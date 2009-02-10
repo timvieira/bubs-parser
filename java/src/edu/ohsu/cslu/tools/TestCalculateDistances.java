@@ -14,8 +14,8 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.math.linear.Matrix;
-import edu.ohsu.cslu.parsing.trees.BaseNaryTree;
-import edu.ohsu.cslu.parsing.trees.ParseTree;
+import edu.ohsu.cslu.narytree.BaseNaryTree;
+import edu.ohsu.cslu.narytree.ParseTree;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.tests.PerformanceTest;

@@ -2,8 +2,8 @@ package edu.ohsu.cslu.util;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.parsing.trees.CharniakHeadPercolationRuleset;
-import edu.ohsu.cslu.parsing.trees.HeadPercolationRuleset;
+import edu.ohsu.cslu.narytree.CharniakHeadPercolationRuleset;
+import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
 
 
 import static junit.framework.Assert.assertEquals;

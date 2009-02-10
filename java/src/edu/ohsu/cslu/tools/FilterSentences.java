@@ -13,7 +13,7 @@ import org.apache.commons.cli.Options;
 
 
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
-import edu.ohsu.cslu.parsing.trees.StringNaryTree;
+import edu.ohsu.cslu.narytree.StringNaryTree;
 
 /**
  * Selects sentences out of a corpus, filtering by the supplied criteria.

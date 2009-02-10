@@ -7,9 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import edu.ohsu.cslu.parsing.trees.HeadPercolationRuleset;
-import edu.ohsu.cslu.parsing.trees.NaryTree;
-import edu.ohsu.cslu.parsing.trees.StringNaryTree;
+import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
+import edu.ohsu.cslu.narytree.NaryTree;
+import edu.ohsu.cslu.narytree.StringNaryTree;
 
 
 public class Strings

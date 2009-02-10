@@ -1,10 +1,23 @@
-package edu.ohsu.cslu.parsing.trees;
+package edu.ohsu.cslu.narytree;
 
-public class MsaHeadPercolationRuleset extends HeadPercolationRuleset
+import java.io.IOException;
+import java.io.StringReader;
+
+/**
+ * Implements Eugene Charniak's set of head-percolation rules (see Charniak, 2000).
+ * 
+ * Note that 'TOP' has been added to this rule-set for semantic completeness.
+ * 
+ * @author Aaron Dunlop
+ * @since Oct 24, 2008
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
+public class CharniakHeadPercolationRuleset extends HeadPercolationRuleset
 {
-    public MsaHeadPercolationRuleset()
+    public CharniakHeadPercolationRuleset() throws IOException
     {
-        super(ruleset());
+        super(new StringReader(ruleset()));
     }
 
     private static String ruleset()
@@ -36,7 +49,7 @@ public class MsaHeadPercolationRuleset extends HeadPercolationRuleset
         sb.append("SINV (r VP) (r SINV) (r SBAR)\n");
         sb.append("SQ (r AUX BES HVS MD) (r SQ) (r VP)\n");
         sb.append("UCP (r UCP)\n");
-        sb.append("VP (r VP) (r AUX AUXG BES HVS MD TO VB VBD VBG VBN VBP VBZ)\n");
+        sb.append("VP (r AUX AUXG BES HVS MD TO VB VBD VBG VBN VBP VBZ) (r VP)\n");
         sb.append("WHADJP (r WRB) (r WHADJP)\n");
         sb.append("WHADVP (r WRB) (r WHADVP)\n");
         sb.append("WHNP (r WDT WP WP$) (r WHNP)\n");

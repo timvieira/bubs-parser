@@ -12,8 +12,8 @@ import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.SimpleMappedSequence;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 import edu.ohsu.cslu.math.linear.Matrix;
-import edu.ohsu.cslu.parsing.trees.HeadPercolationRuleset;
-import edu.ohsu.cslu.parsing.trees.MsaHeadPercolationRuleset;
+import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
+import edu.ohsu.cslu.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.util.Strings;
 
