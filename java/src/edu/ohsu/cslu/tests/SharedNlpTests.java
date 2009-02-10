@@ -18,8 +18,8 @@ import edu.ohsu.cslu.matching.ProfileMatchers;
 import edu.ohsu.cslu.matching.approximate.TestApproximateMatchers;
 import edu.ohsu.cslu.matching.exact.TestExactMatchers;
 import edu.ohsu.cslu.math.AllMathTests;
+import edu.ohsu.cslu.narytree.AllTreeTests;
 import edu.ohsu.cslu.parsing.grammar.TestStringGrammar;
-import edu.ohsu.cslu.parsing.trees.AllTreeTests;
 import edu.ohsu.cslu.tools.AllToolTests;
 import edu.ohsu.cslu.util.AllUtilTests;
 

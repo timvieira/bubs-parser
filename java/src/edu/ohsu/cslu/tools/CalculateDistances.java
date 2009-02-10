@@ -20,10 +20,10 @@ import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.math.linear.FixedPointShortMatrix;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.narytree.BaseNaryTree;
+import edu.ohsu.cslu.narytree.ParseTree;
+import edu.ohsu.cslu.narytree.BaseNaryTree.PqgramProfile;
 import edu.ohsu.cslu.parsing.grammar.InducedGrammar;
-import edu.ohsu.cslu.parsing.trees.BaseNaryTree;
-import edu.ohsu.cslu.parsing.trees.ParseTree;
-import edu.ohsu.cslu.parsing.trees.BaseNaryTree.PqgramProfile;
 import edu.ohsu.cslu.util.Math;
 import edu.ohsu.cslu.util.MultipleBufferedReader;
 

@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.parsing.trees;
+package edu.ohsu.cslu.narytree;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.parsing.trees;
+package edu.ohsu.cslu.narytree;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
