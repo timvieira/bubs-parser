@@ -1,0 +1,203 @@
+<!-- $Id: build.xml 7582 2008-06-17 21:57:19Z chriso $ -->
+<project name="nlp" default="dist" basedir=".">
+
+    <!-- Use ant-contrib, cpptasks, and genjar (from SourceForge) to enable try/catch, 
+         gcc compilation, and better dependency analysis than classfileset -->
+    <taskdef resource="net/sf/antcontrib/antlib.xml" />
+    <taskdef resource="cpptasks.tasks" />
+    <taskdef classpath="java/lib/GenJar.jar" resource="genjar.properties" />
+
+    <property name="dir.build" location="build" />
+    <property name="dir.src" location="java/src" />
+    <property name="dir.lib" location="java/lib" />
+    <property name="dir.build.lib" location="build-lib" />
+    <property name="dir.dist" location="build-dist" />
+    <property name="dir.sge.tmp" location="sge-tmp" />
+
+    <!--
+    ========================================================================
+        Clean the entire project
+    ========================================================================
+    -->
+    <target name="clean" description="Clean the entire project">
+        <delete dir="build" />
+        <delete dir="build-dist" />
+    </target>
+
+    <!--
+    ========================================================================
+        Compile all Java code
+    ========================================================================
+    -->
+    <target name="compile.java" description="Compile Java code and tools">
+        <!-- If the build directory doesn't already exist, create it -->
+        <mkdir dir="${dir.build}" />
+        <javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true">
+            <classpath>
+                <fileset dir="${dir.lib}" includes="*.jar" />
+            </classpath>
+        </javac>
+    </target>
+
+    <!--
+    ========================================================================
+        Compile all native code
+    ========================================================================
+    -->
+    <target name="compile.native" description="Compile native code and tools">
+        <!-- If the build directory doesn't already exist, create it -->
+        <mkdir dir="${dir.dist}" />
+
+        <cc name="gcc" outtype="executable" outfile="${dir.dist}/evalb" debug="true">
+            <fileset dir="c/evalb" includes="*.c" />
+        </cc>
+
+        <delete dir="${dir.dist}" includes="*.o,dependencies.xml,history.xml" />
+    </target>
+
+    <!-- 
+    ========================================================================
+       Package an executable jar file
+    ========================================================================
+    -->
+    <target name="package.jar" description="Package an executable jar file">
+        <!-- Create the distribution directory if it doesn't already exist -->
+        <mkdir dir="${dir.dist}" />
+
+        <!-- Package the jar -->
+        <genjar jarfile="${dir.dist}/${tool-name}.jar">
+            <class name="${root-class}" />
+
+            <classpath>
+                <pathelement location="${dir.build}" />
+                <fileset dir="${dir.lib}" includes="*.jar" />
+                <fileset dir="${dir.build.lib}" includes="*.jar" />
+            </classpath>
+
+            <manifest>
+                <attribute name="Main-Class" value="${root-class}" />
+            </manifest>
+            <zipgroupfileset dir="." includes="${additional-jars}" />
+        </genjar>
+
+        <!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
+        <delete file="${dir.dist}/${tool-name}" />
+        <copy file="java/tools/script-template.sh" tofile="${dir.dist}/${tool-name}" />
+        <fixcrlf file="${dir.dist}/${tool-name}" eol="unix" />
+        <replace file="${dir.dist}/${tool-name}">
+            <replacefilter token="%JAR%" value="${tool-name}.jar" />
+            <replacefilter token="%MEM%" value="${heap-size}" />
+        </replace>
+    </target>
+
+    <!-- 
+    ========================================================================
+       Targets to package various NLP executables 
+    ========================================================================
+    -->
+
+    <target name="select-features" depends="compile.java" description="Package feature selection/formatting tool">
+        <antcall target="package.jar">
+            <param name="root-class" value="edu.ohsu.cslu.tools.SelectFeatures" />
+            <param name="tool-name" value="select-features" />
+            <param name="heap-size" value="128" />
+        </antcall>
+    </target>
+
+    <target name="filter-sentences" depends="compile.java" description="Package Sentence Filtering Tool">
+        <antcall target="package.jar">
+            <param name="root-class" value="edu.ohsu.cslu.tools.FilterSentences" />
+            <param name="tool-name" value="filter-sentences" />
+            <param name="heap-size" value="256" />
+        </antcall>
+    </target>
+
+    <target name="split-corpus" depends="compile.java" description="Package Training/Dev set split tool">
+        <antcall target="package.jar">
+            <param name="root-class" value="edu.ohsu.cslu.tools.SplitCorpus" />
+            <param name="tool-name" value="split-corpus" />
+            <param name="heap-size" value="256" />
+        </antcall>
+    </target>
+
+    <target name="calculate-distances" depends="compile.java" description="Package Distance Calculation Tool">
+        <antcall target="package.jar">
+            <param name="root-class" value="edu.ohsu.cslu.tools.CalculateDistances" />
+            <param name="tool-name" value="calculate-distances" />
+            <param name="heap-size" value="512" />
+        </antcall>
+    </target>
+
+    <target name="encode" depends="compile.java" description="Package Encoding Tool">
+        <antcall target="package.jar">
+            <param name="root-class" value="edu.ohsu.cslu.tools.Encode" />
+            <param name="tool-name" value="encode" />
+            <param name="heap-size" value="128" />
+        </antcall>
+    </target>
+
+    <target name="induce-vocabularies" depends="compile.java" description="Package Vocabulary Induction Tool">
+        <antcall target="package.jar">
+            <param name="root-class" value="edu.ohsu.cslu.alignment.tools.InduceVocabularies" />
+            <param name="tool-name" value="induce-vocabularies" />
+            <param name="heap-size" value="128" />
+        </antcall>
+    </target>
+
+    <target name="align-sentences" depends="compile.java" description="Package Sentence MSA Tool">
+        <antcall target="package.jar">
+            <param name="root-class" value="edu.ohsu.cslu.alignment.tools.AlignSentences" />
+            <param name="tool-name" value="align-sentences" />
+            <param name="heap-size" value="512" />
+        </antcall>
+    </target>
+
+    <target name="train-and-align" depends="compile.java" description="Package Full Sentence MSA Tool">
+        <antcall target="package.jar">
+            <param name="root-class" value="edu.ohsu.cslu.alignment.tools.TrainPssmAndAlignSentences" />
+            <param name="tool-name" value="train-and-align" />
+            <param name="heap-size" value="512" />
+        </antcall>
+    </target>
+
+    <!-- 
+    ========================================================================
+       Package a Sun Grid Engine job
+    ========================================================================
+    -->
+    <target name="package.job" description="Package a Sun Grid Engine job">
+        <!-- If 'params' is not specified, default it to the empty string -->
+        <property name="params" value="" />
+
+        <!-- If 'heap-size' is not specified, default it to 256m -->
+        <property name="heap-size" value="256" />
+
+        <!-- Generate a grid-engine runner script  -->
+        <delete file="${dir.dist}/grid-${tool-name}" failonerror="false" />
+        <copy file="java/tools/grid-script-template.sh" tofile="${dir.dist}/grid-${tool-name}" />
+        <fixcrlf file="${dir.dist}/grid-${tool-name}" eol="unix" />
+        <replace file="${dir.dist}/grid-${tool-name}">
+            <replacefilter token="%NAME%" value="${tool-name}" />
+            <replacefilter token="%MEM%" value="${heap-size}" />
+            <replacefilter token="%PARAMS%" value="${params}" />
+        </replace>
+    </target>
+
+    <!-- Grid job naming convention: prepend 'grid-' to the name of the target which packages the jar -->
+
+    <target name="grid-calculate-distances" depends="calculate-distances" description="Package calculate-distances SGE job">
+        <antcall target="package.job">
+            <param name="tool-name" value="calculate-distances" />
+            <param name="heap-size" value="512" />
+        </antcall>
+    </target>
+
+    <!-- 
+    ========================================================================
+       Package all NLP applications
+    ========================================================================
+    -->
+    <target name="dist" depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,compile.native" description="Package all NLP application">
+    </target>
+
+</project>

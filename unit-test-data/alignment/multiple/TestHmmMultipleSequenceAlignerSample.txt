@@ -1,0 +1,12 @@
+       - |       NN |       - |       - |      AUX |      TO |      VB |      IN |             JJ |           CD |       . |
+       - | Delivery |       - |       - |       is |      to |   begin |      in |          early |         1991 |       . |
+       - |  NONHEAD |       - |       - |     HEAD | NONHEAD | NONHEAD | NONHEAD |        NONHEAD |      NONHEAD | NONHEAD |
+----------------------------------------------------------------------------------------------------------------------------
+       - |      JJS |       - |     AUX |      VBN |      TO |      VB |      IN |             JJ |          NNS |       . |
+       - |     Most |       - |     are | expected |      to |    fall |   below | previous-month |       levels |       . |
+       - |  NONHEAD |       - | NONHEAD |     HEAD | NONHEAD | NONHEAD | NONHEAD |        NONHEAD |      NONHEAD | NONHEAD |
+----------------------------------------------------------------------------------------------------------------------------
+      DT |       NN |      MD |     AUX |      VBN |       - |       - |      IN |              - |          NNP |       . |
+     The |  venture |    will |      be |    based |       - |       - |      in |              - | Indianapolis |       . |
+ NONHEAD |  NONHEAD | NONHEAD | NONHEAD |     HEAD |       - |       - | NONHEAD |              - |      NONHEAD | NONHEAD |
+----------------------------------------------------------------------------------------------------------------------------
