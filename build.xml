@@ -5,11 +5,12 @@
          gcc compilation, and better dependency analysis than classfileset -->
     <taskdef resource="net/sf/antcontrib/antlib.xml" />
     <taskdef resource="cpptasks.tasks" />
-    <taskdef classpath="java/lib/GenJar.jar" resource="genjar.properties" />
+    <taskdef classpath="java/bsd-lib/GenJar.jar" resource="genjar.properties" />
 
     <property name="dir.build" location="build" />
     <property name="dir.src" location="java/src" />
-    <property name="dir.lib" location="java/lib" />
+    <property name="dir.bsd.lib" location="java/bsd-lib" />
+    <property name="dir.lgpl.lib" location="java/lgpl-lib" />
     <property name="dir.build.lib" location="build-lib" />
     <property name="dir.dist" location="build-dist" />
     <property name="dir.sge.tmp" location="sge-tmp" />
@@ -34,7 +35,7 @@
         <mkdir dir="${dir.build}" />
         <javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true">
             <classpath>
-                <fileset dir="${dir.lib}" includes="*.jar" />
+                <fileset dir="${dir.bsd.lib}" includes="*.jar" />
             </classpath>
         </javac>
     </target>
@@ -70,7 +71,7 @@
 
             <classpath>
                 <pathelement location="${dir.build}" />
-                <fileset dir="${dir.lib}" includes="*.jar" />
+                <fileset dir="${dir.bsd.lib}" includes="*.jar" />
                 <fileset dir="${dir.build.lib}" includes="*.jar" />
             </classpath>
 
