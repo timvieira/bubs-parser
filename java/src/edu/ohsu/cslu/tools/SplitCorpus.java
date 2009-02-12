@@ -16,6 +16,10 @@ import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
  * Splits a line-based corpus into training and development (or training and test) sets, writing one
  * to STDOUT and the other to STDERR.
  * 
+ * The relative size of each set is configured on the command-line.
+ * 
+ * Lines are permuted randomly and output in that permuted order.
+ * 
  * @author Aaron Dunlop
  * @since Oct 22, 2008
  * 
