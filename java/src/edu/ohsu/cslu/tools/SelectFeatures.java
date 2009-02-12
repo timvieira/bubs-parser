@@ -15,10 +15,21 @@ import edu.ohsu.cslu.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
 
 /**
- * Selects and formats features from a variously formatted sentences (including Penn-Treebank trees,
- * parenthesis-bracketed flat structures, and Stanford's slash-delimited tagged representation.
+ * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse
+ * trees, parenthesis-bracketed flat structures, and Stanford's slash-delimited tagged
+ * representation).
  * 
- * Outputs flat structures in bracketed or Stanford-formats.
+ * Outputs flat structures in bracketed or Stanford formats.
+ * 
+ * Supported features from parse trees:
+ * <ul>
+ * <li>Word</li>
+ * <li>Part-of-Speech</li>
+ * <li>Before-head-verb / Head-verb / After-head-verb</li>
+ * </ul>
+ * 
+ * From flat bracketed input, arbitrary features can be selected in any order (e.g. features 1, 6,
+ * and 3 output in that order).
  * 
  * @author Aaron Dunlop
  * @since Nov 17, 2008
@@ -27,8 +38,8 @@ import edu.ohsu.cslu.util.Strings;
  */
 public class SelectFeatures extends LinewiseCommandlineTool
 {
-    private Format inputFormat;
-    private Format outputFormat;
+    private FileFormat inputFormat;
+    private FileFormat outputFormat;
     private boolean pos;
     private boolean head;
     private boolean word;
@@ -42,7 +53,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
     private final static String HEAD_FEATURE_HEAD = "HEAD";
     private final static String HEAD_FEATURE_AFTER = "AFTER";
 
-    // TODO: Allow other optional rulesets?
+    // TODO: Allow other head-percolation rulesets?
     private final HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
 
     public static void main(String[] args)
@@ -76,21 +87,21 @@ public class SelectFeatures extends LinewiseCommandlineTool
     @Override
     public void setToolOptions(CommandLine commandLine) throws ParseException
     {
-        inputFormat = commandLine.hasOption('i') ? Format.inputFormat(commandLine.getOptionValue('i'))
-            : Format.Bracketed;
-        outputFormat = commandLine.hasOption('o') ? Format.inputFormat(commandLine.getOptionValue('o'))
-            : Format.Bracketed;
+        inputFormat = commandLine.hasOption('i') ? FileFormat.forString(commandLine.getOptionValue('i'))
+            : FileFormat.Bracketed;
+        outputFormat = commandLine.hasOption('o') ? FileFormat.forString(commandLine.getOptionValue('o'))
+            : FileFormat.Bracketed;
 
         // We only handle 'p', 'head', and 'word' options when extracting from trees
-        if (inputFormat != Format.BracketedTree && inputFormat != Format.SquareBracketedTree
+        if (inputFormat != FileFormat.BracketedTree && inputFormat != FileFormat.SquareBracketedTree
             && (commandLine.hasOption('p') || commandLine.hasOption('h') || commandLine.hasOption('w')))
         {
             throw new ParseException("POS, head, and word options only supported for tree input formats");
         }
 
         // And 'f' option when selecting from a flat format
-        if (inputFormat != Format.Bracketed && inputFormat != Format.SquareBracketed && inputFormat != Format.Stanford
-            && commandLine.hasOption('f'))
+        if (inputFormat != FileFormat.Bracketed && inputFormat != FileFormat.SquareBracketed
+            && inputFormat != FileFormat.Stanford && commandLine.hasOption('f'))
         {
             throw new ParseException("Feature option (-f) only supported for flat input formats");
         }
@@ -116,7 +127,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
                 featureDelimiter = "/";
                 break;
             default :
-                throw new ParseException("Unknown output format");
+                throw new ParseException("Unknown output format: " + commandLine.getOptionValue('o'));
         }
 
         if (commandLine.hasOption('f'))
@@ -266,11 +277,11 @@ public class SelectFeatures extends LinewiseCommandlineTool
             @Override
             public String call()
             {
-                if (inputFormat == Format.BracketedTree)
+                if (inputFormat == FileFormat.BracketedTree)
                 {
                     return selectTreeFeatures(line);
                 }
-                else if (inputFormat == Format.SquareBracketedTree)
+                else if (inputFormat == FileFormat.SquareBracketedTree)
                 {
                     return selectTreeFeatures(line.replaceAll("\\[", "(").replaceAll("\\]", ")"));
                 }
@@ -280,72 +291,5 @@ public class SelectFeatures extends LinewiseCommandlineTool
                 }
             }
         };
-    }
-
-    private enum Format
-    {
-        /** Penn Treebank parenthesis-bracketed format */
-        BracketedTree,
-        /** Square-bracketed tree format */
-        SquareBracketedTree,
-        /** Parenthesis-bracketed flat format */
-        Bracketed,
-        /** Square-bracketed flat format */
-        SquareBracketed,
-        /** Slash-delimited flat format */
-        Stanford;
-
-        public boolean isTreeFormat()
-        {
-            return this == BracketedTree || this == SquareBracketedTree;
-        }
-
-        public static Format inputFormat(String s)
-        {
-            if ("bracketed-tree".equalsIgnoreCase(s) || "tree".equalsIgnoreCase(s))
-            {
-                return BracketedTree;
-            }
-            if ("square-bracketed-tree".equalsIgnoreCase(s))
-            {
-                return SquareBracketedTree;
-            }
-            else if ("bracketed".equalsIgnoreCase(s))
-            {
-                return Bracketed;
-            }
-            else if ("square-bracketed".equalsIgnoreCase(s))
-            {
-                return SquareBracketed;
-            }
-            else if ("stanford".equalsIgnoreCase(s))
-            {
-                return Stanford;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Unknown input format: " + s);
-            }
-        }
-
-        public static Format outputFormat(String s)
-        {
-            if ("bracketed".equalsIgnoreCase(s))
-            {
-                return Bracketed;
-            }
-            else if ("square-bracketed".equalsIgnoreCase(s))
-            {
-                return SquareBracketed;
-            }
-            else if ("stanford".equalsIgnoreCase(s))
-            {
-                return Stanford;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Unknown or illegal output format: " + s);
-            }
-        }
     }
 }

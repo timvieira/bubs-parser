@@ -10,7 +10,7 @@ import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
-
+import org.apache.commons.cli.ParseException;
 
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.narytree.StringNaryTree;
@@ -28,8 +28,13 @@ public class FilterSentences extends BaseCommandlineTool
     private int minLength;
     private int maxLength;
     private int count;
-    private FileType fileType;
-    List<String> filenames;
+    private FileFormat inputFormat;
+    private List<String> filenames;
+
+    public static void main(String[] args)
+    {
+        run(args);
+    }
 
     @Override
     public void execute() throws Exception
@@ -40,13 +45,9 @@ public class FilterSentences extends BaseCommandlineTool
             final BufferedReader reader = new BufferedReader(new InputStreamReader(fileAsInputStream(filename)));
             for (String line = reader.readLine(); line != null; line = reader.readLine())
             {
-                switch (fileType)
+                switch (inputFormat)
                 {
-                    case Simple :
-                        System.err.println("Not Implemented");
-                        break;
-
-                    case Parsed :
+                    case BracketedTree :
                         StringNaryTree parseTree = StringNaryTree.read(line);
                         // Skip sentences which do not meet the size criteria
                         if (parseTree.leaves() < minLength || parseTree.leaves() > maxLength)
@@ -57,9 +58,9 @@ public class FilterSentences extends BaseCommandlineTool
                         sentences.add(parseTree.toString());
                         break;
 
-                    case Tagged :
-                        System.err.println("Not Implemented");
-                        break;
+                    // TODO: Implement other input formats
+                    default :
+                        throw new IllegalArgumentException("Unknown input format: " + inputFormat.toString());
                 }
             }
             reader.close();
@@ -88,7 +89,7 @@ public class FilterSentences extends BaseCommandlineTool
         Options options = basicOptions();
 
         options.addOption(OptionBuilder.hasArg().withArgName("type").withDescription(
-            "File Type (parsed, tagged, simple). Default simple").create('t'));
+            "File Type (tree, tagged, simple). Default simple").create('t'));
         options.addOption(OptionBuilder.hasArg().withArgName("length").withDescription("Minimum length").create("ml"));
         options.addOption(OptionBuilder.hasArg().withArgName("length").withDescription("Maximum length").create("xl"));
         options.addOption(OptionBuilder.hasArg().withArgName("count").withDescription("Number of sentences")
@@ -98,9 +99,14 @@ public class FilterSentences extends BaseCommandlineTool
     }
 
     @Override
-    public void setToolOptions(CommandLine commandLine)
+    public void setToolOptions(CommandLine commandLine) throws ParseException
     {
-        fileType = FileType.forString(commandLine.getOptionValue('t'));
+        inputFormat = FileFormat.forString(commandLine.getOptionValue('t'));
+        if (inputFormat != FileFormat.BracketedTree)
+        {
+            throw new ParseException("Unsupported input format: " + commandLine.getOptionValue('t'));
+        }
+
         minLength = commandLine.hasOption("ml") ? Integer.parseInt(commandLine.getOptionValue("ml")) : 0;
         maxLength = commandLine.hasOption("xl") ? Integer.parseInt(commandLine.getOptionValue("xl"))
             : Integer.MAX_VALUE;
@@ -113,32 +119,5 @@ public class FilterSentences extends BaseCommandlineTool
     protected String usageArguments() throws Exception
     {
         return "[filenames]";
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args)
-    {
-        run(args);
-    }
-
-    private enum FileType {
-        Parsed, Tagged, Simple;
-
-        public static FileType forString(String s)
-        {
-            if ("parsed".equalsIgnoreCase(s))
-            {
-                return Parsed;
-            }
-
-            if ("tagged".equalsIgnoreCase(s))
-            {
-                return Tagged;
-            }
-
-            return Simple;
-        }
     }
 }
