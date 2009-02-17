@@ -4,7 +4,15 @@
  */
 package edu.ohsu.cslu.tools;
 
-enum FileFormat
+/**
+ * Enumeration of text input and output formats.
+ * 
+ * @author Aaron Dunlop
+ * @since Feb 11, 2009
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
+public enum FileFormat
 {
     /** Penn Treebank parenthesis-bracketed format */
     BracketedTree,
