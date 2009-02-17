@@ -11,7 +11,6 @@ import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.narytree.NaryTree;
 import edu.ohsu.cslu.narytree.StringNaryTree;
 
-
 public class Strings
 {
     public static String fill(char c, int count)
@@ -155,7 +154,7 @@ public class Strings
         sequence = sequence.replaceAll("\n|\r", " ").trim();
         final int firstCloseBracket = sequence.indexOf(closeBracket);
         int tokensPerBracket = 0;
-        for (int i = 0; i < firstCloseBracket; i++)
+        for (int i = 0; i < firstCloseBracket && i > 0; i++)
         {
             i = sequence.indexOf(' ', i);
             tokensPerBracket++;
