@@ -1,12 +1,11 @@
 package edu.ohsu.cslu.util;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Test;
 
 import edu.ohsu.cslu.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
-
-
-import static junit.framework.Assert.assertEquals;
 
 public class TestStrings
 {
@@ -67,6 +66,17 @@ public class TestStrings
     public void testBracketedTags() throws Exception
     {
         checkStringFeatures(Strings.bracketedTags("(foo 1) (bar 2)\n(foobar 3)"));
+
+        String[][] tags = Strings.bracketedTags("(foo)");
+        assertEquals(1, tags.length);
+        assertEquals(1, tags[0].length);
+        assertEquals("foo", tags[0][0]);
+
+        tags = Strings.bracketedTags("(foo 1)");
+        assertEquals(1, tags.length);
+        assertEquals(2, tags[0].length);
+        assertEquals("foo", tags[0][0]);
+        assertEquals("1", tags[0][1]);
     }
 
     @Test
