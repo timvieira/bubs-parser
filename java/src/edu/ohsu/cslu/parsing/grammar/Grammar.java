@@ -46,9 +46,7 @@ public interface Grammar
      * Returns the number of occurrences of a specified category.
      * 
      * @param category
-     * @param production
-     * 
-     * @return
+     * @return count
      */
     public int occurrences(int category);
 
@@ -57,8 +55,7 @@ public interface Grammar
      * 
      * @param category
      * @param production
-     * 
-     * @return
+     * @return count
      */
     public int occurrences(int category, int production);
 
@@ -68,8 +65,7 @@ public interface Grammar
      * @param category
      * @param production1
      * @param production2
-     * 
-     * @return
+     * @return count
      */
     public int occurrences(int category, int production1, int production2);
 
@@ -78,8 +74,7 @@ public interface Grammar
      * 
      * @param category
      * @param production
-     * 
-     * @return
+     * @return probability of the specified production
      */
     public float probability(int category, int production);
 
@@ -89,8 +84,7 @@ public interface Grammar
      * @param category
      * @param production1
      * @param production2
-     * 
-     * @return
+     * @return Probability of the specified production
      */
     public float probability(int category, int production1, int production2);
 
@@ -98,10 +92,8 @@ public interface Grammar
      * Returns the log probability of a specified unary production given a category.
      * 
      * @param category
-     * @param production1
-     * @param production2
-     * 
-     * @return
+     * @param production
+     * @return Log probability of the specified production
      */
     public float logProbability(int category, int production);
 
@@ -111,8 +103,7 @@ public interface Grammar
      * @param category
      * @param production1
      * @param production2
-     * 
-     * @return
+     * @return Log probability of the specified production
      */
     public float logProbability(int category, int production1, int production2);
 

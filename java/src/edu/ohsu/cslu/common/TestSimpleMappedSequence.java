@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.common;
 
+import static junit.framework.Assert.assertEquals;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -8,9 +9,6 @@ import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link SimpleMappedSequence}.
@@ -172,7 +170,7 @@ public class TestSimpleMappedSequence
     }
 
     /**
-     * Tests the {@link SimpleMappedSequence#subsequence(int, int)} method.
+     * Tests the {@link SimpleMappedSequence#subSequence(int, int)} method.
      * 
      * @throws Exception if something bad happens
      */

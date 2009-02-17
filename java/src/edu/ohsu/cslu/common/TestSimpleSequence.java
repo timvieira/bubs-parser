@@ -1,11 +1,11 @@
 package edu.ohsu.cslu.common;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.StringReader;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import static junit.framework.Assert.assertEquals;
 
 public class TestSimpleSequence
 {
@@ -79,7 +79,7 @@ public class TestSimpleSequence
     }
 
     /**
-     * Tests {@link SimpleSequence#subsequence(int, int)} method.
+     * Tests {@link SimpleSequence#subSequence(int, int)} method.
      * 
      * @throws Exception if something bad happens
      */

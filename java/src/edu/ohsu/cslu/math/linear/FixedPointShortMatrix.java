@@ -6,7 +6,6 @@ import java.io.Writer;
 
 import edu.ohsu.cslu.util.Math;
 
-
 /**
  * Fixed-point implementation of the {@link Matrix} interface, which stores values as shorts for
  * space efficiency (16-bit instead of 32-bit floats), at the expense of some runtime efficiency due
@@ -182,7 +181,7 @@ public class FixedPointShortMatrix extends BaseMatrix implements Matrix, Seriali
     }
 
     /**
-     * Type-strengthen {@link Matrix.subMatrix()}
+     * Type-strengthen {@link Matrix#subMatrix(int, int, int, int)}
      * 
      * Note that a submatrix of a symmetric matrix may or may not be symmetric as well. This
      * implementation correctly creates a symmetric submatrix when the specified indices indicate a
@@ -233,7 +232,7 @@ public class FixedPointShortMatrix extends BaseMatrix implements Matrix, Seriali
     }
 
     /**
-     * Type-strengthen {@link Matrix.transpose()}
+     * Type-strengthen {@link Matrix#transpose()}
      */
     @Override
     public FixedPointShortMatrix transpose()

@@ -60,12 +60,12 @@ public final class ParseTree extends BaseNaryTree<String>
 
     /**
      * Returns the 'head' descendant of this tree, using a head-percolation rule-set of the standard
-     * Charniak/Magerman form.
+     * Magerman/Charniak form.
      * 
-     * @param ruleset head-percolation ruleset
+     * @param ruleset Head-percolation ruleset
      * @return head descendant
      */
-    public ParseTree headDescendant(HeadPercolationRuleset rules)
+    public ParseTree headDescendant(HeadPercolationRuleset ruleset)
     {
         if (isLeaf())
         {
@@ -77,13 +77,13 @@ public final class ParseTree extends BaseNaryTree<String>
         // Special-case for unary productions
         if (childArray.length == 1)
         {
-            return ((ParseTree) childList.get(0)).headDescendant(rules);
+            return ((ParseTree) childList.get(0)).headDescendant(ruleset);
         }
 
         // TODO: This is terribly inefficient - it requires mapping each child (O(n) and iterating
         // through childList (O(n)) for each node. A total of O(n^2)...)
-        int index = rules.headChild(label(), vocabulary.map(childArray));
-        return ((ParseTree) childList.get(index)).headDescendant(rules);
+        int index = ruleset.headChild(label(), vocabulary.map(childArray));
+        return ((ParseTree) childList.get(index)).headDescendant(ruleset);
     }
 
     /**

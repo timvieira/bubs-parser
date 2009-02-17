@@ -122,7 +122,7 @@ public interface NaryTree<E extends Object>
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param writer The writer to write to
+     * @param outputStream The {@link OutputStream} to write to
      * @throws IOException if the write fails
      */
     public void write(OutputStream outputStream) throws IOException;
@@ -130,7 +130,7 @@ public interface NaryTree<E extends Object>
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param writer The writer to write to
+     * @param writer The {@link Writer} to write to
      * @throws IOException if the write fails
      */
     public void write(Writer writer) throws IOException;

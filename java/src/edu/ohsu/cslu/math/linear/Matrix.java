@@ -15,7 +15,6 @@ import java.util.zip.GZIPInputStream;
 
 import edu.ohsu.cslu.util.Strings;
 
-
 /**
  * Base interface for all matrix classes.
  * 
@@ -121,7 +120,7 @@ public interface Matrix extends Cloneable
      * 
      * @param i row
      * @param j column
-     * @param value new value
+     * @param newValue new value
      */
     public void set(final int i, final int j, final String newValue);
 
@@ -211,7 +210,7 @@ public interface Matrix extends Cloneable
 
     /**
      * @return the coordinates of the maximum value present in the matrix; i,j such that
-     *         {@link #get(i, j)} will return the same value as {@link #max()}.
+     *         {@link #getFloat(int, int)} will return the same value as {@link #max()}.
      */
     public int[] argMax();
 
@@ -227,7 +226,7 @@ public interface Matrix extends Cloneable
 
     /**
      * @return the coordinates of the minimum value present in the matrix; i,j such that
-     *         {@link #get(i, j)} will return the same value as {@link #min()}.
+     *         {@link #getFloat(int, int)} will return the same value as {@link #min()}.
      */
     public int[] argMin();
 

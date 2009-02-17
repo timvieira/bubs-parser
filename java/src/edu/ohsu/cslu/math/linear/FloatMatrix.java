@@ -171,7 +171,7 @@ public final class FloatMatrix extends BaseMatrix implements Matrix, Serializabl
     }
 
     /**
-     * Type-strengthen {@link Matrix.subMatrix()}
+     * Type-strengthen {@link Matrix#subMatrix(int, int, int, int)}
      * 
      * Note that a submatrix of a symmetric matrix may or may not be symmetric as well. This
      * implementation correctly creates a symmetric submatrix when the specified indices indicate a
@@ -222,7 +222,7 @@ public final class FloatMatrix extends BaseMatrix implements Matrix, Serializabl
     }
 
     /**
-     * Type-strengthen {@link Matrix.transpose()}
+     * Type-strengthen {@link Matrix#transpose()}
      */
     @Override
     public FloatMatrix transpose()

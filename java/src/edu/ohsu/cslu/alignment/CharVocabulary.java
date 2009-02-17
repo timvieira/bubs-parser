@@ -34,7 +34,7 @@ public interface CharVocabulary extends AlignmentVocabulary
      * storage.
      * 
      * @param c
-     * @return
+     * @return integer index
      */
     public int mapCharacter(char c);
 
@@ -42,7 +42,7 @@ public interface CharVocabulary extends AlignmentVocabulary
      * Maps an integer array index to a character from the current alphabet.
      * 
      * @param i
-     * @return
+     * @return mapped character
      */
     public char mapIndex(int i);
 

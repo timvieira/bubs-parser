@@ -103,7 +103,6 @@ public final class PackedIntVector extends BaseVector implements Vector
      * 
      * @param index
      * @param value
-     * @return previous value at the specified index
      */
     public final void set(int index, int value)
     {
@@ -127,7 +126,7 @@ public final class PackedIntVector extends BaseVector implements Vector
      * Returns the value stored at the specified location
      * 
      * @param index
-     * @return
+     * @return value at the specified location
      */
     public final int getInt(int index)
     {

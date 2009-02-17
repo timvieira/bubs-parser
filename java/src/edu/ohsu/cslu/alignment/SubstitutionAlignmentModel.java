@@ -19,7 +19,7 @@ public interface SubstitutionAlignmentModel extends AlignmentModel
      * 
      * @param alignedFeature
      * @param unalignedFeature
-     * @return
+     * @return substitution cost
      */
     public float cost(int alignedFeature, int unalignedFeature);
 
@@ -33,7 +33,7 @@ public interface SubstitutionAlignmentModel extends AlignmentModel
      * 
      * @param feature
      * @param sequenceLength
-     * @return
+     * @return gap insertion cost
      */
     public float gapInsertionCost(int feature, int sequenceLength);
 
@@ -42,7 +42,7 @@ public interface SubstitutionAlignmentModel extends AlignmentModel
      * 
      * @param alignedVector
      * @param unalignedVector
-     * @return
+     * @return substitution cost
      */
     public float cost(int[] alignedVector, int[] unalignedVector);
 
@@ -56,7 +56,7 @@ public interface SubstitutionAlignmentModel extends AlignmentModel
      * 
      * @param featureVector
      * @param sequenceLength
-     * @return
+     * @return gap insertion cost
      */
     public float gapInsertionCost(int[] featureVector, int sequenceLength);
 }
