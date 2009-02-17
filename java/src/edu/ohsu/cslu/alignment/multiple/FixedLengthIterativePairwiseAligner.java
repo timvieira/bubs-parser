@@ -9,7 +9,18 @@ import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.math.linear.Matrix;
 
-
+/**
+ * An iterative pairwise aligner which assumes that the length of the final alignment is known; gaps
+ * are inserted into the sequences as they are aligned, but no gaps are inserted into the alignment
+ * itself.
+ * 
+ * @see VariableLengthIterativePairwiseAligner
+ * 
+ * @author Aaron Dunlop
+ * @since Feb 17, 2009
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class FixedLengthIterativePairwiseAligner extends BaseMultipleSequenceAligner
 {
     public FixedLengthIterativePairwiseAligner()
@@ -20,8 +31,10 @@ public class FixedLengthIterativePairwiseAligner extends BaseMultipleSequenceAli
     /**
      * Assumes the longer of the two sequences has already been aligned into the aligned set.
      * 
-     * @param pair
-     * @return
+     * @param alignedSequence
+     * @param unalignedSequence
+     * @param alignmentModel
+     * @return Multiple sequence alignment
      */
     @Override
     protected SequenceAlignment align(final MappedSequence alignedSequence, final MappedSequence unalignedSequence,

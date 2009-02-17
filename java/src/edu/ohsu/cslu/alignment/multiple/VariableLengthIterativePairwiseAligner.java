@@ -3,7 +3,6 @@
  */
 package edu.ohsu.cslu.alignment.multiple;
 
-
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.alignment.pairwise.VariableLengthDynamicAligner;
@@ -11,7 +10,18 @@ import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.SimpleMappedSequence;
 import edu.ohsu.cslu.math.linear.Matrix;
 
-// TODO: Tune - we lost a lot of speed again somewhere
+/**
+ * An iterative pairwise aligner which inserts gaps into the alignment itself, allowing the MSA to
+ * expand in an effort to create the best possible alignment. In general, the alignment runtime will
+ * be considerably longer than that of @link {@link FixedLengthIterativePairwiseAligner}
+ * 
+ * TODO: Tune - we lost a lot of speed again somewhere
+ * 
+ * @author Aaron Dunlop
+ * @since Feb 17, 2009
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class VariableLengthIterativePairwiseAligner extends BaseMultipleSequenceAligner
 {
     public VariableLengthIterativePairwiseAligner()
@@ -22,8 +32,10 @@ public class VariableLengthIterativePairwiseAligner extends BaseMultipleSequence
     /**
      * Assumes one of the sequences has already been aligned into the aligned set.
      * 
-     * @param pair
-     * @return
+     * @param alignedSequence
+     * @param unalignedSequence
+     * @param alignmentModel
+     * @return Multiple sequence alignment
      */
     @Override
     protected SequenceAlignment align(MappedSequence alignedSequence, MappedSequence unalignedSequence,

@@ -86,7 +86,8 @@ public abstract class BaseStringGrammar extends BaseGrammar implements StringGra
      * Increments the count of the specified binary production.
      * 
      * @param category
-     * @param production
+     * @param production1
+     * @param production2
      * @param occurrences
      */
     protected final void incrementBinaryOccurrenceCount(final String category, final String production1,

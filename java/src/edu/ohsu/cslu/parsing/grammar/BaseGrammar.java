@@ -17,7 +17,6 @@ import java.util.Set;
 
 import edu.ohsu.cslu.math.linear.BitVector;
 
-
 /**
  * Base Grammar implementation. Stores all productions as ints for quick access (note that this
  * limits it to representing ~2 billion unique productions, but that shouldn't be problematic for
@@ -438,7 +437,8 @@ public abstract class BaseGrammar implements Grammar, Serializable
      * Increments the count of the specified binary production.
      * 
      * @param category
-     * @param production
+     * @param production1
+     * @param production2
      */
     protected final void incrementBinaryOccurrenceCount(final int category, final int production1, final int production2)
     {
@@ -495,7 +495,8 @@ public abstract class BaseGrammar implements Grammar, Serializable
      * Increments the count of the specified binary production.
      * 
      * @param category
-     * @param production
+     * @param production1
+     * @param production2
      * @param occurrences
      */
     protected final void incrementBinaryOccurrenceCount(final int category, final int production1,
@@ -571,7 +572,7 @@ public abstract class BaseGrammar implements Grammar, Serializable
      * Returns the set of legal unary productions given a category
      * 
      * @param category
-     * @return
+     * @return Set of legal unary productions
      */
     protected final IntSet unaryProductions(final int category)
     {
@@ -582,7 +583,7 @@ public abstract class BaseGrammar implements Grammar, Serializable
      * Returns the set of legal binary productions given a category
      * 
      * @param category
-     * @return
+     * @return Set of legal binary productions
      */
     protected final Set<int[]> binaryProductions(final int category)
     {
