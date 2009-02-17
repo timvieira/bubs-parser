@@ -12,14 +12,13 @@ import java.util.TreeSet;
 
 import edu.ohsu.cslu.matching.Matcher;
 
-
 /**
  * Base class for all approximate matchers
- *
+ * 
  * @author Aaron Dunlop
  * @since Jun 12, 2008
- *
- * $Id$
+ * 
+ *        $Id$
  */
 public abstract class ApproximateMatcher extends Matcher
 {
@@ -33,7 +32,7 @@ public abstract class ApproximateMatcher extends Matcher
 
     /**
      * Returns the locations of matches found in the text and the edit distances for each match.
-     *
+     * 
      * @param patterns The patterns to search for
      * @param text The text to search
      * @param edits The number of edits to allow in matches
@@ -44,7 +43,7 @@ public abstract class ApproximateMatcher extends Matcher
 
     /**
      * Returns the locations of matches found in the text.
-     *
+     * 
      * @param patterns The patterns to search for
      * @param text The text to search
      * @param edits The number of edits to allow in matches
@@ -57,7 +56,7 @@ public abstract class ApproximateMatcher extends Matcher
 
     /**
      * Returns the number of matches found in the text.
-     *
+     * 
      * @param pattern The pattern to search for
      * @param text The text to search
      * @param edits The number of edits to allow in matches
@@ -70,7 +69,7 @@ public abstract class ApproximateMatcher extends Matcher
 
     /**
      * Returns the locations of matches found in the text.
-     *
+     * 
      * @param pattern The pattern to search for
      * @param text The text to search
      * @param edits The number of edits to allow in matches
@@ -83,7 +82,7 @@ public abstract class ApproximateMatcher extends Matcher
 
     /**
      * Returns the locations of matches found in the text.
-     *
+     * 
      * @param patterns The patterns to search for
      * @param text The text to search
      * @param edits The number of edits to allow in matches
@@ -96,7 +95,7 @@ public abstract class ApproximateMatcher extends Matcher
 
     /**
      * Returns the number of matches found in the text.
-     *
+     * 
      * @param patterns The patterns to search for
      * @param text The text to search
      * @param edits The number of edits to allow in matches
@@ -109,7 +108,7 @@ public abstract class ApproximateMatcher extends Matcher
 
     /**
      * Returns the number of matches found in the text.
-     *
+     * 
      * @param patterns The patterns to search for
      * @param text The text to search
      * @param edits The number of edits to allow in matches
@@ -122,8 +121,8 @@ public abstract class ApproximateMatcher extends Matcher
 
     /**
      * Returns the locations of matches found in the text and the edit distances for each match.
-     *
-     * @param patterns The patterns to search for
+     * 
+     * @param pattern The pattern to search for
      * @param text The text to search
      * @param edits The number of edits to allow in matches
      * @return The ending locations of any matches found, along with edit distances for those

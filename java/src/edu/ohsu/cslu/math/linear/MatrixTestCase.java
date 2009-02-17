@@ -1,5 +1,9 @@
 package edu.ohsu.cslu.math.linear;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -9,11 +13,6 @@ import java.io.StringWriter;
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
 
 /**
  * Unit tests shared by all matrix test classes
@@ -174,16 +173,12 @@ public abstract class MatrixTestCase
 
     /**
      * Tests setRow() method.
-     * 
-     * @throws Exception if something bad happens
      */
     @Test
     public abstract void testSetRow();
 
     /**
      * Tests setColumn() method
-     * 
-     * @throws Exception if something bad happens
      */
     @Test
     public abstract void testSetColumn();

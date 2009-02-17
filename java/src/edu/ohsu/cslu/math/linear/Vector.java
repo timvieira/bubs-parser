@@ -14,7 +14,6 @@ import java.util.zip.GZIPInputStream;
 
 import edu.ohsu.cslu.util.Strings;
 
-
 /**
  * Base interface for all vector classes.
  * 
@@ -87,7 +86,7 @@ public interface Vector
      * Parses and sets a vector element
      * 
      * @param i index
-     * @param value new value
+     * @param newValue new value
      */
     public void set(final int i, final String newValue);
 
@@ -112,8 +111,8 @@ public interface Vector
     public int intMax();
 
     /**
-     * @return the index of the maximum value present in the vector; i such that {@link #getInt(i)}
-     *         will return the same value as {@link #max()}.
+     * @return the index of the maximum value present in the vector; i such that
+     *         {@link #getInt(int)} will return the same value as {@link #max()}.
      */
     public int argMax();
 
@@ -128,20 +127,20 @@ public interface Vector
     public int intMin();
 
     /**
-     * @return the index of the minimum value present in the vector; i such that {@link #getInt(i)}
-     *         will return the same value as {@link #min()}.
+     * @return the index of the minimum value present in the vector; i such that
+     *         {@link #getInt(int)} will return the same value as {@link #min()}.
      */
     public int argMin();
 
     /**
-     * @param multiplier
-     * @return a new vector scaled by the provided multiplier
+     * @param addend The value to add
+     * @return a new vector scaled by the provided addend
      */
     public Vector scalarAdd(float addend);
 
     /**
-     * @param multiplier
-     * @return a new vector scaled by the provided multiplier
+     * @param addend The value to add
+     * @return a new vector scaled by the provided addend
      */
     public Vector scalarAdd(int addend);
 
@@ -160,7 +159,7 @@ public interface Vector
     public float dotProduct(Vector v);
 
     /**
-     * Get a subvector.
+     * Create a subvector spanning the specified indices.
      * 
      * @param i0 Initial index
      * @param i1 Final index

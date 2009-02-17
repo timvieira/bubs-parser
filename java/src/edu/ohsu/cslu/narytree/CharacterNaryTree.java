@@ -10,7 +10,6 @@ import java.util.List;
 
 import edu.ohsu.cslu.common.Vocabulary;
 
-
 /**
  * N-Ary tree implementation using Characters as node labels.
  * 
@@ -191,7 +190,6 @@ public final class CharacterNaryTree extends BaseNaryTree<Character>
      * @param profile Current profile
      * @param r Current tree
      * @param anc Current shift register
-     * @return profile
      */
     protected void pqgramProfile(final int p, final int q, PqgramProfile profile, final CharacterNaryTree r,
         CharShiftRegister anc)

@@ -22,9 +22,7 @@ public interface StringGrammar extends Grammar, Vocabulary
      * Returns the number of occurrences of a specified category.
      * 
      * @param category
-     * @param production
-     * 
-     * @return
+     * @return count
      */
     public int occurrences(String category);
 
@@ -33,8 +31,7 @@ public interface StringGrammar extends Grammar, Vocabulary
      * 
      * @param category
      * @param production
-     * 
-     * @return
+     * @return count
      */
     public int occurrences(String category, String production);
 
@@ -44,8 +41,7 @@ public interface StringGrammar extends Grammar, Vocabulary
      * @param category
      * @param production1
      * @param production2
-     * 
-     * @return
+     * @return count
      */
     public int occurrences(String category, String production1, String production2);
 
@@ -53,10 +49,8 @@ public interface StringGrammar extends Grammar, Vocabulary
      * Returns the probability of a specified unary production given a category.
      * 
      * @param category
-     * @param production1
-     * @param production2
-     * 
-     * @return
+     * @param production
+     * @return Probability of the specified production
      */
     public float probability(String category, String production);
 
@@ -66,8 +60,7 @@ public interface StringGrammar extends Grammar, Vocabulary
      * @param category
      * @param production1
      * @param production2
-     * 
-     * @return
+     * @return Probability of the specified production
      */
     public float probability(String category, String production1, String production2);
 
@@ -75,10 +68,8 @@ public interface StringGrammar extends Grammar, Vocabulary
      * Returns the log probability of a specified unary production given a category.
      * 
      * @param category
-     * @param production1
-     * @param production2
-     * 
-     * @return
+     * @param production
+     * @return Log probability of the specified production
      */
     public float logProbability(String category, String production);
 
@@ -88,8 +79,7 @@ public interface StringGrammar extends Grammar, Vocabulary
      * @param category
      * @param production1
      * @param production2
-     * 
-     * @return
+     * @return Log probability of the specified production
      */
     public float logProbability(String category, String production1, String production2);
 
@@ -107,7 +97,7 @@ public interface StringGrammar extends Grammar, Vocabulary
      * Maps an integer production index to the String production label it represents
      * 
      * @param productionIndex
-     * @return
+     * @return String production label mapped by the specified index
      */
     public String mapProduction(int productionIndex);
 
@@ -115,7 +105,7 @@ public interface StringGrammar extends Grammar, Vocabulary
      * Maps a String production to its associated integer index
      * 
      * @param production
-     * @return
+     * @return Integer production mapped from the specified label
      */
     public int mapProduction(String production);
 

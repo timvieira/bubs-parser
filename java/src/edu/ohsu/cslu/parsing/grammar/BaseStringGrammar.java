@@ -102,7 +102,7 @@ public abstract class BaseStringGrammar extends BaseGrammar implements StringGra
      * TODO: This doesn't really belong in a Grammar implementation. Move somewhere else?
      * 
      * @param tree
-     * @return
+     * @return Bracketed string representation of the un-factored tree
      */
     public static String unfactor(String tree)
     {

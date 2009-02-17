@@ -254,7 +254,7 @@ public class StringNaryTree implements NaryTree<String>, Serializable
      * @param ruleset head-percolation ruleset
      * @return head descendant
      */
-    public StringNaryTree headDescendant(HeadPercolationRuleset rules)
+    public StringNaryTree headDescendant(HeadPercolationRuleset ruleset)
     {
         if (isLeaf())
         {
@@ -266,13 +266,13 @@ public class StringNaryTree implements NaryTree<String>, Serializable
         // Special-case for unary productions
         if (childArray.length == 1)
         {
-            return childList.get(0).headDescendant(rules);
+            return childList.get(0).headDescendant(ruleset);
         }
 
         // TODO: This is terribly inefficient - it requires mapping each child (O(n) and iterating
         // through childList (O(n)) for each node. A total of O(n^2)...)
-        int index = rules.headChild(label(), childArray);
-        return childList.get(index).headDescendant(rules);
+        int index = ruleset.headChild(label(), childArray);
+        return childList.get(index).headDescendant(ruleset);
     }
 
     /**
@@ -586,7 +586,7 @@ public class StringNaryTree implements NaryTree<String>, Serializable
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param writer The writer to write to
+     * @param outputStream The {@link OutputStream} to write to
      * @throws IOException if the write fails
      */
     public void write(OutputStream outputStream) throws IOException
@@ -597,7 +597,7 @@ public class StringNaryTree implements NaryTree<String>, Serializable
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param writer The writer to write to
+     * @param writer The {@link Writer} to write to
      * @throws IOException if the write fails
      */
     public void write(Writer writer) throws IOException

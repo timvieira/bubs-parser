@@ -580,7 +580,7 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E>
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param writer The writer to write to
+     * @param outputStream The {@link OutputStream} to write to
      * @throws IOException if the write fails
      */
     public void write(final OutputStream outputStream) throws IOException
@@ -591,7 +591,7 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E>
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param writer The writer to write to
+     * @param writer The {@link Writer} to write to
      * @throws IOException if the write fails
      */
     public void write(final Writer writer) throws IOException
@@ -669,7 +669,6 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E>
      * @param profile Current profile
      * @param r Current tree
      * @param anc Current shift register
-     * @return profile
      */
     private void pqgramProfile(final int p, final int q, final PqgramProfile profile, final BaseNaryTree<E> r,
         IntShiftRegister anc)
@@ -880,9 +879,8 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E>
          * Calculates the pq-gram tree similarity metric between two trees. See Augsten, Bohlen,
          * Gamper, 2005.
          * 
-         * @param otherProfile The bag profile of the other tree
-         * @param p parameter
-         * @param q parameter
+         * @param profile1 Bag profile of a tree
+         * @param profile2 Bag profile of a tree
          * @return tree similarity
          */
         public final static float pqgramDistance(final PqgramProfile profile1, final PqgramProfile profile2)

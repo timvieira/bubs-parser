@@ -40,7 +40,7 @@ public interface Vocabulary
     /**
      * Returns the tokens represented by the specified indices
      * 
-     * @param index integer representation
+     * @param indices integer representation
      * @return the tokens represented by the specified indices
      */
     public String[] map(int[] indices);
@@ -56,7 +56,7 @@ public interface Vocabulary
     /**
      * Returns the indices representing the specified tokens
      * 
-     * @param token String token
+     * @param labels String tokens
      * @return the indices representing the specified tokens
      */
     public int[] map(String[] labels);

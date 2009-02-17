@@ -23,8 +23,8 @@ import org.apache.commons.cli.ParseException;
  * specified on the command-line.
  * 
  * Unfortunately, it doesn't appear possible to determine the actual class being executed within
- * {@link main(args)}, so each subclass must implement a {@link main(args)} method and call {@link
- * main(args)} from within it.
+ * <code>main(String[])</code>, so each subclass must implement a <code>main(String[])</code> method
+ * and call {@link BaseCommandlineTool#run(String[])} from within it.
  * 
  * In addition, subclasses should include a no-argument constructor and the abstract methods
  * declared here in the superclass.

@@ -76,8 +76,9 @@ public class HeadPercolationRuleset
     /**
      * Returns the index of the child preferred as the head of a production
      * 
-     * @param children
-     * @return
+     * @param parentProduction
+     * @param childProductions
+     * @return the index of the head child
      */
     public int headChild(String parentProduction, String[] childProductions)
     {

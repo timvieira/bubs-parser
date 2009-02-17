@@ -175,7 +175,7 @@ public class Strings
      * sequence, further split up into its constituent features.
      * 
      * @param sequence
-     * @return
+     * @return string tokens
      */
     public static String[][] bracketedTags(String sequence)
     {
@@ -187,7 +187,7 @@ public class Strings
      * sequence, further split up into its constituent features.
      * 
      * @param sequence
-     * @return
+     * @return string tokens
      */
     public static String[][] squareBracketedTags(String sequence)
     {
@@ -199,7 +199,7 @@ public class Strings
      * in the supplied sequence, further split up into its constituent features.
      * 
      * @param sequence
-     * @return
+     * @return string tokens
      */
     public static String[][] slashDelimitedTags(String sequence)
     {
