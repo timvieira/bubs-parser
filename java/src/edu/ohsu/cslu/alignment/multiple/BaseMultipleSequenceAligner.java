@@ -3,13 +3,20 @@
  */
 package edu.ohsu.cslu.alignment.multiple;
 
-
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.pairwise.PairwiseAligner;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.math.linear.Matrix;
 
+/**
+ * Abstract base class for multiple sequence aligners.
+ * 
+ * @author Aaron Dunlop
+ * @since Feb 17, 2009
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public abstract class BaseMultipleSequenceAligner implements MultipleSequenceAligner
 {
     protected PairwiseAligner aligner;
@@ -17,8 +24,10 @@ public abstract class BaseMultipleSequenceAligner implements MultipleSequenceAli
     /**
      * Assumes one of the sequences has already been aligned into the aligned set.
      * 
-     * @param pair
-     * @return
+     * @param alignedSequence
+     * @param unalignedSequence
+     * @param alignmentModel
+     * @return Multiple sequence alignment
      */
     protected abstract SequenceAlignment align(MappedSequence alignedSequence, MappedSequence unalignedSequence,
         AlignmentModel alignmentModel);

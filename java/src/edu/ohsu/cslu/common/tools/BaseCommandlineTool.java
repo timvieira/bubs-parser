@@ -77,7 +77,7 @@ public abstract class BaseCommandlineTool
      * TODO: Refactor so this functionality is called from {@link #run(String[])} and controlled by
      * attributes?
      * 
-     * @return
+     * @return {@link Options} shared by all subclasses
      * @throws Exception
      */
     @SuppressWarnings("static-access")
