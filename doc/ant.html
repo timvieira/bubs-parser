@@ -1,0 +1,89 @@
+<html>
+<head>
+<title>Ant</title>
+</head>
+
+<body>
+<h2>Ant</h2>
+
+<p>Ant is a build tool, similar to make, but avoids make's classic
+'spaces vs tabs' issue by using an XML format.</p>
+
+<p>Ant is extensible; tasks and types are all Java code, and it's
+reasonably easy to write new ones. But most common tasks are already
+handled cleanly by standard tasks, so it's unlikely you'll need to write
+any custom extensions.</p>
+
+<p>We'll focus here on the usage in our shared code. If you want
+more information on Ant, see the Ant webpage at <a
+	href="http://ant.apache.org/">http://ant.apache.org/</a> and the manual
+at <a href="http://ant.apache.org/manual/index.html">http://ant.apache.org/manual/index.html</a>.</p>
+
+<h3>Quick Start:</h3>
+<p>Just cd into the shared-nlp-code root directory and type 'ant'.
+This will run the default target, 'dist', which will compile all Java
+and C code, package all standalone Java programs as standalone jars, and
+create wrapper scripts for them. The resulting distribution files will
+be in build-dist.</p>
+
+<h3>Standalone Tools</h3>
+<p>We package most of the tools in our shared code as standalone
+jars; that is, the packaged jar file contains all its class dependencies
+(including those from libraries in bsd-lib and lgpl-lib), so we can
+avoid classpath and versioning hell. We use a modified version of the
+GenJar (http://genjar.sourceforge.org/) project to do the dependency
+search and packaging.</p>
+
+<p>The search and packaging itself is done in the package.tool
+target, but in general, you should be able to add new packaging targets
+without dealing directly with that mechanism. The package.tool target
+also creates the wrapper shell-script The wrapper script is intended to
+be installed in some directory in your $PATH, along with the jar file
+itself. You'll then be able to call the tool directly from the
+command-line without typing the full path to the jar file. You can of
+course execute the jar file yourself using 'java -jar .../my-tool.jar
+...' but the wrapper might save you some typing, and under Cygwin it
+does the path conversion so that you can target files using Cygwin /
+Unix paths and the appropriate windows path will be passed to the Java
+program.</p>
+
+<p>The wrapper script is based on the template in <i>java/tools/script-template.sh</i>.
+In theory, the resulting script works on OS X, Cygwin (under Windows),
+Linux, Solaris, etc. (not that I test all those frequently, but I think
+I've tried each OS at some point in time. Let me know if it doesn't work
+for you).</p>
+
+<h3>Adding a tool build target.</h3>
+<p>Adding a new tool is fairly easy, usually just requiring a single
+additional target. The new target should call the <i>package.tool</i>
+target as in this example (the distance calculation tool):</p>
+<pre>
+  &lt;target name="calculate-distances" depends="compile.java" description="Package Distance Calculation Tool"&gt;
+    &lt;antcall target="package.tool"&gt;
+      &lt;param name="root-class" value="edu.ohsu.cslu.tools.CalculateDistances" /&gt;
+      &lt;param name="tool-name" value="calculate-distances" /&gt;
+      &lt;param name="heap-size" value="512" /&gt;
+    &lt;/antcall&gt;
+  &lt;/target&gt;
+</pre>
+
+<br/>This target calls package.jar with three parameters:
+<ul>
+	<li><b>root-class</b> : The class with a 'main' method that we
+	want to execute</li>
+	<li><b>tool-name</b> : The name we want it packaged as. This
+	should generally match the target name, although that's not enforced.</li>
+	<li><b>heap-size</b> : The size of the required java heap in
+	megabytes (defaults to 128 if not specified)</li>
+</ul>
+<p>If you want your new tool to be built as part of the standard
+distribution, add it to the lengthy list of dependencies in the 'dist'
+target at the bottom of the build file.</p>
+
+<font color="#777777"> Author: Aaron Dunlop<br />
+Revision: $Rev$<br />
+Last Changed: $LastChangedDate$<br />
+</font>
+
+</body>
+</html>

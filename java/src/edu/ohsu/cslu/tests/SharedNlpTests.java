@@ -23,6 +23,15 @@ import edu.ohsu.cslu.parsing.grammar.TestStringGrammar;
 import edu.ohsu.cslu.tools.AllToolTests;
 import edu.ohsu.cslu.util.AllUtilTests;
 
+/**
+ * The entire regression suite for shared NLP code. This class also contains a number of static
+ * helper methods used by other unit test classes.
+ * 
+ * @author Aaron Dunlop
+ * @since Sep 22, 2008
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 @RunWith(Suite.class)
 @Suite.SuiteClasses( {AllCommonTests.class, TestExactMatchers.class, TestApproximateMatchers.class,
                       ProfileMatchers.class, AllAlignmentTests.class, TestStringGrammar.class,

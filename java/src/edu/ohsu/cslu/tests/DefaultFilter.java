@@ -4,7 +4,7 @@ import org.junit.runner.Description;
 import org.junit.runner.manipulation.Filter;
 
 /**
- * The default test filter includes normal unit and integration tests, but excludes tests
+ * The default test filter; includes normal unit and integration tests, but excludes tests
  * specifically annotated as performance tests.
  * 
  * @author aarond

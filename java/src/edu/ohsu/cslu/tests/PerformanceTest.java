@@ -6,7 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * TODO: Document
+ * Allows test methods or classes to be annotated as 'performance' tests. In general, performance
+ * tests are long-running and will be excluded from standard regression test runs. However, running
+ * performance tests occasionally will alert you to performance regressions.
+ * 
+ * These annotations will only take effect when a test is run with {@link FilteredRunner}.
  * 
  * @author Aaron Dunlop
  * @since Jan 7, 2009
@@ -21,7 +25,7 @@ public @interface PerformanceTest {
      * the tests can be specified with a system property.
      * 
      * If, at runtime, no 'test.hardware' system property is specified, the first hardware
-     * configuration in the annotation (@link {@link #value()} will be assumed.
+     * configuration in the annotation ({@link #value()}) will be assumed.
      */
     public final static String TEST_HARDWARE = "test.hardware";
 
