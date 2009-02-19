@@ -7,7 +7,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 
-
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 
@@ -22,7 +21,7 @@ import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class InduceVocabularies extends BaseCommandlineTool
+public class InduceMappedVocabularies extends BaseCommandlineTool
 {
     private int tag = -1;
 
