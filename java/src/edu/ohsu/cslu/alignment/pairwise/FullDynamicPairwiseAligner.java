@@ -14,7 +14,7 @@ import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.SimpleMappedSequence;
 import edu.ohsu.cslu.common.Vocabulary;
 
-public class VariableLengthDynamicAligner extends BaseDynamicAligner implements PairwiseAligner
+public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements PairwiseAligner
 {
     // 0 = substitution, 1 = gap in unaligned sequence, 2 = gap in already-aligned sequence
     private final static byte BACKPOINTER_SUBSTITUTION = 0;

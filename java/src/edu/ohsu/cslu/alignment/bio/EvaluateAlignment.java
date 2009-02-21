@@ -9,6 +9,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+/**
+ * Evaluates the accuracy of a biological sequence alignment.
+ * 
+ * Adapted from a C tool provided by Brian Roark.
+ * 
+ * @author Brian Roark
+ * @author Aaron Dunlop
+ * 
+ * @since Mar 1, 2008
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class EvaluateAlignment
 {
     public final static String USAGE = "Usage: %s [-opts] train.file test.MSA                  \n\n"

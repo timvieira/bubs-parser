@@ -1,11 +1,12 @@
 package edu.ohsu.cslu.alignment.multiple;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
-
 
 import org.junit.Before;
 import org.junit.Test;
@@ -13,15 +14,12 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.alignment.bio.EvaluateAlignment;
-import edu.ohsu.cslu.alignment.bio.LaplaceModel;
+import edu.ohsu.cslu.alignment.pssm.LaplaceModel;
 import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
 import edu.ohsu.cslu.math.linear.Matrix;
 import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.tests.PerformanceTest;
-
-
-import static junit.framework.Assert.assertEquals;
+import edu.ohsu.cslu.tests.SharedNlpTests;
 
 @RunWith(FilteredRunner.class)
 @PerformanceTest
@@ -65,16 +63,8 @@ public class ProfileMultipleSequenceAligners
         corpus = corpusSequenceList.toArray(new String[0]);
         unalignedSequences = unalignedSequenceList.toArray(new String[0]);
 
-        model = new LaplaceModel(new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)), new DnaVocabulary(), 6,
-            true);
-    }
-
-    @Test
-    @PerformanceTest
-    public void profileFixedLengthIterativePairwiseAligner() throws IOException
-    {
-        System.out.println("Fixed Length Iterative Pairwise Aligner: "
-            + profileAligner(new FixedLengthIterativePairwiseAligner()));
+        model = new LaplaceModel(new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)),
+            new DnaVocabulary(), 6, true);
     }
 
     @Test
@@ -82,7 +72,7 @@ public class ProfileMultipleSequenceAligners
     public void profileVariableLengthIterativePairwiseAligner() throws IOException
     {
         System.out.println("Variable Length Iterative Pairwise Aligner"
-            + profileAligner(new VariableLengthIterativePairwiseAligner()));
+            + profileAligner(new IterativePairwiseAligner()));
     }
 
     @Test

@@ -1,11 +1,9 @@
 package edu.ohsu.cslu.alignment.multiple;
 
-import java.io.IOException;
-
+import static junit.framework.Assert.assertEquals;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
@@ -14,13 +12,10 @@ import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.SimpleMappedSequence;
-import edu.ohsu.cslu.math.linear.FloatMatrix;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 import edu.ohsu.cslu.math.linear.Matrix;
 import edu.ohsu.cslu.tools.CalculateDistances;
 import edu.ohsu.cslu.util.Strings;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for multiple sequence aligners.
@@ -34,11 +29,7 @@ public class TestMultipleSequenceAligners
 {
     private final static DnaVocabulary DNA_VOCABULARY = new DnaVocabulary();
 
-    // 'ACXGA' is 1 edit from 'ACTGA'; 'CTG' is 2 edits from 'ACTGA' and 3 from 'ACXGA'
-    private final static String[] SAMPLE_SEQUENCES_1 = new String[] {"ACTGA", "ACXGA", "CTG"};
-    private final static String[] SAMPLE_SEQUENCES_2 = new String[] {"ACTGAC", "ACXGAC", "ACTG", "CTGGACT"};
-
-    private static MatrixSubstitutionAlignmentModel dnaAlignmentModel;
+    private final static String[] SAMPLE_SEQUENCES = new String[] {"ACTGAC", "ACXGAC", "ACTG", "CTGGACT"};
 
     private static SimpleVocabulary[] linguisticVocabularies;
     private static SubstitutionAlignmentModel linguisticAlignmentModel;
@@ -55,14 +46,6 @@ public class TestMultipleSequenceAligners
     @BeforeClass
     public static void suiteSetUp() throws Exception
     {
-        Matrix dnaAlignmentMatrix = new FloatMatrix(new float[][] { {0f, 10f, 10f, 10f, 10f, 10f},
-                                                                   {10f, 0f, 10f, 10f, 10f, 10f},
-                                                                   {10f, 10f, 0f, 10f, 10f, 10f},
-                                                                   {10f, 10f, 10f, 0f, 10f, 10f},
-                                                                   {10f, 10f, 10f, 10f, 10f, 0f, 10f},
-                                                                   {10f, 10f, 10f, 10f, 10f, 10f, 0f}});
-        dnaAlignmentModel = new MatrixSubstitutionAlignmentModel(dnaAlignmentMatrix, DNA_VOCABULARY);
-
         // Create Vocabularies
         StringBuilder sb = new StringBuilder(1024);
         sb.append(Strings.extractPos(sampleSentence4));
@@ -86,46 +69,21 @@ public class TestMultipleSequenceAligners
             linguisticVocabularies);
     }
 
-    private Matrix sample1DistanceMatrix() throws IOException
-    {
-        StringBuffer sb = new StringBuffer();
-        sb.append("type=int rows=3 columns=3 symmetric=true\n");
-        sb.append("0\n");
-        sb.append("1 0\n");
-        sb.append("2 3 0\n");
-        return Matrix.Factory.read(sb.toString());
-    }
-
     @Test
     public void testDnaAlignment() throws Exception
     {
-        MultipleSequenceAligner aligner = new FixedLengthIterativePairwiseAligner();
-        MappedSequence[] sampleSequences1 = DNA_VOCABULARY.mapSequences(SAMPLE_SEQUENCES_1);
-        MultipleSequenceAlignment alignedSequences = aligner.align(sampleSequences1, sample1DistanceMatrix(),
-            dnaAlignmentModel);
-        assertEquals(" A | C | T | G | A |\n--------------------\n" + " A | C | X | G | A |\n--------------------\n"
-            + " - | C | T | G | - |\n--------------------\n", alignedSequences.toString());
+        Matrix levenshteinDistances = CalculateDistances.LevenshteinDistanceCalculator.distances(SAMPLE_SEQUENCES);
+        MappedSequence[] sampleSequences2 = DNA_VOCABULARY.mapSequences(SAMPLE_SEQUENCES);
 
-        // Fixed length aligner
-        Matrix levenshteinDistances = CalculateDistances.LevenshteinDistanceCalculator.distances(SAMPLE_SEQUENCES_2);
-        MappedSequence[] sampleSequences2 = DNA_VOCABULARY.mapSequences(SAMPLE_SEQUENCES_2);
-        aligner = new FixedLengthIterativePairwiseAligner();
-
-        alignedSequences = aligner.align(sampleSequences2, levenshteinDistances, dnaAlignmentModel);
-        assertEquals(" A | C | T | G | A | C | - |\n----------------------------\n"
-            + " A | C | X | G | A | C | - |\n----------------------------\n"
-            + " A | C | T | G | - | - | - |\n----------------------------\n"
-            + " C | T | G | G | A | C | T |\n----------------------------\n", alignedSequences.toString());
-
-        // Variable length aligner
-        aligner = new VariableLengthIterativePairwiseAligner();
+        // Full dynamic aligner
+        MultipleSequenceAligner aligner = new IterativePairwiseAligner();
 
         // Hand-tuned matrix designed to force more gap insertion
         Matrix matrix2 = new IntMatrix(new int[][] { {3, 99, 99, 98, 99, 200}, {93, 26, 95, 90, 94, 500},
                                                     {93, 94, 29, 92, 89, 500}, {93, 91, 94, 25, 94, 500},
                                                     {92, 92, 87, 91, 34, 500}, {92, 75, 80, 69, 81, 500}});
         AlignmentModel model2 = new MatrixSubstitutionAlignmentModel(matrix2, DNA_VOCABULARY);
-        alignedSequences = aligner.align(sampleSequences2, levenshteinDistances, model2);
+        MultipleSequenceAlignment alignedSequences = aligner.align(sampleSequences2, levenshteinDistances, model2);
 
         StringBuilder sb = new StringBuilder(512);
         sb.append(" A | C | T | - | G | A | C | - |\n");
@@ -147,7 +105,7 @@ public class TestMultipleSequenceAligners
             linguisticVocabularies);
         MappedSequence sequence3 = new SimpleMappedSequence(Strings.extractPos(sampleSentence8), linguisticVocabularies);
 
-        MultipleSequenceAligner aligner = new VariableLengthIterativePairwiseAligner();
+        MultipleSequenceAligner aligner = new IterativePairwiseAligner();
         Matrix distanceMatrix = new IntMatrix(new int[][] { {0, 1}, {1, 0}});
         MultipleSequenceAlignment sequenceAlignment = aligner.align(new MappedSequence[] {sequence1, sequence2},
             distanceMatrix, linguisticAlignmentModel);

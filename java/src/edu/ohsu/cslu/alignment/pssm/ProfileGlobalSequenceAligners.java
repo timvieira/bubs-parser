@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.pssm;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -8,15 +10,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
-import edu.ohsu.cslu.alignment.bio.LaplaceModel;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.tests.PerformanceTest;
-
-import static junit.framework.Assert.assertEquals;
+import edu.ohsu.cslu.tests.SharedNlpTests;
 
 @RunWith(FilteredRunner.class)
 @PerformanceTest
@@ -36,7 +34,7 @@ public class ProfileGlobalSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"dell", "16141"})
+    @PerformanceTest( {"d820", "16141"})
     public void profileFullDynamicAligner() throws IOException
     {
         PssmAlignmentModel model = new LaplaceModel(new StringReader(SMALL_TRAINING_SET), new DnaVocabulary(), 6, true);
@@ -44,7 +42,7 @@ public class ProfileGlobalSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"dell", "10157"})
+    @PerformanceTest( {"d820", "10157"})
     public void profileLinearDynamicAligner() throws IOException
     {
         PssmAlignmentModel model = new LaplaceModel(new StringReader(SMALL_TRAINING_SET), new DnaVocabulary(), 6, true);

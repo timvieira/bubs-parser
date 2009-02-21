@@ -1,12 +1,13 @@
 package edu.ohsu.cslu.tools;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-
 
 import org.junit.Before;
 import org.junit.Test;
@@ -17,12 +18,9 @@ import edu.ohsu.cslu.math.linear.Matrix;
 import edu.ohsu.cslu.narytree.BaseNaryTree;
 import edu.ohsu.cslu.narytree.ParseTree;
 import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.tests.PerformanceTest;
+import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.tools.CalculateDistances.PqgramDistanceCalculator;
-
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for the command-line distance calculation tool.
@@ -86,7 +84,7 @@ public class TestCalculateDistances
     }
 
     @Test
-    @PerformanceTest( {"dell", "14688"})
+    @PerformanceTest( {"d820", "14688"})
     public void profilePqgramDistanceCalculator()
     {
         long startTime = System.currentTimeMillis();

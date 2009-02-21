@@ -49,7 +49,7 @@ public class TestPairwiseLinguisticAlignment
         MappedSequence sequence1 = new SimpleMappedSequence(Strings.extractPos(sampleSentence4), vocabularies);
         MappedSequence sequence2 = new SimpleMappedSequence(Strings.extractPos(sampleSentence16), vocabularies);
 
-        VariableLengthDynamicAligner aligner = new VariableLengthDynamicAligner();
+        FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
         SequenceAlignment alignment = aligner.alignPair(sequence1, sequence2, simpleAlignmentModel);
 
         StringBuilder sb = new StringBuilder(512);

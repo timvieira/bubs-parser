@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -10,8 +12,6 @@ import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.math.linear.FloatMatrix;
 import edu.ohsu.cslu.math.linear.Matrix;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for pairwise aligners.
@@ -39,19 +39,6 @@ public class TestPairwiseAligners
         identityMatrixModel = new MatrixSubstitutionAlignmentModel(alignmentMatrix, DNA_VOCABULARY);
     }
 
-    @Test
-    public void testFixedLengthDynamicAligner() throws Exception
-    {
-        FixedLengthDynamicAligner aligner = new FixedLengthDynamicAligner();
-
-        assertEquals("AC--AC", alignStrings(aligner, identityMatrixModel, "ACAC", "ACT-AC"));
-        assertEquals("-CTG-", alignStrings(aligner, identityMatrixModel, "CTG", "ACTGA"));
-        assertEquals("ACXGA", alignStrings(aligner, identityMatrixModel, "ACXGA", "ACTGA"));
-
-        // We expect a clearly-wrong alignment, since this aligner disallows adding columns
-        assertEquals("ACTGA", alignStrings(aligner, identityMatrixModel, "ACTGA", "CTGAC"));
-    }
-
     private String alignStrings(PairwiseAligner aligner, AlignmentModel model, String unaligned, String aligned)
     {
         return DNA_VOCABULARY.mapSequence(aligner.alignPair(DNA_VOCABULARY.mapSequence(unaligned),
@@ -61,7 +48,7 @@ public class TestPairwiseAligners
     @Test
     public void testVariableLengthDynamicAligner() throws Exception
     {
-        VariableLengthDynamicAligner aligner = new VariableLengthDynamicAligner();
+        FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
         assertEquals("AC--AC", alignStrings(aligner, identityMatrixModel, "ACAC", "ACT-AC"));
         assertEquals("-CTG-", alignStrings(aligner, identityMatrixModel, "CTG", "ACTGA"));
 

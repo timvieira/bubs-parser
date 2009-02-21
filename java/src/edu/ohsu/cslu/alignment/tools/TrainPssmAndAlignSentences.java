@@ -16,7 +16,7 @@ import org.apache.commons.cli.Options;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
-import edu.ohsu.cslu.alignment.multiple.VariableLengthIterativePairwiseAligner;
+import edu.ohsu.cslu.alignment.multiple.IterativePairwiseAligner;
 import edu.ohsu.cslu.alignment.pssm.LinearPssmAligner;
 import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
 import edu.ohsu.cslu.common.MappedSequence;
@@ -131,7 +131,7 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
         Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
 
         // Align the sequences
-        VariableLengthIterativePairwiseAligner aligner = new VariableLengthIterativePairwiseAligner();
+        IterativePairwiseAligner aligner = new IterativePairwiseAligner();
         MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix, alignmentModel);
 
         System.out.format("Training Alignment of length %d (produced in %d ms)\n\n", trainingAlignment.length(), System

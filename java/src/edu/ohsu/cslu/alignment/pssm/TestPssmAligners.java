@@ -12,8 +12,6 @@ import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.CharVocabulary;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
-import edu.ohsu.cslu.alignment.bio.LaplaceModel;
-import edu.ohsu.cslu.alignment.bio.MaximumLikelihoodModel;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.tests.FilteredRunner;
