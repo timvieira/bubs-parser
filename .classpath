@@ -7,6 +7,6 @@
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/commons-collections-3.2.1.jar" sourcepath="java/bsd-lib/commons-collections-3.2.1-sources.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/fastutil.jar" sourcepath="java/bsd-lib/fastutil-src.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/jsr166y.jar" sourcepath="java/bsd-lib/jsr166y_src.jar"/>
-	<classpathentry exported="true" kind="lib" path="java/bsd-lib/junit.jar" sourcepath="java/bsd-lib/junit_src.jar"/>
+	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/junit.jar" sourcepath="java/lgpl-lib/junit_src.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
