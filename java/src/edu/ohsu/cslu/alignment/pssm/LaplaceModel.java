@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.alignment.bio;
+package edu.ohsu.cslu.alignment.pssm;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,7 +6,6 @@ import java.io.Reader;
 
 import edu.ohsu.cslu.alignment.CharVocabulary;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
-import edu.ohsu.cslu.alignment.pssm.MatrixPssmAlignmentModel;
 import edu.ohsu.cslu.math.linear.FloatMatrix;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 

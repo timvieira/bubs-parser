@@ -1,19 +1,20 @@
 /**
- * VariableLengthIterativePairwiseAligner.java
+ * IterativePairwiseAligner.java
  */
 package edu.ohsu.cslu.alignment.multiple;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
+import edu.ohsu.cslu.alignment.pairwise.FullDynamicPairwiseAligner;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
-import edu.ohsu.cslu.alignment.pairwise.VariableLengthDynamicAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.SimpleMappedSequence;
 import edu.ohsu.cslu.math.linear.Matrix;
 
 /**
- * An iterative pairwise aligner which inserts gaps into the alignment itself, allowing the MSA to
- * expand in an effort to create the best possible alignment. In general, the alignment runtime will
- * be considerably longer than that of @link {@link FixedLengthIterativePairwiseAligner}
+ * A fairly standard iterative pairwise aligner. Iterates through a set of unaligned sequences,
+ * choosing at each step the unaligned sequence which is 'closest' (as defined by a supplied
+ * distance matrix) to an already-aligned sequence. Performs pairwise alignment of those two
+ * sequences using {@link FullDynamicPairwiseAligner}.
  * 
  * TODO: Tune - we lost a lot of speed again somewhere
  * 
@@ -22,11 +23,11 @@ import edu.ohsu.cslu.math.linear.Matrix;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class VariableLengthIterativePairwiseAligner extends BaseMultipleSequenceAligner
+public class IterativePairwiseAligner extends BaseMultipleSequenceAligner
 {
-    public VariableLengthIterativePairwiseAligner()
+    public IterativePairwiseAligner()
     {
-        aligner = new VariableLengthDynamicAligner();
+        aligner = new FullDynamicPairwiseAligner();
     }
 
     /**

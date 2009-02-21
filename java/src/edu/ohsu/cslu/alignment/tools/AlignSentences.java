@@ -16,7 +16,7 @@ import org.apache.commons.cli.Options;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
-import edu.ohsu.cslu.alignment.multiple.VariableLengthIterativePairwiseAligner;
+import edu.ohsu.cslu.alignment.multiple.IterativePairwiseAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.SimpleMappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
@@ -129,7 +129,7 @@ public class AlignSentences extends BaseCommandlineTool
         Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
 
         // Align the sequences
-        VariableLengthIterativePairwiseAligner aligner = new VariableLengthIterativePairwiseAligner();
+        IterativePairwiseAligner aligner = new IterativePairwiseAligner();
         MultipleSequenceAlignment alignment = aligner.align(sequences, distanceMatrix, alignmentModel);
 
         System.out.println(alignment.toString());

@@ -8,13 +8,16 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
+import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 
 /**
- * Induces vocabularies given an input in bracketed format. The tokens appear in the resulting
- * vocabularies in the same order they occur in the input document.
+ * Induces {@link Vocabulary} instances given an input in bracketed format. The tokens appear in the
+ * resulting vocabularies in the same order they occur in the input document.
  * 
  * TODO: Support square-bracketed and slash-delimited input.
+ * 
+ * @see Vocabulary
  * 
  * @author Aaron Dunlop
  * @since Feb 5, 2009
