@@ -165,7 +165,7 @@
 
 	<target name="induce-vocabularies" depends="compile.java" description="Package Vocabulary Induction Tool">
 		<antcall target="package.tool">
-			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.InduceVocabularies" />
+			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.InduceMappedVocabularies" />
 			<param name="tool-name" value="induce-vocabularies" />
 		</antcall>
 	</target>
