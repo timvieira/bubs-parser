@@ -3,7 +3,7 @@ Shared NLP Code
 To build all NLP tools:
   ant dist
 
-  Tools will be packaged in 'buid-dist'
+  Tools will be packaged in 'build-dist'
   
 To build documentation:
   ant docs
