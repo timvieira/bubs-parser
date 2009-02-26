@@ -101,7 +101,7 @@ public abstract class BaseCommandlineTool
      * @param commandLine
      */
     @SuppressWarnings("unchecked")
-    public void setBasicToolOptions(CommandLine commandLine)
+    void setBasicToolOptions(CommandLine commandLine)
     {
         // TODO: Add another annotation for 'verbosable' ?
         verbose = commandLine.hasOption('v');

@@ -11,8 +11,8 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * Processes input (STDIN or files) line-by-line. Subclasses must implement a runnable task to do
- * the processing.
+ * Processes input (from files or STDIN) line-by-line. Subclasses must implement a {@link Callable}
+ * task to do the processing.
  * 
  * @author Aaron Dunlop
  * @since Nov 5, 2008
