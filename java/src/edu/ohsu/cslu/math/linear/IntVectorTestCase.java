@@ -74,7 +74,7 @@ public abstract class IntVectorTestCase extends VectorTestCase
         Vector v = new IntVector(new int[] {1, 2, 3, 4});
         assertEquals(49, v.dotProduct(new IntVector(new int[] {4, 5, 5, 5})), .01f);
         assertEquals(49f, v.dotProduct(new FloatVector(new float[] {4, 5, 5, 5})), .01f);
-        assertEquals(5f, v.dotProduct(new BitVector(new int[] {0, 1, 1, 0})), .01f);
+        assertEquals(5f, v.dotProduct(new PackedBitVector(new int[] {0, 1, 1, 0})), .01f);
         assertEquals(49, v.dotProduct(new PackedIntVector(new int[] {4, 5, 5, 5}, 4)), .01f);
     }
 }

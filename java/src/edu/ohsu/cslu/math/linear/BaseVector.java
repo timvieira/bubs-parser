@@ -7,7 +7,7 @@ import java.io.Writer;
 
 public abstract class BaseVector implements Vector, Serializable
 {
-    protected final int length;
+    protected int length;
 
     BaseVector(final int length)
     {
@@ -171,6 +171,13 @@ public abstract class BaseVector implements Vector, Serializable
         {
             throw new IllegalArgumentException("Vector length mismatch");
         }
+
+        // SparseBitVector dotProduct() implementation is more efficient.
+        if (v instanceof SparseBitVector)
+        {
+            return v.dotProduct(this);
+        }
+
         float dotProduct = 0f;
         for (int i = 0; i < length; i++)
         {

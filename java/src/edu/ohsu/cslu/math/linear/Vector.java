@@ -161,8 +161,8 @@ public interface Vector
     /**
      * Create a subvector spanning the specified indices.
      * 
-     * @param i0 Initial index
-     * @param i1 Final index
+     * @param i0 Initial index (inclusive)
+     * @param i1 Final index (inclusive)
      * @return A(i0:i1)
      * @throws ArrayIndexOutOfBoundsException if subVector indices are outside the range of the
      *             Vector
@@ -207,10 +207,11 @@ public interface Vector
         private final static String ATTRIBUTE_BITS = "bits";
 
         public final static String ATTRIBUTE_TYPE_INT = "int";
+        public final static String ATTRIBUTE_TYPE_PACKED_INTEGER = "packed-int";
         public final static String ATTRIBUTE_TYPE_FLOAT = "float";
         public final static String ATTRIBUTE_TYPE_FIXED_POINT_SHORT = "fixed-point-short";
-        public final static String ATTRIBUTE_TYPE_BIT = "bit";
-        public final static String ATTRIBUTE_TYPE_PACKED_INTEGER = "packed-int";
+        public final static String ATTRIBUTE_TYPE_PACKED_BIT = "packed-bit";
+        public final static String ATTRIBUTE_TYPE_SPARSE_BIT = "sparse-bit";
 
         public static Vector read(String s) throws IOException
         {
@@ -254,9 +255,13 @@ public interface Vector
             {
                 throw new RuntimeException(type + " type is not supported");
             }
-            else if (type.equals(ATTRIBUTE_TYPE_BIT))
+            else if (type.equals(ATTRIBUTE_TYPE_PACKED_BIT))
             {
-                vector = new BitVector(length);
+                vector = new PackedBitVector(length);
+            }
+            else if (type.equals(ATTRIBUTE_TYPE_SPARSE_BIT))
+            {
+                vector = new SparseBitVector();
             }
             else if (type.equals(ATTRIBUTE_TYPE_PACKED_INTEGER))
             {
@@ -275,7 +280,7 @@ public interface Vector
             // Read and initialize vector
             String line = br.readLine();
             String[] split = line.split(" +");
-            if (split.length != vector.length())
+            if (split.length != length)
             {
                 throw new IllegalArgumentException("Serialized vector length mismatch");
             }

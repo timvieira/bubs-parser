@@ -1,43 +1,28 @@
 package edu.ohsu.cslu.math.linear;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
 import java.util.Arrays;
 
-import org.junit.Before;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
-
 /**
- * Tests for {@link BitVector} implementations
+ * Tests for {@link PackedBitVector} implementations
  * 
  * @author Aaron Dunlop
  * @since Sep 11, 2008
  * 
  *        $Id$
  */
-public class TestBitVector extends VectorTestCase
+public abstract class BitVectorTestCase extends VectorTestCase
 {
-    private int[] sampleArray;
-
-    @Override
-    @Before
-    public void setUp() throws Exception
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("vector type=bit length=35\n");
-        sb.append("1 0 1 1 1 0 0 1 1 0 1 1 1 0 1 0 0 0 1 0 1 1 0 1 1 1 1 0 0 1 0 0 1 1 1\n");
-        stringSampleVector = sb.toString();
-
-        sampleArray = new int[] {1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0,
-                                 1, 0, 0, 1, 1, 1};
-        sampleVector = new BitVector(sampleArray);
-
-        vectorClass = BitVector.class;
-    }
+    /**
+     * @return an empty BitVector of the class appropriate for this test case.
+     */
+    protected abstract BitVector createEmptyBitVector();
 
     @Override
     protected Vector create(float[] array)
@@ -47,7 +32,7 @@ public class TestBitVector extends VectorTestCase
         {
             intArray[i] = array[i] == 0 ? 0 : 1;
         }
-        return new BitVector(intArray);
+        return new PackedBitVector(intArray);
     }
 
     @Override
@@ -127,10 +112,10 @@ public class TestBitVector extends VectorTestCase
         assertEquals(1, subvector.getInt(0));
 
         // 2-element subvector
-        subvector = sampleVector.subVector(4, 5);
+        subvector = sampleVector.subVector(6, 7);
         assertEquals("Wrong length", 2, subvector.length());
-        assertEquals(1, subvector.getInt(0));
-        assertEquals(0, subvector.getInt(1));
+        assertEquals(0, subvector.getInt(0));
+        assertEquals(1, subvector.getInt(1));
 
         // And a 4-element subvector spanning an integer split-point
         subvector = sampleVector.subVector(30, 33);
@@ -139,7 +124,6 @@ public class TestBitVector extends VectorTestCase
         assertEquals(0, subvector.getInt(1));
         assertEquals(1, subvector.getInt(2));
         assertEquals(1, subvector.getInt(3));
-
     }
 
     /**
@@ -223,7 +207,7 @@ public class TestBitVector extends VectorTestCase
     @Test
     public void testAdd()
     {
-        BitVector bitmap = createEmptyBitmap();
+        BitVector bitmap = createEmptyBitVector();
         assertFalse("Did not expect 3", bitmap.contains(3));
         bitmap.add(3);
         assertTrue("Expected 3", bitmap.contains(3));
@@ -235,7 +219,7 @@ public class TestBitVector extends VectorTestCase
     @Test
     public void testArrayAddAll()
     {
-        BitVector bitmap = createEmptyBitmap();
+        BitVector bitmap = createEmptyBitVector();
         assertFalse("Did not expect 1", bitmap.contains(1));
         assertFalse("Did not expect 3", bitmap.contains(3));
         bitmap.addAll(new int[] {1, 3});
@@ -248,7 +232,7 @@ public class TestBitVector extends VectorTestCase
     @Test
     public void testIntSetAddAll()
     {
-        BitVector bitmap = createEmptyBitmap();
+        BitVector bitmap = createEmptyBitVector();
         assertFalse("Did not expect 1", bitmap.contains(1));
         assertFalse("Did not expect 3", bitmap.contains(3));
 
@@ -263,7 +247,7 @@ public class TestBitVector extends VectorTestCase
     @Test
     public void testRemove()
     {
-        BitVector bitmap = createEmptyBitmap();
+        BitVector bitmap = createEmptyBitVector();
         bitmap.add(1);
         bitmap.add(2);
         bitmap.add(3);
@@ -285,7 +269,7 @@ public class TestBitVector extends VectorTestCase
     @Test
     public void testArrayRemoveAll()
     {
-        BitVector bitmap = createEmptyBitmap();
+        BitVector bitmap = createEmptyBitVector();
         bitmap.addAll(new int[] {1, 2, 3, 4});
         assertTrue("Expected 1", bitmap.contains(1));
         assertTrue("Expected 3", bitmap.contains(3));
@@ -301,7 +285,7 @@ public class TestBitVector extends VectorTestCase
     @Test
     public void testIntSetRemoveAll()
     {
-        BitVector bitmap = createEmptyBitmap();
+        BitVector bitmap = createEmptyBitVector();
         bitmap.addAll(new int[] {1, 2, 3, 4});
         assertTrue("Expected 1", bitmap.contains(1));
         assertTrue("Expected 3", bitmap.contains(3));
@@ -312,11 +296,6 @@ public class TestBitVector extends VectorTestCase
         assertFalse("Did not expect 3", bitmap.contains(3));
         assertTrue("Expected 2", bitmap.contains(2));
         assertTrue("Expected 4", bitmap.contains(4));
-    }
-
-    private BitVector createEmptyBitmap()
-    {
-        return new BitVector(16);
     }
 
 }
