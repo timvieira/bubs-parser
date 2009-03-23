@@ -1,0 +1,83 @@
+<html>
+<head>
+<title>Coding Guidelines</title>
+</head>
+
+<body>
+<h2>Coding Guidelines</h2>
+
+<p>This document is just a list of guidelines and best practices
+that we try to follow in our shared code, to keep it easy to understand,
+more maintainable, and (hopefully) more generally useful. I'm quite
+certain that they're not followed consistently throughout the codebase
+at the time of this writing (and there may never be a time when they
+are) but we'll do our best.</p>
+
+<ul>
+	<li><b>Libraries</b>
+	<ul>
+		<li>Any jars required should go in either the <i>bsd-lib</i> or <i>lgpl-lib</i>
+		directories, depending on the license the library is released under.
+		If we're ever going to do code release, it may be important to keep
+		track of the licenses of our dependencies. It appears to me that the
+		Common Public License and its derivatives are closer to the LGPL than
+		to the BSD-style licenses, so CPL libraries are located in <i>lgpl-lib</i>.
+		<ul>
+			<li>Whenever possible, a source jar should be attached to each
+			classfile jar. This allows easier debugging within the library
+			itself. The source jar should go in the same directory as the
+			classfile jar and be 'attached' so Eclipse can relate the two. In the
+			Eclipse project's 'Java Build Path' configuration, expand the jar
+			entry in the 'Libraries' tab, select 'Source attachment', click
+			'Edit', 'Workspace', and locate the source jar.</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+
+	<li><b>JavaDoc</b> - We try to document classes and methods using
+	the standard JavaDoc tags. The shared project Eclipse preferences are
+	setup to mark missing or malformed JavaDoc with compiler warnings.</li>
+
+	<li><b>Naming Conventions</b> - We don't have a lot of explicit
+	naming conventions, aside from the test class conventions already
+	mentioned, but it's generally worth using descriptive names, even if
+	they're lengthy. Eclipse's code-complete eliminates the need to type
+	long names manually, making descriptive naming nearly free.</li>
+
+	<li><b>Don't Break the Build</b> - This is mostly just common
+	courtesy. In general, we want to assume that it's safe to update from
+	the repository at any time without breaking anything. So only commit
+	code that compiles (ideally, code that's passed the regression suite -
+	see below).</li>
+
+	<li><b>Unit Testing</b>
+	<ul>
+		<li>All classes should be tested by JUnit unit tests (see <a
+			href="unit_testing.html">unit_testing.html</a> for more details).
+		Most classes will have a dedicated unit test class (e.g., class <i>Foo</i>
+		will be tested by <i>TestFoo</i>). In some cases, it makes sense for
+		several closely related classes in a package to be tested by the same
+		test class, in which case the test class name should still be prefixed
+		with <i>Test</i>.</li>
+		<li>Run the regression suite prior to committing to be sure you
+		haven't broken anything.</li>
+	</ul>
+	</li>
+
+	<li><b>Code Formatting</b> - The Eclipse project is configured to
+	automatically format source code when it is saved. This generally isn't
+	a problem performance-wise on modern machines, and it keeps everything
+	consistent. If there are any debates about the current code format, we
+	can discuss and change to something generally agreeable.</li>
+
+</ul>
+
+<font color="#777777"> Author: Aaron Dunlop<br />
+Last Changed By: $Author: dunlopa $<br />
+Revision: $Rev: 287 $<br />
+Last Changed: $LastChangedDate: 2009-02-18 14:51:30 -0800 (Wed, 18 Feb
+2009) $<br />
+</font>
+</body>
+</html>

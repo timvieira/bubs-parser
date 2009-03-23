@@ -4,10 +4,12 @@
 </head>
 
 <body>
-<h2>Unit Testing</h2>
+<h2>Unit Testing and Profiling</h2>
 
 <p>The shared code includes fairly extensive unit tests, implemented
-using the <a href="http://www.junit.org/">JUnit</a> framework.</p> For examples, see any of the <i>TestXYZ</i> classes.
+using the <a href="http://www.junit.org/">JUnit</a> framework.</p>
+
+<p>For examples, see any of the <i>TestXYZ</i> classes.</p>
 
 <h3>Motivation</h3>
 <ul>
@@ -33,6 +35,7 @@ using the <a href="http://www.junit.org/">JUnit</a> framework.</p> For examples,
 </ul>
 
 <h3>Test Data</h3>
+<blockquote>
 Often, it's easiest and simplest just to include test data in the test
 case itself, but some tests require more data than is practical to
 include inline. External test data is stored in the
@@ -44,8 +47,10 @@ please keep file size reasonable, and gzip anything over a few kilobytes
 to preserve disk and repository space. The test hierarchy handles
 reading gzipped data transparently, so compression saves everyone space
 without costing any additional effort.
+</blockquote>
 
 <h3>Performance Tests</h3>
+<blockquote>
 <p>We're trying to write reasonably efficient implementations, and
 it's often useful to profile our code, but profiling runs generally take
 much longer than standard unit testing runs. And we don't want to slow
@@ -54,17 +59,30 @@ runs.</p
 <p>Individual test methods or classes can be annotated with the <i>@PerformanceTest</i>
 annotation. The <i>FilteredRunner</i> test runner will by default mark
 any performance tests as ignored. You can run change the filter used by
-specifying the <i>junit.filter.class</i> system property. For example, you
-can run performance tests by including
-<i>-Djunit.filter.class=edu.ohsu.cslu.tests.PerformanceTestFilter</i> on the
-command-line (or in the <i>VM Arguments</i> field in your Eclipse runner
-configuration).</p>
+specifying the <i>junit.filter.class</i> system property. For example,
+you can run performance tests by including <i>-Djunit.filter.class=edu.ohsu.cslu.tests.PerformanceTestFilter</i>
+on the command-line (or in the <i>VM Arguments</i> field in your Eclipse
+runner configuration).</p>
+<p>The <i>@PerformanceTest</i> annotation can be parameterized with
+an expected runtime when it annotates a test method. A parameterized
+performance test will fail if the runtime is more than 10% off from the
+expected time. This lets us use it as a performance regression metric -
+if we run the performance tests occasionally, we'll know if and when we
+introduce something that dramatically changes our code's performance.
+Note that the test will fail even if the performance improves by more
+than 10% - we'd like to know when we improve things too (and generally,
+we'd then change the annotation to reflect our new baseline).</p>
+</blockquote>
 
 <h3>Naming Conventions</h3>
 <ul>
 	<li>Unit test classnames begin with <i>Test</i></li>
-	<li>In general, tests for a specific class are named with <i>Test</i>
-	prefixed to the class name. (e.g. <i>Foo</i> is tested by <i>TestFoo</i>)</li>
+	<li>Most classes will have a dedicated unit test class, which
+	should be named with <i>Test</i> prefixed to the class name. (e.g. <i>Foo</i>
+	is tested by <i>TestFoo</i>).</li>
+	<li>In some cases, it makes sense for several closely related
+	classes in a package to be tested by the same test class, in which case
+	the test class name should still be prefixed with <i>Test</i> (e.g. <i>TestMultipleSequenceAligners</i>.</li>
 	<li>Test suites for a package begin with <i>All</i> and end with <i>Tests</i>.
 	e.g., tests for the <i>edu.ohsu.cslu.common</i> package are in <i>AllCommonTests</i>.</li>
 	<li>Test superclasses (classes containing test code shared by a
