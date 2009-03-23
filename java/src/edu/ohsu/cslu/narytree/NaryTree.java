@@ -13,7 +13,7 @@ import java.util.List;
  * 
  * TODO: Do we need methods to add children or subtrees in positions other than the rightmost?
  * 
- * TODO: Methods to switch child positions or otherwise alter tree structure?
+ * TODO: Methods to switch child positions or otherwise alter tree structure (rename?)
  * 
  * TODO: Document
  * 

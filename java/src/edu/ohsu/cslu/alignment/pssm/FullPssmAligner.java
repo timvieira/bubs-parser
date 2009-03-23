@@ -312,33 +312,5 @@ public class FullPssmAligner extends BasePssmAligner
             sb.append('\n');
         }
         return sb.toString();
-        // final Vocabulary vocabulary0 = m_model.vocabularies()[0];
-        // StringBuilder sb = new StringBuilder(1024);
-        // sb.append("       ");
-        //
-        // sb.append('\n');
-        // for (int i = 0; i < m_sequence.length() + 1; i++)
-        // {
-        // sb.append(i > 0 ? m_sequence.stringFeature(i - 1, 0) + "  " : "<s>");
-        // sb.append(" | ");
-        //
-        // for (int j = 0; j < m_array.length; j++)
-        // {
-        // float value = m_array[i][j];
-        // String backtraceValue = vocabulary0.map(m_backtraceArray[i][j][0]);
-        // String formattedValue = String.format(" %6.2f %s |", value, backtraceValue);
-        // if (value == Float.MAX_VALUE)
-        // {
-        // formattedValue = "    Max " + backtraceValue + " |";
-        // }
-        // else if (value == Float.POSITIVE_INFINITY)
-        // {
-        // formattedValue = "    Inf " + backtraceValue + " |";
-        // }
-        // sb.append(formattedValue);
-        // }
-        // sb.append('\n');
-        // }
-        // return sb.toString();
     }
 }
