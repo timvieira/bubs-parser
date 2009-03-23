@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import edu.ohsu.cslu.math.linear.BitVector;
+import edu.ohsu.cslu.math.linear.PackedBitVector;
 
 /**
  * Base Grammar implementation. Stores all productions as ints for quick access (note that this
@@ -156,9 +157,9 @@ public abstract class BaseGrammar implements Grammar, Serializable
         tmpProductionSet = null;
         int arraySize = categoryOccurrences.size();
 
-        validUnaryProductionsBitmap = new BitVector(productions.length);
-        validFirstProductionsBitmap = new BitVector(productions.length);
-        validSecondProductionsBitmap = new BitVector(productions.length);
+        validUnaryProductionsBitmap = new PackedBitVector(productions.length);
+        validFirstProductionsBitmap = new PackedBitVector(productions.length);
+        validSecondProductionsBitmap = new PackedBitVector(productions.length);
 
         // Calculate and store unary production probabilities
         unaryProductionLogProbabilities = new Int2FloatOpenHashMap[arraySize];
