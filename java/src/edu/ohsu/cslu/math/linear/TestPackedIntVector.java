@@ -1,11 +1,14 @@
 package edu.ohsu.cslu.math.linear;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.util.Random;
 
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import static junit.framework.Assert.assertEquals;
+import edu.ohsu.cslu.tests.FilteredRunner;
+import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
  * Unit tests for {@link PackedIntVector}
@@ -15,6 +18,7 @@ import static junit.framework.Assert.assertEquals;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestPackedIntVector extends IntVectorTestCase
 {
     private int[] sampleArray;
@@ -330,10 +334,9 @@ public class TestPackedIntVector extends IntVectorTestCase
         assertEquals("Wrong value", -250f, v.getFloat(10), .001f);
     }
 
-    // Uncomment @Ignore to profile
-    @Ignore
+    @PerformanceTest
     @Test
-    public void testProfile()
+    public void profilePackedIntVector()
     {
         final int iterations = 100000000;
         final int length = 65536;
