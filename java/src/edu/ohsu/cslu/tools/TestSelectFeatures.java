@@ -10,6 +10,7 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.common.tools.LinewiseCommandlineTool;
 import edu.ohsu.cslu.common.tools.ToolTestCase;
 import edu.ohsu.cslu.tests.SharedNlpTests;
@@ -32,8 +33,6 @@ public class TestSelectFeatures extends ToolTestCase
     @DataPoint
     public final static String BAD_ARGS_3 = "-i bracketed-tree -f 1,2";
 
-    private final String lineBreak = System.getProperty("line.separator");
-
     @Theory
     public void testBadArgs(String args) throws Exception
     {
@@ -41,7 +40,7 @@ public class TestSelectFeatures extends ToolTestCase
         // Exception
         try
         {
-            executeTool(new SelectFeatures(), args, "(Bracketed) (input)");
+            executeTool(args, "(Bracketed) (input)");
             fail("Expected ParseException");
         }
         catch (ParseException expected)
@@ -59,27 +58,26 @@ public class TestSelectFeatures extends ToolTestCase
         final String oneLineInput = "(<s> <s> BEFORE) (Ms. NNP BEFORE) (Haag NNP BEFORE) (plays VBZ HEAD) (Elianti NNP AFTER) (. . AFTER) (</s> </s> AFTER)";
 
         // Select only a single feature
-        assertEquals("(<s>) (Ms.) (Haag) (plays) (Elianti) (.) (</s>)" + lineBreak, executeTool(new SelectFeatures(),
-            "-i bracketed -f 1", oneLineInput));
-        assertEquals("(<s>) (Ms.) (Haag) (plays) (Elianti) (.) (</s>)" + lineBreak, executeTool(new SelectFeatures(),
-            "-i bracketed -f 1 -o bracketed", oneLineInput));
-        assertEquals("[<s>] [Ms.] [Haag] [plays] [Elianti] [.] [</s>]" + lineBreak, executeTool(new SelectFeatures(),
-            "-f 1 -o square-bracketed", oneLineInput));
-        assertEquals("<s> Ms. Haag plays Elianti . </s>" + lineBreak, executeTool(new SelectFeatures(),
-            "-f 1 -o stanford", oneLineInput));
+        assertEquals("(<s>) (Ms.) (Haag) (plays) (Elianti) (.) (</s>)\n",
+            executeTool("-i bracketed -f 1", oneLineInput));
+        assertEquals("(<s>) (Ms.) (Haag) (plays) (Elianti) (.) (</s>)\n", executeTool("-i bracketed -f 1 -o bracketed",
+            oneLineInput));
+        assertEquals("[<s>] [Ms.] [Haag] [plays] [Elianti] [.] [</s>]\n", executeTool("-f 1 -o square-bracketed",
+            oneLineInput));
+        assertEquals("<s> Ms. Haag plays Elianti . </s>\n", executeTool("-f 1 -o stanford", oneLineInput));
 
         // Select two features
-        assertEquals("(<s> BEFORE) (Ms. BEFORE) (Haag BEFORE) (plays HEAD) (Elianti AFTER) (. AFTER) (</s> AFTER)"
-            + lineBreak, executeTool(new SelectFeatures(), "-i bracketed -f 1,3", oneLineInput));
-        assertEquals("<s>/BEFORE Ms./BEFORE Haag/BEFORE plays/HEAD Elianti/AFTER ./AFTER </s>/AFTER" + lineBreak,
-            executeTool(new SelectFeatures(), "-i bracketed -f 1,3 -o stanford", oneLineInput));
+        assertEquals("(<s> BEFORE) (Ms. BEFORE) (Haag BEFORE) (plays HEAD) (Elianti AFTER) (. AFTER) (</s> AFTER)\n",
+            executeTool("-i bracketed -f 1,3", oneLineInput));
+        assertEquals("<s>/BEFORE Ms./BEFORE Haag/BEFORE plays/HEAD Elianti/AFTER ./AFTER </s>/AFTER\n", executeTool(
+            "-i bracketed -f 1,3 -o stanford", oneLineInput));
 
         // Reverse input order
-        assertEquals("(<s> <s>) (NNP Ms.) (NNP Haag) (VBZ plays) (NNP Elianti) (. .) (</s> </s>)" + lineBreak,
-            executeTool(new SelectFeatures(), "-i bracketed -f 2,1", oneLineInput));
+        assertEquals("(<s> <s>) (NNP Ms.) (NNP Haag) (VBZ plays) (NNP Elianti) (. .) (</s> </s>)\n", executeTool(
+            "-i bracketed -f 2,1", oneLineInput));
         // Reverse and output in slash-delimited format
-        assertEquals("<s>/<s> NNP/Ms. NNP/Haag VBZ/plays NNP/Elianti ./. </s>/</s>" + lineBreak, executeTool(
-            new SelectFeatures(), "-f 2,1 -o stanford", oneLineInput));
+        assertEquals("<s>/<s> NNP/Ms. NNP/Haag VBZ/plays NNP/Elianti ./. </s>/</s>\n", executeTool(
+            "-f 2,1 -o stanford", oneLineInput));
 
         // Now a few tests with two input lines
         final String twoLineInput = "(RB Sometimes BEFORE) (PRP they BEFORE) (AUX are HEAD) (JJ constructive AFTER)"
@@ -89,16 +87,16 @@ public class TestSelectFeatures extends ToolTestCase
             + " (. . AFTER)";
 
         // Select only the word
-        assertEquals("(Sometimes) (they) (are) (constructive)" + " (,) (but) (often) (not) (.)" + lineBreak
-            + "(The) (Ontario) (Supreme) (Court)" + " (overturned) (Mr.) (Blair) ('s) (decision)" + " (.)" + lineBreak,
-            executeTool(new SelectFeatures(), "-f 2", twoLineInput));
+        assertEquals("(Sometimes) (they) (are) (constructive)" + " (,) (but) (often) (not) (.)\n"
+            + "(The) (Ontario) (Supreme) (Court)" + " (overturned) (Mr.) (Blair) ('s) (decision)" + " (.)\n",
+            executeTool("-f 2", twoLineInput));
 
         // Select all features
         assertEquals("(RB Sometimes BEFORE) (PRP they BEFORE) (AUX are HEAD) (JJ constructive AFTER) (, , AFTER)"
-            + " (CC but AFTER) (RB often AFTER) (RB not AFTER) (. . AFTER)" + lineBreak
+            + " (CC but AFTER) (RB often AFTER) (RB not AFTER) (. . AFTER)\n"
             + "(DT The BEFORE) (NNP Ontario BEFORE) (NNP Supreme BEFORE) (NNP Court BEFORE)"
             + " (VBD overturned HEAD) (NNP Mr. AFTER) (NNP Blair AFTER) (POS 's AFTER) (NN decision AFTER)"
-            + " (. . AFTER)" + lineBreak, executeTool(new SelectFeatures(), "-f 1,2,3", twoLineInput));
+            + " (. . AFTER)\n", executeTool("-f 1,2,3", twoLineInput));
 
     }
 
@@ -119,33 +117,32 @@ public class TestSelectFeatures extends ToolTestCase
 
         // Test extracting all features from a bracketed tree
         assertEquals("(Sometimes RB BEFORE) (they PRP BEFORE) (are AUX HEAD) (constructive JJ AFTER)"
-            + " (, , AFTER) (but CC AFTER) (often RB AFTER) (not RB AFTER) (. . AFTER)" + lineBreak, executeTool(
-            new SelectFeatures(), "-i bracketed-tree -w -p -h", oneLineInput));
+            + " (, , AFTER) (but CC AFTER) (often RB AFTER) (not RB AFTER) (. . AFTER)\n", executeTool(
+            "-i bracketed-tree -w -p -h", oneLineInput));
 
         // Select only the head feature
-        assertEquals("(BEFORE) (BEFORE) (HEAD) (AFTER) (AFTER) (AFTER) (AFTER) (AFTER) (AFTER)" + lineBreak,
-            executeTool(new SelectFeatures(), "-i tree -h", oneLineInput));
-        assertEquals("BEFORE BEFORE HEAD AFTER AFTER AFTER AFTER AFTER AFTER" + lineBreak, executeTool(
-            new SelectFeatures(), "-i tree -h -o stanford", oneLineInput));
+        assertEquals("(BEFORE) (BEFORE) (HEAD) (AFTER) (AFTER) (AFTER) (AFTER) (AFTER) (AFTER)\n", executeTool(
+            "-i tree -h", oneLineInput));
+        assertEquals("BEFORE BEFORE HEAD AFTER AFTER AFTER AFTER AFTER AFTER\n", executeTool("-i tree -h -o stanford",
+            oneLineInput));
 
         // And from a square-bracketed tree
         assertEquals("(Sometimes RB BEFORE) (they PRP BEFORE) (are AUX HEAD) (constructive JJ AFTER)"
-            + " (, , AFTER) (but CC AFTER) (often RB AFTER) (not RB AFTER) (. . AFTER)" + lineBreak, executeTool(
-            new SelectFeatures(), "-i square-bracketed-tree -w -p -h", oneLineInput.replaceAll("\\(", "[").replaceAll(
-                "\\)", "]")));
+            + " (, , AFTER) (but CC AFTER) (often RB AFTER) (not RB AFTER) (. . AFTER)\n", executeTool(
+            "-i square-bracketed-tree -w -p -h", oneLineInput.replaceAll("\\(", "[").replaceAll("\\)", "]")));
 
         // Extract only word and head-verb feature from two lines, outputting a square-bracketed
         // format
         assertEquals("[Sometimes BEFORE] [they BEFORE] [are HEAD] [constructive AFTER] [, AFTER]"
-            + " [but AFTER] [often AFTER] [not AFTER] [. AFTER]" + lineBreak
+            + " [but AFTER] [often AFTER] [not AFTER] [. AFTER]\n"
             + "[The BEFORE] [Ontario BEFORE] [Supreme BEFORE] [Court BEFORE] [overturned HEAD]"
-            + " [Mr. AFTER] [Blair AFTER] ['s AFTER] [decision AFTER] [. AFTER]" + lineBreak, executeTool(
-            new SelectFeatures(), "-i tree -w -h -o square-bracketed", twoLineInput));
+            + " [Mr. AFTER] [Blair AFTER] ['s AFTER] [decision AFTER] [. AFTER]\n", executeTool(
+            "-i tree -w -h -o square-bracketed", twoLineInput));
 
         // And just the word and POS, outputting in Stanford format
-        assertEquals("Sometimes/RB they/PRP are/AUX constructive/JJ ,/, but/CC often/RB not/RB ./." + lineBreak
-            + "The/DT Ontario/NNP Supreme/NNP Court/NNP overturned/VBD Mr./NNP Blair/NNP 's/POS decision/NN ./."
-            + lineBreak, executeTool(new SelectFeatures(), "-i tree -w -p -o stanford", twoLineInput));
+        assertEquals("Sometimes/RB they/PRP are/AUX constructive/JJ ,/, but/CC often/RB not/RB ./.\n"
+            + "The/DT Ontario/NNP Supreme/NNP Court/NNP overturned/VBD Mr./NNP Blair/NNP 's/POS decision/NN ./.\n",
+            executeTool("-i tree -w -p -o stanford", twoLineInput));
     }
 
     /**
@@ -160,7 +157,13 @@ public class TestSelectFeatures extends ToolTestCase
     {
         String input = new String(SharedNlpTests.readUnitTestData("tools/select-features.input"));
         String expectedOutput = new String(SharedNlpTests.readUnitTestData("tools/select-features.output"));
-        String output = executeTool(new SelectFeatures(), "-i tree -w -p -h -xt 2", input);
+        String output = executeTool("-i tree -w -p -h -xt 2", input);
         assertEquals(expectedOutput, output);
+    }
+
+    @Override
+    protected BaseCommandlineTool tool()
+    {
+        return new SelectFeatures();
     }
 }

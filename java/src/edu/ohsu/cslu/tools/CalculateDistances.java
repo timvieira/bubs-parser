@@ -13,6 +13,7 @@ import jsr166y.forkjoin.RecursiveAction;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.common.Vocabulary;
@@ -25,7 +26,6 @@ import edu.ohsu.cslu.narytree.ParseTree;
 import edu.ohsu.cslu.narytree.BaseNaryTree.PqgramProfile;
 import edu.ohsu.cslu.parsing.grammar.InducedGrammar;
 import edu.ohsu.cslu.util.Math;
-import edu.ohsu.cslu.util.MultipleBufferedReader;
 
 /**
  * Implements (currently) Levenshtein and pq-gram distance calculations.
@@ -40,7 +40,6 @@ import edu.ohsu.cslu.util.MultipleBufferedReader;
 public class CalculateDistances extends BaseCommandlineTool
 {
     private String grammarFilename = null;
-    private String filename = null;
 
     private CalculationMethod calculationMethod;
     private String parameters;
@@ -63,7 +62,6 @@ public class CalculateDistances extends BaseCommandlineTool
         br.close();
         String input = sb.toString();
 
-        MultipleBufferedReader reader = new MultipleBufferedReader(fileAsReader(filename));
         switch (calculationMethod)
         {
             case Levenshtein :
@@ -91,11 +89,11 @@ public class CalculateDistances extends BaseCommandlineTool
 
         // Read in all lines
         br = new BufferedReader(new StringReader(input));
-        for (String line = reader.readLine(); line != null; line = reader.readLine())
+        for (String line = br.readLine(); line != null; line = br.readLine())
         {
             calculator.addElement(line);
         }
-        reader.close();
+        br.close();
 
         Matrix matrix = calculator.distance();
         System.out.println(matrix.toString());
@@ -118,18 +116,19 @@ public class CalculateDistances extends BaseCommandlineTool
     }
 
     @Override
-    public void setToolOptions(CommandLine commandLine)
+    public void setToolOptions(CommandLine commandLine) throws ParseException
     {
         calculationMethod = CalculationMethod.forString(commandLine.getOptionValue('m'));
         grammarFilename = commandLine.getOptionValue('g');
+
         parameters = commandLine.hasOption('p') ? commandLine.getOptionValue('p') : null;
+        if (calculationMethod == CalculationMethod.Pqgram && parameters == null)
+        {
+            throw new ParseException("P and Q parameters are required for pqgram distance calculation");
+        }
+
         maxThreads = commandLine.hasOption("xt") ? Integer.parseInt(commandLine.getOptionValue("xt")) : Runtime
             .getRuntime().availableProcessors();
-
-        if (commandLine.getArgs().length > 0)
-        {
-            filename = commandLine.getArgs()[0];
-        }
     }
 
     @Override
@@ -319,19 +318,26 @@ public class CalculateDistances extends BaseCommandlineTool
                 s2 = tmp;
             }
 
+            // Access to char arrays is faster than String.charAt()
             final char[] s1Chars = s1.toCharArray();
             final char[] s2Chars = s2.toCharArray();
 
+            // We'll simulate a chart of i rows and j columns, using only 2 arrays (since we only
+            // need the current and previous rows)
             final int iSize = s2.length() + 1;
             final int jSize = s1.length() + 1;
             int[] previous = new int[jSize];
             int[] current = new int[jSize];
 
+            // Fill the 0'th row with the cost of substitutions all the way through
             for (int j = 1; j < jSize; j++)
             {
                 previous[j] = previous[j - 1] + COST;
             }
 
+            // And fill the 1st row with a huge value. Later, when this row is the previous row, we
+            // don't want to accidentally get a cost of zero from the j'th entry of an uninitialized
+            // array.
             // TODO: This isn't really the best constant here, but using Integer.MAX_VALUE risks
             // overflow
             Arrays.fill(current, 50000);
@@ -340,6 +346,7 @@ public class CalculateDistances extends BaseCommandlineTool
             {
                 final int prevI = i - 1;
                 final int maxJ = jSize - iSize + i + 1;
+
                 for (int j = 1; j < maxJ; j++)
                 {
                     final int prevJ = j - 1;
