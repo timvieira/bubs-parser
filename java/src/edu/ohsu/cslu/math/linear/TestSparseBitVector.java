@@ -21,8 +21,7 @@ public class TestSparseBitVector extends BitVectorTestCase
         sb.append("1 0 1 1 1 0 0 1 1 0 1 1 1 0 1 0 0 0 1 0 1 1 0 1 1 1 1 0 0 1 0 0 1 1 1\n");
         stringSampleVector = sb.toString();
 
-        int[] sampleArray = new int[] {1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1,
-                                       0, 0, 1, 0, 0, 1, 1, 1};
+        int[] sampleArray = new int[] {0, 2, 3, 4, 7, 8, 10, 11, 12, 14, 18, 20, 21, 23, 24, 25, 26, 29, 32, 33, 34};
         sampleVector = new SparseBitVector(sampleArray);
 
         vectorClass = SparseBitVector.class;

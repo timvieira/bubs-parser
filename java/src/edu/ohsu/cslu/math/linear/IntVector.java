@@ -2,6 +2,7 @@ package edu.ohsu.cslu.math.linear;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Arrays;
 
 /**
  * A {@link Vector} implementation which stores 32-bit ints.
@@ -21,6 +22,13 @@ public class IntVector extends BaseVector
     {
         super(length);
         this.vector = new int[length];
+    }
+
+    public IntVector(int length, int defaultValue)
+    {
+        super(length);
+        this.vector = new int[length];
+        Arrays.fill(this.vector, defaultValue);
     }
 
     public IntVector(int[] vector)

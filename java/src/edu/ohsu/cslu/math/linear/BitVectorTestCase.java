@@ -3,7 +3,9 @@ package edu.ohsu.cslu.math.linear;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.util.Arrays;
 
@@ -33,6 +35,113 @@ public abstract class BitVectorTestCase extends VectorTestCase
             intArray[i] = array[i] == 0 ? 0 : 1;
         }
         return new PackedBitVector(intArray);
+    }
+
+    @Override
+    public void testVectorAdd() throws Exception
+    {
+        Vector vector = create(new float[] {1, 0, 1, 1});
+        IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
+        FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
+
+        try
+        {
+            vector.add(create(new float[] {1}));
+            fail("Expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            assertEquals("Vector length mismatch", expected.getMessage());
+        }
+
+        // If we add an {@link IntVector} we should get a new {@link IntVector}
+        Vector sum = intVector.add(intVector);
+        assertEquals("Wrong class: " + sum.getClass().getName(), IntVector.class, sum.getClass());
+        assertEquals("Wrong length", 4, sum.length());
+        assertEquals("Wrong value", 2, sum.getInt(0));
+        assertEquals("Wrong value", 4, sum.getInt(1));
+        assertEquals("Wrong value", 6, sum.getInt(2));
+        assertEquals("Wrong value", 8, sum.getInt(3));
+
+        // If we add a {@link FloatVector} we should get a {@link FloatVector}
+        sum = intVector.add(floatVector);
+        assertEquals("Wrong class: " + sum.getClass().getName(), FloatVector.class, sum.getClass());
+        assertEquals("Wrong length", 4, sum.length());
+        assertEquals("Wrong value", 5, sum.getFloat(0), .01f);
+        assertEquals("Wrong value", 5, sum.getFloat(1), .01f);
+        assertEquals("Wrong value", 5, sum.getFloat(2), .01f);
+        assertEquals("Wrong value", 5, sum.getFloat(3), .01f);
+
+        // If we add a {@link PackedBitVector} we should get a new {@link IntVector}
+        sum = vector.add(new PackedBitVector(new int[] {1, 1, 0, 0}));
+        assertEquals("Wrong class: " + sum.getClass().getName(), IntVector.class, sum.getClass());
+        assertEquals("Wrong length", 4, sum.length());
+        assertEquals("Wrong value", 2, sum.getInt(0));
+        assertEquals("Wrong value", 1, sum.getInt(1));
+        assertEquals("Wrong value", 1, sum.getInt(2));
+        assertEquals("Wrong value", 1, sum.getInt(3));
+
+        // If we add a {@link SparseBitVector} we should get a new {@link IntVector}
+        sum = vector.add(new SparseBitVector(new int[] {1, 2}));
+        assertEquals("Wrong class: " + sum.getClass().getName(), IntVector.class, sum.getClass());
+        assertEquals("Wrong length", 4, sum.length());
+        assertEquals("Wrong value", 1, sum.getInt(0));
+        assertEquals("Wrong value", 1, sum.getInt(1));
+        assertEquals("Wrong value", 2, sum.getInt(2));
+        assertEquals("Wrong value", 1, sum.getInt(3));
+    }
+
+    @Override
+    public void testElementwiseMultiply() throws Exception
+    {
+        Vector vector = create(new float[] {1, 0, 1, 1});
+        IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
+        FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
+
+        try
+        {
+            vector.elementwiseMultiply(create(new float[] {1}));
+            fail("Expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            assertEquals("Vector length mismatch", expected.getMessage());
+        }
+
+        // If we multiply by an {@link IntVector} we should get a new {@link IntVector}
+        Vector product = vector.elementwiseMultiply(intVector);
+        assertEquals("Wrong class: " + product.getClass().getName(), IntVector.class, product.getClass());
+        assertEquals("Wrong length", 4, product.length());
+        assertEquals("Wrong value", 1, product.getInt(0));
+        assertEquals("Wrong value", 0, product.getInt(1));
+        assertEquals("Wrong value", 3, product.getInt(2));
+        assertEquals("Wrong value", 4, product.getInt(3));
+
+        // If we multiply by a {@link FloatVector} we should get a {@link FloatVector}
+        product = vector.elementwiseMultiply(floatVector);
+        assertEquals("Wrong class: " + product.getClass().getName(), FloatVector.class, product.getClass());
+        assertEquals("Wrong length", 4, product.length());
+        assertEquals("Wrong value", 4, product.getFloat(0), .01f);
+        assertEquals("Wrong value", 0, product.getFloat(1), .01f);
+        assertEquals("Wrong value", 2, product.getFloat(2), .01f);
+        assertEquals("Wrong value", 1, product.getFloat(3), .01f);
+
+        // If we multiply by a {@link PackedBitVector} we should get a new {@link PackedBitVector}
+        product = vector.elementwiseMultiply(new PackedBitVector(new int[] {1, 1, 0, 0}));
+        assertEquals("Wrong class: " + product.getClass().getName(), PackedBitVector.class, product.getClass());
+        assertEquals("Wrong length", 4, product.length());
+        assertEquals("Wrong value", 1, product.getInt(0));
+        assertEquals("Wrong value", 0, product.getInt(1));
+        assertEquals("Wrong value", 0, product.getInt(2));
+        assertEquals("Wrong value", 0, product.getInt(3));
+
+        // If we multiply by a {@link SparseBitVector} we should get a new {@link SparseBitVector}
+        product = vector.elementwiseMultiply(new SparseBitVector(new int[] {1, 2}));
+        assertEquals("Wrong class: " + product.getClass().getName(), SparseBitVector.class, product.getClass());
+        assertEquals("Wrong value", 0, product.getInt(0));
+        assertEquals("Wrong value", 0, product.getInt(1));
+        assertEquals("Wrong value", 1, product.getInt(2));
+        assertEquals("Wrong value", 0, product.getInt(3));
     }
 
     @Override
@@ -205,7 +314,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
     }
 
     @Test
-    public void testAdd()
+    public void testSetAdd()
     {
         BitVector bitmap = createEmptyBitVector();
         assertFalse("Did not expect 3", bitmap.contains(3));
@@ -298,4 +407,32 @@ public abstract class BitVectorTestCase extends VectorTestCase
         assertTrue("Expected 4", bitmap.contains(4));
     }
 
+    public void testValues()
+    {
+        IntSet intSet = new IntOpenHashSet(((BitVector) sampleVector).values());
+
+        assertEquals(21, intSet.size());
+
+        assertTrue(intSet.contains(0));
+        assertTrue(intSet.contains(2));
+        assertTrue(intSet.contains(3));
+        assertTrue(intSet.contains(4));
+        assertTrue(intSet.contains(7));
+        assertTrue(intSet.contains(8));
+        assertTrue(intSet.contains(10));
+        assertTrue(intSet.contains(11));
+        assertTrue(intSet.contains(12));
+        assertTrue(intSet.contains(14));
+        assertTrue(intSet.contains(18));
+        assertTrue(intSet.contains(20));
+        assertTrue(intSet.contains(21));
+        assertTrue(intSet.contains(23));
+        assertTrue(intSet.contains(24));
+        assertTrue(intSet.contains(25));
+        assertTrue(intSet.contains(26));
+        assertTrue(intSet.contains(29));
+        assertTrue(intSet.contains(32));
+        assertTrue(intSet.contains(33));
+        assertTrue(intSet.contains(34));
+    }
 }

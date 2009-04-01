@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.math.linear;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -8,8 +10,6 @@ import java.io.StringWriter;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests shared by all vector test classes
@@ -202,6 +202,22 @@ public abstract class VectorTestCase
         assertEquals(126, sampleVector.intMax());
         assertEquals(2, sampleVector.argMax());
     }
+
+    /**
+     * Tests vector addition
+     * 
+     * @throws Exception if something bad happens
+     */
+    @Test
+    public abstract void testVectorAdd() throws Exception;
+
+    /**
+     * Tests element-wise multiplication
+     * 
+     * @throws Exception if something bad happens
+     */
+    @Test
+    public abstract void testElementwiseMultiply() throws Exception;
 
     /**
      * Tests scalar addition

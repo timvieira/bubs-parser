@@ -106,54 +106,107 @@ public abstract class BaseVector implements Vector, Serializable
         return minI;
     }
 
+    public Vector add(Vector v)
+    {
+        if (v.length() != length && !(v instanceof SparseBitVector && v.length() < length))
+        {
+            throw new IllegalArgumentException("Vector length mismatch");
+        }
+
+        Vector newVector;
+        Class<?> vClass = v.getClass();
+        if (vClass == IntVector.class || vClass == PackedIntVector.class || v instanceof BitVector)
+        {
+            newVector = createIntVector();
+        }
+        else
+        {
+            newVector = new FloatVector(length);
+        }
+
+        for (int i = 0; i < length; i++)
+        {
+            newVector.set(i, getFloat(i) + v.getFloat(i));
+        }
+
+        return newVector;
+    }
+
     @Override
     public Vector scalarAdd(float addend)
     {
-        Vector v = new FloatVector(length);
-        for (int i = 0; i < v.length(); i++)
+        Vector newVector = new FloatVector(length);
+        for (int i = 0; i < newVector.length(); i++)
         {
-            v.set(i, getFloat(i) + addend);
+            newVector.set(i, getFloat(i) + addend);
         }
-        return v;
+        return newVector;
     }
 
     @Override
     public Vector scalarAdd(int addend)
     {
-        Vector v = createIntVector();
-        for (int i = 0; i < v.length(); i++)
+        Vector newVector = createIntVector();
+        for (int i = 0; i < newVector.length(); i++)
         {
-            v.set(i, getFloat(i) + addend);
+            newVector.set(i, getFloat(i) + addend);
         }
-        return v;
+        return newVector;
+    }
+
+    public Vector elementwiseMultiply(Vector v)
+    {
+        if (v.length() != length && !(v instanceof SparseBitVector && v.length() < length))
+        {
+            throw new IllegalArgumentException("Vector length mismatch");
+        }
+
+        Vector newVector;
+        Class<?> vClass = v.getClass();
+        if (vClass == IntVector.class || vClass == PackedIntVector.class || v instanceof BitVector)
+        {
+            newVector = createIntVector();
+        }
+        else
+        {
+            newVector = new FloatVector(length);
+        }
+
+        for (int i = 0; i < length; i++)
+        {
+            newVector.set(i, getFloat(i) * v.getFloat(i));
+        }
+
+        return newVector;
     }
 
     @Override
     public Vector scalarMultiply(float multiplier)
     {
-        Vector v = new FloatVector(length);
-        for (int i = 0; i < v.length(); i++)
+        Vector newVector = new FloatVector(length);
+        for (int i = 0; i < newVector.length(); i++)
         {
-            v.set(i, getFloat(i) * multiplier);
+            newVector.set(i, getFloat(i) * multiplier);
         }
-        return v;
+        return newVector;
     }
 
     @Override
     public Vector scalarMultiply(int multiplier)
     {
-        Vector v = createIntVector();
-        for (int i = 0; i < v.length(); i++)
+        Vector newVector = createIntVector();
+        for (int i = 0; i < newVector.length(); i++)
         {
-            v.set(i, getFloat(i) * multiplier);
+            newVector.set(i, getFloat(i) * multiplier);
         }
-        return v;
+        return newVector;
     }
 
     /**
-     * Creates a new {@link Vector} of the appropriate type to return from integer operations (
-     * {@link #scalarAdd(int)}, {@link #scalarMultiply(int)}, etc.) This method will be overridden
-     * by floating-point {@link Vector} implementations.
+     * Creates a new {@link Vector} of the same length and of a type appropriate to return from
+     * integer operations ({@link #scalarAdd(int)}, {@link #scalarMultiply(int)}, etc.) This method
+     * will be overridden by floating-point {@link Vector} implementations and by
+     * {@link PackedIntVector}.
      * 
      * TODO: A better name?
      * 
@@ -167,15 +220,15 @@ public abstract class BaseVector implements Vector, Serializable
     @Override
     public float dotProduct(Vector v)
     {
-        if (v.length() != length)
-        {
-            throw new IllegalArgumentException("Vector length mismatch");
-        }
-
         // SparseBitVector dotProduct() implementation is more efficient.
         if (v instanceof SparseBitVector)
         {
             return v.dotProduct(this);
+        }
+
+        if (v.length() != length)
+        {
+            throw new IllegalArgumentException("Vector length mismatch");
         }
 
         float dotProduct = 0f;

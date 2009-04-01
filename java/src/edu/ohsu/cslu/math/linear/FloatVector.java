@@ -2,6 +2,7 @@ package edu.ohsu.cslu.math.linear;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Arrays;
 
 /**
  * A {@link Vector} implementation which stores 32-bit floats. For most NLP tasks requiring
@@ -25,10 +26,24 @@ public class FloatVector extends BaseVector
         this.vector = new float[length];
     }
 
+    public FloatVector(final int length, float defaultValue)
+    {
+        super(length);
+        this.vector = new float[length];
+        Arrays.fill(vector, defaultValue);
+    }
+
     public FloatVector(final float[] vector)
     {
         super(vector.length);
         this.vector = vector;
+    }
+
+    /** Type-strengthen return-type */
+    @Override
+    public FloatVector add(Vector v)
+    {
+        return (FloatVector) super.add(v);
     }
 
     @Override

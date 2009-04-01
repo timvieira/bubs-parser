@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.math.linear;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.io.IOException;
@@ -114,6 +116,36 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     public final float negativeInfinity()
     {
         return 0;
+    }
+
+    @Override
+    public Vector elementwiseMultiply(Vector v)
+    {
+        if (!(v instanceof BitVector))
+        {
+            return super.elementwiseMultiply(v);
+        }
+
+        // {@link SparseBitVector} has an efficient implementation
+        if (v instanceof SparseBitVector)
+        {
+            return ((SparseBitVector) v).elementwiseMultiply(this);
+        }
+
+        if (v.length() != length)
+        {
+            throw new IllegalArgumentException("Vector length mismatch");
+        }
+
+        final int[] vArray = ((PackedBitVector) v).packedVector;
+        PackedBitVector newVector = new PackedBitVector(length);
+        final int[] newArray = newVector.packedVector;
+        for (int i = 0; i < packedVector.length; i++)
+        {
+            newArray[i] = packedVector[i] & vArray[i];
+        }
+
+        return newVector;
     }
 
     @Override
@@ -250,6 +282,28 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     }
 
     @Override
+    public BitVector intersection(BitVector v)
+    {
+        return (BitVector) elementwiseMultiply(v);
+    }
+
+    @Override
+    public int[] values()
+    {
+        // Not very efficient, but we don't expect to use this method often with {@link
+        // PackedBitVector}
+        IntList intList = new IntArrayList();
+        for (int i = 0; i < length; i++)
+        {
+            if (getBoolean(i))
+            {
+                intList.add(i);
+            }
+        }
+        return intList.toIntArray();
+    }
+
+    @Override
     public Vector clone()
     {
         PackedBitVector v = new PackedBitVector(length);
@@ -257,6 +311,6 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
         return v;
     }
 
-    // TODO: intersect, union?
+    // TODO: union?
     // TODO: Implement size() ? This might turn out to be useful, but could also be inefficient
 }

@@ -98,6 +98,24 @@ public final class PackedIntVector extends BaseVector implements Vector
         }
     }
 
+    @Override
+    public Vector add(Vector v)
+    {
+        if (v instanceof PackedIntVector && v.length() == length && ((PackedIntVector) v).bits == bits)
+        {
+            Vector newVector = new PackedIntVector(length, bits);
+
+            for (int i = 0; i < length; i++)
+            {
+                newVector.set(i, getFloat(i) + v.getFloat(i));
+            }
+
+            return newVector;
+        }
+
+        return super.add(v);
+    }
+
     /**
      * Sets a value at the specified location
      * 
@@ -186,6 +204,12 @@ public final class PackedIntVector extends BaseVector implements Vector
             subVector.set(i, getInt(i0 + i));
         }
         return subVector;
+    }
+
+    @Override
+    protected Vector createIntVector()
+    {
+        return new PackedIntVector(length, bits);
     }
 
     @Override
