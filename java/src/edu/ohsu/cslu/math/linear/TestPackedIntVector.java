@@ -274,7 +274,7 @@ public class TestPackedIntVector extends IntVectorTestCase
     public void testScalarAdd() throws Exception
     {
         Vector v = sampleVector.scalarAdd(1);
-        assertEquals("Wrong class", IntVector.class, v.getClass());
+        assertEquals("Wrong class", sampleVector.getClass(), v.getClass());
         assertEquals("Wrong value", 12, v.getInt(0));
         assertEquals("Wrong value", 1, v.getInt(1));
         assertEquals("Wrong value", 12, v.getInt(2));
@@ -305,19 +305,19 @@ public class TestPackedIntVector extends IntVectorTestCase
     @Override
     public void testScalarMultiply() throws Exception
     {
-        Vector v = sampleVector.scalarMultiply(3);
-        assertEquals("Wrong class", IntVector.class, v.getClass());
-        assertEquals("Wrong value", 33, v.getInt(0));
+        Vector v = sampleVector.scalarMultiply(2);
+        assertEquals("Wrong class", sampleVector.getClass(), v.getClass());
+        assertEquals("Wrong value", 22, v.getInt(0));
         assertEquals("Wrong value", 0, v.getInt(1));
-        assertEquals("Wrong value", 33, v.getInt(2));
-        assertEquals("Wrong value", 66, v.getInt(3));
-        assertEquals("Wrong value", 99, v.getInt(4));
-        assertEquals("Wrong value", 132, v.getInt(5));
-        assertEquals("Wrong value", 168, v.getInt(6));
-        assertEquals("Wrong value", 201, v.getInt(7));
-        assertEquals("Wrong value", 234, v.getInt(8));
-        assertEquals("Wrong value", 267, v.getInt(9));
-        assertEquals("Wrong value", 300, v.getInt(10));
+        assertEquals("Wrong value", 22, v.getInt(2));
+        assertEquals("Wrong value", 44, v.getInt(3));
+        assertEquals("Wrong value", 66, v.getInt(4));
+        assertEquals("Wrong value", 88, v.getInt(5));
+        assertEquals("Wrong value", 112, v.getInt(6));
+        assertEquals("Wrong value", 134, v.getInt(7));
+        assertEquals("Wrong value", 156, v.getInt(8));
+        assertEquals("Wrong value", 178, v.getInt(9));
+        assertEquals("Wrong value", 200, v.getInt(10));
 
         v = sampleVector.scalarMultiply(-2.5f);
         assertEquals("Wrong class", FloatVector.class, v.getClass());

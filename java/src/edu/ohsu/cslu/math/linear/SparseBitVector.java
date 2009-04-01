@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.math.linear;
 
+import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -29,6 +30,14 @@ public class SparseBitVector extends BaseVector implements BitVector
         intSet = new IntOpenHashSet();
     }
 
+    /**
+     * Constructs a {@link SparseBitVector} from an integer array. Note that the semantics of this
+     * constructor are different from those of most other {@link Vector} constructors with the same
+     * signature - the int values contained in the parameter are themselves populated, whereas most
+     * other constructors populate the _indices_ of the array which contain non-zero values.
+     * 
+     * @param array The vector indices to populate
+     */
     public SparseBitVector(final int[] array)
     {
         super(0);
@@ -36,11 +45,34 @@ public class SparseBitVector extends BaseVector implements BitVector
 
         for (int i = 0; i < array.length; i++)
         {
-            if (array[i] != 0)
+            add(array[i]);
+        }
+    }
+
+    @Override
+    public Vector elementwiseMultiply(Vector v)
+    {
+        if (!(v instanceof BitVector))
+        {
+            return super.elementwiseMultiply(v);
+        }
+
+        // If we're multiplying two SparseBitVector instances, iterate through the smaller one.
+        if (v instanceof SparseBitVector && ((SparseBitVector) v).intSet.size() < intSet.size())
+        {
+            return ((SparseBitVector) v).elementwiseMultiply(this);
+        }
+
+        SparseBitVector newVector = new SparseBitVector();
+        for (int i : intSet)
+        {
+            if (v.getBoolean(i))
             {
-                add(i);
+                newVector.add(i);
             }
         }
+
+        return newVector;
     }
 
     @Override
@@ -143,16 +175,19 @@ public class SparseBitVector extends BaseVector implements BitVector
     @Override
     public float dotProduct(Vector v)
     {
-        if (v.length() != length)
+        try
+        {
+            float dotProduct = 0f;
+            for (int i : intSet)
+            {
+                dotProduct += v.getFloat(i);
+            }
+            return dotProduct;
+        }
+        catch (ArrayIndexOutOfBoundsException e)
         {
             throw new IllegalArgumentException("Vector length mismatch");
         }
-        float dotProduct = 0f;
-        for (int i : intSet)
-        {
-            dotProduct += v.getFloat(i);
-        }
-        return dotProduct;
     }
 
     @Override
@@ -307,6 +342,12 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
+    public BitVector intersection(BitVector v)
+    {
+        return (BitVector) elementwiseMultiply(v);
+    }
+
+    @Override
     public float sum()
     {
         return intSet.size();
@@ -315,7 +356,16 @@ public class SparseBitVector extends BaseVector implements BitVector
     @Override
     public void write(Writer writer) throws IOException
     {
+        // TODO: This outputs "0 0 1 0 1...". Should we instead output the populated indices (e.g.
+        // "2 4...") ?
         write(writer, String.format("vector type=sparse-bit length=%d\n", length()));
+    }
+
+    @Override
+    public int[] values()
+    {
+        // Return the values in-order
+        return new IntAVLTreeSet(intSet).toIntArray();
     }
 
     @Override

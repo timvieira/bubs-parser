@@ -91,6 +91,23 @@ public interface Vector
     public void set(final int i, final String newValue);
 
     /**
+     * Adds two {@link Vector}s, returning a new {@link Vector}
+     * 
+     * @param v addend
+     * @return sum of the two {@link Vector}s, as a new {@link Vector} instance
+     */
+    public Vector add(Vector v);
+
+    /**
+     * Multiplies each element of two {@link Vector}s, returning a new {@link Vector}
+     * 
+     * @param v multiplicand, a vector of the same length.
+     * @return a new vector in which each element is the multiple of the corresponding elements of
+     *         the two supplied {@link Vector}s.
+     */
+    public Vector elementwiseMultiply(Vector v);
+
+    /**
      * @return the maximum value which can be stored by this vector
      */
     public float infinity();
@@ -159,7 +176,7 @@ public interface Vector
     public float dotProduct(Vector v);
 
     /**
-     * Create a subvector spanning the specified indices.
+     * Creates a subvector spanning the specified indices.
      * 
      * @param i0 Initial index (inclusive)
      * @param i1 Final index (inclusive)

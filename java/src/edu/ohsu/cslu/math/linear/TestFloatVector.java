@@ -1,8 +1,9 @@
 package edu.ohsu.cslu.math.linear;
 
-import org.junit.Before;
-
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
+
+import org.junit.Before;
 
 /**
  * Unit tests for {@link FloatVector}
@@ -41,6 +42,112 @@ public class TestFloatVector extends VectorTestCase
             floatArray[i] = array[i];
         }
         return new FloatVector(floatArray);
+    }
+
+    @Override
+    public void testVectorAdd() throws Exception
+    {
+        Vector vector = create(new float[] {1, 2, 3, 4});
+        IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
+
+        try
+        {
+            vector.add(create(new float[] {1}));
+            fail("Expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            assertEquals("Vector length mismatch", expected.getMessage());
+        }
+
+        // If we add two {@link FloatVector}s, we should get another {@link FloatVector}
+        Vector sum = vector.add(vector);
+        assertEquals("Wrong class: " + sum.getClass().getName(), vectorClass, sum.getClass());
+        assertEquals("Wrong length", 4, sum.length());
+        assertEquals("Wrong value", 2, sum.getFloat(0), .01f);
+        assertEquals("Wrong value", 4, sum.getFloat(1), .01f);
+        assertEquals("Wrong value", 6, sum.getFloat(2), .01f);
+        assertEquals("Wrong value", 8, sum.getFloat(3), .01f);
+
+        // If we add an {@link IntVector} we should get a {@link FloatVector}
+        sum = vector.add(intVector);
+        assertEquals("Wrong class: " + sum.getClass().getName(), vectorClass, sum.getClass());
+        assertEquals("Wrong length", 4, sum.length());
+        assertEquals("Wrong value", 2, sum.getFloat(0), .01f);
+        assertEquals("Wrong value", 4, sum.getFloat(1), .01f);
+        assertEquals("Wrong value", 6, sum.getFloat(2), .01f);
+        assertEquals("Wrong value", 8, sum.getFloat(3), .01f);
+
+        // If we add a {@link PackedBitVector} we should get a new {@link FloatVector}
+        sum = vector.add(new PackedBitVector(new int[] {1, 1, 0, 0}));
+        assertEquals("Wrong class: " + sum.getClass().getName(), FloatVector.class, sum.getClass());
+        assertEquals("Wrong length", 4, sum.length());
+        assertEquals("Wrong value", 2, sum.getInt(0), .01f);
+        assertEquals("Wrong value", 3, sum.getInt(1), .01f);
+        assertEquals("Wrong value", 3, sum.getInt(2), .01f);
+        assertEquals("Wrong value", 4, sum.getInt(3), .01f);
+
+        // If we add a {@link SparseBitVector} we should get a new {@link FloatVector}
+        sum = vector.add(new SparseBitVector(new int[] {1, 2}));
+        assertEquals("Wrong class: " + sum.getClass().getName(), FloatVector.class, sum.getClass());
+        assertEquals("Wrong length", 4, sum.length());
+        assertEquals("Wrong value", 1, sum.getInt(0), .01f);
+        assertEquals("Wrong value", 3, sum.getInt(1), .01f);
+        assertEquals("Wrong value", 4, sum.getInt(2), .01f);
+        assertEquals("Wrong value", 4, sum.getInt(3), .01f);
+    }
+
+    @Override
+    public void testElementwiseMultiply() throws Exception
+    {
+        Vector vector = create(new float[] {1, 2, 3, 4});
+        IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
+
+        try
+        {
+            vector.elementwiseMultiply(create(new float[] {1}));
+            fail("Expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            assertEquals("Vector length mismatch", expected.getMessage());
+        }
+
+        // If we multiply by a {@link FloatVector}s, we should get another {@link FloatVector}
+        Vector product = vector.elementwiseMultiply(vector);
+        assertEquals("Wrong class: " + product.getClass().getName(), vectorClass, product.getClass());
+        assertEquals("Wrong length", 4, product.length());
+        assertEquals("Wrong value", 1, product.getFloat(0), .01f);
+        assertEquals("Wrong value", 4, product.getFloat(1), .01f);
+        assertEquals("Wrong value", 9, product.getFloat(2), .01f);
+        assertEquals("Wrong value", 16, product.getFloat(3), .01f);
+
+        // If we multiply by an {@link IntVector} we should get a {@link FloatVector}
+        product = vector.elementwiseMultiply(intVector);
+        assertEquals("Wrong class: " + product.getClass().getName(), vectorClass, product.getClass());
+        assertEquals("Wrong length", 4, product.length());
+        assertEquals("Wrong value", 1, product.getFloat(0), .01f);
+        assertEquals("Wrong value", 4, product.getFloat(1), .01f);
+        assertEquals("Wrong value", 9, product.getFloat(2), .01f);
+        assertEquals("Wrong value", 16, product.getFloat(3), .01f);
+
+        // If we multiply by a {@link PackedBitVector} we should get a new {@link FloatVector}
+        product = vector.elementwiseMultiply(new PackedBitVector(new int[] {1, 1, 0, 0}));
+        assertEquals("Wrong class: " + product.getClass().getName(), FloatVector.class, product.getClass());
+        assertEquals("Wrong length", 4, product.length());
+        assertEquals("Wrong value", 1, product.getInt(0), .01f);
+        assertEquals("Wrong value", 2, product.getInt(1), .01f);
+        assertEquals("Wrong value", 0, product.getInt(2), .01f);
+        assertEquals("Wrong value", 0, product.getInt(3), .01f);
+
+        // If we multiply by a {@link SparseBitVector} we should get a new {@link FloatVector}
+        product = vector.elementwiseMultiply(new SparseBitVector(new int[] {1, 2}));
+        assertEquals("Wrong class: " + product.getClass().getName(), FloatVector.class, product.getClass());
+        assertEquals("Wrong length", 4, product.length());
+        assertEquals("Wrong value", 0, product.getInt(0), .01f);
+        assertEquals("Wrong value", 2, product.getInt(1), .01f);
+        assertEquals("Wrong value", 3, product.getInt(2), .01f);
+        assertEquals("Wrong value", 0, product.getInt(3), .01f);
     }
 
     @Override
