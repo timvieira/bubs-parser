@@ -6,7 +6,7 @@ import java.io.Writer;
 import edu.ohsu.cslu.alignment.CharVocabulary;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
-import edu.ohsu.cslu.math.linear.IntVector;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.util.Math;
 
 /**

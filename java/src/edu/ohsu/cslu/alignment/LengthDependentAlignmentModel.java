@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.alignment;
 
-import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
 
 public class LengthDependentAlignmentModel extends MatrixSubstitutionAlignmentModel
 {

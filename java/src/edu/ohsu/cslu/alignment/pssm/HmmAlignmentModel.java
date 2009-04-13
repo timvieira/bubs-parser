@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.alignment.pssm;
 
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Implements a hybrid PSSM / Substitution Matrix alignment model.

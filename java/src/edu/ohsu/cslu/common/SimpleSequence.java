@@ -6,7 +6,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.util.Strings;
 
 /**

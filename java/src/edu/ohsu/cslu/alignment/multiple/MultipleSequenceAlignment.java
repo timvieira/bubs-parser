@@ -16,11 +16,11 @@ import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.Vocabulary;
-import edu.ohsu.cslu.math.linear.FloatMatrix;
-import edu.ohsu.cslu.math.linear.FloatVector;
-import edu.ohsu.cslu.math.linear.IntMatrix;
-import edu.ohsu.cslu.math.linear.Matrix;
-import edu.ohsu.cslu.math.linear.NumericVector;
+import edu.ohsu.cslu.datastructs.matrices.FloatMatrix;
+import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
+import edu.ohsu.cslu.datastructs.vectors.FloatVector;
+import edu.ohsu.cslu.datastructs.vectors.NumericVector;
 import edu.ohsu.cslu.util.Strings;
 
 /**

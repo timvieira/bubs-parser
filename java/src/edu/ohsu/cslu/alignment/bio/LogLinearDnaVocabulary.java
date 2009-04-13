@@ -2,8 +2,8 @@ package edu.ohsu.cslu.alignment.bio;
 
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.math.linear.BitVector;
-import edu.ohsu.cslu.math.linear.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
+import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 
 public class LogLinearDnaVocabulary extends DnaVocabulary
 {

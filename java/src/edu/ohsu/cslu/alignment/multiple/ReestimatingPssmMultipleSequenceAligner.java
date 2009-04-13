@@ -7,8 +7,8 @@ import edu.ohsu.cslu.alignment.pssm.HmmAlignmentModel;
 import edu.ohsu.cslu.alignment.pssm.PssmSequenceAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.Sequence;
-import edu.ohsu.cslu.math.linear.Matrix;
-import edu.ohsu.cslu.math.linear.NumericVector;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
+import edu.ohsu.cslu.datastructs.vectors.NumericVector;
 
 /**
  * Aligns sequences using a PSSM model re-estimated at each iteration.

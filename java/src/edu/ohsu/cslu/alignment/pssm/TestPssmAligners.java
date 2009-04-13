@@ -19,9 +19,9 @@ import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.math.linear.FloatVector;
-import edu.ohsu.cslu.math.linear.IntVector;
-import edu.ohsu.cslu.math.linear.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.FloatVector;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
+import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 

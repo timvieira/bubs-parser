@@ -2,7 +2,7 @@ package edu.ohsu.cslu.alignment.pssm;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.common.Sequence;
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Represents a column-based alignment model; used when aligning a {@link Sequence} with an

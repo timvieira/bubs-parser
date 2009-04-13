@@ -6,8 +6,8 @@ import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.Vocabulary;
-import edu.ohsu.cslu.math.linear.IntVector;
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Implements {@link PssmSequenceAligner} using linear space for the intermediate storage of scores

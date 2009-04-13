@@ -21,10 +21,10 @@ import edu.ohsu.cslu.alignment.pssm.PssmSequenceAligner;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
-import edu.ohsu.cslu.math.linear.Matrix;
-import edu.ohsu.cslu.math.linear.NumericVector;
-import edu.ohsu.cslu.math.linear.SparseBitVector;
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
+import edu.ohsu.cslu.datastructs.vectors.NumericVector;
+import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
 {

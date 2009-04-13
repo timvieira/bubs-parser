@@ -8,7 +8,7 @@ import edu.ohsu.cslu.alignment.pssm.BasePssmAligner;
 import edu.ohsu.cslu.alignment.pssm.LinearPssmAligner;
 import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
 
 public class PssmAligner implements MultipleSequenceAligner
 {

@@ -17,9 +17,9 @@ import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
-import edu.ohsu.cslu.math.linear.FloatVector;
-import edu.ohsu.cslu.math.linear.IntVector;
-import edu.ohsu.cslu.math.linear.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.FloatVector;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
+import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 
 /**
  * Unit tests for {@link MultipleSequenceAlignment}

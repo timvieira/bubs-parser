@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.ohsu.cslu.math.linear.BitVector;
-import edu.ohsu.cslu.math.linear.PackedBitVector;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
+import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 
 /**
  * Base Grammar implementation. Stores all productions as ints for quick access (note that this
