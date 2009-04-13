@@ -12,8 +12,8 @@ import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.common.Vocabulary;
-import edu.ohsu.cslu.math.linear.IntVector;
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Implements {@link PairwiseAligner} using standard dynamic-programming algorithm. Stores the

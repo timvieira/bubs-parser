@@ -18,7 +18,7 @@ import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
-import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.util.Strings;

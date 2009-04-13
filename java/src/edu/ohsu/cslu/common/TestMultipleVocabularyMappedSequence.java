@@ -7,8 +7,8 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
-import edu.ohsu.cslu.math.linear.IntMatrix;
-import edu.ohsu.cslu.math.linear.IntVector;
+import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**

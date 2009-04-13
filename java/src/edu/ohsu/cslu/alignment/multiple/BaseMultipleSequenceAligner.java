@@ -8,7 +8,7 @@ import edu.ohsu.cslu.alignment.pairwise.PairwiseAligner;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.Sequence;
-import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
 
 /**
  * Abstract base class for multiple sequence aligners.

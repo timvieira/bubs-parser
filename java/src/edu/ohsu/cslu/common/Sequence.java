@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.common;
 
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Represents an ordered sequence of tokens, possibly with multiple features for each token. The

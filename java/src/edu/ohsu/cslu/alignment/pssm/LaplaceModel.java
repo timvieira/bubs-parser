@@ -6,8 +6,8 @@ import java.io.Reader;
 
 import edu.ohsu.cslu.alignment.CharVocabulary;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
-import edu.ohsu.cslu.math.linear.FloatMatrix;
-import edu.ohsu.cslu.math.linear.IntMatrix;
+import edu.ohsu.cslu.datastructs.matrices.FloatMatrix;
+import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 
 /**
  * Models the training data, adding in the specified number of 'pseudo' counts. Specifying 0 yields

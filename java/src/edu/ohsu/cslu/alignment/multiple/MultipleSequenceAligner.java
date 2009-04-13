@@ -7,7 +7,7 @@ import java.io.IOException;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
 
 /**
  * TODO: Document interface

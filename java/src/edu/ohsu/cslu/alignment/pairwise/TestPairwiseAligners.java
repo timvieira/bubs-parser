@@ -11,9 +11,9 @@ import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
-import edu.ohsu.cslu.math.linear.FloatMatrix;
-import edu.ohsu.cslu.math.linear.Matrix;
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.matrices.FloatMatrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Unit tests for pairwise aligners.

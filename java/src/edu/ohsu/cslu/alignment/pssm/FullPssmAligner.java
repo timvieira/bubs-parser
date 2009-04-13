@@ -13,9 +13,9 @@ import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.common.Vocabulary;
-import edu.ohsu.cslu.math.linear.BitVector;
-import edu.ohsu.cslu.math.linear.IntVector;
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Traditional dynamic-programming sequence alignment algorithm.

@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.common.tools.ToolTestCase;
-import edu.ohsu.cslu.math.linear.IntMatrix;
+import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;

@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.alignment;
 
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Represents a substitution-cost based alignment model, in which each substitution, deletion, or

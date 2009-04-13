@@ -5,8 +5,8 @@ import java.util.Arrays;
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
-import edu.ohsu.cslu.math.linear.BitVector;
-import edu.ohsu.cslu.math.linear.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
+import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.util.Strings;
 
 /**

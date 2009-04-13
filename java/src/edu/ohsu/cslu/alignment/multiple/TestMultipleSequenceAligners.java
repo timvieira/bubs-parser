@@ -12,8 +12,8 @@ import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
-import edu.ohsu.cslu.math.linear.IntMatrix;
-import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.tools.CalculateDistances;
 import edu.ohsu.cslu.util.Strings;
 

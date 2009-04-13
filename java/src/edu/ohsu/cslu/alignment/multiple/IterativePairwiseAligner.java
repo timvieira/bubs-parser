@@ -9,7 +9,7 @@ import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.Sequence;
-import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
 
 /**
  * A fairly standard iterative pairwise aligner. Iterates through a set of unaligned sequences,

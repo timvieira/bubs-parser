@@ -9,7 +9,7 @@ import org.apache.commons.cli.Options;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.common.FeatureClass;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
-import edu.ohsu.cslu.math.linear.FloatVector;
+import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.tools.LinguisticToolOptions;
 
 public class CreateVectorFromVocabulary extends BaseCommandlineTool

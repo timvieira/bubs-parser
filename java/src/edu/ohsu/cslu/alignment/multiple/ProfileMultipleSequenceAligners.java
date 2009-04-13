@@ -19,7 +19,7 @@ import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.alignment.bio.EvaluateAlignment;
 import edu.ohsu.cslu.alignment.pssm.LaplaceModel;
 import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
-import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;

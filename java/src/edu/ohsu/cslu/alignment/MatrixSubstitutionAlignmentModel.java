@@ -2,10 +2,10 @@ package edu.ohsu.cslu.alignment;
 
 import java.io.Serializable;
 
-import edu.ohsu.cslu.math.linear.FloatMatrix;
-import edu.ohsu.cslu.math.linear.IntVector;
-import edu.ohsu.cslu.math.linear.Matrix;
-import edu.ohsu.cslu.math.linear.Vector;
+import edu.ohsu.cslu.datastructs.matrices.FloatMatrix;
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Implements the {@link SubstitutionAlignmentModel} interfaces using a {@link Matrix} of
