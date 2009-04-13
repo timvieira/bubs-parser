@@ -13,7 +13,7 @@ import org.junit.Before;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestFloatVector extends VectorTestCase
+public class TestFloatVector extends NumericVectorTestCase
 {
     private float[] sampleArray;
 

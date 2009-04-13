@@ -4,10 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.regex.Pattern;
 
+import edu.ohsu.cslu.math.linear.Vector;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -95,7 +94,7 @@ public class SimpleSequence implements Sequence
     }
 
     @Override
-    public Sequence features(int... features)
+    public Sequence retainFeatures(int... features)
     {
         String[][] newFeatures = new String[length()][features.length];
 
@@ -250,17 +249,6 @@ public class SimpleSequence implements Sequence
     }
 
     @Override
-    public String[] stringSequence(int featureIndex)
-    {
-        String[] sequence = new String[length()];
-        for (int i = 0; i < length(); i++)
-        {
-            sequence[i] = stringFeature(i, featureIndex);
-        }
-        return sequence;
-    }
-
-    @Override
     public final String toBracketedString()
     {
         final int length = length();
@@ -329,8 +317,22 @@ public class SimpleSequence implements Sequence
     }
 
     @Override
-    public Iterator<String> iterator()
+    public Sequence insertGaps(int[] gapIndices)
     {
-        return Arrays.asList(stringFeatures[0]).iterator();
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Sequence removeAllGaps()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Vector elementAt(int index)
+    {
+        throw new UnsupportedOperationException("elementAt not implemented in SimpleSequence");
     }
 }

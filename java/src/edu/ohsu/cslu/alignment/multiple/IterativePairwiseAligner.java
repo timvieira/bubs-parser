@@ -7,7 +7,8 @@ import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.pairwise.FullDynamicPairwiseAligner;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.math.linear.Matrix;
 
 /**
@@ -51,7 +52,7 @@ public class IterativePairwiseAligner extends BaseMultipleSequenceAligner
      * @param sequences
      * @param gapIndices
      */
-    public static void insertGaps(MappedSequence[] sequences, int[] gapIndices)
+    public static void insertGaps(Sequence[] sequences, int[] gapIndices)
     {
         if (gapIndices.length == 0)
         {
@@ -60,7 +61,7 @@ public class IterativePairwiseAligner extends BaseMultipleSequenceAligner
 
         for (int i = 0; i < sequences.length; i++)
         {
-            SimpleMappedSequence simpleSequence = (SimpleMappedSequence) sequences[i];
+            MultipleVocabularyMappedSequence simpleSequence = (MultipleVocabularyMappedSequence) sequences[i];
             if (simpleSequence != null)
             {
                 sequences[i] = simpleSequence.insertGaps(gapIndices);

@@ -12,6 +12,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.alignment.AlignmentVocabulary;
+import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
+import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.alignment.bio.EvaluateAlignment;
 import edu.ohsu.cslu.alignment.pssm.LaplaceModel;
@@ -33,8 +36,6 @@ public class ProfileMultipleSequenceAligners
     private String[] corpus;
     private String[] unalignedSequences;
     private Matrix distanceMatrix;
-
-    private PssmAlignmentModel model;
 
     @Before
     public void setUp() throws IOException
@@ -63,32 +64,28 @@ public class ProfileMultipleSequenceAligners
         corpus = corpusSequenceList.toArray(new String[0]);
         unalignedSequences = unalignedSequenceList.toArray(new String[0]);
 
-        model = new LaplaceModel(new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)),
-            new DnaVocabulary(), 6, true);
     }
 
     @Test
     @PerformanceTest
-    public void profileVariableLengthIterativePairwiseAligner() throws IOException
+    public void profileIterativePairwiseAligner()
     {
-        System.out.println("Variable Length Iterative Pairwise Aligner"
-            + profileAligner(new IterativePairwiseAligner()));
+        SubstitutionAlignmentModel subModel = new MatrixSubstitutionAlignmentModel(10, 8,
+            new AlignmentVocabulary[] {DNA_VOCABULARY});
+
+        new IterativePairwiseAligner().align(DNA_VOCABULARY.mapSequences(unalignedSequences), distanceMatrix, subModel);
     }
 
     @Test
     @PerformanceTest
     public void profileModelAligner() throws IOException
     {
-        float accuracy = profileAligner(new PssmAligner());
-        assertEquals(94.78f, accuracy, .1);
-    }
-
-    private float profileAligner(MultipleSequenceAligner aligner) throws IOException
-    {
-        MultipleSequenceAlignment sequenceAlignment = aligner.align(DNA_VOCABULARY.mapSequences(unalignedSequences),
-            distanceMatrix, model);
-
+        PssmAlignmentModel model = new LaplaceModel(new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)),
+            new DnaVocabulary(), 6, true);
+        MultipleSequenceAlignment sequenceAlignment = new PssmAligner().align(DNA_VOCABULARY
+            .mapSequences(unalignedSequences), distanceMatrix, model);
         long[] eval = EvaluateAlignment.evaluate(DNA_VOCABULARY.mapSequences(sequenceAlignment.sequences()), corpus);
-        return eval[0] * 100f / eval[1];
+        float accuracy = eval[0] * 100f / eval[1];
+        assertEquals(94.78f, accuracy, .1);
     }
 }

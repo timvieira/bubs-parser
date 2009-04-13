@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -8,12 +10,9 @@ import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.util.Strings;
-
-
-import static junit.framework.Assert.assertEquals;
 
 public class TestPairwiseLinguisticAlignment
 {
@@ -46,15 +45,17 @@ public class TestPairwiseLinguisticAlignment
     @Test
     public void testSampleAlignment() throws Exception
     {
-        MappedSequence sequence1 = new SimpleMappedSequence(Strings.extractPos(sampleSentence4), vocabularies);
-        MappedSequence sequence2 = new SimpleMappedSequence(Strings.extractPos(sampleSentence16), vocabularies);
+        MappedSequence sequence1 = new MultipleVocabularyMappedSequence(Strings.extractPos(sampleSentence4),
+            vocabularies);
+        MappedSequence sequence2 = new MultipleVocabularyMappedSequence(Strings.extractPos(sampleSentence16),
+            vocabularies);
 
         FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
         SequenceAlignment alignment = aligner.alignPair(sequence1, sequence2, simpleAlignmentModel);
 
         StringBuilder sb = new StringBuilder(512);
-        sb.append("       NN | AUX | - | TO |    VB | IN |    JJ |   CD | . |\n");
-        sb.append(" Delivery |  is | - | to | begin | in | early | 1991 | . |\n");
+        sb.append("       NN | AUX | _- | TO |    VB | IN |    JJ |   CD | . |\n");
+        sb.append(" Delivery |  is | _- | to | begin | in | early | 1991 | . |\n");
         assertEquals(sb.toString(), alignment.toString());
 
         // Now align the other sentence
@@ -66,17 +67,15 @@ public class TestPairwiseLinguisticAlignment
         assertEquals(sb.toString(), alignment.toString());
         SharedNlpTests.assertEquals(new int[] {2}, alignment.gapIndices());
 
-        MultipleSequenceAlignment sequenceAlignment = new MultipleSequenceAlignment(new MappedSequence[] {
-                                                                                    alignment.alignedSequence(),
-                                                                                    sequence1.insertGaps(alignment
-                                                                                        .gapIndices())});
+        MultipleSequenceAlignment sequenceAlignment = new MultipleSequenceAlignment(
+            new MappedSequence[] {alignment.alignedSequence(), sequence1.insertGaps(alignment.gapIndices())});
         sb = new StringBuilder(512);
 
         sb.append("      JJS | AUX |      VBN | TO |    VB |    IN |             JJ |    NNS | . |\n");
         sb.append("     Most | are | expected | to |  fall | below | previous-month | levels | . |\n");
         sb.append("-------------------------------------------------------------------------------\n");
-        sb.append("       NN | AUX |        - | TO |    VB |    IN |             JJ |     CD | . |\n");
-        sb.append(" Delivery |  is |        - | to | begin |    in |          early |   1991 | . |\n");
+        sb.append("       NN | AUX |       _- | TO |    VB |    IN |             JJ |     CD | . |\n");
+        sb.append(" Delivery |  is |       _- | to | begin |    in |          early |   1991 | . |\n");
         sb.append("-------------------------------------------------------------------------------\n");
         assertEquals(sb.toString(), sequenceAlignment.toString());
     }

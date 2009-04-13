@@ -7,11 +7,15 @@ import it.unimi.dsi.fastutil.ints.IntListIterator;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
+import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.common.Vocabulary;
+import edu.ohsu.cslu.math.linear.BitVector;
+import edu.ohsu.cslu.math.linear.IntVector;
+import edu.ohsu.cslu.math.linear.Vector;
 
 /**
  * Traditional dynamic-programming sequence alignment algorithm.
@@ -27,7 +31,7 @@ public class FullPssmAligner extends BasePssmAligner
     private float[][] m_array;
     // TODO: Replace with a PackedIntVector and profile
     protected byte[][] m_backPointer;
-    private MappedSequence m_sequence;
+    private Sequence m_sequence;
     private PssmAlignmentModel m_model;
 
     @Override
@@ -39,12 +43,7 @@ public class FullPssmAligner extends BasePssmAligner
         final float[][] array = new float[maxI][maxJ];
         final byte[][] backPointer = new byte[maxI][maxJ];
 
-        final Vocabulary[] vocabularies = model.vocabularies();
-        final int[] gapSymbol = new int[vocabularies.length];
-        for (int i = 0; i < vocabularies.length; i++)
-        {
-            gapSymbol[i] = ((AlignmentVocabulary) vocabularies[i]).gapSymbol();
-        }
+        final Vector gapVector = model.gapVector();
 
         m_array = array;
         m_backPointer = backPointer;
@@ -66,7 +65,7 @@ public class FullPssmAligner extends BasePssmAligner
         // Initialize all the 'start' columns - probabilities of deleting all the way through
         for (int j = 1; j < maxJ; j++)
         {
-            array[0][j] = array[0][j - 1] + model.negativeLogP(gapSymbol, j - 1, features);
+            array[0][j] = array[0][j - 1] + model.cost(gapVector, j - 1, features);
             backPointer[0][j] = BACKPOINTER_UNALIGNED_GAP;
         }
 
@@ -76,15 +75,15 @@ public class FullPssmAligner extends BasePssmAligner
         for (int i = 1; i < maxI; i++)
         {
             final int prevI = i - 1;
-            final int[] currentElement = sequence.features(prevI);
+            final Vector currentElement = sequence.elementAt(prevI);
 
             for (int j = i; j < maxJ; j++)
             {
                 final int prevJ = j - 1;
 
                 // Probability of emission / gap
-                final float emit = array[prevI][prevJ] + model.negativeLogP(currentElement, prevJ, features);
-                final float gap = array[i][prevJ] + model.negativeLogP(gapSymbol, prevJ, features);
+                final float emit = array[prevI][prevJ] + model.cost(currentElement, prevJ, features);
+                final float gap = array[i][prevJ] + model.cost(gapVector, prevJ, features);
 
                 // Bias toward emission given equal probabilities
                 if (emit <= gap)
@@ -100,15 +99,15 @@ public class FullPssmAligner extends BasePssmAligner
             }
         }
 
-        return backtrace(sequence, model, backPointer, gapSymbol);
+        return backtrace(sequence, model, backPointer, gapVector);
     }
 
     protected final MappedSequence backtrace(MappedSequence sequence, PssmAlignmentModel model, byte[][] backPointer,
-        int[] gapVector)
+        Vector gapVector)
     {
         // Backtrace to reconstruct the winning alignment, adding to the beginning of a linked-list
         // to implicitly construct the buffer in order, while we traverse the alignment in reverse.
-        final LinkedList<int[]> buffer = new LinkedList<int[]>();
+        final LinkedList<Vector> backtrace = new LinkedList<Vector>();
 
         int i = sequence.length();
         int j = model.columns();
@@ -120,7 +119,7 @@ public class FullPssmAligner extends BasePssmAligner
             if (j <= i)
             {
                 // Emit
-                buffer.addFirst(sequence.features(--i));
+                backtrace.addFirst(sequence.elementAt(--i));
                 j--;
             }
             else
@@ -129,12 +128,12 @@ public class FullPssmAligner extends BasePssmAligner
                 {
                     case BACKPOINTER_SUBSTITUTION :
                         // Emit
-                        buffer.addFirst(sequence.features(--i));
+                        backtrace.addFirst(sequence.elementAt(--i));
                         j--;
                         break;
                     case BACKPOINTER_UNALIGNED_GAP :
                         // Gap in unaligned sequence
-                        buffer.addFirst(gapVector);
+                        backtrace.addFirst(gapVector);
                         j--;
                         break;
                     default :
@@ -143,7 +142,12 @@ public class FullPssmAligner extends BasePssmAligner
             }
         }
 
-        return new SimpleMappedSequence(buffer.toArray(new int[0][]), model.vocabularies());
+        if (sequence instanceof MultipleVocabularyMappedSequence)
+        {
+            return new MultipleVocabularyMappedSequence(backtrace.toArray(new IntVector[backtrace.size()]), model
+                .vocabularies());
+        }
+        return new LogLinearMappedSequence(backtrace.toArray(new BitVector[backtrace.size()]), model.vocabularies()[0]);
     }
 
     @Override
@@ -155,12 +159,7 @@ public class FullPssmAligner extends BasePssmAligner
         final float[][] array = new float[maxI][maxJ];
         final byte[][] backpointer = new byte[maxI][maxJ];
 
-        final Vocabulary[] vocabularies = model.vocabularies();
-        final int[] gapSymbol = new int[vocabularies.length];
-        for (int i = 0; i < vocabularies.length; i++)
-        {
-            gapSymbol[i] = ((AlignmentVocabulary) vocabularies[i]).gapSymbol();
-        }
+        final Vector gapVector = model.gapVector();
 
         m_array = array;
         m_backPointer = backpointer;
@@ -176,12 +175,12 @@ public class FullPssmAligner extends BasePssmAligner
         // Initialize all the 'start' columns - probabilities of gaps all the way through
         for (int i = 1; i < maxI; i++)
         {
-            array[i][0] = array[i - 1][0] + model.pssmGapInsertionCost(sequence.features(i - 1));
+            array[i][0] = array[i - 1][0] + model.pssmGapInsertionCost(sequence.elementAt(i - 1));
             backpointer[i][0] = BACKPOINTER_PSSM_GAP;
         }
         for (int j = 1; j < maxJ; j++)
         {
-            array[0][j] = array[0][j - 1] + model.negativeLogP(gapSymbol, j - 1, features);
+            array[0][j] = array[0][j - 1] + model.cost(gapVector, j - 1, features);
         }
         Arrays.fill(backpointer[0], BACKPOINTER_UNALIGNED_GAP);
 
@@ -190,7 +189,7 @@ public class FullPssmAligner extends BasePssmAligner
         for (int i = 1; i < maxI; i++)
         {
             final int prevI = i - 1;
-            final int[] currentElement = sequence.features(prevI);
+            final Vector currentElement = sequence.elementAt(prevI);
             final byte[] backpointerI = backpointer[i];
 
             for (int j = 1; j < maxJ; j++)
@@ -198,8 +197,8 @@ public class FullPssmAligner extends BasePssmAligner
                 final int prevJ = j - 1;
 
                 // Probability of emission / gap in unaligned / gap in pssm
-                final float emit = array[prevI][prevJ] + model.negativeLogP(currentElement, prevJ, features);
-                final float gapInNewSequence = array[i][prevJ] + model.negativeLogP(gapSymbol, prevJ, features);
+                final float emit = array[prevI][prevJ] + model.cost(currentElement, prevJ, features);
+                final float gapInNewSequence = array[i][prevJ] + model.cost(gapVector, prevJ, features);
                 final float gapInPssm = array[prevI][j] + model.pssmGapInsertionCost(currentElement);
 
                 // Bias toward emission given equal probabilities
@@ -221,15 +220,15 @@ public class FullPssmAligner extends BasePssmAligner
             }
         }
 
-        return backtraceWithGaps(sequence, model, backpointer, gapSymbol);
+        return backtraceWithGaps(sequence, model, backpointer, gapVector);
     }
 
-    protected final SequenceAlignment backtraceWithGaps(MappedSequence sequence, PssmAlignmentModel model,
-        byte[][] backPointer, int[] gapVector)
+    protected final SequenceAlignment backtraceWithGaps(Sequence sequence, PssmAlignmentModel model,
+        byte[][] backPointer, Vector gapVector)
     {
         // Backtrace to reconstruct the winning alignment, adding to the beginning of a linked-list
         // to implicitly construct the buffer in order, while we traverse the alignment in reverse.
-        final LinkedList<int[]> buffer = new LinkedList<int[]>();
+        final LinkedList<Vector> buffer = new LinkedList<Vector>();
         final IntList gapList = new IntArrayList(sequence.length());
 
         int i = sequence.length();
@@ -241,7 +240,7 @@ public class FullPssmAligner extends BasePssmAligner
             {
                 case BACKPOINTER_SUBSTITUTION :
                     // Emit
-                    buffer.addFirst(sequence.features(--i));
+                    buffer.addFirst(sequence.elementAt(--i));
                     j--;
                     break;
                 case BACKPOINTER_UNALIGNED_GAP :
@@ -251,7 +250,7 @@ public class FullPssmAligner extends BasePssmAligner
                     break;
                 case BACKPOINTER_PSSM_GAP :
                     // Gap in PSSM
-                    buffer.addFirst(sequence.features(--i));
+                    buffer.addFirst(sequence.elementAt(--i));
                     gapList.add(j);
                     break;
                 default :
@@ -267,8 +266,13 @@ public class FullPssmAligner extends BasePssmAligner
             gapIndices[i] = gapIterator.nextInt();
         }
 
-        return new SequenceAlignment(new SimpleMappedSequence(buffer.toArray(new int[0][]), model.vocabularies()),
-            gapIndices);
+        if (sequence instanceof MultipleVocabularyMappedSequence)
+        {
+            return new SequenceAlignment(new MultipleVocabularyMappedSequence(buffer.toArray(new IntVector[buffer
+                .size()]), model.vocabularies()), gapIndices);
+        }
+        return new SequenceAlignment(new LogLinearMappedSequence(buffer.toArray(new BitVector[buffer.size()]), model
+            .vocabularies()[0]), gapIndices);
     }
 
     @Override
@@ -290,7 +294,7 @@ public class FullPssmAligner extends BasePssmAligner
         sb.append('\n');
         for (int i = 0; i < maxI; i++)
         {
-            sb.append(String.format("%5s |", i > 0 ? vocabulary.map(m_sequence.feature(i - 1, 0)) : ""));
+            sb.append(String.format("%5s |", i > 0 ? vocabulary.map(m_sequence.elementAt(i - 1).getInt(0)) : ""));
             for (int j = 0; j < maxJ; j++)
             {
                 float value = m_array[i][j];

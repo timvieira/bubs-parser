@@ -7,18 +7,16 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 
-
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
-import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.multiple.IterativePairwiseAligner;
+import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.math.linear.Matrix;
 import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
@@ -91,7 +89,8 @@ public class AlignSentences extends BaseCommandlineTool
         for (int i = 0; i < sequences.length; i++)
         {
             // TODO: extract pos from sentence
-            sequences[i] = new SimpleMappedSequence(Strings.extractPosAndHead(sentences.get(i), ruleset), vocabularies);
+            sequences[i] = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sentences.get(i), ruleset),
+                vocabularies);
         }
 
         // Construct and/or read in substitution matrices

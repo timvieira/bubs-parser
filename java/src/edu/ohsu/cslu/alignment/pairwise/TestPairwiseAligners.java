@@ -10,11 +10,17 @@ import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
+import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.math.linear.FloatMatrix;
 import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.math.linear.Vector;
 
 /**
  * Unit tests for pairwise aligners.
+ * 
+ * TODO Implement pairwise alignment model for {@link LogLinearMappedSequence}s. It's quite
+ * reasonable for a {@link SubstitutionAlignmentModel} to calculate the cost of aligning two
+ * log-linear feature vectors.
  * 
  * @author Aaron Dunlop
  * @since Oct 8, 2008
@@ -46,9 +52,14 @@ public class TestPairwiseAligners
     }
 
     @Test
-    public void testVariableLengthDynamicAligner() throws Exception
+    public void testFullDynamicAligner() throws Exception
     {
         FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
+        testPairwiseAligner(aligner);
+    }
+
+    private void testPairwiseAligner(FullDynamicPairwiseAligner aligner)
+    {
         assertEquals("AC--AC", alignStrings(aligner, identityMatrixModel, "ACAC", "ACT-AC"));
         assertEquals("-CTG-", alignStrings(aligner, identityMatrixModel, "CTG", "ACTGA"));
 
@@ -115,7 +126,7 @@ public class TestPairwiseAligners
         }
 
         @Override
-        public float gapInsertionCost(int[] featureVector, int sequenceLength)
+        public float gapInsertionCost(Vector featureVector, int sequenceLength)
         {
             float cost = super.cost(gapVector, featureVector);
             if (sequenceLength >= 6)

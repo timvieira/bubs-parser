@@ -6,18 +6,21 @@ import java.io.Reader;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
-import edu.ohsu.cslu.alignment.CharVocabulary;
+import edu.ohsu.cslu.alignment.LogLinearVocabulary;
+import edu.ohsu.cslu.alignment.pssm.LogLinearAlignmentModel;
 import edu.ohsu.cslu.alignment.pssm.MatrixPssmAlignmentModel;
 import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
+import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.math.linear.FloatMatrix;
+import edu.ohsu.cslu.math.linear.FloatVector;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.math.linear.NumericVector;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -248,7 +251,7 @@ public class MultipleSequenceAlignment implements Serializable
                     final int addend = (i == emphasizedSequence) ? additionalCounts + 1 : 1;
                     for (int f = 0; f < featureCount; f++)
                     {
-                        counts[f].add(sequence.feature(j, featureIndices[f]), j, addend);
+                        counts[f].add(sequence.elementAt(j).getInt(featureIndices[f]), j, addend);
                     }
                 }
             }
@@ -282,6 +285,89 @@ public class MultipleSequenceAlignment implements Serializable
     }
 
     /**
+     * Induces a {@link LogLinearAlignmentModel} from the sequence. Alignment cost vectors for each
+     * column are estimated using maximum likelihood with Laplace smoothing.
+     * 
+     * @param laplacePseudoCounts Laplace smoothing counts for each vocabulary entry
+     * @param scalingVector Weights for each vocabulary entry. If not null, the alignment cost
+     *            vectors are scaled by this vector (if null, the final alignment vectors are left
+     *            un-scaled).
+     * @param gapInsertionCostVector
+     * @return alignment model
+     */
+    public LogLinearAlignmentModel induceLogLinearAlignmentModel(NumericVector laplacePseudoCounts,
+        NumericVector scalingVector, NumericVector gapInsertionCostVector)
+    {
+        final LogLinearVocabulary vocabulary = (LogLinearVocabulary) vocabularies[0];
+        final int columns = length;
+
+        if (laplacePseudoCounts.length() != vocabulary.size())
+        {
+            throw new IllegalArgumentException("Pseudo-count vector length must match vocabulary size");
+        }
+
+        if (gapInsertionCostVector.length() != vocabulary.size())
+        {
+            throw new IllegalArgumentException("Gap insertion-cost vector length must match vocabulary size");
+        }
+
+        // Separate 'total' count for each category in the grammar
+        int[] categoryBoundaries = vocabulary.categoryBoundaries();
+        FloatVector totalCount = new FloatVector(vocabulary.size());
+        int previousBoundary = 0;
+        for (int i = 0; i <= categoryBoundaries.length + 1; i++)
+        {
+            final int nextBoundary = i < categoryBoundaries.length ? categoryBoundaries[i] : vocabulary.size();
+            final float laplaceTotalCount = laplacePseudoCounts.subVector(previousBoundary, nextBoundary - 1).sum();
+            for (int j = previousBoundary; j < nextBoundary; j++)
+            {
+                // The divisor for each category should be the pseudo-counts for that category + the
+                // number of sequences in the MSA
+                totalCount.set(j, laplaceTotalCount + size());
+            }
+
+            previousBoundary = nextBoundary;
+        }
+
+        // Initialize the count vectors with the specified pseudo-counts
+        final NumericVector[] counts = new NumericVector[columns];
+        for (int j = 0; j < columns; j++)
+        {
+            counts[j] = (NumericVector) laplacePseudoCounts.clone();
+        }
+
+        // Count the features present in the alignment
+        for (int i = 0; i < sequences.size(); i++)
+        {
+            LogLinearMappedSequence sequence = (LogLinearMappedSequence) sequences.get(i);
+            if (sequence != null)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    for (int feature : sequence.elementAt(j).values())
+                    {
+                        counts[j].set(feature, counts[j].getFloat(feature) + 1);
+                    }
+                }
+            }
+        }
+
+        // Turn the count vectors into cost vectors
+        final FloatVector[] costVectors = new FloatVector[columns];
+        for (int j = 0; j < columns; j++)
+        {
+            costVectors[j] = (FloatVector) counts[j].elementwiseDivide(totalCount).elementwiseLog().scalarMultiply(-1f);
+
+            if (scalingVector != null)
+            {
+                costVectors[j] = costVectors[j].elementwiseMultiply(scalingVector);
+            }
+        }
+
+        return new LogLinearAlignmentModel(costVectors, vocabulary, gapInsertionCostVector);
+    }
+
+    /**
      * Reads a character-based sequence alignment, such as a DNA, RNA, or protein alignment in the
      * format:
      * 
@@ -296,14 +382,27 @@ public class MultipleSequenceAlignment implements Serializable
      * @return sequence alignment
      * @throws IOException if the read fails
      */
-    public static MultipleSequenceAlignment readCharAlignment(Reader reader, CharVocabulary vocabulary)
+    public static MultipleSequenceAlignment readCharAlignment(Reader reader, AlignmentVocabulary vocabulary)
         throws IOException
     {
         MultipleSequenceAlignment alignment = new MultipleSequenceAlignment();
         BufferedReader br = new BufferedReader(reader);
         for (String line = br.readLine(); line != null; line = br.readLine())
         {
-            alignment.addSequence(vocabulary.mapSequence(line));
+            int[] mappedSequence = new int[line.length()];
+            for (int i = 0; i < line.length(); i++)
+            {
+                mappedSequence[i] = vocabulary.map(line.substring(i, i + 1));
+            }
+
+            if (vocabulary instanceof LogLinearVocabulary)
+            {
+                alignment.addSequence(new LogLinearMappedSequence(mappedSequence, vocabulary));
+            }
+            else
+            {
+                alignment.addSequence(new MultipleVocabularyMappedSequence(mappedSequence, vocabulary));
+            }
         }
         return alignment;
     }
@@ -329,7 +428,7 @@ public class MultipleSequenceAlignment implements Serializable
         BufferedReader br = new BufferedReader(reader);
         for (String line = br.readLine(); line != null; line = br.readLine())
         {
-            alignment.addSequence(new SimpleMappedSequence(line, vocabularies));
+            alignment.addSequence(new MultipleVocabularyMappedSequence(line, vocabularies));
         }
         return alignment;
     }
@@ -337,6 +436,8 @@ public class MultipleSequenceAlignment implements Serializable
     @Override
     public String toString()
     {
+        // TODO: Handle sequences mapped with a LogLinearVocabulary
+
         // Find the maximum token length in each column
         int lineLength = 0;
         String[] formats = new String[length];
@@ -347,14 +448,13 @@ public class MultipleSequenceAlignment implements Serializable
             {
                 for (int i = 0; i < features; i++)
                 {
-                    // Skip un-populated slots
-                    // TODO: Should we include a marker for these positions?
+                    // Skip un-populated slots (we do not currently insert a marker for these slots)
                     if (sequence != null)
                     {
-                        int featureLength = sequence.stringFeature(j, i).length();
-                        if (featureLength > columnLength)
+                        final int sequenceColumnLength = sequence.maxLabelLength(j);
+                        if (sequenceColumnLength > columnLength)
                         {
-                            columnLength = featureLength;
+                            columnLength = sequenceColumnLength;
                         }
                     }
                 }

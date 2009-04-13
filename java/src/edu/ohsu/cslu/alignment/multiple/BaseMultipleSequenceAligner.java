@@ -7,6 +7,7 @@ import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.pairwise.PairwiseAligner;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
+import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.math.linear.Matrix;
 
 /**
@@ -127,7 +128,7 @@ public abstract class BaseMultipleSequenceAligner implements MultipleSequenceAli
         return alignedSequences;
     }
 
-    private void blackoutAlignedSequence(final Matrix distanceMatrix, final MappedSequence[] unalignedSequences,
+    private void blackoutAlignedSequence(final Matrix distanceMatrix, final Sequence[] unalignedSequences,
         final int sequenceIndex)
     {
         final float infinity = distanceMatrix.infinity();

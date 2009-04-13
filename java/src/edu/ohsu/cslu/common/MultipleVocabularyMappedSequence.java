@@ -1,20 +1,19 @@
 package edu.ohsu.cslu.common;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.math.linear.IntMatrix;
+import edu.ohsu.cslu.math.linear.IntVector;
 import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.math.linear.Vector;
 import edu.ohsu.cslu.util.Strings;
 
-
 /**
- * The simplest possible implementation of the {@link MappedSequence} interface. Represents a
- * sequence as a simple int[] array, mapped using a {@link Vocabulary}
+ * The simplest possible implementation of the {@link Sequence} interface. Represents a sequence as
+ * a simple int[] array, mapped using a {@link Vocabulary}
  * 
  * We're using a matrix of m tokens, each with n features, in hopes of better cache performance
  * during processing (since we'll usually be iterating over the length of the sequence and touching
@@ -25,12 +24,12 @@ import edu.ohsu.cslu.util.Strings;
  * 
  *        $Id$
  */
-public final class SimpleMappedSequence implements MappedSequence, Cloneable, Serializable
+public final class MultipleVocabularyMappedSequence implements MappedSequence, Cloneable, Serializable
 {
     private final Vocabulary[] vocabularies;
     private final Matrix matrix;
 
-    public SimpleMappedSequence(final int[] sequence, final Vocabulary vocabulary)
+    public MultipleVocabularyMappedSequence(final int[] sequence, final Vocabulary vocabulary)
     {
         if (sequence.length == 0)
         {
@@ -45,26 +44,40 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
 
     }
 
-    public SimpleMappedSequence(final int[][] sequence, final Vocabulary[] vocabularies)
+    public MultipleVocabularyMappedSequence(final int[][] sequence, final Vocabulary[] vocabularies)
     {
         matrix = new IntMatrix(sequence);
         this.vocabularies = vocabularies;
     }
 
-    public SimpleMappedSequence(final int[][] sequence, final Vocabulary vocabulary)
+    public MultipleVocabularyMappedSequence(final IntVector[] sequence, final Vocabulary[] vocabularies)
+    {
+        matrix = new IntMatrix(sequence.length, sequence[0].length());
+        for (int i = 0; i < sequence.length; i++)
+        {
+            for (int j = 0; j < sequence[i].length(); j++)
+            {
+                matrix.set(i, j, sequence[i].getInt(j));
+            }
+        }
+
+        this.vocabularies = vocabularies;
+    }
+
+    public MultipleVocabularyMappedSequence(final int[][] sequence, final Vocabulary vocabulary)
     {
         matrix = new IntMatrix(sequence);
         this.vocabularies = new Vocabulary[features()];
         Arrays.fill(vocabularies, vocabulary);
     }
 
-    private SimpleMappedSequence(final Matrix matrix, final Vocabulary[] vocabularies)
+    private MultipleVocabularyMappedSequence(final Matrix matrix, final Vocabulary[] vocabularies)
     {
         this.matrix = matrix;
         this.vocabularies = vocabularies;
     }
 
-    public SimpleMappedSequence(final Matrix matrix, final Vocabulary vocabulary)
+    public MultipleVocabularyMappedSequence(final Matrix matrix, final Vocabulary vocabulary)
     {
         this.matrix = matrix;
         this.vocabularies = new AlignmentVocabulary[features()];
@@ -72,7 +85,7 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
     }
 
     /**
-     * Constructs a {@link SimpleMappedSequence} from a bracketed sequence of the form:
+     * Constructs a {@link MultipleVocabularyMappedSequence} from a bracketed sequence of the form:
      * 
      * <pre>
      * '(feature1 feature2...featureN) (feature1 feature2...featureN)...'
@@ -81,7 +94,7 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
      * @param bracketedSequence
      * @param vocabularies
      */
-    public SimpleMappedSequence(String bracketedSequence, AlignmentVocabulary[] vocabularies)
+    public MultipleVocabularyMappedSequence(String bracketedSequence, AlignmentVocabulary[] vocabularies)
     {
         String[][] split = Strings.bracketedTags(bracketedSequence);
         matrix = new IntMatrix(split.length, split[0].length);
@@ -96,7 +109,12 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
         this.vocabularies = vocabularies;
     }
 
-    @Override
+    /**
+     * @param index position in the {@link Sequence}
+     * @param featureIndex feature / {@link Vocabulary}
+     * @return integer representation of the token at the specified index, mapped using the
+     *         {@link Vocabulary} of the specified <code>featureIndex</code>
+     */
     public final int feature(final int index, final int featureIndex)
     {
         return matrix.getInt(index, featureIndex);
@@ -108,10 +126,14 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
         return vocabularies[featureIndex].map(feature(index, featureIndex));
     }
 
-    @Override
-    public final int[] features(final int index)
+    /**
+     * @param index
+     * @return integer representation of the token at the specified index. Each integer represents a
+     *         feature mapped using the {@link Vocabulary} of the same index.
+     */
+    public final Vector elementAt(final int index)
     {
-        return matrix.getIntRow(index);
+        return new IntVector(matrix.getIntRow(index));
     }
 
     @Override
@@ -125,7 +147,9 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
         return stringFeatures;
     }
 
-    @Override
+    /**
+     * @return the vocabulary used to map the specified feature
+     */
     public final Vocabulary vocabulary(final int featureIndex)
     {
         return vocabularies[featureIndex];
@@ -154,7 +178,7 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
      * 
      * @param gapIndices
      */
-    public final MappedSequence insertGaps(final int[] gapIndices)
+    public final MultipleVocabularyMappedSequence insertGaps(final int[] gapIndices)
     {
         if (gapIndices.length == 0)
         {
@@ -183,11 +207,11 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
             }
         }
 
-        return new SimpleMappedSequence(newMatrix, vocabularies);
+        return new MultipleVocabularyMappedSequence(newMatrix, vocabularies);
     }
 
     @Override
-    public final MappedSequence removeAllGaps()
+    public final MultipleVocabularyMappedSequence removeAllGaps()
     {
         final int oldLength = length();
         int gaps = 0;
@@ -215,11 +239,11 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
                 newMatrix.setRow(newJ++, matrix.getIntRow(oldJ));
             }
         }
-        return new SimpleMappedSequence(newMatrix, vocabularies);
+        return new MultipleVocabularyMappedSequence(newMatrix, vocabularies);
     }
 
     @Override
-    public Sequence features(int... features)
+    public MappedSequence retainFeatures(int... features)
     {
         int[][] newSequences = new int[features.length][];
         Vocabulary[] newVocabularies = new Vocabulary[features.length];
@@ -230,19 +254,7 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
         }
 
         // TODO: There's probably a much more efficient way to do this, but it's working.
-        return new SimpleMappedSequence(new IntMatrix(newSequences).transpose(), newVocabularies);
-    }
-
-    @Override
-    public String[] stringSequence(int featureIndex)
-    {
-        // TODO: There might be a more efficient way to do this
-        String[] sequence = new String[length()];
-        for (int i = 0; i < length(); i++)
-        {
-            sequence[i] = stringFeature(i, featureIndex);
-        }
-        return sequence;
+        return new MultipleVocabularyMappedSequence(new IntMatrix(newSequences).transpose(), newVocabularies);
     }
 
     @Override
@@ -250,28 +262,17 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
     {
         if (endIndex == beginIndex)
         {
-            return new SimpleMappedSequence(new int[0][0], vocabularies);
+            return new MultipleVocabularyMappedSequence(new int[0][0], vocabularies);
         }
 
-        return new SimpleMappedSequence(matrix.subMatrix(beginIndex, endIndex - 1, 0, matrix.columns() - 1),
-            vocabularies);
+        return new MultipleVocabularyMappedSequence(
+            matrix.subMatrix(beginIndex, endIndex - 1, 0, matrix.columns() - 1), vocabularies);
     }
 
     @Override
-    public Sequence[] splitIntoSentences()
+    public MappedSequence[] splitIntoSentences()
     {
         throw new UnsupportedOperationException("splitIntoSentences is not implemented");
-    }
-
-    @Override
-    public Iterator<String> iterator()
-    {
-        ArrayList<String> words = new ArrayList<String>(length());
-        for (int i = 0; i < length(); i++)
-        {
-            words.add(stringFeature(i, 0));
-        }
-        return words.iterator();
     }
 
     @Override
@@ -282,12 +283,12 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
             return true;
         }
 
-        if (!(o instanceof SimpleMappedSequence))
+        if (!(o instanceof MultipleVocabularyMappedSequence))
         {
             return false;
         }
 
-        SimpleMappedSequence s = (SimpleMappedSequence) o;
+        MultipleVocabularyMappedSequence s = (MultipleVocabularyMappedSequence) o;
         if (vocabularies.length != s.vocabularies.length)
         {
             return false;
@@ -309,9 +310,9 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
     }
 
     @Override
-    public final MappedSequence clone()
+    public final MultipleVocabularyMappedSequence clone()
     {
-        return new SimpleMappedSequence(matrix.clone(), vocabularies);
+        return new MultipleVocabularyMappedSequence(matrix.clone(), vocabularies);
     }
 
     @Override
@@ -394,7 +395,12 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
         return toColumnString(formats);
     }
 
-    @Override
+    /**
+     * Formats this sequence as a String, using the supplied formatting Strings
+     * 
+     * @param formats
+     * @return String visualization of the sequence
+     */
     public String toColumnString(String[] formats)
     {
         final int length = length();
@@ -415,5 +421,20 @@ public final class SimpleMappedSequence implements MappedSequence, Cloneable, Se
         sb.deleteCharAt(sb.length() - 1);
 
         return sb.toString();
+    }
+
+    @Override
+    public int maxLabelLength(int index)
+    {
+        int maxLength = 0;
+        for (int i = 0; i < features(); i++)
+        {
+            final int length = stringFeature(index, i).length();
+            if (length > maxLength)
+            {
+                maxLength = length;
+            }
+        }
+        return maxLength;
     }
 }

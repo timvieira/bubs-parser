@@ -172,6 +172,10 @@ public abstract class BaseCommandlineTool
                 new HelpFormatter().printHelp(classname + " [options] " + tool.usageArguments(), options);
             }
         }
+        catch (IllegalArgumentException e)
+        {
+            System.err.println(e.getMessage());
+        }
         catch (Exception e)
         {
             e.printStackTrace();

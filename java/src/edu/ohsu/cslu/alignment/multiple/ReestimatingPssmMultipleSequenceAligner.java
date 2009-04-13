@@ -1,43 +1,51 @@
 package edu.ohsu.cslu.alignment.multiple;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
-import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.alignment.pssm.FullPssmAligner;
-import edu.ohsu.cslu.alignment.pssm.MatrixPssmAlignmentModel;
+import edu.ohsu.cslu.alignment.pssm.HmmAlignmentModel;
 import edu.ohsu.cslu.alignment.pssm.PssmSequenceAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.math.linear.NumericVector;
 
 /**
- * Aligns sequences using an HMM. Implemented as a PSSM alignment, in which the PSSM is re-estimated
- * at each iteration, up-weighting the 'closest' already-aligned sequence over the other sequences.
+ * Aligns sequences using a PSSM model re-estimated at each iteration.
  * 
- * TODO: Share more code with {@link BaseMultipleSequenceAligner}
+ * TODO: Share more code with {@link BaseMultipleSequenceAligner} and
+ * {@link HmmMultipleSequenceAligner}.
  * 
  * @author Aaron Dunlop
- * @since Jan 22, 2009
+ * @since Mar 31, 2009
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
+public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequenceAligner
 {
     private final PssmSequenceAligner pssmAligner = new FullPssmAligner();
-    private final int[] laplacePseudoCountsPerToken;
-    private final int upweightingCount;
+    private final NumericVector laplacePseudoCounts;
+    private final NumericVector gapInsertionCostVector;
+
+    // private final int upweightingCount;
 
     // private float upweightingPercentage;
 
-    public HmmMultipleSequenceAligner(int[] laplacePseudoCountsPerToken, int upweightingCount)
+    public ReestimatingPssmMultipleSequenceAligner(NumericVector laplacePseudoCounts,
+        NumericVector gapInsertionCostVector)
     {
-        this.laplacePseudoCountsPerToken = laplacePseudoCountsPerToken;
-        this.upweightingCount = upweightingCount;
+        this.laplacePseudoCounts = laplacePseudoCounts;
+        this.gapInsertionCostVector = gapInsertionCostVector;
     }
 
     @Override
     public MultipleSequenceAlignment align(final MappedSequence[] sequences, final Matrix distanceMatrix,
         final AlignmentModel alignmentModel)
+    {
+        return align(sequences, distanceMatrix);
+    }
+
+    public MultipleSequenceAlignment align(final MappedSequence[] sequences, final Matrix distanceMatrix)
     {
         final MappedSequence[] unalignedSequences = new MappedSequence[sequences.length];
         System.arraycopy(sequences, 0, unalignedSequences, 0, sequences.length);
@@ -61,6 +69,7 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
 
         MultipleSequenceAlignment alignedSequences = new MultipleSequenceAlignment();
 
+        // TODO: Bug
         int firstSequenceToAlign = distanceMatrix.argMin()[0];
 
         // Mark all distances to/from the aligned sequence as infinite, so we won't try to align
@@ -71,20 +80,13 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
         unalignedSequences[firstSequenceToAlign] = null;
         int sequencesAligned = 1;
 
-        final int[] featureIndices = new int[alignmentModel.features()];
-        for (int i = 0; i < featureIndices.length; i++)
-        {
-            featureIndices[i] = i;
-        }
-
         // Once all sequences are aligned, we can stop
         while (sequencesAligned < unalignedSequences.length)
         {
-            // Find the indices of the closest pair in which sequence 1 is already aligned and
-            // sequence 2 is not
+            // Find the sequence closest to an already-aligned sequence
             // TODO: This search could probably be made more efficient. As it is, it's O(n^2 for
             // each sequence aligned - O(n^3) total.
-            int unalignedIndex = 1, alignedIndex = 0;
+            int unalignedIndex = 1;
             float min = Float.POSITIVE_INFINITY;
             for (int i = 0; i < distanceMatrix.rows(); i++)
             {
@@ -99,14 +101,12 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
                             if (unalignedSequences[j] != null)
                             {
                                 unalignedIndex = i;
-                                alignedIndex = j;
                                 min = distance;
                             }
                         }
                         else if (unalignedSequences[j] != null)
                         {
                             unalignedIndex = j;
-                            alignedIndex = i;
                             min = distance;
                         }
                     }
@@ -116,36 +116,32 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
             System.out.format("%d : Aligning sentence %d (current alignment length %d)\n", sequencesAligned,
                 unalignedIndex, alignedSequences.length());
 
-            // Estimate a new PSSM using Laplace smoothing
-            // TODO: HEAD/NONHEAD gap cost should be a parameter
-            final MatrixPssmAlignmentModel pssmAlignmentModel = (MatrixPssmAlignmentModel) alignedSequences
-                .inducePssmAlignmentModel(laplacePseudoCountsPerToken, featureIndices, alignedIndex, upweightingCount,
-                    new boolean[] {false, false, true}, 10f);
+            // Estimate a new PSSM
+            final HmmAlignmentModel hmmAlignmentModel = alignedSequences.induceLogLinearAlignmentModel(
+                laplacePseudoCounts, null, gapInsertionCostVector);
 
-            int pssmHeadColumn = -1;
-            Matrix pssmHeadCostMatrix = pssmAlignmentModel.costMatrix(2);
-            for (int j = 0; j < pssmAlignmentModel.columns(); j++)
-            {
-                if (!Float.isInfinite(pssmHeadCostMatrix.getFloat(1, j)))
-                {
-                    if (pssmHeadColumn >= 0)
-                    {
-                        System.err.format("Mismatched Head Columns: %d, %d\n", pssmHeadColumn, j);
-                    }
-                    else
-                    {
-                        pssmHeadColumn = j;
-                    }
-                }
-            }
-            System.out.println("PSSM Head Column: " + pssmHeadColumn);
-
-            pssmAlignmentModel.setSubstitutionAlignmentModel((SubstitutionAlignmentModel) alignmentModel);
+            // int pssmHeadColumn = -1;
+            // Matrix pssmHeadCostMatrix = pssmAlignmentModel.costMatrix(2);
+            // for (int j = 0; j < pssmAlignmentModel.columns(); j++)
+            // {
+            // if (!Float.isInfinite(pssmHeadCostMatrix.getFloat(1, j)))
+            // {
+            // if (pssmHeadColumn >= 0)
+            // {
+            // System.err.format("Mismatched Head Columns: %d, %d\n", pssmHeadColumn, j);
+            // }
+            // else
+            // {
+            // pssmHeadColumn = j;
+            // }
+            // }
+            // }
+            // System.out.println("PSSM Head Column: " + pssmHeadColumn);
 
             // The first sequence in the pair is already aligned but the second isn't. Align
             // the unaligned sequence with the newly induced PSSM
             SequenceAlignment alignment = pssmAligner.alignWithGaps(unalignedSequences[unalignedIndex],
-                pssmAlignmentModel, featureIndices);
+                hmmAlignmentModel);
 
             // Update already aligned sequences to include gaps where needed. For the moment,
             // we'll skip re-computing distance metrics...
@@ -156,6 +152,7 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
 
             sequencesAligned++;
 
+            // System.out.println(alignedSequences.toString());
             blackoutAlignedSequence(distanceMatrix, unalignedSequences, unalignedIndex);
         }
         return alignedSequences;
@@ -177,4 +174,5 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
             }
         }
     }
+
 }

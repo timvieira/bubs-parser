@@ -9,7 +9,6 @@ import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.math.linear.FloatMatrix;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 
-
 /**
  * Models the training data, adding in the specified number of 'pseudo' counts. Specifying 0 yields
  * a Maximum Likelihood model.
@@ -41,7 +40,8 @@ public final class LaplaceModel extends MatrixPssmAlignmentModel
         IntMatrix counts = new IntMatrix(vocabulary.size(), columns, false);
 
         countLine(vocabulary, line, columns, counts);
-        int totalCount = pseudoCounts;
+        // We already counted one line
+        int totalCount = 1 + pseudoCounts;
 
         for (line = br.readLine(); line != null; line = br.readLine())
         {
@@ -60,7 +60,6 @@ public final class LaplaceModel extends MatrixPssmAlignmentModel
         {
             for (int j = 0; j < columns; j++)
             {
-                // TODO: scalarAdd() in Matrix hierarchy?
                 matrices[0].set(i, j, (float) -Math.log((counts.getFloat(i, j) + pseudoCountsPerChar) / totalCount));
             }
         }

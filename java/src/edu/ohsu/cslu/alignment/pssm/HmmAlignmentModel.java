@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.pssm;
 
+import edu.ohsu.cslu.math.linear.Vector;
+
 /**
  * Implements a hybrid PSSM / Substitution Matrix alignment model.
  * 
@@ -20,6 +22,6 @@ public interface HmmAlignmentModel extends PssmAlignmentModel
      * @param featureVector The features which would be aligned with the newly-inserted gap
      * @return Cost of gap insertion
      */
-    public float pssmGapInsertionCost(int[] featureVector);
+    public float pssmGapInsertionCost(Vector featureVector);
 
 }

@@ -16,7 +16,7 @@ import java.io.Writer;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public final class PackedIntVector extends BaseVector implements Vector
+public final class PackedIntVector extends BaseNumericVector
 {
     // These 5 fields and constants must be modified to convert storage from int to long.
     // Preliminary

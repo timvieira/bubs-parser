@@ -10,7 +10,6 @@ import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.math.linear.Matrix;
 
-
 public class PssmAligner implements MultipleSequenceAligner
 {
     private final BasePssmAligner aligner;
@@ -23,7 +22,8 @@ public class PssmAligner implements MultipleSequenceAligner
     // TODO: PssmAligner doesn't need a distance matrix...
 
     @Override
-    public MultipleSequenceAlignment align(MappedSequence[] unalignedSequences, Matrix distanceMatrix, AlignmentModel alignmentModel)
+    public MultipleSequenceAlignment align(MappedSequence[] unalignedSequences, Matrix distanceMatrix,
+        AlignmentModel alignmentModel)
     {
         MultipleSequenceAlignment alignedSequences = new MultipleSequenceAlignment();
         for (int i = 0; i < unalignedSequences.length; i++)

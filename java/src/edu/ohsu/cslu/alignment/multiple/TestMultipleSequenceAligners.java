@@ -11,7 +11,7 @@ import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 import edu.ohsu.cslu.math.linear.Matrix;
 import edu.ohsu.cslu.tools.CalculateDistances;
@@ -100,10 +100,12 @@ public class TestMultipleSequenceAligners
     @Test
     public void testLinguisticAlignment() throws Exception
     {
-        MappedSequence sequence1 = new SimpleMappedSequence(Strings.extractPos(sampleSentence4), linguisticVocabularies);
-        MappedSequence sequence2 = new SimpleMappedSequence(Strings.extractPos(sampleSentence16),
+        MappedSequence sequence1 = new MultipleVocabularyMappedSequence(Strings.extractPos(sampleSentence4),
             linguisticVocabularies);
-        MappedSequence sequence3 = new SimpleMappedSequence(Strings.extractPos(sampleSentence8), linguisticVocabularies);
+        MappedSequence sequence2 = new MultipleVocabularyMappedSequence(Strings.extractPos(sampleSentence16),
+            linguisticVocabularies);
+        MappedSequence sequence3 = new MultipleVocabularyMappedSequence(Strings.extractPos(sampleSentence8),
+            linguisticVocabularies);
 
         MultipleSequenceAligner aligner = new IterativePairwiseAligner();
         Matrix distanceMatrix = new IntMatrix(new int[][] { {0, 1}, {1, 0}});
@@ -112,8 +114,8 @@ public class TestMultipleSequenceAligners
 
         StringBuilder sb = new StringBuilder(512);
 
-        sb.append("       NN | AUX |        - | TO |    VB |    IN |             JJ |     CD | . |\n");
-        sb.append(" Delivery |  is |        - | to | begin |    in |          early |   1991 | . |\n");
+        sb.append("       NN | AUX |       _- | TO |    VB |    IN |             JJ |     CD | . |\n");
+        sb.append(" Delivery |  is |       _- | to | begin |    in |          early |   1991 | . |\n");
         sb.append("-------------------------------------------------------------------------------\n");
         sb.append("      JJS | AUX |      VBN | TO |    VB |    IN |             JJ |    NNS | . |\n");
         sb.append("     Most | are | expected | to |  fall | below | previous-month | levels | . |\n");
@@ -126,21 +128,21 @@ public class TestMultipleSequenceAligners
 
         sb = new StringBuilder(1024);
         sb
-            .append("   - |       NN |    - | AUX |        - | TO |    VB |    IN |             JJ |           CD | . |\n");
+            .append("  _- |       NN |   _- | AUX |       _- | TO |    VB |    IN |             JJ |           CD | . |\n");
         sb
-            .append("   - | Delivery |    - |  is |        - | to | begin |    in |          early |         1991 | . |\n");
-        sb
-            .append("--------------------------------------------------------------------------------------------------\n");
-        sb
-            .append("   - |      JJS |    - | AUX |      VBN | TO |    VB |    IN |             JJ |          NNS | . |\n");
-        sb
-            .append("   - |     Most |    - | are | expected | to |  fall | below | previous-month |       levels | . |\n");
+            .append("  _- | Delivery |   _- |  is |       _- | to | begin |    in |          early |         1991 | . |\n");
         sb
             .append("--------------------------------------------------------------------------------------------------\n");
         sb
-            .append("  DT |       NN |   MD | AUX |      VBN |  - |     - |    IN |              - |          NNP | . |\n");
+            .append("  _- |      JJS |   _- | AUX |      VBN | TO |    VB |    IN |             JJ |          NNS | . |\n");
         sb
-            .append(" The |  venture | will |  be |    based |  - |     - |    in |              - | Indianapolis | . |\n");
+            .append("  _- |     Most |   _- | are | expected | to |  fall | below | previous-month |       levels | . |\n");
+        sb
+            .append("--------------------------------------------------------------------------------------------------\n");
+        sb
+            .append("  DT |       NN |   MD | AUX |      VBN | _- |    _- |    IN |             _- |          NNP | . |\n");
+        sb
+            .append(" The |  venture | will |  be |    based | _- |    _- |    in |             _- | Indianapolis | . |\n");
         sb
             .append("--------------------------------------------------------------------------------------------------\n");
         assertEquals(sb.toString(), sequenceAlignment.toString());

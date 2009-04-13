@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
-import edu.ohsu.cslu.common.MappedSequence;
+import edu.ohsu.cslu.common.Sequence;
 
 
 /**
@@ -26,6 +26,6 @@ public interface PairwiseAligner
      * 
      * @return Aligned version of string, with gaps inserted as appropriate.
      */
-    public SequenceAlignment alignPair(MappedSequence unaligned, MappedSequence aligned, AlignmentModel model);
+    public SequenceAlignment alignPair(Sequence unaligned, Sequence aligned, AlignmentModel model);
 
 }

@@ -54,6 +54,7 @@
 		<!-- If the build directory doesn't already exist, create it -->
 		<mkdir dir="${dir.dist}" />
 
+		<!-- TODO Update to recognize Windows vs Unix and find the right gcc path -->
 		<cc name="gcc" outtype="executable" outfile="${dir.dist}/evalb" debug="true">
 			<fileset dir="c/evalb" includes="*.c" />
 		</cc>
@@ -129,6 +130,13 @@
 		<antcall target="package.tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.SelectFeatures" />
 			<param name="tool-name" value="select-features" />
+		</antcall>
+	</target>
+
+	<target name="create-vector" depends="compile.java" description="Package vector creation tool">
+		<antcall target="package.tool">
+			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.CreateVectorFromVocabulary" />
+			<param name="tool-name" value="create-vector" />
 		</antcall>
 	</target>
 
@@ -224,7 +232,7 @@
     ========================================================================
     -->
 	<target name="dist"
-	        depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,compile.native"
+	        depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,create-vector,compile.native"
 	        description="Package all NLP application">
 	</target>
 
