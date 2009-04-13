@@ -7,13 +7,23 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 
+import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 
 /**
- * Induces {@link Vocabulary} instances given an input in bracketed format. The tokens appear in the
- * resulting vocabularies in the same order they occur in the input document.
+ * Induces {@link Vocabulary} instances given an input in bracketed format.
+ * 
+ * The default behavior is to induce a separate vocabulary for each sequential tag - e.g.
+ * "(DT The) (NN boy)" would produce 2 vocabularies, one for parts-of-speech and one for words.
+ * 
+ * Alternatively, if invoked with the '-u' switch, {@link InduceMappedVocabularies} will induce a
+ * single logLinear vocabulary covering all tokens encountered. This mode is especially useful for
+ * binary (log-linear) modeling.
+ * 
+ * In either case, the tokens appear in the resulting vocabularies in the same order they occur in
+ * the input document.
  * 
  * TODO: Support square-bracketed and slash-delimited input.
  * 
@@ -27,6 +37,7 @@ import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 public class InduceMappedVocabularies extends BaseCommandlineTool
 {
     private int tag = -1;
+    private boolean logLinear;
 
     public static void main(String[] args)
     {
@@ -36,6 +47,15 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
     @Override
     public void execute() throws Exception
     {
+        if (logLinear)
+        {
+            LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(new BufferedReader(new InputStreamReader(
+                System.in)));
+            System.out.println(vocabulary.toString());
+            return;
+        }
+
+        // Induce separate vocabularies for each tag in a set of tokens
         SimpleVocabulary[] vocabularies = SimpleVocabulary.induceVocabularies(new BufferedReader(new InputStreamReader(
             System.in)));
 
@@ -60,6 +80,8 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
 
         options.addOption(OptionBuilder.hasArg().withArgName("tag").withDescription("tag number (default 1)").create(
             't'));
+        options.addOption(OptionBuilder.withDescription("Log-Linear - create a single vocabulary mapping all tokens")
+            .create('l'));
 
         return options;
     }
@@ -67,7 +89,8 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
     @Override
     public void setToolOptions(CommandLine commandLine)
     {
-        tag = commandLine.hasOption('t') ? Integer.parseInt(commandLine.getOptionValue('t')) - 1 : 0;
+        tag = commandLine.hasOption('t') ? Integer.parseInt(commandLine.getOptionValue('t')) - 1 : -1;
+        logLinear = commandLine.hasOption('l');
     }
 
     @Override

@@ -9,7 +9,6 @@ import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.math.linear.Matrix;
 
-
 /**
  * TODO: Document interface
  * 
@@ -20,5 +19,6 @@ import edu.ohsu.cslu.math.linear.Matrix;
  */
 public interface MultipleSequenceAligner
 {
-    public MultipleSequenceAlignment align(MappedSequence[] unalignedSequences, Matrix distanceMatrix, AlignmentModel alignmentModel) throws IOException;
+    public MultipleSequenceAlignment align(MappedSequence[] unalignedSequences, Matrix distanceMatrix,
+        AlignmentModel alignmentModel) throws IOException;
 }

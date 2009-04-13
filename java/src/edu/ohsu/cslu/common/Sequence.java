@@ -1,20 +1,27 @@
 package edu.ohsu.cslu.common;
 
+import edu.ohsu.cslu.math.linear.Vector;
+
 /**
  * Represents an ordered sequence of tokens, possibly with multiple features for each token. The
- * first feature is generally assumed to be a word; other features such as POS tags, HEAD tags, or
- * segment BEGIN/CONTINUE/END are possible.
+ * first feature is generally assumed to be a word; other features such as POS tags, head_verb tags,
+ * or segment BEGIN/CONTINUE/END are possible.
+ * 
+ * TODO: Implement Iterable<Vector>? or Iterator<String> iterator(featureIndex)?
  * 
  * @author Aaron Dunlop
  * @since Dec 15, 2008
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public interface Sequence extends Iterable<String>
+public interface Sequence
 {
     /**
      * @param index
      * @return the String representation of the token at the specified index
+     * 
+     *         TODO: This doesn't make a lot of sense for FeatureMappedSequence - we'll very often
+     *         have to return null
      */
     public String stringFeature(int index, int featureIndex);
 
@@ -23,6 +30,12 @@ public interface Sequence extends Iterable<String>
      * @return the String representation of the token at the specified index
      */
     public String[] stringFeatures(int index);
+
+    /**
+     * @param index
+     * @return element at the specified index
+     */
+    public Vector elementAt(int index);
 
     /**
      * @return the length of the sequence
@@ -38,7 +51,7 @@ public interface Sequence extends Iterable<String>
      * @param features feature indices
      * @return a copy of this sequence containing only the specified features.
      */
-    public Sequence features(int... features);
+    public Sequence retainFeatures(int... features);
 
     /**
      * Returns a new sequence that is a subsequence of this sequence.
@@ -53,8 +66,6 @@ public interface Sequence extends Iterable<String>
      */
     public Sequence subSequence(int beginIndex, int endIndex);
 
-    public String[] stringSequence(int featureIndex);
-
     // /**
     // * Inserts the specified features at the specified location.
     // *
@@ -62,7 +73,7 @@ public interface Sequence extends Iterable<String>
     // * @param index
     // * @return the new sequence created
     // */
-    // public TokenSequence insert(String[] features, int index);
+    // public Sequence insert(String[] features, int index);
 
     /**
      * Returns the sequence formatted using parenthesis-delimited brackets (e.g.
@@ -88,4 +99,18 @@ public interface Sequence extends Iterable<String>
      * @return sentences
      */
     public Sequence[] splitIntoSentences();
+
+    /**
+     * Returns a new sequence with gaps inserted at the specified indices
+     * 
+     * @param gapIndices
+     * @return a copy of this sequence with gaps inserted at the specified indices
+     */
+    public Sequence insertGaps(int[] gapIndices);
+
+    /**
+     * @return a copy of this sequence with any gaps removed
+     */
+    public Sequence removeAllGaps();
+
 }

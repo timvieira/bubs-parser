@@ -3,10 +3,10 @@ package edu.ohsu.cslu.alignment.bio;
 import java.io.IOException;
 import java.io.Writer;
 
-
 import edu.ohsu.cslu.alignment.CharVocabulary;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.math.linear.IntVector;
 import edu.ohsu.cslu.util.Math;
 
 /**
@@ -84,7 +84,7 @@ public class DnaVocabulary implements CharVocabulary
         {
             mappedSequence[i] = mapCharacter(sequence.charAt(i));
         }
-        return new SimpleMappedSequence(mappedSequence, this);
+        return new MultipleVocabularyMappedSequence(mappedSequence, this);
     }
 
     public String mapSequence(MappedSequence sequence)
@@ -92,7 +92,7 @@ public class DnaVocabulary implements CharVocabulary
         char[] mappedSequence = new char[sequence.length()];
         for (int j = 0; j < mappedSequence.length; j++)
         {
-            mappedSequence[j] = mapIndex(sequence.feature(j, 0));
+            mappedSequence[j] = mapIndex(((IntVector) sequence.elementAt(j)).getInt(0));
         }
         return new String(mappedSequence);
     }

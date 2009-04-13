@@ -6,10 +6,11 @@ import edu.ohsu.cslu.common.MappedSequence;
  * A character-based {@link AlignmentVocabulary} for a particular domain (e.g. A, C, G, and T for
  * DNA).
  * 
+ * TODO: Remove
+ * 
  * @author Aaron Dunlop
  * @since Jul 4, 2008
  * 
- *        TODO: Add a 'gap' character or string
  * 
  *        $Id$
  */

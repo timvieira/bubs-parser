@@ -5,6 +5,14 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
 
+/**
+ * Implements functionality common to all {@link Vector} implementations.
+ * 
+ * @author Aaron Dunlop
+ * @since Apr 1, 2009
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public abstract class BaseVector implements Vector, Serializable
 {
     protected int length;
@@ -156,6 +164,10 @@ public abstract class BaseVector implements Vector, Serializable
 
     public Vector elementwiseMultiply(Vector v)
     {
+        // TODO: The return-types of various Vector class's elementwiseMultiply methods are somewhat
+        // inconsistent. Think through the appropriate return-types for add(Vector),
+        // elementwiseMultiply, and elementwiseDivide.
+
         if (v.length() != length && !(v instanceof SparseBitVector && v.length() < length))
         {
             throw new IllegalArgumentException("Vector length mismatch");

@@ -12,7 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Unit tests shared by all vector test classes
+ * Unit tests common to all {@link Vector} implementations
  * 
  * @author Aaron Dunlop
  * @since Dec 8, 2008

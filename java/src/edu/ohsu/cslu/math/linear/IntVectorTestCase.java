@@ -11,7 +11,7 @@ import static junit.framework.Assert.fail;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class IntVectorTestCase extends VectorTestCase
+public abstract class IntVectorTestCase extends NumericVectorTestCase
 {
     @Override
     public void testVectorAdd() throws Exception

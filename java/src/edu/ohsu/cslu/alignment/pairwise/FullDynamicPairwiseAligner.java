@@ -7,13 +7,26 @@ import it.unimi.dsi.fastutil.ints.IntListIterator;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
-import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.common.Vocabulary;
+import edu.ohsu.cslu.math.linear.IntVector;
+import edu.ohsu.cslu.math.linear.Vector;
 
+/**
+ * Implements {@link PairwiseAligner} using standard dynamic-programming algorithm. Stores the
+ * entire DP array so that {@link #toString()} can display all costs and back-pointers.
+ * 
+ * TODO Implement a Linear-space version (which of course could not provide the toString()
+ * functionality, but should run slightly faster and require less memory).
+ * 
+ * @author Aaron Dunlop
+ * @since Apr 11, 2009
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements PairwiseAligner
 {
     // 0 = substitution, 1 = gap in unaligned sequence, 2 = gap in already-aligned sequence
@@ -23,7 +36,7 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
 
     private byte[][] m_backpointer;
 
-    public SequenceAlignment alignPair(MappedSequence unaligned, MappedSequence aligned, final AlignmentModel model)
+    public SequenceAlignment alignPair(Sequence unaligned, Sequence aligned, final AlignmentModel model)
     {
         m_aligned = aligned;
         m_unaligned = unaligned;
@@ -47,7 +60,7 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
         for (int j = 1; j < jSize; j++)
         {
             final int prevJ = j - 1;
-            edits[0][j] = edits[0][prevJ] + subModel.gapInsertionCost(aligned.features(prevJ), currentAlignmentLength); // GAP_COST;
+            edits[0][j] = edits[0][prevJ] + subModel.gapInsertionCost(aligned.elementAt(prevJ), currentAlignmentLength); // GAP_COST;
             backpointer[0][j] = BACKPOINTER_UNALIGNED_GAP;
         }
 
@@ -55,7 +68,7 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
         for (int i = 1; i < iSize; i++)
         {
             final int prevI = i - 1;
-            edits[i][0] = edits[prevI][0] + subModel.gapInsertionCost(unaligned.features(prevI), unalignedLength); // GAP_COST;
+            edits[i][0] = edits[prevI][0] + subModel.gapInsertionCost(unaligned.elementAt(prevI), unalignedLength); // GAP_COST;
             backpointer[i][0] = BACKPOINTER_ALIGNED_GAP;
         }
 
@@ -67,12 +80,12 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
 
             final float[] currentIEdits = edits[i];
             final float[] previousIEdits = edits[prevI];
-            final int[] previousUnaligned = unaligned.features(prevI);
+            final Vector previousUnaligned = unaligned.elementAt(prevI);
 
             for (int j = 1; j < jSize; j++)
             {
                 final int prevJ = j - 1;
-                final int[] previousAligned = aligned.features(prevJ);
+                final Vector previousAligned = aligned.elementAt(prevJ);
 
                 // Inserting a gap into unaligned sequence
                 final float f1 = currentIEdits[prevJ] + subModel.gapInsertionCost(previousAligned, unalignedLength);
@@ -112,11 +125,10 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
 
         // Backtrace to reconstruct the winning alignment, adding to the beginning of a linked-list
         // to implicitly construct the buffer in order, while we traverse the alignment in reverse.
-        final LinkedList<int[]> buffer = new LinkedList<int[]>();
+        final LinkedList<Vector> buffer = new LinkedList<Vector>();
         final IntList gapList = new IntArrayList(unaligned.length());
 
-        final int[] gapVector = new int[unaligned.features()];
-        Arrays.fill(gapVector, SubstitutionAlignmentModel.GAP_INDEX);
+        final IntVector gapVector = new IntVector(unaligned.features(), SubstitutionAlignmentModel.GAP_INDEX);
 
         int i = unaligned.length();
         int j = aligned.length();
@@ -126,7 +138,7 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
             {
                 case BACKPOINTER_SUBSTITUTION :
                     // Match
-                    buffer.addFirst(unaligned.features(--i));
+                    buffer.addFirst(unaligned.elementAt(--i));
                     j--;
                     break;
                 case BACKPOINTER_UNALIGNED_GAP :
@@ -136,7 +148,7 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
                     break;
                 case BACKPOINTER_ALIGNED_GAP :
                     // Gap in aligned sequence
-                    buffer.addFirst(unaligned.features(--i));
+                    buffer.addFirst(unaligned.elementAt(--i));
                     gapList.add(j);
                     break;
                 default :
@@ -152,8 +164,8 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
             gapIndices[i] = gapIterator.nextInt();
         }
 
-        return new SequenceAlignment(new SimpleMappedSequence(buffer.toArray(new int[0][]), model.vocabularies()),
-            gapIndices);
+        return new SequenceAlignment(new MultipleVocabularyMappedSequence(buffer.toArray(new IntVector[buffer.size()]),
+            model.vocabularies()), gapIndices);
     }
 
     @Override
@@ -169,12 +181,12 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
         sb.append("       ");
         for (int j = 0; j < maxJ; j++)
         {
-            sb.append(String.format("%9s |", j > 0 ? vocabulary.map(m_aligned.feature(j - 1, 0)) : ""));
+            sb.append(String.format("%9s |", j > 0 ? vocabulary.map(m_aligned.elementAt(j - 1).getInt(0)) : ""));
         }
         sb.append('\n');
         for (int i = 0; i < maxI; i++)
         {
-            sb.append(String.format("%5s |", i > 0 ? vocabulary.map(m_unaligned.feature(i - 1, 0)) : ""));
+            sb.append(String.format("%5s |", i > 0 ? vocabulary.map(m_unaligned.elementAt(i - 1).getInt(0)) : ""));
             for (int j = 0; j < maxJ; j++)
             {
                 float value = m_costs[i][j];

@@ -5,12 +5,12 @@ import org.junit.runners.Suite;
 
 import edu.ohsu.cslu.alignment.multiple.ProfileMultipleSequenceAligners;
 import edu.ohsu.cslu.alignment.multiple.TestMultipleSequenceAligners;
-import edu.ohsu.cslu.alignment.multiple.TestSequenceAlignment;
+import edu.ohsu.cslu.alignment.multiple.TestMultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.pairwise.TestPairwiseAligners;
 import edu.ohsu.cslu.alignment.pairwise.TestPairwiseLinguisticAlignment;
 import edu.ohsu.cslu.alignment.pssm.ProfileGlobalSequenceAligners;
 import edu.ohsu.cslu.alignment.pssm.TestPssmAligners;
-
+import edu.ohsu.cslu.alignment.tools.TestInduceMappedVocabularies;
 
 /**
  * Alignment test suite.
@@ -21,9 +21,10 @@ import edu.ohsu.cslu.alignment.pssm.TestPssmAligners;
  *        $Id$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses( {TestSimpleVocabulary.class, TestPssmAligners.class,
-                      ProfileGlobalSequenceAligners.class, TestSequenceAlignment.class,
+@Suite.SuiteClasses( {TestSimpleVocabulary.class, TestLogLinearVocabulary.class, TestPssmAligners.class,
+                      ProfileGlobalSequenceAligners.class, TestMultipleSequenceAlignment.class,
                       TestMultipleSequenceAligners.class, ProfileMultipleSequenceAligners.class,
-                      TestPairwiseAligners.class, TestPairwiseLinguisticAlignment.class})
+                      TestPairwiseAligners.class, TestPairwiseLinguisticAlignment.class,
+                      TestInduceMappedVocabularies.class})
 public class AllAlignmentTests
 {}

@@ -1,15 +1,19 @@
 package edu.ohsu.cslu.alignment;
 
-
-import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
+import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.common.Vocabulary;
 
 /**
- * A model used for aligning sequences with one another. The two basic alignment approaches are a
- * profile-based alignment such as {@link PssmAlignmentModel}, in which each token has a probability
- * of occurrence in each column, and a substitution-based alignment model such as
- * {@link SubstitutionAlignmentModel} in which each insertion, deletion, and substitution is
- * penalized by a cost.
+ * A model used for aligning sequences with one another.
+ * 
+ * The responsibilities of an {@link AlignmentModel} is to assign a cost to aligning a particular
+ * token (or a set of features representing a token) at each point in the dynamic alignment process.
+ * 
+ * For a column-based alignment (i.e., when aligning a new {@link Sequence} with an existing MSA),
+ * that cost will depend on the feature vector and on the column index.
+ * 
+ * For a pairwise alignment (i.e., when aligning one {@link Sequence} with another), that cost will
+ * depend on comparing a pair of feature vectors from the two sequences.
  * 
  * @author Aaron Dunlop
  * @since Oct 10, 2008

@@ -14,7 +14,7 @@ import java.util.Arrays;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class FloatVector extends BaseVector
+public class FloatVector extends BaseNumericVector
 {
     private final static long serialVersionUID = 379752896212698724L;
 
@@ -44,6 +44,13 @@ public class FloatVector extends BaseVector
     public FloatVector add(Vector v)
     {
         return (FloatVector) super.add(v);
+    }
+
+    /** Type-strengthen return-type */
+    @Override
+    public FloatVector elementwiseMultiply(Vector v)
+    {
+        return (FloatVector) super.elementwiseMultiply(v);
     }
 
     @Override

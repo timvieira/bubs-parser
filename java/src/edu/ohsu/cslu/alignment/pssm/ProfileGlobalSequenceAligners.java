@@ -34,7 +34,7 @@ public class ProfileGlobalSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"d820", "16141"})
+    @PerformanceTest( {"d820", "12485"})
     public void profileFullDynamicAligner() throws IOException
     {
         PssmAlignmentModel model = new LaplaceModel(new StringReader(SMALL_TRAINING_SET), new DnaVocabulary(), 6, true);

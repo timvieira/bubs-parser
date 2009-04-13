@@ -7,21 +7,20 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 
-
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
-import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.multiple.IterativePairwiseAligner;
+import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.pssm.LinearPssmAligner;
 import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
+import edu.ohsu.cslu.math.linear.IntVector;
 import edu.ohsu.cslu.math.linear.Matrix;
 import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.narytree.MsaHeadPercolationRuleset;
@@ -93,7 +92,8 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
         MappedSequence[] sequences = new MappedSequence[sentences.size()];
         for (int i = 0; i < sequences.length; i++)
         {
-            sequences[i] = new SimpleMappedSequence(Strings.extractPosAndHead(sentences.get(i), ruleset), vocabularies);
+            sequences[i] = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sentences.get(i), ruleset),
+                vocabularies);
         }
 
         // Construct and/or read in substitution matrices
@@ -146,7 +146,7 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
         float headP = Float.MAX_VALUE;
         for (int j = 0; j < pssmAlignmentModel.columns(); j++)
         {
-            float negativeLogP = pssmAlignmentModel.negativeLogP(new int[] {1, 1, 1}, j, new int[] {2});
+            float negativeLogP = pssmAlignmentModel.cost(new IntVector(new int[] {1, 1, 1}), j, new int[] {2});
             if (negativeLogP < headP)
             {
                 headP = negativeLogP;
@@ -166,8 +166,8 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
 
         for (String line = devSetReader.readLine(); line != null; line = devSetReader.readLine())
         {
-            MappedSequence unalignedSequence = new SimpleMappedSequence(Strings.extractPosAndHead(line, ruleset),
-                vocabularies);
+            MappedSequence unalignedSequence = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(line,
+                ruleset), vocabularies);
             MappedSequence alignedSequence = pssmAligner.align(unalignedSequence, pssmAlignmentModel, devSetFeatures);
             devAlignment.addSequence(alignedSequence);
         }
@@ -185,7 +185,7 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
         int correct = 0;
         for (int i = 0; i < sequenceAlignment.size(); i++)
         {
-            if (headColumn(sequenceAlignment.get(i)) == column)
+            if (headColumn((MultipleVocabularyMappedSequence) sequenceAlignment.get(i)) == column)
             {
                 correct++;
             }
@@ -193,7 +193,7 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
         return correct;
     }
 
-    private int headColumn(MappedSequence sequence)
+    private int headColumn(MultipleVocabularyMappedSequence sequence)
     {
         for (int j = 0; j < sequence.length(); j++)
         {

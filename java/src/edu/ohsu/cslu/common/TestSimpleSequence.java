@@ -64,18 +64,18 @@ public class TestSimpleSequence
     }
 
     /**
-     * Tests the {@link SimpleMappedSequence#features(int[])} method.
+     * Tests the {@link MultipleVocabularyMappedSequence#retainFeatures(int...)} method.
      * 
      * @throws Exception if something bad happens
      */
     @Test
     public void testFeatures() throws Exception
     {
-        assertEquals(sequence1, sequence1.features(new int[] {0, 1}));
+        assertEquals(sequence1, sequence1.retainFeatures(new int[] {0, 1}));
 
-        assertEquals("DT NNS MD VB NN NNS VBN IN NNS .", sequence1.features(new int[] {1}).toSlashSeparatedString());
-        assertEquals("The computers will display stock prices selected by users .", sequence1.features(new int[] {0})
-            .toSlashSeparatedString());
+        assertEquals("DT NNS MD VB NN NNS VBN IN NNS .", sequence1.retainFeatures(new int[] {1}).toSlashSeparatedString());
+        assertEquals("The computers will display stock prices selected by users .", sequence1.retainFeatures(
+            new int[] {0}).toSlashSeparatedString());
     }
 
     /**

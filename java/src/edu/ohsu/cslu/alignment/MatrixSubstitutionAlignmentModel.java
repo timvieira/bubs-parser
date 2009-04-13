@@ -1,10 +1,11 @@
 package edu.ohsu.cslu.alignment;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 import edu.ohsu.cslu.math.linear.FloatMatrix;
+import edu.ohsu.cslu.math.linear.IntVector;
 import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.math.linear.Vector;
 
 /**
  * Implements the {@link SubstitutionAlignmentModel} interfaces using a {@link Matrix} of
@@ -19,14 +20,13 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
 {
     private final Matrix[] matrices;
     private final AlignmentVocabulary[] vocabularies;
-    protected final int[] gapVector;
+    protected final IntVector gapVector;
 
     public MatrixSubstitutionAlignmentModel(Matrix[] matrices, AlignmentVocabulary[] vocabularies)
     {
         this.matrices = matrices;
         this.vocabularies = vocabularies;
-        gapVector = new int[matrices.length];
-        Arrays.fill(gapVector, GAP_INDEX);
+        this.gapVector = new IntVector(matrices.length, 0);
     }
 
     public MatrixSubstitutionAlignmentModel(Matrix matrix, AlignmentVocabulary vocabulary)
@@ -39,8 +39,7 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
     {
         this.vocabularies = vocabularies;
         this.matrices = new Matrix[substitutionCosts.length];
-        this.gapVector = new int[matrices.length];
-        Arrays.fill(gapVector, GAP_INDEX);
+        this.gapVector = new IntVector(matrices.length, 0);
 
         initializeIdentityMatrices(substitutionCosts, gapCosts, vocabularies);
     }
@@ -49,8 +48,7 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
     {
         this.vocabularies = vocabularies;
         this.matrices = new Matrix[vocabularies.length];
-        this.gapVector = new int[vocabularies.length];
-        Arrays.fill(gapVector, GAP_INDEX);
+        this.gapVector = new IntVector(matrices.length, 0);
 
         float[] substitutionCosts = new float[vocabularies.length];
         float[] gapCosts = new float[vocabularies.length];
@@ -107,18 +105,18 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
     }
 
     @Override
-    public float cost(final int[] alignedVector, final int[] unalignedVector)
+    public float cost(final Vector alignedVector, final Vector unalignedVector)
     {
         float cost = 0f;
         for (int i = 0; i < matrices.length; i++)
         {
-            cost += matrices[i].getFloat(alignedVector[i], unalignedVector[i]);
+            cost += matrices[i].getFloat(alignedVector.getInt(i), unalignedVector.getInt(i));
         }
         return cost;
     }
 
     @Override
-    public float gapInsertionCost(int[] featureVector, int sequenceLength)
+    public float gapInsertionCost(Vector featureVector, int sequenceLength)
     {
         // cost does not depend on sequence length
 

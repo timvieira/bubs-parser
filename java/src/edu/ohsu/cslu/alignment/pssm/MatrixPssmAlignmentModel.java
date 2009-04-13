@@ -4,7 +4,9 @@ import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.CharVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.common.Vocabulary;
+import edu.ohsu.cslu.math.linear.IntVector;
 import edu.ohsu.cslu.math.linear.Matrix;
+import edu.ohsu.cslu.math.linear.Vector;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -50,24 +52,24 @@ public class MatrixPssmAlignmentModel implements HmmAlignmentModel
         this(vocabulary, null);
     }
 
-    public float negativeLogP(final int[] features, final int column)
+    public float cost(final Vector featureVector, final int column)
     {
-        int[] featureIndices = new int[features.length];
+        int[] featureIndices = new int[featureVector.length()];
         for (int i = 0; i < featureIndices.length; i++)
         {
             featureIndices[i] = i;
         }
-        return negativeLogP(features, column, featureIndices);
+        return cost(featureVector, column, featureIndices);
     }
 
-    public float negativeLogP(final int[] features, final int column, final int[] featureIndices)
+    public float cost(final Vector featureVector, final int column, final int[] featureIndices)
     {
-        final boolean gap = (features[0] == gapSymbols[0]);
+        final boolean gap = (featureVector.getInt(0) == SubstitutionAlignmentModel.GAP_INDEX);
 
         float sum = 0f;
         for (int i = 0; i < featureIndices.length; i++)
         {
-            final int f = features[featureIndices[i]];
+            final int f = featureVector.getInt(featureIndices[i]);
 
             // 0 probability of a gap in one feature and not in all
             final int gapSymbol = gapSymbols[i];
@@ -80,14 +82,14 @@ public class MatrixPssmAlignmentModel implements HmmAlignmentModel
         return sum;
     }
 
-    public float p(final int[] features, final int column)
+    public float p(final Vector featureVector, final int column)
     {
-        return (float) -Math.exp(negativeLogP(features, column));
+        return (float) -Math.exp(cost(featureVector, column));
     }
 
-    public float p(final int[] features, final int column, final int[] featureIndices)
+    public float p(final Vector featureVector, final int column, final int[] featureIndices)
     {
-        return (float) -Math.exp(negativeLogP(features, column, featureIndices));
+        return (float) -Math.exp(cost(featureVector, column, featureIndices));
     }
 
     @Override
@@ -112,7 +114,18 @@ public class MatrixPssmAlignmentModel implements HmmAlignmentModel
     }
 
     @Override
-    public float pssmGapInsertionCost(int[] featureVector)
+    public Vector gapVector()
+    {
+        final Vector gapVector = new IntVector(vocabularies.length);
+        for (int i = 0; i < vocabularies.length; i++)
+        {
+            gapVector.set(i, ((AlignmentVocabulary) vocabularies[i]).gapSymbol());
+        }
+        return gapVector;
+    }
+
+    @Override
+    public float pssmGapInsertionCost(Vector featureVector)
     {
         return substitutionModel.gapInsertionCost(featureVector, columns());
     }
@@ -156,7 +169,7 @@ public class MatrixPssmAlignmentModel implements HmmAlignmentModel
             sb.append(" | ");
             for (int j = 0; j < columns; j++)
             {
-                float p = negativeLogP(new int[] {i}, j);
+                float p = cost(new IntVector(new int[] {i}), j);
                 sb.append(Float.isInfinite(p) ? "  Inf " : String.format("%5.3f ", p));
             }
             sb.append('\n');

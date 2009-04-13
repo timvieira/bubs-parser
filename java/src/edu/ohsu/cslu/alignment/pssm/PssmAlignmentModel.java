@@ -1,44 +1,56 @@
 package edu.ohsu.cslu.alignment.pssm;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
+import edu.ohsu.cslu.common.Sequence;
+import edu.ohsu.cslu.math.linear.Vector;
 
 /**
- * Represents a Position Specific Score Matrix (PSSM) for aligning a sequence with an alignment
- * profile or an existing alignment.
+ * Represents a column-based alignment model; used when aligning a {@link Sequence} with an
+ * alignment profile or an existing multiple-sequence-alignment.
  * 
- * Each column in the model is assigned a specific probability of containing each token in the
- * vocabulary. When aligning, these probabilities can be used to assign a cost to placing a token in
- * a column.
+ * Some {@link PssmAlignmentModel} implementations will represent a Position Specific Score Matrix
+ * (PSSM), in which the number of columns is fixed, calculating a single cost to aligning a
+ * feature-vector in each column.
+ * 
+ * Other implementations will also allow inserting additional columns into the model, again with a
+ * cost. Column insertion is generally rare, so this cost would often be considerable.
+ * 
+ * TODO Collapse PssmAlignmentModel and HmmAlignmentModel into ColumnAlignmentModel
  * 
  * @author Aaron Dunlop
  * @since Oct 7, 2008
  * 
- *        $Id$
+ * @version $Id$
  */
 public interface PssmAlignmentModel extends AlignmentModel
 {
     /**
-     * Returns the negative log of the modeled probability of finding the specified feature vector
-     * in the specified column
+     * Returns the cost of aligning the specified feature-vector into the specified column. This
+     * cost will often (but not always) be the same as the negative log of the modeled probability
+     * of finding the feature-vector in the specified column.
      * 
-     * @param features
+     * @param featureVector
      * @param column
      * @return The negative log of the modeled probability
      */
-    public float negativeLogP(int[] features, int column);
+    public float cost(Vector featureVector, int column);
 
     /**
-     * Returns the negative log of the modeled probability of finding the specified feature vector
-     * in the specified column
+     * Returns the cost of aligning the specified feature-vector into the specified column. This
+     * cost will often (but not always) be the same as the negative log of the modeled probability
+     * of finding the feature-vector in the specified column.
+     * 
+     * This cost is calculated using a subset of the available features, as specified by the
+     * <code>featureIndices</code> parameter.
      * 
      * TODO: Document better
      * 
-     * @param features
+     * @param featureVector
      * @param column
-     * @param featureIndices
+     * @param featureIndices Subset of available features
      * @return The negative log of the modeled probability
      */
-    public float negativeLogP(int[] features, int column, int[] featureIndices);
+    public float cost(Vector featureVector, int column, int[] featureIndices);
 
     /**
      * Returns the number of columns in this model.
@@ -46,4 +58,9 @@ public interface PssmAlignmentModel extends AlignmentModel
      * @return Number of columns in this model.
      */
     public int columns();
+
+    /**
+     * @return a 'gap' feature vector appropriate for this alignment model
+     */
+    public Vector gapVector();
 }

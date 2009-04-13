@@ -1,8 +1,7 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
-
 import edu.ohsu.cslu.alignment.AlignmentModel;
-import edu.ohsu.cslu.common.MappedSequence;
+import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.common.Vocabulary;
 
 /**
@@ -16,8 +15,8 @@ import edu.ohsu.cslu.common.Vocabulary;
 public abstract class BaseDynamicAligner implements PairwiseAligner
 {
     protected float m_costs[][];
-    protected MappedSequence m_aligned;
-    protected MappedSequence m_unaligned;
+    protected Sequence m_aligned;
+    protected Sequence m_unaligned;
     protected AlignmentModel m_model;
 
     @Override
@@ -33,12 +32,12 @@ public abstract class BaseDynamicAligner implements PairwiseAligner
         sb.append("       ");
         for (int j = 0; j < maxJ; j++)
         {
-            sb.append(String.format("%6s |", j > 0 ? vocabulary.map(m_aligned.feature(j - 1, 0)) : ""));
+            sb.append(String.format("%6s |", j > 0 ? vocabulary.map(m_aligned.elementAt(j - 1).getInt(0)) : ""));
         }
         sb.append('\n');
         for (int i = 0; i < maxI; i++)
         {
-            sb.append(String.format("%5s |", i > 0 ? vocabulary.map(m_unaligned.feature(i - 1, 0)) : ""));
+            sb.append(String.format("%5s |", i > 0 ? vocabulary.map(m_unaligned.elementAt(i - 1).getInt(0)) : ""));
             for (int j = 0; j < maxJ; j++)
             {
                 float value = m_costs[i][j];

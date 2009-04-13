@@ -15,7 +15,6 @@ import java.util.Map;
 
 import edu.ohsu.cslu.util.Strings;
 
-
 /**
  * Simple String vocabulary implementation.
  * 
@@ -26,13 +25,13 @@ import edu.ohsu.cslu.util.Strings;
  */
 public class SimpleVocabulary implements AlignmentVocabulary, Serializable
 {
-    private final static int GAP_SYMBOL = 0;
-    private final static String STRING_GAP_SYMBOL = "-";
+    protected final static int GAP_SYMBOL = 0;
+    protected final static String STRING_GAP_SYMBOL = "_-";
     private final static int FIRST_SYMBOL = 1;
     private final Object2IntOpenHashMap<String> token2IndexMap;
     private final String[] tokens;
 
-    private SimpleVocabulary(String[] tokens)
+    protected SimpleVocabulary(String[] tokens)
     {
         this.tokens = tokens;
 
@@ -128,7 +127,6 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
             String[] elements = line.split("\\)+ *");
             for (String element : elements)
             {
-
                 String[] features = element.substring(1).split(" +");
                 if (features.length != featureCount)
                 {
@@ -226,15 +224,19 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
         return new SimpleVocabulary(tokens);
     }
 
+    protected void writeHeader(Writer writer) throws IOException
+    {
+        writer.write("vocabulary size=");
+        writer.write(Integer.toString(size()));
+        writer.write('\n');
+    }
+
     @Override
     public void write(Writer writer) throws IOException
     {
-        final int size = size();
-        writer.write("vocabulary size=");
-        writer.write(Integer.toString(size));
-        writer.write('\n');
+        writeHeader(writer);
 
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < tokens.length; i++)
         {
             writer.write(Integer.toString(i));
             writer.write(" : ");

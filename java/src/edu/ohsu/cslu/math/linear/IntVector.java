@@ -12,7 +12,7 @@ import java.util.Arrays;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class IntVector extends BaseVector
+public class IntVector extends BaseNumericVector
 {
     private final static long serialVersionUID = 379752896212698724L;
 

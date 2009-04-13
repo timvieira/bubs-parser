@@ -1,23 +1,21 @@
 package edu.ohsu.cslu.alignment.multiple;
 
+import static junit.framework.Assert.assertEquals;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.SimpleMappedSequence;
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 import edu.ohsu.cslu.math.linear.Matrix;
 import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.util.Strings;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Test cases for {@link HmmMultipleSequenceAligner}.
@@ -75,14 +73,46 @@ public class TestHmmMultipleSequenceAligner
             linguisticVocabularies);
     }
 
+    // @Test
+    // public void testDnaAlignment() throws Exception
+    // {
+    // DnaVocabulary dnaVocabulary = new DnaVocabulary();
+    // Matrix levenshteinDistances =
+    // CalculateDistances.LevenshteinDistanceCalculator.distances(SAMPLE_SEQUENCES);
+    // Sequence[] sampleSequences2 = dnaVocabulary.mapSequences(SAMPLE_SEQUENCES);
+    //
+    // // Full dynamic aligner
+    // MultipleSequenceAligner aligner = new IterativePairwiseAligner();
+    //
+    // // Hand-tuned matrix designed to force more gap insertion
+    // Matrix matrix2 = new IntMatrix(new int[][] { {3, 99, 99, 98, 99, 200}, {93, 26, 95, 90, 94,
+    // 500},
+    // {93, 94, 29, 92, 89, 500}, {93, 91, 94, 25, 94, 500},
+    // {92, 92, 87, 91, 34, 500}, {92, 75, 80, 69, 81, 500}});
+    // AlignmentModel model2 = new MatrixSubstitutionAlignmentModel(matrix2, dnaVocabulary);
+    // MultipleSequenceAlignment alignedSequences = aligner.align(sampleSequences2,
+    // levenshteinDistances, model2);
+    //
+    // StringBuilder sb = new StringBuilder(512);
+    // sb.append(" A | C | T | - | G | A | C | - |\n");
+    // sb.append("--------------------------------\n");
+    // sb.append(" A | C | - | X | G | A | C | - |\n");
+    // sb.append("--------------------------------\n");
+    // sb.append(" A | C | T | - | G | - | - | - |\n");
+    // sb.append("--------------------------------\n");
+    // sb.append(" - | C | T | G | G | A | C | T |\n");
+    // sb.append("--------------------------------\n");
+    // assertEquals(sb.toString(), alignedSequences.toString());
+    // }
+
     @Test
     public void testLinguisticAlignment() throws Exception
     {
-        MappedSequence sequence1 = new SimpleMappedSequence(Strings.extractPosAndHead(sampleSentence4,
+        MappedSequence sequence1 = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sampleSentence4,
             headPercolationRuleset), linguisticVocabularies);
-        MappedSequence sequence2 = new SimpleMappedSequence(Strings.extractPosAndHead(sampleSentence16,
+        MappedSequence sequence2 = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sampleSentence16,
             headPercolationRuleset), linguisticVocabularies);
-        MappedSequence sequence3 = new SimpleMappedSequence(Strings.extractPosAndHead(sampleSentence8,
+        MappedSequence sequence3 = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sampleSentence8,
             headPercolationRuleset), linguisticVocabularies);
 
         MultipleSequenceAligner aligner = new HmmMultipleSequenceAligner(new int[] {1, 1, 0}, 10);

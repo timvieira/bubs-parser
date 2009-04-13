@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment;
 
+import edu.ohsu.cslu.math.linear.Vector;
+
 /**
  * Represents a substitution-cost based alignment model, in which each substitution, deletion, or
  * gap insertion is penalized by a particular cost.
@@ -44,7 +46,7 @@ public interface SubstitutionAlignmentModel extends AlignmentModel
      * @param unalignedVector
      * @return substitution cost
      */
-    public float cost(int[] alignedVector, int[] unalignedVector);
+    public float cost(Vector alignedVector, Vector unalignedVector);
 
     /**
      * Returns the cost of inserting a gap in an alignment of the specified length. The gap
@@ -58,5 +60,5 @@ public interface SubstitutionAlignmentModel extends AlignmentModel
      * @param sequenceLength
      * @return gap insertion cost
      */
-    public float gapInsertionCost(int[] featureVector, int sequenceLength);
+    public float gapInsertionCost(Vector featureVector, int sequenceLength);
 }

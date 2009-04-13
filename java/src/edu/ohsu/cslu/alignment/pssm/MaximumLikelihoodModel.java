@@ -7,7 +7,6 @@ import edu.ohsu.cslu.alignment.CharVocabulary;
 import edu.ohsu.cslu.math.linear.FloatMatrix;
 import edu.ohsu.cslu.math.linear.IntMatrix;
 
-
 /**
  * A simple unsmoothed maximum-likelihood model
  * 
@@ -40,6 +39,7 @@ public class MaximumLikelihoodModel extends MatrixPssmAlignmentModel
         matrices[0] = new FloatMatrix(rows, columns, false);
         IntMatrix counts = new IntMatrix(vocabulary.size(), columns);
         countLine(vocabulary, line, columns, counts);
+        // We already counted one line
         int totalCount = 1;
 
         for (line = br.readLine(); line != null; line = br.readLine())
