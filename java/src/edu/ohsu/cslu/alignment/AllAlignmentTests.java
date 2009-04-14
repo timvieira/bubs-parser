@@ -3,13 +3,13 @@ package edu.ohsu.cslu.alignment;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+import edu.ohsu.cslu.alignment.column.ProfileGlobalSequenceAligners;
+import edu.ohsu.cslu.alignment.column.TestColumnAligners;
 import edu.ohsu.cslu.alignment.multiple.ProfileMultipleSequenceAligners;
 import edu.ohsu.cslu.alignment.multiple.TestMultipleSequenceAligners;
 import edu.ohsu.cslu.alignment.multiple.TestMultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.pairwise.TestPairwiseAligners;
 import edu.ohsu.cslu.alignment.pairwise.TestPairwiseLinguisticAlignment;
-import edu.ohsu.cslu.alignment.pssm.ProfileGlobalSequenceAligners;
-import edu.ohsu.cslu.alignment.pssm.TestColumnAligners;
 import edu.ohsu.cslu.alignment.tools.TestInduceMappedVocabularies;
 
 /**

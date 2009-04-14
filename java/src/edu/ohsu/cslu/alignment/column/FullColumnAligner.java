@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.alignment.pssm;
+package edu.ohsu.cslu.alignment.column;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;

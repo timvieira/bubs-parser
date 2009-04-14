@@ -4,9 +4,9 @@
 package edu.ohsu.cslu.alignment.multiple;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.BaseColumnAligner;
-import edu.ohsu.cslu.alignment.pssm.ColumnAlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.LinearColumnAligner;
+import edu.ohsu.cslu.alignment.column.BaseColumnAligner;
+import edu.ohsu.cslu.alignment.column.ColumnAlignmentModel;
+import edu.ohsu.cslu.alignment.column.LinearColumnAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 

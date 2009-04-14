@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.alignment.pssm;
+package edu.ohsu.cslu.alignment.column;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.common.Sequence;

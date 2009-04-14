@@ -13,10 +13,10 @@ import org.apache.commons.cli.Options;
 
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
+import edu.ohsu.cslu.alignment.column.ColumnAlignmentModel;
+import edu.ohsu.cslu.alignment.column.LinearColumnAligner;
 import edu.ohsu.cslu.alignment.multiple.IterativePairwiseAligner;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
-import edu.ohsu.cslu.alignment.pssm.ColumnAlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.LinearColumnAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;

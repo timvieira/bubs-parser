@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.alignment.pssm;
+package edu.ohsu.cslu.alignment.column;
 
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.CharVocabulary;

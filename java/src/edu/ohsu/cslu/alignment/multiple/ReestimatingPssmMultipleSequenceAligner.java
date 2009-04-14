@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.alignment.multiple;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
+import edu.ohsu.cslu.alignment.column.ColumnAlignmentModel;
+import edu.ohsu.cslu.alignment.column.ColumnSequenceAligner;
+import edu.ohsu.cslu.alignment.column.FullColumnAligner;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
-import edu.ohsu.cslu.alignment.pssm.FullColumnAligner;
-import edu.ohsu.cslu.alignment.pssm.ColumnAlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.ColumnSequenceAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
