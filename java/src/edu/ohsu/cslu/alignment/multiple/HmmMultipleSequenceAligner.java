@@ -1,11 +1,10 @@
 package edu.ohsu.cslu.alignment.multiple;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
-import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
-import edu.ohsu.cslu.alignment.pssm.FullPssmAligner;
-import edu.ohsu.cslu.alignment.pssm.MatrixPssmAlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.PssmSequenceAligner;
+import edu.ohsu.cslu.alignment.pssm.FullColumnAligner;
+import edu.ohsu.cslu.alignment.pssm.MatrixColumnAlignmentModel;
+import edu.ohsu.cslu.alignment.pssm.ColumnSequenceAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
@@ -23,7 +22,7 @@ import edu.ohsu.cslu.datastructs.matrices.Matrix;
  */
 public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
 {
-    private final PssmSequenceAligner pssmAligner = new FullPssmAligner();
+    private final ColumnSequenceAligner pssmAligner = new FullColumnAligner();
     private final int[] laplacePseudoCountsPerToken;
     private final int upweightingCount;
 
@@ -118,7 +117,7 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
 
             // Estimate a new PSSM using Laplace smoothing
             // TODO: HEAD/NONHEAD gap cost should be a parameter
-            final MatrixPssmAlignmentModel pssmAlignmentModel = (MatrixPssmAlignmentModel) alignedSequences
+            final MatrixColumnAlignmentModel pssmAlignmentModel = (MatrixColumnAlignmentModel) alignedSequences
                 .inducePssmAlignmentModel(laplacePseudoCountsPerToken, featureIndices, alignedIndex, upweightingCount,
                     new boolean[] {false, false, true}, 10f);
 
@@ -140,11 +139,11 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
             }
             System.out.println("PSSM Head Column: " + pssmHeadColumn);
 
-            pssmAlignmentModel.setSubstitutionAlignmentModel((SubstitutionAlignmentModel) alignmentModel);
+            pssmAlignmentModel.setColumnInsertionCost(10);
 
             // The first sequence in the pair is already aligned but the second isn't. Align
             // the unaligned sequence with the newly induced PSSM
-            SequenceAlignment alignment = pssmAligner.alignWithGaps(unalignedSequences[unalignedIndex],
+            SequenceAlignment alignment = pssmAligner.align(unalignedSequences[unalignedIndex],
                 pssmAlignmentModel, featureIndices);
 
             // Update already aligned sequences to include gaps where needed. For the moment,

@@ -34,22 +34,24 @@ public class ProfileGlobalSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"d820", "12485"})
+    @PerformanceTest( {"d820", "18173"})
     public void profileFullDynamicAligner() throws IOException
     {
-        PssmAlignmentModel model = new LaplaceModel(new StringReader(SMALL_TRAINING_SET), new DnaVocabulary(), 6, true);
-        profileAligner(new FullPssmAligner(), model, "Full Dynamic", TEST_SET);
+        ColumnAlignmentModel model = new LaplaceModel(new StringReader(SMALL_TRAINING_SET), new DnaVocabulary(), 6,
+            true);
+        profileAligner(new FullColumnAligner(), model, "Full Dynamic", TEST_SET);
     }
 
     @Test
-    @PerformanceTest( {"d820", "10157"})
+    @PerformanceTest( {"d820", "14548"})
     public void profileLinearDynamicAligner() throws IOException
     {
-        PssmAlignmentModel model = new LaplaceModel(new StringReader(SMALL_TRAINING_SET), new DnaVocabulary(), 6, true);
-        profileAligner(new LinearPssmAligner(), model, "Linear Dynamic", TEST_SET);
+        ColumnAlignmentModel model = new LaplaceModel(new StringReader(SMALL_TRAINING_SET), new DnaVocabulary(), 6,
+            true);
+        profileAligner(new LinearColumnAligner(), model, "Linear Dynamic", TEST_SET);
     }
 
-    private void profileAligner(BasePssmAligner aligner, PssmAlignmentModel model, String name, String testSet)
+    private void profileAligner(BaseColumnAligner aligner, ColumnAlignmentModel model, String name, String testSet)
         throws IOException
     {
         int totalMatches = 0;
@@ -63,7 +65,7 @@ public class ProfileGlobalSequenceAligners
         {
             String sequence = testSetReader.readLine();
             MappedSequence unalignedSequence = dnaVocabulary.mapSequence(sequence.replaceAll("-", ""));
-            MappedSequence alignment = aligner.align(unalignedSequence, model);
+            MappedSequence alignment = aligner.align(unalignedSequence, model).alignedSequence();
             totalLength += sequence.length();
             int matches = aligner.matches(sequence, dnaVocabulary.mapSequence(alignment));
             totalMatches += matches;

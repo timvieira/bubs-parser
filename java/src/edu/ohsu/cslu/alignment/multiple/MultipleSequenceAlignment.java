@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
+import edu.ohsu.cslu.alignment.pssm.ColumnAlignmentModel;
 import edu.ohsu.cslu.alignment.pssm.LogLinearAlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.MatrixPssmAlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
+import edu.ohsu.cslu.alignment.pssm.MatrixColumnAlignmentModel;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
@@ -196,7 +196,7 @@ public class MultipleSequenceAlignment implements Serializable
         length += gapIndices.length;
     }
 
-    public PssmAlignmentModel inducePssmAlignmentModel(int pseudoCountsPerToken)
+    public ColumnAlignmentModel inducePssmAlignmentModel(int pseudoCountsPerToken)
     {
         final int[] featureIndices = new int[features];
         final int[] pseudoCounts = new int[features];
@@ -209,7 +209,7 @@ public class MultipleSequenceAlignment implements Serializable
             Float.POSITIVE_INFINITY);
     }
 
-    public PssmAlignmentModel inducePssmAlignmentModel(int pseudoCountsPerToken, int[] featureIndices)
+    public ColumnAlignmentModel inducePssmAlignmentModel(int pseudoCountsPerToken, int[] featureIndices)
     {
         int[] pseudoCounts = new int[features];
         for (int i = 0; i < features; i++)
@@ -220,7 +220,7 @@ public class MultipleSequenceAlignment implements Serializable
             Float.POSITIVE_INFINITY);
     }
 
-    public PssmAlignmentModel inducePssmAlignmentModel(int[] pseudoCountsPerToken, int[] featureIndices,
+    public ColumnAlignmentModel inducePssmAlignmentModel(int[] pseudoCountsPerToken, int[] featureIndices,
         int emphasizedSequence, int additionalCounts, boolean[] binaryFeatures, float binaryFeatureGapCost)
     {
         final int featureCount = featureIndices.length;
@@ -281,7 +281,7 @@ public class MultipleSequenceAlignment implements Serializable
             }
         }
 
-        return new MatrixPssmAlignmentModel(pssmMatrices, newVocabularies);
+        return new MatrixColumnAlignmentModel(pssmMatrices, newVocabularies);
     }
 
     /**

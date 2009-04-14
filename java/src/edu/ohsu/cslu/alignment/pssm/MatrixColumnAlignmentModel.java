@@ -18,16 +18,16 @@ import edu.ohsu.cslu.util.Strings;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class MatrixPssmAlignmentModel implements HmmAlignmentModel
+public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
 {
     protected final int MAX_TOSTRING_LENGTH = 256;
 
     protected final Vocabulary[] vocabularies;
     protected final Matrix[] matrices;
     private final int[] gapSymbols;
-    private SubstitutionAlignmentModel substitutionModel;
+    private float columnInsertionCost = Float.POSITIVE_INFINITY;
 
-    public MatrixPssmAlignmentModel(Matrix[] matrices, Vocabulary[] vocabularies)
+    public MatrixColumnAlignmentModel(Matrix[] matrices, Vocabulary[] vocabularies)
     {
         this.matrices = matrices;
         this.vocabularies = vocabularies;
@@ -39,17 +39,17 @@ public class MatrixPssmAlignmentModel implements HmmAlignmentModel
         }
     }
 
-    protected MatrixPssmAlignmentModel(AlignmentVocabulary vocabulary, SubstitutionAlignmentModel substitutionModel)
+    protected MatrixColumnAlignmentModel(AlignmentVocabulary vocabulary, float columnInsertionCost)
     {
         this.vocabularies = new AlignmentVocabulary[] {vocabulary};
         this.matrices = new Matrix[1];
         this.gapSymbols = new int[] {vocabulary.gapSymbol()};
-        this.substitutionModel = substitutionModel;
+        this.columnInsertionCost = columnInsertionCost;
     }
 
-    protected MatrixPssmAlignmentModel(AlignmentVocabulary vocabulary)
+    protected MatrixColumnAlignmentModel(AlignmentVocabulary vocabulary)
     {
-        this(vocabulary, null);
+        this(vocabulary, Float.POSITIVE_INFINITY);
     }
 
     public float cost(final Vector featureVector, final int column)
@@ -125,14 +125,14 @@ public class MatrixPssmAlignmentModel implements HmmAlignmentModel
     }
 
     @Override
-    public float pssmGapInsertionCost(Vector featureVector)
+    public float columnInsertionCost(Vector featureVector)
     {
-        return substitutionModel.gapInsertionCost(featureVector, columns());
+        return columnInsertionCost;
     }
 
-    public void setSubstitutionAlignmentModel(SubstitutionAlignmentModel substitutionModel)
+    public void setColumnInsertionCost(float columnInsertionCost)
     {
-        this.substitutionModel = substitutionModel;
+        this.columnInsertionCost = columnInsertionCost;
     }
 
     @Override

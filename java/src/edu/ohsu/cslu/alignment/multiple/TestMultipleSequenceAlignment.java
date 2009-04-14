@@ -12,8 +12,8 @@ import org.junit.Test;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
+import edu.ohsu.cslu.alignment.pssm.ColumnAlignmentModel;
 import edu.ohsu.cslu.alignment.pssm.LogLinearAlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
@@ -56,7 +56,6 @@ public class TestMultipleSequenceAlignment
 
     private static MappedSequence logLinearSequence1;
     private static MappedSequence logLinearSequence2;
-    private static MappedSequence logLinearSequence3;
 
     @BeforeClass
     public static void suiteSetUp() throws Exception
@@ -75,7 +74,6 @@ public class TestMultipleSequenceAlignment
             + logLinearSentence16);
         logLinearSequence1 = new LogLinearMappedSequence(logLinearSentence4, logLinearVocabulary);
         logLinearSequence2 = new LogLinearMappedSequence(logLinearSentence16, logLinearVocabulary);
-        logLinearSequence3 = new LogLinearMappedSequence(logLinearSentence8, logLinearVocabulary);
     }
 
     @Test
@@ -133,7 +131,7 @@ public class TestMultipleSequenceAlignment
             .toString()), dnaVocabulary);
 
         // First test a maximum-likelihood model
-        PssmAlignmentModel pssmModel = alignment.inducePssmAlignmentModel(0);
+        ColumnAlignmentModel pssmModel = alignment.inducePssmAlignmentModel(0);
         assertEquals(-Math.log(3f / 8), pssmModel.cost(new IntVector(DNA_A), 0), .01f);
         assertEquals(-Math.log(2f / 8), pssmModel.cost(new IntVector(DNA_T), 0), .01f);
         assertEquals(-Math.log(2f / 8), pssmModel.cost(new IntVector(DNA_C), 5), .01f);
@@ -253,8 +251,8 @@ public class TestMultipleSequenceAlignment
 
         FloatVector dnaGapInsertionCostVector = new FloatVector(dnaVocabulary.size(), 10);
         // First test a maximum-likelihood model
-        PssmAlignmentModel pssmModel = alignment.induceLogLinearAlignmentModel(
-            new FloatVector(dnaVocabulary.size(), 0), null, dnaGapInsertionCostVector);
+        ColumnAlignmentModel pssmModel = alignment.induceLogLinearAlignmentModel(new FloatVector(dnaVocabulary.size(),
+            0), null, dnaGapInsertionCostVector);
         assertEquals(-Math.log(3f / 8), pssmModel.cost(DNA_A, 0), .01f);
         assertEquals(-Math.log(2f / 8), pssmModel.cost(DNA_T, 0), .01f);
         assertEquals(-Math.log(2f / 8), pssmModel.cost(DNA_C, 5), .01f);

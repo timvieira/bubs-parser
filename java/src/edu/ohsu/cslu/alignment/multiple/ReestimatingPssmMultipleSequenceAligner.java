@@ -2,9 +2,9 @@ package edu.ohsu.cslu.alignment.multiple;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
-import edu.ohsu.cslu.alignment.pssm.FullPssmAligner;
-import edu.ohsu.cslu.alignment.pssm.HmmAlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.PssmSequenceAligner;
+import edu.ohsu.cslu.alignment.pssm.FullColumnAligner;
+import edu.ohsu.cslu.alignment.pssm.ColumnAlignmentModel;
+import edu.ohsu.cslu.alignment.pssm.ColumnSequenceAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
@@ -23,7 +23,7 @@ import edu.ohsu.cslu.datastructs.vectors.NumericVector;
  */
 public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequenceAligner
 {
-    private final PssmSequenceAligner pssmAligner = new FullPssmAligner();
+    private final ColumnSequenceAligner pssmAligner = new FullColumnAligner();
     private final NumericVector laplacePseudoCounts;
     private final NumericVector gapInsertionCostVector;
 
@@ -117,7 +117,7 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
                 unalignedIndex, alignedSequences.length());
 
             // Estimate a new PSSM
-            final HmmAlignmentModel hmmAlignmentModel = alignedSequences.induceLogLinearAlignmentModel(
+            final ColumnAlignmentModel hmmAlignmentModel = alignedSequences.induceLogLinearAlignmentModel(
                 laplacePseudoCounts, null, gapInsertionCostVector);
 
             // int pssmHeadColumn = -1;
@@ -140,7 +140,7 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
 
             // The first sequence in the pair is already aligned but the second isn't. Align
             // the unaligned sequence with the newly induced PSSM
-            SequenceAlignment alignment = pssmAligner.alignWithGaps(unalignedSequences[unalignedIndex],
+            SequenceAlignment alignment = pssmAligner.align(unalignedSequences[unalignedIndex],
                 hmmAlignmentModel);
 
             // Update already aligned sequences to include gaps where needed. For the moment,

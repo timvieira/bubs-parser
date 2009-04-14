@@ -17,8 +17,8 @@ import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.alignment.bio.EvaluateAlignment;
+import edu.ohsu.cslu.alignment.pssm.ColumnAlignmentModel;
 import edu.ohsu.cslu.alignment.pssm.LaplaceModel;
-import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
@@ -67,7 +67,7 @@ public class ProfileMultipleSequenceAligners
     }
 
     @Test
-    @PerformanceTest
+    @PerformanceTest( {"d820", "76256"})
     public void profileIterativePairwiseAligner()
     {
         SubstitutionAlignmentModel subModel = new MatrixSubstitutionAlignmentModel(10, 8,
@@ -77,11 +77,11 @@ public class ProfileMultipleSequenceAligners
     }
 
     @Test
-    @PerformanceTest
+    @PerformanceTest( {"d820", "88146"})
     public void profileModelAligner() throws IOException
     {
-        PssmAlignmentModel model = new LaplaceModel(new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)),
-            new DnaVocabulary(), 6, true);
+        ColumnAlignmentModel model = new LaplaceModel(
+            new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)), new DnaVocabulary(), 6, true);
         MultipleSequenceAlignment sequenceAlignment = new PssmAligner().align(DNA_VOCABULARY
             .mapSequences(unalignedSequences), distanceMatrix, model);
         long[] eval = EvaluateAlignment.evaluate(DNA_VOCABULARY.mapSequences(sequenceAlignment.sequences()), corpus);

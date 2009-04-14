@@ -25,133 +25,17 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  * 
  *        $Id$
  */
-public class FullPssmAligner extends BasePssmAligner
+public class FullColumnAligner extends BaseColumnAligner
 {
     /** Store the dynamic programming information for toString() to format */
     private float[][] m_array;
     // TODO: Replace with a PackedIntVector and profile
     protected byte[][] m_backPointer;
     private Sequence m_sequence;
-    private PssmAlignmentModel m_model;
+    private ColumnAlignmentModel m_model;
 
     @Override
-    public MappedSequence align(MappedSequence sequence, PssmAlignmentModel model, int[] features)
-    {
-        final int maxI = sequence.length() + 1;
-        final int maxJ = model.columns() + 1;
-
-        final float[][] array = new float[maxI][maxJ];
-        final byte[][] backPointer = new byte[maxI][maxJ];
-
-        final Vector gapVector = model.gapVector();
-
-        m_array = array;
-        m_backPointer = backPointer;
-        m_sequence = sequence;
-        m_model = model;
-
-        for (int i = 0; i < maxI; i++)
-        {
-            Arrays.fill(array[i], Float.MAX_VALUE);
-        }
-
-        for (int j = 1; j < maxJ; j++)
-        {
-            array[0][j] = Float.MAX_VALUE;
-        }
-
-        array[0][0] = 0.0f;
-
-        // Initialize all the 'start' columns - probabilities of deleting all the way through
-        for (int j = 1; j < maxJ; j++)
-        {
-            array[0][j] = array[0][j - 1] + model.cost(gapVector, j - 1, features);
-            backPointer[0][j] = BACKPOINTER_UNALIGNED_GAP;
-        }
-
-        // Choose min of (emit, gap) (current element / gap symbol)
-        // Emit should be i-1, j-1, gap in unaligned sequence i, j-1.
-
-        for (int i = 1; i < maxI; i++)
-        {
-            final int prevI = i - 1;
-            final Vector currentElement = sequence.elementAt(prevI);
-
-            for (int j = i; j < maxJ; j++)
-            {
-                final int prevJ = j - 1;
-
-                // Probability of emission / gap
-                final float emit = array[prevI][prevJ] + model.cost(currentElement, prevJ, features);
-                final float gap = array[i][prevJ] + model.cost(gapVector, prevJ, features);
-
-                // Bias toward emission given equal probabilities
-                if (emit <= gap)
-                {
-                    array[i][j] = emit;
-                    backPointer[i][j] = BACKPOINTER_SUBSTITUTION;
-                }
-                else
-                {
-                    array[i][j] = gap;
-                    backPointer[i][j] = BACKPOINTER_UNALIGNED_GAP;
-                }
-            }
-        }
-
-        return backtrace(sequence, model, backPointer, gapVector);
-    }
-
-    protected final MappedSequence backtrace(MappedSequence sequence, PssmAlignmentModel model, byte[][] backPointer,
-        Vector gapVector)
-    {
-        // Backtrace to reconstruct the winning alignment, adding to the beginning of a linked-list
-        // to implicitly construct the buffer in order, while we traverse the alignment in reverse.
-        final LinkedList<Vector> backtrace = new LinkedList<Vector>();
-
-        int i = sequence.length();
-        int j = model.columns();
-
-        while (i > 0 || j > 0)
-        {
-            // Ensure that we emit all input elements, even if they're improbable (this generally
-            // only applies when the input sequence is the same length as an unsmoothed PSSM model)
-            if (j <= i)
-            {
-                // Emit
-                backtrace.addFirst(sequence.elementAt(--i));
-                j--;
-            }
-            else
-            {
-                switch (backPointer[i][j])
-                {
-                    case BACKPOINTER_SUBSTITUTION :
-                        // Emit
-                        backtrace.addFirst(sequence.elementAt(--i));
-                        j--;
-                        break;
-                    case BACKPOINTER_UNALIGNED_GAP :
-                        // Gap in unaligned sequence
-                        backtrace.addFirst(gapVector);
-                        j--;
-                        break;
-                    default :
-                        throw new IllegalArgumentException("Should never get here");
-                }
-            }
-        }
-
-        if (sequence instanceof MultipleVocabularyMappedSequence)
-        {
-            return new MultipleVocabularyMappedSequence(backtrace.toArray(new IntVector[backtrace.size()]), model
-                .vocabularies());
-        }
-        return new LogLinearMappedSequence(backtrace.toArray(new BitVector[backtrace.size()]), model.vocabularies()[0]);
-    }
-
-    @Override
-    public SequenceAlignment alignWithGaps(MappedSequence sequence, HmmAlignmentModel model, int[] features)
+    public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model, int[] features)
     {
         final int maxI = sequence.length() + 1;
         final int maxJ = model.columns() + 1;
@@ -168,15 +52,15 @@ public class FullPssmAligner extends BasePssmAligner
 
         for (int i = 0; i < maxI; i++)
         {
-            Arrays.fill(array[i], Float.MAX_VALUE);
+            Arrays.fill(array[i], Float.POSITIVE_INFINITY);
         }
         array[0][0] = 0.0f;
 
         // Initialize all the 'start' columns - probabilities of gaps all the way through
         for (int i = 1; i < maxI; i++)
         {
-            array[i][0] = array[i - 1][0] + model.pssmGapInsertionCost(sequence.elementAt(i - 1));
-            backpointer[i][0] = BACKPOINTER_PSSM_GAP;
+            array[i][0] = array[i - 1][0] + model.columnInsertionCost(sequence.elementAt(i - 1));
+            backpointer[i][0] = BACKPOINTER_INSERT_COLUMN;
         }
         for (int j = 1; j < maxJ; j++)
         {
@@ -184,8 +68,8 @@ public class FullPssmAligner extends BasePssmAligner
         }
         Arrays.fill(backpointer[0], BACKPOINTER_UNALIGNED_GAP);
 
-        // Choose min of (emit, gap in unaligned sequence, gap in pssm)
-        // Emit should be i-1, j-1, gap in unaligned sequence i, j-1, gap in pssm i-1,j
+        // Choose min of (emit, gap in unaligned sequence, insert column)
+        // Emit should be i-1, j-1, gap in unaligned sequence i, j-1, insert column i-1,j
         for (int i = 1; i < maxI; i++)
         {
             final int prevI = i - 1;
@@ -196,10 +80,10 @@ public class FullPssmAligner extends BasePssmAligner
             {
                 final int prevJ = j - 1;
 
-                // Probability of emission / gap in unaligned / gap in pssm
+                // Probability of emission / gap in unaligned / insert column
                 final float emit = array[prevI][prevJ] + model.cost(currentElement, prevJ, features);
                 final float gapInNewSequence = array[i][prevJ] + model.cost(gapVector, prevJ, features);
-                final float gapInPssm = array[prevI][j] + model.pssmGapInsertionCost(currentElement);
+                final float gapInPssm = array[prevI][j] + model.columnInsertionCost(currentElement);
 
                 // Bias toward emission given equal probabilities
                 if (emit <= gapInPssm && emit <= gapInNewSequence)
@@ -215,20 +99,20 @@ public class FullPssmAligner extends BasePssmAligner
                 else
                 {
                     array[i][j] = gapInPssm;
-                    backpointerI[j] = BACKPOINTER_PSSM_GAP;
+                    backpointerI[j] = BACKPOINTER_INSERT_COLUMN;
                 }
             }
         }
 
-        return backtraceWithGaps(sequence, model, backpointer, gapVector);
+        return backtrace(sequence, model, backpointer, gapVector);
     }
 
-    protected final SequenceAlignment backtraceWithGaps(Sequence sequence, PssmAlignmentModel model,
+    protected final SequenceAlignment backtrace(Sequence sequence, ColumnAlignmentModel model,
         byte[][] backPointer, Vector gapVector)
     {
         // Backtrace to reconstruct the winning alignment, adding to the beginning of a linked-list
         // to implicitly construct the buffer in order, while we traverse the alignment in reverse.
-        final LinkedList<Vector> buffer = new LinkedList<Vector>();
+        final LinkedList<Vector> backtrace = new LinkedList<Vector>();
         final IntList gapList = new IntArrayList(sequence.length());
 
         int i = sequence.length();
@@ -240,17 +124,17 @@ public class FullPssmAligner extends BasePssmAligner
             {
                 case BACKPOINTER_SUBSTITUTION :
                     // Emit
-                    buffer.addFirst(sequence.elementAt(--i));
+                    backtrace.addFirst(sequence.elementAt(--i));
                     j--;
                     break;
                 case BACKPOINTER_UNALIGNED_GAP :
                     // Gap in unaligned sequence
-                    buffer.addFirst(gapVector);
+                    backtrace.addFirst(gapVector);
                     j--;
                     break;
-                case BACKPOINTER_PSSM_GAP :
+                case BACKPOINTER_INSERT_COLUMN :
                     // Gap in PSSM
-                    buffer.addFirst(sequence.elementAt(--i));
+                    backtrace.addFirst(sequence.elementAt(--i));
                     gapList.add(j);
                     break;
                 default :
@@ -268,11 +152,11 @@ public class FullPssmAligner extends BasePssmAligner
 
         if (sequence instanceof MultipleVocabularyMappedSequence)
         {
-            return new SequenceAlignment(new MultipleVocabularyMappedSequence(buffer.toArray(new IntVector[buffer
+            return new SequenceAlignment(new MultipleVocabularyMappedSequence(backtrace.toArray(new IntVector[backtrace
                 .size()]), model.vocabularies()), gapIndices);
         }
-        return new SequenceAlignment(new LogLinearMappedSequence(buffer.toArray(new BitVector[buffer.size()]), model
-            .vocabularies()[0]), gapIndices);
+        return new SequenceAlignment(new LogLinearMappedSequence(backtrace.toArray(new BitVector[backtrace.size()]),
+            model.vocabularies()[0]), gapIndices);
     }
 
     @Override
@@ -307,7 +191,7 @@ public class FullPssmAligner extends BasePssmAligner
                     case BACKPOINTER_UNALIGNED_GAP :
                         backpointer = "<";
                         break;
-                    case BACKPOINTER_PSSM_GAP :
+                    case BACKPOINTER_INSERT_COLUMN :
                         backpointer = "^";
                         break;
                 }

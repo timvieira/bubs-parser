@@ -15,9 +15,9 @@ import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.multiple.ReestimatingPssmMultipleSequenceAligner;
-import edu.ohsu.cslu.alignment.pssm.FullPssmAligner;
+import edu.ohsu.cslu.alignment.pssm.ColumnSequenceAligner;
+import edu.ohsu.cslu.alignment.pssm.FullColumnAligner;
 import edu.ohsu.cslu.alignment.pssm.LogLinearAlignmentModel;
-import edu.ohsu.cslu.alignment.pssm.PssmSequenceAligner;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
@@ -110,7 +110,7 @@ public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
 
         System.out.println("\nHead Column = " + trainHeadColumn + "\n");
 
-        PssmSequenceAligner pssmAligner = new FullPssmAligner();
+        ColumnSequenceAligner pssmAligner = new FullColumnAligner();
 
         MappedSequence[] devSetSequences = mapSequences(new BufferedReader(new FileReader(devSetFile)), vocabulary);
 
@@ -130,7 +130,7 @@ public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
                 }
             }
 
-            MappedSequence alignedSequence = pssmAligner.align(sequence, pssmAlignmentModel);
+            MappedSequence alignedSequence = pssmAligner.align(sequence, pssmAlignmentModel).alignedSequence();
 
             // System.out.println(alignedSequence.toString());
 
