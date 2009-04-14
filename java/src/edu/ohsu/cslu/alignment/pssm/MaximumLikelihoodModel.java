@@ -17,7 +17,7 @@ import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class MaximumLikelihoodModel extends MatrixPssmAlignmentModel
+public class MaximumLikelihoodModel extends MatrixColumnAlignmentModel
 {
     public MaximumLikelihoodModel(java.io.Reader trainingData, CharVocabulary vocabulary, boolean ignoreLabelLines)
         throws IOException

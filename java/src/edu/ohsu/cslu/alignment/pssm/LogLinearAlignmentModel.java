@@ -15,14 +15,14 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.util.Strings;
 
 /**
- * Implements {@link HmmAlignmentModel} using a {@link BitVector} and the perceptron algorithm
+ * Implements {@link ColumnAlignmentModel} using a {@link BitVector} and the perceptron algorithm
  * 
  * @author Aaron Dunlop
  * @since Mar 24, 2009
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class LogLinearAlignmentModel implements HmmAlignmentModel
+public class LogLinearAlignmentModel implements ColumnAlignmentModel
 {
     protected final int MAX_TOSTRING_LENGTH = 256;
 
@@ -111,7 +111,7 @@ public class LogLinearAlignmentModel implements HmmAlignmentModel
     }
 
     @Override
-    public float pssmGapInsertionCost(Vector featureVector)
+    public float columnInsertionCost(Vector featureVector)
     {
         return featureVector.dotProduct(gapInsertionCostVector);
     }
@@ -178,7 +178,7 @@ public class LogLinearAlignmentModel implements HmmAlignmentModel
         sb.append(String.format("%" + maxTokenLength + "s ", ""));
         for (int i = 0; i < columns; i++)
         {
-            sb.append(String.format("%6d ", i));
+            sb.append(String.format("%5d ", i));
         }
         sb.append('\n');
         sb.append(Strings.fill('-', columns * 6 + 3));

@@ -12,15 +12,15 @@ import edu.ohsu.cslu.common.MappedSequence;
  * 
  *        $Id$
  */
-public abstract class BasePssmAligner implements PssmSequenceAligner
+public abstract class BaseColumnAligner implements ColumnSequenceAligner
 {
-    // 0 = substitution, 1 = gap in unaligned sequence, 2 = gap in PSSM
+    // 0 = substitution, 1 = gap in unaligned sequence, 2 = insert column
     protected final static byte BACKPOINTER_SUBSTITUTION = 0;
     protected final static byte BACKPOINTER_UNALIGNED_GAP = 1;
-    protected final static byte BACKPOINTER_PSSM_GAP = 2;
+    protected final static byte BACKPOINTER_INSERT_COLUMN = 2;
 
     @Override
-    public MappedSequence align(MappedSequence sequence, PssmAlignmentModel model)
+    public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model)
     {
         int[] features = new int[model.features()];
         for (int i = 0; i < features.length; i++)
@@ -28,17 +28,6 @@ public abstract class BasePssmAligner implements PssmSequenceAligner
             features[i] = i;
         }
         return align(sequence, model, features);
-    }
-
-    @Override
-    public SequenceAlignment alignWithGaps(MappedSequence sequence, HmmAlignmentModel model)
-    {
-        int[] features = new int[model.features()];
-        for (int i = 0; i < features.length; i++)
-        {
-            features[i] = i;
-        }
-        return alignWithGaps(sequence, model, features);
     }
 
     /**

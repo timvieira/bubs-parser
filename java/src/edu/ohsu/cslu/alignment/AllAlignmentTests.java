@@ -9,7 +9,7 @@ import edu.ohsu.cslu.alignment.multiple.TestMultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.pairwise.TestPairwiseAligners;
 import edu.ohsu.cslu.alignment.pairwise.TestPairwiseLinguisticAlignment;
 import edu.ohsu.cslu.alignment.pssm.ProfileGlobalSequenceAligners;
-import edu.ohsu.cslu.alignment.pssm.TestPssmAligners;
+import edu.ohsu.cslu.alignment.pssm.TestColumnAligners;
 import edu.ohsu.cslu.alignment.tools.TestInduceMappedVocabularies;
 
 /**
@@ -21,7 +21,7 @@ import edu.ohsu.cslu.alignment.tools.TestInduceMappedVocabularies;
  *        $Id$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses( {TestSimpleVocabulary.class, TestLogLinearVocabulary.class, TestPssmAligners.class,
+@Suite.SuiteClasses( {TestSimpleVocabulary.class, TestLogLinearVocabulary.class, TestColumnAligners.class,
                       ProfileGlobalSequenceAligners.class, TestMultipleSequenceAlignment.class,
                       TestMultipleSequenceAligners.class, ProfileMultipleSequenceAligners.class,
                       TestPairwiseAligners.class, TestPairwiseLinguisticAlignment.class,

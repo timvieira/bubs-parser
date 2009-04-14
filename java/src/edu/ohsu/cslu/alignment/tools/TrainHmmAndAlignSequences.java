@@ -15,8 +15,8 @@ import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.multiple.HmmMultipleSequenceAligner;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
-import edu.ohsu.cslu.alignment.pssm.LinearPssmAligner;
-import edu.ohsu.cslu.alignment.pssm.PssmAlignmentModel;
+import edu.ohsu.cslu.alignment.pssm.ColumnAlignmentModel;
+import edu.ohsu.cslu.alignment.pssm.LinearColumnAligner;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
@@ -141,7 +141,7 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
         // System.out.println(trainingAlignment.toString());
         // System.out.println();
 
-        PssmAlignmentModel pssmAlignmentModel = trainingAlignment.inducePssmAlignmentModel(pseudoCountsPerElement);
+        ColumnAlignmentModel pssmAlignmentModel = trainingAlignment.inducePssmAlignmentModel(pseudoCountsPerElement);
 
         int trainHeadColumn = 0;
         float headP = Float.MAX_VALUE;
@@ -162,14 +162,15 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
         System.out.println("\nHead Column = " + trainHeadColumn + "\n");
 
         BufferedReader devSetReader = new BufferedReader(new FileReader(devSetFilename));
-        LinearPssmAligner pssmAligner = new LinearPssmAligner();
+        LinearColumnAligner pssmAligner = new LinearColumnAligner();
         MultipleSequenceAlignment devAlignment = new MultipleSequenceAlignment();
 
         for (String line = devSetReader.readLine(); line != null; line = devSetReader.readLine())
         {
             MappedSequence unalignedSequence = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(line,
                 ruleset), vocabularies);
-            MappedSequence alignedSequence = pssmAligner.align(unalignedSequence, pssmAlignmentModel, devSetFeatures);
+            MappedSequence alignedSequence = pssmAligner.align(unalignedSequence, pssmAlignmentModel,
+                devSetFeatures).alignedSequence();
             devAlignment.addSequence(alignedSequence);
         }
 

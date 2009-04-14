@@ -18,7 +18,7 @@ import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
  * 
  *        $Id$
  */
-public final class LaplaceModel extends MatrixPssmAlignmentModel
+public final class LaplaceModel extends MatrixColumnAlignmentModel
 {
     public LaplaceModel(Reader trainingData, CharVocabulary vocabulary, int pseudoCounts, boolean ignoreLabelLines)
         throws IOException

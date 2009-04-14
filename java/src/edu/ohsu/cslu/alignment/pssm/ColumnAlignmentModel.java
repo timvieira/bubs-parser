@@ -5,24 +5,23 @@ import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
- * Represents a column-based alignment model; used when aligning a {@link Sequence} with an
- * alignment profile or an existing multiple-sequence-alignment.
+ * Represents a column-based alignment model; used when aligning a {@link Sequence} with a
+ * position-specific alignment profile or an existing multiple-sequence-alignment.
  * 
- * Some {@link PssmAlignmentModel} implementations will represent a Position Specific Score Matrix
- * (PSSM), in which the number of columns is fixed, calculating a single cost to aligning a
- * feature-vector in each column.
+ * Some {@link ColumnAlignmentModel} implementations will allow (for a cost) insertion of additional
+ * columns into the model. This cost is computed by the {@link #columnInsertionCost(Vector)}
+ * method. Column insertion is generally rare, so this cost will often be considerable.
  * 
- * Other implementations will also allow inserting additional columns into the model, again with a
- * cost. Column insertion is generally rare, so this cost would often be considerable.
- * 
- * TODO Collapse PssmAlignmentModel and HmmAlignmentModel into ColumnAlignmentModel
+ * Other implementations will represent a Position Specific Score Matrix (PSSM), in which the number
+ * of columns is fixed, In this case, {@link #columnInsertionCost(Vector)} should return
+ * Float.POSITIVE_INFINITY.
  * 
  * @author Aaron Dunlop
- * @since Oct 7, 2008
+ * @since Feb 9, 2009
  * 
- * @version $Id$
+ * @version $Revision$ $Date$ $Author$
  */
-public interface PssmAlignmentModel extends AlignmentModel
+public interface ColumnAlignmentModel extends AlignmentModel
 {
     /**
      * Returns the cost of aligning the specified feature-vector into the specified column. This
@@ -63,4 +62,15 @@ public interface PssmAlignmentModel extends AlignmentModel
      * @return a 'gap' feature vector appropriate for this alignment model
      */
     public Vector gapVector();
+
+    /**
+     * Returns the cost of inserting a gap into the PSSM itself. Some alignment methods allow this
+     * (even though that changes the existing model, making it less of a <i>position specific</i>
+     * score matrix...)
+     * 
+     * @param featureVector The features which would be aligned with the newly-inserted gap
+     * @return Cost of gap insertion
+     */
+    public float columnInsertionCost(Vector featureVector);
+
 }
