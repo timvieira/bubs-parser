@@ -292,11 +292,11 @@ public class MultipleSequenceAlignment implements Serializable
      * @param scalingVector Weights for each vocabulary entry. If not null, the alignment cost
      *            vectors are scaled by this vector (if null, the final alignment vectors are left
      *            un-scaled).
-     * @param gapInsertionCostVector
+     * @param columnInsertionCostVector
      * @return alignment model
      */
     public LogLinearAlignmentModel induceLogLinearAlignmentModel(NumericVector laplacePseudoCounts,
-        NumericVector scalingVector, NumericVector gapInsertionCostVector)
+        NumericVector scalingVector, NumericVector columnInsertionCostVector)
     {
         final LogLinearVocabulary vocabulary = (LogLinearVocabulary) vocabularies[0];
         final int columns = length;
@@ -306,7 +306,7 @@ public class MultipleSequenceAlignment implements Serializable
             throw new IllegalArgumentException("Pseudo-count vector length must match vocabulary size");
         }
 
-        if (gapInsertionCostVector.length() != vocabulary.size())
+        if (columnInsertionCostVector.length() != vocabulary.size())
         {
             throw new IllegalArgumentException("Gap insertion-cost vector length must match vocabulary size");
         }
@@ -364,7 +364,7 @@ public class MultipleSequenceAlignment implements Serializable
             }
         }
 
-        return new LogLinearAlignmentModel(costVectors, vocabulary, gapInsertionCostVector);
+        return new LogLinearAlignmentModel(costVectors, vocabulary, columnInsertionCostVector);
     }
 
     /**

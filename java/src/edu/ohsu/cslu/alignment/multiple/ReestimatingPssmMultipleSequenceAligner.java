@@ -25,17 +25,17 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
 {
     private final ColumnSequenceAligner pssmAligner = new FullColumnAligner();
     private final NumericVector laplacePseudoCounts;
-    private final NumericVector gapInsertionCostVector;
+    private final NumericVector columnInsertionCostVector;
 
     // private final int upweightingCount;
 
     // private float upweightingPercentage;
 
     public ReestimatingPssmMultipleSequenceAligner(NumericVector laplacePseudoCounts,
-        NumericVector gapInsertionCostVector)
+        NumericVector columnInsertionCostVector)
     {
         this.laplacePseudoCounts = laplacePseudoCounts;
-        this.gapInsertionCostVector = gapInsertionCostVector;
+        this.columnInsertionCostVector = columnInsertionCostVector;
     }
 
     @Override
@@ -118,7 +118,7 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
 
             // Estimate a new PSSM
             final ColumnAlignmentModel hmmAlignmentModel = alignedSequences.induceLogLinearAlignmentModel(
-                laplacePseudoCounts, null, gapInsertionCostVector);
+                laplacePseudoCounts, null, columnInsertionCostVector);
 
             // int pssmHeadColumn = -1;
             // Matrix pssmHeadCostMatrix = pssmAlignmentModel.costMatrix(2);
@@ -140,8 +140,7 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
 
             // The first sequence in the pair is already aligned but the second isn't. Align
             // the unaligned sequence with the newly induced PSSM
-            SequenceAlignment alignment = pssmAligner.align(unalignedSequences[unalignedIndex],
-                hmmAlignmentModel);
+            SequenceAlignment alignment = pssmAligner.align(unalignedSequences[unalignedIndex], hmmAlignmentModel);
 
             // Update already aligned sequences to include gaps where needed. For the moment,
             // we'll skip re-computing distance metrics...

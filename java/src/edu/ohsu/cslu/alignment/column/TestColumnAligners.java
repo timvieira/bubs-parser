@@ -38,12 +38,12 @@ public class TestColumnAligners
     protected final static DnaVocabulary DNA_VOCABULARY = new DnaVocabulary();
 
     private String trainingData;
-    // TODO: Combine 'simple' and 'gapInsertion' training data?
+    // TODO: Combine 'simple' and 'columnInsertion' training data?
     private String simpleTrainingData;
-    private String gapInsertionTrainingData;
+    private String columnInsertionTrainingData;
 
     private ColumnAlignmentModel pssmModel;
-    private ColumnAlignmentModel gapInsertionModel;
+    private ColumnAlignmentModel columnInsertionModel;
 
     @Before
     public void setUp() throws IOException
@@ -95,14 +95,14 @@ public class TestColumnAligners
         sb.append("-A-GT\n");
         sb.append("A-CG-\n");
         sb.append("-----\n");
-        gapInsertionTrainingData = sb.toString();
+        columnInsertionTrainingData = sb.toString();
 
-        pssmModel = new MaximumLikelihoodModel(new StringReader(gapInsertionTrainingData), DNA_VOCABULARY, false);
+        pssmModel = new MaximumLikelihoodModel(new StringReader(columnInsertionTrainingData), DNA_VOCABULARY, false);
         ((MaximumLikelihoodModel) pssmModel).setColumnInsertionCost(Float.POSITIVE_INFINITY);
 
-        gapInsertionModel = new MaximumLikelihoodModel(new StringReader(gapInsertionTrainingData), DNA_VOCABULARY,
-            false);
-        ((MaximumLikelihoodModel) gapInsertionModel).setColumnInsertionCost(2);
+        columnInsertionModel = new MaximumLikelihoodModel(new StringReader(columnInsertionTrainingData),
+            DNA_VOCABULARY, false);
+        ((MaximumLikelihoodModel) columnInsertionModel).setColumnInsertionCost(2);
     }
 
     @Test
@@ -136,7 +136,7 @@ public class TestColumnAligners
                 .unitTestDataAsStream("alignment/current_prokMSA_aligned.fasta.train.set.100.gz")), DNA_VOCABULARY, 6,
             true)));
 
-        columnInsertionTest(aligner, pssmModel, gapInsertionModel);
+        columnInsertionTest(aligner, pssmModel, columnInsertionModel);
     }
 
     @Test
@@ -169,7 +169,7 @@ public class TestColumnAligners
                 .unitTestDataAsStream("alignment/current_prokMSA_aligned.fasta.train.set.100.gz")), DNA_VOCABULARY, 6,
             true)));
 
-        columnInsertionTest(aligner, pssmModel, gapInsertionModel);
+        columnInsertionTest(aligner, pssmModel, columnInsertionModel);
     }
 
     @Test
@@ -177,21 +177,21 @@ public class TestColumnAligners
     {
         FullColumnAligner aligner = new FullColumnAligner();
         DnaVocabulary dnaVocabulary = new LogLinearDnaVocabulary();
-        FloatVector dnaGapInsertionCostVector = new FloatVector(6, Float.POSITIVE_INFINITY);
+        FloatVector dnaColumnInsertionCostVector = new FloatVector(6, Float.POSITIVE_INFINITY);
         LogLinearAlignmentModel simpleMlModel = new LogLinearAlignmentModel(new StringReader(simpleTrainingData),
-            dnaVocabulary, true, dnaGapInsertionCostVector);
+            dnaVocabulary, true, dnaColumnInsertionCostVector);
         assertEquals("Wrong ML alignment", "CAAC-T", alignString(aligner, "CAACT", simpleMlModel));
 
         LogLinearAlignmentModel mlModel = new LogLinearAlignmentModel(new StringReader(trainingData), dnaVocabulary,
-            true, dnaGapInsertionCostVector);
+            true, dnaColumnInsertionCostVector);
         LogLinearAlignmentModel laplaceModel0 = new LogLinearAlignmentModel(new StringReader(trainingData),
-            dnaVocabulary, new FloatVector(6, 0), true, dnaGapInsertionCostVector);
+            dnaVocabulary, new FloatVector(6, 0), true, dnaColumnInsertionCostVector);
         checkUnsmoothedModel(mlModel, laplaceModel0);
 
         LogLinearAlignmentModel laplaceModel2 = new LogLinearAlignmentModel(new StringReader(trainingData),
-            dnaVocabulary, new FloatVector(6, .333f), true, dnaGapInsertionCostVector);
+            dnaVocabulary, new FloatVector(6, .333f), true, dnaColumnInsertionCostVector);
         LogLinearAlignmentModel laplaceModel6 = new LogLinearAlignmentModel(new StringReader(trainingData),
-            dnaVocabulary, new FloatVector(6, 1f), true, dnaGapInsertionCostVector);
+            dnaVocabulary, new FloatVector(6, 1f), true, dnaColumnInsertionCostVector);
 
         sanityTest(aligner, mlModel);
         sanityTest(aligner, laplaceModel2);
@@ -205,11 +205,11 @@ public class TestColumnAligners
         assertEquals(longAlignedSequence(), alignString(aligner, longUnalignedSequence(), new LogLinearAlignmentModel(
             new InputStreamReader(SharedNlpTests
                 .unitTestDataAsStream("alignment/current_prokMSA_aligned.fasta.train.set.100.gz")), dnaVocabulary,
-            new FloatVector(6, 1f), true, dnaGapInsertionCostVector)));
+            new FloatVector(6, 1f), true, dnaColumnInsertionCostVector)));
 
-        gapInsertionModel = new LogLinearAlignmentModel(new StringReader(gapInsertionTrainingData), dnaVocabulary,
-            true, new FloatVector(6, 2f));
-        columnInsertionTest(aligner, pssmModel, gapInsertionModel);
+        columnInsertionModel = new LogLinearAlignmentModel(new StringReader(columnInsertionTrainingData),
+            dnaVocabulary, true, new FloatVector(6, 2f));
+        columnInsertionTest(aligner, pssmModel, columnInsertionModel);
 
         String logLinearSentence1 = "(_-) (Delivery _pos_NN) (_-) (_-) (began _pos_AUX _head_verb) (in _pos_IN)"
             + " (early _pos_JJ) (1991 _pos_CD) (. _pos_.)";
@@ -226,12 +226,12 @@ public class TestColumnAligners
         msa.addSequence(new LogLinearMappedSequence(logLinearSentence1, linguisticVocabulary));
         msa.addSequence(new LogLinearMappedSequence(logLinearSentence2, linguisticVocabulary));
 
-        FloatVector gapInsertionCostVector = new FloatVector(linguisticVocabulary.size(), 10);
-        gapInsertionCostVector.set(linguisticVocabulary.map("_head_verb"), Float.POSITIVE_INFINITY);
+        FloatVector columnInsertionCostVector = new FloatVector(linguisticVocabulary.size(), 10);
+        columnInsertionCostVector.set(linguisticVocabulary.map("_head_verb"), Float.POSITIVE_INFINITY);
         LogLinearAlignmentModel linguisticModel = msa.induceLogLinearAlignmentModel(new FloatVector(
             new float[] {2f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f,
                          1f, 1f, 1f, 1f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f,
-                         .2f, 0}), null, gapInsertionCostVector);
+                         .2f, 0}), null, columnInsertionCostVector);
 
         MappedSequence unalignedSequence = new LogLinearMappedSequence(logLinearSentence3, linguisticVocabulary);
         SequenceAlignment alignment = aligner.align(unalignedSequence, linguisticModel);
@@ -467,7 +467,7 @@ public class TestColumnAligners
     }
 
     protected void columnInsertionTest(FullColumnAligner aligner, ColumnAlignmentModel fixedColumnModel,
-        ColumnAlignmentModel columnInsertionModel)
+        ColumnAlignmentModel variableColumnModel)
     {
         // Aligning with a model which does not allow column insertion should return the sequence
         // as-is
@@ -476,9 +476,9 @@ public class TestColumnAligners
             .mapSequence(sequenceAlignment.alignedSequence()));
 
         // But the aligner should insert a column if we allow it.
-        sequenceAlignment = align(aligner, "AACCG", columnInsertionModel);
-        assertEquals("Wrong Column-insertion alignment", "AACCG-", ((CharVocabulary) columnInsertionModel
-            .vocabularies()[0]).mapSequence(sequenceAlignment.alignedSequence()));
+        sequenceAlignment = align(aligner, "AACCG", variableColumnModel);
+        assertEquals("Wrong Column-insertion alignment", "AACCG-",
+            ((CharVocabulary) variableColumnModel.vocabularies()[0]).mapSequence(sequenceAlignment.alignedSequence()));
         SharedNlpTests.assertEquals(new int[] {2}, sequenceAlignment.gapIndices());
     }
 }

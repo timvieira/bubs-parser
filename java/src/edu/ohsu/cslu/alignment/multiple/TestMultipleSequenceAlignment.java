@@ -249,10 +249,10 @@ public class TestMultipleSequenceAlignment
         MultipleSequenceAlignment alignment = MultipleSequenceAlignment.readCharAlignment(new StringReader(sb
             .toString()), dnaVocabulary);
 
-        FloatVector dnaGapInsertionCostVector = new FloatVector(dnaVocabulary.size(), 10);
+        FloatVector dnaColumnInsertionCostVector = new FloatVector(dnaVocabulary.size(), 10);
         // First test a maximum-likelihood model
         ColumnAlignmentModel pssmModel = alignment.induceLogLinearAlignmentModel(new FloatVector(dnaVocabulary.size(),
-            0), null, dnaGapInsertionCostVector);
+            0), null, dnaColumnInsertionCostVector);
         assertEquals(-Math.log(3f / 8), pssmModel.cost(DNA_A, 0), .01f);
         assertEquals(-Math.log(2f / 8), pssmModel.cost(DNA_T, 0), .01f);
         assertEquals(-Math.log(2f / 8), pssmModel.cost(DNA_C, 5), .01f);
@@ -262,7 +262,7 @@ public class TestMultipleSequenceAlignment
 
         // Now test a Laplace-smoothed model
         pssmModel = alignment.induceLogLinearAlignmentModel(new FloatVector(dnaVocabulary.size(), 1), null,
-            dnaGapInsertionCostVector);
+            dnaColumnInsertionCostVector);
         assertEquals(-Math.log(4f / 13), pssmModel.cost(DNA_A, 0), .01f);
         assertEquals(-Math.log(3f / 13), pssmModel.cost(DNA_T, 0), .01f);
         assertEquals(-Math.log(3f / 13), pssmModel.cost(DNA_C, 5), .01f);
