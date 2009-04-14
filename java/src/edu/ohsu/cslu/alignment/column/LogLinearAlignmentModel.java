@@ -28,27 +28,27 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
 
     private final FloatVector[] costVectors;
     private final Vocabulary vocabulary;
-    private final NumericVector gapInsertionCostVector;
+    private final NumericVector columnInsertionCostVector;
 
     public LogLinearAlignmentModel(FloatVector[] costVectors, Vocabulary vocabulary,
-        NumericVector gapInsertionCostVector)
+        NumericVector columnInsertionCostVector)
     {
         this.costVectors = costVectors;
         this.vocabulary = vocabulary;
-        this.gapInsertionCostVector = gapInsertionCostVector;
+        this.columnInsertionCostVector = columnInsertionCostVector;
     }
 
     public LogLinearAlignmentModel(java.io.Reader trainingData, CharVocabulary vocabulary, boolean ignoreLabelLines,
-        NumericVector gapInsertionCostVector) throws IOException
+        NumericVector columnInsertionCostVector) throws IOException
     {
-        this(trainingData, vocabulary, null, ignoreLabelLines, gapInsertionCostVector);
+        this(trainingData, vocabulary, null, ignoreLabelLines, columnInsertionCostVector);
     }
 
     public LogLinearAlignmentModel(java.io.Reader trainingData, CharVocabulary vocabulary, Vector laplacePseudoCounts,
-        boolean ignoreLabelLines, NumericVector gapInsertionCostVector) throws IOException
+        boolean ignoreLabelLines, NumericVector columnInsertionCostVector) throws IOException
     {
         this.vocabulary = vocabulary;
-        this.gapInsertionCostVector = gapInsertionCostVector;
+        this.columnInsertionCostVector = columnInsertionCostVector;
 
         BufferedReader br = new BufferedReader(trainingData);
 
@@ -113,7 +113,7 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
     @Override
     public float columnInsertionCost(Vector featureVector)
     {
-        return featureVector.dotProduct(gapInsertionCostVector);
+        return featureVector.dotProduct(columnInsertionCostVector);
     }
 
     @Override
