@@ -13,11 +13,11 @@ import org.apache.commons.cli.Options;
 
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
+import edu.ohsu.cslu.alignment.column.ColumnSequenceAligner;
+import edu.ohsu.cslu.alignment.column.FullColumnAligner;
+import edu.ohsu.cslu.alignment.column.LogLinearAlignmentModel;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.multiple.ReestimatingPssmMultipleSequenceAligner;
-import edu.ohsu.cslu.alignment.pssm.ColumnSequenceAligner;
-import edu.ohsu.cslu.alignment.pssm.FullColumnAligner;
-import edu.ohsu.cslu.alignment.pssm.LogLinearAlignmentModel;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
