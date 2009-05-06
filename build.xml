@@ -86,6 +86,8 @@
          * tool-name - string (required). The desired script name. The jar name 
              will match, with a .jar suffix
          * heap-size (optional - default=128) Size in megabytes
+         * additional-jars (optional) List of any additional jars which should
+             be included in their entirety
     ========================================================================
     -->
 	<target name="package.tool" description="Package an executable jar file">
