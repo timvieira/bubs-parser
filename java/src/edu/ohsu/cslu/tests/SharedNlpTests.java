@@ -52,6 +52,11 @@ public class SharedNlpTests
         return is;
     }
 
+    public static String unitTestDataAsString(String filename) throws IOException
+    {
+        return new String(readUnitTestData(filename));
+    }
+
     public static byte[] readUnitTestData(String filename) throws IOException
     {
         InputStream is = new FileInputStream(SharedNlpTests.UNIT_TEST_DIR + filename);
@@ -106,7 +111,7 @@ public class SharedNlpTests
 
     public static void assertEquals(String message, int[] expected, int[] actual)
     {
-        Assert.assertEquals(message, expected.length, actual.length);
+        Assert.assertEquals(message + " (length mismatch)", expected.length, actual.length);
         for (int i = 0; i < expected.length; i++)
         {
             Assert.assertEquals(message, expected[i], actual[i]);
