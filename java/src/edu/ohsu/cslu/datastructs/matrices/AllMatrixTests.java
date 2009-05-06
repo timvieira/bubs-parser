@@ -4,6 +4,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses( {TestIntMatrix.class, TestFloatMatrix.class, TestFixedPointShortMatrix.class})
+@Suite.SuiteClasses( {TestIntMatrix.class, TestShortMatrix.class, TestByteMatrix.class, TestFloatMatrix.class,
+                      TestFixedPointShortMatrix.class})
 public class AllMatrixTests
 {}

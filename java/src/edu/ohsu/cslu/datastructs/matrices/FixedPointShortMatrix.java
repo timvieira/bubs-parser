@@ -22,7 +22,7 @@ import edu.ohsu.cslu.util.Math;
  * 
  *        $Id$
  */
-public class FixedPointShortMatrix extends BaseMatrix implements Matrix, Serializable, Cloneable
+public class FixedPointShortMatrix extends BaseMatrix implements Serializable, Cloneable
 {
     private final static long serialVersionUID = 369752896212698723L;
 

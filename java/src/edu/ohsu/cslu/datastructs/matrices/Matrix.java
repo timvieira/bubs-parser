@@ -331,6 +331,8 @@ public interface Matrix extends Cloneable
         private final static String ATTRIBUTE_PRECISION = "precision";
 
         public final static String ATTRIBUTE_TYPE_INT = "int";
+        public final static String ATTRIBUTE_TYPE_SHORT = "short";
+        public final static String ATTRIBUTE_TYPE_BYTE = "byte";
         public final static String ATTRIBUTE_TYPE_FLOAT = "float";
         public final static String ATTRIBUTE_TYPE_FIXED_POINT_SHORT = "fixed-point-short";
 
@@ -455,6 +457,14 @@ public interface Matrix extends Cloneable
             {
                 int precision = Integer.parseInt(attributes.get(ATTRIBUTE_PRECISION));
                 matrix = new FixedPointShortMatrix(rows, columns, precision, symmetric);
+            }
+            else if (type.equals(ATTRIBUTE_TYPE_SHORT))
+            {
+                matrix = new ShortMatrix(rows, columns, symmetric);
+            }
+            else if (type.equals(ATTRIBUTE_TYPE_BYTE))
+            {
+                matrix = new ByteMatrix(rows, columns, symmetric);
             }
             else if (type.equals("double"))
             {

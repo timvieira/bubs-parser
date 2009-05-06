@@ -20,7 +20,7 @@ import java.util.Arrays;
  * 
  *        $Id$
  */
-public final class FloatMatrix extends BaseMatrix implements Matrix, Serializable, Cloneable
+public final class FloatMatrix extends BaseMatrix implements Serializable, Cloneable
 {
     private final static long serialVersionUID = 369752896212698723L;
 
