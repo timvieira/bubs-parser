@@ -1,14 +1,13 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.Writer;
 import java.util.Arrays;
 
 /**
- * Implementation of the {@link Matrix} interface which stores integers instead of floating-point.
- * This implementation is likely to be more efficient for some applications which do not need
- * floating-point arithmetic.
+ * Implementation of the {@link Matrix} interface which stores shorts instead of floating-point.
+ * This implementation is more memory-efficient than {@link IntMatrix} for applications which do not
+ * need the full range of a 32-bit integer.
  * 
  * Reads and writes matrices to a standard human-readable storage format as well as to java
  * serialized objects.
@@ -22,66 +21,66 @@ import java.util.Arrays;
  * 
  *        $Id$
  */
-public final class IntMatrix extends BaseMatrix implements Serializable, Cloneable
+public class ShortMatrix extends BaseMatrix
 {
     private final static long serialVersionUID = 369752896212698723L;
 
-    private final int[][] matrix;
+    private final short[][] matrix;
 
     /**
-     * Construct an IntMatrix
+     * Construct a ShortMatrix
      * 
-     * @param matrix the int array
+     * @param matrix the short array
      */
-    public IntMatrix(final int[][] matrix)
+    public ShortMatrix(final short[][] matrix)
     {
         this(matrix, false);
     }
 
     /**
-     * Construct an IntMatrix
+     * Construct a ShortMatrix
      * 
      * @param m rows
      * @param n columns
      * @param symmetric Is this matrix symmetric? (Symmetric matrices can be stored more
      *            efficiently)
      */
-    public IntMatrix(final int m, final int n, boolean symmetric)
+    public ShortMatrix(final int m, final int n, boolean symmetric)
     {
         super(m, n, symmetric);
         if (symmetric)
         {
-            matrix = new int[m][];
+            matrix = new short[m][];
             for (int i = 0; i < m; i++)
             {
-                matrix[i] = new int[i + 1];
+                matrix[i] = new short[i + 1];
             }
         }
         else
         {
-            matrix = new int[m][n];
+            matrix = new short[m][n];
         }
     }
 
     /**
-     * Construct an IntMatrix
+     * Construct a ShortMatrix
      * 
      * @param m rows
      * @param n columns
      */
-    public IntMatrix(final int m, final int n)
+    public ShortMatrix(final int m, final int n)
     {
         this(m, n, false);
     }
 
     /**
-     * Construct an IntMatrix
+     * Construct a ShortMatrix
      * 
-     * @param matrix the int array
+     * @param matrix the short array
      * @param symmetric Is this matrix symmetric? (Symmetric matrices can be stored more
      *            efficiently)
      */
-    public IntMatrix(final int[][] matrix, boolean symmetric)
+    public ShortMatrix(final short[][] matrix, boolean symmetric)
     {
         super(matrix.length, matrix.length == 0 ? 0 : matrix[matrix.length - 1].length, symmetric);
         this.matrix = matrix;
@@ -117,7 +116,12 @@ public final class IntMatrix extends BaseMatrix implements Serializable, Cloneab
     {
         if (!symmetric)
         {
-            return matrix[i];
+            final int[] row = new int[n];
+            for (int j = 0; j < n; j++)
+            {
+                row[j] = matrix[i][j];
+            }
+            return row;
         }
 
         // For symmetric matrices, we have to copy and 'extend' the row
@@ -134,11 +138,11 @@ public final class IntMatrix extends BaseMatrix implements Serializable, Cloneab
     {
         if (symmetric && j > i)
         {
-            matrix[j][i] = value;
+            matrix[j][i] = (short) value;
         }
         else
         {
-            matrix[i][j] = value;
+            matrix[i][j] = (short) value;
         }
     }
 
@@ -151,7 +155,7 @@ public final class IntMatrix extends BaseMatrix implements Serializable, Cloneab
     @Override
     public void set(final int i, final int j, final String newValue)
     {
-        matrix[i][j] = Integer.parseInt(newValue);
+        matrix[i][j] = Short.parseShort(newValue);
     }
 
     public void increment(final int i, final int j)
@@ -185,7 +189,7 @@ public final class IntMatrix extends BaseMatrix implements Serializable, Cloneab
         }
         else
         {
-            Arrays.fill(matrix[i], value);
+            Arrays.fill(matrix[i], (short) value);
         }
     }
 
@@ -293,59 +297,59 @@ public final class IntMatrix extends BaseMatrix implements Serializable, Cloneab
      * symmetric (even if the submatrix is in fact mathematically a symmetric matrix).
      */
     @Override
-    public IntMatrix subMatrix(final int i0, final int i1, final int j0, final int j1)
+    public ShortMatrix subMatrix(final int i0, final int i1, final int j0, final int j1)
     {
         if (symmetric)
         {
             if (((i1 - i0) == (j1 - j0)) && (i1 == j1))
             {
                 // The resulting matrix will still be symmetric
-                final int[][] submatrix = new int[i1 - i0 + 1][];
+                final short[][] submatrix = new short[i1 - i0 + 1][];
                 for (int i = i0; i <= i1; i++)
                 {
                     final int rowLength = i - i0 + 1;
-                    final int[] row = submatrix[i - i0] = new int[rowLength];
+                    final short[] row = submatrix[i - i0] = new short[rowLength];
                     System.arraycopy(matrix[i], j0, row, 0, rowLength);
                 }
-                return new IntMatrix(submatrix, true);
+                return new ShortMatrix(submatrix, true);
             }
 
             // The resulting matrix will _not_ be symmetric
-            final int[][] submatrix = new int[i1 - i0 + 1][];
+            final short[][] submatrix = new short[i1 - i0 + 1][];
             for (int i = i0; i <= i1; i++)
             {
                 final int rowLength = j1 - j0 + 1;
-                final int[] row = submatrix[i - i0] = new int[rowLength];
+                final short[] row = submatrix[i - i0] = new short[rowLength];
                 for (int j = j0; j <= j1; j++)
                 {
-                    row[j - j0] = getInt(i, j);
+                    row[j - j0] = (short) getInt(i, j);
                 }
             }
-            return new IntMatrix(submatrix, false);
+            return new ShortMatrix(submatrix, false);
         }
 
-        final int[][] submatrix = new int[i1 - i0 + 1][];
+        final short[][] submatrix = new short[i1 - i0 + 1][];
         for (int i = i0; i <= i1; i++)
         {
-            final int[] row = new int[j1 - j0 + 1];
+            final short[] row = new short[j1 - j0 + 1];
             System.arraycopy(matrix[i], j0, row, 0, row.length);
             submatrix[i - i0] = row;
         }
-        return new IntMatrix(submatrix);
+        return new ShortMatrix(submatrix);
     }
 
     /**
      * Type-strengthen {@link Matrix#transpose()}
      */
     @Override
-    public IntMatrix transpose()
+    public ShortMatrix transpose()
     {
         if (isSymmetric() || n == 0)
         {
             return clone();
         }
 
-        final int[][] array = new int[n][m];
+        final short[][] array = new short[n][m];
         for (int i = 0; i < m; i++)
         {
             for (int j = 0; j < n; j++)
@@ -353,7 +357,7 @@ public final class IntMatrix extends BaseMatrix implements Serializable, Cloneab
                 array[j][i] = matrix[i][j];
             }
         }
-        return new IntMatrix(array);
+        return new ShortMatrix(array);
     }
 
     @Override
@@ -389,33 +393,33 @@ public final class IntMatrix extends BaseMatrix implements Serializable, Cloneab
     @Override
     public float infinity()
     {
-        return Integer.MAX_VALUE;
+        return Short.MAX_VALUE;
     }
 
     @Override
     public float negativeInfinity()
     {
-        return Integer.MIN_VALUE;
+        return Short.MIN_VALUE;
     }
 
     @Override
-    public IntMatrix clone()
+    public ShortMatrix clone()
     {
-        final int[][] newMatrix = new int[m][];
+        final short[][] newMatrix = new short[m][];
         for (int i = 0; i < m; i++)
         {
             final int rowLength = matrix[i].length;
-            newMatrix[i] = new int[rowLength];
+            newMatrix[i] = new short[rowLength];
             System.arraycopy(matrix[i], 0, newMatrix[i], 0, rowLength);
         }
-        return new IntMatrix(newMatrix, symmetric);
+        return new ShortMatrix(newMatrix, symmetric);
     }
 
     @Override
     public void write(Writer writer) throws IOException
     {
         // Header line
-        writer.write(String.format("matrix type=int rows=%d columns=%d symmetric=%s\n", m, n, symmetric));
+        writer.write(String.format("matrix type=short rows=%d columns=%d symmetric=%s\n", m, n, symmetric));
 
         // Matrix contents
         final int length = Integer.toString(intMax()).length();
