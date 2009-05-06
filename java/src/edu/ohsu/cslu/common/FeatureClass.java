@@ -22,6 +22,9 @@ public enum FeatureClass implements Comparable<FeatureClass>
     /** Gap token */
     Gap,
 
+    /** Unknown-word token */
+    Unknown,
+
     /** Any token which does not start with an underscore */
     Word,
 
@@ -47,6 +50,7 @@ public enum FeatureClass implements Comparable<FeatureClass>
     Other;
 
     public final static String GAP = "_-";
+    public final static String UNKNOWN = "-unk-";
 
     public final static String PREFIX_POS = "_pos_";
     public final static String PREFIX_PREVIOUS_WORD = "_word-";
@@ -84,6 +88,11 @@ public enum FeatureClass implements Comparable<FeatureClass>
         if (s.equals(GAP))
         {
             return Gap;
+        }
+
+        if (s.equals(UNKNOWN))
+        {
+            return Unknown;
         }
 
         if (!s.startsWith("_"))

@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.alignment;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -10,6 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link LogLinearVocabulary}
@@ -105,31 +105,31 @@ public class TestLogLinearVocabulary
     {
         LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(sampleInput);
 
-        assertEquals(36, vocabulary.size());
+        assertEquals(37, vocabulary.size());
 
         assertEquals(0, vocabulary.map("_-"));
-        assertEquals(1, vocabulary.map("-RRB-"));
-        assertEquals("-RRB-", vocabulary.map(1));
+        assertEquals(2, vocabulary.map("-RRB-"));
+        assertEquals("-RRB-", vocabulary.map(2));
 
-        assertEquals(11, vocabulary.map("not"));
-        assertEquals("not", vocabulary.map(11));
+        assertEquals(12, vocabulary.map("not"));
+        assertEquals("not", vocabulary.map(12));
 
-        assertEquals(4, vocabulary.map("The"));
-        assertEquals("The", vocabulary.map(4));
+        assertEquals(5, vocabulary.map("The"));
+        assertEquals("The", vocabulary.map(5));
 
-        assertEquals(10, vocabulary.map("least"));
-        assertEquals("least", vocabulary.map(10));
+        assertEquals(11, vocabulary.map("least"));
+        assertEquals("least", vocabulary.map(11));
 
-        assertEquals(35, vocabulary.map("_sib"));
-        assertEquals("_sib", vocabulary.map(35));
+        assertEquals(36, vocabulary.map("_sib"));
+        assertEquals("_sib", vocabulary.map(36));
 
-        assertEquals(34, vocabulary.map("_head"));
-        assertEquals("_head", vocabulary.map(34));
+        assertEquals(35, vocabulary.map("_head"));
+        assertEquals("_head", vocabulary.map(35));
 
         // This token should not be mapped, even though we skipped the space between two parentheses
         assertEquals(Integer.MIN_VALUE, vocabulary.map("_sib_pos_NNS"));
 
-        SharedNlpTests.assertEquals("Wrong category boundary", new int[] {19, 34}, vocabulary.categoryBoundaries());
+        SharedNlpTests.assertEquals("Wrong category boundary", new int[] {20, 35}, vocabulary.categoryBoundaries());
     }
 
     @Test
