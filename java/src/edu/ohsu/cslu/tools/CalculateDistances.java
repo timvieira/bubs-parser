@@ -2,6 +2,7 @@ package edu.ohsu.cslu.tools;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,7 +97,7 @@ public class CalculateDistances extends BaseCommandlineTool
         br.close();
 
         Matrix matrix = calculator.distance();
-        System.out.println(matrix.toString());
+        matrix.write(new OutputStreamWriter(System.out));
     }
 
     @Override
