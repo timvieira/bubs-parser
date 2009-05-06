@@ -1,8 +1,5 @@
 package edu.ohsu.cslu.common;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -11,6 +8,9 @@ import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.alignment.bio.LogLinearDnaVocabulary;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * Unit tests for {@link LogLinearMappedSequence}.
@@ -67,7 +67,7 @@ public class TestLogLinearMappedSequence
         LogLinearMappedSequence sequence = new LogLinearMappedSequence(sentence1, vocabulary);
 
         assertEquals(10, sequence.length());
-        assertEquals(34, sequence.features());
+        assertEquals(35, sequence.features());
 
         // TODO: This test is probably now applicable to {@link MultipleVocabularyMappedSequence} as
         // well

@@ -1,12 +1,12 @@
 package edu.ohsu.cslu.alignment.tools;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.Test;
 
 import edu.ohsu.cslu.alignment.TestSimpleVocabulary;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.common.tools.ToolTestCase;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Simple unit tests for {@link InduceMappedVocabularies}. The core functionality is tested in
@@ -58,21 +58,22 @@ public class TestInduceMappedVocabularies extends ToolTestCase
     public void testInduceLogLinearVocabulary() throws Exception
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("vocabulary size=14 categoryboundaries=12\n");
+        sb.append("vocabulary size=15 categoryboundaries=13\n");
         sb.append("0 : _-\n");
-        sb.append("1 : .\n");
-        sb.append("2 : DT\n");
-        sb.append("3 : MD\n");
-        sb.append("4 : NN\n");
-        sb.append("5 : NNS\n");
-        sb.append("6 : The\n");
-        sb.append("7 : VB\n");
-        sb.append("8 : computers\n");
-        sb.append("9 : display\n");
-        sb.append("10 : stock\n");
-        sb.append("11 : will\n");
-        sb.append("12 : _head\n");
-        sb.append("13 : _sib\n");
+        sb.append("1 : -unk-\n");
+        sb.append("2 : .\n");
+        sb.append("3 : DT\n");
+        sb.append("4 : MD\n");
+        sb.append("5 : NN\n");
+        sb.append("6 : NNS\n");
+        sb.append("7 : The\n");
+        sb.append("8 : VB\n");
+        sb.append("9 : computers\n");
+        sb.append("10 : display\n");
+        sb.append("11 : stock\n");
+        sb.append("12 : will\n");
+        sb.append("13 : _head\n");
+        sb.append("14 : _sib\n");
         sb.append("\n");
 
         String output = executeTool("-l",

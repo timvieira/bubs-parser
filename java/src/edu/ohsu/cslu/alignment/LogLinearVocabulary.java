@@ -120,6 +120,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
     {
         TreeSet<String> featureList = new TreeSet<String>(new TokenComparator());
         featureList.add(gapSymbol);
+        featureList.add(FeatureClass.UNKNOWN);
 
         for (String line = reader.readLine(); line != null; line = reader.readLine())
         {
@@ -147,7 +148,8 @@ public class LogLinearVocabulary extends SimpleVocabulary
         {
             FeatureClass fc = FeatureClass.forString(iter.next());
             i++;
-            if (currentClass != fc)
+            // Special-case - Unknown is considered part of the Word feature class
+            if (currentClass != fc && !(currentClass == FeatureClass.Unknown && fc == FeatureClass.Word))
             {
                 currentClass = fc;
                 categoryBoundaryList.add(i);
@@ -199,6 +201,17 @@ public class LogLinearVocabulary extends SimpleVocabulary
             }
         }
         writer.write('\n');
+    }
+
+    @Override
+    public int map(String token)
+    {
+        final int value = super.map(token);
+        if (value == Integer.MIN_VALUE && !token.startsWith("_"))
+        {
+            return map(FeatureClass.UNKNOWN);
+        }
+        return value;
     }
 
     public int[] categoryBoundaries()
