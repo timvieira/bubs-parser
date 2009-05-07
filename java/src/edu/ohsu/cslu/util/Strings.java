@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.narytree.NaryTree;
@@ -235,5 +237,39 @@ public class Strings
             }
         }
         return attributes;
+    }
+
+    /**
+     * @param s a space-delimited string
+     * @return All possible permutations of the tokens in the supplied string
+     */
+    public static Set<String> permuteTokens(String s)
+    {
+        TreeSet<String> permutations = new TreeSet<String>();
+        recursivePermute(permutations, "", s.split(" "));
+        return permutations;
+    }
+
+    private static Set<String> recursivePermute(Set<String> permutations, String prefix, String[] suffix)
+    {
+        String newPrefix = prefix.length() == 0 ? "" : prefix + " ";
+        // Base case of length 1
+        if (suffix.length == 1)
+        {
+            permutations.add(newPrefix + suffix[0]);
+            return permutations;
+        }
+
+        // Call recursively for each character in toPermute
+        for (int i = 0; i < suffix.length; i++)
+        {
+            String[] newSuffix = new String[suffix.length - 1];
+            System.arraycopy(suffix, 0, newSuffix, 0, i);
+            System.arraycopy(suffix, i + 1, newSuffix, i, newSuffix.length - i);
+
+            permutations.addAll(recursivePermute(permutations, newPrefix + suffix[i], newSuffix));
+        }
+
+        return permutations;
     }
 }
