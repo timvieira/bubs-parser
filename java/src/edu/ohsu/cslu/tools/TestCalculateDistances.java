@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.tools;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,6 +10,8 @@ import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for the command-line distance calculation tool.
@@ -57,11 +57,11 @@ public class TestCalculateDistances extends ToolTestCase
     public void testLevenshteinDistanceCalculator() throws Exception
     {
         IntMatrix intMatrix = new IntMatrix(new int[][] { {0}, {3, 0}, {1, 3, 0}}, true);
-        assertEquals(intMatrix.toString() + '\n', executeTool("-m levenshtein", "dance\ndancing\ndances"));
+        assertEquals(intMatrix.toString(), executeTool("-m levenshtein", "dance\ndancing\ndances"));
 
         // A couple examples from Wikipedia
         intMatrix = new IntMatrix(new int[][] { {0}, {3, 0}, {7, 6, 0}, {5, 6, 3, 0}}, true);
-        assertEquals(intMatrix.toString() + '\n', executeTool("-m levenshtein", "kitten\nsitting\nsaturday\nsunday"));
+        assertEquals(intMatrix.toString(), executeTool("-m levenshtein", "kitten\nsitting\nsaturday\nsunday"));
     }
 
     @Override
