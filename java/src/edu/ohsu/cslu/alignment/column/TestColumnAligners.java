@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.alignment.column;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -23,6 +21,8 @@ import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for various {@link ColumnSequenceAligner} implementations.
@@ -230,7 +230,7 @@ public class TestColumnAligners
         columnInsertionCostVector.set(linguisticVocabulary.map("_head_verb"), Float.POSITIVE_INFINITY);
         LogLinearAlignmentModel linguisticModel = msa.induceLogLinearAlignmentModel(new FloatVector(
             new float[] {2f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f,
-                         1f, 1f, 1f, 1f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f,
+                         1f, 1f, 1f, 1f, 1f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f,
                          .2f, 0}), null, columnInsertionCostVector);
 
         MappedSequence unalignedSequence = new LogLinearMappedSequence(logLinearSentence3, linguisticVocabulary);

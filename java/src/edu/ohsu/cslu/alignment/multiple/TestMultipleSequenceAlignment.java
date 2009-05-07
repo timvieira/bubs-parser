@@ -1,8 +1,5 @@
 package edu.ohsu.cslu.alignment.multiple;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
-
 import java.io.IOException;
 import java.io.StringReader;
 
@@ -20,6 +17,9 @@ import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
 
 /**
  * Unit tests for {@link MultipleSequenceAlignment}
@@ -263,12 +263,12 @@ public class TestMultipleSequenceAlignment
         // Now test a Laplace-smoothed model
         pssmModel = alignment.induceLogLinearAlignmentModel(new FloatVector(dnaVocabulary.size(), 1), null,
             dnaColumnInsertionCostVector);
-        assertEquals(-Math.log(4f / 13), pssmModel.cost(DNA_A, 0), .01f);
-        assertEquals(-Math.log(3f / 13), pssmModel.cost(DNA_T, 0), .01f);
-        assertEquals(-Math.log(3f / 13), pssmModel.cost(DNA_C, 5), .01f);
-        assertEquals(-Math.log(9f / 13), pssmModel.cost(DNA_GAP, 11), .01f);
-        assertEquals(-Math.log(2f / 13), pssmModel.cost(DNA_T, 20), .01f);
-        assertEquals(-Math.log(6f / 13), pssmModel.cost(DNA_G, 25), .01f);
+        assertEquals(-Math.log(4f / 14), pssmModel.cost(DNA_A, 0), .01f);
+        assertEquals(-Math.log(3f / 14), pssmModel.cost(DNA_T, 0), .01f);
+        assertEquals(-Math.log(3f / 14), pssmModel.cost(DNA_C, 5), .01f);
+        assertEquals(-Math.log(9f / 14), pssmModel.cost(DNA_GAP, 11), .01f);
+        assertEquals(-Math.log(2f / 14), pssmModel.cost(DNA_T, 20), .01f);
+        assertEquals(-Math.log(6f / 14), pssmModel.cost(DNA_G, 25), .01f);
 
         // And a linguistic alignment
         String sentence = "(the _pos_DT) (_-) (cat _pos_NN) (ran _pos_VBN _head_verb)";
@@ -276,10 +276,11 @@ public class TestMultipleSequenceAlignment
         alignment = new MultipleSequenceAlignment();
         LogLinearMappedSequence sequence = new LogLinearMappedSequence(sentence, vocabulary);
         alignment.addSequence(sequence);
-        // We'll add 1/3 to each word count, 1 to each POS count, and 0 to _head_verb counts
-        FloatVector laplacePseudoCounts = new FloatVector(new float[] {1f, 1f / 3, 1f / 3, 1f / 3, 1, 1, 1, 0});
+        // We'll add 1 to gap count, 1/4 to each word count (including -unk-), 1 to each POS count,
+        // and 0 to _head_verb counts
+        FloatVector laplacePseudoCounts = new FloatVector(new float[] {1f, 1f / 4, 1f / 4, 1f / 4, 1f / 4, 1, 1, 1, 0});
         LogLinearAlignmentModel model = alignment.induceLogLinearAlignmentModel(laplacePseudoCounts, null,
-            new FloatVector(new float[] {10, 10, 10, 10, 10, 10, 10, Float.POSITIVE_INFINITY}));
+            new FloatVector(new float[] {10, 10, 10, 10, 10, 10, 10, 10, Float.POSITIVE_INFINITY}));
 
         // Gap
         SparseBitVector gap = new SparseBitVector(new int[] {0});
@@ -289,26 +290,27 @@ public class TestMultipleSequenceAlignment
         // TODO: We should probably have an infinite cost of placing a gap in the _head_verb column
         assertEquals(-Math.log(1f / 3), model.cost(gap, 3), .01f);
 
-        SparseBitVector the = new SparseBitVector(new int[] {3});
-        assertEquals(-Math.log(4f / 9), model.cost(the, 0), .01f);
-        assertEquals(-Math.log(1f / 9), model.cost(the, 1), .01f);
-        assertEquals(-Math.log(1f / 9), model.cost(the, 2), .01f);
-        // TODO: We should probably have an infinite cost of aligning the in the _head_verb column
-        assertEquals(-Math.log(1f / 9), model.cost(the, 3), .01f);
+        SparseBitVector the = new SparseBitVector(new int[] {vocabulary.map("the")});
+        assertEquals(-Math.log(5f / 12), model.cost(the, 0), .01f);
+        assertEquals(-Math.log(1f / 12), model.cost(the, 1), .01f);
+        assertEquals(-Math.log(1f / 12), model.cost(the, 2), .01f);
+        // TODO: We should probably have an infinite cost of aligning 'the' in the _head_verb column
+        assertEquals(-Math.log(1f / 12), model.cost(the, 3), .01f);
 
-        SparseBitVector theDT = new SparseBitVector(new int[] {3, 4});
-        assertEquals(-(Math.log(4f / 9) + Math.log(1f / 2)), model.cost(theDT, 0), .01f);
-        assertEquals(-(Math.log(1f / 9) + Math.log(1f / 4)), model.cost(theDT, 1), .01f);
-        assertEquals(-(Math.log(1f / 9) + Math.log(1f / 4)), model.cost(theDT, 2), .01f);
+        SparseBitVector theDT = new SparseBitVector(new int[] {vocabulary.map("the"), vocabulary.map("_pos_DT")});
+        assertEquals(-(Math.log(5f / 12) + Math.log(1f / 2)), model.cost(theDT, 0), .01f);
+        assertEquals(-(Math.log(1f / 12) + Math.log(1f / 4)), model.cost(theDT, 1), .01f);
+        assertEquals(-(Math.log(1f / 12) + Math.log(1f / 4)), model.cost(theDT, 2), .01f);
         // TODO: We should probably have an infinite cost of aligning the/DT in the _head_verb
         // column
-        assertEquals(-(Math.log(1f / 9) + Math.log(1f / 4)), model.cost(theDT, 3), .01f);
+        assertEquals(-(Math.log(1f / 12) + Math.log(1f / 4)), model.cost(theDT, 3), .01f);
 
-        SparseBitVector ranVB = new SparseBitVector(new int[] {2, 6, 7});
-        assertEquals(Float.POSITIVE_INFINITY, model.cost(ranVB, 0), .01f);
-        assertEquals(Float.POSITIVE_INFINITY, model.cost(ranVB, 1), .01f);
-        assertEquals(Float.POSITIVE_INFINITY, model.cost(ranVB, 2), .01f);
-        assertEquals(-(Math.log(4f / 9) + Math.log(1f / 2) + Math.log(1)), model.cost(ranVB, 3), .01f);
+        SparseBitVector ranVBN = new SparseBitVector(new int[] {vocabulary.map("ran"), vocabulary.map("_pos_VBN"),
+                                                                vocabulary.map("_head_verb")});
+        assertEquals(Float.POSITIVE_INFINITY, model.cost(ranVBN, 0), .01f);
+        assertEquals(Float.POSITIVE_INFINITY, model.cost(ranVBN, 1), .01f);
+        assertEquals(Float.POSITIVE_INFINITY, model.cost(ranVBN, 2), .01f);
+        assertEquals(-(Math.log(5f / 12) + Math.log(1f / 2) + Math.log(1)), model.cost(ranVBN, 3), .01f);
     }
 
     @Test

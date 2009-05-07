@@ -9,8 +9,8 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  * position-specific alignment profile or an existing multiple-sequence-alignment.
  * 
  * Some {@link ColumnAlignmentModel} implementations will allow (for a cost) insertion of additional
- * columns into the model. This cost is computed by the {@link #columnInsertionCost(Vector)}
- * method. Column insertion is generally rare, so this cost will often be considerable.
+ * columns into the model. This cost is computed by the {@link #columnInsertionCost(Vector)} method.
+ * Column insertion is generally rare, so this cost will often be considerable.
  * 
  * Other implementations will represent a Position Specific Score Matrix (PSSM), in which the number
  * of columns is fixed, In this case, {@link #columnInsertionCost(Vector)} should return
@@ -57,11 +57,6 @@ public interface ColumnAlignmentModel extends AlignmentModel
      * @return Number of columns in this model.
      */
     public int columns();
-
-    /**
-     * @return a 'gap' feature vector appropriate for this alignment model
-     */
-    public Vector gapVector();
 
     /**
      * Returns the cost of inserting a gap into the PSSM itself. Some alignment methods allow this

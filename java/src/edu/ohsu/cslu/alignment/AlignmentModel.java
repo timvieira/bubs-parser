@@ -1,7 +1,9 @@
 package edu.ohsu.cslu.alignment;
 
+import edu.ohsu.cslu.alignment.column.ColumnAlignmentModel;
 import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.common.Vocabulary;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * A model used for aligning sequences with one another.
@@ -10,10 +12,12 @@ import edu.ohsu.cslu.common.Vocabulary;
  * token (or a set of features representing a token) at each point in the dynamic alignment process.
  * 
  * For a column-based alignment (i.e., when aligning a new {@link Sequence} with an existing MSA),
- * that cost will depend on the feature vector and on the column index.
+ * that cost will depend on the feature vector and on the column index. (see
+ * {@link ColumnAlignmentModel}).
  * 
  * For a pairwise alignment (i.e., when aligning one {@link Sequence} with another), that cost will
- * depend on comparing a pair of feature vectors from the two sequences.
+ * depend on comparing a pair of feature vectors from the two sequences. (see
+ * {@link SubstitutionAlignmentModel}).
  * 
  * @author Aaron Dunlop
  * @since Oct 10, 2008
@@ -38,5 +42,10 @@ public interface AlignmentModel
      * @return the number of features represented in this model.
      */
     public int features();
+
+    /**
+     * @return a 'gap' feature vector appropriate for this alignment model
+     */
+    public Vector gapVector();
 
 }
