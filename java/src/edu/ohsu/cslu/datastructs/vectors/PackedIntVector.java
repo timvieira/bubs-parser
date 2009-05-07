@@ -99,11 +99,11 @@ public final class PackedIntVector extends BaseNumericVector
     }
 
     @Override
-    public Vector add(Vector v)
+    public NumericVector add(Vector v)
     {
         if (v instanceof PackedIntVector && v.length() == length && ((PackedIntVector) v).bits == bits)
         {
-            Vector newVector = new PackedIntVector(length, bits);
+            NumericVector newVector = new PackedIntVector(length, bits);
 
             for (int i = 0; i < length; i++)
             {
@@ -207,7 +207,7 @@ public final class PackedIntVector extends BaseNumericVector
     }
 
     @Override
-    protected Vector createIntVector()
+    protected NumericVector createIntVector()
     {
         return new PackedIntVector(length, bits);
     }

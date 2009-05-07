@@ -114,14 +114,14 @@ public abstract class BaseVector implements Vector, Serializable
         return minI;
     }
 
-    public Vector add(Vector v)
+    public NumericVector add(Vector v)
     {
         if (v.length() != length && !(v instanceof SparseBitVector && v.length() < length))
         {
             throw new IllegalArgumentException("Vector length mismatch");
         }
 
-        Vector newVector;
+        NumericVector newVector;
         Class<?> vClass = v.getClass();
         if (vClass == IntVector.class || vClass == PackedIntVector.class || v instanceof BitVector)
         {
@@ -141,9 +141,9 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public Vector scalarAdd(float addend)
+    public NumericVector scalarAdd(float addend)
     {
-        Vector newVector = new FloatVector(length);
+        NumericVector newVector = new FloatVector(length);
         for (int i = 0; i < newVector.length(); i++)
         {
             newVector.set(i, getFloat(i) + addend);
@@ -152,9 +152,9 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public Vector scalarAdd(int addend)
+    public NumericVector scalarAdd(int addend)
     {
-        Vector newVector = createIntVector();
+        NumericVector newVector = createIntVector();
         for (int i = 0; i < newVector.length(); i++)
         {
             newVector.set(i, getFloat(i) + addend);
@@ -173,7 +173,7 @@ public abstract class BaseVector implements Vector, Serializable
             throw new IllegalArgumentException("Vector length mismatch");
         }
 
-        Vector newVector;
+        NumericVector newVector;
         Class<?> vClass = v.getClass();
         if (vClass == IntVector.class || vClass == PackedIntVector.class || v instanceof BitVector)
         {
@@ -193,9 +193,9 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public Vector scalarMultiply(float multiplier)
+    public NumericVector scalarMultiply(float multiplier)
     {
-        Vector newVector = new FloatVector(length);
+        NumericVector newVector = new FloatVector(length);
         for (int i = 0; i < newVector.length(); i++)
         {
             newVector.set(i, getFloat(i) * multiplier);
@@ -204,9 +204,9 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public Vector scalarMultiply(int multiplier)
+    public NumericVector scalarMultiply(int multiplier)
     {
-        Vector newVector = createIntVector();
+        NumericVector newVector = createIntVector();
         for (int i = 0; i < newVector.length(); i++)
         {
             newVector.set(i, getFloat(i) * multiplier);
@@ -224,7 +224,7 @@ public abstract class BaseVector implements Vector, Serializable
      * 
      * @return Vector
      */
-    protected Vector createIntVector()
+    protected NumericVector createIntVector()
     {
         return new IntVector(length);
     }

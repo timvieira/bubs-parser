@@ -268,9 +268,9 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public Vector scalarMultiply(float multiplier)
+    public NumericVector scalarMultiply(float multiplier)
     {
-        Vector v = new FloatVector(length);
+        NumericVector v = new FloatVector(length);
         for (int i : intSet)
         {
             v.set(i, multiplier);
@@ -279,9 +279,9 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public Vector scalarMultiply(int multiplier)
+    public NumericVector scalarMultiply(int multiplier)
     {
-        Vector v = createIntVector();
+        NumericVector v = createIntVector();
         for (int i : intSet)
         {
             v.set(i, multiplier);
