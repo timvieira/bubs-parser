@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -10,10 +8,15 @@ import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
+import edu.ohsu.cslu.alignment.character.CharSequence;
+import edu.ohsu.cslu.alignment.character.CharSubstitutionAlignmentModel;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
+import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.matrices.FloatMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for pairwise aligners.
@@ -55,10 +58,21 @@ public class TestPairwiseAligners
     public void testFullDynamicAligner() throws Exception
     {
         FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
-        testPairwiseAligner(aligner);
+        testDnaAlignment(aligner);
+
+        // And a character-based alignment
+        assertEquals("the dog\0's barking", alignStringsAsCharSequences(aligner, "the dog's barking",
+            "the dog 's barking"));
     }
 
-    private void testPairwiseAligner(FullDynamicPairwiseAligner aligner)
+    private String alignStringsAsCharSequences(PairwiseAligner aligner, String unaligned, String aligned)
+    {
+        Sequence s1 = new CharSequence(unaligned);
+        Sequence s2 = new CharSequence(aligned);
+        return aligner.alignPair(s1, s2, new CharSubstitutionAlignmentModel()).alignedSequence().toString();
+    }
+
+    private void testDnaAlignment(FullDynamicPairwiseAligner aligner)
     {
         assertEquals("AC--AC", alignStrings(aligner, identityMatrixModel, "ACAC", "ACT-AC"));
         assertEquals("-CTG-", alignStrings(aligner, identityMatrixModel, "CTG", "ACTGA"));

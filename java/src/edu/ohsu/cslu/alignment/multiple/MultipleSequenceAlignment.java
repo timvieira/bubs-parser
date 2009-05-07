@@ -298,6 +298,8 @@ public class MultipleSequenceAlignment implements Serializable
     public LogLinearAlignmentModel induceLogLinearAlignmentModel(NumericVector laplacePseudoCounts,
         NumericVector scalingVector, NumericVector columnInsertionCostVector)
     {
+        // TODO Retain counts between estimations
+
         final LogLinearVocabulary vocabulary = (LogLinearVocabulary) vocabularies[0];
         final int columns = length;
 

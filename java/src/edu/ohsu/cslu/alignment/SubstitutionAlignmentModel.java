@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.alignment;
 
+import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
@@ -61,4 +62,6 @@ public interface SubstitutionAlignmentModel extends AlignmentModel
      * @return gap insertion cost
      */
     public float gapInsertionCost(Vector featureVector, int sequenceLength);
+
+    public Sequence createSequence(Vector[] elements);
 }

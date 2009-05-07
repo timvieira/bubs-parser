@@ -9,10 +9,9 @@ import java.util.LinkedList;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
-import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.common.Vocabulary;
-import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
@@ -128,7 +127,7 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
         final LinkedList<Vector> buffer = new LinkedList<Vector>();
         final IntList gapList = new IntArrayList(unaligned.length());
 
-        final IntVector gapVector = new IntVector(unaligned.features(), SubstitutionAlignmentModel.GAP_INDEX);
+        final Vector gapVector = model.gapVector();
 
         int i = unaligned.length();
         int j = aligned.length();
@@ -164,8 +163,8 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
             gapIndices[i] = gapIterator.nextInt();
         }
 
-        return new SequenceAlignment(new MultipleVocabularyMappedSequence(buffer.toArray(new IntVector[buffer.size()]),
-            model.vocabularies()), gapIndices);
+        return new SequenceAlignment((MappedSequence) ((SubstitutionAlignmentModel) model).createSequence(buffer
+            .toArray(new Vector[buffer.size()])), gapIndices);
     }
 
     @Override

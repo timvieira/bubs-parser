@@ -2,6 +2,8 @@ package edu.ohsu.cslu.alignment;
 
 import java.io.Serializable;
 
+import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.matrices.FloatMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
@@ -130,6 +132,18 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
     public final int features()
     {
         return matrices.length;
+    }
+
+    @Override
+    public Sequence createSequence(Vector[] elements)
+    {
+        return new MultipleVocabularyMappedSequence(elements, vocabularies);
+    }
+
+    @Override
+    public Vector gapVector()
+    {
+        return new IntVector(new int[vocabularies.length]);
     }
 
     @Override

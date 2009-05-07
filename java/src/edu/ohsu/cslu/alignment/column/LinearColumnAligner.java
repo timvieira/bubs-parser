@@ -2,11 +2,8 @@ package edu.ohsu.cslu.alignment.column;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.Vocabulary;
-import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
@@ -20,6 +17,7 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  */
 public final class LinearColumnAligner extends FullColumnAligner
 {
+    private float score;
 
     @Override
     public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model, int[] features)
@@ -32,12 +30,7 @@ public final class LinearColumnAligner extends FullColumnAligner
         // TODO: Replace with a PackedIntVector and profile
         final byte[][] backpointer = new byte[maxI][maxJ];
 
-        final Vocabulary[] vocabularies = model.vocabularies();
-        final IntVector gapVector = new IntVector(vocabularies.length);
-        for (int i = 0; i < vocabularies.length; i++)
-        {
-            gapVector.set(i, ((AlignmentVocabulary) vocabularies[i]).gapSymbol());
-        }
+        final Vector gapVector = model.gapVector();
 
         Arrays.fill(current, Float.MAX_VALUE);
 
@@ -92,6 +85,15 @@ public final class LinearColumnAligner extends FullColumnAligner
             current = tmp;
         }
 
+        score = previous[previous.length - 1];
         return backtrace(sequence, model, backpointer, gapVector);
+    }
+
+    /**
+     * @return the score of the last alignment performed
+     */
+    public float score()
+    {
+        return score;
     }
 }

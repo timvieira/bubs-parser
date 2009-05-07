@@ -50,7 +50,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
         this.vocabularies = vocabularies;
     }
 
-    public MultipleVocabularyMappedSequence(final IntVector[] sequence, final Vocabulary[] vocabularies)
+    public MultipleVocabularyMappedSequence(final Vector[] sequence, final Vocabulary[] vocabularies)
     {
         matrix = new IntMatrix(sequence.length, sequence[0].length());
         for (int i = 0; i < sequence.length; i++)
