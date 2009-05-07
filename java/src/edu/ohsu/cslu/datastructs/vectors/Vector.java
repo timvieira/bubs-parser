@@ -96,7 +96,7 @@ public interface Vector
      * @param v addend
      * @return sum of the two {@link Vector}s, as a new {@link Vector} instance
      */
-    public Vector add(Vector v);
+    public NumericVector add(Vector v);
 
     /**
      * Multiplies each element of two {@link Vector}s, returning a new {@link Vector}
@@ -153,25 +153,25 @@ public interface Vector
      * @param addend The value to add
      * @return a new vector scaled by the provided addend
      */
-    public Vector scalarAdd(float addend);
+    public NumericVector scalarAdd(float addend);
 
     /**
      * @param addend The value to add
      * @return a new vector scaled by the provided addend
      */
-    public Vector scalarAdd(int addend);
+    public NumericVector scalarAdd(int addend);
 
     /**
      * @param multiplier
      * @return a new vector scaled by the provided multiplier
      */
-    public Vector scalarMultiply(float multiplier);
+    public NumericVector scalarMultiply(float multiplier);
 
     /**
      * @param multiplier
      * @return a new vector scaled by the provided multiplier
      */
-    public Vector scalarMultiply(int multiplier);
+    public NumericVector scalarMultiply(int multiplier);
 
     public float dotProduct(Vector v);
 

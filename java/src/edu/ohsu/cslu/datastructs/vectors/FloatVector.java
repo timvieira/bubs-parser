@@ -102,7 +102,7 @@ public class FloatVector extends BaseNumericVector
     }
 
     @Override
-    public Vector createIntVector()
+    public NumericVector createIntVector()
     {
         return new FloatVector(length);
     }
@@ -113,6 +113,25 @@ public class FloatVector extends BaseNumericVector
         final float[] newVector = new float[i1 - i0 + 1];
         System.arraycopy(vector, i0, newVector, 0, newVector.length);
         return new FloatVector(newVector);
+    }
+
+    /**
+     * Performs the standard learning algorithm on the weight vector (w) of a perceptron.
+     * 
+     * @param x Input vector
+     * @param y Expected output
+     * @param alpha Learning Rate
+     */
+    public void perceptronUpdate(final Vector x, final float y, final float alpha)
+    {
+        // For each j:
+        // w(j) = w(j) + alpha(y - f(x))x(j)
+        float f = dotProduct(x);
+        for (int j = 0; j < length; j++)
+        {
+            vector[j] = vector[j] + alpha * (y - f) * x.getFloat(j);
+        }
+        // TODO: Separate training for SparseBitVector, since it can be more efficient
     }
 
     @Override
