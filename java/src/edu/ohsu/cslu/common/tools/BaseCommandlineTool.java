@@ -101,7 +101,7 @@ public abstract class BaseCommandlineTool
      * @param commandLine
      */
     @SuppressWarnings("unchecked")
-    void setBasicToolOptions(CommandLine commandLine)
+    protected void setBasicToolOptions(CommandLine commandLine)
     {
         // TODO: Add another annotation for 'verbosable' ?
         verbose = commandLine.hasOption('v');
@@ -119,6 +119,19 @@ public abstract class BaseCommandlineTool
         }
 
         dataFiles = commandLine.getArgList();
+    }
+
+    /**
+     * This method should be overridden by tools which do <i>not</i> want command-line arguments
+     * treated as input files.
+     * 
+     * TODO: Would this option be better handled as an annotation?
+     * 
+     * @return true if this tool should treat command-line arguments as input data files.
+     */
+    protected boolean handleArgsAsInput()
+    {
+        return true;
     }
 
     /**
@@ -142,7 +155,7 @@ public abstract class BaseCommandlineTool
                 tool.setBasicToolOptions(commandLine);
                 tool.setToolOptions(commandLine);
 
-                if (tool.dataFiles.size() > 0)
+                if (tool.dataFiles.size() > 0 && tool.handleArgsAsInput())
                 {
                     // Handle one or more input files from the command-line, translating gzipped
                     // files as appropriate.
