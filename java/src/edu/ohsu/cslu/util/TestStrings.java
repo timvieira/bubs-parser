@@ -4,8 +4,8 @@ import static junit.framework.Assert.assertEquals;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.narytree.CharniakHeadPercolationRuleset;
-import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
+import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
+import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 
 public class TestStrings
 {

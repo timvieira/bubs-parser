@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.narytree;
+package edu.ohsu.cslu.datastructs.narytree;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

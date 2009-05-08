@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.narytree;
+package edu.ohsu.cslu.datastructs.narytree;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

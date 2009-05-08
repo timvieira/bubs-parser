@@ -25,10 +25,10 @@ import org.apache.commons.cli.ParseException;
 
 import edu.ohsu.cslu.common.FeatureClass;
 import edu.ohsu.cslu.common.tools.LinewiseCommandlineTool;
-import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
-import edu.ohsu.cslu.narytree.MsaHeadPercolationRuleset;
-import edu.ohsu.cslu.narytree.NaryTree;
-import edu.ohsu.cslu.narytree.StringNaryTree;
+import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
+import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
 
 /**

@@ -22,9 +22,9 @@ import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.matrices.FixedPointShortMatrix;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
-import edu.ohsu.cslu.narytree.BaseNaryTree;
-import edu.ohsu.cslu.narytree.ParseTree;
-import edu.ohsu.cslu.narytree.BaseNaryTree.PqgramProfile;
+import edu.ohsu.cslu.datastructs.narytree.BaseNaryTree;
+import edu.ohsu.cslu.datastructs.narytree.ParseTree;
+import edu.ohsu.cslu.datastructs.narytree.BaseNaryTree.PqgramProfile;
 import edu.ohsu.cslu.parsing.grammar.InducedGrammar;
 import edu.ohsu.cslu.util.Math;
 

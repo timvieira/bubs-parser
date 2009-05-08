@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.narytree;
+package edu.ohsu.cslu.datastructs.narytree;
 
 public class MsaHeadPercolationRuleset extends HeadPercolationRuleset
 {
