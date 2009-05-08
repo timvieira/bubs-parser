@@ -10,8 +10,8 @@ import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
-import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
-import edu.ohsu.cslu.narytree.MsaHeadPercolationRuleset;
+import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
+import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.util.Strings;
 

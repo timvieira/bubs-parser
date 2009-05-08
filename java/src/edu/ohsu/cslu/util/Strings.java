@@ -9,9 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import edu.ohsu.cslu.narytree.HeadPercolationRuleset;
-import edu.ohsu.cslu.narytree.NaryTree;
-import edu.ohsu.cslu.narytree.StringNaryTree;
+import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 
 public class Strings
 {
