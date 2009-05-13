@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.common.tools;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -229,5 +230,24 @@ public abstract class BaseCommandlineTool
     protected static Reader fileAsReader(String filename) throws IOException
     {
         return new InputStreamReader(fileAsInputStream(filename));
+    }
+
+    /**
+     * Returns the contents of the specified file
+     * 
+     * @param filename
+     * @return Contents of the specified file
+     * @throws IOException
+     */
+    protected static String fileAsString(String filename) throws IOException
+    {
+        BufferedReader br = new BufferedReader(fileAsReader(filename));
+        StringBuilder sb = new StringBuilder(1024);
+        for (String line = br.readLine(); line != null; line = br.readLine())
+        {
+            sb.append(line);
+            sb.append('\n');
+        }
+        return sb.toString();
     }
 }
