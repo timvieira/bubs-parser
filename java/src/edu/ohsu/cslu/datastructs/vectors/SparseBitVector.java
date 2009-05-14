@@ -379,4 +379,15 @@ public class SparseBitVector extends BaseVector implements BitVector
         }
         return newVector;
     }
+
+    /**
+     * Exposes the internal {@link IntSet} for use by other {@link Vector} implementations within
+     * the vector package.
+     * 
+     * @return IntSet
+     */
+    IntSet intSet()
+    {
+        return intSet;
+    }
 }
