@@ -53,6 +53,138 @@ public class FloatVector extends BaseNumericVector
         return (FloatVector) super.elementwiseMultiply(v);
     }
 
+    /**
+     * Adds a {@link Vector} to this vector, returning a reference to this vector
+     * 
+     * Caution: This method changes the contents of this vector
+     * 
+     * @param v addend, a vector of the same length.
+     * @return a reference to this vector.
+     */
+    public FloatVector inPlaceAdd(Vector v)
+    {
+        // Special-case for SparseBitVector
+        if (v instanceof SparseBitVector)
+        {
+            if (v.length() > length)
+            {
+                throw new IllegalArgumentException("Vector length mismatch");
+            }
+
+            for (int i : ((SparseBitVector) v).intSet())
+            {
+                vector[i] += 1;
+            }
+            return this;
+        }
+
+        if (v.length() != length)
+        {
+            throw new IllegalArgumentException("Vector length mismatch");
+        }
+
+        for (int i = 0; i < length; i++)
+        {
+            vector[i] += v.getFloat(i);
+        }
+        return this;
+    }
+
+    /**
+     * Multiplies this {@link Vector} by another {@link Vector}, returning a reference to this
+     * vector
+     * 
+     * Caution: This method changes the contents of this vector
+     * 
+     * @param v multiplicand, a vector of the same length.
+     * @return a reference to this vector.
+     */
+    public FloatVector inPlaceElementwiseMultiply(Vector v)
+    {
+        if (v.length() != length && !(v instanceof SparseBitVector && v.length() <= length))
+        {
+            throw new IllegalArgumentException("Vector length mismatch");
+        }
+
+        for (int i = 0; i < length; i++)
+        {
+            vector[i] *= v.getFloat(i);
+        }
+        return this;
+    }
+
+    /**
+     * Divides this {@link Vector} by another {@link Vector}, returning a reference to this vector
+     * 
+     * Caution: This method changes the contents of this vector
+     * 
+     * @param v divisor, a vector of the same length.
+     * @return a reference to this vector.
+     */
+    public FloatVector inPlaceElementwiseDivide(Vector v)
+    {
+        if (v.length() != length)
+        {
+            throw new IllegalArgumentException("Vector length mismatch");
+        }
+
+        for (int i = 0; i < length; i++)
+        {
+            vector[i] /= v.getFloat(i);
+        }
+        return this;
+    }
+
+    /**
+     * Adds the provided scalar to this {@link Vector}, returning a reference to this vector
+     * 
+     * Caution: This method changes the contents of this vector
+     * 
+     * @param addend Scalar value.
+     * @return a reference to this vector.
+     */
+    public FloatVector inPlaceScalarAdd(float addend)
+    {
+        for (int i = 0; i < length; i++)
+        {
+            vector[i] += addend;
+        }
+        return this;
+    }
+
+    /**
+     * Multiplies this {@link Vector} by the provided scalar, returning a reference to this vector
+     * 
+     * Caution: This method changes the contents of this vector
+     * 
+     * @param multiplicand Scalar value.
+     * @return a reference to this vector.
+     */
+    public FloatVector inPlaceScalarMultiply(float multiplicand)
+    {
+        for (int i = 0; i < length; i++)
+        {
+            vector[i] *= multiplicand;
+        }
+        return this;
+    }
+
+    /**
+     * Takes the log of this {@link Vector}, returning a reference to this vector
+     * 
+     * Caution: This method changes the contents of this vector
+     * 
+     * @return a reference to this vector.
+     */
+    public FloatVector inPlaceElementwiseLog()
+    {
+        for (int i = 0; i < length; i++)
+        {
+            vector[i] = (float) Math.log(vector[i]);
+        }
+        return this;
+    }
+
     @Override
     public final float getFloat(final int i)
     {
