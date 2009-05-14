@@ -170,20 +170,7 @@ public class LogLinearMappedSequence implements MappedSequence
         final int newLength = length() + gaps;
 
         final BitVector[] newElements = new BitVector[newLength];
-        int currentGap = 0;
-        int oldJ = 0;
-        for (int newJ = 0; newJ < newLength; newJ++)
-        {
-            if (currentGap < gaps && oldJ == gapIndices[currentGap])
-            {
-                newElements[newJ] = gapVector;
-                currentGap++;
-            }
-            else
-            {
-                newElements[newJ] = elements[oldJ++];
-            }
-        }
+        edu.ohsu.cslu.util.Arrays.insertGaps(elements, gapIndices, newElements, gapVector);
 
         // Note that this does not clone all contained BitVectors. Efficient, but possibly
         // problematic in a functional-programming sense.

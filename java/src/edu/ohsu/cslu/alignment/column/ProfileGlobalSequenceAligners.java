@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.alignment.column;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -15,6 +13,8 @@ import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
 
 @RunWith(FilteredRunner.class)
 @PerformanceTest
@@ -34,7 +34,7 @@ public class ProfileGlobalSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"d820", "18173"})
+    @PerformanceTest( {"d820", "13970"})
     public void profileFullDynamicAligner() throws IOException
     {
         ColumnAlignmentModel model = new LaplaceModel(new StringReader(SMALL_TRAINING_SET), new DnaVocabulary(), 6,

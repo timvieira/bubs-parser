@@ -248,8 +248,8 @@ public class TestMultipleSequenceAlignment
 
         MultipleSequenceAlignment alignment = MultipleSequenceAlignment.readCharAlignment(new StringReader(sb
             .toString()), dnaVocabulary);
-
         FloatVector dnaColumnInsertionCostVector = new FloatVector(dnaVocabulary.size(), 10);
+
         // First test a maximum-likelihood model
         ColumnAlignmentModel pssmModel = alignment.induceLogLinearAlignmentModel(new FloatVector(dnaVocabulary.size(),
             0), null, dnaColumnInsertionCostVector);
