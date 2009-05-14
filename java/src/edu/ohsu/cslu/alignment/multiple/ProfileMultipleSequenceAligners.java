@@ -71,30 +71,7 @@ public class ProfileMultipleSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"d820", "52344"})
-    public void profileIterativePairwiseAligner()
-    {
-        SubstitutionAlignmentModel subModel = new MatrixSubstitutionAlignmentModel(10, 8,
-            new AlignmentVocabulary[] {DNA_VOCABULARY});
-
-        new IterativePairwiseAligner().align(DNA_VOCABULARY.mapSequences(unalignedSequences), distanceMatrix, subModel);
-    }
-
-    @Test
-    @PerformanceTest( {"d820", "67359"})
-    public void profilePssmAligner() throws IOException
-    {
-        ColumnAlignmentModel model = new LaplaceModel(
-            new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)), new DnaVocabulary(), 6, true);
-        MultipleSequenceAlignment sequenceAlignment = new PssmAligner().align(DNA_VOCABULARY
-            .mapSequences(unalignedSequences), distanceMatrix, model);
-        long[] eval = EvaluateAlignment.evaluate(DNA_VOCABULARY.mapSequences(sequenceAlignment.sequences()), corpus);
-        float accuracy = eval[0] * 100f / eval[1];
-        assertEquals(94.78f, accuracy, .1);
-    }
-
-    @Test
-    @PerformanceTest( {"d820", "26173"})
+    @PerformanceTest( {"d820", "4516"})
     public void profileReestimatingPssmAligner() throws IOException
     {
         BufferedReader br = new BufferedReader(new InputStreamReader(SharedNlpTests
@@ -112,6 +89,29 @@ public class ProfileMultipleSequenceAligners
         ReestimatingPssmMultipleSequenceAligner aligner = new ReestimatingPssmMultipleSequenceAligner(new FloatVector(
             vocabulary.size(), .2f), new FloatVector(vocabulary.size(), 1));
 
-        aligner.alignInOrder(trainingSequences.toArray(new MappedSequence[trainingSequences.size()]));
+        aligner.alignInOrder(trainingSequences.toArray(new MappedSequence[trainingSequences.size()]), true);
+    }
+
+    @Test
+    @PerformanceTest( {"d820", "52344"})
+    public void profileIterativePairwiseAligner()
+    {
+        SubstitutionAlignmentModel subModel = new MatrixSubstitutionAlignmentModel(10, 8,
+            new AlignmentVocabulary[] {DNA_VOCABULARY});
+
+        new IterativePairwiseAligner().align(DNA_VOCABULARY.mapSequences(unalignedSequences), distanceMatrix, subModel);
+    }
+
+    @Test
+    @PerformanceTest( {"d820", "60557"})
+    public void profilePssmAligner() throws IOException
+    {
+        ColumnAlignmentModel model = new LaplaceModel(
+            new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)), new DnaVocabulary(), 6, true);
+        MultipleSequenceAlignment sequenceAlignment = new PssmAligner().align(DNA_VOCABULARY
+            .mapSequences(unalignedSequences), distanceMatrix, model);
+        long[] eval = EvaluateAlignment.evaluate(DNA_VOCABULARY.mapSequences(sequenceAlignment.sequences()), corpus);
+        float accuracy = eval[0] * 100f / eval[1];
+        assertEquals(94.78f, accuracy, .1);
     }
 }

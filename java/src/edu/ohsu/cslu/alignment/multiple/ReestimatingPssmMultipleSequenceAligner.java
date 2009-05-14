@@ -31,6 +31,9 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
 
     // private float upweightingPercentage;
 
+    /**
+     * TODO Document
+     */
     public ReestimatingPssmMultipleSequenceAligner(NumericVector laplacePseudoCounts,
         NumericVector columnInsertionCostVector)
     {
@@ -157,27 +160,36 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
         return alignedSequences;
     }
 
-    public MultipleSequenceAlignment alignInOrder(final MappedSequence[] sequences)
+    public MultipleSequenceAlignment alignInOrder(final MappedSequence[] sequences, boolean verbose)
     {
         MultipleSequenceAlignment alignedSequences = new MultipleSequenceAlignment();
 
         alignedSequences.addSequence(sequences[0]);
 
+        NumericVector cachedColumnInsertionCostVector = columnInsertionCostVector.scalarMultiply(alignedSequences
+            .length());
         for (int i = 1; i < sequences.length; i++)
         {
             // Estimate a new PSSM
             final ColumnAlignmentModel columnAlignmentModel = alignedSequences.induceLogLinearAlignmentModel(
-                laplacePseudoCounts, null, columnInsertionCostVector.scalarMultiply(alignedSequences.length()));
+                laplacePseudoCounts, null, cachedColumnInsertionCostVector);
 
-            System.out.format("Aligning sentence %d (of %d). Current Alignment Length: %d\n", i, sequences.length,
-                columnAlignmentModel.columns());
+            if (verbose)
+            {
+                System.out.format("Aligning sentence %d (of %d). Current Alignment Length: %d\n", i + 1,
+                    sequences.length, columnAlignmentModel.columns());
+            }
 
             // Align the unaligned sequence with the newly induced PSSM
             SequenceAlignment alignment = pssmAligner.align(sequences[i], columnAlignmentModel);
 
             // Update already aligned sequences to include gaps where needed. For the moment,
             // we'll skip re-computing distance metrics...
-            alignedSequences.insertGaps(alignment.gapIndices());
+            if (alignment.alignedSequence().length() != columnAlignmentModel.columns())
+            {
+                alignedSequences.insertGaps(alignment.gapIndices());
+                cachedColumnInsertionCostVector = columnInsertionCostVector.scalarMultiply(alignedSequences.length());
+            }
 
             alignedSequences.addSequence(alignment.alignedSequence());
         }

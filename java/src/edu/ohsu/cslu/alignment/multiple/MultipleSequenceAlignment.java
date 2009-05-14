@@ -21,6 +21,7 @@ import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.NumericVector;
+import edu.ohsu.cslu.util.Arrays;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -42,17 +43,26 @@ public class MultipleSequenceAlignment implements Serializable
     private final ArrayList<MappedSequence> sequences;
 
     /** Length of the sequences in the alignment */
-    private int length;
+    private int columns;
 
     /** Number of features of each sequence in the alignment */
     private int features;
 
     private Vocabulary[] vocabularies;
 
+    /** Used by {@link #induceLogLinearAlignmentModel(NumericVector, NumericVector, NumericVector)} */
+    private NumericVector[] countVectors;
+
+    /** Used by {@link #induceLogLinearAlignmentModel(NumericVector, NumericVector, NumericVector)} */
+    private FloatVector totalCountVector;
+
+    /** Used by {@link #induceLogLinearAlignmentModel(NumericVector, NumericVector, NumericVector)} */
+    private NumericVector cachedLaplacePseudoCounts;
+
     public MultipleSequenceAlignment()
     {
         this.sequences = new ArrayList<MappedSequence>();
-        length = 0;
+        columns = 0;
     }
 
     public MultipleSequenceAlignment(final MappedSequence[] sequences)
@@ -74,7 +84,7 @@ public class MultipleSequenceAlignment implements Serializable
     {
         if (sequences.size() == 0)
         {
-            length = newSequence.length();
+            columns = newSequence.length();
             features = newSequence.features();
             vocabularies = newSequence.vocabularies();
         }
@@ -82,6 +92,15 @@ public class MultipleSequenceAlignment implements Serializable
         checkSequence(newSequence);
 
         sequences.add(newSequence);
+
+        if (totalCountVector != null)
+        {
+            // Count the tokens occurring in the sequence
+            countSequence((LogLinearMappedSequence) newSequence);
+
+            // And add 1 to the total count
+            totalCountVector.inPlaceScalarAdd(1);
+        }
     }
 
     /**
@@ -95,7 +114,7 @@ public class MultipleSequenceAlignment implements Serializable
     {
         if (sequences.size() == 0)
         {
-            length = newSequence.length();
+            columns = newSequence.length();
             features = newSequence.features();
             vocabularies = newSequence.vocabularies();
         }
@@ -107,21 +126,30 @@ public class MultipleSequenceAlignment implements Serializable
             sequences.add(null);
         }
         sequences.set(index, newSequence);
+
+        if (totalCountVector != null)
+        {
+            // Count the tokens occurring in the sequence
+            countSequence((LogLinearMappedSequence) newSequence);
+
+            // And add 1 to the total count
+            totalCountVector.inPlaceScalarAdd(1);
+        }
     }
 
     private void checkSequence(MappedSequence newSequence)
     {
         // Assign the length when the first sequence is added
-        if (length == 0)
+        if (columns == 0)
         {
-            length = newSequence.length();
+            columns = newSequence.length();
         }
 
         // All sequence lengths must match
-        if (newSequence.length() != length)
+        if (newSequence.length() != columns)
         {
             throw new IllegalArgumentException(String.format(
-                "Sequence length (%d) does not match alignment length (%d)", newSequence.length(), length));
+                "Sequence length (%d) does not match alignment length (%d)", newSequence.length(), columns));
         }
 
         // All sequence feature counts must match
@@ -159,7 +187,7 @@ public class MultipleSequenceAlignment implements Serializable
      */
     public final int length()
     {
-        return length;
+        return columns;
     }
 
     /**
@@ -185,6 +213,11 @@ public class MultipleSequenceAlignment implements Serializable
      */
     public void insertGaps(final int[] gapIndices)
     {
+        if (gapIndices.length == 0)
+        {
+            return;
+        }
+
         for (int i = 0; i < sequences.size(); i++)
         {
             MappedSequence s = sequences.get(i);
@@ -193,7 +226,21 @@ public class MultipleSequenceAlignment implements Serializable
                 sequences.set(i, s.insertGaps(gapIndices));
             }
         }
-        length += gapIndices.length;
+        columns += gapIndices.length;
+
+        if (countVectors != null)
+        {
+            NumericVector[] gapVectors = new NumericVector[gapIndices.length];
+            for (int j = 0; j < gapVectors.length; j++)
+            {
+                gapVectors[j] = (NumericVector) cachedLaplacePseudoCounts.clone();
+                gapVectors[j].set(AlignmentModel.GAP_INDEX, gapVectors[j].getFloat(AlignmentModel.GAP_INDEX) + size());
+            }
+
+            NumericVector[] newCountVectors = new NumericVector[countVectors.length + gapIndices.length];
+            Arrays.insertGaps(countVectors, gapIndices, newCountVectors, gapVectors);
+            countVectors = newCountVectors;
+        }
     }
 
     public ColumnAlignmentModel inducePssmAlignmentModel(int pseudoCountsPerToken)
@@ -224,7 +271,6 @@ public class MultipleSequenceAlignment implements Serializable
         int emphasizedSequence, int additionalCounts, boolean[] binaryFeatures, float binaryFeatureGapCost)
     {
         final int featureCount = featureIndices.length;
-        final int columns = length;
         final Vocabulary[] newVocabularies = new Vocabulary[featureIndices.length];
         for (int f = 0; f < featureCount; f++)
         {
@@ -235,7 +281,7 @@ public class MultipleSequenceAlignment implements Serializable
         final IntMatrix[] counts = new IntMatrix[featureCount];
         for (int f = 0; f < featureCount; f++)
         {
-            counts[f] = Matrix.Factory.newIntMatrix(newVocabularies[featureIndices[f]].size(), length,
+            counts[f] = Matrix.Factory.newIntMatrix(newVocabularies[featureIndices[f]].size(), columns,
                 pseudoCountsPerToken[f]);
             totalCounts[f] = pseudoCountsPerToken[f] * newVocabularies[featureIndices[f]].size() + size()
                 + additionalCounts;
@@ -298,10 +344,7 @@ public class MultipleSequenceAlignment implements Serializable
     public LogLinearAlignmentModel induceLogLinearAlignmentModel(NumericVector laplacePseudoCounts,
         NumericVector scalingVector, NumericVector columnInsertionCostVector)
     {
-        // TODO Retain counts between estimations
-
         final LogLinearVocabulary vocabulary = (LogLinearVocabulary) vocabularies[0];
-        final int columns = length;
 
         if (laplacePseudoCounts.length() != vocabulary.size())
         {
@@ -313,56 +356,73 @@ public class MultipleSequenceAlignment implements Serializable
             throw new IllegalArgumentException("Gap insertion-cost vector length must match vocabulary size");
         }
 
-        // Separate 'total' count for each category in the grammar
-        int[] categoryBoundaries = vocabulary.categoryBoundaries();
-        FloatVector totalCount = new FloatVector(vocabulary.size());
-        int previousBoundary = 0;
-        for (int i = 0; i <= categoryBoundaries.length + 1; i++)
+        // Do a full count calculation the first time or if the pseudo-count vector is changed
+        if (totalCountVector == null || !laplacePseudoCounts.equals(cachedLaplacePseudoCounts))
         {
-            final int nextBoundary = i < categoryBoundaries.length ? categoryBoundaries[i] : vocabulary.size();
-            final float laplaceTotalCount = laplacePseudoCounts.subVector(previousBoundary, nextBoundary - 1).sum();
-            for (int j = previousBoundary; j < nextBoundary; j++)
+            cachedLaplacePseudoCounts = laplacePseudoCounts;
+
+            int[] categoryBoundaries = vocabulary.categoryBoundaries();
+
+            // Separate 'total' count for each category in the grammar
+            totalCountVector = new FloatVector(vocabulary.size());
+            int previousBoundary = 0;
+            for (int i = 0; i <= categoryBoundaries.length + 1; i++)
             {
-                // The divisor for each category should be the pseudo-counts for that category + the
-                // number of sequences in the MSA
-                totalCount.set(j, laplaceTotalCount + size());
+                final int nextBoundary = i < categoryBoundaries.length ? categoryBoundaries[i] : vocabulary.size();
+                final float laplaceTotalCount = laplacePseudoCounts.subVector(previousBoundary, nextBoundary - 1).sum();
+                for (int j = previousBoundary; j < nextBoundary; j++)
+                {
+                    // The divisor for each category should be the pseudo-counts for that category +
+                    // the number of sequences in the MSA
+                    totalCountVector.set(j, laplaceTotalCount + size());
+                }
+
+                previousBoundary = nextBoundary;
             }
 
-            previousBoundary = nextBoundary;
-        }
-
-        // Initialize the count vectors with the specified pseudo-counts
-        final NumericVector[] counts = new NumericVector[columns];
-        for (int j = 0; j < columns; j++)
-        {
-            counts[j] = (NumericVector) laplacePseudoCounts.clone();
-        }
-
-        // Count the features present in the alignment
-        for (int i = 0; i < sequences.size(); i++)
-        {
-            LogLinearMappedSequence sequence = (LogLinearMappedSequence) sequences.get(i);
-            if (sequence != null)
+            // Initialize the count vectors with the specified pseudo-counts
+            // NumericVector[] oldCountVectors = countVectors;
+            countVectors = new NumericVector[columns];
+            for (int j = 0; j < columns; j++)
             {
-                for (int j = 0; j < columns; j++)
+                countVectors[j] = (NumericVector) cachedLaplacePseudoCounts.clone();
+            }
+
+            // Count the features present in the alignment
+            for (int i = 0; i < sequences.size(); i++)
+            {
+                LogLinearMappedSequence sequence = (LogLinearMappedSequence) sequences.get(i);
+                if (sequence != null)
                 {
-                    for (int feature : sequence.elementAt(j).values())
-                    {
-                        counts[j].set(feature, counts[j].getFloat(feature) + 1);
-                    }
+                    countSequence(sequence);
                 }
             }
         }
 
+        return induceLogLinearAlignmentModel(columnInsertionCostVector, scalingVector, vocabulary);
+    }
+
+    private void countSequence(LogLinearMappedSequence sequence)
+    {
+        for (int j = 0; j < columns; j++)
+        {
+            ((FloatVector) countVectors[j]).inPlaceAdd(sequence.elementAt(j));
+        }
+    }
+
+    private LogLinearAlignmentModel induceLogLinearAlignmentModel(NumericVector columnInsertionCostVector,
+        NumericVector scalingVector, final LogLinearVocabulary vocabulary)
+    {
         // Turn the count vectors into cost vectors
         final FloatVector[] costVectors = new FloatVector[columns];
         for (int j = 0; j < columns; j++)
         {
-            costVectors[j] = (FloatVector) counts[j].elementwiseDivide(totalCount).elementwiseLog().scalarMultiply(-1f);
+            costVectors[j] = countVectors[j].elementwiseDivide(totalCountVector).inPlaceElementwiseLog()
+                .inPlaceScalarMultiply(-1f);
 
             if (scalingVector != null)
             {
-                costVectors[j] = costVectors[j].elementwiseMultiply(scalingVector);
+                costVectors[j].inPlaceElementwiseMultiply(scalingVector);
             }
         }
 
@@ -442,8 +502,8 @@ public class MultipleSequenceAlignment implements Serializable
 
         // Find the maximum token length in each column
         int lineLength = 0;
-        String[] formats = new String[length];
-        for (int j = 0; j < length; j++)
+        String[] formats = new String[columns];
+        for (int j = 0; j < columns; j++)
         {
             int columnLength = 0;
             for (MappedSequence sequence : sequences)
