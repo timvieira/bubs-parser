@@ -28,7 +28,7 @@ public class IterativePairwiseAligner extends BaseMultipleSequenceAligner
 {
     public IterativePairwiseAligner()
     {
-        aligner = new FullDynamicPairwiseAligner();
+        pairAligner = new FullDynamicPairwiseAligner();
     }
 
     /**
@@ -43,7 +43,7 @@ public class IterativePairwiseAligner extends BaseMultipleSequenceAligner
     protected SequenceAlignment align(MappedSequence alignedSequence, MappedSequence unalignedSequence,
         final AlignmentModel alignmentModel)
     {
-        return aligner.alignPair(unalignedSequence, alignedSequence, alignmentModel);
+        return pairAligner.alignPair(unalignedSequence, alignedSequence, alignmentModel);
     }
 
     /**
@@ -72,6 +72,11 @@ public class IterativePairwiseAligner extends BaseMultipleSequenceAligner
     @Override
     protected int firstSequenceToAlign(MappedSequence[] sequences, Matrix distanceMatrix)
     {
+        
+        // TODO: A BUG!!! : distanceMatrix.argMin() can find that the minimal distance
+        //                  between two sequences is between sequence A and **itself**
+        //                  And we don't want to align a sentence with itself.
+        
         return distanceMatrix.argMin()[0];
     }
 }

@@ -137,7 +137,7 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
     }
 
     @Override
-    public int features()
+    public int featureCount()
     {
         return costVectors[0].length();
     }
@@ -196,5 +196,12 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public float costOfInsertingAGapIntoThisAlignmentModel(Vector featureVector)
+    {
+        // TODO Auto-generated method stub
+        return 0;
     }
 }

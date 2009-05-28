@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.tools;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,8 +12,6 @@ import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for the command-line distance calculation tool.

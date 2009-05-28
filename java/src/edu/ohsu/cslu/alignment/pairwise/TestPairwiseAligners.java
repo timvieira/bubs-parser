@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -15,8 +17,6 @@ import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.matrices.FloatMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for pairwise aligners.

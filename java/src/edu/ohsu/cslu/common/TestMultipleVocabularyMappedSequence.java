@@ -38,14 +38,14 @@ public class TestMultipleVocabularyMappedSequence
     {
         MultipleVocabularyMappedSequence sequence = new MultipleVocabularyMappedSequence(new int[] {0, 1, 2, 3},
             DNA_VOCABULARY);
-        assertEquals(1, sequence.features());
+        assertEquals(1, sequence.featureCount());
         assertEquals(4, sequence.length());
         assertEquals(new IntVector(new int[] {0}), sequence.elementAt(0));
         assertEquals(new IntVector(new int[] {2}), sequence.elementAt(2));
 
         int[][] array = new int[][] { {0, 1}, {1, 2}, {2, 3}, {3, 4}};
         sequence = new MultipleVocabularyMappedSequence(array, DNA_VOCABULARY);
-        assertEquals(2, sequence.features());
+        assertEquals(2, sequence.featureCount());
         assertEquals(4, sequence.length());
         assertEquals(new IntVector(new int[] {0, 1}), sequence.elementAt(0));
         assertEquals(new IntVector(new int[] {1, 2}), sequence.elementAt(1));
@@ -53,7 +53,7 @@ public class TestMultipleVocabularyMappedSequence
         assertEquals(new IntVector(new int[] {3, 4}), sequence.elementAt(3));
 
         sequence = new MultipleVocabularyMappedSequence(new IntMatrix(array), DNA_VOCABULARY);
-        assertEquals(2, sequence.features());
+        assertEquals(2, sequence.featureCount());
         assertEquals(4, sequence.length());
         assertEquals(new IntVector(new int[] {0, 1}), sequence.elementAt(0));
         assertEquals(new IntVector(new int[] {1, 2}), sequence.elementAt(1));
@@ -62,7 +62,7 @@ public class TestMultipleVocabularyMappedSequence
         SharedNlpTests.assertEquals(new String[] {"G", "T"}, sequence.stringFeatures(3));
 
         sequence = new MultipleVocabularyMappedSequence(new int[][] {{0, 1, 2}}, DNA_VOCABULARY);
-        assertEquals(3, sequence.features());
+        assertEquals(3, sequence.featureCount());
         assertEquals(1, sequence.length());
         assertEquals(new IntVector(new int[] {0, 1, 2}), sequence.elementAt(0));
     }
@@ -73,7 +73,7 @@ public class TestMultipleVocabularyMappedSequence
         MultipleVocabularyMappedSequence sequence = new MultipleVocabularyMappedSequence(sentence1, simpleVocabularies);
 
         assertEquals(10, sequence.length());
-        assertEquals(2, sequence.features());
+        assertEquals(2, sequence.featureCount());
 
         assertEquals(2, sequence.feature(1, 0));
         assertEquals("computers", sequence.stringFeature(1, 0));

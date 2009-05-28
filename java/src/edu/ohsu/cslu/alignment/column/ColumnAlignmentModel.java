@@ -68,4 +68,6 @@ public interface ColumnAlignmentModel extends AlignmentModel
      */
     public float columnInsertionCost(Vector featureVector);
 
+    float costOfInsertingAGapIntoThisAlignmentModel(Vector featureVector);
+
 }

@@ -35,7 +35,7 @@ public class CharSubstitutionAlignmentModel implements SubstitutionAlignmentMode
     }
 
     @Override
-    public int features()
+    public int featureCount()
     {
         return 1;
     }
@@ -56,6 +56,12 @@ public class CharSubstitutionAlignmentModel implements SubstitutionAlignmentMode
     public Vector gapVector()
     {
         return new SparseBitVector(new int[] {0});
+    }
+
+    @Override
+    public float gapInsertionCostForOneFeature(int featureIndex, int featureValueIndex)
+    {
+        return 1;
     }
 
 }

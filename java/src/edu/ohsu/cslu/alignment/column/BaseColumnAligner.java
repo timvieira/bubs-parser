@@ -22,7 +22,7 @@ public abstract class BaseColumnAligner implements ColumnSequenceAligner
     @Override
     public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model)
     {
-        int[] features = new int[model.features()];
+        int[] features = new int[model.featureCount()];
         for (int i = 0; i < features.length; i++)
         {
             features[i] = i;

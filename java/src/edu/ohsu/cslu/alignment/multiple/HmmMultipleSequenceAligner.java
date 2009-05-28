@@ -59,7 +59,7 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
         // final TreeSet<PairwiseDistance> distanceTree = createDistanceTree(distanceMatrix);
 
         MultipleSequenceAlignment alignedSequences = new MultipleSequenceAlignment();
-
+        // BUG ??? How should you pick the first sequence??
         int firstSequenceToAlign = distanceMatrix.argMin()[0];
 
         // Mark all distances to/from the aligned sequence as infinite, so we won't try to align
@@ -70,7 +70,7 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
         unalignedSequences[firstSequenceToAlign] = null;
         int sequencesAligned = 1;
 
-        final int[] featureIndices = new int[alignmentModel.features()];
+        final int[] featureIndices = new int[alignmentModel.featureCount()];
         for (int i = 0; i < featureIndices.length; i++)
         {
             featureIndices[i] = i;

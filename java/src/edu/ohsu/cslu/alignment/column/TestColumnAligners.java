@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.column;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -21,8 +23,6 @@ import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for various {@link ColumnSequenceAligner} implementations.
@@ -255,7 +255,7 @@ public class TestColumnAligners
         // agree.
         for (int j = 0; j < mlModel.columns(); j++)
         {
-            for (int i = 0; i < mlModel.features(); i++)
+            for (int i = 0; i < mlModel.featureCount(); i++)
             {
                 IntVector sampleVector = new IntVector(new int[] {i});
                 assertEquals(mlModel.cost(sampleVector, j), unsmoothedModel.cost(sampleVector, j));
@@ -272,7 +272,7 @@ public class TestColumnAligners
         // agree.
         for (int j = 0; j < mlModel.columns(); j++)
         {
-            for (int i = 0; i < mlModel.features(); i++)
+            for (int i = 0; i < mlModel.featureCount(); i++)
             {
                 SparseBitVector sampleVector = new SparseBitVector(new int[] {i});
                 assertEquals(mlModel.cost(sampleVector, j), unsmoothedModel.cost(sampleVector, j));

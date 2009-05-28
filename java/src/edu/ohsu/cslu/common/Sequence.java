@@ -45,7 +45,7 @@ public interface Sequence
     /**
      * @return the number of features represented for each element of this sequence
      */
-    public int features();
+    public int featureCount();
 
     /**
      * @param features feature indices

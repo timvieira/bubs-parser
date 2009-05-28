@@ -37,88 +37,131 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
 
     public SequenceAlignment alignPair(Sequence unaligned, Sequence aligned, final AlignmentModel model)
     {
+        
+        // WHAT IS THE POINT OF ALL THESE M_ VARIABLES THAT JUST DOUBLE THE VARIABLES THAT ARE
+        // ACTUALLY USED
+        //
+        // The m_ variables make toString() work, while local copies are faster in memory.
+        // 
+        
         m_aligned = aligned;
         m_unaligned = unaligned;
         m_model = model;
 
         SubstitutionAlignmentModel subModel = (SubstitutionAlignmentModel) model;
-        final int iSize = unaligned.length() + 1;
-        final int jSize = aligned.length() + 1;
+        final int unalignedSize = unaligned.length() + 1;
+        final int alignedSize = aligned.length() + 1;
         final int currentAlignmentLength = aligned.length();
         final int unalignedLength = unaligned.length();
-        final float[][] edits = new float[iSize][jSize];
-        final byte[][] backpointer = new byte[iSize][jSize];
+        final float[][] edits = new float[unalignedSize][alignedSize];
+        final byte[][] backpointers = new byte[unalignedSize][alignedSize];
 
-        final int[] GAP = new int[model.features()];
+        final int[] GAP = new int[model.featureCount()];
         Arrays.fill(GAP, SubstitutionAlignmentModel.GAP_INDEX);
 
         m_costs = edits;
-        m_backpointer = backpointer;
+        m_backpointer = backpointers;
 
         // Gaps all the way through unaligned sequence
-        for (int j = 1; j < jSize; j++)
+        for (int alignedIndex = 1; alignedIndex < alignedSize; alignedIndex++)
         {
-            final int prevJ = j - 1;
-            edits[0][j] = edits[0][prevJ] + subModel.gapInsertionCost(aligned.elementAt(prevJ), currentAlignmentLength); // GAP_COST;
-            backpointer[0][j] = BACKPOINTER_UNALIGNED_GAP;
+            final int alignedIndexMinusOne = alignedIndex - 1;
+            edits[0][alignedIndex] = 
+                edits[0][alignedIndexMinusOne] + 
+                subModel.gapInsertionCost(aligned.elementAt(alignedIndexMinusOne), currentAlignmentLength); // GAP_COST;
+            backpointers[0][alignedIndex] = BACKPOINTER_UNALIGNED_GAP;
         }
 
         // Gaps all the way through aligned sequence
-        for (int i = 1; i < iSize; i++)
+        for (int unalignedIndex = 1; unalignedIndex < unalignedSize; unalignedIndex++)
         {
-            final int prevI = i - 1;
-            edits[i][0] = edits[prevI][0] + subModel.gapInsertionCost(unaligned.elementAt(prevI), unalignedLength); // GAP_COST;
-            backpointer[i][0] = BACKPOINTER_ALIGNED_GAP;
+            final int unalignedIndexMinusOne = unalignedIndex - 1;
+            edits[unalignedIndex][0] = 
+                edits[unalignedIndexMinusOne][0] + 
+                subModel.gapInsertionCost(unaligned.elementAt(unalignedIndexMinusOne), unalignedLength); // GAP_COST;
+            backpointers[unalignedIndex][0] = BACKPOINTER_ALIGNED_GAP;
         }
 
-        backpointer[0][0] = BACKPOINTER_SUBSTITUTION;
-
-        for (int i = 1; i < iSize; i++)
+        backpointers[0][0] = BACKPOINTER_SUBSTITUTION;
+        
+        for (int unalignedIndex = 1; unalignedIndex < unalignedSize; unalignedIndex++)
         {
-            final int prevI = i - 1;
+            final int unalignedIndexMinusOne = unalignedIndex - 1;
 
-            final float[] currentIEdits = edits[i];
-            final float[] previousIEdits = edits[prevI];
-            final Vector previousUnaligned = unaligned.elementAt(prevI);
+            final float[] currentIEdits = edits[unalignedIndex];
+            final float[] previousIEdits = edits[unalignedIndexMinusOne];
+            final Vector previousUnaligned = unaligned.elementAt(unalignedIndexMinusOne);
 
-            for (int j = 1; j < jSize; j++)
+            for (int alignedIndex = 1; alignedIndex < alignedSize; alignedIndex++)
             {
-                final int prevJ = j - 1;
-                final Vector previousAligned = aligned.elementAt(prevJ);
+                final int alignedIndexMinusOne = alignedIndex - 1;
+                final Vector previousAligned = aligned.elementAt(alignedIndexMinusOne);
 
                 // Inserting a gap into unaligned sequence
-                final float f1 = currentIEdits[prevJ] + subModel.gapInsertionCost(previousAligned, unalignedLength);
+                final float scoreOfGapInUnaligned = 
+                    currentIEdits[alignedIndexMinusOne] + 
+                    subModel.gapInsertionCost(previousAligned, unalignedLength);
 
                 // Inserting a gap into the aligned sequence
-                final float f2 = previousIEdits[j]
-                    + subModel.gapInsertionCost(previousUnaligned, currentAlignmentLength);
+                final float scoreOfGapInAligned = 
+                    previousIEdits[alignedIndex] + 
+                    subModel.gapInsertionCost(previousUnaligned, currentAlignmentLength);
 
                 // Substitution / match
-                float f3 = previousIEdits[prevJ] + subModel.cost(previousAligned, previousUnaligned);
+                float scoreOfMatching = 
+                    previousIEdits[alignedIndexMinusOne] + 
+                    subModel.cost(previousAligned, previousUnaligned);
 
-                if (f1 < f2)
+                if (scoreOfGapInUnaligned < scoreOfGapInAligned)
                 {
-                    if (f1 < f3)
+                    if (scoreOfGapInUnaligned < scoreOfMatching)
                     {
-                        edits[i][j] = f1;
-                        backpointer[i][j] = BACKPOINTER_UNALIGNED_GAP;
+                        edits[unalignedIndex][alignedIndex] = scoreOfGapInUnaligned;
+                        backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_UNALIGNED_GAP;
                     }
                     else
                     {
-                        edits[i][j] = f3;
-                        backpointer[i][j] = BACKPOINTER_SUBSTITUTION;
+                        edits[unalignedIndex][alignedIndex] = scoreOfMatching;
+                        backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_SUBSTITUTION;
                     }
                 }
-                else if (f2 < f3)
+                else if (scoreOfGapInAligned < scoreOfMatching)
                 {
-                    edits[i][j] = f2;
-                    backpointer[i][j] = BACKPOINTER_ALIGNED_GAP;
+                    edits[unalignedIndex][alignedIndex] = scoreOfGapInAligned;
+                    backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_ALIGNED_GAP;
                 }
                 else
                 {
-                    edits[i][j] = f3;
-                    backpointer[i][j] = BACKPOINTER_SUBSTITUTION;
+                    edits[unalignedIndex][alignedIndex] = scoreOfMatching;
+                    backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_SUBSTITUTION;
                 }
+                
+                
+// This commented-out code changes the preference of when to match and when to insert a gap
+                // Note the '<='s in place of the '<'s
+//                if (scoreOfGapInUnaligned <= scoreOfGapInAligned)
+//                {
+//                    if (scoreOfGapInUnaligned <= scoreOfMatching)
+//                    {
+//                        edits[unalignedIndex][alignedIndex] = scoreOfGapInUnaligned;
+//                        backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_UNALIGNED_GAP;
+//                    }
+//                    else
+//                    {
+//                        edits[unalignedIndex][alignedIndex] = scoreOfMatching;
+//                        backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_SUBSTITUTION;
+//                    }
+//                }
+//                else if (scoreOfGapInAligned <= scoreOfMatching)
+//                {
+//                    edits[unalignedIndex][alignedIndex] = scoreOfGapInAligned;
+//                    backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_ALIGNED_GAP;
+//                }
+//                else
+//                {
+//                    edits[unalignedIndex][alignedIndex] = scoreOfMatching;
+//                    backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_SUBSTITUTION;
+//                }
             }
         }
 
@@ -129,26 +172,26 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
 
         final Vector gapVector = model.gapVector();
 
-        int i = unaligned.length();
-        int j = aligned.length();
-        while (i > 0 || j > 0)
+        int unalignedIndex = unaligned.length();
+        int alignedIndex = aligned.length();
+        while (unalignedIndex > 0 || alignedIndex > 0)
         {
-            switch (backpointer[i][j])
+            switch (backpointers[unalignedIndex][alignedIndex])
             {
                 case BACKPOINTER_SUBSTITUTION :
                     // Match
-                    buffer.addFirst(unaligned.elementAt(--i));
-                    j--;
+                    buffer.addFirst(unaligned.elementAt(--unalignedIndex));
+                    alignedIndex--;
                     break;
                 case BACKPOINTER_UNALIGNED_GAP :
                     // Gap in unaligned sequence
                     buffer.addFirst(gapVector);
-                    j--;
+                    alignedIndex--;
                     break;
                 case BACKPOINTER_ALIGNED_GAP :
                     // Gap in aligned sequence
-                    buffer.addFirst(unaligned.elementAt(--i));
-                    gapList.add(j);
+                    buffer.addFirst(unaligned.elementAt(--unalignedIndex));
+                    gapList.add(alignedIndex);
                     break;
                 default :
                     throw new IllegalArgumentException("Should never get here");
@@ -158,9 +201,9 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
         // Reverse gapList
         final int[] gapIndices = new int[gapList.size()];
         final IntListIterator gapIterator = gapList.listIterator();
-        for (i = gapIndices.length - 1; i >= 0; i--)
+        for (unalignedIndex = gapIndices.length - 1; unalignedIndex >= 0; unalignedIndex--)
         {
-            gapIndices[i] = gapIterator.nextInt();
+            gapIndices[unalignedIndex] = gapIterator.nextInt();
         }
 
         return new SequenceAlignment((MappedSequence) ((SubstitutionAlignmentModel) model).createSequence(buffer

@@ -12,6 +12,7 @@ import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.column.ColumnAlignmentModel;
 import edu.ohsu.cslu.alignment.column.LogLinearAlignmentModel;
 import edu.ohsu.cslu.alignment.column.MatrixColumnAlignmentModel;
+import edu.ohsu.cslu.alignment.slotBased.MatrixSlotAlignmentModel;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
@@ -39,6 +40,7 @@ import edu.ohsu.cslu.util.Strings;
  */
 public class MultipleSequenceAlignment implements Serializable
 {
+    
     /** Sequences currently in the alignment */
     private final ArrayList<MappedSequence> sequences;
 
@@ -46,7 +48,7 @@ public class MultipleSequenceAlignment implements Serializable
     private int columns;
 
     /** Number of features of each sequence in the alignment */
-    private int features;
+    private int featureCount;
 
     private Vocabulary[] vocabularies;
 
@@ -85,7 +87,7 @@ public class MultipleSequenceAlignment implements Serializable
         if (sequences.size() == 0)
         {
             columns = newSequence.length();
-            features = newSequence.features();
+            featureCount = newSequence.featureCount();
             vocabularies = newSequence.vocabularies();
         }
 
@@ -115,7 +117,7 @@ public class MultipleSequenceAlignment implements Serializable
         if (sequences.size() == 0)
         {
             columns = newSequence.length();
-            features = newSequence.features();
+            featureCount = newSequence.featureCount();
             vocabularies = newSequence.vocabularies();
         }
 
@@ -153,11 +155,11 @@ public class MultipleSequenceAlignment implements Serializable
         }
 
         // All sequence feature counts must match
-        if (newSequence.features() != features)
+        if (newSequence.featureCount() != featureCount)
         {
             throw new IllegalArgumentException(String.format(
-                "Sequence feature count (%d) does not match alignment feature count (%d)", newSequence.features(),
-                features));
+                "Sequence feature count (%d) does not match alignment feature count (%d)", newSequence.featureCount(),
+                featureCount));
         }
 
         // And all sequences must use the same vocabularies
@@ -193,7 +195,7 @@ public class MultipleSequenceAlignment implements Serializable
     /**
      * @return the number of sequences currently in the alignment
      */
-    public final int size()
+    public final int numOfSequences()
     {
         return sequences.size();
     }
@@ -234,7 +236,7 @@ public class MultipleSequenceAlignment implements Serializable
             for (int j = 0; j < gapVectors.length; j++)
             {
                 gapVectors[j] = (NumericVector) cachedLaplacePseudoCounts.clone();
-                gapVectors[j].set(AlignmentModel.GAP_INDEX, gapVectors[j].getFloat(AlignmentModel.GAP_INDEX) + size());
+                gapVectors[j].set(AlignmentModel.GAP_INDEX, gapVectors[j].getFloat(AlignmentModel.GAP_INDEX) + numOfSequences());
             }
 
             NumericVector[] newCountVectors = new NumericVector[countVectors.length + gapIndices.length];
@@ -245,25 +247,35 @@ public class MultipleSequenceAlignment implements Serializable
 
     public ColumnAlignmentModel inducePssmAlignmentModel(int pseudoCountsPerToken)
     {
-        final int[] featureIndices = new int[features];
-        final int[] pseudoCounts = new int[features];
-        for (int i = 0; i < features; i++)
+        final int[] featureIndices = new int[featureCount];
+        final int[] pseudoCounts = new int[featureCount];
+        for (int i = 0; i < featureCount; i++)
         {
             featureIndices[i] = i;
             pseudoCounts[i] = pseudoCountsPerToken;
         }
-        return inducePssmAlignmentModel(pseudoCounts, featureIndices, 0, 0, new boolean[features],
+        return inducePssmAlignmentModel(
+            pseudoCounts, 
+            featureIndices, 
+            0, 
+            0, 
+            new boolean[featureCount],
             Float.POSITIVE_INFINITY);
     }
 
     public ColumnAlignmentModel inducePssmAlignmentModel(int pseudoCountsPerToken, int[] featureIndices)
     {
-        int[] pseudoCounts = new int[features];
-        for (int i = 0; i < features; i++)
+        int[] pseudoCounts = new int[featureCount];
+        for (int i = 0; i < featureCount; i++)
         {
             pseudoCounts[i] = pseudoCountsPerToken;
         }
-        return inducePssmAlignmentModel(pseudoCounts, featureIndices, 0, 0, new boolean[features],
+        return inducePssmAlignmentModel(
+            pseudoCounts, 
+            featureIndices, 
+            0, 
+            0, 
+            new boolean[featureCount],
             Float.POSITIVE_INFINITY);
     }
 
@@ -283,7 +295,7 @@ public class MultipleSequenceAlignment implements Serializable
         {
             counts[f] = Matrix.Factory.newIntMatrix(newVocabularies[featureIndices[f]].size(), columns,
                 pseudoCountsPerToken[f]);
-            totalCounts[f] = pseudoCountsPerToken[f] * newVocabularies[featureIndices[f]].size() + size()
+            totalCounts[f] = pseudoCountsPerToken[f] * newVocabularies[featureIndices[f]].size() + numOfSequences()
                 + additionalCounts;
         }
 
@@ -374,7 +386,7 @@ public class MultipleSequenceAlignment implements Serializable
                 {
                     // The divisor for each category should be the pseudo-counts for that category +
                     // the number of sequences in the MSA
-                    totalCountVector.set(j, laplaceTotalCount + size());
+                    totalCountVector.set(j, laplaceTotalCount + numOfSequences());
                 }
 
                 previousBoundary = nextBoundary;
@@ -508,7 +520,7 @@ public class MultipleSequenceAlignment implements Serializable
             int columnLength = 0;
             for (MappedSequence sequence : sequences)
             {
-                for (int i = 0; i < features; i++)
+                for (int i = 0; i < featureCount; i++)
                 {
                     // Skip un-populated slots (we do not currently insert a marker for these slots)
                     if (sequence != null)
@@ -541,5 +553,10 @@ public class MultipleSequenceAlignment implements Serializable
         }
 
         return sb.toString();
+    }
+
+    public Vocabulary[] getVocabularies()
+    {
+        return vocabularies;
     }
 }

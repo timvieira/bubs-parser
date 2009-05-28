@@ -1,11 +1,11 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests shared by all integer matrices

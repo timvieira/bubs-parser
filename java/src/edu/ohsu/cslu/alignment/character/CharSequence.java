@@ -47,7 +47,7 @@ public class CharSequence implements MappedSequence
     }
 
     @Override
-    public int features()
+    public int featureCount()
     {
         return 1;
     }

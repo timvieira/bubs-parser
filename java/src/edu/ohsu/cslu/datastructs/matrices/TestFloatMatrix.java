@@ -1,9 +1,9 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Before;
 import org.junit.Test;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Tests for the {@link FloatMatrix} class

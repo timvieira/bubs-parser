@@ -1,9 +1,9 @@
 package edu.ohsu.cslu.datastructs;
 
-import org.junit.Test;
-
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.fail;
+
+import org.junit.Test;
 
 /**
  * Unit tests for {@link FloatingPointLongPairwiseDistanceHeap}

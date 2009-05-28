@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.multiple;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -11,22 +13,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
-import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.alignment.bio.EvaluateAlignment;
 import edu.ohsu.cslu.alignment.column.ColumnAlignmentModel;
 import edu.ohsu.cslu.alignment.column.LaplaceModel;
-import edu.ohsu.cslu.common.LogLinearMappedSequence;
-import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
-import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
 
 @RunWith(FilteredRunner.class)
 @PerformanceTest
@@ -71,29 +67,7 @@ public class ProfileMultipleSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"d820", "4516"})
-    public void profileReestimatingPssmAligner() throws IOException
-    {
-        BufferedReader br = new BufferedReader(new InputStreamReader(SharedNlpTests
-            .unitTestDataAsStream("alignment/multiple/wsj_nps.2000.txt.gz")));
-        br.mark(1024 * 1024);
-        LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(br);
-        br.reset();
-
-        LinkedList<MappedSequence> trainingSequences = new LinkedList<MappedSequence>();
-        for (String line = br.readLine(); line != null; line = br.readLine())
-        {
-            trainingSequences.add(new LogLinearMappedSequence(line, vocabulary));
-        }
-
-        ReestimatingPssmMultipleSequenceAligner aligner = new ReestimatingPssmMultipleSequenceAligner(new FloatVector(
-            vocabulary.size(), .2f), new FloatVector(vocabulary.size(), 1));
-
-        aligner.alignInOrder(trainingSequences.toArray(new MappedSequence[trainingSequences.size()]), true);
-    }
-
-    @Test
-    @PerformanceTest( {"d820", "52344"})
+    @PerformanceTest( {"d820", "76256"})
     public void profileIterativePairwiseAligner()
     {
         SubstitutionAlignmentModel subModel = new MatrixSubstitutionAlignmentModel(10, 8,
@@ -103,8 +77,8 @@ public class ProfileMultipleSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"d820", "60557"})
-    public void profilePssmAligner() throws IOException
+    @PerformanceTest( {"d820", "88146"})
+    public void profileModelAligner() throws IOException
     {
         ColumnAlignmentModel model = new LaplaceModel(
             new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)), new DnaVocabulary(), 6, true);

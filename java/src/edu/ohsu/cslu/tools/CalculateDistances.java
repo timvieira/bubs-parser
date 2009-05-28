@@ -330,6 +330,10 @@ public class CalculateDistances extends BaseCommandlineTool
             int[] previous = new int[jSize];
             int[] current = new int[jSize];
 
+
+            // make previous[] look like [0, 1, 2, 3, ..., s1.length()]
+            // (or equivalently: like [0, 1, 2, 3, ..., jSize - 1]
+            //
             // Fill the 0'th row with the cost of substitutions all the way through
             for (int j = 1; j < jSize; j++)
             {
@@ -352,19 +356,19 @@ public class CalculateDistances extends BaseCommandlineTool
                 {
                     final int prevJ = j - 1;
                     // Gap
-                    final int f1 = current[prevJ] + COST;
+                    final int gapCost = current[prevJ] + COST;
                     // Substitution or match
-                    int f2 = previous[prevJ];
+                    int substitutionOrMatchCost = previous[prevJ];
                     // Delete
-                    int f3 = previous[j];
+                    int deleteCost = previous[j];
 
                     if (s2Chars[prevI] != s1Chars[prevJ])
                     {
-                        f2 += COST;
-                        f3 += COST;
+                        substitutionOrMatchCost += COST;
+                        deleteCost += COST;
                     }
 
-                    current[j] = Math.min(new int[] {f1, f2, f3});
+                    current[j] = Math.min(new int[] {gapCost, substitutionOrMatchCost, deleteCost});
                 }
 
                 final int[] tmp = previous;

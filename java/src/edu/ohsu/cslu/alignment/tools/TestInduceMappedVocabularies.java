@@ -1,12 +1,12 @@
 package edu.ohsu.cslu.alignment.tools;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Test;
 
 import edu.ohsu.cslu.alignment.TestSimpleVocabulary;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.common.tools.ToolTestCase;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Simple unit tests for {@link InduceMappedVocabularies}. The core functionality is tested in

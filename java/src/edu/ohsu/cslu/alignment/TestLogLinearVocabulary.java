@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -8,8 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link LogLinearVocabulary}

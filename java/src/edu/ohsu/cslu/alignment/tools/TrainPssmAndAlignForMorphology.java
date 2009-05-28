@@ -1,3 +1,13 @@
+/*
+ * Author: Christian Monson
+ * Date:   March 4, 2009
+ * 
+ * This class was built by copying TrainPssmAndAlignSentences. The purpose of this class is to see
+ * if performing the style of multiple sequence alignment that Aaron Dunlop has worked on produces
+ * anything meaningful when applied to aligning the characters of words.
+ * 
+ */
+
 package edu.ohsu.cslu.alignment.tools;
 
 import java.io.BufferedReader;
@@ -13,26 +23,18 @@ import org.apache.commons.cli.Options;
 
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
-import edu.ohsu.cslu.alignment.column.ColumnAlignmentModel;
-import edu.ohsu.cslu.alignment.column.LinearColumnAligner;
-import edu.ohsu.cslu.alignment.multiple.IterativePairwiseAligner;
+import edu.ohsu.cslu.alignment.multiple.HmmMultipleSequenceAlignerForMorphology;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
-import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
-import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
-import edu.ohsu.cslu.datastructs.vectors.IntVector;
-import edu.ohsu.cslu.util.Strings;
 
-public class TrainPssmAndAlignSentences extends BaseCommandlineTool
+public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
 {
     private String distanceMatrixFilename;
-    private String devSetFilename;
     private int pseudoCountsPerElement;
-    private int[] devSetFeatures;
-
+    
     private final List<String> substitutionMatrixOptions = new ArrayList<String>();
     private final List<String> vocabularyFiles = new ArrayList<String>();
     private final static String AUTO = "auto";
@@ -49,31 +51,34 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
     public void execute() throws Exception
     {
         long startTime = System.currentTimeMillis();
-        HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
 
-        final ArrayList<String> sentences = new ArrayList<String>();
         StringBuilder sb = new StringBuilder(8192);
 
+        final ArrayList<String> sentences = new ArrayList<String>();
         final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         for (String line = reader.readLine(); line != null; line = reader.readLine())
         {
             sentences.add(line);
-            sb.append(Strings.extractPos(line));
+            sb.append(line);
             sb.append('\n');
         }
-        String entireInput = sb.toString();
-
+        
+        // String entireInput = sb.toString();
+        //
         // Induce the vocabularies
         // TODO: induceVocabularies should handle tree-format
-        SimpleVocabulary[] inducedVocabularies = SimpleVocabulary.induceVocabularies(entireInput);
-        SimpleVocabulary[] vocabularies = new SimpleVocabulary[inducedVocabularies.length];
+        // SimpleVocabulary[] inducedVocabularies =
+        // SimpleVocabulary.induceVocabularies(entireInput);
+        // SimpleVocabulary[] vocabularies = new SimpleVocabulary[inducedVocabularies.length];
+
+        SimpleVocabulary[] vocabularies = new SimpleVocabulary[1];
 
         if (vocabularyFiles != null)
         {
-            if (vocabularyFiles.size() > vocabularies.length)
-            {
-                vocabularies = new SimpleVocabulary[vocabularyFiles.size()];
-            }
+            // if (vocabularyFiles.size() > vocabularies.length)
+            // {
+            vocabularies = new SimpleVocabulary[vocabularyFiles.size()];
+            // }
 
             for (int i = 0; i < vocabularyFiles.size(); i++)
             {
@@ -83,7 +88,7 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
                 }
                 else
                 {
-                    vocabularies[i] = inducedVocabularies[i];
+                    // vocabularies[i] = inducedVocabularies[i];
                 }
             }
         }
@@ -92,8 +97,10 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
         MappedSequence[] sequences = new MappedSequence[sentences.size()];
         for (int i = 0; i < sequences.length; i++)
         {
-            sequences[i] = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sentences.get(i), ruleset),
-                vocabularies);
+            sequences[i] = new MultipleVocabularyMappedSequence(sentences.get(i), vocabularies);
+            // sequences[i] =
+            // new SimpleMappedSequence(Strings.extractPosAndHead(sentences.get(i), ruleset),
+            // vocabularies);
         }
 
         // Construct and/or read in substitution matrices
@@ -123,87 +130,27 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
             }
         }
 
-        MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(substitutionMatrices,
-            vocabularies);
-
-        // Read in pairwise tree distance file
+        
+        MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(substitutionMatrices, vocabularies);
+        
+        
+        // Read in pairwise  distance file
         // TODO: Option to calculate the distance matrix on-the-fly
         Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
 
         // Align the sequences
-        IterativePairwiseAligner aligner = new IterativePairwiseAligner();
+//        IterativePairwiseAligner aligner = new IterativePairwiseAligner();
+        HmmMultipleSequenceAlignerForMorphology aligner = 
+            new HmmMultipleSequenceAlignerForMorphology(new int[] {pseudoCountsPerElement}, 0); // Zero for DO NOT UPWEIGHT THE MOST SIMILAR SEQUENCE
         MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix, alignmentModel);
 
         System.out.format("Training Alignment of length %d (produced in %d ms)\n\n", trainingAlignment.length(), System
             .currentTimeMillis()
             - startTime);
-        // System.out.println(trainingAlignment.toString());
-        // System.out.println();
+        System.out.println(trainingAlignment.toString());
+        System.out.println();
+        
 
-        ColumnAlignmentModel pssmAlignmentModel = trainingAlignment.inducePssmAlignmentModel(pseudoCountsPerElement);
-
-        int trainHeadColumn = 0;
-        float headP = Float.MAX_VALUE;
-        for (int j = 0; j < pssmAlignmentModel.columns(); j++)
-        {
-            float negativeLogP = pssmAlignmentModel.cost(new IntVector(new int[] {1, 1, 1}), j, new int[] {2});
-            if (negativeLogP < headP)
-            {
-                headP = negativeLogP;
-                trainHeadColumn = j;
-            }
-        }
-
-        int correct = headVerbsInColumn(trainHeadColumn, trainingAlignment);
-        System.out.format("Training: %4.2f%% identification accuracy of head verbs (%d out of %d )\n", correct * 100f
-            / trainingAlignment.numOfSequences(), correct, trainingAlignment.numOfSequences());
-
-        System.out.println("\nHead Column = " + trainHeadColumn + "\n");
-
-        BufferedReader devSetReader = new BufferedReader(new FileReader(devSetFilename));
-        LinearColumnAligner pssmAligner = new LinearColumnAligner();
-        MultipleSequenceAlignment devAlignment = new MultipleSequenceAlignment();
-
-        for (String line = devSetReader.readLine(); line != null; line = devSetReader.readLine())
-        {
-            MappedSequence unalignedSequence = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(line,
-                ruleset), vocabularies);
-            MappedSequence alignedSequence = pssmAligner.align(unalignedSequence, pssmAlignmentModel,
-                devSetFeatures).alignedSequence();
-            devAlignment.addSequence(alignedSequence);
-        }
-
-        // System.out.println("Development Alignment");
-        // System.out.println(devAlignment.toString());
-
-        correct = headVerbsInColumn(trainHeadColumn, devAlignment);
-        System.out.format("Development: %4.2f%% identification accuracy of head verbs (%d out of %d )\n", correct
-            * 100f / devAlignment.numOfSequences(), correct, devAlignment.numOfSequences());
-    }
-
-    private int headVerbsInColumn(int column, MultipleSequenceAlignment sequenceAlignment)
-    {
-        int correct = 0;
-        for (int i = 0; i < sequenceAlignment.numOfSequences(); i++)
-        {
-            if (headColumn((MultipleVocabularyMappedSequence) sequenceAlignment.get(i)) == column)
-            {
-                correct++;
-            }
-        }
-        return correct;
-    }
-
-    private int headColumn(MultipleVocabularyMappedSequence sequence)
-    {
-        for (int j = 0; j < sequence.length(); j++)
-        {
-            if (sequence.feature(j, 2) == 1)
-            {
-                return j;
-            }
-        }
-        return -1;
     }
 
     @Override
@@ -222,7 +169,7 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
 
         options.addOption(OptionBuilder.hasArg().withArgName("devset").withLongOpt("development-set").withDescription(
             "Development Set").create("ds"));
-        options.addOption(OptionBuilder.isRequired().hasArg().withArgName("pseudo-counts").withLongOpt("pseudo-counts")
+        options.addOption(OptionBuilder.hasArg().withArgName("pseudo-counts").withLongOpt("pseudo-counts")
             .withDescription("Pseudo-counts per vocabulary element").create("pc"));
         options.addOption(OptionBuilder.hasArgs().withArgName("features").withLongOpt("devset-features")
             .withDescription("Features to use when aligning development set (indices, comma-separated)")
@@ -251,23 +198,8 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool
                 dataFiles.add(split[0]);
             }
         }
-
+        
         pseudoCountsPerElement = Integer.parseInt(commandLine.getOptionValue("pc", "1"));
-        devSetFilename = commandLine.getOptionValue("ds");
-
-        if (commandLine.hasOption("df"))
-        {
-            String[] stringFeatureIndices = commandLine.getOptionValues("df");
-            devSetFeatures = new int[stringFeatureIndices.length];
-            for (int i = 0; i < devSetFeatures.length; i++)
-            {
-                devSetFeatures[i] = Integer.parseInt(stringFeatureIndices[i]);
-            }
-        }
-        else
-        {
-            devSetFeatures = new int[vmOptions.length];
-        }
     }
 
     @Override

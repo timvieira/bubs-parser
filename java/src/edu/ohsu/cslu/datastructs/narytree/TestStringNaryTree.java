@@ -1,5 +1,11 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -10,8 +16,6 @@ import java.util.Iterator;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link StringNaryTree}
