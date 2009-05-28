@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.multiple;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -14,8 +16,6 @@ import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.util.Strings;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Test cases for {@link HmmMultipleSequenceAligner}.

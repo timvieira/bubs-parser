@@ -41,7 +41,7 @@ public interface AlignmentModel
     /**
      * @return the number of features represented in this model.
      */
-    public int features();
+    public int featureCount();
 
     /**
      * @return a 'gap' feature vector appropriate for this alignment model

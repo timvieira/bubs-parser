@@ -13,7 +13,7 @@ import edu.ohsu.cslu.datastructs.matrices.Matrix;
 public class PssmAligner implements MultipleSequenceAligner
 {
     private final BaseColumnAligner aligner;
-
+    
     public PssmAligner()
     {
         aligner = new LinearColumnAligner();

@@ -1,20 +1,17 @@
 package edu.ohsu.cslu.matching.approximate;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.io.IOException;
 import java.util.Set;
 
-
 import org.junit.Test;
 
 import edu.ohsu.cslu.matching.MatchTestCase;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 
 public class TestApproximateMatchers extends MatchTestCase
 {

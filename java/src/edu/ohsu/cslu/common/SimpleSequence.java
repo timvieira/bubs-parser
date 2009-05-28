@@ -88,7 +88,7 @@ public class SimpleSequence implements Sequence
     }
 
     @Override
-    public int features()
+    public int featureCount()
     {
         return stringFeatures[0].length;
     }
@@ -252,7 +252,7 @@ public class SimpleSequence implements Sequence
     public final String toBracketedString()
     {
         final int length = length();
-        final int features = features();
+        final int features = featureCount();
 
         StringBuilder sb = new StringBuilder(length * 20);
 
@@ -278,7 +278,7 @@ public class SimpleSequence implements Sequence
     public final String toSlashSeparatedString()
     {
         final int length = length();
-        final int features = features();
+        final int features = featureCount();
 
         StringBuilder sb = new StringBuilder(length * 20);
 

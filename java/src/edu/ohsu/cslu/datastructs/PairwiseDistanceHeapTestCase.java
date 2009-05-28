@@ -1,13 +1,16 @@
 package edu.ohsu.cslu.datastructs;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
+
 import java.util.NoSuchElementException;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.datastructs.PairwiseDistanceHeap.PairwiseDistance;
-
-import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link PairwiseDistanceHeap} implementations.

@@ -157,7 +157,7 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
 
         int correct = headVerbsInColumn(trainHeadColumn, trainingAlignment);
         System.out.format("Training: %4.2f%% identification accuracy of head verbs (%d out of %d )\n", correct * 100f
-            / trainingAlignment.size(), correct, trainingAlignment.size());
+            / trainingAlignment.numOfSequences(), correct, trainingAlignment.numOfSequences());
 
         System.out.println("\nHead Column = " + trainHeadColumn + "\n");
 
@@ -179,13 +179,13 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
 
         correct = headVerbsInColumn(trainHeadColumn, devAlignment);
         System.out.format("Development: %4.2f%% identification accuracy of head verbs (%d out of %d )\n", correct
-            * 100f / devAlignment.size(), correct, devAlignment.size());
+            * 100f / devAlignment.numOfSequences(), correct, devAlignment.numOfSequences());
     }
 
     private int headVerbsInColumn(int column, MultipleSequenceAlignment sequenceAlignment)
     {
         int correct = 0;
-        for (int i = 0; i < sequenceAlignment.size(); i++)
+        for (int i = 0; i < sequenceAlignment.numOfSequences(); i++)
         {
             if (headColumn((MultipleVocabularyMappedSequence) sequenceAlignment.get(i)) == column)
             {

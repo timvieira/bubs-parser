@@ -1,5 +1,8 @@
 package edu.ohsu.cslu.alignment.multiple;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
+
 import java.io.IOException;
 import java.io.StringReader;
 
@@ -17,9 +20,6 @@ import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
 
 /**
  * Unit tests for {@link MultipleSequenceAlignment}

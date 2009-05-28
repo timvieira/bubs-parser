@@ -1,8 +1,8 @@
 package edu.ohsu.cslu.common;
 
-import org.junit.Test;
-
 import static junit.framework.Assert.assertEquals;
+
+import org.junit.Test;
 
 public class TestPorterStemmer
 {

@@ -38,4 +38,7 @@ public interface ColumnSequenceAligner
      * @return An alignment between the sequence and the PSSM.
      */
     public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model);
+
+    public SequenceAlignment alignWithGaps(MappedSequence mappedSequence,
+        MatrixColumnAlignmentModel pssmAlignmentModel, int[] featureIndices);
 }

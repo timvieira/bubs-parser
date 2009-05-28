@@ -54,7 +54,7 @@ public class TestSimpleSequence
     public void testReadBracketedSequence() throws Exception
     {
         assertEquals(10, sequence1.length());
-        assertEquals(2, sequence1.features());
+        assertEquals(2, sequence1.featureCount());
 
         assertEquals("computers", sequence1.stringFeature(1, 0));
         assertEquals("NNS", sequence1.stringFeature(1, 1));

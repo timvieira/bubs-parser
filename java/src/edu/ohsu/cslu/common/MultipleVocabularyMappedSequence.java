@@ -39,7 +39,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
         {
             matrix = new IntMatrix(new int[][] {sequence}).transpose();
         }
-        this.vocabularies = new AlignmentVocabulary[features()];
+        this.vocabularies = new AlignmentVocabulary[featureCount()];
         Arrays.fill(vocabularies, vocabulary);
 
     }
@@ -67,7 +67,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     public MultipleVocabularyMappedSequence(final int[][] sequence, final Vocabulary vocabulary)
     {
         matrix = new IntMatrix(sequence);
-        this.vocabularies = new Vocabulary[features()];
+        this.vocabularies = new Vocabulary[featureCount()];
         Arrays.fill(vocabularies, vocabulary);
     }
 
@@ -80,7 +80,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     public MultipleVocabularyMappedSequence(final Matrix matrix, final Vocabulary vocabulary)
     {
         this.matrix = matrix;
-        this.vocabularies = new AlignmentVocabulary[features()];
+        this.vocabularies = new AlignmentVocabulary[featureCount()];
         Arrays.fill(vocabularies, vocabulary);
     }
 
@@ -139,7 +139,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     @Override
     public final String[] stringFeatures(final int index)
     {
-        String[] stringFeatures = new String[features()];
+        String[] stringFeatures = new String[featureCount()];
         for (int i = 0; i < stringFeatures.length; i++)
         {
             stringFeatures[i] = stringFeature(index, i);
@@ -168,7 +168,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     }
 
     @Override
-    public final int features()
+    public final int featureCount()
     {
         return matrix.columns();
     }
@@ -185,13 +185,13 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
             return clone();
         }
 
-        final int[] gapVector = new int[features()];
+        final int[] gapVector = new int[featureCount()];
         Arrays.fill(gapVector, SubstitutionAlignmentModel.GAP_INDEX);
 
         final int gaps = gapIndices.length;
         final int newLength = length() + gaps;
 
-        final Matrix newMatrix = new IntMatrix(newLength, features());
+        final Matrix newMatrix = new IntMatrix(newLength, featureCount());
         int currentGap = 0;
         int oldI = 0;
         for (int i = 0; i < newLength; i++)
@@ -228,7 +228,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
             return clone();
         }
 
-        Matrix newMatrix = new IntMatrix(oldLength - gaps, features());
+        Matrix newMatrix = new IntMatrix(oldLength - gaps, featureCount());
 
         // Old and new column indices
         int newJ = 0;
@@ -324,7 +324,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     public final String toBracketedString()
     {
         final int length = length();
-        final int features = features();
+        final int features = featureCount();
 
         StringBuilder sb = new StringBuilder(length * 20);
 
@@ -349,7 +349,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     public final String toSlashSeparatedString()
     {
         final int length = length();
-        final int features = features();
+        final int features = featureCount();
 
         StringBuilder sb = new StringBuilder(length * 20);
 
@@ -373,7 +373,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     public final String toColumnString()
     {
         final int length = length();
-        final int features = features();
+        final int features = featureCount();
 
         // Find the maximum token length in each column
         String[] formats = new String[length];
@@ -404,7 +404,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     public String toColumnString(String[] formats)
     {
         final int length = length();
-        final int features = features();
+        final int features = featureCount();
 
         StringBuilder sb = new StringBuilder(length * 20);
 
@@ -427,7 +427,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     public int maxLabelLength(int index)
     {
         int maxLength = 0;
-        for (int i = 0; i < features(); i++)
+        for (int i = 0; i < featureCount(); i++)
         {
             final int length = stringFeature(index, i).length();
             if (length > maxLength)

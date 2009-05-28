@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for the {@link IntShiftRegister class}

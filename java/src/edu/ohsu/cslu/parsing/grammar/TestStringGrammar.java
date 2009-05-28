@@ -1,5 +1,9 @@
 package edu.ohsu.cslu.parsing.grammar;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.Arrays;
@@ -9,11 +13,6 @@ import java.util.Set;
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
 
 /**
  * Grammar Tests

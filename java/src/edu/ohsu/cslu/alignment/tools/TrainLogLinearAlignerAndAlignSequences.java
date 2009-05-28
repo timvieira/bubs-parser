@@ -106,7 +106,7 @@ public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
 
         int trainHeadsCorrect = headVerbsInColumn(trainHeadColumn, trainingAlignment);
         System.out.format("Training: %4.2f%% identification accuracy of head verbs (%d out of %d )\n",
-            trainHeadsCorrect * 100f / trainingAlignment.size(), trainHeadsCorrect, trainingAlignment.size());
+            trainHeadsCorrect * 100f / trainingAlignment.numOfSequences(), trainHeadsCorrect, trainingAlignment.numOfSequences());
 
         System.out.println("\nHead Column = " + trainHeadColumn + "\n");
 
@@ -176,7 +176,7 @@ public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
     private int headVerbsInColumn(int column, MultipleSequenceAlignment sequenceAlignment)
     {
         int correct = 0;
-        for (int i = 0; i < sequenceAlignment.size(); i++)
+        for (int i = 0; i < sequenceAlignment.numOfSequences(); i++)
         {
             if (headColumn((LogLinearMappedSequence) sequenceAlignment.get(i)) == column)
             {

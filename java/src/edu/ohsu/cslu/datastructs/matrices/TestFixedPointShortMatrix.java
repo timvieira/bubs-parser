@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.fail;
+
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Unit tests for {@link FixedPointShortMatrix}

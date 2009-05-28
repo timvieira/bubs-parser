@@ -20,13 +20,13 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  */
 public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentModel, Serializable
 {
-    private final Matrix[] matrices;
+    private final Matrix[] substitutionMatrices;
     private final AlignmentVocabulary[] vocabularies;
     protected final IntVector gapVector;
 
     public MatrixSubstitutionAlignmentModel(Matrix[] matrices, AlignmentVocabulary[] vocabularies)
     {
-        this.matrices = matrices;
+        this.substitutionMatrices = matrices;
         this.vocabularies = vocabularies;
         this.gapVector = new IntVector(matrices.length, 0);
     }
@@ -40,8 +40,8 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
         AlignmentVocabulary[] vocabularies)
     {
         this.vocabularies = vocabularies;
-        this.matrices = new Matrix[substitutionCosts.length];
-        this.gapVector = new IntVector(matrices.length, 0);
+        this.substitutionMatrices = new Matrix[substitutionCosts.length];
+        this.gapVector = new IntVector(substitutionMatrices.length, 0);
 
         initializeIdentityMatrices(substitutionCosts, gapCosts, vocabularies);
     }
@@ -49,8 +49,8 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
     public MatrixSubstitutionAlignmentModel(float substitutionCost, float gapCost, AlignmentVocabulary[] vocabularies)
     {
         this.vocabularies = vocabularies;
-        this.matrices = new Matrix[vocabularies.length];
-        this.gapVector = new IntVector(matrices.length, 0);
+        this.substitutionMatrices = new Matrix[vocabularies.length];
+        this.gapVector = new IntVector(substitutionMatrices.length, 0);
 
         float[] substitutionCosts = new float[vocabularies.length];
         float[] gapCosts = new float[vocabularies.length];
@@ -67,19 +67,19 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
         for (int m = 0; m < substitutionCosts.length; m++)
         {
             final int size = vocab[m].size();
-            matrices[m] = new FloatMatrix(size, size, false);
+            substitutionMatrices[m] = new FloatMatrix(size, size, false);
 
             for (int i = 0; i < size; i++)
             {
                 for (int j = 0; j < size; j++)
                 {
-                    matrices[m].set(i, j, (i == j) ? 0 : substitutionCosts[m]);
+                    substitutionMatrices[m].set(i, j, (i == j) ? 0 : substitutionCosts[m]);
                 }
             }
 
-            matrices[m].setRow(0, gapCosts[m]);
-            matrices[m].setColumn(0, gapCosts[m]);
-            matrices[m].set(0, 0, 0);
+            substitutionMatrices[m].setRow(0, gapCosts[m]);
+            substitutionMatrices[m].setColumn(0, gapCosts[m]);
+            substitutionMatrices[m].set(0, 0, 0);
         }
     }
 
@@ -92,7 +92,8 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
     @Override
     public float cost(final int alignedFeature, final int unalignedFeature)
     {
-        return matrices[0].getFloat(alignedFeature, unalignedFeature);
+        // WARNING: THIS DOES NOT CYCLE THROUGH ALL THE FEATURES!! (IT ONLY LOOKS AS SUBSTITUTIONMATRICES[0])
+        return substitutionMatrices[0].getFloat(alignedFeature, unalignedFeature);
     }
 
     @Override
@@ -105,14 +106,22 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
         // in the new sequence)
         return cost(GAP_INDEX, feature);
     }
+    
+    // featureIndex -- the feature we are interested in
+    // featureValueIndex -- the value of the feature we are interested in
+    @Override
+    public float gapInsertionCostForOneFeature(int feature, int featureValue)
+    {
+        return substitutionMatrices[feature].getFloat(featureValue, GAP_INDEX);
+    }
 
     @Override
     public float cost(final Vector alignedVector, final Vector unalignedVector)
     {
         float cost = 0f;
-        for (int i = 0; i < matrices.length; i++)
+        for (int i = 0; i < substitutionMatrices.length; i++)
         {
-            cost += matrices[i].getFloat(alignedVector.getInt(i), unalignedVector.getInt(i));
+            cost += substitutionMatrices[i].getFloat(alignedVector.getInt(i), unalignedVector.getInt(i));
         }
         return cost;
     }
@@ -129,9 +138,9 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
     }
 
     @Override
-    public final int features()
+    public final int featureCount()
     {
-        return matrices.length;
+        return substitutionMatrices.length;
     }
 
     @Override
@@ -150,9 +159,9 @@ public class MatrixSubstitutionAlignmentModel implements SubstitutionAlignmentMo
     public String toString()
     {
         StringBuilder sb = new StringBuilder(8096);
-        for (int m = 0; m < matrices.length; m++)
+        for (int m = 0; m < substitutionMatrices.length; m++)
         {
-            Matrix matrix = matrices[m];
+            Matrix matrix = substitutionMatrices[m];
             if (matrix.rows() <= 100)
             {
                 AlignmentVocabulary vocabulary = vocabularies[m];

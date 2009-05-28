@@ -3,19 +3,18 @@
  */
 package edu.ohsu.cslu.matching.exact;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.Set;
 import java.util.TreeSet;
-
 
 import org.junit.Test;
 
 import edu.ohsu.cslu.matching.MatchTestCase;
 import edu.ohsu.cslu.matching.Matcher;
 import edu.ohsu.cslu.matching.exact.AhoCorasickMatcher.Match;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 
 /**
  * Tests Naive, Boyer-Moore, Knuth-Morris-Pratt, and Aho-Corasick matchers.

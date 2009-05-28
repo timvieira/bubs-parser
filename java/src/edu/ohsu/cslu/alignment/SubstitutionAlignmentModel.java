@@ -64,4 +64,13 @@ public interface SubstitutionAlignmentModel extends AlignmentModel
     public float gapInsertionCost(Vector featureVector, int sequenceLength);
 
     public Sequence createSequence(Vector[] elements);
+
+    /**
+     * Returns the cost of inserting a gap for the featureValue featureValueIndex in
+     * the feature featureIndex     
+     * @param featureIndex
+     * @param featureValueIndex
+     * @return gap insertion cost
+     */
+    float gapInsertionCostForOneFeature(int featureIndex, int featureValueIndex);
 }

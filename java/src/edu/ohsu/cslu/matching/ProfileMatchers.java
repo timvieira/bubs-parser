@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,8 +19,8 @@ import edu.ohsu.cslu.matching.exact.BoyerMooreMatcher;
 import edu.ohsu.cslu.matching.exact.KnuthMorrisPrattMatcher;
 import edu.ohsu.cslu.matching.exact.NaiveMatcher;
 import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.tests.PerformanceTest;
+import edu.ohsu.cslu.tests.SharedNlpTests;
 
 
 /**

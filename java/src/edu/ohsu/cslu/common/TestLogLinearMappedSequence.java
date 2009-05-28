@@ -1,5 +1,8 @@
 package edu.ohsu.cslu.common;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -8,9 +11,6 @@ import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.alignment.bio.LogLinearDnaVocabulary;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 
 /**
  * Unit tests for {@link LogLinearMappedSequence}.
@@ -44,7 +44,7 @@ public class TestLogLinearMappedSequence
     public void testConstructors() throws Exception
     {
         LogLinearMappedSequence sequence = new LogLinearMappedSequence(new int[] {0, 1, 2, 3}, dnaVocabulary);
-        assertEquals(6, sequence.features());
+        assertEquals(6, sequence.featureCount());
         assertEquals(4, sequence.length());
         SharedNlpTests.assertEquals(new int[] {0}, sequence.elementAt(0).values());
         SharedNlpTests.assertEquals(new int[] {1}, sequence.elementAt(1).values());
@@ -53,7 +53,7 @@ public class TestLogLinearMappedSequence
 
         int[][] array = new int[][] { {0, 1}, {1, 2}, {2, 3}, {3, 4}};
         sequence = new LogLinearMappedSequence(array, dnaVocabulary);
-        assertEquals(6, sequence.features());
+        assertEquals(6, sequence.featureCount());
         assertEquals(4, sequence.length());
         SharedNlpTests.assertEquals(new int[] {0, 1}, sequence.elementAt(0).values());
         SharedNlpTests.assertEquals(new int[] {1, 2}, sequence.elementAt(1).values());
@@ -67,7 +67,7 @@ public class TestLogLinearMappedSequence
         LogLinearMappedSequence sequence = new LogLinearMappedSequence(sentence1, vocabulary);
 
         assertEquals(10, sequence.length());
-        assertEquals(35, sequence.features());
+        assertEquals(35, sequence.featureCount());
 
         // TODO: This test is probably now applicable to {@link MultipleVocabularyMappedSequence} as
         // well
