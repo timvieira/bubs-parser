@@ -2,6 +2,9 @@ package edu.ohsu.cslu.datastructs.vectors;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
 
 import static junit.framework.Assert.*;
 
@@ -13,6 +16,7 @@ import static junit.framework.Assert.*;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestFloatVector extends NumericVectorTestCase
 {
     private float[] sampleArray;

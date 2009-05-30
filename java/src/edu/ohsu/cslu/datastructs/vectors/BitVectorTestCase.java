@@ -1,15 +1,16 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
 import org.junit.Test;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * Tests for {@link PackedBitVector} implementations
@@ -26,15 +27,19 @@ public abstract class BitVectorTestCase extends VectorTestCase
      */
     protected abstract BitVector createEmptyBitVector();
 
+    protected Class<? extends BitVector> elementwiseMultiplyResultClass;
+
+    @SuppressWarnings("unchecked")
     @Override
-    protected Vector create(float[] array)
+    protected Vector create(float[] array) throws Exception
     {
-        int[] intArray = new int[array.length];
+        boolean[] booleanArray = new boolean[array.length];
         for (int i = 0; i < array.length; i++)
         {
-            intArray[i] = array[i] == 0 ? 0 : 1;
+            booleanArray[i] = (array[i] != 0);
         }
-        return new PackedBitVector(intArray);
+        Constructor<BitVector> c = (Constructor<BitVector>) vectorClass.getConstructor(boolean[].class);
+        return c.newInstance(booleanArray);
     }
 
     @Override
@@ -43,16 +48,6 @@ public abstract class BitVectorTestCase extends VectorTestCase
         Vector vector = create(new float[] {1, 0, 1, 1});
         IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
         FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
-
-        try
-        {
-            vector.add(create(new float[] {1}));
-            fail("Expected IllegalArgumentException");
-        }
-        catch (IllegalArgumentException expected)
-        {
-            assertEquals("Vector length mismatch", expected.getMessage());
-        }
 
         // If we add an {@link IntVector} we should get a new {@link IntVector}
         Vector sum = intVector.add(intVector);
@@ -98,16 +93,6 @@ public abstract class BitVectorTestCase extends VectorTestCase
         IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
         FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
 
-        try
-        {
-            vector.elementwiseMultiply(create(new float[] {1}));
-            fail("Expected IllegalArgumentException");
-        }
-        catch (IllegalArgumentException expected)
-        {
-            assertEquals("Vector length mismatch", expected.getMessage());
-        }
-
         // If we multiply by an {@link IntVector} we should get a new {@link IntVector}
         Vector product = vector.elementwiseMultiply(intVector);
         assertEquals("Wrong class: " + product.getClass().getName(), IntVector.class, product.getClass());
@@ -126,10 +111,10 @@ public abstract class BitVectorTestCase extends VectorTestCase
         assertEquals("Wrong value", 2, product.getFloat(2), .01f);
         assertEquals("Wrong value", 1, product.getFloat(3), .01f);
 
-        // If we multiply by a {@link PackedBitVector} we should get a new {@link PackedBitVector}
+        // If we multiply by a {@link PackedBitVector} we should get a new instance of class under
+        // test
         product = vector.elementwiseMultiply(new PackedBitVector(new int[] {1, 1, 0, 0}));
-        assertEquals("Wrong class: " + product.getClass().getName(), PackedBitVector.class, product.getClass());
-        assertEquals("Wrong length", 4, product.length());
+        assertEquals("Wrong class: ", vectorClass, product.getClass());
         assertEquals("Wrong value", 1, product.getInt(0));
         assertEquals("Wrong value", 0, product.getInt(1));
         assertEquals("Wrong value", 0, product.getInt(2));
@@ -137,7 +122,17 @@ public abstract class BitVectorTestCase extends VectorTestCase
 
         // If we multiply by a {@link SparseBitVector} we should get a new {@link SparseBitVector}
         product = vector.elementwiseMultiply(new SparseBitVector(new int[] {1, 2}));
-        assertEquals("Wrong class: " + product.getClass().getName(), SparseBitVector.class, product.getClass());
+        assertEquals("Wrong class: ", SparseBitVector.class, product.getClass());
+        assertEquals("Wrong value", 0, product.getInt(0));
+        assertEquals("Wrong value", 0, product.getInt(1));
+        assertEquals("Wrong value", 1, product.getInt(2));
+        assertEquals("Wrong value", 0, product.getInt(3));
+
+        // Multiply by a {@link MutableSparseBitVector}
+        Class<? extends BitVector> expectedClass = (vectorClass == SparseBitVector.class) ? SparseBitVector.class
+            : MutableSparseBitVector.class;
+        product = vector.elementwiseMultiply(new MutableSparseBitVector(new int[] {1, 2}));
+        assertEquals("Wrong class: ", expectedClass, product.getClass());
         assertEquals("Wrong value", 0, product.getInt(0));
         assertEquals("Wrong value", 0, product.getInt(1));
         assertEquals("Wrong value", 1, product.getInt(2));
@@ -226,7 +221,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
         assertEquals(0, subvector.getInt(0));
         assertEquals(1, subvector.getInt(1));
 
-        // And a 4-element subvector spanning an integer split-point
+        // And a 4-element subvector spanning an integer split-point (in PackedBitVector)
         subvector = sampleVector.subVector(30, 33);
         assertEquals("Wrong length", 4, subvector.length());
         assertEquals(0, subvector.getInt(0));

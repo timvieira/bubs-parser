@@ -71,7 +71,22 @@ public class FloatVector extends BaseNumericVector
                 throw new IllegalArgumentException("Vector length mismatch");
             }
 
-            for (int i : ((SparseBitVector) v).intSet())
+            for (int i : ((SparseBitVector) v).values())
+            {
+                vector[i] += 1;
+            }
+            return this;
+        }
+
+        // Special-case for MutableSparseBitVector
+        if (v instanceof MutableSparseBitVector)
+        {
+            if (v.length() > length)
+            {
+                throw new IllegalArgumentException("Vector length mismatch");
+            }
+
+            for (int i : ((MutableSparseBitVector) v).intSet())
             {
                 vector[i] += 1;
             }

@@ -2,8 +2,6 @@ package edu.ohsu.cslu.datastructs.vectors;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 
-import java.util.BitSet;
-
 /**
  * Extends the {@link Vector} interface with methods specific to handling of bit (binary) vectors.
  * 
@@ -21,21 +19,21 @@ import java.util.BitSet;
 public interface BitVector extends Vector
 {
     /**
-     * Set-convention convenience method
+     * Set-convention convenience method (optional operation)
      * 
      * @param toAdd element to add to the set
      */
     public void add(final int toAdd);
 
     /**
-     * Set-convention convenience method
+     * Set-convention convenience method (optional operation)
      * 
      * @param toAdd elements to add to the set
      */
     public void addAll(final int[] toAdd);
 
     /**
-     * Set-convention convenience method
+     * Set-convention convenience method (optional operation)
      * 
      * @param toAdd elements to add to the set
      */
@@ -58,7 +56,7 @@ public interface BitVector extends Vector
     public boolean contains(final int i);
 
     /**
-     * Set-convention convenience method
+     * Set-convention convenience method (optional operation)
      * 
      * @param toRemove element to remove from the set
      * @return True if the specified element was contained in this set
@@ -66,21 +64,34 @@ public interface BitVector extends Vector
     public boolean remove(final int toRemove);
 
     /**
-     * Set-convention convenience method
+     * Set-convention convenience method (optional operation)
      * 
      * @param toRemove elements to remove from the set
      */
     public void removeAll(final int[] toRemove);
 
     /**
-     * Set-convention convenience method
+     * Set-convention convenience method (optional operation)
      * 
      * @param toRemove elements to remove from the set
      */
     public void removeAll(final IntSet toRemove);
 
     /**
-     * @return an array containing the indices of all elements contained in this {@link BitSet}
+     * Returns the length of the vector. The length of a {@link BitVector} is either:
+     * <ol>
+     * <li>For implementations of fixed-size, such as {@link PackedBitVector}, the highest index
+     * which the vector can store.
+     * <li>For implementations of variable size, such as {@link MutableSparseBitVector}, the highest
+     * populated index + 1.
+     * </ol>
+     * 
+     * @return length.
+     */
+    public int length();
+
+    /**
+     * @return an array containing the indices of all elements contained in this {@link Vector}
      */
     public int[] values();
 }

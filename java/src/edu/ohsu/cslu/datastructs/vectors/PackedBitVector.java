@@ -43,6 +43,22 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
         }
     }
 
+    /**
+     * Constructs a {@link PackedBitVector} from a boolean array.
+     * 
+     * @param array array of populated bits
+     */
+    public PackedBitVector(final boolean[] array)
+    {
+        super(array.length);
+
+        packedVector = new int[(array.length >> 5) + 1];
+        for (int i = 0; i < length; i++)
+        {
+            set(i, array[i]);
+        }
+    }
+
     @Override
     public final boolean getBoolean(final int i)
     {
@@ -126,10 +142,18 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
             return super.elementwiseMultiply(v);
         }
 
-        // {@link SparseBitVector} has an efficient implementation
+        /**
+         * {@link SparseBitVector} and {@link MutableSparseBitVector} have an efficient
+         * implementations
+         */
         if (v instanceof SparseBitVector)
         {
             return ((SparseBitVector) v).elementwiseMultiply(this);
+        }
+
+        if (v instanceof MutableSparseBitVector)
+        {
+            return ((MutableSparseBitVector) v).elementwiseMultiply(this);
         }
 
         if (v.length() != length)

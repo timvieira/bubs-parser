@@ -28,7 +28,7 @@ import edu.ohsu.cslu.util.Strings;
 public interface Vector
 {
     /**
-     * Get length of the vector.
+     * Returns the length of the vector.
      * 
      * @return length.
      */
@@ -229,6 +229,7 @@ public interface Vector
         public final static String ATTRIBUTE_TYPE_FIXED_POINT_SHORT = "fixed-point-short";
         public final static String ATTRIBUTE_TYPE_PACKED_BIT = "packed-bit";
         public final static String ATTRIBUTE_TYPE_SPARSE_BIT = "sparse-bit";
+        public final static String ATTRIBUTE_TYPE_MUTABLE_SPARSE_BIT = "mutable-sparse-bit";
 
         public static Vector read(String s) throws IOException
         {
@@ -278,7 +279,13 @@ public interface Vector
             }
             else if (type.equals(ATTRIBUTE_TYPE_SPARSE_BIT))
             {
-                vector = new SparseBitVector();
+                // Special-case, to read in the contents as an array of integers
+                return new SparseBitVector(readIntArray(br));
+            }
+            else if (type.equals(ATTRIBUTE_TYPE_MUTABLE_SPARSE_BIT))
+            {
+                // Special-case, to read in the contents as an array of integers
+                return new MutableSparseBitVector(readIntArray(br));
             }
             else if (type.equals(ATTRIBUTE_TYPE_PACKED_INTEGER))
             {
@@ -295,8 +302,7 @@ public interface Vector
             }
 
             // Read and initialize vector
-            String line = br.readLine();
-            String[] split = line.split(" +");
+            String[] split = br.readLine().split(" +");
             if (split.length != length)
             {
                 throw new IllegalArgumentException("Serialized vector length mismatch");
@@ -307,8 +313,17 @@ public interface Vector
             }
 
             return vector;
+        }
 
+        private static int[] readIntArray(BufferedReader br) throws IOException
+        {
+            String[] split = br.readLine().split(" +");
+            int[] elements = new int[split.length];
+            for (int i = 0; i < elements.length; i++)
+            {
+                elements[i] = Integer.parseInt(split[i]);
+            }
+            return elements;
         }
     }
-
 }
