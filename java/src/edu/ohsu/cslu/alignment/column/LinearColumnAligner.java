@@ -17,8 +17,6 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  */
 public final class LinearColumnAligner extends FullColumnAligner
 {
-    private float score;
-
     @Override
     public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model, int[] features)
     {
@@ -85,15 +83,6 @@ public final class LinearColumnAligner extends FullColumnAligner
             current = tmp;
         }
 
-        score = previous[previous.length - 1];
-        return backtrace(sequence, model, backpointer, gapVector);
-    }
-
-    /**
-     * @return the score of the last alignment performed
-     */
-    public float score()
-    {
-        return score;
+        return backtrace(sequence, model, backpointer, gapVector, previous[maxJ - 1]);
     }
 }

@@ -31,10 +31,11 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
     protected Matrix[] matrices;
     private int[] gapSymbols;
     private float columnInsertionCost = Float.POSITIVE_INFINITY;
-    
+
     private SubstitutionAlignmentModel substitutionModel;
-    
-    // totalCounts[] holds the total number of counts and pseudo-counts that exist for a given feature
+
+    // totalCounts[] holds the total number of counts and pseudo-counts that exist for a given
+    // feature
     int[] totalCounts;
 
     public MatrixColumnAlignmentModel(Matrix[] matrices, Vocabulary[] vocabularies)
@@ -61,23 +62,19 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
     {
         this(vocabulary, Float.POSITIVE_INFINITY);
     }
-    
-    public MatrixColumnAlignmentModel(
-        MultipleSequenceAlignment multipleSequenceAlignment,
-        int[] pseudoCountsPerToken, 
-        int[] featureIndices,
-        int emphasizedSequence, 
-        int additionalCounts, 
-        boolean[] binaryFeatures, 
+
+    public MatrixColumnAlignmentModel(MultipleSequenceAlignment multipleSequenceAlignment, int[] pseudoCountsPerToken,
+        int[] featureIndices, int emphasizedSequence, int additionalCounts, boolean[] binaryFeatures,
         float binaryFeatureGapCost)
     {
         final int featureCount = featureIndices.length;
         final int slots = multipleSequenceAlignment.length();
+        final Vocabulary[] vocabs = multipleSequenceAlignment.getVocabularies();
         final Vocabulary[] newVocabularies = new Vocabulary[featureIndices.length];
+
         for (int f = 0; f < featureCount; f++)
         {
-            Vocabulary[] vocabularies = multipleSequenceAlignment.getVocabularies();
-            newVocabularies[f] = vocabularies[featureIndices[f]];
+            newVocabularies[f] = vocabs[featureIndices[f]];
         }
 
         // Create counts[] and totalCounts[] which index on the feature vector.
@@ -85,28 +82,27 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
         final IntMatrix[] counts = new IntMatrix[featureCount];
         for (int indexIntoFeatureIndices = 0; indexIntoFeatureIndices < featureCount; indexIntoFeatureIndices++)
         {
-            // For a particular feature, counts[i] holds a Matrix with as many slots as multipleSequenceAlignment has columns
-            // and as many rows as there are vocabulary items for this feature. 
+            // For a particular feature, counts[i] holds a Matrix with as many slots as
+            // multipleSequenceAlignment has columns
+            // and as many rows as there are vocabulary items for this feature.
             // Counts initially holds the base number of pseudo counts for smoothing.
-            counts[indexIntoFeatureIndices] = 
-                Matrix.Factory.newIntMatrix(
-                    newVocabularies[featureIndices[indexIntoFeatureIndices]].size(), 
-                    multipleSequenceAlignment.length(),
-                    pseudoCountsPerToken[indexIntoFeatureIndices]);
-            
+            counts[indexIntoFeatureIndices] = Matrix.Factory.newIntMatrix(
+                newVocabularies[featureIndices[indexIntoFeatureIndices]].size(), multipleSequenceAlignment.length(),
+                pseudoCountsPerToken[indexIntoFeatureIndices]);
+
             // For a particular feature, the total number of counts for any slot is the sum of:
-            //  1) The total number of pseudo-counts as given by: pseudo-counts_for_feature_i * size_of_vocabulary_of_feature_i
-            //  2) The number of sequences in the AlignmentModel
-            //  3) The number of additional counts by which to upweight the emphasizedSequence
-            totalCounts[indexIntoFeatureIndices] = 
-                (pseudoCountsPerToken[indexIntoFeatureIndices] * newVocabularies[featureIndices[indexIntoFeatureIndices]].size()) + 
-                multipleSequenceAlignment.numOfSequences() + 
-                additionalCounts;
+            // 1) The total number of pseudo-counts as given by: pseudo-counts_for_feature_i *
+            // size_of_vocabulary_of_feature_i
+            // 2) The number of sequences in the AlignmentModel
+            // 3) The number of additional counts by which to upweight the emphasizedSequence
+            totalCounts[indexIntoFeatureIndices] = (pseudoCountsPerToken[indexIntoFeatureIndices] * newVocabularies[featureIndices[indexIntoFeatureIndices]]
+                .size())
+                + multipleSequenceAlignment.numOfSequences() + additionalCounts;
         }
 
         // March through each sequence
-        //   for each slot (i.e. position) in the sequence and for each feature
-        //      up the count of the feature-value that occurred in the sequence
+        // for each slot (i.e. position) in the sequence and for each feature
+        // up the count of the feature-value that occurred in the sequence
         for (int sequenceIndex = 0; sequenceIndex < multipleSequenceAlignment.numOfSequences(); sequenceIndex++)
         {
             MappedSequence sequence = multipleSequenceAlignment.get(sequenceIndex);
@@ -117,13 +113,12 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
                     final int addend = (sequenceIndex == emphasizedSequence) ? additionalCounts + 1 : 1;
                     for (int indexIntoFeatureIndeces = 0; indexIntoFeatureIndeces < featureCount; indexIntoFeatureIndeces++)
                     {
-                        counts[indexIntoFeatureIndeces].add(
-                            sequence.elementAt(slotIndex).getInt(indexIntoFeatureIndeces),// Integer representation of the 
-                                                                                                  // feature-value of the current 
-                                                                                                  // feature at slotIndex in this  
-                                                                                                  // sequence 
-                            slotIndex, 
-                            addend);
+                        counts[indexIntoFeatureIndeces].add(sequence.elementAt(slotIndex).getInt(
+                            indexIntoFeatureIndeces),// Integer representation of the
+                            // feature-value of the current
+                            // feature at slotIndex in this
+                            // sequence
+                            slotIndex, addend);
                     }
                 }
             }
@@ -134,8 +129,8 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
         Matrix[] distributionMatrices = new Matrix[featureCount];
         for (int indexIntoFeatureIndices = 0; indexIntoFeatureIndices < featureCount; indexIntoFeatureIndices++)
         {
-            final Matrix matrix = distributionMatrices[indexIntoFeatureIndices] = 
-                new FloatMatrix(counts[indexIntoFeatureIndices].rows(), counts[indexIntoFeatureIndices].columns());
+            final Matrix matrix = distributionMatrices[indexIntoFeatureIndices] = new FloatMatrix(
+                counts[indexIntoFeatureIndices].rows(), counts[indexIntoFeatureIndices].columns());
             for (int i = 0; i < matrix.rows(); i++)
             {
                 if (binaryFeatures[indexIntoFeatureIndices] && i == AlignmentModel.GAP_INDEX)
@@ -150,12 +145,8 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
                 {
                     for (int j = 0; j < matrix.columns(); j++)
                     {
-                        matrix.set(
-                            i, 
-                            j, 
-                            calculateNegativeLogP(
-                                counts[indexIntoFeatureIndices].getFloat(i, j),
-                                totalCounts[indexIntoFeatureIndices]));
+                        matrix.set(i, j, calculateNegativeLogP(counts[indexIntoFeatureIndices].getFloat(i, j),
+                            totalCounts[indexIntoFeatureIndices]));
                     }
                 }
             }
@@ -163,21 +154,21 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
 
         initialize(distributionMatrices, newVocabularies);
     }
-    
+
     private float calculateNegativeLogP(float numerator, float denominator)
     {
         return (float) -Math.log(numerator / denominator);
     }
-    
-    private void initialize(Matrix[] matrices, Vocabulary[] vocabularies)
-    {
-        this.matrices = matrices;
-        this.vocabularies = vocabularies;
-        this.gapSymbols = new int[vocabularies.length];
 
-        for (int i = 0; i < vocabularies.length; i++)
+    private void initialize(Matrix[] newMatrices, Vocabulary[] newVocabularies)
+    {
+        this.matrices = newMatrices;
+        this.vocabularies = newVocabularies;
+        this.gapSymbols = new int[newVocabularies.length];
+
+        for (int i = 0; i < newVocabularies.length; i++)
         {
-            gapSymbols[i] = ((AlignmentVocabulary) vocabularies[i]).gapSymbol();
+            gapSymbols[i] = ((AlignmentVocabulary) newVocabularies[i]).gapSymbol();
         }
     }
 
@@ -228,7 +219,7 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
     }
 
     // TODO: Change name to columnCount()
-    public int columns()  
+    public int columns()
     {
         return matrices[0].columns();
     }
@@ -307,22 +298,21 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
 
         return sb.toString();
     }
-    
+
     public void setSubstitutionAlignmentModel(SubstitutionAlignmentModel substitutionModel)
     {
         this.substitutionModel = substitutionModel;
     }
-    
+
     /**
-     * Calculates the cost of inserting a gap into this Alignment Model using the following algorithm:
+     * Calculates the cost of inserting a gap into this Alignment Model using the following
+     * algorithm:
      * 
-     *   sum over all features:
-     *    a) cost of aligning the NEW feature-value of feature[i] to a gap
-     *       TIMES
-     *    b) total cost of ripping a gap into all already-aligned sequence  
-     *     
-     *    Where b) is defined as the same as aligning a featureVector to a slot that contains zero
-     *    matching feature values.
+     * sum over all features: a) cost of aligning the NEW feature-value of feature[i] to a gap TIMES
+     * b) total cost of ripping a gap into all already-aligned sequence
+     * 
+     * Where b) is defined as the same as aligning a featureVector to a slot that contains zero
+     * matching feature values.
      * 
      * @param featureVector -- the values of all features for one slot of the NEW sequence to align
      * @return the cost of inserting a gap
@@ -331,23 +321,22 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
     public float costOfInsertingAGapIntoThisAlignmentModel(Vector featureVector)
     {
         float costOfInsertingAGapIntoThisAlignementModel = 0;
-        
-        for (int featureIndex = 0; featureIndex < featureVector.length(); featureIndex++) 
+
+        for (int featureIndex = 0; featureIndex < featureVector.length(); featureIndex++)
         {
-            float reflexiveCostOfInstertingAGapInThisAlignmentForThisFeature =
-                substitutionModel.gapInsertionCostForOneFeature(featureIndex, featureVector.getInt(featureIndex));
-            
-            float laplaceSmoothingIncrement = calculateNegativeLogP( 1, totalCounts[featureIndex]);
-            
-            costOfInsertingAGapIntoThisAlignementModel += 
-                reflexiveCostOfInstertingAGapInThisAlignmentForThisFeature *
-                laplaceSmoothingIncrement;
+            float reflexiveCostOfInstertingAGapInThisAlignmentForThisFeature = substitutionModel
+                .gapInsertionCostForOneFeature(featureIndex, featureVector.getInt(featureIndex));
+
+            float laplaceSmoothingIncrement = calculateNegativeLogP(1, totalCounts[featureIndex]);
+
+            costOfInsertingAGapIntoThisAlignementModel += reflexiveCostOfInstertingAGapInThisAlignmentForThisFeature
+                * laplaceSmoothingIncrement;
         }
-        
+
         return costOfInsertingAGapIntoThisAlignementModel;
     }
-    
-    //@Override
+
+    // @Override
     public float costOfInsertingAGapIntoThisAlignmentModel_reflexive(Vector featureVector)
     {
         return substitutionModel.gapInsertionCost(featureVector, columns());

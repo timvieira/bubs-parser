@@ -24,10 +24,14 @@ public class SequenceAlignment
     /** Gaps to be inserted into already-aligned string */
     private final int[] gapIndices;
 
-    public SequenceAlignment(final MappedSequence newlyAlignedSequence, final int[] gaps)
+    /** Score assigned by the aligner */
+    private final float score;
+
+    public SequenceAlignment(final MappedSequence newlyAlignedSequence, final int[] gapIndices, final float score)
     {
         this.newlyAlignedSequence = newlyAlignedSequence;
-        gapIndices = gaps;
+        this.gapIndices = gapIndices;
+        this.score = score;
     }
 
     /**
@@ -45,6 +49,14 @@ public class SequenceAlignment
     public final int[] gapIndices()
     {
         return gapIndices;
+    }
+
+    /**
+     * @return The score assigned by the aligner when creating this alignment
+     */
+    public float score()
+    {
+        return score;
     }
 
     @Override

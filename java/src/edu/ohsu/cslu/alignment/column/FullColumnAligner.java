@@ -29,7 +29,7 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
 public class FullColumnAligner extends BaseColumnAligner
 {
     /** Store the dynamic programming information for toString() to format */
-    private float[][] m_array;
+    private float[][] m_scoreArray;
     // TODO: Replace with a PackedIntVector and profile
     protected byte[][] m_backPointer;
     private Sequence m_sequence;
@@ -41,31 +41,31 @@ public class FullColumnAligner extends BaseColumnAligner
         final int maxI = sequence.length() + 1;
         final int maxJ = model.columns() + 1;
 
-        final float[][] array = new float[maxI][maxJ];
+        final float[][] scoreArray = new float[maxI][maxJ];
         final byte[][] backpointer = new byte[maxI][maxJ];
 
         final Vector gapVector = model.gapVector();
 
-        m_array = array;
+        m_scoreArray = scoreArray;
         m_backPointer = backpointer;
         m_sequence = sequence;
         m_model = model;
 
         for (int i = 0; i < maxI; i++)
         {
-            Arrays.fill(array[i], Float.POSITIVE_INFINITY);
+            Arrays.fill(scoreArray[i], Float.POSITIVE_INFINITY);
         }
-        array[0][0] = 0.0f;
+        scoreArray[0][0] = 0.0f;
 
         // Initialize all the 'start' columns - probabilities of gaps all the way through
         for (int i = 1; i < maxI; i++)
         {
-            array[i][0] = array[i - 1][0] + model.columnInsertionCost(sequence.elementAt(i - 1));
+            scoreArray[i][0] = scoreArray[i - 1][0] + model.columnInsertionCost(sequence.elementAt(i - 1));
             backpointer[i][0] = BACKPOINTER_INSERT_COLUMN;
         }
         for (int j = 1; j < maxJ; j++)
         {
-            array[0][j] = array[0][j - 1] + model.cost(gapVector, j - 1, features);
+            scoreArray[0][j] = scoreArray[0][j - 1] + model.cost(gapVector, j - 1, features);
         }
         Arrays.fill(backpointer[0], BACKPOINTER_UNALIGNED_GAP);
 
@@ -82,39 +82,39 @@ public class FullColumnAligner extends BaseColumnAligner
                 final int prevJ = j - 1;
 
                 // Probability of emission / gap in unaligned / insert column
-                final float emit = array[prevI][prevJ] + model.cost(currentElement, prevJ, features);
-                final float gapInNewSequence = array[i][prevJ] + model.cost(gapVector, prevJ, features);
-                final float gapInPssm = array[prevI][j] + model.columnInsertionCost(currentElement);
+                final float emit = scoreArray[prevI][prevJ] + model.cost(currentElement, prevJ, features);
+                final float gapInNewSequence = scoreArray[i][prevJ] + model.cost(gapVector, prevJ, features);
+                final float gapInPssm = scoreArray[prevI][j] + model.columnInsertionCost(currentElement);
 
                 // Bias toward emission given equal probabilities
                 if (emit <= gapInPssm && emit <= gapInNewSequence)
                 {
-                    array[i][j] = emit;
+                    scoreArray[i][j] = emit;
                     backpointerI[j] = BACKPOINTER_SUBSTITUTION;
                 }
                 else if (gapInNewSequence <= gapInPssm)
                 {
-                    array[i][j] = gapInNewSequence;
+                    scoreArray[i][j] = gapInNewSequence;
                     backpointerI[j] = BACKPOINTER_UNALIGNED_GAP;
                 }
                 else
                 {
-                    array[i][j] = gapInPssm;
+                    scoreArray[i][j] = gapInPssm;
                     backpointerI[j] = BACKPOINTER_INSERT_COLUMN;
                 }
             }
         }
 
-        return backtrace(sequence, model, backpointer, gapVector);
+        return backtrace(sequence, model, backpointer, gapVector, scoreArray[maxI - 1][maxJ - 1]);
     }
-    
+
     @Override
     public SequenceAlignment alignWithGaps(MappedSequence sequence, MatrixColumnAlignmentModel model, int[] features)
     {
         final int maxI = sequence.length() + 1;
         final int maxJ = model.columns() + 1;
 
-        final float[][] array = new float[maxI][maxJ];
+        final float[][] scoreArray = new float[maxI][maxJ];
         final byte[][] backpointer = new byte[maxI][maxJ];
 
         final Vocabulary[] vocabularies = model.vocabularies();
@@ -123,28 +123,31 @@ public class FullColumnAligner extends BaseColumnAligner
         {
             gapSymbol.set(i, ((AlignmentVocabulary) vocabularies[i]).gapSymbol());
         }
-        
-        m_array = array;
+
+        m_scoreArray = scoreArray;
         m_backPointer = backpointer;
         m_sequence = sequence;
         m_model = model;
 
         for (int i = 0; i < maxI; i++)
         {
-            Arrays.fill(array[i], Float.MAX_VALUE);
+            Arrays.fill(scoreArray[i], Float.MAX_VALUE);
         }
-        array[0][0] = 0.0f;
+        scoreArray[0][0] = 0.0f;
 
         // Initialize all the 'start' columns - probabilities of gaps all the way through
         for (int i = 1; i < maxI; i++)
         {
-            //array[i][0] = array[i - 1][0] + model.costOfInsertingAGapIntoThisAlignmentModel/*_reflexive*/(sequence.features(i - 1));
-            array[i][0] = array[i - 1][0] + model.costOfInsertingAGapIntoThisAlignmentModel_reflexive(sequence.elementAt(i - 1));
+            // array[i][0] = array[i - 1][0] +
+            // model.costOfInsertingAGapIntoThisAlignmentModel/*_reflexive*/(sequence.features(i -
+            // 1));
+            scoreArray[i][0] = scoreArray[i - 1][0]
+                + model.costOfInsertingAGapIntoThisAlignmentModel_reflexive(sequence.elementAt(i - 1));
             backpointer[i][0] = BACKPOINTER_INSERT_COLUMN;
         }
         for (int j = 1; j < maxJ; j++)
         {
-            array[0][j] = array[0][j - 1] + model.cost(gapSymbol, j - 1, features);
+            scoreArray[0][j] = scoreArray[0][j - 1] + model.cost(gapSymbol, j - 1, features);
         }
         Arrays.fill(backpointer[0], BACKPOINTER_UNALIGNED_GAP);
 
@@ -161,25 +164,27 @@ public class FullColumnAligner extends BaseColumnAligner
                 final int prevJ = j - 1;
 
                 // Probability of emission / gap in unaligned / gap in pssm
-                final float emit = array[prevI][prevJ] + model.cost(currentElement, prevJ, features);
-                final float gapInNewSequence = array[i][prevJ] + model.cost(gapSymbol, prevJ, features);
-                //final float gapInPssm = array[prevI][j] + model.costOfInsertingAGapIntoThisAlignmentModel/*_reflexive*/(currentElement);
-                final float gapInPssm = array[prevI][j] + model.costOfInsertingAGapIntoThisAlignmentModel_reflexive(currentElement);
+                final float emit = scoreArray[prevI][prevJ] + model.cost(currentElement, prevJ, features);
+                final float gapInNewSequence = scoreArray[i][prevJ] + model.cost(gapSymbol, prevJ, features);
+                // final float gapInPssm = array[prevI][j] +
+                // model.costOfInsertingAGapIntoThisAlignmentModel/*_reflexive*/(currentElement);
+                final float gapInPssm = scoreArray[prevI][j]
+                    + model.costOfInsertingAGapIntoThisAlignmentModel_reflexive(currentElement);
 
                 // Bias toward emission given equal probabilities
                 if (emit <= gapInPssm && emit <= gapInNewSequence)
                 {
-                    array[i][j] = emit;
+                    scoreArray[i][j] = emit;
                     backpointerI[j] = BACKPOINTER_SUBSTITUTION;
                 }
                 else if (gapInNewSequence <= gapInPssm)
                 {
-                    array[i][j] = gapInNewSequence;
+                    scoreArray[i][j] = gapInNewSequence;
                     backpointerI[j] = BACKPOINTER_UNALIGNED_GAP;
                 }
                 else
                 {
-                    array[i][j] = gapInPssm;
+                    scoreArray[i][j] = gapInPssm;
                     backpointerI[j] = BACKPOINTER_INSERT_COLUMN;
                 }
             }
@@ -187,13 +192,12 @@ public class FullColumnAligner extends BaseColumnAligner
 
         System.out.println();
         System.out.println(this);
-        
-        return backtraceWithGaps(sequence, model, backpointer, gapSymbol);
+
+        return backtraceWithGaps(sequence, model, backpointer, gapSymbol, scoreArray[maxI][maxJ]);
     }
 
-
-    protected final SequenceAlignment backtrace(Sequence sequence, ColumnAlignmentModel model,
-        byte[][] backPointer, Vector gapVector)
+    protected final SequenceAlignment backtrace(Sequence sequence, ColumnAlignmentModel model, byte[][] backPointer,
+        Vector gapVector, final float score)
     {
         // Backtrace to reconstruct the winning alignment, adding to the beginning of a linked-list
         // to implicitly construct the buffer in order, while we traverse the alignment in reverse.
@@ -238,14 +242,14 @@ public class FullColumnAligner extends BaseColumnAligner
         if (sequence instanceof MultipleVocabularyMappedSequence)
         {
             return new SequenceAlignment(new MultipleVocabularyMappedSequence(backtrace.toArray(new IntVector[backtrace
-                .size()]), model.vocabularies()), gapIndices);
+                .size()]), model.vocabularies()), gapIndices, score);
         }
         return new SequenceAlignment(new LogLinearMappedSequence(backtrace.toArray(new BitVector[backtrace.size()]),
-            model.vocabularies()[0]), gapIndices);
+            model.vocabularies()[0]), gapIndices, score);
     }
-    
+
     protected final SequenceAlignment backtraceWithGaps(MappedSequence sequence, ColumnAlignmentModel model,
-        byte[][] backPointer, Vector gapVector)
+        byte[][] backPointer, Vector gapVector, final float score)
     {
         // Backtrace to reconstruct the winning alignment, adding to the beginning of a linked-list
         // to implicitly construct the buffer in order, while we traverse the alignment in reverse.
@@ -287,8 +291,8 @@ public class FullColumnAligner extends BaseColumnAligner
             gapIndices[i] = gapIterator.nextInt();
         }
 
-        return new SequenceAlignment(new LogLinearMappedSequence(buffer.toArray(new BitVector[buffer.size()]), model.vocabularies()[0]),
-            gapIndices);
+        return new SequenceAlignment(new LogLinearMappedSequence(buffer.toArray(new BitVector[buffer.size()]), model
+            .vocabularies()[0]), gapIndices, score);
     }
 
     @Override
@@ -313,7 +317,7 @@ public class FullColumnAligner extends BaseColumnAligner
             sb.append(String.format("%5s |", i > 0 ? vocabulary.map(m_sequence.elementAt(i - 1).getInt(0)) : ""));
             for (int j = 0; j < maxJ; j++)
             {
-                float value = m_array[i][j];
+                float value = m_scoreArray[i][j];
                 String backpointer = null;
                 switch (m_backPointer[i][j])
                 {
