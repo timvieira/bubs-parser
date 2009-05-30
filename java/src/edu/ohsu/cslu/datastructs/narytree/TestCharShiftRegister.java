@@ -3,7 +3,9 @@ package edu.ohsu.cslu.datastructs.narytree;
 import static junit.framework.Assert.assertEquals;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
@@ -14,6 +16,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestCharShiftRegister
 {
 

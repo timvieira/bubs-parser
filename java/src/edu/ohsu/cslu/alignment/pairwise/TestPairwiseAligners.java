@@ -1,9 +1,8 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
@@ -17,6 +16,9 @@ import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.matrices.FloatMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
+import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for pairwise aligners.
@@ -30,6 +32,7 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestPairwiseAligners
 {
     private final static DnaVocabulary DNA_VOCABULARY = new DnaVocabulary();

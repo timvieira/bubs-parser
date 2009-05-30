@@ -1,9 +1,8 @@
 package edu.ohsu.cslu.alignment.multiple;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
@@ -14,8 +13,11 @@ import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tools.CalculateDistances;
 import edu.ohsu.cslu.util.Strings;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for multiple sequence aligners.
@@ -25,6 +27,7 @@ import edu.ohsu.cslu.util.Strings;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestMultipleSequenceAligners
 {
     private final static DnaVocabulary DNA_VOCABULARY = new DnaVocabulary();

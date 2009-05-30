@@ -16,6 +16,9 @@ import java.util.Iterator;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
  * Unit tests for {@link CharacterNaryTree}
@@ -25,6 +28,7 @@ import org.junit.Test;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestCharacterNaryTree
 {
     private CharacterNaryTree sampleTree;

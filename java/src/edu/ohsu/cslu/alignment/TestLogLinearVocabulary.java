@@ -1,15 +1,17 @@
 package edu.ohsu.cslu.alignment;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link LogLinearVocabulary}
@@ -19,6 +21,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestLogLinearVocabulary
 {
     private String sampleInput;

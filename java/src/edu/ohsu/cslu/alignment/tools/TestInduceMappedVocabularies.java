@@ -3,10 +3,12 @@ package edu.ohsu.cslu.alignment.tools;
 import static junit.framework.Assert.assertEquals;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.TestSimpleVocabulary;
 import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.common.tools.ToolTestCase;
+import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
  * Simple unit tests for {@link InduceMappedVocabularies}. The core functionality is tested in
@@ -18,6 +20,7 @@ import edu.ohsu.cslu.common.tools.ToolTestCase;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestInduceMappedVocabularies extends ToolTestCase
 {
 

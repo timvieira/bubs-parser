@@ -1,12 +1,15 @@
 package edu.ohsu.cslu.alignment;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.StringReader;
 import java.io.StringWriter;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Basic unit tests for {@link SimpleVocabulary}
@@ -16,6 +19,7 @@ import org.junit.Test;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestSimpleVocabulary
 {
     private String sampleInput;

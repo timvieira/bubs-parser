@@ -1,9 +1,12 @@
 package edu.ohsu.cslu.datastructs;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
+
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.fail;
-
-import org.junit.Test;
 
 /**
  * Unit tests for {@link FloatingPointLongPairwiseDistanceHeap}
@@ -13,6 +16,7 @@ import org.junit.Test;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestFloatingPointLongPairwiseDistanceHeap extends PairwiseDistanceHeapTestCase
 {
     @Override
@@ -78,5 +82,4 @@ public class TestFloatingPointLongPairwiseDistanceHeap extends PairwiseDistanceH
         distanceHeap.insert(0, 1, Float.MIN_VALUE);
         distanceHeap.insert(0, 1, Float.MAX_VALUE);
     }
-
 }

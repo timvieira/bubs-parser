@@ -1,11 +1,5 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -17,8 +11,12 @@ import java.util.Iterator;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link IntegerNaryTree} class. Also tests the static inner class
@@ -29,6 +27,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestIntegerNaryTree
 {
     private IntegerNaryTree sampleTree;

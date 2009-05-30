@@ -1,11 +1,5 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,10 +13,14 @@ import java.util.Iterator;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.parsing.grammar.InducedGrammar;
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link ParseTree}
@@ -34,6 +32,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestParseTree
 {
     private static InducedGrammar fullCorpusGrammar;
