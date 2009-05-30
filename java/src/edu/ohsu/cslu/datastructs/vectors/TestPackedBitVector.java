@@ -1,6 +1,9 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
 import org.junit.Before;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
  * Unit tests for {@link PackedBitVector}.
@@ -10,6 +13,7 @@ import org.junit.Before;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestPackedBitVector extends BitVectorTestCase
 {
     @Override

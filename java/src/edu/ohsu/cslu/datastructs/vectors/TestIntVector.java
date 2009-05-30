@@ -1,8 +1,11 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.Before;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link IntVector}
@@ -12,6 +15,7 @@ import org.junit.Before;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestIntVector extends IntVectorTestCase
 {
     private int[] sampleArray;

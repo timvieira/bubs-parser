@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -10,6 +8,8 @@ import java.io.StringWriter;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests common to all {@link Vector} implementations
@@ -26,7 +26,14 @@ public abstract class VectorTestCase
 
     protected Class<? extends Vector> vectorClass;
 
-    protected abstract Vector create(float[] array);
+    /**
+     * Returns a {@link Vector} instance of the class under test (see {@link #vectorClass}.
+     * 
+     * @param array
+     * @return vector
+     * @throws Exception
+     */
+    protected abstract Vector create(float[] array) throws Exception;
 
     @Before
     public abstract void setUp() throws Exception;

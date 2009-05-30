@@ -1,34 +1,38 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
+import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Arrays;
 
 /**
  * Implementation of the {@link BitVector} interface which stores the indices of populated bits in
  * an {@link IntSet}.
  * 
- * This class is generally useful to store binary feature vectors in which a few of the bits will be
- * populated - if a large number of bits are likely to be populated, {@link PackedBitVector} will
- * likely be more efficient.
+ * This class is generally useful to store mutable binary feature vectors in which a few of the bits
+ * will be populated - if a large number of bits are likely to be populated, {@link PackedBitVector}
+ * will likely be more efficient.
+ * 
+ * If a sparsely-populated bit vector is not expected to change, consider the immutable class
+ * {@link SparseBitVector}, which is generally more efficient.
  * 
  * @author Aaron Dunlop
  * @since Sep 11, 2008
  * 
  *        $Id$
  */
-public class SparseBitVector extends BaseVector implements BitVector
-{
-    private final int[] elements;
 
-    public SparseBitVector()
+public class MutableSparseBitVector extends BaseVector implements BitVector
+{
+    private final IntRBTreeSet intSet;
+
+    public MutableSparseBitVector()
     {
         super(0);
-        elements = new int[0];
+        intSet = new IntRBTreeSet();
     }
 
     /**
@@ -39,33 +43,34 @@ public class SparseBitVector extends BaseVector implements BitVector
      * 
      * @param array The vector indices to populate
      */
-    public SparseBitVector(final int[] array)
+    public MutableSparseBitVector(final int[] array)
     {
-        super(array.length == 0 ? 0 : array[array.length - 1] + 1);
-        this.elements = new int[array.length];
-        System.arraycopy(array, 0, this.elements, 0, array.length);
-        Arrays.sort(this.elements);
+        super(0);
+        intSet = new IntRBTreeSet();
+
+        for (int i = 0; i < array.length; i++)
+        {
+            add(array[i]);
+        }
     }
 
     /**
-     * Constructs a {@link SparseBitVector} from a boolean array.
+     * Constructs a {@link MutableSparseBitVector} from a boolean array.
      * 
      * @param array array of populated bits
      */
-    public SparseBitVector(final boolean[] array)
+    public MutableSparseBitVector(final boolean[] array)
     {
         super(array.length);
 
-        IntSet newElements = new IntRBTreeSet();
+        intSet = new IntRBTreeSet();
         for (int i = 0; i < array.length; i++)
         {
             if (array[i])
             {
-                newElements.add(i);
+                intSet.add(i);
             }
         }
-
-        this.elements = newElements.toIntArray();
     }
 
     @Override
@@ -76,91 +81,117 @@ public class SparseBitVector extends BaseVector implements BitVector
             return super.elementwiseMultiply(v);
         }
 
-        // If we're multiplying two SparseBitVector instances, iterate through the smaller one.
-        if (v instanceof SparseBitVector && ((SparseBitVector) v).elements.length < elements.length)
+        // If we're multiplying by a SparseBitVector, use SparseBitVector's implementation
+        if (v instanceof SparseBitVector)
         {
             return ((SparseBitVector) v).elementwiseMultiply(this);
         }
 
-        IntSet newContents = new IntRBTreeSet();
-        for (int i : elements)
+        // If we're multiplying two SparseBitVector instances, iterate through the smaller one.
+        if (v instanceof MutableSparseBitVector && ((MutableSparseBitVector) v).intSet.size() < intSet.size())
+        {
+            return ((MutableSparseBitVector) v).elementwiseMultiply(this);
+        }
+
+        MutableSparseBitVector newVector = new MutableSparseBitVector();
+        for (int i : intSet)
         {
             if (v.getBoolean(i))
             {
-                newContents.add(i);
+                newVector.add(i);
             }
         }
 
-        return new SparseBitVector(newContents.toIntArray());
+        return newVector;
     }
 
     @Override
     public void add(int toAdd)
     {
-        throw new UnsupportedOperationException("SparseBitVector is immutable");
+        intSet.add(toAdd);
+        if ((toAdd + 1) > length)
+        {
+            length = toAdd + 1;
+        }
     }
 
     @Override
     public void addAll(int[] toAdd)
     {
-        throw new UnsupportedOperationException("SparseBitVector is immutable");
+        for (int i : toAdd)
+        {
+            intSet.add(i);
+        }
     }
 
     @Override
     public void addAll(IntSet toAdd)
     {
-        throw new UnsupportedOperationException("SparseBitVector is immutable");
+        intSet.addAll(toAdd);
+        length = length();
     }
 
     @Override
     public boolean contains(int i)
     {
-        // TODO Since we maintain the elements in sorted order, we could use a binary search here
-        for (int element : elements)
-        {
-            if (element == i)
-            {
-                return true;
-            }
-        }
-        return false;
+        return intSet.contains(i);
     }
 
     @Override
     public boolean remove(int toRemove)
     {
-        throw new UnsupportedOperationException("SparseBitVector is immutable");
+        final boolean result = intSet.remove(toRemove);
+        length = length();
+        return result;
     }
 
     @Override
     public void removeAll(int[] toRemove)
     {
-        throw new UnsupportedOperationException("SparseBitVector is immutable");
+        for (int i : toRemove)
+        {
+            intSet.remove(i);
+        }
+        length = length();
     }
 
     @Override
     public void removeAll(IntSet toRemove)
     {
-        throw new UnsupportedOperationException("SparseBitVector is immutable");
+        intSet.removeAll(toRemove);
+        length = length();
     }
 
     @Override
     public int argMax()
     {
-        // Return the lowest populated index (or 0 if the set is empty)
-        return elements.length > 0 ? elements[0] : 0;
+        // If no index is populated, return 0
+        if (intSet.size() == 0)
+        {
+            return 0;
+        }
+
+        // Return the lowest populated index
+        int minSetIndex = Integer.MAX_VALUE;
+        for (int i : intSet)
+        {
+            if (i < minSetIndex)
+            {
+                minSetIndex = i;
+            }
+        }
+        return minSetIndex;
     }
 
     @Override
     public int argMin()
     {
         // If no index is populated, return 0
-        if (elements.length == 0)
+        if (intSet.size() == 0)
         {
             return 0;
         }
 
-        // TODO This could probably be a lot more efficient
         for (int i = 0; i < length; i++)
         {
             if (!contains(i))
@@ -177,7 +208,7 @@ public class SparseBitVector extends BaseVector implements BitVector
         try
         {
             float dotProduct = 0f;
-            for (final int i : elements)
+            for (int i : intSet)
             {
                 dotProduct += v.getFloat(i);
             }
@@ -192,19 +223,19 @@ public class SparseBitVector extends BaseVector implements BitVector
     @Override
     public boolean getBoolean(int i)
     {
-        return contains(i);
+        return intSet.contains(i);
     }
 
     @Override
     public float getFloat(int i)
     {
-        return contains(i) ? 1f : 0f;
+        return intSet.contains(i) ? 1f : 0f;
     }
 
     @Override
     public int getInt(int i)
     {
-        return contains(i) ? 1 : 0;
+        return intSet.contains(i) ? 1 : 0;
     }
 
     @Override
@@ -217,21 +248,21 @@ public class SparseBitVector extends BaseVector implements BitVector
     public int intMax()
     {
         // If any indices are populated, the maximum value is 1; otherwise, 0
-        return elements.length > 0 ? 1 : 0;
+        return intSet.size() > 0 ? 1 : 0;
     }
 
     @Override
     public int intMin()
     {
         // If all indices are populated, the minimum value is 1; otherwise, 0.
-        return length == elements.length ? 1 : 0;
+        return length == intSet.size() ? 1 : 0;
     }
 
     @Override
     public int length()
     {
-        // Return the highest populated index + 1 (or 0 if no elements are populated)
-        return elements.length > 0 ? elements[elements.length - 1] + 1 : 0;
+        // Return the highest populated index + 1, or 0 if no index is populated
+        return intSet.isEmpty() ? 0 : intSet.lastInt() + 1;
     }
 
     @Override
@@ -256,7 +287,7 @@ public class SparseBitVector extends BaseVector implements BitVector
     public NumericVector scalarMultiply(float multiplier)
     {
         NumericVector v = new FloatVector(length);
-        for (int i : elements)
+        for (int i : intSet)
         {
             v.set(i, multiplier);
         }
@@ -267,7 +298,7 @@ public class SparseBitVector extends BaseVector implements BitVector
     public NumericVector scalarMultiply(int multiplier)
     {
         NumericVector v = createIntVector();
-        for (int i : elements)
+        for (int i : intSet)
         {
             v.set(i, multiplier);
         }
@@ -315,15 +346,15 @@ public class SparseBitVector extends BaseVector implements BitVector
     @Override
     public Vector subVector(int i0, int i1)
     {
-        IntArrayList newElements = new IntArrayList();
-        for (int i = 0; i < elements.length; i++)
+        MutableSparseBitVector newVector = new MutableSparseBitVector();
+        for (int i = i0; i <= i1; i++)
         {
-            if (elements[i] >= i0 && elements[i] <= i1)
+            if (contains(i))
             {
-                newElements.add(elements[i] - i0);
+                newVector.add(i - i0);
             }
         }
-        return new SparseBitVector(newElements.toIntArray());
+        return newVector;
     }
 
     @Override
@@ -335,21 +366,28 @@ public class SparseBitVector extends BaseVector implements BitVector
     @Override
     public float sum()
     {
-        return elements.length;
+        return intSet.size();
     }
 
     @Override
     public void write(Writer writer) throws IOException
     {
         // Unlike PackedBitVector, this outputs only the populated indices (e.g. "2 4...")
-        writer.write(String.format("vector type=sparse-bit length=%d\n", length()));
+        writer.write(String.format("vector type=mutable-sparse-bit length=%d\n", length()));
 
         // Write Vector contents
-        for (int i = 0; i < elements.length - 1; i++)
+        for (IntIterator iter = intSet.iterator(); iter.hasNext();)
         {
-            writer.write(String.format("%d ", elements[i]));
+            final int element = iter.nextInt();
+            if (iter.hasNext())
+            {
+                writer.write(String.format("%d ", element));
+            }
+            else
+            {
+                writer.write(String.format("%d\n", element));
+            }
         }
-        writer.write(String.format("%d\n", elements[elements.length - 1]));
         writer.flush();
     }
 
@@ -357,12 +395,29 @@ public class SparseBitVector extends BaseVector implements BitVector
     public int[] values()
     {
         // Return the values in-order
-        return elements;
+        return new IntAVLTreeSet(intSet).toIntArray();
     }
 
     @Override
-    public SparseBitVector clone()
+    public MutableSparseBitVector clone()
     {
-        return new SparseBitVector(elements);
+        // TODO Sizing the initial IntSet in the copy would make this more efficient
+        MutableSparseBitVector newVector = new MutableSparseBitVector();
+        for (int i : intSet)
+        {
+            newVector.add(i);
+        }
+        return newVector;
+    }
+
+    /**
+     * Exposes the internal {@link IntSet} for use by other {@link Vector} implementations within
+     * the vector package.
+     * 
+     * @return IntSet
+     */
+    IntSet intSet()
+    {
+        return intSet;
     }
 }

@@ -116,7 +116,8 @@ public abstract class BaseVector implements Vector, Serializable
 
     public NumericVector add(Vector v)
     {
-        if (v.length() != length && !(v instanceof SparseBitVector && v.length() <= length))
+        if (v.length() != length && !(v instanceof SparseBitVector || v instanceof MutableSparseBitVector)
+            && v.length() <= length)
         {
             throw new IllegalArgumentException("Vector length mismatch");
         }
