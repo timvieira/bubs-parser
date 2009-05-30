@@ -3,7 +3,9 @@ package edu.ohsu.cslu.datastructs.narytree;
 import static junit.framework.Assert.assertEquals;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
@@ -14,6 +16,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestIntShiftRegister
 {
 
@@ -30,13 +33,12 @@ public class TestIntShiftRegister
     {
         IntShiftRegister register = new IntShiftRegister(5);
         assertEquals(5, register.size());
-        SharedNlpTests.assertEquals(new int[] {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE,
-                                         Integer.MIN_VALUE}, register.register());
+        SharedNlpTests.assertEquals(new int[] {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                               Integer.MIN_VALUE, Integer.MIN_VALUE}, register.register());
 
         register = register.shift(5);
-        SharedNlpTests.assertEquals(
-            new int[] {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, 5}, register
-                .register());
+        SharedNlpTests.assertEquals(new int[] {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                               Integer.MIN_VALUE, 5}, register.register());
 
         register = register.shift(4);
         SharedNlpTests.assertEquals(new int[] {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, 5, 4}, register

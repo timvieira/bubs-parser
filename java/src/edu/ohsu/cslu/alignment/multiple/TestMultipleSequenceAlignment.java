@@ -1,13 +1,11 @@
 package edu.ohsu.cslu.alignment.multiple;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
-
 import java.io.IOException;
 import java.io.StringReader;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
@@ -20,6 +18,10 @@ import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
 
 /**
  * Unit tests for {@link MultipleSequenceAlignment}
@@ -29,6 +31,7 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestMultipleSequenceAlignment
 {
     private static SimpleVocabulary posVocabulary;

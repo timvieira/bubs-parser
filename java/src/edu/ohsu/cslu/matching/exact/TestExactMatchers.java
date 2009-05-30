@@ -11,10 +11,12 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.matching.MatchTestCase;
 import edu.ohsu.cslu.matching.Matcher;
 import edu.ohsu.cslu.matching.exact.AhoCorasickMatcher.Match;
+import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
  * Tests Naive, Boyer-Moore, Knuth-Morris-Pratt, and Aho-Corasick matchers.
@@ -24,6 +26,7 @@ import edu.ohsu.cslu.matching.exact.AhoCorasickMatcher.Match;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestExactMatchers extends MatchTestCase
 {
     @Test

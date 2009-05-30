@@ -1,5 +1,9 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
+
 import static junit.framework.Assert.assertEquals;
 
 /**
@@ -10,6 +14,7 @@ import static junit.framework.Assert.assertEquals;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestShortMatrix extends IntMatrixTestCase
 {
     @Override

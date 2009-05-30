@@ -1,9 +1,8 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
@@ -11,9 +10,13 @@ import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.util.Strings;
 
+import static junit.framework.Assert.assertEquals;
+
+@RunWith(FilteredRunner.class)
 public class TestPairwiseLinguisticAlignment
 {
     private static SimpleVocabulary[] vocabularies;

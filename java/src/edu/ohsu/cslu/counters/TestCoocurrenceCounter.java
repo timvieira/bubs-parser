@@ -6,9 +6,10 @@ import java.io.StringReader;
 import junit.framework.TestCase;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
 
 /**
  * Unit tests for Log Likelihood and Log Odds calculations
@@ -18,6 +19,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestCoocurrenceCounter extends TestCase
 {
     @Test

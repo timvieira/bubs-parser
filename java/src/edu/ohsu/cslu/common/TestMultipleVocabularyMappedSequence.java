@@ -1,15 +1,17 @@
 package edu.ohsu.cslu.common;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link MultipleVocabularyMappedSequence}.
@@ -19,6 +21,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestMultipleVocabularyMappedSequence
 {
     private final static DnaVocabulary DNA_VOCABULARY = new DnaVocabulary();
@@ -166,9 +169,10 @@ public class TestMultipleVocabularyMappedSequence
         Sequence sequence = new MultipleVocabularyMappedSequence(sentence1, simpleVocabularies);
         assertEquals(sequence, sequence.retainFeatures(new int[] {0, 1}));
 
-        assertEquals("The computers will display stock prices selected by users .", sequence
-            .retainFeatures(new int[] {0}).toSlashSeparatedString());
-        assertEquals("DT NNS MD VB NN NNS VBN IN NNS .", sequence.retainFeatures(new int[] {1}).toSlashSeparatedString());
+        assertEquals("The computers will display stock prices selected by users .", sequence.retainFeatures(
+            new int[] {0}).toSlashSeparatedString());
+        assertEquals("DT NNS MD VB NN NNS VBN IN NNS .", sequence.retainFeatures(new int[] {1})
+            .toSlashSeparatedString());
     }
 
     /**

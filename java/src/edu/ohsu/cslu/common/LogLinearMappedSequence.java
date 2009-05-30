@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.common;
 
+import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
+
 import java.util.Arrays;
 
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
@@ -63,11 +65,12 @@ public class LogLinearMappedSequence implements MappedSequence
 
         for (int j = 0; j < split.length; j++)
         {
-            final BitVector currentElement = elements[j] = new SparseBitVector();
+            int[] features = new int[split[j].length];
             for (int i = 0; i < split[j].length; i++)
             {
-                currentElement.add(vocabulary.map(split[j][i]));
+                features[i] = vocabulary.map(split[j][i]);
             }
+            elements[j] = new SparseBitVector(features);
         }
         this.vocabulary = vocabulary;
     }
@@ -83,8 +86,7 @@ public class LogLinearMappedSequence implements MappedSequence
         this.elements = new BitVector[features.length];
         for (int j = 0; j < features.length; j++)
         {
-            elements[j] = new SparseBitVector();
-            elements[j].add(features[j]);
+            elements[j] = new SparseBitVector(new int[] {features[j]});
         }
         this.vocabulary = vocabulary;
     }
@@ -94,11 +96,7 @@ public class LogLinearMappedSequence implements MappedSequence
         this.elements = new BitVector[features.length];
         for (int j = 0; j < features.length; j++)
         {
-            final BitVector currentElement = elements[j] = new SparseBitVector();
-            for (int i = 0; i < features[j].length; i++)
-            {
-                currentElement.add(features[j][i]);
-            }
+            elements[j] = new SparseBitVector(features[j]);
         }
         this.vocabulary = vocabulary;
     }
@@ -218,14 +216,15 @@ public class LogLinearMappedSequence implements MappedSequence
         final BitVector[] newElements = new BitVector[elements.length];
         for (int j = 0; j < elements.length; j++)
         {
-            final BitVector currentElement = newElements[j] = new SparseBitVector();
+            IntRBTreeSet newFeatures = new IntRBTreeSet();
             for (int i = 0; i < features.length; i++)
             {
                 if (elements[j].getBoolean(features[i]))
                 {
-                    currentElement.add(features[i]);
+                    newFeatures.add(features[i]);
                 }
             }
+            newElements[j] = new SparseBitVector(newFeatures.toIntArray());
         }
         return new LogLinearMappedSequence(newElements, vocabulary);
     }

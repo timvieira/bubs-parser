@@ -1,10 +1,13 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
-
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 
 /**
  * Unit tests for {@link FixedPointShortMatrix}
@@ -14,6 +17,7 @@ import org.junit.Test;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestFixedPointShortMatrix extends FloatingPointMatrixTestCase
 {
     private float[][] sampleArray;

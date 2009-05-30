@@ -1,12 +1,16 @@
 package edu.ohsu.cslu.common;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.StringReader;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.assertEquals;
+
+@RunWith(FilteredRunner.class)
 public class TestSimpleSequence
 {
     private final static String sentence1BracketedInput = "(The DT) (computers NNS) (will MD) (display VB) (stock NN)\n"
@@ -73,7 +77,8 @@ public class TestSimpleSequence
     {
         assertEquals(sequence1, sequence1.retainFeatures(new int[] {0, 1}));
 
-        assertEquals("DT NNS MD VB NN NNS VBN IN NNS .", sequence1.retainFeatures(new int[] {1}).toSlashSeparatedString());
+        assertEquals("DT NNS MD VB NN NNS VBN IN NNS .", sequence1.retainFeatures(new int[] {1})
+            .toSlashSeparatedString());
         assertEquals("The computers will display stock prices selected by users .", sequence1.retainFeatures(
             new int[] {0}).toSlashSeparatedString());
     }

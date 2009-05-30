@@ -1,8 +1,11 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link ByteMatrix}
@@ -12,6 +15,7 @@ import org.junit.Test;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestByteMatrix extends IntMatrixTestCase
 {
     @Override

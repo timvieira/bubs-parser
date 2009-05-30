@@ -4,6 +4,9 @@ import static junit.framework.Assert.assertEquals;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
  * Tests for the {@link FloatMatrix} class
@@ -13,6 +16,7 @@ import org.junit.Test;
  * 
  *        $Id$
  */
+@RunWith(FilteredRunner.class)
 public class TestFloatMatrix extends FloatingPointMatrixTestCase
 {
     private float[][] sampleArray;
