@@ -43,7 +43,7 @@ public class ProfileGlobalSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"d820", "14548"})
+    @PerformanceTest( {"d820", "11392"})
     public void profileLinearDynamicAligner() throws IOException
     {
         ColumnAlignmentModel model = new LaplaceModel(new StringReader(SMALL_TRAINING_SET), new DnaVocabulary(), 6,

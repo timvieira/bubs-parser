@@ -37,13 +37,13 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
 
     public SequenceAlignment alignPair(Sequence unaligned, Sequence aligned, final AlignmentModel model)
     {
-        
+
         // WHAT IS THE POINT OF ALL THESE M_ VARIABLES THAT JUST DOUBLE THE VARIABLES THAT ARE
         // ACTUALLY USED
         //
         // The m_ variables make toString() work, while local copies are faster in memory.
         // 
-        
+
         m_aligned = aligned;
         m_unaligned = unaligned;
         m_model = model;
@@ -66,9 +66,8 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
         for (int alignedIndex = 1; alignedIndex < alignedSize; alignedIndex++)
         {
             final int alignedIndexMinusOne = alignedIndex - 1;
-            edits[0][alignedIndex] = 
-                edits[0][alignedIndexMinusOne] + 
-                subModel.gapInsertionCost(aligned.elementAt(alignedIndexMinusOne), currentAlignmentLength); // GAP_COST;
+            edits[0][alignedIndex] = edits[0][alignedIndexMinusOne]
+                + subModel.gapInsertionCost(aligned.elementAt(alignedIndexMinusOne), currentAlignmentLength); // GAP_COST;
             backpointers[0][alignedIndex] = BACKPOINTER_UNALIGNED_GAP;
         }
 
@@ -76,14 +75,13 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
         for (int unalignedIndex = 1; unalignedIndex < unalignedSize; unalignedIndex++)
         {
             final int unalignedIndexMinusOne = unalignedIndex - 1;
-            edits[unalignedIndex][0] = 
-                edits[unalignedIndexMinusOne][0] + 
-                subModel.gapInsertionCost(unaligned.elementAt(unalignedIndexMinusOne), unalignedLength); // GAP_COST;
+            edits[unalignedIndex][0] = edits[unalignedIndexMinusOne][0]
+                + subModel.gapInsertionCost(unaligned.elementAt(unalignedIndexMinusOne), unalignedLength); // GAP_COST;
             backpointers[unalignedIndex][0] = BACKPOINTER_ALIGNED_GAP;
         }
 
         backpointers[0][0] = BACKPOINTER_SUBSTITUTION;
-        
+
         for (int unalignedIndex = 1; unalignedIndex < unalignedSize; unalignedIndex++)
         {
             final int unalignedIndexMinusOne = unalignedIndex - 1;
@@ -98,19 +96,16 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
                 final Vector previousAligned = aligned.elementAt(alignedIndexMinusOne);
 
                 // Inserting a gap into unaligned sequence
-                final float scoreOfGapInUnaligned = 
-                    currentIEdits[alignedIndexMinusOne] + 
-                    subModel.gapInsertionCost(previousAligned, unalignedLength);
+                final float scoreOfGapInUnaligned = currentIEdits[alignedIndexMinusOne]
+                    + subModel.gapInsertionCost(previousAligned, unalignedLength);
 
                 // Inserting a gap into the aligned sequence
-                final float scoreOfGapInAligned = 
-                    previousIEdits[alignedIndex] + 
-                    subModel.gapInsertionCost(previousUnaligned, currentAlignmentLength);
+                final float scoreOfGapInAligned = previousIEdits[alignedIndex]
+                    + subModel.gapInsertionCost(previousUnaligned, currentAlignmentLength);
 
                 // Substitution / match
-                float scoreOfMatching = 
-                    previousIEdits[alignedIndexMinusOne] + 
-                    subModel.cost(previousAligned, previousUnaligned);
+                float scoreOfMatching = previousIEdits[alignedIndexMinusOne]
+                    + subModel.cost(previousAligned, previousUnaligned);
 
                 if (scoreOfGapInUnaligned < scoreOfGapInAligned)
                 {
@@ -135,33 +130,33 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
                     edits[unalignedIndex][alignedIndex] = scoreOfMatching;
                     backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_SUBSTITUTION;
                 }
-                
-                
-// This commented-out code changes the preference of when to match and when to insert a gap
+
+                // This commented-out code changes the preference of when to match and when to
+                // insert a gap
                 // Note the '<='s in place of the '<'s
-//                if (scoreOfGapInUnaligned <= scoreOfGapInAligned)
-//                {
-//                    if (scoreOfGapInUnaligned <= scoreOfMatching)
-//                    {
-//                        edits[unalignedIndex][alignedIndex] = scoreOfGapInUnaligned;
-//                        backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_UNALIGNED_GAP;
-//                    }
-//                    else
-//                    {
-//                        edits[unalignedIndex][alignedIndex] = scoreOfMatching;
-//                        backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_SUBSTITUTION;
-//                    }
-//                }
-//                else if (scoreOfGapInAligned <= scoreOfMatching)
-//                {
-//                    edits[unalignedIndex][alignedIndex] = scoreOfGapInAligned;
-//                    backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_ALIGNED_GAP;
-//                }
-//                else
-//                {
-//                    edits[unalignedIndex][alignedIndex] = scoreOfMatching;
-//                    backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_SUBSTITUTION;
-//                }
+                // if (scoreOfGapInUnaligned <= scoreOfGapInAligned)
+                // {
+                // if (scoreOfGapInUnaligned <= scoreOfMatching)
+                // {
+                // edits[unalignedIndex][alignedIndex] = scoreOfGapInUnaligned;
+                // backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_UNALIGNED_GAP;
+                // }
+                // else
+                // {
+                // edits[unalignedIndex][alignedIndex] = scoreOfMatching;
+                // backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_SUBSTITUTION;
+                // }
+                // }
+                // else if (scoreOfGapInAligned <= scoreOfMatching)
+                // {
+                // edits[unalignedIndex][alignedIndex] = scoreOfGapInAligned;
+                // backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_ALIGNED_GAP;
+                // }
+                // else
+                // {
+                // edits[unalignedIndex][alignedIndex] = scoreOfMatching;
+                // backpointers[unalignedIndex][alignedIndex] = BACKPOINTER_SUBSTITUTION;
+                // }
             }
         }
 
@@ -207,7 +202,7 @@ public class FullDynamicPairwiseAligner extends BaseDynamicAligner implements Pa
         }
 
         return new SequenceAlignment((MappedSequence) ((SubstitutionAlignmentModel) model).createSequence(buffer
-            .toArray(new Vector[buffer.size()])), gapIndices);
+            .toArray(new Vector[buffer.size()])), gapIndices, edits[unalignedSize - 1][alignedSize - 1]);
     }
 
     @Override
