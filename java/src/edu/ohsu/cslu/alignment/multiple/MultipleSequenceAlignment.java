@@ -12,7 +12,6 @@ import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.column.ColumnAlignmentModel;
 import edu.ohsu.cslu.alignment.column.LogLinearAlignmentModel;
 import edu.ohsu.cslu.alignment.column.MatrixColumnAlignmentModel;
-import edu.ohsu.cslu.alignment.slotBased.MatrixSlotAlignmentModel;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
@@ -40,7 +39,7 @@ import edu.ohsu.cslu.util.Strings;
  */
 public class MultipleSequenceAlignment implements Serializable
 {
-    
+
     /** Sequences currently in the alignment */
     private final ArrayList<MappedSequence> sequences;
 
@@ -236,7 +235,8 @@ public class MultipleSequenceAlignment implements Serializable
             for (int j = 0; j < gapVectors.length; j++)
             {
                 gapVectors[j] = (NumericVector) cachedLaplacePseudoCounts.clone();
-                gapVectors[j].set(AlignmentModel.GAP_INDEX, gapVectors[j].getFloat(AlignmentModel.GAP_INDEX) + numOfSequences());
+                gapVectors[j].set(AlignmentModel.GAP_INDEX, gapVectors[j].getFloat(AlignmentModel.GAP_INDEX)
+                    + numOfSequences());
             }
 
             NumericVector[] newCountVectors = new NumericVector[countVectors.length + gapIndices.length];
@@ -254,12 +254,7 @@ public class MultipleSequenceAlignment implements Serializable
             featureIndices[i] = i;
             pseudoCounts[i] = pseudoCountsPerToken;
         }
-        return inducePssmAlignmentModel(
-            pseudoCounts, 
-            featureIndices, 
-            0, 
-            0, 
-            new boolean[featureCount],
+        return inducePssmAlignmentModel(pseudoCounts, featureIndices, 0, 0, new boolean[featureCount],
             Float.POSITIVE_INFINITY);
     }
 
@@ -270,19 +265,13 @@ public class MultipleSequenceAlignment implements Serializable
         {
             pseudoCounts[i] = pseudoCountsPerToken;
         }
-        return inducePssmAlignmentModel(
-            pseudoCounts, 
-            featureIndices, 
-            0, 
-            0, 
-            new boolean[featureCount],
+        return inducePssmAlignmentModel(pseudoCounts, featureIndices, 0, 0, new boolean[featureCount],
             Float.POSITIVE_INFINITY);
     }
 
     public ColumnAlignmentModel inducePssmAlignmentModel(int[] pseudoCountsPerToken, int[] featureIndices,
         int emphasizedSequence, int additionalCounts, boolean[] binaryFeatures, float binaryFeatureGapCost)
     {
-        final int featureCount = featureIndices.length;
         final Vocabulary[] newVocabularies = new Vocabulary[featureIndices.length];
         for (int f = 0; f < featureCount; f++)
         {
