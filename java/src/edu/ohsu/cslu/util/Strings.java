@@ -272,4 +272,29 @@ public class Strings
 
         return permutations;
     }
+
+    /**
+     * Splits the string by whitespace into tokens, and returns all 2-token combinations
+     * 
+     * @return Pairs of tokens
+     */
+    public static Set<String> tokenPairs(String s)
+    {
+        TreeSet<String> pairs = new TreeSet<String>();
+        String[] tokens = s.split("\\s+");
+        if (tokens.length == 1)
+        {
+            pairs.add(s);
+            return pairs;
+        }
+
+        for (int i = 0; i < tokens.length - 1; i++)
+        {
+            for (int j = i + 1; j < tokens.length; j++)
+            {
+                pairs.add(tokens[i] + " " + tokens[j]);
+            }
+        }
+        return pairs;
+    }
 }

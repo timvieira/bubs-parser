@@ -1,12 +1,20 @@
 package edu.ohsu.cslu.util;
 
-import static junit.framework.Assert.assertEquals;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
+import edu.ohsu.cslu.tests.FilteredRunner;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+
+@RunWith(FilteredRunner.class)
 public class TestStrings
 {
     // TODO: Implement tests for extractPos and parseTreeTokens?
@@ -99,5 +107,23 @@ public class TestStrings
         assertEquals("2", tokens[1][1]);
         assertEquals("foobar", tokens[2][0]);
         assertEquals("3", tokens[2][1]);
+    }
+
+    public void testTokenPairs() throws Exception
+    {
+        // Single-token string
+        assertEquals(new TreeSet<String>(Arrays.asList(new String[] {"foo"})), Strings.tokenPairs("foo"));
+
+        // Two-token string
+        assertEquals(new TreeSet<String>(Arrays.asList(new String[] {"foo bar"})), Strings.tokenPairs("foo bar"));
+
+        Set<String> pairs = Strings.tokenPairs("this is a test");
+        assertEquals(6, pairs.size());
+        assertTrue(pairs.contains("this is"));
+        assertTrue(pairs.contains("this a"));
+        assertTrue(pairs.contains("this test"));
+        assertTrue(pairs.contains("is a"));
+        assertTrue(pairs.contains("is test"));
+        assertTrue(pairs.contains("a test"));
     }
 }
