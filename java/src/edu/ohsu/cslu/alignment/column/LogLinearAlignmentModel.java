@@ -117,7 +117,7 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
     }
 
     @Override
-    public int columns()
+    public int columnCount()
     {
         return costVectors.length;
     }
@@ -157,7 +157,7 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
     @Override
     public String toString()
     {
-        final int columns = columns();
+        final int columns = columnCount();
         if (columns > MAX_TOSTRING_LENGTH)
         {
             return "Maximum length exceeded";

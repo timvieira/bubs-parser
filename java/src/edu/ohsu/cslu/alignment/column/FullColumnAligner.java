@@ -39,7 +39,7 @@ public class FullColumnAligner extends BaseColumnAligner
     public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model, int[] features)
     {
         final int maxI = sequence.length() + 1;
-        final int maxJ = model.columns() + 1;
+        final int maxJ = model.columnCount() + 1;
 
         final float[][] scoreArray = new float[maxI][maxJ];
         final byte[][] backpointer = new byte[maxI][maxJ];
@@ -112,7 +112,7 @@ public class FullColumnAligner extends BaseColumnAligner
     public SequenceAlignment alignWithGaps(MappedSequence sequence, MatrixColumnAlignmentModel model, int[] features)
     {
         final int maxI = sequence.length() + 1;
-        final int maxJ = model.columns() + 1;
+        final int maxJ = model.columnCount() + 1;
 
         final float[][] scoreArray = new float[maxI][maxJ];
         final byte[][] backpointer = new byte[maxI][maxJ];
@@ -138,11 +138,9 @@ public class FullColumnAligner extends BaseColumnAligner
         // Initialize all the 'start' columns - probabilities of gaps all the way through
         for (int i = 1; i < maxI; i++)
         {
-            // array[i][0] = array[i - 1][0] +
-            // model.costOfInsertingAGapIntoThisAlignmentModel/*_reflexive*/(sequence.features(i -
-            // 1));
-            scoreArray[i][0] = scoreArray[i - 1][0]
-                + model.costOfInsertingAGapIntoThisAlignmentModel_reflexive(sequence.elementAt(i - 1));
+            scoreArray[i][0] = scoreArray[i - 1][0] + model.costOfInsertingAGapIntoThisAlignmentModel/*_reflexive*/(sequence.elementAt(i - 1));
+            //scoreArray[i][0] = scoreArray[i - 1][0] + model.costOfInsertingAGapIntoThisAlignmentModel_reflexive(sequence.elementAt(i - 1));
+
             backpointer[i][0] = BACKPOINTER_INSERT_COLUMN;
         }
         for (int j = 1; j < maxJ; j++)
@@ -166,10 +164,9 @@ public class FullColumnAligner extends BaseColumnAligner
                 // Probability of emission / gap in unaligned / gap in pssm
                 final float emit = scoreArray[prevI][prevJ] + model.cost(currentElement, prevJ, features);
                 final float gapInNewSequence = scoreArray[i][prevJ] + model.cost(gapSymbol, prevJ, features);
-                // final float gapInPssm = array[prevI][j] +
-                // model.costOfInsertingAGapIntoThisAlignmentModel/*_reflexive*/(currentElement);
-                final float gapInPssm = scoreArray[prevI][j]
-                    + model.costOfInsertingAGapIntoThisAlignmentModel_reflexive(currentElement);
+                final float gapInPssm = scoreArray[prevI][j] + model.costOfInsertingAGapIntoThisAlignmentModel/*_reflexive*/(currentElement);
+                //final float gapInPssm = scoreArray[prevI][j] + model.costOfInsertingAGapIntoThisAlignmentModel_reflexive(currentElement);
+
 
                 // Bias toward emission given equal probabilities
                 if (emit <= gapInPssm && emit <= gapInNewSequence)
@@ -193,7 +190,7 @@ public class FullColumnAligner extends BaseColumnAligner
         System.out.println();
         System.out.println(this);
 
-        return backtraceWithGaps(sequence, model, backpointer, gapSymbol, scoreArray[maxI][maxJ]);
+        return backtraceWithGaps(sequence, model, backpointer, gapSymbol, scoreArray[maxI-1][maxJ-1]);
     }
 
     protected final SequenceAlignment backtrace(Sequence sequence, ColumnAlignmentModel model, byte[][] backPointer,
@@ -205,7 +202,7 @@ public class FullColumnAligner extends BaseColumnAligner
         final IntList gapList = new IntArrayList(sequence.length());
 
         int i = sequence.length();
-        int j = model.columns();
+        int j = model.columnCount();
 
         while (i > 0 || j > 0)
         {
@@ -253,11 +250,11 @@ public class FullColumnAligner extends BaseColumnAligner
     {
         // Backtrace to reconstruct the winning alignment, adding to the beginning of a linked-list
         // to implicitly construct the buffer in order, while we traverse the alignment in reverse.
-        final LinkedList<Vector> buffer = new LinkedList<Vector>();
-        final IntList gapList = new IntArrayList(sequence.length());
+        final LinkedList<Vector> sequenceToAlign_GapsInserted_asLinkedList = new LinkedList<Vector>();
+        final IntList listOfGapsToInsertIntoAlreadyAlignedSequences = new IntArrayList(sequence.length());
 
         int i = sequence.length();
-        int j = model.columns();
+        int j = model.columnCount();
 
         while (i > 0 || j > 0)
         {
@@ -265,18 +262,18 @@ public class FullColumnAligner extends BaseColumnAligner
             {
                 case BACKPOINTER_SUBSTITUTION :
                     // Emit
-                    buffer.addFirst(sequence.elementAt(--i));
+                    sequenceToAlign_GapsInserted_asLinkedList.addFirst(sequence.elementAt(--i));
                     j--;
                     break;
                 case BACKPOINTER_UNALIGNED_GAP :
                     // Gap in unaligned sequence
-                    buffer.addFirst(gapVector);
+                    sequenceToAlign_GapsInserted_asLinkedList.addFirst(gapVector);
                     j--;
                     break;
                 case BACKPOINTER_INSERT_COLUMN :
                     // Gap in PSSM
-                    buffer.addFirst(sequence.elementAt(--i));
-                    gapList.add(j);
+                    sequenceToAlign_GapsInserted_asLinkedList.addFirst(sequence.elementAt(--i));
+                    listOfGapsToInsertIntoAlreadyAlignedSequences.add(j);
                     break;
                 default :
                     throw new IllegalArgumentException("Should never get here");
@@ -284,22 +281,43 @@ public class FullColumnAligner extends BaseColumnAligner
         }
 
         // Reverse gapList
-        final int[] gapIndices = new int[gapList.size()];
-        final IntListIterator gapIterator = gapList.listIterator();
-        for (i = gapIndices.length - 1; i >= 0; i--)
+        final int[] listOfGapsToInsertIntoAlreadyAlignedSequences_reversed = new int[listOfGapsToInsertIntoAlreadyAlignedSequences.size()];
+        final IntListIterator gapIterator = listOfGapsToInsertIntoAlreadyAlignedSequences.listIterator();
+        for (i = listOfGapsToInsertIntoAlreadyAlignedSequences_reversed.length - 1; i >= 0; i--)
         {
-            gapIndices[i] = gapIterator.nextInt();
+            listOfGapsToInsertIntoAlreadyAlignedSequences_reversed[i] = gapIterator.nextInt();
         }
 
-        return new SequenceAlignment(new LogLinearMappedSequence(buffer.toArray(new BitVector[buffer.size()]), model
-            .vocabularies()[0]), gapIndices, score);
+        
+        // This builds a MultipleVocabularyMappedSequence. If you need a LogLinearMappedSequence, then please find a way to comment back in
+        // the return statement below without breaking the code that builds the MultipleVocabularyMappedSequence.
+        Vector[] sequenceToAlign_GapsInserted_asArrayOfVectorsOfVocabularyItems = new Vector[sequenceToAlign_GapsInserted_asLinkedList.size()];
+        sequenceToAlign_GapsInserted_asArrayOfVectorsOfVocabularyItems = 
+            sequenceToAlign_GapsInserted_asLinkedList.toArray(sequenceToAlign_GapsInserted_asArrayOfVectorsOfVocabularyItems);
+        MultipleVocabularyMappedSequence sequenceToAlign_GapsInserted = 
+            new MultipleVocabularyMappedSequence(sequenceToAlign_GapsInserted_asArrayOfVectorsOfVocabularyItems, model.vocabularies());
+        SequenceAlignment tempSequenceAlignment = 
+            new SequenceAlignment(sequenceToAlign_GapsInserted, listOfGapsToInsertIntoAlreadyAlignedSequences_reversed, score);
+        return tempSequenceAlignment;
+        
+// THIS BUILDS A LOGLINEARMAPPEDSEQUENCE, IF YOU NEED THIS FIND A WAY TO COMMENT IN BACK IN WITHOUT BREAKING THE ABOVE CODE
+// WHICH BUILDS A MULTIPLEVOCABULARYMAPPEDSEQUENCE
+//
+//        return new SequenceAlignment(
+//            new LogLinearMappedSequence(
+//                sequenceToAlign_GapsInserted_asLinkedList.toArray(
+//                    new BitVector[sequenceToAlign_GapsInserted_asLinkedList.size()]), 
+//                model.vocabularies()[0]),
+//            listOfGapsToInsertIntoAlreadyAlignedSequences_reversed,
+//            score);
+        
     }
 
     @Override
     public String toString()
     {
         int maxI = m_sequence.length() + 1;
-        int maxJ = m_model.columns() + 1;
+        int maxJ = m_model.columnCount() + 1;
 
         Vocabulary vocabulary = m_model.vocabularies()[0];
 

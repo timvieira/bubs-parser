@@ -56,7 +56,7 @@ public interface ColumnAlignmentModel extends AlignmentModel
      * 
      * @return Number of columns in this model.
      */
-    public int columns();
+    public int columnCount();
 
     /**
      * Returns the cost of inserting a gap into the PSSM itself. Some alignment methods allow this

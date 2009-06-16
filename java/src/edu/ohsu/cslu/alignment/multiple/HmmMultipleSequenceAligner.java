@@ -123,7 +123,7 @@ public class HmmMultipleSequenceAligner implements MultipleSequenceAligner
 
             int pssmHeadColumn = -1;
             Matrix pssmHeadCostMatrix = pssmAlignmentModel.costMatrix(2);
-            for (int j = 0; j < pssmAlignmentModel.columns(); j++)
+            for (int j = 0; j < pssmAlignmentModel.columnCount(); j++)
             {
                 if (!Float.isInfinite(pssmHeadCostMatrix.getFloat(1, j)))
                 {

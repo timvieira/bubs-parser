@@ -85,7 +85,7 @@ public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
         // Find the head column of the alignment model
         int trainHeadColumn = 0;
         float headP = Float.MAX_VALUE;
-        for (int j = 0; j < pssmAlignmentModel.columns(); j++)
+        for (int j = 0; j < pssmAlignmentModel.columnCount(); j++)
         {
             float negativeLogP = pssmAlignmentModel.cost(new SparseBitVector(new int[] {headFeature}), j);
             if (negativeLogP < headP)

@@ -177,7 +177,7 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
             if (verbose)
             {
                 System.out.format("Aligning sentence %d (of %d). Current Alignment Length: %d\n", i + 1,
-                    sequences.length, columnAlignmentModel.columns());
+                    sequences.length, columnAlignmentModel.columnCount());
             }
 
             // Align the unaligned sequence with the newly induced PSSM
@@ -185,7 +185,7 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
 
             // Update already aligned sequences to include gaps where needed. For the moment,
             // we'll skip re-computing distance metrics...
-            if (alignment.alignedSequence().length() != columnAlignmentModel.columns())
+            if (alignment.alignedSequence().length() != columnAlignmentModel.columnCount())
             {
                 alignedSequences.insertGaps(alignment.gapIndices());
                 cachedColumnInsertionCostVector = columnInsertionCostVector.scalarMultiply(alignedSequences.length());
