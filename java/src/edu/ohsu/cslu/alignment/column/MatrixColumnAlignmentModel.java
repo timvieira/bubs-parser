@@ -68,7 +68,7 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
         float binaryFeatureGapCost)
     {
         final int featureCount = featureIndices.length;
-        final int slots = multipleSequenceAlignment.length();
+        final int columns = multipleSequenceAlignment.length();
         final Vocabulary[] vocabs = multipleSequenceAlignment.getVocabularies();
         final Vocabulary[] newVocabularies = new Vocabulary[featureIndices.length];
 
@@ -108,17 +108,18 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
             MappedSequence sequence = multipleSequenceAlignment.get(sequenceIndex);
             if (sequence != null)
             {
-                for (int slotIndex = 0; slotIndex < slots; slotIndex++)
+                for (int columnIndex = 0; columnIndex < columns; columnIndex++)
                 {
                     final int addend = (sequenceIndex == emphasizedSequence) ? additionalCounts + 1 : 1;
                     for (int indexIntoFeatureIndeces = 0; indexIntoFeatureIndeces < featureCount; indexIntoFeatureIndeces++)
                     {
-                        counts[indexIntoFeatureIndeces].add(sequence.elementAt(slotIndex).getInt(
-                            indexIntoFeatureIndeces),// Integer representation of the
-                            // feature-value of the current
-                            // feature at slotIndex in this
-                            // sequence
-                            slotIndex, addend);
+                        counts[indexIntoFeatureIndeces].add(
+                            sequence.elementAt(columnIndex).getInt(indexIntoFeatureIndeces),// Integer representation of the 
+                                                                                                  // feature-value of the current 
+                                                                                                  // feature at columnIndex in this  
+                                                                                                  // sequence 
+                            columnIndex, 
+                            addend);
                     }
                 }
             }
@@ -218,8 +219,7 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
         return matrices.length;
     }
 
-    // TODO: Change name to columnCount()
-    public int columns()
+    public int columnCount()  
     {
         return matrices[0].columns();
     }
@@ -259,7 +259,7 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
     @Override
     public String toString()
     {
-        final int columns = columns();
+        final int columns = columnCount();
         if (columns > MAX_TOSTRING_LENGTH)
         {
             return "Maximum length exceeded";
@@ -339,6 +339,6 @@ public class MatrixColumnAlignmentModel implements ColumnAlignmentModel
     // @Override
     public float costOfInsertingAGapIntoThisAlignmentModel_reflexive(Vector featureVector)
     {
-        return substitutionModel.gapInsertionCost(featureVector, columns());
+        return substitutionModel.gapInsertionCost(featureVector, columnCount());
     }
 }

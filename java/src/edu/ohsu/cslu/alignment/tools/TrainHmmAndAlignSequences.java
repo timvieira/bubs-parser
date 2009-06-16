@@ -145,7 +145,7 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
 
         int trainHeadColumn = 0;
         float headP = Float.MAX_VALUE;
-        for (int j = 0; j < pssmAlignmentModel.columns(); j++)
+        for (int j = 0; j < pssmAlignmentModel.columnCount(); j++)
         {
             float negativeLogP = pssmAlignmentModel.cost(new IntVector(new int[] {1, 1, 1}), j, new int[] {2});
             if (negativeLogP < headP)

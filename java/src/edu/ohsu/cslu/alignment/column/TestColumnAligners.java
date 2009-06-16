@@ -253,7 +253,7 @@ public class TestColumnAligners
     {
         // A quick sanity test to ensure that an un-smoothed model and the Maximum Likelihood model
         // agree.
-        for (int j = 0; j < mlModel.columns(); j++)
+        for (int j = 0; j < mlModel.columnCount(); j++)
         {
             for (int i = 0; i < mlModel.featureCount(); i++)
             {
@@ -270,7 +270,7 @@ public class TestColumnAligners
 
         // A quick sanity test to ensure that an un-smoothed model and the Maximum Likelihood model
         // agree.
-        for (int j = 0; j < mlModel.columns(); j++)
+        for (int j = 0; j < mlModel.columnCount(); j++)
         {
             for (int i = 0; i < mlModel.featureCount(); i++)
             {

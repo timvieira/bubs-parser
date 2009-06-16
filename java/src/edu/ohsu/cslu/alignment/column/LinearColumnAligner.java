@@ -21,7 +21,7 @@ public final class LinearColumnAligner extends FullColumnAligner
     public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model, int[] features)
     {
         final int maxI = sequence.length() + 1;
-        final int maxJ = model.columns() + 1;
+        final int maxJ = model.columnCount() + 1;
 
         float[] current = new float[maxJ];
         float[] previous = new float[maxJ];
