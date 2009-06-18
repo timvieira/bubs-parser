@@ -2,6 +2,7 @@ package edu.ohsu.cslu.tests;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
@@ -38,15 +39,30 @@ import edu.ohsu.cslu.util.AllUtilTests;
 public class SharedNlpTests
 {
     public final static String UNIT_TEST_DIR = "unit-test-data/";
+    public final static String SHARED_UNIT_TEST_DIR = "../shared-nlp-code/" + UNIT_TEST_DIR;
 
     public static InputStream unitTestDataAsStream(String filename) throws IOException
     {
-        InputStream is = new FileInputStream(SharedNlpTests.UNIT_TEST_DIR + filename);
-        if (filename.endsWith(".gz"))
+        try
         {
-            is = new GZIPInputStream(is);
+            InputStream is = new FileInputStream(SharedNlpTests.UNIT_TEST_DIR + filename);
+            if (filename.endsWith(".gz"))
+            {
+                is = new GZIPInputStream(is);
+            }
+            return is;
         }
-        return is;
+        catch (FileNotFoundException e)
+        {
+            // A hack to read files in the shared unit test data directory from tests run within
+            // other projects
+            InputStream is = new FileInputStream(SharedNlpTests.SHARED_UNIT_TEST_DIR + filename);
+            if (filename.endsWith(".gz"))
+            {
+                is = new GZIPInputStream(is);
+            }
+            return is;
+        }
     }
 
     public static String unitTestDataAsString(String filename) throws IOException
@@ -56,12 +72,7 @@ public class SharedNlpTests
 
     public static byte[] readUnitTestData(String filename) throws IOException
     {
-        InputStream is = new FileInputStream(SharedNlpTests.UNIT_TEST_DIR + filename);
-        if (filename.endsWith(".gz"))
-        {
-            is = new GZIPInputStream(is);
-        }
-        return readUnitTestData(is);
+        return readUnitTestData(unitTestDataAsStream(filename));
     }
 
     private static byte[] readUnitTestData(InputStream is) throws IOException
