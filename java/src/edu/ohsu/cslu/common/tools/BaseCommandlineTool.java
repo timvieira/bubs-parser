@@ -3,9 +3,11 @@ package edu.ohsu.cslu.common.tools;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
@@ -39,6 +41,7 @@ import org.apache.commons.cli.ParseException;
 public abstract class BaseCommandlineTool
 {
     protected boolean verbose;
+    protected boolean veryVerbose;
 
     /** Non-threadable tools use a single thread */
     protected int maxThreads = 1;
@@ -75,9 +78,6 @@ public abstract class BaseCommandlineTool
     /**
      * Generally called from options() in subclasses.
      * 
-     * TODO: Refactor so this functionality is called from {@link #run(String[])} and controlled by
-     * attributes?
-     * 
      * @return {@link Options} shared by all subclasses
      * @throws Exception
      */
@@ -86,7 +86,9 @@ public abstract class BaseCommandlineTool
     {
         // Create an instance of the Options class specifying options shared by all tools
         Options options = new Options();
-        options.addOption(OptionBuilder.withDescription("Verbose").create('v'));
+        options.addOption(OptionBuilder.withDescription("Verbose output").create('v'));
+        options.addOption(OptionBuilder.withDescription("Very verbose output").create("vv"));
+        options.addOption(OptionBuilder.withDescription("Output File").create('o'));
         if (getClass().getAnnotation(Threadable.class) != null)
         {
             options.addOption(OptionBuilder.hasArg().withArgName("threads").withDescription("Maximum Threads").create(
@@ -100,12 +102,15 @@ public abstract class BaseCommandlineTool
      * command-line tools.
      * 
      * @param commandLine
+     * @throws ParseException
      */
     @SuppressWarnings("unchecked")
-    protected void setBasicToolOptions(CommandLine commandLine)
+    protected void setBasicToolOptions(CommandLine commandLine) throws ParseException
     {
         // TODO: Add another annotation for 'verbosable' ?
-        verbose = commandLine.hasOption('v');
+        veryVerbose = commandLine.hasOption("vv");
+        // 'vv' implies 'v' as well
+        verbose = commandLine.hasOption('v') || veryVerbose;
 
         // If this tool is threadable, default the thread pool size to the number of CPUs on
         // the machine
@@ -117,6 +122,18 @@ public abstract class BaseCommandlineTool
         else
         {
             maxThreads = 1;
+        }
+
+        if (commandLine.hasOption('o'))
+        {
+            try
+            {
+                System.setOut(new PrintStream(new File(commandLine.getOptionValue('o'))));
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new ParseException(e.getMessage());
+            }
         }
 
         dataFiles = commandLine.getArgList();
