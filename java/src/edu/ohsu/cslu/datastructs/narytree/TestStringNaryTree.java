@@ -1,11 +1,5 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -19,6 +13,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link StringNaryTree}
@@ -63,6 +59,23 @@ public class TestStringNaryTree
         tmp2.addChild("j");
         sampleTree.addSubtree(tmp1);
 
+        /**
+         * <pre>
+         *             f 
+         *             |
+         *       --------------
+         *       |     |     |
+         *       d     g     i
+         *       |           |
+         *    -------     --------
+         *    |     |     |      |
+         *    b     e     h      k
+         *    |                  |
+         *  -----                j
+         *  |   |
+         *  a   c
+         * </pre>
+         */
         stringSampleTree = "(f (d (b a c) e) g (i h (k j)))";
     }
 
