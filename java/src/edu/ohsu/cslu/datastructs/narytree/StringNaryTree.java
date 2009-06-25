@@ -31,7 +31,7 @@ public class StringNaryTree implements NaryTree<String>, Serializable
     private final static long serialVersionUID = 369752896212698723L;
 
     /** Label of the root node */
-    protected final String label;
+    protected String label;
 
     /** Parent node (if any) */
     protected StringNaryTree parent;
@@ -464,6 +464,11 @@ public class StringNaryTree implements NaryTree<String>, Serializable
             array[i] = iter.next();
         }
         return array;
+    }
+
+    public void setStringLabel(String label)
+    {
+        this.label = label;
     }
 
     /**
