@@ -283,6 +283,14 @@ public class TestStringNaryTree
     }
 
     @Test
+    public void testSetStringLabel() throws Exception
+    {
+        StringNaryTree simpleTree = StringNaryTree.read(new StringReader("(a (b c) d)"));
+        ((StringNaryTree) simpleTree.children().get(0)).setStringLabel("e");
+        assertEquals("(a (e c) d)", simpleTree.toString());
+    }
+
+    @Test
     public void testReadFromReader() throws Exception
     {
 
