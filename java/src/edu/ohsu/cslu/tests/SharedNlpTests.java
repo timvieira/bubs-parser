@@ -14,7 +14,7 @@ import org.junit.runners.Suite;
 
 import edu.ohsu.cslu.alignment.AllAlignmentTests;
 import edu.ohsu.cslu.common.AllCommonTests;
-import edu.ohsu.cslu.counters.TestCoocurrenceCounter;
+import edu.ohsu.cslu.counters.AllCounterTests;
 import edu.ohsu.cslu.datastructs.AllDataStructureTests;
 import edu.ohsu.cslu.matching.ProfileMatchers;
 import edu.ohsu.cslu.matching.approximate.TestApproximateMatchers;
@@ -34,8 +34,8 @@ import edu.ohsu.cslu.util.AllUtilTests;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses( {AllCommonTests.class, TestExactMatchers.class, TestApproximateMatchers.class,
-                      ProfileMatchers.class, AllAlignmentTests.class, TestStringGrammar.class,
-                      TestCoocurrenceCounter.class, AllDataStructureTests.class, AllToolTests.class, AllUtilTests.class})
+                      ProfileMatchers.class, AllAlignmentTests.class, TestStringGrammar.class, AllCounterTests.class,
+                      AllDataStructureTests.class, AllToolTests.class, AllUtilTests.class})
 public class SharedNlpTests
 {
     public final static String UNIT_TEST_DIR = "unit-test-data/";

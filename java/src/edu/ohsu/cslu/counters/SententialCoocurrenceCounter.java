@@ -3,8 +3,6 @@ package edu.ohsu.cslu.counters;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.TreeSet;
 
 /**
@@ -31,19 +29,19 @@ public class SententialCoocurrenceCounter extends CoocurrenceCounter
 
     protected void countSentence(String[] wordArray)
     {
-        TreeSet<String> words = new TreeSet<String>(Arrays.asList(wordArray));
+        final TreeSet<String> words = new TreeSet<String>();
+
+        for (final String word : wordArray)
+        {
+            words.add(word);
+        }
 
         for (final String h : words)
         {
             incrementCount(h);
 
-            Iterator<String> i = words.iterator();
-            while (!i.next().equals(h))
-            {}
-
-            while (i.hasNext())
+            for (final String w : words.tailSet(h, false))
             {
-                final String w = i.next();
                 incrementCount(h, w);
             }
         }

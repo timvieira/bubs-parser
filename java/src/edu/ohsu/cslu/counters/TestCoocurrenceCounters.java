@@ -1,6 +1,11 @@
 package edu.ohsu.cslu.counters;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.StringReader;
 
 import junit.framework.TestCase;
@@ -9,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
+import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
@@ -20,7 +26,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  *        $Id$
  */
 @RunWith(FilteredRunner.class)
-public class TestCoocurrenceCounter extends TestCase
+public class TestCoocurrenceCounters extends TestCase
 {
     @Test
     public void testBigramCounter() throws Exception
@@ -58,12 +64,25 @@ public class TestCoocurrenceCounter extends TestCase
     @Test
     public void testSentenceCounter() throws Exception
     {
-        String sampleSentences = "in an oct. 19 review of the misanthrope at chicago 's goodman theatre -lrb-"
-            + " revitalized classics take the stage in windy city , leisure & arts -rrb- , the role of celimene"
-            + " , played by kim cattrall , was mistakenly attributed to christina haag .\n"
-            + "ms. haag plays elianti while ms. cattral plays celimene .\n" + "ms. cattral made her debut in 1996.";
+        checkSententialCoocurrenceCounter(sententialCoocurrenceCounter());
+    }
 
-        CoocurrenceCounter cc = new SententialCoocurrenceCounter(new StringReader(sampleSentences));
+    @Test
+    public void testSerialize() throws Exception
+    {
+        // Serialize a counter
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(sententialCoocurrenceCounter());
+
+        // Read in the counter and verify it.
+        CoocurrenceCounter cc = (CoocurrenceCounter) new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))
+            .readObject();
+        checkSententialCoocurrenceCounter(cc);
+    }
+
+    private void checkSententialCoocurrenceCounter(CoocurrenceCounter cc)
+    {
         assertEquals(2, cc.count("in"));
         assertEquals(2, cc.count("haag"));
         assertEquals(2, cc.count("."));
@@ -85,15 +104,23 @@ public class TestCoocurrenceCounter extends TestCase
         assertEquals(3.8712f, cc.logOddsRatio("haag", "ms."), .01);
     }
 
-    @Test
-    public void testFullCorpus() throws Exception
+    private CoocurrenceCounter sententialCoocurrenceCounter() throws IOException
     {
-        long startTime = System.currentTimeMillis();
+        String sampleSentences = "in an oct. 19 review of the misanthrope at chicago 's goodman theatre -lrb-"
+            + " revitalized classics take the stage in windy city , leisure & arts -rrb- , the role of celimene"
+            + " , played by kim cattrall , was mistakenly attributed to christina haag .\n"
+            + "ms. haag plays elianti while ms. cattral plays celimene .\n" + "ms. cattral made her debut in 1996.";
+
+        CoocurrenceCounter cc = new SententialCoocurrenceCounter(new StringReader(sampleSentences));
+        return cc;
+    }
+
+    @Test
+    @PerformanceTest( {"d820", "4938"})
+    public void profileBigramCounter() throws Exception
+    {
         CoocurrenceCounter cc = new BigramCounter(new InputStreamReader(SharedNlpTests
             .unitTestDataAsStream("counters/f2-21.lowercase.txt.gz")));
-        long endTime = System.currentTimeMillis();
-        // 3047 ms
-        System.out.format("Bigram Counter took %d ms.\n", endTime - startTime);
 
         assertEquals("Wrong log likelihood for '64', '.'", 0f, cc.logLikelihoodRatio("64", "."), .01);
         assertEquals("Wrong log likelihood for 'industry', 'than'", Float.NaN,
@@ -113,14 +140,20 @@ public class TestCoocurrenceCounter extends TestCase
         assertEquals("Wrong log likelihood for 'dilutive', 'eqivalents'", 94.2626f, cc.logLikelihoodRatio("dilutive",
             "equivalents"), .01);
         assertEquals("Wrong log likelihood for 'k', 'mart'", 532.9244f, cc.logLikelihoodRatio("k", "mart"), .01);
+    }
 
-        // Sentence Co-occurrence
-        startTime = System.currentTimeMillis();
-        cc = new SententialCoocurrenceCounter(new InputStreamReader(SharedNlpTests
+    @Test
+    @PerformanceTest( {"d820", "19297"})
+    public void profileSententialCoocurrenceCounter() throws Exception
+    {
+        CoocurrenceCounter cc = new SententialCoocurrenceCounter(new InputStreamReader(SharedNlpTests
             .unitTestDataAsStream("counters/f2-21.lowercase.txt.gz")));
-        endTime = System.currentTimeMillis();
-        // 13281 ms
-        System.out.format("Sentential Coocurrence Counter took %d ms.\n", endTime - startTime);
+
+        // ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        // ObjectOutputStream oos = new ObjectOutputStream(bos);
+        // oos.writeObject(cc);
+        //
+        // System.out.println(bos.size());
 
         assertEquals("Wrong log likelihood for 'repaying', 'said'", 10.024f, cc.logLikelihoodRatio("repaying", "said"),
             .01);

@@ -2,6 +2,7 @@ package edu.ohsu.cslu.counters;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 /**
@@ -14,7 +15,7 @@ import java.util.HashMap;
  * 
  *        $Id$
  */
-public abstract class CoocurrenceCounter
+public abstract class CoocurrenceCounter implements Serializable
 {
     private final Object2IntOpenHashMap<String> singleWordCounts = new Object2IntOpenHashMap<String>();
     private final HashMap<String, Object2IntOpenHashMap<String>> twoWordCounts = new HashMap<String, Object2IntOpenHashMap<String>>();
@@ -83,7 +84,7 @@ public abstract class CoocurrenceCounter
      */
     public final int count(String h, String w)
     {
-        Object2IntOpenHashMap<String> map = twoWordCounts.get(h);
+        final Object2IntOpenHashMap<String> map = twoWordCounts.get(h);
         if (map == null)
         {
             return 0;
