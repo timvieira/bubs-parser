@@ -162,6 +162,8 @@ public abstract class BaseCommandlineTool
     {
         try
         {
+            long startTime = System.currentTimeMillis();
+
             BaseCommandlineTool tool = (BaseCommandlineTool) Class.forName(
                 Thread.currentThread().getStackTrace()[2].getClassName()).getConstructor(new Class[] {}).newInstance(
                 new Object[] {});
@@ -190,6 +192,11 @@ public abstract class BaseCommandlineTool
                 {
                     // Handle input on STDIN
                     tool.execute();
+                }
+
+                if (tool.verbose)
+                {
+                    System.out.format("Execution Time: %dms\n", System.currentTimeMillis() - startTime);
                 }
             }
             catch (ParseException e)
