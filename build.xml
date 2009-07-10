@@ -1,11 +1,11 @@
 <!-- $Id: build.xml 7582 2008-06-17 21:57:19Z chriso $ -->
-<project name="nlp" default="dist" basedir=".">
+<project name="shared-nlp-code" default="dist" basedir=".">
 
 	<!-- Use ant-contrib, cpptasks, and genjar (from SourceForge) to enable try/catch, 
          gcc compilation, and better dependency analysis than classfileset -->
-	<taskdef resource="net/sf/antcontrib/antlib.xml" />
-	<taskdef resource="cpptasks.tasks" />
-	<taskdef classpath="java/bsd-lib/GenJar.jar" resource="genjar.properties" />
+	<taskdef classpath="build-lib/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
+	<taskdef classpath="build-lib/cpptasks.jar" resource="cpptasks.tasks" />
+	<taskdef classpath="build-lib/GenJar.jar" resource="genjar.properties" />
 
 	<property name="dir.build" location="build" />
 	<property name="dir.src" location="java/src" />
@@ -90,7 +90,7 @@
              be included in their entirety
     ========================================================================
     -->
-	<target name="package.tool" description="Package an executable jar file">
+	<target name="package-tool" description="Package an executable jar file">
 		<!-- Create the distribution directory if it doesn't already exist -->
 		<mkdir dir="${dir.dist}" />
 
@@ -129,21 +129,21 @@
     -->
 
 	<target name="select-features" depends="compile.java" description="Package feature selection/formatting tool">
-		<antcall target="package.tool">
+		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.SelectFeatures" />
 			<param name="tool-name" value="select-features" />
 		</antcall>
 	</target>
 
 	<target name="create-vector" depends="compile.java" description="Package vector creation tool">
-		<antcall target="package.tool">
+		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.CreateVectorFromVocabulary" />
 			<param name="tool-name" value="create-vector" />
 		</antcall>
 	</target>
 
 	<target name="filter-sentences" depends="compile.java" description="Package Sentence Filtering Tool">
-		<antcall target="package.tool">
+		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.FilterSentences" />
 			<param name="tool-name" value="filter-sentences" />
 			<param name="heap-size" value="256" />
@@ -151,7 +151,7 @@
 	</target>
 
 	<target name="split-corpus" depends="compile.java" description="Package Training/Dev set split tool">
-		<antcall target="package.tool">
+		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.SplitCorpus" />
 			<param name="tool-name" value="split-corpus" />
 			<param name="heap-size" value="256" />
@@ -159,7 +159,7 @@
 	</target>
 
 	<target name="calculate-distances" depends="compile.java" description="Package Distance Calculation Tool">
-		<antcall target="package.tool">
+		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.CalculateDistances" />
 			<param name="tool-name" value="calculate-distances" />
 			<param name="heap-size" value="512" />
@@ -167,21 +167,21 @@
 	</target>
 
 	<target name="encode" depends="compile.java" description="Package Encoding Tool">
-		<antcall target="package.tool">
+		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.Encode" />
 			<param name="tool-name" value="encode" />
 		</antcall>
 	</target>
 
 	<target name="induce-vocabularies" depends="compile.java" description="Package Vocabulary Induction Tool">
-		<antcall target="package.tool">
+		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.InduceMappedVocabularies" />
 			<param name="tool-name" value="induce-vocabularies" />
 		</antcall>
 	</target>
 
 	<target name="align-sentences" depends="compile.java" description="Package Sentence MSA Tool">
-		<antcall target="package.tool">
+		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.AlignSentences" />
 			<param name="tool-name" value="align-sentences" />
 			<param name="heap-size" value="512" />
@@ -189,7 +189,7 @@
 	</target>
 
 	<target name="train-and-align" depends="compile.java" description="Package Full Sentence MSA Tool">
-		<antcall target="package.tool">
+		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.TrainHmmAndAlignSequences" />
 			<param name="tool-name" value="train-and-align" />
 			<param name="heap-size" value="512" />
@@ -201,7 +201,7 @@
        Package a Sun Grid Engine job
     ========================================================================
     -->
-	<target name="package.job" description="Package a Sun Grid Engine job">
+	<target name="package-job" description="Package a Sun Grid Engine job">
 		<!-- If 'params' is not specified, default it to the empty string -->
 		<property name="params" value="" />
 
@@ -222,7 +222,7 @@
 	<!-- Grid job naming convention: prepend 'grid-' to the name of the target which packages the jar -->
 
 	<target name="grid-calculate-distances" depends="calculate-distances">
-		<antcall target="package.job">
+		<antcall target="package-job">
 			<param name="tool-name" value="calculate-distances" />
 			<param name="heap-size" value="512" />
 		</antcall>
