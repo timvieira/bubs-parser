@@ -1,21 +1,29 @@
 <!-- $Id: build.xml 7582 2008-06-17 21:57:19Z chriso $ -->
 <project name="shared-nlp-code" default="dist" basedir=".">
 
-	<!-- Use ant-contrib, cpptasks, and genjar (from SourceForge) to enable try/catch, 
-         gcc compilation, and better dependency analysis than classfileset -->
-	<taskdef classpath="build-lib/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
-	<taskdef classpath="build-lib/cpptasks.jar" resource="cpptasks.tasks" />
-	<taskdef classpath="build-lib/GenJar.jar" resource="genjar.properties" />
-
+    <property name="dir.shared.base" location="../shared-nlp-code"/>
+    
 	<property name="dir.build" location="build" />
 	<property name="dir.src" location="java/src" />
 	<property name="dir.doc" location="doc" />
 	<property name="dir.bsd.lib" location="java/bsd-lib" />
 	<property name="dir.lgpl.lib" location="java/lgpl-lib" />
-	<property name="dir.build.lib" location="build-lib" />
 	<property name="dir.build.doc" location="build-doc" />
-	<property name="dir.dist" location="build-dist" />
+
+    <property name="dir.shared.build" location="${dir.shared.base}/build" />
+    <property name="dir.shared.build.lib" location="${dir.shared.base}/build-lib" />
+    <property name="dir.shared.bsd.lib" location="${dir.shared.base}/java/bsd-lib" />
+    <property name="dir.shared.lgpl.lib" location="${dir.shared.base}/java/lgpl-lib" />
+
+    <property name="dir.dist" location="build-dist" />
 	<property name="dir.sge.tmp" location="sge-tmp" />
+
+    <!-- Use ant-contrib, cpptasks, and genjar (from SourceForge) to enable try/catch, 
+         gcc compilation, and better dependency analysis than classfileset -->
+    <taskdef classpath="${dir.shared.build.lib}/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
+    <taskdef classpath="${dir.shared.build.lib}/cpptasks.jar" resource="cpptasks.tasks" />
+    <taskdef classpath="${dir.shared.build.lib}/GenJar.jar" resource="genjar.properties" />
+
 
 	<path id="classpath.libs">
 		<fileset dir="${dir.bsd.lib}" includes="*.jar" />
@@ -37,7 +45,7 @@
         Compile all Java code
     ========================================================================
     -->
-	<target name="compile.java" description="Compile Java code and tools">
+	<target name="compile-java" description="Compile Java code and tools">
 		<!-- If the build directory doesn't already exist, create it -->
 		<mkdir dir="${dir.build}" />
 		<javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true">
@@ -50,7 +58,7 @@
         Compile all native code
     ========================================================================
     -->
-	<target name="compile.native" description="Compile native code and tools">
+	<target name="compile-native" description="Compile native code and tools">
 		<!-- If the build directory doesn't already exist, create it -->
 		<mkdir dir="${dir.dist}" />
 
@@ -102,8 +110,10 @@
 
 			<classpath>
 				<pathelement location="${dir.build}" />
+                <pathelement location="${dir.shared.build}" />
 				<fileset dir="${dir.bsd.lib}" includes="*.jar" />
-				<fileset dir="${dir.build.lib}" includes="*.jar" />
+                <fileset dir="${dir.shared.bsd.lib}" includes="*.jar" />
+<!--				<fileset dir="${dir.build.lib}" includes="*.jar" /> -->
 			</classpath>
 
 			<manifest>
@@ -114,7 +124,7 @@
 
 		<!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
 		<delete file="${dir.dist}/${tool-name}" />
-		<copy file="java/tools/script-template.sh" tofile="${dir.dist}/${tool-name}" />
+		<copy file="${dir.shared.base}/java/tools/script-template.sh" tofile="${dir.dist}/${tool-name}" />
 		<fixcrlf file="${dir.dist}/${tool-name}" eol="unix" />
 		<replace file="${dir.dist}/${tool-name}">
 			<replacefilter token="%JAR%" value="${tool-name}.jar" />
@@ -128,21 +138,21 @@
     ========================================================================
     -->
 
-	<target name="select-features" depends="compile.java" description="Package feature selection/formatting tool">
+	<target name="select-features" depends="compile-java" description="Package feature selection/formatting tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.SelectFeatures" />
 			<param name="tool-name" value="select-features" />
 		</antcall>
 	</target>
 
-	<target name="create-vector" depends="compile.java" description="Package vector creation tool">
+	<target name="create-vector" depends="compile-java" description="Package vector creation tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.CreateVectorFromVocabulary" />
 			<param name="tool-name" value="create-vector" />
 		</antcall>
 	</target>
 
-	<target name="filter-sentences" depends="compile.java" description="Package Sentence Filtering Tool">
+	<target name="filter-sentences" depends="compile-java" description="Package Sentence Filtering Tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.FilterSentences" />
 			<param name="tool-name" value="filter-sentences" />
@@ -150,7 +160,7 @@
 		</antcall>
 	</target>
 
-	<target name="split-corpus" depends="compile.java" description="Package Training/Dev set split tool">
+	<target name="split-corpus" depends="compile-java" description="Package Training/Dev set split tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.SplitCorpus" />
 			<param name="tool-name" value="split-corpus" />
@@ -158,7 +168,7 @@
 		</antcall>
 	</target>
 
-	<target name="calculate-distances" depends="compile.java" description="Package Distance Calculation Tool">
+	<target name="calculate-distances" depends="compile-java" description="Package Distance Calculation Tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.CalculateDistances" />
 			<param name="tool-name" value="calculate-distances" />
@@ -166,21 +176,21 @@
 		</antcall>
 	</target>
 
-	<target name="encode" depends="compile.java" description="Package Encoding Tool">
+	<target name="encode" depends="compile-java" description="Package Encoding Tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.Encode" />
 			<param name="tool-name" value="encode" />
 		</antcall>
 	</target>
 
-	<target name="induce-vocabularies" depends="compile.java" description="Package Vocabulary Induction Tool">
+	<target name="induce-vocabularies" depends="compile-java" description="Package Vocabulary Induction Tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.InduceMappedVocabularies" />
 			<param name="tool-name" value="induce-vocabularies" />
 		</antcall>
 	</target>
 
-	<target name="align-sentences" depends="compile.java" description="Package Sentence MSA Tool">
+	<target name="align-sentences" depends="compile-java" description="Package Sentence MSA Tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.AlignSentences" />
 			<param name="tool-name" value="align-sentences" />
@@ -188,7 +198,7 @@
 		</antcall>
 	</target>
 
-	<target name="train-and-align" depends="compile.java" description="Package Full Sentence MSA Tool">
+	<target name="train-and-align" depends="compile-java" description="Package Full Sentence MSA Tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.TrainHmmAndAlignSequences" />
 			<param name="tool-name" value="train-and-align" />
@@ -210,7 +220,7 @@
 
 		<!-- Generate a grid-engine runner script  -->
 		<delete file="${dir.dist}/grid-${tool-name}" failonerror="false" />
-		<copy file="java/tools/grid-script-template.sh" tofile="${dir.dist}/grid-${tool-name}" />
+		<copy file="${dir.shared.base}/java/tools/grid-script-template.sh" tofile="${dir.dist}/grid-${tool-name}" />
 		<fixcrlf file="${dir.dist}/grid-${tool-name}" eol="unix" />
 		<replace file="${dir.dist}/grid-${tool-name}">
 			<replacefilter token="%NAME%" value="${tool-name}" />
@@ -228,13 +238,13 @@
 		</antcall>
 	</target>
 
-	<!-- 
+    <!-- 
     ========================================================================
        Package all NLP applications
     ========================================================================
     -->
 	<target name="dist"
-	        depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,create-vector,compile.native"
+	        depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,create-vector,compile-native"
 	        description="Package all NLP application">
 	</target>
 
