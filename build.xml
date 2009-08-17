@@ -113,7 +113,9 @@
                 <pathelement location="${dir.shared.build}" />
 				<fileset dir="${dir.bsd.lib}" includes="*.jar" />
                 <fileset dir="${dir.shared.bsd.lib}" includes="*.jar" />
-<!--				<fileset dir="${dir.build.lib}" includes="*.jar" /> -->
+				<!-- TODO: LGPL jars probably shouldn't be packaged into standalone jar files -->
+                <fileset dir="${dir.shared.lgpl.lib}" includes="*.jar" />
+                <fileset dir="${dir.shared.build.lib}" includes="*.jar" />
 			</classpath>
 
 			<manifest>
@@ -130,6 +132,7 @@
 			<replacefilter token="%JAR%" value="${tool-name}.jar" />
 			<replacefilter token="%MEM%" value="${heap-size}" />
 		</replace>
+		<chmod file="${dir.dist}/${tool-name}" perm="ug+x" />
 	</target>
 
 	<!-- 
