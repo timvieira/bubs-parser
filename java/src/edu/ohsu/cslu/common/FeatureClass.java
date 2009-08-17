@@ -32,7 +32,10 @@ public enum FeatureClass implements Comparable<FeatureClass>
     Pos,
 
     /** Labels: _head_verb, _begin_sent, _initial_cap, etc. */
-    HeadVerb, NotFirstVerb, BeforeHead, AfterHead, BeginSentence, InitialCap, AllCaps,
+    HeadVerb, NotFirstVerb, BeforeHead, AfterHead, BeginSentence, Capitalized, AllCaps, Hyphenated, StartsWithDigit,
+
+    /** _stem_... */
+    Stem,
 
     /** _word-1_..., _word-2_... */
     PreviousWord,
@@ -46,6 +49,9 @@ public enum FeatureClass implements Comparable<FeatureClass>
     /** _pos+1_..., _pos+2_... */
     SubsequentPos,
 
+    /** Length classes */
+    Length1, Length2to5, Length6to10, LengthGreaterThan10,
+
     /** Any token starting with an underscore which does not match other patterns */
     Other;
 
@@ -53,6 +59,8 @@ public enum FeatureClass implements Comparable<FeatureClass>
     public final static String UNKNOWN = "-unk-";
 
     public final static String PREFIX_POS = "_pos_";
+    public final static String PREFIX_STEM = "_stem_";
+
     public final static String PREFIX_PREVIOUS_WORD = "_word-";
     public final static String PREFIX_SUBSEQUENT_WORD = "_word+";
     public final static String PREFIX_PREVIOUS_POS = "_pos-";
@@ -63,8 +71,16 @@ public enum FeatureClass implements Comparable<FeatureClass>
     public final static String FEATURE_HEAD_VERB = "_head_verb";
     public final static String FEATURE_AFTER_HEAD = "_after_head";
     public final static String FEATURE_BEGIN_SENTENCE = "_begin_sent";
-    public final static String FEATURE_INITIAL_CAP = "_initial_cap";
+    public final static String FEATURE_CAPITALIZED = "_capitalized";
     public final static String FEATURE_ALL_CAPS = "_all_caps";
+    public final static String FEATURE_HYPHENATED = "_hyphenated";
+
+    public final static String FEATURE_LENGTH_1 = "_length_1";
+    public final static String FEATURE_LENGTH_2_TO_5 = "_length_2_to_5";
+    public final static String FEATURE_LENGTH_6_TO_10 = "_length_6_to_10";
+    public final static String FEATURE_LENGTH_GREATER_THAN_10 = "_length_greater_than_10";
+
+    public final static String FEATURE_STARTS_WITH_DIGIT = "_starts_with_digit";
 
     private static HashMap<String, FeatureClass> knownLabels = new HashMap<String, FeatureClass>();
     static
@@ -74,8 +90,13 @@ public enum FeatureClass implements Comparable<FeatureClass>
         knownLabels.put(FEATURE_HEAD_VERB, HeadVerb);
         knownLabels.put(FEATURE_AFTER_HEAD, AfterHead);
         knownLabels.put(FEATURE_BEGIN_SENTENCE, BeginSentence);
-        knownLabels.put(FEATURE_INITIAL_CAP, InitialCap);
+        knownLabels.put(FEATURE_CAPITALIZED, Capitalized);
         knownLabels.put(FEATURE_ALL_CAPS, AllCaps);
+        knownLabels.put(FEATURE_LENGTH_1, Length1);
+        knownLabels.put(FEATURE_LENGTH_2_TO_5, Length2to5);
+        knownLabels.put(FEATURE_LENGTH_6_TO_10, Length6to10);
+        knownLabels.put(FEATURE_LENGTH_GREATER_THAN_10, LengthGreaterThan10);
+        knownLabels.put(FEATURE_STARTS_WITH_DIGIT, StartsWithDigit);
     }
 
     public static FeatureClass forString(String s)
@@ -98,6 +119,11 @@ public enum FeatureClass implements Comparable<FeatureClass>
         if (!s.startsWith("_"))
         {
             return Word;
+        }
+
+        if (s.startsWith(PREFIX_STEM))
+        {
+            return Stem;
         }
 
         if (s.startsWith(PREFIX_POS))

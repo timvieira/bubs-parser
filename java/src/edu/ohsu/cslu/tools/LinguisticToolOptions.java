@@ -23,6 +23,8 @@ public class LinguisticToolOptions
     public final static String OPTION_SUBSEQUENT_WORD = "subword";
     public final static String OPTION_PREVIOUS_POS = "prevpos";
     public final static String OPTION_SUBSEQUENT_POS = "subpos";
+    public final static String OPTION_CAPITALIZED = "cap";
+    public final static String OPTION_ALL_CAPS = "allcaps";
 
     public final static String OPTION_GAP = "g";
 }

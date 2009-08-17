@@ -13,8 +13,6 @@ import edu.ohsu.cslu.common.tools.LinewiseCommandlineTool;
 /**
  * Encodes a file into a specified content encoding
  * 
- * TODO: Add tests for encoding?
- * 
  * @author aarond
  * @since Jun 11, 2008
  * 

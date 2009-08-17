@@ -27,6 +27,8 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
     private float subsequentWords;
     private float previousPos;
     private float subsequentPos;
+    private float capitalized;
+    private float allCaps;
 
     public static void main(String[] args)
     {
@@ -49,6 +51,7 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
                     break;
 
                 case Word :
+                case Unknown :
                     setVectorValue(vector, i, word, mapping);
                     break;
 
@@ -96,6 +99,14 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
 
                 case SubsequentPos :
                     setVectorValue(vector, i, subsequentPos, mapping);
+                    break;
+
+                case Capitalized :
+                    setVectorValue(vector, i, capitalized, mapping);
+                    break;
+
+                case AllCaps :
+                    setVectorValue(vector, i, allCaps, mapping);
                     break;
 
                 default :
@@ -152,6 +163,10 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
             LinguisticToolOptions.OPTION_PREVIOUS_POS));
         options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Subsequent POS features")
             .create(LinguisticToolOptions.OPTION_SUBSEQUENT_POS));
+        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Capitalized word").create(
+            LinguisticToolOptions.OPTION_CAP));
+        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Word is all caps").create(
+            LinguisticToolOptions.OPTION_ALL_CAPS));
 
         return options;
     }
@@ -171,6 +186,8 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
             "-1"));
         previousPos = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_PREVIOUS_POS, "-1"));
         subsequentPos = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_SUBSEQUENT_POS, "-1"));
+        capitalized = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_CAP, "-1"));
+        allCaps = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_ALL_CAPS, "-1"));
     }
 
     @Override
