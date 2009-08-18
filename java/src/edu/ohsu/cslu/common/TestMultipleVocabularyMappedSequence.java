@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.common;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,8 +12,6 @@ import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link MultipleVocabularyMappedSequence}.
@@ -78,17 +78,17 @@ public class TestMultipleVocabularyMappedSequence
         assertEquals(10, sequence.length());
         assertEquals(2, sequence.featureCount());
 
-        assertEquals(2, sequence.feature(1, 0));
+        assertEquals(3, sequence.feature(1, 0));
         assertEquals("computers", sequence.stringFeature(1, 0));
-        assertEquals(2, sequence.feature(1, 1));
+        assertEquals(3, sequence.feature(1, 1));
         assertEquals("NNS", sequence.stringFeature(1, 1));
 
-        assertEquals(8, sequence.feature(7, 0));
+        assertEquals(9, sequence.feature(7, 0));
         assertEquals("by", sequence.stringFeature(7, 0));
-        assertEquals(7, sequence.feature(7, 1));
+        assertEquals(8, sequence.feature(7, 1));
         assertEquals("IN", sequence.stringFeature(7, 1));
 
-        assertEquals(new IntVector(new int[] {8, 7}), sequence.elementAt(7));
+        assertEquals(new IntVector(new int[] {9, 8}), sequence.elementAt(7));
     }
 
     @Test
@@ -120,14 +120,14 @@ public class TestMultipleVocabularyMappedSequence
         MultipleVocabularyMappedSequence sequence = new MultipleVocabularyMappedSequence(sentence1, simpleVocabularies);
 
         sequence = sequence.insertGaps(new int[] {0, 5});
-        assertEquals(2, sequence.feature(2, 0));
+        assertEquals(3, sequence.feature(2, 0));
         assertEquals("computers", sequence.stringFeature(2, 0));
-        assertEquals(2, sequence.feature(2, 1));
+        assertEquals(3, sequence.feature(2, 1));
         assertEquals("NNS", sequence.stringFeature(2, 1));
 
-        assertEquals(8, sequence.feature(9, 0));
+        assertEquals(9, sequence.feature(9, 0));
         assertEquals("by", sequence.stringFeature(9, 0));
-        assertEquals(7, sequence.feature(9, 1));
+        assertEquals(8, sequence.feature(9, 1));
         assertEquals("IN", sequence.stringFeature(9, 1));
     }
 
@@ -147,14 +147,14 @@ public class TestMultipleVocabularyMappedSequence
             .insertGaps(new int[] {0, 3, 5});
 
         sequence = sequence.removeAllGaps();
-        assertEquals(2, sequence.feature(1, 0));
+        assertEquals(3, sequence.feature(1, 0));
         assertEquals("computers", sequence.stringFeature(1, 0));
-        assertEquals(2, sequence.feature(1, 1));
+        assertEquals(3, sequence.feature(1, 1));
         assertEquals("NNS", sequence.stringFeature(1, 1));
 
-        assertEquals(8, sequence.feature(7, 0));
+        assertEquals(9, sequence.feature(7, 0));
         assertEquals("by", sequence.stringFeature(7, 0));
-        assertEquals(7, sequence.feature(7, 1));
+        assertEquals(8, sequence.feature(7, 1));
         assertEquals("IN", sequence.stringFeature(7, 1));
     }
 

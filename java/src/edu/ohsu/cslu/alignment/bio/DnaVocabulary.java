@@ -175,4 +175,16 @@ public class DnaVocabulary implements CharVocabulary
         writer.write("4:T\n");
         writer.write("5:X\n");
     }
+
+    @Override
+    public boolean isRareToken(String token)
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isRareToken(int index)
+    {
+        return false;
+    }
 }

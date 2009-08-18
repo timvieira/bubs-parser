@@ -1,5 +1,8 @@
 package edu.ohsu.cslu.alignment.multiple;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
+
 import java.io.IOException;
 import java.io.StringReader;
 
@@ -19,9 +22,6 @@ import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
 
 /**
  * Unit tests for {@link MultipleSequenceAlignment}
@@ -191,18 +191,18 @@ public class TestMultipleSequenceAlignment
                                                                                       wordVocabulary.map("are")}), 3),
             .01f);
 
-        // A Laplace-smoothed linguistic alignment. Our POS vocabulary consists of 15 tokens and our
-        // word vocabulary 22 (including gaps). And we have 3 aligned sequences to count, so POS
-        // counts are out of 18 and word counts out of 25.
+        // A Laplace-smoothed linguistic alignment. Our POS vocabulary consists of 16 tokens and our
+        // word vocabulary 23 (including gaps and unk's). And we have 3 aligned sequences to count,
+        // so POS counts are out of 19 and word counts out of 26.
         pssmModel = alignment.inducePssmAlignmentModel(1);
 
         // 1 DT/The
-        assertEquals(-Math.log(4f / 450), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("DT"),
+        assertEquals(-Math.log(4f / 494), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("DT"),
                                                                                   wordVocabulary.map("The")}), 0), .01f);
-        assertEquals(-Math.log(2f / 450), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("DT"),
+        assertEquals(-Math.log(2f / 494), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("DT"),
                                                                                   wordVocabulary.map("Most")}), 0),
             .01f);
-        assertEquals(-Math.log(2f / 450), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("NN"),
+        assertEquals(-Math.log(2f / 494), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("NN"),
                                                                                   wordVocabulary.map("The")}), 0), .01f);
 
         // We still want 0 probability of POS/- and -/word, even though a purely probabilistic model
@@ -215,17 +215,17 @@ public class TestMultipleSequenceAlignment
             .01f);
 
         // Column 3 has: 1 TO/to, 1 AUX/be, 1 AUX/are.
-        assertEquals(-Math.log(6f / 450), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("AUX"),
+        assertEquals(-Math.log(6f / 494), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("AUX"),
                                                                                   wordVocabulary.map("be")}), 3), .01f);
-        assertEquals(-Math.log(6f / 450), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("AUX"),
+        assertEquals(-Math.log(6f / 494), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("AUX"),
                                                                                   wordVocabulary.map("are")}), 3), .01f);
-        assertEquals(-Math.log(4f / 450), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("TO"),
+        assertEquals(-Math.log(4f / 494), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("TO"),
                                                                                   wordVocabulary.map("to")}), 3), .01f);
-        assertEquals(-Math.log(4f / 450), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("TO"),
+        assertEquals(-Math.log(4f / 494), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("TO"),
                                                                                   wordVocabulary.map("are")}), 3), .01f);
 
         // Smoothing gives some probability mass to an unobserved feature vector
-        assertEquals(-Math.log(1f / 450), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("DT"),
+        assertEquals(-Math.log(1f / 494), pssmModel.cost(new IntVector(new int[] {posVocabulary.map("DT"),
                                                                                   wordVocabulary.map("in")}), 3), .01f);
     }
 

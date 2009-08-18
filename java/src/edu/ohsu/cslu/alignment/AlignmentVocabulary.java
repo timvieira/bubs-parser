@@ -19,4 +19,22 @@ public interface AlignmentVocabulary extends Vocabulary
      */
     public int gapSymbol();
 
+    /**
+     * Returns true if the specified token is considered 'rare' and should be treated in the same
+     * class as unknown tokens.
+     * 
+     * @param token
+     * @return true if the specified token is 'rare'
+     */
+    public boolean isRareToken(String token);
+
+    /**
+     * Returns true if the specified token is considered 'rare' and should be treated in the same
+     * class as unknown tokens.
+     * 
+     * @param index
+     * @return true if the specified token is 'rare'
+     */
+    public boolean isRareToken(int index);
+
 }

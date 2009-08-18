@@ -1,5 +1,9 @@
 package edu.ohsu.cslu.alignment;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+
 import java.io.StringReader;
 import java.io.StringWriter;
 
@@ -8,8 +12,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Basic unit tests for {@link SimpleVocabulary}
@@ -33,7 +35,7 @@ public class TestSimpleVocabulary
         sb.append("(DT The) (NNS computers) (MD will) (VB display) (NN stock)");
         sb.append(" (NNS prices) (VBN selected) (IN by) (NNS users) (. .)\n");
         sb.append("(IN At) (JJS least) (RB not) (WRB when) (PRP you) (AUX are) (VBG ascending) (. .) (-RRB- -RRB-)");
-        sampleVocabulary = SimpleVocabulary.induce(sb.toString());
+        sampleVocabulary = SimpleVocabulary.induce(sb.toString(), 1);
 
         sb = new StringBuilder(256);
         sb.append("(DT The _sib) (NNS computers _head) (MD will _head) (VB display _head) (NN stock _sib)");
@@ -43,39 +45,40 @@ public class TestSimpleVocabulary
         sampleInput = sb.toString();
 
         sb = new StringBuilder(256);
-        sb.append("vocabulary size=32\n");
-        sb.append("0 : -\n");
-        sb.append("1 : DT\n");
-        sb.append("2 : The\n");
-        sb.append("3 : NNS\n");
-        sb.append("4 : computers\n");
-        sb.append("5 : MD\n");
-        sb.append("6 : will\n");
-        sb.append("7 : VB\n");
-        sb.append("8 : display\n");
-        sb.append("9 : NN\n");
-        sb.append("10 : stock\n");
-        sb.append("11 : prices\n");
-        sb.append("12 : VBN\n");
-        sb.append("13 : selected\n");
-        sb.append("14 : IN\n");
-        sb.append("15 : by\n");
-        sb.append("16 : users\n");
-        sb.append("17 : .\n");
-        sb.append("18 : At\n");
-        sb.append("19 : JJS\n");
-        sb.append("20 : least\n");
-        sb.append("21 : RB\n");
-        sb.append("22 : not\n");
-        sb.append("23 : WRB\n");
-        sb.append("24 : when\n");
-        sb.append("25 : PRP\n");
-        sb.append("26 : you\n");
-        sb.append("27 : AUX\n");
-        sb.append("28 : are\n");
-        sb.append("29 : VBG\n");
-        sb.append("30 : ascending\n");
-        sb.append("31 : -RRB-\n");
+        sb.append("vocabulary size=33\n");
+        sb.append("0 : _- : true\n");
+        sb.append("1 : -unk- : true\n");
+        sb.append("2 : DT : true\n");
+        sb.append("3 : The : true\n");
+        sb.append("4 : NNS : true\n");
+        sb.append("5 : computers : true\n");
+        sb.append("6 : MD : true\n");
+        sb.append("7 : will : true\n");
+        sb.append("8 : VB : true\n");
+        sb.append("9 : display : true\n");
+        sb.append("10 : NN : true\n");
+        sb.append("11 : stock : true\n");
+        sb.append("12 : prices : true\n");
+        sb.append("13 : VBN : true\n");
+        sb.append("14 : selected : true\n");
+        sb.append("15 : IN : false\n");
+        sb.append("16 : by : false\n");
+        sb.append("17 : users : true\n");
+        sb.append("18 : . : true\n");
+        sb.append("19 : At : true\n");
+        sb.append("20 : JJS : true\n");
+        sb.append("21 : least : true\n");
+        sb.append("22 : RB : true\n");
+        sb.append("23 : not : true\n");
+        sb.append("24 : WRB : true\n");
+        sb.append("25 : when : true\n");
+        sb.append("26 : PRP : true\n");
+        sb.append("27 : you : true\n");
+        sb.append("28 : AUX : true\n");
+        sb.append("29 : are : true\n");
+        sb.append("30 : VBG : true\n");
+        sb.append("31 : ascending : true\n");
+        sb.append("32 : -RRB- : -RRB-\n");
         sb.append("\n");
         stringSampleVocabulary = sb.toString();
     }
@@ -88,16 +91,19 @@ public class TestSimpleVocabulary
 
     private void checkSampleVocabulary(SimpleVocabulary vocabulary)
     {
-        assertEquals(32, vocabulary.size());
+        assertEquals(33, vocabulary.size());
 
-        assertEquals(1, vocabulary.map("DT"));
-        assertEquals("DT", vocabulary.map(1));
+        assertEquals(2, vocabulary.map("DT"));
+        assertEquals("DT", vocabulary.map(2));
 
-        assertEquals(2, vocabulary.map("The"));
-        assertEquals("The", vocabulary.map(2));
+        assertEquals(3, vocabulary.map("The"));
+        assertEquals("The", vocabulary.map(3));
 
-        assertEquals(28, vocabulary.map("are"));
-        assertEquals("are", vocabulary.map(28));
+        assertEquals(29, vocabulary.map("are"));
+        assertEquals("are", vocabulary.map(29));
+
+        assertTrue(vocabulary.isRareToken("prices"));
+        assertFalse(vocabulary.isRareToken("IN"));
     }
 
     @Test
@@ -106,30 +112,30 @@ public class TestSimpleVocabulary
         SimpleVocabulary[] vocabularies = SimpleVocabulary.induceVocabularies(sampleInput);
 
         assertEquals(3, vocabularies.length);
-        assertEquals(16, vocabularies[0].size());
-        assertEquals(19, vocabularies[1].size());
-        assertEquals(3, vocabularies[2].size());
+        assertEquals(17, vocabularies[0].size());
+        assertEquals(20, vocabularies[1].size());
+        assertEquals(4, vocabularies[2].size());
 
         assertEquals(0, vocabularies[0].map("_-"));
-        assertEquals(1, vocabularies[0].map("DT"));
-        assertEquals("DT", vocabularies[0].map(1));
+        assertEquals(2, vocabularies[0].map("DT"));
+        assertEquals("DT", vocabularies[0].map(2));
 
-        assertEquals(5, vocabularies[0].map("NN"));
-        assertEquals("NN", vocabularies[0].map(5));
+        assertEquals(6, vocabularies[0].map("NN"));
+        assertEquals("NN", vocabularies[0].map(6));
 
         assertEquals(0, vocabularies[1].map("_-"));
-        assertEquals(1, vocabularies[1].map("The"));
-        assertEquals("The", vocabularies[1].map(1));
+        assertEquals(2, vocabularies[1].map("The"));
+        assertEquals("The", vocabularies[1].map(2));
 
-        assertEquals(12, vocabularies[1].map("least"));
-        assertEquals("least", vocabularies[1].map(12));
+        assertEquals(13, vocabularies[1].map("least"));
+        assertEquals("least", vocabularies[1].map(13));
 
         assertEquals(0, vocabularies[2].map("_-"));
-        assertEquals(1, vocabularies[2].map("_sib"));
-        assertEquals("_sib", vocabularies[2].map(1));
+        assertEquals(2, vocabularies[2].map("_sib"));
+        assertEquals("_sib", vocabularies[2].map(2));
 
-        assertEquals(2, vocabularies[2].map("_head"));
-        assertEquals("_head", vocabularies[2].map(2));
+        assertEquals(3, vocabularies[2].map("_head"));
+        assertEquals("_head", vocabularies[2].map(3));
     }
 
     @Test

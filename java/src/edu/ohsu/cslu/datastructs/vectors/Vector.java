@@ -17,9 +17,6 @@ import edu.ohsu.cslu.util.Strings;
 /**
  * Base interface for all vector classes.
  * 
- * TODO: Move infinity, min/max methods to a superinterface of both Vector and Matrix? If so, what
- * would we name it?
- * 
  * @author Aaron Dunlop
  * @since Sep 17, 2008
  * 

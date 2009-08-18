@@ -55,8 +55,8 @@ public enum FeatureClass implements Comparable<FeatureClass>
     /** Any token starting with an underscore which does not match other patterns */
     Other;
 
-    public final static String GAP = "_-";
-    public final static String UNKNOWN = "-unk-";
+    public final static String FEATURE_GAP = "_-";
+    public final static String FEATURE_UNKNOWN = "-unk-";
 
     public final static String PREFIX_POS = "_pos_";
     public final static String PREFIX_STEM = "_stem_";
@@ -106,12 +106,12 @@ public enum FeatureClass implements Comparable<FeatureClass>
             return knownLabels.get(s);
         }
 
-        if (s.equals(GAP))
+        if (s.equals(FEATURE_GAP))
         {
             return Gap;
         }
 
-        if (s.equals(UNKNOWN))
+        if (s.equals(FEATURE_UNKNOWN))
         {
             return Unknown;
         }
@@ -152,5 +152,46 @@ public enum FeatureClass implements Comparable<FeatureClass>
         }
 
         return Other;
+    }
+
+    @Override
+    public String toString()
+    {
+        switch (this)
+        {
+            case Gap :
+                return FEATURE_GAP;
+            case Unknown :
+                return FEATURE_UNKNOWN;
+            case HeadVerb :
+                return FEATURE_HEAD_VERB;
+            case NotFirstVerb :
+                return FEATURE_NOT_FIRST_VERB;
+            case BeforeHead :
+                return FEATURE_BEFORE_HEAD;
+            case AfterHead :
+                return FEATURE_AFTER_HEAD;
+            case BeginSentence :
+                return FEATURE_BEGIN_SENTENCE;
+            case Capitalized :
+                return FEATURE_CAPITALIZED;
+            case AllCaps :
+                return FEATURE_ALL_CAPS;
+            case Hyphenated :
+                return FEATURE_HYPHENATED;
+            case StartsWithDigit :
+                return FEATURE_STARTS_WITH_DIGIT;
+            case Length1 :
+                return FEATURE_LENGTH_1;
+            case Length2to5 :
+                return FEATURE_LENGTH_2_TO_5;
+            case Length6to10 :
+                return FEATURE_LENGTH_6_TO_10;
+            case LengthGreaterThan10 :
+                return FEATURE_LENGTH_GREATER_THAN_10;
+
+            default :
+                return super.toString();
+        }
     }
 }

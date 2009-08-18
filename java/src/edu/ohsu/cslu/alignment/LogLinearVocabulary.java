@@ -58,7 +58,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
     {
         try
         {
-            return induce(new BufferedReader(new StringReader(s)), FeatureClass.GAP);
+            return induce(new BufferedReader(new StringReader(s)), FeatureClass.FEATURE_GAP);
         }
         catch (IOException e)
         {
@@ -102,7 +102,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
      */
     public static LogLinearVocabulary induce(final BufferedReader reader) throws IOException
     {
-        return induce(reader, FeatureClass.GAP);
+        return induce(reader, FeatureClass.FEATURE_GAP);
     }
 
     /**
@@ -120,7 +120,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
     {
         TreeSet<String> featureList = new TreeSet<String>(new TokenComparator());
         featureList.add(gapSymbol);
-        featureList.add(FeatureClass.UNKNOWN);
+        featureList.add(FeatureClass.FEATURE_UNKNOWN);
 
         for (String line = reader.readLine(); line != null; line = reader.readLine())
         {
@@ -209,7 +209,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
         final int value = super.map(token);
         if (value == Integer.MIN_VALUE && !token.startsWith("_"))
         {
-            return map(FeatureClass.UNKNOWN);
+            return map(FeatureClass.FEATURE_UNKNOWN);
         }
         return value;
     }

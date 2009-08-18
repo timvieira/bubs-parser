@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -10,8 +12,6 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link LogLinearVocabulary}
@@ -42,42 +42,42 @@ public class TestLogLinearVocabulary
 
         sb = new StringBuilder(512);
         sb.append("vocabulary size=36 categoryboundaries=19,34\n");
-        sb.append("0 : -\n");
-        sb.append("1 : -RRB-\n");
-        sb.append("2 : .\n");
-        sb.append("3 : At\n");
-        sb.append("4 : The\n");
-        sb.append("5 : are\n");
-        sb.append("6 : ascending\n");
-        sb.append("7 : by\n");
-        sb.append("8 : computers\n");
-        sb.append("9 : display\n");
-        sb.append("10 : least\n");
-        sb.append("11 : not\n");
-        sb.append("12 : prices\n");
-        sb.append("13 : selected\n");
-        sb.append("14 : stock\n");
-        sb.append("15 : users\n");
-        sb.append("16 : when\n");
-        sb.append("17 : will\n");
-        sb.append("18 : you\n");
-        sb.append("19 : _pos_-RRB-\n");
-        sb.append("20 : _pos_.\n");
-        sb.append("21 : _pos_AUX\n");
-        sb.append("22 : _pos_DT\n");
-        sb.append("23 : _pos_IN\n");
-        sb.append("24 : _pos_JJS\n");
-        sb.append("25 : _pos_MD\n");
-        sb.append("26 : _pos_NN\n");
-        sb.append("27 : _pos_NNS\n");
-        sb.append("28 : _pos_PRP\n");
-        sb.append("29 : _pos_RB\n");
-        sb.append("30 : _pos_VB\n");
-        sb.append("31 : _pos_VBG\n");
-        sb.append("32 : _pos_VBN\n");
-        sb.append("33 : _pos_WRB\n");
-        sb.append("34 : _head\n");
-        sb.append("35 : _sib\n");
+        sb.append("0 : - : false\n");
+        sb.append("1 : -RRB- : false\n");
+        sb.append("2 : . : false\n");
+        sb.append("3 : At : false\n");
+        sb.append("4 : The : false\n");
+        sb.append("5 : are : false\n");
+        sb.append("6 : ascending : false\n");
+        sb.append("7 : by : false\n");
+        sb.append("8 : computers : false\n");
+        sb.append("9 : display : false\n");
+        sb.append("10 : least : false\n");
+        sb.append("11 : not : false\n");
+        sb.append("12 : prices : false\n");
+        sb.append("13 : selected : false\n");
+        sb.append("14 : stock : false\n");
+        sb.append("15 : users : false\n");
+        sb.append("16 : when : false\n");
+        sb.append("17 : will : false\n");
+        sb.append("18 : you : false\n");
+        sb.append("19 : _pos_-RRB- : false\n");
+        sb.append("20 : _pos_. : false\n");
+        sb.append("21 : _pos_AUX : false\n");
+        sb.append("22 : _pos_DT : false\n");
+        sb.append("23 : _pos_IN : false\n");
+        sb.append("24 : _pos_JJS : false\n");
+        sb.append("25 : _pos_MD : false\n");
+        sb.append("26 : _pos_NN : false\n");
+        sb.append("27 : _pos_NNS : false\n");
+        sb.append("28 : _pos_PRP : false\n");
+        sb.append("29 : _pos_RB : false\n");
+        sb.append("30 : _pos_VB : false\n");
+        sb.append("31 : _pos_VBG : false\n");
+        sb.append("32 : _pos_VBN : false\n");
+        sb.append("33 : _pos_WRB : false\n");
+        sb.append("34 : _head : false\n");
+        sb.append("35 : _sib : false\n");
         stringSampleVocabulary = sb.toString();
 
         sampleVocabulary = LogLinearVocabulary.read(new StringReader(stringSampleVocabulary));

@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.io.BufferedReader;
@@ -10,9 +12,12 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
+import edu.ohsu.cslu.common.FeatureClass;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -26,14 +31,24 @@ import edu.ohsu.cslu.util.Strings;
 public class SimpleVocabulary implements AlignmentVocabulary, Serializable
 {
     protected final static int GAP_SYMBOL = 0;
-    protected final static String STRING_GAP_SYMBOL = "_-";
-    private final static int FIRST_SYMBOL = 1;
+    protected final static String STRING_GAP_SYMBOL = FeatureClass.Gap.toString();
+    protected final static int UNKNOWN_SYMBOL = 1;
+    protected final static String STRING_UNKNOWN_SYMBOL = FeatureClass.Unknown.toString();
+    private final static String[] STATIC_SYMBOLS = new String[] {STRING_GAP_SYMBOL, STRING_UNKNOWN_SYMBOL};
     private final Object2IntOpenHashMap<String> token2IndexMap;
     private final String[] tokens;
+    private final HashSet<String> rareTokens;
+    private final IntSet rareIndices = new IntOpenHashSet();
 
     protected SimpleVocabulary(String[] tokens)
     {
+        this(tokens, new HashSet<String>());
+    }
+
+    protected SimpleVocabulary(String[] tokens, HashSet<String> rareTokens)
+    {
         this.tokens = tokens;
+        this.rareTokens = rareTokens;
 
         this.token2IndexMap = new Object2IntOpenHashMap<String>();
         token2IndexMap.defaultReturnValue(Integer.MIN_VALUE);
@@ -41,6 +56,10 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
         for (int i = 0; i < tokens.length; i++)
         {
             token2IndexMap.put(tokens[i], i);
+            if (rareTokens.contains(tokens[i]))
+            {
+                rareIndices.add(i);
+            }
         }
     }
 
@@ -57,9 +76,27 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
         }
     }
 
+    public static SimpleVocabulary induce(final String s, final int rareTokenCutoff)
+    {
+        try
+        {
+            return induce(new BufferedReader(new StringReader(s)), rareTokenCutoff);
+        }
+        catch (IOException e)
+        {
+            // We shouldn't ever IOException in a StringReader
+            return null;
+        }
+    }
+
     public static SimpleVocabulary induce(final BufferedReader reader) throws IOException
     {
-        LinkedHashSet<String> tokenList = new LinkedHashSet<String>(128);
+        return induce(reader, 0);
+    }
+
+    public static SimpleVocabulary induce(final BufferedReader reader, int rareTokenCutoff) throws IOException
+    {
+        LinkedHashMap<String, Integer> tokenMap = new LinkedHashMap<String, Integer>(128);
 
         for (String s = reader.readLine(); s != null; s = reader.readLine())
         {
@@ -67,26 +104,39 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
 
             for (String token : tokens)
             {
-                if (token.length() > 0 && !tokenList.contains(token))
+                if (token.length() > 0)
                 {
-                    tokenList.add(token);
+                    Integer count = tokenMap.get(token);
+                    if (count == null)
+                    {
+                        tokenMap.put(token, 1);
+                    }
+                    else
+                    {
+                        tokenMap.put(token, count.intValue() + 1);
+                    }
                 }
             }
-
         }
 
-        String[] tokenArray = new String[FIRST_SYMBOL + tokenList.size()];
-        for (int i = 0; i < FIRST_SYMBOL; i++)
+        final HashSet<String> rareTokens = new HashSet<String>();
+
+        String[] tokenArray = new String[STATIC_SYMBOLS.length + tokenMap.size()];
+        int i;
+        for (i = 0; i < STATIC_SYMBOLS.length; i++)
         {
             tokenArray[i] = STRING_GAP_SYMBOL;
         }
-        int i = FIRST_SYMBOL;
-        for (String token : tokenList)
+        for (String token : tokenMap.keySet())
         {
             tokenArray[i++] = token;
+            if (tokenMap.get(token) <= rareTokenCutoff)
+            {
+                rareTokens.add(token);
+            }
         }
 
-        return new SimpleVocabulary(tokenArray);
+        return new SimpleVocabulary(tokenArray, rareTokens);
     }
 
     public static SimpleVocabulary[] induceVocabularies(final String s)
@@ -113,14 +163,14 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
         for (int i = 0; i < featureCount; i++)
         {
             featureLists[i] = new LinkedHashSet<String>(128);
-            for (int j = 0; j < FIRST_SYMBOL; j++)
+            for (int j = 0; j < STATIC_SYMBOLS.length; j++)
             {
-                featureLists[i].add(STRING_GAP_SYMBOL);
+                featureLists[i].add(STATIC_SYMBOLS[j]);
             }
         }
 
         int[] indices = new int[featureCount];
-        Arrays.fill(indices, FIRST_SYMBOL);
+        Arrays.fill(indices, STATIC_SYMBOLS.length);
 
         while (line != null)
         {
@@ -167,6 +217,12 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
     }
 
     @Override
+    public boolean isRareToken(int index)
+    {
+        return rareIndices.contains(index);
+    }
+
+    @Override
     public String[] map(int[] indices)
     {
         if (indices == null)
@@ -189,6 +245,12 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
     }
 
     @Override
+    public boolean isRareToken(String token)
+    {
+        return rareTokens.contains(token);
+    }
+
+    @Override
     public int[] map(String[] labels)
     {
         if (labels == null)
@@ -206,8 +268,14 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
 
     public static SimpleVocabulary read(final Reader reader) throws IOException
     {
+        return read(reader, 0);
+    }
+
+    public static SimpleVocabulary read(final Reader reader, final int rareTokenCutoff) throws IOException
+    {
         final BufferedReader br = new BufferedReader(reader);
-        Map<String, String> attributes = Strings.headerAttributes(br.readLine());
+        final Map<String, String> attributes = Strings.headerAttributes(br.readLine());
+        final HashSet<String> rareTokens = new HashSet<String>();
 
         int size = Integer.parseInt(attributes.get("size"));
         String[] tokens = new String[size];
@@ -219,9 +287,13 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
                 String[] split = line.split(" +: +");
                 int index = Integer.parseInt(split[0]);
                 tokens[index] = split[1];
+                if (split[2].equals("true"))
+                {
+                    rareTokens.add(split[1]);
+                }
             }
         }
-        return new SimpleVocabulary(tokens);
+        return new SimpleVocabulary(tokens, rareTokens);
     }
 
     protected void writeHeader(Writer writer) throws IOException
@@ -241,6 +313,8 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
             writer.write(Integer.toString(i));
             writer.write(" : ");
             writer.write(tokens[i]);
+            writer.write(" : ");
+            writer.write(rareIndices.contains(i) ? "true" : "false");
             writer.write('\n');
         }
     }
