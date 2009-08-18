@@ -28,28 +28,31 @@ public class TestInduceMappedVocabularies extends ToolTestCase
     public void testInduceVocabularies() throws Exception
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("vocabulary size=7\n");
-        sb.append("0 : _-\n");
-        sb.append("1 : DT\n");
-        sb.append("2 : NNS\n");
-        sb.append("3 : MD\n");
-        sb.append("4 : VB\n");
-        sb.append("5 : NN\n");
-        sb.append("6 : .\n");
+        sb.append("vocabulary size=8\n");
+        sb.append("0 : _- : false\n");
+        sb.append("1 : -unk- : false\n");
+        sb.append("2 : DT : false\n");
+        sb.append("3 : NNS : false\n");
+        sb.append("4 : MD : false\n");
+        sb.append("5 : VB : false\n");
+        sb.append("6 : NN : false\n");
+        sb.append("7 : . : false\n");
         sb.append("\n");
-        sb.append("vocabulary size=7\n");
-        sb.append("0 : _-\n");
-        sb.append("1 : The\n");
-        sb.append("2 : computers\n");
-        sb.append("3 : will\n");
-        sb.append("4 : display\n");
-        sb.append("5 : stock\n");
-        sb.append("6 : .\n");
+        sb.append("vocabulary size=8\n");
+        sb.append("0 : _- : false\n");
+        sb.append("1 : -unk- : false\n");
+        sb.append("2 : The : false\n");
+        sb.append("3 : computers : false\n");
+        sb.append("4 : will : false\n");
+        sb.append("5 : display : false\n");
+        sb.append("6 : stock : false\n");
+        sb.append("7 : . : false\n");
         sb.append("\n");
-        sb.append("vocabulary size=3\n");
-        sb.append("0 : _-\n");
-        sb.append("1 : _sib\n");
-        sb.append("2 : _head\n");
+        sb.append("vocabulary size=4\n");
+        sb.append("0 : _- : false\n");
+        sb.append("1 : -unk- : false\n");
+        sb.append("2 : _sib : false\n");
+        sb.append("3 : _head : false\n");
         sb.append("\n");
 
         String output = executeTool("",
@@ -62,21 +65,21 @@ public class TestInduceMappedVocabularies extends ToolTestCase
     {
         StringBuilder sb = new StringBuilder();
         sb.append("vocabulary size=15 categoryboundaries=13\n");
-        sb.append("0 : _-\n");
-        sb.append("1 : -unk-\n");
-        sb.append("2 : .\n");
-        sb.append("3 : DT\n");
-        sb.append("4 : MD\n");
-        sb.append("5 : NN\n");
-        sb.append("6 : NNS\n");
-        sb.append("7 : The\n");
-        sb.append("8 : VB\n");
-        sb.append("9 : computers\n");
-        sb.append("10 : display\n");
-        sb.append("11 : stock\n");
-        sb.append("12 : will\n");
-        sb.append("13 : _head\n");
-        sb.append("14 : _sib\n");
+        sb.append("0 : _- : false\n");
+        sb.append("1 : -unk- : false\n");
+        sb.append("2 : . : false\n");
+        sb.append("3 : DT : false\n");
+        sb.append("4 : MD : false\n");
+        sb.append("5 : NN : false\n");
+        sb.append("6 : NNS : false\n");
+        sb.append("7 : The : false\n");
+        sb.append("8 : VB : false\n");
+        sb.append("9 : computers : false\n");
+        sb.append("10 : display : false\n");
+        sb.append("11 : stock : false\n");
+        sb.append("12 : will : false\n");
+        sb.append("13 : _head : false\n");
+        sb.append("14 : _sib : false\n");
         sb.append("\n");
 
         String output = executeTool("-l",
