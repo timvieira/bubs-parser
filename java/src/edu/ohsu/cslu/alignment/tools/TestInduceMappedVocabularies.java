@@ -64,9 +64,9 @@ public class TestInduceMappedVocabularies extends ToolTestCase
     public void testInduceLogLinearVocabulary() throws Exception
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("vocabulary size=15 categoryboundaries=13\n");
-        sb.append("0 : _- : false\n");
-        sb.append("1 : -unk- : false\n");
+        sb.append("vocabulary size=15 categoryboundaries=14\n");
+        sb.append("0 : _- : true\n");
+        sb.append("1 : -unk- : true\n");
         sb.append("2 : . : false\n");
         sb.append("3 : DT : false\n");
         sb.append("4 : MD : false\n");

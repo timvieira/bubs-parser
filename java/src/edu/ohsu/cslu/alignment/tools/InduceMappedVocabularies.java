@@ -51,7 +51,7 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
         if (logLinear)
         {
             LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(new BufferedReader(new InputStreamReader(
-                System.in)));
+                System.in)), rareTokenCutoff);
             System.out.println(vocabulary.toString());
             return;
         }
@@ -60,7 +60,7 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
         SimpleVocabulary[] vocabularies = SimpleVocabulary.induceVocabularies(new BufferedReader(new InputStreamReader(
             System.in)));
 
-        if (tag > 0)
+        if (tag >= 0)
         {
             System.out.println(vocabularies[tag - 1].toString());
         }

@@ -1,6 +1,8 @@
 package edu.ohsu.cslu.alignment;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -42,7 +44,7 @@ public class TestLogLinearVocabulary
 
         sb = new StringBuilder(512);
         sb.append("vocabulary size=36 categoryboundaries=19,34\n");
-        sb.append("0 : - : false\n");
+        sb.append("0 : _- : false\n");
         sb.append("1 : -RRB- : false\n");
         sb.append("2 : . : false\n");
         sb.append("3 : At : false\n");
@@ -106,13 +108,11 @@ public class TestLogLinearVocabulary
     @Test
     public void testInduce() throws Exception
     {
-        LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(sampleInput);
+        LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(sampleInput, 1);
 
         assertEquals(37, vocabulary.size());
 
         assertEquals(0, vocabulary.map("_-"));
-        assertEquals(2, vocabulary.map("-RRB-"));
-        assertEquals("-RRB-", vocabulary.map(2));
 
         assertEquals(12, vocabulary.map("not"));
         assertEquals("not", vocabulary.map(12));
@@ -129,10 +129,13 @@ public class TestLogLinearVocabulary
         assertEquals(35, vocabulary.map("_head"));
         assertEquals("_head", vocabulary.map(35));
 
+        assertTrue(vocabulary.isRareToken("ascending"));
+        assertFalse(vocabulary.isRareToken("_pos_IN"));
+
         // This token should not be mapped, even though we skipped the space between two parentheses
         assertEquals(Integer.MIN_VALUE, vocabulary.map("_sib_pos_NNS"));
 
-        SharedNlpTests.assertEquals("Wrong category boundary", new int[] {20, 35}, vocabulary.categoryBoundaries());
+        SharedNlpTests.assertEquals("Wrong category boundary", new int[] {21, 36}, vocabulary.categoryBoundaries());
     }
 
     @Test

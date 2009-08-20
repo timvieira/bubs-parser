@@ -34,7 +34,7 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
     protected final static String STRING_GAP_SYMBOL = FeatureClass.Gap.toString();
     protected final static int UNKNOWN_SYMBOL = 1;
     protected final static String STRING_UNKNOWN_SYMBOL = FeatureClass.Unknown.toString();
-    private final static String[] STATIC_SYMBOLS = new String[] {STRING_GAP_SYMBOL, STRING_UNKNOWN_SYMBOL};
+    protected final static String[] STATIC_SYMBOLS = new String[] {STRING_GAP_SYMBOL, STRING_UNKNOWN_SYMBOL};
     private final Object2IntOpenHashMap<String> token2IndexMap;
     private final String[] tokens;
     private final HashSet<String> rareTokens;
@@ -125,7 +125,7 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
         int i;
         for (i = 0; i < STATIC_SYMBOLS.length; i++)
         {
-            tokenArray[i] = STRING_GAP_SYMBOL;
+            tokenArray[i] = STATIC_SYMBOLS[i];
         }
         for (String token : tokenMap.keySet())
         {
@@ -267,11 +267,6 @@ public class SimpleVocabulary implements AlignmentVocabulary, Serializable
     }
 
     public static SimpleVocabulary read(final Reader reader) throws IOException
-    {
-        return read(reader, 0);
-    }
-
-    public static SimpleVocabulary read(final Reader reader, final int rareTokenCutoff) throws IOException
     {
         final BufferedReader br = new BufferedReader(reader);
         final Map<String, String> attributes = Strings.headerAttributes(br.readLine());
