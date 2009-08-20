@@ -38,6 +38,7 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
 {
     private int tag = -1;
     private boolean logLinear;
+    private int rareTokenCutoff;
 
     public static void main(String[] args)
     {
@@ -59,9 +60,9 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
         SimpleVocabulary[] vocabularies = SimpleVocabulary.induceVocabularies(new BufferedReader(new InputStreamReader(
             System.in)));
 
-        if (tag >= 0)
+        if (tag > 0)
         {
-            System.out.println(vocabularies[tag].toString());
+            System.out.println(vocabularies[tag - 1].toString());
         }
         else
         {
@@ -82,6 +83,8 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
             't'));
         options.addOption(OptionBuilder.withDescription("Log-Linear - create a single vocabulary mapping all tokens")
             .create('l'));
+        options.addOption(OptionBuilder.hasArg().withArgName("cutoff").withDescription("Rare token cutoff (default 0)")
+            .create("rtc"));
 
         return options;
     }
@@ -89,8 +92,9 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
     @Override
     public void setToolOptions(CommandLine commandLine)
     {
-        tag = commandLine.hasOption('t') ? Integer.parseInt(commandLine.getOptionValue('t')) - 1 : -1;
+        tag = Integer.parseInt(commandLine.getOptionValue('t', "-1"));
         logLinear = commandLine.hasOption('l');
+        rareTokenCutoff = Integer.parseInt(commandLine.getOptionValue("rtc", "0"));
     }
 
     @Override

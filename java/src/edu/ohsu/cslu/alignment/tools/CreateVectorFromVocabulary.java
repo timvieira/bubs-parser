@@ -164,7 +164,7 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
         options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Subsequent POS features")
             .create(LinguisticToolOptions.OPTION_SUBSEQUENT_POS));
         options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Capitalized word").create(
-            LinguisticToolOptions.OPTION_CAP));
+            LinguisticToolOptions.OPTION_CAPITALIZED));
         options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Word is all caps").create(
             LinguisticToolOptions.OPTION_ALL_CAPS));
 
@@ -186,7 +186,7 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
             "-1"));
         previousPos = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_PREVIOUS_POS, "-1"));
         subsequentPos = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_SUBSEQUENT_POS, "-1"));
-        capitalized = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_CAP, "-1"));
+        capitalized = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_CAPITALIZED, "-1"));
         allCaps = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_ALL_CAPS, "-1"));
     }
 
