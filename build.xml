@@ -246,8 +246,9 @@
        Package all NLP applications
     ========================================================================
     -->
+    <!-- TODO: Re-add compile-native -->
 	<target name="dist"
-	        depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,create-vector,compile-native"
+	        depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,create-vector"
 	        description="Package all NLP application">
 	</target>
 

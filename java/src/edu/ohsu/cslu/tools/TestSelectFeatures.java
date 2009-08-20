@@ -1,8 +1,5 @@
 package edu.ohsu.cslu.tools;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
-
 import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
@@ -14,6 +11,9 @@ import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.common.tools.LinewiseCommandlineTool;
 import edu.ohsu.cslu.common.tools.ToolTestCase;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 
 /**
  * Unit tests for {@link SelectFeatures}. Also a bit of a playground to try out new JUnit features.
@@ -27,7 +27,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
 public class TestSelectFeatures extends ToolTestCase
 {
     @DataPoint
-    public final static String BAD_ARGS_1 = "-i bracketed -w";
+    public final static String BAD_ARGS_1 = "-i bracketed -wi 2 -f 1,2";
     @DataPoint
     public final static String BAD_ARGS_2 = "-i bracketed -p";
     @DataPoint
@@ -56,6 +56,7 @@ public class TestSelectFeatures extends ToolTestCase
     public void testBracketedInput() throws Exception
     {
         final String oneLineInput = "(<s> <s> before_head) (Ms. NNP before_head) (Haag NNP before_head) (plays VBZ head_verb) (Elianti NNP after_head) (. . after_head) (</s> </s> after_head)";
+        final String hyphenatedInput = "(PRP They) (AUX are) (JJ 10-lap) (NN MCS) (. .)";
 
         // Select only a single feature
         assertEquals("(<s>) (Ms.) (Haag) (plays) (Elianti) (.) (</s>)\n",
@@ -73,6 +74,10 @@ public class TestSelectFeatures extends ToolTestCase
         assertEquals(
             "<s>/before_head Ms./before_head Haag/before_head plays/head_verb Elianti/after_head ./after_head </s>/after_head\n",
             executeTool("-i bracketed -f 1,3 -o stanford", oneLineInput));
+
+        // Test _hyphenated, _capitalized, and _all_caps)
+        assertEquals("(they _capitalized) (are) (10-lap _hyphenated) (mcs _capitalized _all_caps) (.)\n", executeTool(
+            "-i bracketed -wi 2 -lcw -hyphen -cap -allcaps", hyphenatedInput));
 
         // Reverse input order
         assertEquals("(<s> <s>) (NNP Ms.) (NNP Haag) (VBZ plays) (NNP Elianti) (. .) (</s> </s>)\n", executeTool(
@@ -116,16 +121,21 @@ public class TestSelectFeatures extends ToolTestCase
             + " (ADJP (JJ constructive)))) (, ,) (CC but) (FRAG (ADVP (RB often)) (RB not)) (. .)))\n"
             + "(TOP (S (NP (DT The) (NNP Ontario) (NNP Supreme) (NNP Court)) (VP (VBD overturned)"
             + " (NP (NP (NNP Mr.) (NNP Blair) (POS 's)) (NN decision))) (. .)))";
+        final String hyphenatedInput = "(TOP (S (NP (PRP They)) (VP (AUX are) (NP (JJ 10-lap) (NN MCS))) (. .)))\n";
 
-        // Test capitalization and head_verb (but not before_head or after_head)
+        // Test _head_verb (but not before_head or after_head)
         assertEquals("(Sometimes) (they) (are _head_verb) (constructive)" + " (,) (but) (often) (not) (.)\n",
-            executeTool("-i bracketed-tree -w -h -cap", oneLineInput));
+            executeTool("-i bracketed-tree -w -h", oneLineInput));
+
+        // Test _hypehnated, capitalized, and _all_caps)
+        assertEquals("(they _capitalized) (are) (10-lap _hyphenated) (mcs _capitalized _all_caps) (.)\n", executeTool(
+            "-i bracketed-tree -lcw -hyphen -cap -allcaps", hyphenatedInput));
 
         // Test extracting word, pos, head from a bracketed tree
         assertEquals(
             "(sometimes _pos_RB _before_head) (they _pos_PRP _before_head) (are _pos_AUX _head_verb) (constructive _pos_JJ _after_head)"
                 + " (, _pos_, _after_head) (but _pos_CC _after_head) (often _pos_RB _after_head) (not _pos_RB _after_head) (. _pos_. _after_head)\n",
-            executeTool("-i bracketed-tree -w -p -h -bh -ah", oneLineInput));
+            executeTool("-i bracketed-tree -lcw -p -h -bh -ah", oneLineInput));
 
         // Test extracting previous 2 words, subsequent 1 word
         assertEquals(
@@ -133,7 +143,7 @@ public class TestSelectFeatures extends ToolTestCase
                 + " (constructive _word-1_are _word-2_they _word+1_,) (, _word-1_constructive _word-2_are _word+1_but)"
                 + " (but _word-1_, _word-2_constructive _word+1_often) (often _word-1_but _word-2_, _word+1_not)"
                 + " (not _word-1_often _word-2_but _word+1_.) (. _word-1_not _word-2_often)\n", executeTool(
-                "-i bracketed-tree -w -prevword 2 -subword 1", oneLineInput));
+                "-lcw -i bracketed-tree -prevword 2 -subword 1", oneLineInput));
 
         // Test extracting previous word, previous and subsequent POS
         assertEquals(
@@ -141,7 +151,7 @@ public class TestSelectFeatures extends ToolTestCase
                 + " (constructive _word-1_are _pos-1_AUX _pos+1_,) (, _word-1_constructive _pos-1_JJ _pos+1_CC)"
                 + " (but _word-1_, _pos-1_, _pos+1_RB) (often _word-1_but _pos-1_CC _pos+1_RB)"
                 + " (not _word-1_often _pos-1_RB _pos+1_.) (. _word-1_not _pos-1_RB)\n", executeTool(
-                "-i bracketed-tree -w -prevword 1 -prevpos 1 -subpos 1", oneLineInput));
+                "-lcw -i bracketed-tree -prevword 1 -prevpos 1 -subpos 1", oneLineInput));
 
         // Select only the head features
         assertEquals(
@@ -155,7 +165,7 @@ public class TestSelectFeatures extends ToolTestCase
         assertEquals(
             "(sometimes _pos_RB _before_head) (they _pos_PRP _before_head) (are _pos_AUX _head_verb) (constructive _pos_JJ _after_head)"
                 + " (, _pos_, _after_head) (but _pos_CC _after_head) (often _pos_RB _after_head) (not _pos_RB _after_head) (. _pos_. _after_head)\n",
-            executeTool("-i square-bracketed-tree -w -p -h -bh -ah", oneLineInput.replaceAll("\\(", "[").replaceAll(
+            executeTool("-i square-bracketed-tree -lcw -p -h -bh -ah", oneLineInput.replaceAll("\\(", "[").replaceAll(
                 "\\)", "]")));
 
         // Extract only word and head-verb feature from two lines, outputting a square-bracketed
@@ -165,12 +175,12 @@ public class TestSelectFeatures extends ToolTestCase
                 + " [but _after_head] [often _after_head] [not _after_head] [. _after_head]\n"
                 + "[the _before_head] [ontario _before_head] [supreme _before_head] [court _before_head] [overturned _head_verb]"
                 + " [mr. _after_head] [blair _after_head] ['s _after_head] [decision _after_head] [. _after_head]\n",
-            executeTool("-i tree -w -h -bh -ah -o square-bracketed", twoLineInput));
+            executeTool("-i tree -lcw -h -bh -ah -o square-bracketed", twoLineInput));
 
         // And just the word and plain POS, outputting in Stanford format
         assertEquals("sometimes/RB they/PRP are/AUX constructive/JJ ,/, but/CC often/RB not/RB ./.\n"
             + "the/DT ontario/NNP supreme/NNP court/NNP overturned/VBD mr./NNP blair/NNP 's/POS decision/NN ./.\n",
-            executeTool("-i tree -w -ppos -o stanford", twoLineInput));
+            executeTool("-i tree -lcw -ppos -o stanford", twoLineInput));
     }
 
     /**
@@ -185,7 +195,7 @@ public class TestSelectFeatures extends ToolTestCase
     {
         String input = new String(SharedNlpTests.readUnitTestData("tools/select-features.input"));
         String expectedOutput = new String(SharedNlpTests.readUnitTestData("tools/select-features.output"));
-        String output = executeTool("-i tree -w -p -h -bh -ah -xt 2 -cap", input);
+        String output = executeTool("-i tree -w -p -h -bh -ah -xt 2", input);
         assertEquals(expectedOutput, output);
     }
 
