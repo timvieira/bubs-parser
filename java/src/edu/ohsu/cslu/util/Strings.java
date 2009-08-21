@@ -240,6 +240,8 @@ public class Strings
     }
 
     /**
+     * Permutes a space-delimited string
+     * 
      * @param s a space-delimited string
      * @return All possible permutations of the tokens in the supplied string
      */
@@ -250,6 +252,32 @@ public class Strings
         return permutations;
     }
 
+    /**
+     * Permutes a bracketed feature list
+     * 
+     * @param s a bracketed feature list (e.g., "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
+     * @return All possible permutations of the features in the supplied string
+     */
+    public static Set<String> permuteFeatures(String s)
+    {
+        TreeSet<String> permutations = new TreeSet<String>();
+        String[] split = s.split("\\) *");
+        for (int i = 0; i < split.length; i++)
+        {
+            split[i] = split[i] + ")";
+        }
+        recursivePermute(permutations, "", split);
+        return permutations;
+    }
+
+    /**
+     * Permutes the supplied string array
+     * 
+     * @param permutations
+     * @param prefix
+     * @param suffix
+     * @return All permutations of the specified suffix
+     */
     private static Set<String> recursivePermute(Set<String> permutations, String prefix, String[] suffix)
     {
         String newPrefix = prefix.length() == 0 ? "" : prefix + " ";
@@ -276,6 +304,7 @@ public class Strings
     /**
      * Splits the string by whitespace into tokens, and returns all 2-token combinations
      * 
+     * @param s Whitespace-delimited string
      * @return Pairs of tokens
      */
     public static Set<String> tokenPairs(String s)
@@ -293,6 +322,33 @@ public class Strings
             for (int j = i + 1; j < tokens.length; j++)
             {
                 pairs.add(tokens[i] + " " + tokens[j]);
+            }
+        }
+        return pairs;
+    }
+
+    /**
+     * Splits the string by bracketed features, and returns all 2-bracket combinations.
+     * 
+     * @param s Bracketed representation of a sequence. (e.g.,
+     *            "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
+     * @return Pairs of bracketings
+     */
+    public static Set<String> featurePairs(String s)
+    {
+        TreeSet<String> pairs = new TreeSet<String>();
+        String[] elements = s.split("\\) *");
+        if (elements.length == 1)
+        {
+            pairs.add(s);
+            return pairs;
+        }
+
+        for (int i = 0; i < elements.length - 1; i++)
+        {
+            for (int j = i + 1; j < elements.length; j++)
+            {
+                pairs.add(elements[i] + ") " + elements[j] + ")");
             }
         }
         return pairs;

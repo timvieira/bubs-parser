@@ -13,12 +13,14 @@ public class LinguisticToolOptions
 {
     public final static String OPTION_WORD = "w";
     public final static String OPTION_LOWERCASE_WORD = "lcw";
+    public final static String OPTION_STEM = "stem";
     public final static String OPTION_POS = "p";
     public final static String OPTION_PLAIN_POS = "ppos";
 
     public final static String OPTION_CAPITALIZED = "cap";
     public final static String OPTION_ALL_CAPS = "allcaps";
     public final static String OPTION_HYPHENATED = "hyphen";
+    public final static String OPTION_LENGTH = "length";
 
     public final static String OPTION_HEAD_VERB = "h";
     public final static String OPTION_BEFORE_HEAD = "bh";
