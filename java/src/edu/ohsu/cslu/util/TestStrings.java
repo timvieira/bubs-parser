@@ -1,5 +1,8 @@
 package edu.ohsu.cslu.util;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
@@ -10,9 +13,6 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 
 @RunWith(FilteredRunner.class)
 public class TestStrings
@@ -125,5 +125,35 @@ public class TestStrings
         assertTrue(pairs.contains("is a"));
         assertTrue(pairs.contains("is test"));
         assertTrue(pairs.contains("a test"));
+    }
+
+    @Test
+    public void testFeaturePairs() throws Exception
+    {
+        // Single-element string
+        assertEquals(new TreeSet<String>(Arrays.asList(new String[] {"(foo)"})), Strings.featurePairs("(foo)"));
+
+        // Two-element string
+        assertEquals(new TreeSet<String>(Arrays.asList(new String[] {"(foo) (bar)"})), Strings
+            .featurePairs("(foo) (bar)"));
+
+        Set<String> pairs = Strings.featurePairs("(This _capitalized) (is) (a) (test)");
+        assertEquals(6, pairs.size());
+        assertTrue(pairs.contains("(This _capitalized) (is)"));
+        assertTrue(pairs.contains("(This _capitalized) (a)"));
+        assertTrue(pairs.contains("(This _capitalized) (test)"));
+        assertTrue(pairs.contains("(is) (a)"));
+        assertTrue(pairs.contains("(is) (test)"));
+        assertTrue(pairs.contains("(a) (test)"));
+    }
+
+    @Test
+    public void testPermuteFeatures() throws Exception
+    {
+        Set<String> permutations = Strings.permuteFeatures("(Entire _capitalized) (day) (para-sailing _hyphenated)");
+        assertEquals(6, permutations.size());
+        assertTrue(permutations.contains("(day) (para-sailing _hyphenated) (Entire _capitalized)"));
+        assertTrue(permutations.contains("(para-sailing _hyphenated) (day) (Entire _capitalized)"));
+        assertTrue(permutations.contains("(para-sailing _hyphenated) (day) (Entire _capitalized)"));
     }
 }

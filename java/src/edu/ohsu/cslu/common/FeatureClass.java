@@ -92,6 +92,7 @@ public enum FeatureClass implements Comparable<FeatureClass>
         knownLabels.put(FEATURE_BEGIN_SENTENCE, BeginSentence);
         knownLabels.put(FEATURE_CAPITALIZED, Capitalized);
         knownLabels.put(FEATURE_ALL_CAPS, AllCaps);
+        knownLabels.put(FEATURE_HYPHENATED, Hyphenated);
         knownLabels.put(FEATURE_LENGTH_1, Length1);
         knownLabels.put(FEATURE_LENGTH_2_TO_5, Length2to5);
         knownLabels.put(FEATURE_LENGTH_6_TO_10, Length6to10);

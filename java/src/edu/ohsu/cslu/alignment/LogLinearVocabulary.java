@@ -282,6 +282,12 @@ public class LogLinearVocabulary extends SimpleVocabulary
     protected void writeHeader(Writer writer) throws IOException
     {
         writer.write(String.format("vocabulary size=%d categoryboundaries=", size()));
+        if (categoryBoundaries.length == 0)
+        {
+            writer.write(String.format("%d\n", size()));
+            return;
+        }
+
         for (int i = 0; i < categoryBoundaries.length; i++)
         {
             writer.write(Integer.toString(categoryBoundaries[i]));

@@ -29,6 +29,8 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
     private float subsequentPos;
     private float capitalized;
     private float allCaps;
+    private float hyphenated;
+    private float length;
 
     public static void main(String[] args)
     {
@@ -109,6 +111,17 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
                     setVectorValue(vector, i, allCaps, mapping);
                     break;
 
+                case Hyphenated :
+                    setVectorValue(vector, i, hyphenated, mapping);
+                    break;
+
+                case Length1 :
+                case Length2to5 :
+                case Length6to10 :
+                case LengthGreaterThan10 :
+                    setVectorValue(vector, i, length, mapping);
+                    break;
+
                 default :
                     throw new IllegalArgumentException("Unknown feature class: " + mapping);
             }
@@ -165,8 +178,12 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
             .create(LinguisticToolOptions.OPTION_SUBSEQUENT_POS));
         options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Capitalized word").create(
             LinguisticToolOptions.OPTION_CAPITALIZED));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Word is all caps").create(
+        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("All-cap word").create(
             LinguisticToolOptions.OPTION_ALL_CAPS));
+        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Hyphenated word").create(
+            LinguisticToolOptions.OPTION_HYPHENATED));
+        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Word Length").create(
+            LinguisticToolOptions.OPTION_LENGTH));
 
         return options;
     }
@@ -188,6 +205,8 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
         subsequentPos = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_SUBSEQUENT_POS, "-1"));
         capitalized = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_CAPITALIZED, "-1"));
         allCaps = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_ALL_CAPS, "-1"));
+        hyphenated = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_HYPHENATED, "-1"));
+        length = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_LENGTH, "-1"));
     }
 
     @Override
