@@ -23,7 +23,8 @@ import java.util.Arrays;
  */
 public class SparseBitVector extends BaseVector implements BitVector
 {
-    private final int[] elements;
+    // Allow direct access to other classes in the same package
+    final int[] elements;
 
     public SparseBitVector()
     {

@@ -35,7 +35,7 @@ public class SequenceAlignment
     }
 
     /**
-     * @return The newly-aligned sequence.
+     * @return The newly-aligned sequence (including any gaps inserted in the alignment process).
      */
     public final MappedSequence alignedSequence()
     {
@@ -43,10 +43,10 @@ public class SequenceAlignment
     }
 
     /**
-     * @return Any gaps which must be inserted in the already-aligned sequence(s) as a result of
-     *         this new alignment.
+     * @return Any columns or gaps which must be inserted in the already-aligned sequence(s) as a
+     *         result of this new alignment.
      */
-    public final int[] gapIndices()
+    public final int[] insertedColumnIndices()
     {
         return gapIndices;
     }

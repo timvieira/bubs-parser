@@ -91,23 +91,23 @@ public class TestPairwiseAligners
         SequenceAlignment alignment = aligner.alignPair(DNA_VOCABULARY.mapSequence("ACTGA"), DNA_VOCABULARY
             .mapSequence("CTGACT"), identityMatrixModel);
         assertEquals("ACTGA--", DNA_VOCABULARY.mapSequence(alignment.alignedSequence()));
-        assertEquals(1, alignment.gapIndices().length);
-        assertEquals(0, alignment.gapIndices()[0]);
+        assertEquals(1, alignment.insertedColumnIndices().length);
+        assertEquals(0, alignment.insertedColumnIndices()[0]);
 
         alignment = aligner.alignPair(DNA_VOCABULARY.mapSequence("CTGACT"), DNA_VOCABULARY.mapSequence("AACTGAC"),
             identityMatrixModel);
         assertEquals("--CTGACT", DNA_VOCABULARY.mapSequence(alignment.alignedSequence()));
-        assertEquals(1, alignment.gapIndices().length);
-        assertEquals(7, alignment.gapIndices()[0]);
+        assertEquals(1, alignment.insertedColumnIndices().length);
+        assertEquals(7, alignment.insertedColumnIndices()[0]);
 
         alignment = aligner.alignPair(DNA_VOCABULARY.mapSequence("CTGGACT"), DNA_VOCABULARY.mapSequence("ACTGAC"),
             identityMatrixModel);
         assertEquals("-CTGGACT", DNA_VOCABULARY.mapSequence(alignment.alignedSequence()));
-        assertEquals(2, alignment.gapIndices().length);
-        assertEquals(3, alignment.gapIndices()[0]);
-        assertEquals(6, alignment.gapIndices()[1]);
+        assertEquals(2, alignment.insertedColumnIndices().length);
+        assertEquals(3, alignment.insertedColumnIndices()[0]);
+        assertEquals(6, alignment.insertedColumnIndices()[1]);
         assertEquals(" A | C | T | - | G | A | C | - |", DNA_VOCABULARY.mapSequence("ACTGAC").insertGaps(
-            alignment.gapIndices()).toString());
+            alignment.insertedColumnIndices()).toString());
 
         // Now test using SixCharacterAlignmentModel, which penalizes gap insertion in sequences
         // longer than 6 elements

@@ -18,6 +18,7 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
 
     private float gap;
     private float word;
+    private float stem;
     private float pos;
     private float notFirstVerb;
     private float headVerb;
@@ -55,6 +56,10 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
                 case Word :
                 case Unknown :
                     setVectorValue(vector, i, word, mapping);
+                    break;
+
+                case Stem :
+                    setVectorValue(vector, i, stem, mapping);
                     break;
 
                 case Pos :
@@ -157,6 +162,8 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
             LinguisticToolOptions.OPTION_GAP));
         options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Word feature").create(
             LinguisticToolOptions.OPTION_WORD));
+        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Stem feature").create(
+            LinguisticToolOptions.OPTION_STEM));
         options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("POS feature (_pos_...)").create(
             LinguisticToolOptions.OPTION_POS));
         options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("_first_verb feature").create(
@@ -193,6 +200,7 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
     {
         gap = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_GAP, "-1"));
         word = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_WORD, "-1"));
+        stem = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_STEM, "-1"));
         pos = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_POS, "-1"));
         notFirstVerb = Float.parseFloat(commandLine.getOptionValue(OPTION_NOT_FIRST_VERB, "-1"));
         headVerb = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_HEAD_VERB, "-1"));

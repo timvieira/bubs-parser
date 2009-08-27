@@ -30,10 +30,10 @@ import edu.ohsu.cslu.util.Strings;
  */
 public class SimpleVocabulary implements AlignmentVocabulary, Serializable
 {
-    protected final static int GAP_SYMBOL = 0;
-    protected final static String STRING_GAP_SYMBOL = FeatureClass.Gap.toString();
-    protected final static int UNKNOWN_SYMBOL = 1;
-    protected final static String STRING_UNKNOWN_SYMBOL = FeatureClass.Unknown.toString();
+    public final static int GAP_SYMBOL = 0;
+    public final static String STRING_GAP_SYMBOL = FeatureClass.Gap.toString();
+    public final static int UNKNOWN_SYMBOL = 1;
+    public final static String STRING_UNKNOWN_SYMBOL = FeatureClass.Unknown.toString();
     protected final static String[] STATIC_SYMBOLS = new String[] {STRING_GAP_SYMBOL, STRING_UNKNOWN_SYMBOL};
     private final Object2IntOpenHashMap<String> token2IndexMap;
     private final String[] tokens;

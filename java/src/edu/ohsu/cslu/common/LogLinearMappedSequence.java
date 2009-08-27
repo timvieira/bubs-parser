@@ -1,11 +1,14 @@
 package edu.ohsu.cslu.common;
 
+import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
 import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.util.Arrays;
 
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
+import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
@@ -72,6 +75,21 @@ public class LogLinearMappedSequence implements MappedSequence
             }
             elements[j] = new SparseBitVector(features);
         }
+
+//        for (int j = 0; j < split.length; j++)
+//        {
+//            final IntSet featureSet = new IntAVLTreeSet();
+//            for (int i = 0; i < split[j].length; i++)
+//            {
+//                final String token = split[j][i];
+//                if (vocabulary.isRareToken(token))
+//                {
+//                    featureSet.add(SimpleVocabulary.UNKNOWN_SYMBOL);
+//                }
+//                featureSet.add(vocabulary.map(token));
+//            }
+//            elements[j] = new SparseBitVector(featureSet.toIntArray());
+//        }
         this.vocabulary = vocabulary;
     }
 

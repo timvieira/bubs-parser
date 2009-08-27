@@ -68,10 +68,10 @@ public class TestPairwiseLinguisticAlignment
         sb.append("  JJS | AUX |      VBN | TO |   VB |    IN |             JJ |    NNS | . |\n");
         sb.append(" Most | are | expected | to | fall | below | previous-month | levels | . |\n");
         assertEquals(sb.toString(), alignment.toString());
-        SharedNlpTests.assertEquals(new int[] {2}, alignment.gapIndices());
+        SharedNlpTests.assertEquals(new int[] {2}, alignment.insertedColumnIndices());
 
         MultipleSequenceAlignment sequenceAlignment = new MultipleSequenceAlignment(
-            new MappedSequence[] {alignment.alignedSequence(), sequence1.insertGaps(alignment.gapIndices())});
+            new MappedSequence[] {alignment.alignedSequence(), sequence1.insertGaps(alignment.insertedColumnIndices())});
         sb = new StringBuilder(512);
 
         sb.append("      JJS | AUX |      VBN | TO |    VB |    IN |             JJ |    NNS | . |\n");

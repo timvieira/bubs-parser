@@ -3,7 +3,7 @@ package edu.ohsu.cslu.alignment.multiple;
 import edu.ohsu.cslu.alignment.AlignmentModel;
 import edu.ohsu.cslu.alignment.column.ColumnAlignmentModel;
 import edu.ohsu.cslu.alignment.column.ColumnSequenceAligner;
-import edu.ohsu.cslu.alignment.column.FullColumnAligner;
+import edu.ohsu.cslu.alignment.column.LinearColumnAligner;
 import edu.ohsu.cslu.alignment.pairwise.SequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.Sequence;
@@ -23,7 +23,7 @@ import edu.ohsu.cslu.datastructs.vectors.NumericVector;
  */
 public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequenceAligner
 {
-    private final ColumnSequenceAligner pssmAligner = new FullColumnAligner();
+    private final ColumnSequenceAligner pssmAligner = new LinearColumnAligner();
     private final NumericVector laplacePseudoCounts;
     private final NumericVector columnInsertionCostVector;
 
@@ -147,7 +147,7 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
 
             // Update already aligned sequences to include gaps where needed. For the moment,
             // we'll skip re-computing distance metrics...
-            alignedSequences.insertGaps(alignment.gapIndices());
+            alignedSequences.insertGaps(alignment.insertedColumnIndices());
 
             alignedSequences.addSequence(alignment.alignedSequence(), unalignedIndex);
             unalignedSequences[unalignedIndex] = null;
@@ -187,7 +187,7 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
             // we'll skip re-computing distance metrics...
             if (alignment.alignedSequence().length() != columnAlignmentModel.columnCount())
             {
-                alignedSequences.insertGaps(alignment.gapIndices());
+                alignedSequences.insertGaps(alignment.insertedColumnIndices());
                 cachedColumnInsertionCostVector = columnInsertionCostVector.scalarMultiply(alignedSequences.length());
             }
 

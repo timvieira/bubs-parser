@@ -1,8 +1,5 @@
 package edu.ohsu.cslu.util;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
@@ -13,6 +10,10 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.tests.FilteredRunner;
+import edu.ohsu.cslu.tests.PerformanceTest;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 @RunWith(FilteredRunner.class)
 public class TestStrings
@@ -155,5 +156,12 @@ public class TestStrings
         assertTrue(permutations.contains("(day) (para-sailing _hyphenated) (Entire _capitalized)"));
         assertTrue(permutations.contains("(para-sailing _hyphenated) (day) (Entire _capitalized)"));
         assertTrue(permutations.contains("(para-sailing _hyphenated) (day) (Entire _capitalized)"));
+    }
+
+    @Test
+    @PerformanceTest( {"d820", "1047"})
+    public void profilePermuteFeatures() throws Exception
+    {
+        Strings.permuteFeatures("(%) (rate) (capped) (one-year) (adjustable) (rate) (mortgages)");
     }
 }
