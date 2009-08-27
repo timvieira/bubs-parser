@@ -3,6 +3,7 @@ package edu.ohsu.cslu.datastructs.vectors;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.Random;
 
 /**
  * A {@link Vector} implementation which stores 32-bit floats. For most NLP tasks requiring
@@ -26,11 +27,35 @@ public class FloatVector extends BaseNumericVector
         this.vector = new float[length];
     }
 
-    public FloatVector(final int length, float defaultValue)
+    /**
+     * Initializes all elements to a default value.
+     * 
+     * @param length The size of the vector
+     * @param defaultValue The value assigned to all elements
+     */
+    public FloatVector(final int length, final float defaultValue)
     {
         super(length);
         this.vector = new float[length];
         Arrays.fill(vector, defaultValue);
+    }
+
+    /**
+     * Initializes all elements to random values between minValue and maxValue
+     * 
+     * @param length The size of the vector
+     * @param minValue The lowest value in the initialization range (inclusive)
+     * @param maxValue The highest value in the initialization range (exclusive)
+     */
+    public FloatVector(final int length, final float minValue, final float maxValue)
+    {
+        super(length);
+        this.vector = new float[length];
+        final Random r = new Random();
+        for (int i = 0; i < length; i++)
+        {
+            vector[i] = minValue + r.nextFloat() * (maxValue - minValue);
+        }
     }
 
     public FloatVector(final float[] vector)
@@ -120,6 +145,8 @@ public class FloatVector extends BaseNumericVector
         {
             throw new IllegalArgumentException("Vector length mismatch");
         }
+
+        // TODO: This could be more efficient for SparseBitVectors
 
         for (int i = 0; i < length; i++)
         {
@@ -263,7 +290,8 @@ public class FloatVector extends BaseNumericVector
     }
 
     /**
-     * Performs the standard learning algorithm on the weight vector (w) of a perceptron.
+     * Performs the standard learning algorithm on the weight vector (w) of a perceptron. TODO
+     * Untested
      * 
      * @param x Input vector
      * @param y Expected output
@@ -278,7 +306,26 @@ public class FloatVector extends BaseNumericVector
         {
             vector[j] = vector[j] + alpha * (y - f) * x.getFloat(j);
         }
-        // TODO: Separate training for SparseBitVector, since it can be more efficient
+        // TODO Separate training for SparseBitVector, since it can be more efficient
+    }
+
+    /**
+     * Performs the standard learning algorithm on the weight vector (w) of a perceptron.
+     * 
+     * TODO More generic version for classes other than SparseBitVector
+     * 
+     * @param example Input vector
+     * @param alpha Learning Rate (positive for positive examples, negative for negative examples)
+     */
+    public void perceptronUpdate(final SparseBitVector example, final float alpha)
+    {
+        // For each element j in example:
+        // w(j) = w(j) + alpha
+        final int[] elements = example.elements;
+        for (int j = 0; j < elements.length; j++)
+        {
+            vector[elements[j]] = vector[elements[j]] - alpha;
+        }
     }
 
     @Override

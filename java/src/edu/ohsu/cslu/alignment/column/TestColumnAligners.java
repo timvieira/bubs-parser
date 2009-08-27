@@ -237,7 +237,7 @@ public class TestColumnAligners
         SequenceAlignment alignment = aligner.align(unalignedSequence, linguisticModel);
         assertEquals("(_-) (Most _pos_JJS) (_-) (will _pos_AUX) (fall _pos_VB _head_verb) (below _pos_IN)"
             + " (previous-month _pos_JJ) (levels _pos_NNS) (. _pos_.)", alignment.alignedSequence().toBracketedString());
-        msa.insertGaps(alignment.gapIndices());
+        msa.insertGaps(alignment.insertedColumnIndices());
         msa.addSequence(alignment.alignedSequence());
 
         unalignedSequence = new LogLinearMappedSequence(logLinearSentence4, linguisticVocabulary);
@@ -245,7 +245,7 @@ public class TestColumnAligners
         assertEquals("(mr. _pos_NNP) (rosen _pos_NNP) (and _pos_CC) (mr. _pos_NNP) (smith _pos_NNP)"
             + " (are _pos_AUX) (also _pos_RB) (pushing _pos_VBG _head_verb) (_-) (retail _pos_JJ)"
             + " (sales _pos_NNS) (. _pos_.)", alignment.alignedSequence().toBracketedString());
-        msa.insertGaps(alignment.gapIndices());
+        msa.insertGaps(alignment.insertedColumnIndices());
         msa.addSequence(alignment.alignedSequence());
     }
 
@@ -479,6 +479,6 @@ public class TestColumnAligners
         sequenceAlignment = align(aligner, "AACCG", variableColumnModel);
         assertEquals("Wrong Column-insertion alignment", "AACCG-",
             ((CharVocabulary) variableColumnModel.vocabularies()[0]).mapSequence(sequenceAlignment.alignedSequence()));
-        SharedNlpTests.assertEquals(new int[] {2}, sequenceAlignment.gapIndices());
+        SharedNlpTests.assertEquals(new int[] {2}, sequenceAlignment.insertedColumnIndices());
     }
 }

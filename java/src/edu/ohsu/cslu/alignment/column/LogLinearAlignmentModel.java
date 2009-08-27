@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import edu.ohsu.cslu.alignment.CharVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
+import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
@@ -38,14 +39,15 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
         this.columnInsertionCostVector = columnInsertionCostVector;
     }
 
-    public LogLinearAlignmentModel(java.io.Reader trainingData, CharVocabulary vocabulary, boolean ignoreLabelLines,
-        NumericVector columnInsertionCostVector) throws IOException
+    public LogLinearAlignmentModel(final java.io.Reader trainingData, final CharVocabulary vocabulary,
+        boolean ignoreLabelLines, NumericVector columnInsertionCostVector) throws IOException
     {
         this(trainingData, vocabulary, null, ignoreLabelLines, columnInsertionCostVector);
     }
 
-    public LogLinearAlignmentModel(java.io.Reader trainingData, CharVocabulary vocabulary, Vector laplacePseudoCounts,
-        boolean ignoreLabelLines, NumericVector columnInsertionCostVector) throws IOException
+    public LogLinearAlignmentModel(final java.io.Reader trainingData, final CharVocabulary vocabulary,
+        final Vector laplacePseudoCounts, final boolean ignoreLabelLines, final NumericVector columnInsertionCostVector)
+        throws IOException
     {
         this.vocabulary = vocabulary;
         this.columnInsertionCostVector = columnInsertionCostVector;
@@ -178,7 +180,7 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
         sb.append(String.format("%" + maxTokenLength + "s ", ""));
         for (int i = 0; i < columns; i++)
         {
-            sb.append(String.format("%5d ", i));
+            sb.append(String.format("%6d ", i));
         }
         sb.append('\n');
         sb.append(Strings.fill('-', columns * 6 + 3));
@@ -190,7 +192,7 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
             for (int j = 0; j < columns; j++)
             {
                 float p = costVectors[j].getFloat(i);
-                sb.append(Float.isInfinite(p) ? "  Inf " : String.format("%5.2f ", p));
+                sb.append(Float.isInfinite(p) ? "  Inf " : String.format("%6.2f ", p));
             }
             sb.append('\n');
         }
@@ -199,9 +201,48 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
     }
 
     @Override
-    public float costOfInsertingAGapIntoThisAlignmentModel(Vector featureVector)
+    public float costOfInsertingAGapIntoThisAlignmentModel(final Vector featureVector)
     {
-        // TODO Auto-generated method stub
+        // Auto-generated method stub
         return 0;
+    }
+
+    /**
+     * Update model weights using the perceptron algorithm.
+     * 
+     * @param trainingSequence The positive example to learn from (for negative examples, specify a
+     *            negative training rate).
+     * @param trainingRate Positive (for positive examples) or negative (for negative examples)
+     *            amount by which to update model weights.
+     */
+    public void perceptronUpdate(final LogLinearMappedSequence trainingSequence, final float trainingRate)
+    {
+        for (int i = 0; i < trainingSequence.length(); i++)
+        {
+            costVectors[i].perceptronUpdate((SparseBitVector) trainingSequence.elementAt(i), trainingRate);
+        }
+    }
+
+    public LogLinearAlignmentModel insertGaps(final int[] gapIndices, final float minWeight, final float maxWeight,
+        final NumericVector newColumnInsertionCostVector)
+    {
+        if (gapIndices.length == 0)
+        {
+            return this;
+        }
+
+        final int gaps = gapIndices.length;
+        final int newLength = columnCount() + gaps;
+
+        final FloatVector[] newCostVectors = new FloatVector[newLength];
+        final FloatVector[] gapCosts = new FloatVector[gaps];
+        for (int i = 0; i < gapCosts.length; i++)
+        {
+            gapCosts[i] = new FloatVector(vocabulary.size(), minWeight, maxWeight);
+        }
+        edu.ohsu.cslu.util.Arrays.insertGaps(costVectors, gapIndices, newCostVectors, gapCosts);
+
+        return new LogLinearAlignmentModel(newCostVectors, vocabulary, newColumnInsertionCostVector != null
+            ? newColumnInsertionCostVector : columnInsertionCostVector);
     }
 }

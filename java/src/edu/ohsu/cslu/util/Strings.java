@@ -1,13 +1,17 @@
 package edu.ohsu.cslu.util;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -228,7 +232,7 @@ public class Strings
     public static Map<String, String> headerAttributes(String line)
     {
         Map<String, String> attributes = new HashMap<String, String>();
-        for (String stringAttribute : line.split(" +"))
+        for (final String stringAttribute : line.split(" +"))
         {
             if (stringAttribute.indexOf('=') >= 0)
             {
@@ -247,7 +251,7 @@ public class Strings
      */
     public static Set<String> permuteTokens(String s)
     {
-        TreeSet<String> permutations = new TreeSet<String>();
+        HashSet<String> permutations = new HashSet<String>();
         recursivePermute(permutations, "", s.split(" "));
         return permutations;
     }
@@ -260,7 +264,7 @@ public class Strings
      */
     public static Set<String> permuteFeatures(String s)
     {
-        TreeSet<String> permutations = new TreeSet<String>();
+        HashSet<String> permutations = new HashSet<String>();
         String[] split = s.split("\\) *");
         for (int i = 0; i < split.length; i++)
         {
@@ -280,22 +284,22 @@ public class Strings
      */
     private static Set<String> recursivePermute(Set<String> permutations, String prefix, String[] suffix)
     {
-        String newPrefix = prefix.length() == 0 ? "" : prefix + " ";
         // Base case of length 1
         if (suffix.length == 1)
         {
-            permutations.add(newPrefix + suffix[0]);
+            permutations.add(prefix.length() == 0 ? suffix[0] : prefix + " " + suffix[0]);
             return permutations;
         }
 
-        // Call recursively for each character in toPermute
+        // Call recursively for each feature in toPermute
         for (int i = 0; i < suffix.length; i++)
         {
             String[] newSuffix = new String[suffix.length - 1];
             System.arraycopy(suffix, 0, newSuffix, 0, i);
             System.arraycopy(suffix, i + 1, newSuffix, i, newSuffix.length - i);
 
-            permutations.addAll(recursivePermute(permutations, newPrefix + suffix[i], newSuffix));
+            permutations.addAll(recursivePermute(permutations, prefix.length() == 0 ? suffix[i] : prefix + " "
+                + suffix[i], newSuffix));
         }
 
         return permutations;
@@ -309,7 +313,7 @@ public class Strings
      */
     public static Set<String> tokenPairs(String s)
     {
-        TreeSet<String> pairs = new TreeSet<String>();
+        HashSet<String> pairs = new HashSet<String>();
         String[] tokens = s.split("\\s+");
         if (tokens.length == 1)
         {
@@ -336,7 +340,7 @@ public class Strings
      */
     public static Set<String> featurePairs(String s)
     {
-        TreeSet<String> pairs = new TreeSet<String>();
+        HashSet<String> pairs = new HashSet<String>();
         String[] elements = s.split("\\) *");
         if (elements.length == 1)
         {
@@ -352,5 +356,17 @@ public class Strings
             }
         }
         return pairs;
+    }
+
+    public static String readInputStream(final InputStream is) throws IOException
+    {
+        final StringBuilder sb = new StringBuilder(4096);
+        final BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        for (String line = br.readLine(); line != null; line = br.readLine())
+        {
+            sb.append(line);
+            sb.append('\n');
+        }
+        return sb.toString();
     }
 }

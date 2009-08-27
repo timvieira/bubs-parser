@@ -126,7 +126,7 @@ public abstract class BaseMultipleSequenceAligner implements MultipleSequenceAli
 
             // Update already aligned sequences to include gaps where needed. For the moment,
             // we'll skip re-computing distance metrics...
-            alignedSequences.insertGaps(alignment.gapIndices());
+            alignedSequences.insertGaps(alignment.insertedColumnIndices());
 
             alignedSequences.addSequence(alignment.alignedSequence(), unalignedIndex);
             unalignedSequences[unalignedIndex] = null;

@@ -303,7 +303,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
     public int map(String token)
     {
         final int value = super.map(token);
-        if (value == Integer.MIN_VALUE && !token.startsWith("_"))
+        if (value == Integer.MIN_VALUE && (!token.startsWith("_") || token.startsWith(FeatureClass.PREFIX_STEM)))
         {
             return map(FeatureClass.FEATURE_UNKNOWN);
         }

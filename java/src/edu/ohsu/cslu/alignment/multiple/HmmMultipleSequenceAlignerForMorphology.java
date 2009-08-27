@@ -173,7 +173,7 @@ public class HmmMultipleSequenceAlignerForMorphology implements MultipleSequence
 
             // Update already aligned sequences to include gaps where needed. For the moment,
             // we'll skip re-computing distance metrics...
-            alignedSequences.insertGaps(alignment.gapIndices());
+            alignedSequences.insertGaps(alignment.insertedColumnIndices());
 
             // int alignmentHeadColumn = 0;
             // for (int j = 0; j < alignment..columns(); j++)
