@@ -16,7 +16,6 @@
     <property name="dir.shared.lgpl.lib" location="${dir.shared.base}/java/lgpl-lib" />
 
     <property name="dir.dist" location="build-dist" />
-	<property name="dir.sge.tmp" location="sge-tmp" />
 
     <!-- Use ant-contrib, cpptasks, and genjar (from SourceForge) to enable try/catch, 
          gcc compilation, and better dependency analysis than classfileset -->
@@ -87,21 +86,30 @@
 
 	<!-- 
     ========================================================================
-       Package an executable jar file. Called by individual targets below
+       Package an executable jar file and runner scripts for direct shell 
+       usage and for submission to the Sun Grid Engine.
+       
+       Called by individual targets below
        
        Arguments:
          * root-class - classname (required)
          * tool-name - string (required). The desired script name. The jar name 
-             will match, with a .jar suffix
+             will match, with a .jar suffix, and the SGE script will be named
+             by prepending 'grid-'
          * heap-size (optional - default=128) Size in megabytes
          * additional-jars (optional) List of any additional jars which should
              be included in their entirety
+         * params (optional) Parameter list to pass to the grid engine script.
     ========================================================================
     -->
 	<target name="package-tool" description="Package an executable jar file">
 		<!-- Create the distribution directory if it doesn't already exist -->
 		<mkdir dir="${dir.dist}" />
 
+		<!-- If 'params' is not specified, default it to the empty string -->
+		<property name="params" value="" />
+
+		<!-- If 'heap-size' is not specified, default it to 128m -->
 		<property name="heap-size" value="128" />
 
 		<!-- Package the jar -->
@@ -133,6 +141,18 @@
 			<replacefilter token="%MEM%" value="${heap-size}" />
 		</replace>
 		<chmod file="${dir.dist}/${tool-name}" perm="ug+x" />
+
+
+		<!-- Generate a grid-engine runner script  -->
+		<delete file="${dir.dist}/grid-${tool-name}" failonerror="false" />
+		<copy file="${dir.shared.base}/java/tools/grid-script-template.sh" tofile="${dir.dist}/grid-${tool-name}" />
+		<fixcrlf file="${dir.dist}/grid-${tool-name}" eol="unix" />
+		<replace file="${dir.dist}/grid-${tool-name}">
+			<replacefilter token="%NAME%" value="${tool-name}" />
+			<replacefilter token="%MEM%" value="${heap-size}" />
+			<replacefilter token="%PARAMS%" value="${params}" />
+		</replace>
+
 	</target>
 
 	<!-- 
@@ -205,38 +225,6 @@
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.TrainHmmAndAlignSequences" />
 			<param name="tool-name" value="train-and-align" />
-			<param name="heap-size" value="512" />
-		</antcall>
-	</target>
-
-	<!-- 
-    ========================================================================
-       Package a Sun Grid Engine job
-    ========================================================================
-    -->
-	<target name="package-job" description="Package a Sun Grid Engine job">
-		<!-- If 'params' is not specified, default it to the empty string -->
-		<property name="params" value="" />
-
-		<!-- If 'heap-size' is not specified, default it to 256m -->
-		<property name="heap-size" value="256" />
-
-		<!-- Generate a grid-engine runner script  -->
-		<delete file="${dir.dist}/grid-${tool-name}" failonerror="false" />
-		<copy file="${dir.shared.base}/java/tools/grid-script-template.sh" tofile="${dir.dist}/grid-${tool-name}" />
-		<fixcrlf file="${dir.dist}/grid-${tool-name}" eol="unix" />
-		<replace file="${dir.dist}/grid-${tool-name}">
-			<replacefilter token="%NAME%" value="${tool-name}" />
-			<replacefilter token="%MEM%" value="${heap-size}" />
-			<replacefilter token="%PARAMS%" value="${params}" />
-		</replace>
-	</target>
-
-	<!-- Grid job naming convention: prepend 'grid-' to the name of the target which packages the jar -->
-
-	<target name="grid-calculate-distances" depends="calculate-distances">
-		<antcall target="package-job">
-			<param name="tool-name" value="calculate-distances" />
 			<param name="heap-size" value="512" />
 		</antcall>
 	</target>
