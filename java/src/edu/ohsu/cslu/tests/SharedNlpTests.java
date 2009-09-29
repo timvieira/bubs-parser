@@ -19,7 +19,6 @@ import edu.ohsu.cslu.datastructs.AllDataStructureTests;
 import edu.ohsu.cslu.matching.ProfileMatchers;
 import edu.ohsu.cslu.matching.approximate.TestApproximateMatchers;
 import edu.ohsu.cslu.matching.exact.TestExactMatchers;
-import edu.ohsu.cslu.parsing.grammar.TestStringGrammar;
 import edu.ohsu.cslu.tools.AllToolTests;
 import edu.ohsu.cslu.util.AllUtilTests;
 
@@ -34,7 +33,7 @@ import edu.ohsu.cslu.util.AllUtilTests;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses( {AllCommonTests.class, TestExactMatchers.class, TestApproximateMatchers.class,
-                      ProfileMatchers.class, AllAlignmentTests.class, TestStringGrammar.class, AllCounterTests.class,
+                      ProfileMatchers.class, AllAlignmentTests.class, AllCounterTests.class,
                       AllDataStructureTests.class, AllToolTests.class, AllUtilTests.class})
 public class SharedNlpTests
 {
