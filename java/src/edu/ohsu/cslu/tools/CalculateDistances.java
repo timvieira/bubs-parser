@@ -25,7 +25,6 @@ import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.narytree.BaseNaryTree;
 import edu.ohsu.cslu.datastructs.narytree.ParseTree;
 import edu.ohsu.cslu.datastructs.narytree.BaseNaryTree.PqgramProfile;
-import edu.ohsu.cslu.parsing.grammar.InducedGrammar;
 import edu.ohsu.cslu.util.Math;
 
 /**
@@ -40,8 +39,6 @@ import edu.ohsu.cslu.util.Math;
  */
 public class CalculateDistances extends BaseCommandlineTool
 {
-    private String grammarFilename = null;
-
     private CalculationMethod calculationMethod;
     private String parameters;
     private int maxThreads;
@@ -70,17 +67,7 @@ public class CalculateDistances extends BaseCommandlineTool
                 break;
 
             case Pqgram :
-                Vocabulary vocabulary = null;
-                if (grammarFilename != null)
-                {
-                    // TODO: Change this to a vocabulary instead - we don't need a full grammar
-                    vocabulary = new InducedGrammar("TOP", fileAsReader(grammarFilename), false);
-                }
-                else
-                {
-                    vocabulary = SimpleVocabulary.induce(new BufferedReader(new StringReader(input)));
-                }
-
+                Vocabulary vocabulary = SimpleVocabulary.induce(new BufferedReader(new StringReader(input)));
                 calculator = new PqgramDistanceCalculator(parameters, vocabulary, maxThreads);
                 break;
 
@@ -108,7 +95,6 @@ public class CalculateDistances extends BaseCommandlineTool
 
         options.addOption(OptionBuilder.hasArg().withArgName("method").withDescription(
             "Distance Calculation Method (pqgram, levenshtein) (default levenshtein)").create('m'));
-        options.addOption(OptionBuilder.hasArg().withArgName("grammar").withDescription("Grammar file").create('g'));
         options.addOption(OptionBuilder.hasArg().withArgName("parameters").withDescription("parameters").create('p'));
         options
             .addOption(OptionBuilder.hasArg().withArgName("threads").withDescription("Maximum Threads").create("xt"));
@@ -120,7 +106,6 @@ public class CalculateDistances extends BaseCommandlineTool
     public void setToolOptions(CommandLine commandLine) throws ParseException
     {
         calculationMethod = CalculationMethod.forString(commandLine.getOptionValue('m'));
-        grammarFilename = commandLine.getOptionValue('g');
 
         parameters = commandLine.hasOption('p') ? commandLine.getOptionValue('p') : null;
         if (calculationMethod == CalculationMethod.Pqgram && parameters == null)
@@ -329,7 +314,6 @@ public class CalculateDistances extends BaseCommandlineTool
             final int jSize = s1.length() + 1;
             int[] previous = new int[jSize];
             int[] current = new int[jSize];
-
 
             // make previous[] look like [0, 1, 2, 3, ..., s1.length()]
             // (or equivalently: like [0, 1, 2, 3, ..., jSize - 1]
