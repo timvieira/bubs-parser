@@ -1,9 +1,14 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
@@ -16,11 +21,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
-import edu.ohsu.cslu.parsing.grammar.InducedGrammar;
+import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link ParseTree}
@@ -35,7 +37,7 @@ import static junit.framework.Assert.*;
 @RunWith(FilteredRunner.class)
 public class TestParseTree
 {
-    private static InducedGrammar fullCorpusGrammar;
+    private static Vocabulary vocabulary;
     private final static String TREEBANK_DATA = "parsing/f2-21.topos.txt.gz";
 
     private ParseTree sampleTree;
@@ -51,18 +53,16 @@ public class TestParseTree
     @BeforeClass
     public static void suiteSetUp() throws IOException
     {
-        if (fullCorpusGrammar == null)
+        if (vocabulary == null)
         {
-            InducedGrammar ig = new InducedGrammar("TOP", new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream(TREEBANK_DATA)), true);
-            fullCorpusGrammar = ig.leftFactor();
+            vocabulary = SimpleVocabulary.induce("NP S TOP VP DT Wdt NNP Wnnp NN Wnn VBD Wvbd . W.");
         }
     }
 
     @Before
     public void setUp()
     {
-        sampleTree = new ParseTree("TOP", fullCorpusGrammar);
+        sampleTree = new ParseTree("TOP", vocabulary);
 
         ParseTree s = sampleTree.addChild("S");
         ParseTree np = s.addChild("NP");
@@ -79,7 +79,7 @@ public class TestParseTree
     @Test
     public void testAddChild() throws Exception
     {
-        ParseTree tree = new ParseTree("TOP", fullCorpusGrammar);
+        ParseTree tree = new ParseTree("TOP", vocabulary);
         assertEquals(1, tree.size());
         tree.addChild("S");
         assertEquals(2, tree.size());
@@ -90,7 +90,7 @@ public class TestParseTree
     @Test
     public void testAddChildren() throws Exception
     {
-        ParseTree tree = new ParseTree("TOP", fullCorpusGrammar);
+        ParseTree tree = new ParseTree("TOP", vocabulary);
         assertEquals(1, tree.size());
         tree.addChildren(new String[] {"S", "."});
         assertEquals(3, tree.size());
@@ -102,8 +102,8 @@ public class TestParseTree
     @Test
     public void testAddSubtree() throws Exception
     {
-        ParseTree tree = new ParseTree("TOP", fullCorpusGrammar);
-        ParseTree s = new ParseTree("S", fullCorpusGrammar);
+        ParseTree tree = new ParseTree("TOP", vocabulary);
+        ParseTree s = new ParseTree("S", vocabulary);
         s.addChildren(new String[] {"NP", "VBD"});
         tree.addSubtree(s);
         assertEquals(4, tree.size());
@@ -287,7 +287,7 @@ public class TestParseTree
     {
 
         String stringSimpleTree = "(TOP (NP VP) .)";
-        ParseTree simpleTree = ParseTree.read(new StringReader(stringSimpleTree), fullCorpusGrammar);
+        ParseTree simpleTree = ParseTree.read(new StringReader(stringSimpleTree), vocabulary);
         assertEquals(4, simpleTree.size());
         assertEquals(2, simpleTree.subtree("NP").size());
 
@@ -297,7 +297,7 @@ public class TestParseTree
         assertEquals(".", simpleTree.subtree(".").label());
 
         String stringTestTree = "(TOP (S (NP (DT Wdt) (NNP Wnnp) (NN Wnn)) (VBD Wvbd) (. W.)))";
-        ParseTree testTree = ParseTree.read(new StringReader(stringTestTree), fullCorpusGrammar);
+        ParseTree testTree = ParseTree.read(new StringReader(stringTestTree), vocabulary);
         assertEquals(13, testTree.size());
         assertEquals(7, testTree.subtree("S").subtree("NP").size());
 
@@ -316,7 +316,7 @@ public class TestParseTree
         assertEquals(".", testTree.subtree("S").subtree(".").label());
         assertEquals("W.", testTree.subtree("S").subtree(".").subtree("W.").label());
 
-        ParseTree tree = ParseTree.read(new StringReader(stringSampleTree), fullCorpusGrammar);
+        ParseTree tree = ParseTree.read(new StringReader(stringSampleTree), vocabulary);
         assertEquals(sampleTree, tree);
     }
 
@@ -328,7 +328,7 @@ public class TestParseTree
         assertEquals(stringSampleTree, writer.toString());
 
         String stringSimpleTree = "(TOP (NP (NP (NP (NN Wnn) (NN Wnn)) (NN Wnn)) (NN Wnn)))";
-        ParseTree tree = new ParseTree("TOP", fullCorpusGrammar);
+        ParseTree tree = new ParseTree("TOP", vocabulary);
         tree.addChild("NP").addChild("NP").addChild("NP").addChild("NN").addChild("Wnn");
         tree.subtree("NP").subtree("NP").subtree("NP").addChild("NN").addChild("Wnn");
         tree.subtree("NP").subtree("NP").addChild("NN").addChild("Wnn");
@@ -351,13 +351,13 @@ public class TestParseTree
     @Test
     public void testEquals() throws Exception
     {
-        BaseNaryTree<String> tree1 = new ParseTree("TOP", fullCorpusGrammar);
+        BaseNaryTree<String> tree1 = new ParseTree("TOP", vocabulary);
         tree1.addChildren(new String[] {"S", "."});
 
-        BaseNaryTree<String> tree2 = new ParseTree("TOP", fullCorpusGrammar);
+        BaseNaryTree<String> tree2 = new ParseTree("TOP", vocabulary);
         tree2.addChildren(new String[] {"S", "."});
 
-        BaseNaryTree<String> tree3 = new ParseTree("TOP", fullCorpusGrammar);
+        BaseNaryTree<String> tree3 = new ParseTree("TOP", vocabulary);
         tree3.addChildren(new String[] {"VBD", "."});
 
         assertTrue(tree1.equals(tree2));
@@ -395,14 +395,14 @@ public class TestParseTree
     public void testPqGramSimilarity() throws Exception
     {
         // Example taken from Augsten, Bohlen, Gamper, 2005, page 304
-        ParseTree t1 = new ParseTree("TOP", fullCorpusGrammar);
+        ParseTree t1 = new ParseTree("TOP", vocabulary);
         ParseTree tmp = t1.addChild("TOP");
         tmp.addChild("NP");
         tmp.addChild("S");
         t1.addChild("S");
         t1.addChild("VP");
 
-        ParseTree t2 = new ParseTree("TOP", fullCorpusGrammar);
+        ParseTree t2 = new ParseTree("TOP", vocabulary);
         tmp = t2.addChild("TOP");
         tmp.addChild("NP");
         tmp.addChild("S");
@@ -411,9 +411,9 @@ public class TestParseTree
 
         assertEquals(.31, t1.pqgramDistance(t2, 2, 3), .01f);
 
-        t1 = ParseTree.read("(TOP (S (NP (DT Wdt) (NNP Wnnp) (NN Wnn)) (VBD Wvbd) (. W.)))", fullCorpusGrammar);
-        t2 = ParseTree.read("(TOP (S (NP (DT Wdt) (NNP Wnnp)) (VBD  (NN Wnn) (VBD Wvbd)) (. W.)))", fullCorpusGrammar);
-        ParseTree t3 = ParseTree.read("(TOP (S (DT Wdt) (NNP Wnnp) (NN Wnn) (VBD Wvbd) (. W.)))", fullCorpusGrammar);
+        t1 = ParseTree.read("(TOP (S (NP (DT Wdt) (NNP Wnnp) (NN Wnn)) (VBD Wvbd) (. W.)))", vocabulary);
+        t2 = ParseTree.read("(TOP (S (NP (DT Wdt) (NNP Wnnp)) (VBD  (NN Wnn) (VBD Wvbd)) (. W.)))", vocabulary);
+        ParseTree t3 = ParseTree.read("(TOP (S (DT Wdt) (NNP Wnnp) (NN Wnn) (VBD Wvbd) (. W.)))", vocabulary);
 
         assertEquals(0f, t1.pqgramDistance(t1, 3, 3), .01f);
         assertEquals(.36f, t1.pqgramDistance(t2, 3, 3), .01f);
