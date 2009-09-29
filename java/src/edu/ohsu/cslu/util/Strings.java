@@ -313,11 +313,22 @@ public class Strings
      */
     public static Set<String> tokenPairs(String s)
     {
-        HashSet<String> pairs = new HashSet<String>();
         String[] tokens = s.split("\\s+");
+        return tokenPairs(tokens);
+    }
+
+    /**
+     * Returns all 2-token combinations
+     * 
+     * @param tokens
+     * @return Pairs of tokens
+     */
+    public static Set<String> tokenPairs(String[] tokens)
+    {
+        HashSet<String> pairs = new HashSet<String>();
         if (tokens.length == 1)
         {
-            pairs.add(s);
+            pairs.add(tokens[0]);
             return pairs;
         }
 
@@ -356,6 +367,29 @@ public class Strings
             }
         }
         return pairs;
+    }
+
+    /**
+     * Splits the string by bracketed features, and returns all words, assuming the word is the
+     * first feature in each bracketing
+     * 
+     * TODO: Terrible hack
+     * 
+     * @param s Bracketed representation of a sequence. (e.g.,
+     *            "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
+     * @return words
+     */
+    public static String[] words(String bracketedFeatures)
+    {
+        final ArrayList<String> words = new ArrayList<String>();
+        final String[] elements = bracketedFeatures.split("\\) *");
+        for (final String element : elements)
+        {
+            int index = element.indexOf(' ');
+            final String word = index > 0 ? element.substring(1, index) : element.substring(1);
+            words.add(word);
+        }
+        return words.toArray(new String[words.size()]);
     }
 
     public static String readInputStream(final InputStream is) throws IOException

@@ -41,7 +41,8 @@ public class LogLinearVocabulary extends SimpleVocabulary
 {
     private final int[] categoryBoundaries;
 
-    private LogLinearVocabulary(String[] tokens, int[] categoryBoundaries, HashSet<String> rareFeatures)
+    private LogLinearVocabulary(final String[] tokens, final int[] categoryBoundaries,
+        final HashSet<String> rareFeatures)
     {
         super(tokens, rareFeatures);
         this.categoryBoundaries = categoryBoundaries;
@@ -129,6 +130,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
      *            the token counts need not all be identical. e.g.
      *            "(The DT start) (dog NN) (ran VB head_verb)"
      * @param rareTokenCutoff Greatest occurrence count at which a token will be counted as 'rare'
+     * @param storeKnownWords Maintain a set of lowercase words mapped by this vocabulary
      * @return induced vocabulary
      * @throws IOException
      */
@@ -161,6 +163,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
      *            "(The DT start) (dog NN) (ran VB head_verb)"
      * @param gapSymbol
      * @param rareTokenCutoff Greatest occurrence count at which a token will be counted as 'rare'
+     * @param storeKnownWords Maintain a set of lowercase words mapped by this vocabulary
      * @return induced vocabulary
      * @throws IOException
      */
