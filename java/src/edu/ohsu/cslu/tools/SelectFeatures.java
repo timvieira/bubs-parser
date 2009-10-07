@@ -1,22 +1,5 @@
 package edu.ohsu.cslu.tools;
 
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_AFTER_HEAD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_ALL_CAPS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_BEFORE_HEAD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_CAPITALIZED;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HEAD_VERB;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HYPHENATED;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_LENGTH;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_LOWERCASE_WORD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PLAIN_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_WORD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_STEM;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_WORD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_WORD;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,6 +19,7 @@ import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.*;
 
 /**
  * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse
@@ -465,7 +449,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
             }
             else
             {
-                sb.append(FeatureClass.FEATURE_LENGTH_6_TO_10);
+                sb.append(FeatureClass.FEATURE_LENGTH_GREATER_THAN_10);
             }
             sb.append(featureDelimiter);
         }
@@ -487,6 +471,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
 
         if (includeStem)
         {
+            sb.append(FeatureClass.PREFIX_STEM);
             sb.append(porterStemmer.stemWord(label.toLowerCase()));
             sb.append(featureDelimiter);
         }
