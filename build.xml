@@ -140,17 +140,19 @@
 			<replacefilter token="%JAR%" value="${tool-name}.jar" />
 			<replacefilter token="%MEM%" value="${heap-size}" />
 		</replace>
+	    <!-- Make the script executable -->
 		<chmod file="${dir.dist}/${tool-name}" perm="ug+x" />
 
-
-		<!-- Generate a grid-engine runner script  -->
+		<!-- Generate a grid-engine runner script (submittable via qsub) -->
 		<delete file="${dir.dist}/grid-${tool-name}" failonerror="false" />
 		<copy file="${dir.shared.base}/java/tools/grid-script-template.sh" tofile="${dir.dist}/grid-${tool-name}" />
 		<fixcrlf file="${dir.dist}/grid-${tool-name}" eol="unix" />
 		<replace file="${dir.dist}/grid-${tool-name}">
-			<replacefilter token="%NAME%" value="${tool-name}" />
-			<replacefilter token="%MEM%" value="${heap-size}" />
-			<replacefilter token="%PARAMS%" value="${params}" />
+            <replacefilter token="%NAME%" value="${tool-name}" />
+            <replacefilter token="%ROOT-CLASS%" value="${root-class}" />
+            <replacefilter token="%CP_JARS%" value="${cp-jars}" />
+            <replacefilter token="%MEM%" value="${heap-size}" />
+            <replacefilter token="%PARAMS%" value="${params}" />
 		</replace>
 
 	</target>

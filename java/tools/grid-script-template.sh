@@ -10,6 +10,9 @@
 # working directory
 #$ -cwd
 
+# Make the $PATH environment variable available to grid job
+#$ -v PATH
+
 # Use the current environment
 #$ -V
 
@@ -18,8 +21,10 @@
 #$ -e %NAME%.err
 
 # Set memory requirements
-#$ -l h_rss=%MEM%M
+#$ -l mem_free=%MEM%M
+#$ -l mem_token=%MEM%M
+#$ -l swap_free=%MEM%M
 
 # TODO: Add an optional processor requirement (num_proc?) 
 
-$JAVA_HOME/bin/java -Xmx%MEM%m -server -XX:+UseParallelGC -XX:+UseParallelOldGC -jar %NAME%.jar %PARAMS% $*
+$JAVA_HOME/bin/java -Xmx%MEM%m -server -XX:+UseParallelGC -XX:+UseParallelOldGC -cp %NAME%.jar:%CP_JARS% %ROOT-CLASS% %PARAMS% $*
