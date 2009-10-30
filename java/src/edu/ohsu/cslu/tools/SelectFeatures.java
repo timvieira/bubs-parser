@@ -3,17 +3,16 @@ package edu.ohsu.cslu.tools;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.List;
+import java.util.concurrent.Callable;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
+import cltool.LinewiseCommandlineTool;
 import edu.ohsu.cslu.common.FeatureClass;
 import edu.ohsu.cslu.common.PorterStemmer;
-import edu.ohsu.cslu.common.tools.LinewiseCommandlineTool;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -47,41 +46,75 @@ import static edu.ohsu.cslu.tools.LinguisticToolOptions.*;
  */
 public class SelectFeatures extends LinewiseCommandlineTool
 {
-    private FileFormat inputFormat;
-    private FileFormat outputFormat;
+    @Option(name = "-i", aliases = {"--input-format"}, metaVar = "format (tree|bracketed|square-bracketed|stanford)", usage = "Input format. Default = bracketed.")
+    private final FileFormat inputFormat = FileFormat.Bracketed;
+
+    @Option(name = "-out", aliases = {"--output-format"}, metaVar = "format (tree|bracketed|square-bracketed|stanford)", usage = "Output format. Default = bracketed.")
+    private final FileFormat outputFormat = FileFormat.Bracketed;
 
     /** TreeBank POS prefixed with 'pos_' e.g. pos_DT, pos_. */
+    @Option(name = "-p", aliases = {"--pos", "--part-of-speech"}, usage = "Include POS feature (_pos_...)")
     private boolean pos;
 
     /** TreeBank POS without a prefix e.g. DT, NN */
+    @Option(name = "-ppos", aliases = {"--plain-pos"}, usage = "Include plain POS feature (without _pos_ prefix)")
     private boolean plainPos;
 
+    @Option(name = "-w", aliases = {"--word"}, usage = "Include token")
     private boolean includeWord;
+
+    @Option(name = "-lcw", aliases = {"--lowercase-word"}, usage = "Include lowercased token")
     private boolean includeLowercaseWord;
+
+    @Option(name = "-stem", usage = "Include word stem")
     private boolean includeStem;
 
+    @Option(name = "-h", aliases = {"--head-verb"}, usage = "Include _head_verb feature")
     private boolean headVerb;
-    private Set<String> firstVerbPos;
+
+    // TODO This should really be a Set for efficiency
+    @Option(name = "-nfv", aliases = {"--not-first-verb"}, usage = "Include _first_verb feature")
+    private List<String> firstVerbPos;
+
+    @Option(name = "-bh", aliases = {"--before-head"}, usage = "Include _before_head_verb feature")
     private boolean beforeHead;
+
+    @Option(name = "-ah", aliases = {"--after-head"}, usage = "Include _after_head_verb feature")
     private boolean afterHead;
 
+    @Option(name = "-cap", aliases = {"--capitalized"}, usage = "Include capitalization feature")
     private boolean capitalized;
+
+    @Option(name = "-allcaps", aliases = {"--all-caps"}, usage = "Include all-capitalized feature")
     private boolean allcaps;
+
+    @Option(name = "-hyphen", aliases = {"--hyphenated"}, usage = "Include hyphenization feature")
     private boolean hyphenated;
+
+    @Option(name = "-length", aliases = {"--word-length"}, usage = "Include length features")
     private boolean length;
 
+    @Option(name = "-prevword", aliases = {"--previous-words"}, metaVar = "count", usage = "Include previous words")
     private int previousWords;
+
+    @Option(name = "-subword", aliases = {"--subsequent-words"}, metaVar = "count", usage = "Include subsequent words")
     private int subsequentWords;
+
+    @Option(name = "-prevpos", aliases = {"--previous-pos"}, metaVar = "count", usage = "Include pos for previous words")
     private int previousPos;
+
+    @Option(name = "-subpos", aliases = {"--subsequent-pos"}, metaVar = "count", usage = "Include pos for subsequent words")
     private int subsequentPos;
 
+    @Option(name = "-f", aliases = {"--word-index"}, metaVar = "index", usage = "Feature index (in bracketed input) of token to treat as the word (starting with 1) Default = 1")
     private int[] selectedFeatures;
 
     private String beginBracket;
     private String endBracket;
     private String featureDelimiter;
 
-    private int wordIndex;
+    @Option(name = "-wi", aliases = {"--word-index"}, metaVar = "index", usage = "Feature index (in bracketed input) of token to treat as the word (starting with 1) Default = 1")
+    private final int wordIndex = 1;
 
     // TODO: Allow other head-percolation rulesets?
     private final HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
@@ -118,122 +151,35 @@ public class SelectFeatures extends LinewiseCommandlineTool
     }
 
     @Override
-    @SuppressWarnings("static-access")
-    protected Options options() throws Exception
+    public void setup(CmdLineParser parser) throws CmdLineException
     {
-        Options options = basicOptions();
+        // // If input is not in tree format, we cannot extract certain features
+        // if (inputFormat != FileFormat.BracketedTree && inputFormat !=
+        // FileFormat.SquareBracketedTree)
+        // {
+        // for (Option o : commandLine.getOptions())
+        // {
+        // if (TREE_FEATURES.contains(o.getOpt()))
+        // {
+        // throw new ParseException(o.getOpt() + " option only supported for tree input formats");
+        // }
+        // }
+        // }
 
-        options.addOption(OptionBuilder.hasArg().withDescription(
-            "Input format (tree,bracketed,square-bracketed,stanford; default=bracketed)").withLongOpt("input-format")
-            .create(OPTION_INPUT_FORMAT));
-        options.addOption(OptionBuilder.hasArg().withDescription(
-            "Output format (bracketed, square-bracketed, stanford; default=bracketed)").withLongOpt("output-format")
-            .create(OPTION_OUTPUT_FORMAT));
-
-        options.addOption(OptionBuilder.withDescription("Include lowercase token").create(OPTION_LOWERCASE_WORD));
-        options.addOption(OptionBuilder.withDescription("Include word stem").create(OPTION_STEM));
-        options.addOption(OptionBuilder.withDescription("Extract prefixed POS feature (_pos_...)").create(OPTION_POS));
-        options.addOption(OptionBuilder.withDescription("Extract plain POS feature (without prefix)").create(
-            OPTION_PLAIN_POS));
-        options.addOption(OptionBuilder.withDescription("Extract _head_verb feature").create(OPTION_HEAD_VERB));
-        options.addOption(OptionBuilder.hasArgs().withValueSeparator(',').withArgName("verbs").withDescription(
-            "Extract _first_verb feature").create(OPTION_NOT_FIRST_VERB));
-        options
-            .addOption(OptionBuilder.withDescription("Extract _before_head_verb feature").create(OPTION_BEFORE_HEAD));
-        options.addOption(OptionBuilder.withDescription("Extract _after_head_verb feature").create(OPTION_AFTER_HEAD));
-        options.addOption(OptionBuilder.withDescription("Extract word feature").create(OPTION_WORD));
-        options.addOption(OptionBuilder.withDescription("Include feature for capitalized tokens").create(
-            OPTION_CAPITALIZED));
-        options.addOption(OptionBuilder.withDescription("Include feature for hyphenated tokens").create(
-            OPTION_HYPHENATED));
-        options
-            .addOption(OptionBuilder.withDescription("Include feature for all-caps tokens?").create(OPTION_ALL_CAPS));
-        options.addOption(OptionBuilder.withDescription("Include length features ").create(OPTION_LENGTH));
-
-        options.addOption(OptionBuilder.hasArg().withArgName("count").withDescription("Previous words").create(
-            OPTION_PREVIOUS_WORD));
-        options.addOption(OptionBuilder.hasArg().withArgName("count").withDescription("Subsequent words").create(
-            OPTION_SUBSEQUENT_WORD));
-        options.addOption(OptionBuilder.hasArg().withArgName("count").withDescription("Previous POS").create(
-            OPTION_PREVIOUS_POS));
-        options.addOption(OptionBuilder.hasArg().withArgName("count").withDescription("Subsequent POS").create(
-            OPTION_SUBSEQUENT_POS));
-
-        options.addOption(OptionBuilder.hasArgs().withValueSeparator(',').withArgName("features").withDescription(
-            "list (1..n, comma-separated)").create(OPTION_FEATURE_INDICES));
-        options.addOption(OptionBuilder.hasArg().withArgName("index").withDescription(
-            "Feature index (in bracketed input) of token to treat as the word (starting with 1, default=1)").create(
-            OPTION_WORD_INDEX));
-
-        return options;
-    }
-
-    @Override
-    public void setToolOptions(CommandLine commandLine) throws ParseException
-    {
-        inputFormat = commandLine.hasOption(OPTION_INPUT_FORMAT) ? FileFormat.forString(commandLine
-            .getOptionValue(OPTION_INPUT_FORMAT)) : FileFormat.Bracketed;
-        outputFormat = commandLine.hasOption(OPTION_OUTPUT_FORMAT) ? FileFormat.forString(commandLine
-            .getOptionValue(OPTION_OUTPUT_FORMAT)) : FileFormat.Bracketed;
-
-        // If input is not in tree format, we cannot extract certain features
-        if (inputFormat != FileFormat.BracketedTree && inputFormat != FileFormat.SquareBracketedTree)
+        if (selectedFeatures != null && selectedFeatures.length > 0 && wordIndex != 0)
         {
-            for (Option o : commandLine.getOptions())
-            {
-                if (TREE_FEATURES.contains(o.getOpt()))
-                {
-                    throw new ParseException(o.getOpt() + " option only supported for tree input formats");
-                }
-            }
-        }
-
-        if (commandLine.hasOption(OPTION_FEATURE_INDICES) && commandLine.hasOption(OPTION_WORD_INDEX))
-        {
-            throw new ParseException("-" + OPTION_FEATURE_INDICES + " and -" + OPTION_WORD_INDEX
-                + " cannot be used together");
+            throw new CmdLineException(parser, "Cannot select both feature indices and word index");
         }
 
         // And 'f' option when selecting from a flat format
         if (inputFormat != FileFormat.Bracketed && inputFormat != FileFormat.SquareBracketed
             && inputFormat != FileFormat.Stanford)
         {
-            if (commandLine.hasOption(OPTION_FEATURE_INDICES))
+            if (selectedFeatures != null && selectedFeatures.length > 0)
             {
-                throw new ParseException("Feature option (-" + OPTION_FEATURE_INDICES
-                    + ") only supported for flat input formats");
-            }
-            if (commandLine.hasOption(OPTION_WORD_INDEX))
-            {
-                throw new ParseException("Word index option (-" + OPTION_WORD_INDEX
-                    + ") only supported for flat input formats");
+                throw new CmdLineException(parser, "Field selection is only supported for flat input formats");
             }
         }
-
-        pos = commandLine.hasOption(OPTION_POS);
-        plainPos = commandLine.hasOption(OPTION_PLAIN_POS);
-        headVerb = commandLine.hasOption(OPTION_HEAD_VERB);
-
-        capitalized = commandLine.hasOption(OPTION_CAPITALIZED);
-        allcaps = commandLine.hasOption(OPTION_ALL_CAPS);
-        hyphenated = commandLine.hasOption(OPTION_HYPHENATED);
-        length = commandLine.hasOption(OPTION_LENGTH);
-
-        includeWord = commandLine.hasOption(OPTION_WORD);
-        includeLowercaseWord = commandLine.hasOption(OPTION_LOWERCASE_WORD);
-        includeStem = commandLine.hasOption(OPTION_STEM);
-
-        if (commandLine.hasOption(OPTION_NOT_FIRST_VERB))
-        {
-            firstVerbPos = new HashSet<String>();
-            for (final String verbLabel : commandLine.getOptionValues(OPTION_NOT_FIRST_VERB))
-            {
-                firstVerbPos.add(verbLabel);
-            }
-        }
-
-        beforeHead = commandLine.hasOption(OPTION_BEFORE_HEAD);
-        afterHead = commandLine.hasOption(OPTION_AFTER_HEAD);
 
         switch (outputFormat)
         {
@@ -252,35 +198,17 @@ public class SelectFeatures extends LinewiseCommandlineTool
                 endBracket = "";
                 featureDelimiter = "/";
                 break;
-            default :
-                throw new ParseException("Unknown output format: " + commandLine.getOptionValue('o'));
         }
 
-        if (commandLine.hasOption(OPTION_FEATURE_INDICES))
+        if (selectedFeatures != null)
         {
-            final String[] features = commandLine.getOptionValues(OPTION_FEATURE_INDICES);
-            selectedFeatures = new int[features.length];
             for (int i = 0; i < selectedFeatures.length; i++)
             {
                 // Command-line feature argument starts indexing with 1, but we want to index
                 // starting with 0
-                selectedFeatures[i] = Integer.parseInt(features[i]) - 1;
+                selectedFeatures[i]--;
             }
         }
-
-        wordIndex = Integer.parseInt(commandLine.getOptionValue(OPTION_WORD_INDEX, "1"));
-
-        // Previous and subsequent words / POS
-        previousWords = Integer.parseInt(commandLine.getOptionValue(OPTION_PREVIOUS_WORD, "0"));
-        subsequentWords = Integer.parseInt(commandLine.getOptionValue(OPTION_SUBSEQUENT_WORD, "0"));
-        previousPos = Integer.parseInt(commandLine.getOptionValue(OPTION_PREVIOUS_POS, "0"));
-        subsequentPos = Integer.parseInt(commandLine.getOptionValue(OPTION_SUBSEQUENT_POS, "0"));
-    }
-
-    @Override
-    protected String usageArguments() throws Exception
-    {
-        return "[filename]";
     }
 
     private String selectTreeFeatures(String parsedSentence)
@@ -555,9 +483,9 @@ public class SelectFeatures extends LinewiseCommandlineTool
     }
 
     @Override
-    protected LineTask lineTask(String line)
+    protected Callable<String> lineTask(final String line)
     {
-        return new LineTask(line)
+        return new Callable<String>()
         {
             @Override
             public String call()

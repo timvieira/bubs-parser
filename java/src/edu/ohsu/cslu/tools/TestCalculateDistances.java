@@ -1,17 +1,17 @@
 package edu.ohsu.cslu.tools;
 
-import static junit.framework.Assert.assertEquals;
-
-import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
-import edu.ohsu.cslu.common.tools.ToolTestCase;
+import cltool.ToolTestCase;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for the command-line distance calculation tool.
@@ -24,16 +24,19 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
 @RunWith(FilteredRunner.class)
 public class TestCalculateDistances extends ToolTestCase
 {
-    @Test(expected = ParseException.class)
+    @Test
     public void testNoParametersArgument() throws Exception
     {
-        executeTool("-m pqgram", "(Bracketed) (input)");
+        String output = executeTool(new CalculateDistances(), "-m pqgram", "(Bracketed) (input)");
+        assertTrue("Missing error output", output
+            .contains("P and Q parameters are required for pqgram distance calculation"));
     }
 
     @Test
     public void testPqgramDistanceCalculator() throws Exception
     {
-        String output = executeToolFromFile("-m pqgram -p 2,3", "tools/calculate-distances-pqgram.input.gz");
+        String output = executeToolFromFile(new CalculateDistances(), "-m pqgram -p 2,3",
+            "tools/calculate-distances-pqgram.input.gz");
         String expectedOutput = new String(SharedNlpTests
             .readUnitTestData("tools/calculate-distances-pqgram.output.gz"));
         assertEquals(expectedOutput, output);
@@ -44,7 +47,8 @@ public class TestCalculateDistances extends ToolTestCase
     public void profilePqgramDistanceCalculator() throws Exception
     {
         long startTime = System.currentTimeMillis();
-        String output = executeToolFromFile("-m pqgram -p 2,3", "tools/calculate-distances-pqgram-profile.input.gz");
+        String output = executeToolFromFile(new CalculateDistances(), "-m pqgram -p 2,3",
+            "tools/calculate-distances-pqgram-profile.input.gz");
         long totalTime = System.currentTimeMillis() - startTime;
         String expectedOutput = new String(SharedNlpTests
             .readUnitTestData("tools/calculate-distances-pqgram-profile.output.gz"));
@@ -57,16 +61,12 @@ public class TestCalculateDistances extends ToolTestCase
     public void testLevenshteinDistanceCalculator() throws Exception
     {
         IntMatrix intMatrix = new IntMatrix(new int[][] { {0}, {3, 0}, {1, 3, 0}}, true);
-        assertEquals(intMatrix.toString(), executeTool("-m levenshtein", "dance\ndancing\ndances"));
+        assertEquals(intMatrix.toString(), executeTool(new CalculateDistances(), "-m levenshtein",
+            "dance\ndancing\ndances"));
 
         // A couple examples from Wikipedia
         intMatrix = new IntMatrix(new int[][] { {0}, {3, 0}, {7, 6, 0}, {5, 6, 3, 0}}, true);
-        assertEquals(intMatrix.toString(), executeTool("-m levenshtein", "kitten\nsitting\nsaturday\nsunday"));
-    }
-
-    @Override
-    protected BaseCommandlineTool tool()
-    {
-        return new CalculateDistances();
+        assertEquals(intMatrix.toString(), executeTool(new CalculateDistances(), "-m levenshtein",
+            "kitten\nsitting\nsaturday\nsunday"));
     }
 }

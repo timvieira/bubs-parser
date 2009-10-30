@@ -2,13 +2,13 @@ package edu.ohsu.cslu.tools;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.Callable;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
-import edu.ohsu.cslu.common.tools.LinewiseCommandlineTool;
+import cltool.LinewiseCommandlineTool;
 
 /**
  * Encodes a file into a specified content encoding
@@ -20,27 +20,17 @@ import edu.ohsu.cslu.common.tools.LinewiseCommandlineTool;
  */
 public class Encode extends LinewiseCommandlineTool
 {
+    @Option(name = "-e", aliases = {"--encoding"}, metaVar = "encoding", usage = "Encoding (us-ascii | utf-8 | utf-16 | ...) Default = utf-8")
+    private final String encoding = "utf-8";
+
     public static void main(String[] args)
     {
         run(args);
     }
 
     @Override
-    @SuppressWarnings("static-access")
-    protected Options options() throws Exception
+    public void setup(CmdLineParser parser) throws ParseException
     {
-        Options options = new Options();
-
-        options.addOption(OptionBuilder.isRequired().hasArg().withArgName("encoding").withDescription(
-            "Encoding (us-ascii, utf-8, utf-16, etc)").create('e'));
-
-        return options;
-    }
-
-    @Override
-    public void setToolOptions(CommandLine commandLine) throws ParseException
-    {
-        String encoding = commandLine.getOptionValue('e').toUpperCase();
         try
         {
             System.setOut(new PrintStream(System.out, true, encoding));
@@ -52,15 +42,9 @@ public class Encode extends LinewiseCommandlineTool
     }
 
     @Override
-    protected String usageArguments() throws Exception
+    protected Callable<String> lineTask(final String line)
     {
-        return "[filenames]";
-    }
-
-    @Override
-    protected LineTask lineTask(String line)
-    {
-        return new LineTask(line)
+        return new Callable<String>()
         {
             @Override
             public String call()

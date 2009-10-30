@@ -7,17 +7,16 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
+import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.multiple.IterativePairwiseAligner;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
-import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
@@ -25,38 +24,39 @@ import edu.ohsu.cslu.util.Strings;
 
 public class AlignSentences extends BaseCommandlineTool
 {
+    @Option(name = "-dm", aliases = {"--distance-matrix"}, metaVar = "filename", usage = "Distance matrix file")
     private String distanceMatrixFilename;
+
+    @Option(name = "-vm", aliases = {"--vocabulary-files"}, metaVar = "vocabulary=matrix,...", usage = "Vocabularies and Substitution Matrices separated by '='. sub-cost,gap-cost"
+        + " defines matrix, 'auto' induces vocabulary automatically")
+    private String vocabularyMatrixParam;
+
     private final List<String> substitutionMatrixOptions = new ArrayList<String>();
     private final List<String> vocabularyFiles = new ArrayList<String>();
 
     private final static String AUTO = "auto";
 
-    /**
-     * @param args
-     */
     public static void main(String[] args)
     {
         run(args);
     }
 
     @Override
-    public void execute() throws Exception
+    public void run() throws Exception
     {
         HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
 
         final ArrayList<String> sentences = new ArrayList<String>();
         StringBuilder sb = new StringBuilder(8192);
-        // TODO: Handle STDIN?
-        for (String dataFile : dataFiles)
+
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        for (String line = reader.readLine(); line != null; line = reader.readLine())
         {
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(fileAsInputStream(dataFile)));
-            for (String line = reader.readLine(); line != null; line = reader.readLine())
-            {
-                sentences.add(line);
-                sb.append(Strings.extractPos(line));
-                sb.append('\n');
-            }
+            sentences.add(line);
+            sb.append(Strings.extractPos(line));
+            sb.append('\n');
         }
+
         String entireFile = sb.toString();
 
         // Induce the vocabularies
@@ -135,48 +135,15 @@ public class AlignSentences extends BaseCommandlineTool
     }
 
     @Override
-    @SuppressWarnings("static-access")
-    protected Options options() throws Exception
+    public void setup(CmdLineParser parser)
     {
-        Options options = basicOptions();
-
-        options.addOption(OptionBuilder.hasArg().withArgName("matrix").withLongOpt("distance-matrix").withDescription(
-            "Distance Matrix File").create("dm"));
-
-        options.addOption(OptionBuilder.hasArgs().withArgName("vocabulary=matrix")
-            .withLongOpt("filenames/vocabularies").withDescription(
-                "Vocabularies and Substitution Matrices separated by '='. sub-cost,gap-cost"
-                    + " defines matrix, 'auto' induces vocabulary automatically").create("vm"));
-
-        return options;
-    }
-
-    @Override
-    public void setToolOptions(CommandLine commandLine)
-    {
-        distanceMatrixFilename = commandLine.getOptionValue("dm");
-
-        String[] vmOptions = commandLine.getOptionValues("vm");
+        String[] vmOptions = vocabularyMatrixParam.split(",");
 
         for (int i = 0; i < vmOptions.length; i++)
         {
             String[] split = vmOptions[i].split("=");
-            if (split.length > 1)
-            {
-                vocabularyFiles.add(split[0]);
-                substitutionMatrixOptions.add(split[1]);
-            }
-            else
-            {
-                dataFiles.add(split[0]);
-            }
+            vocabularyFiles.add(split[0]);
+            substitutionMatrixOptions.add(split[1]);
         }
     }
-
-    @Override
-    protected String usageArguments() throws Exception
-    {
-        return "[filenames]";
-    }
-
 }

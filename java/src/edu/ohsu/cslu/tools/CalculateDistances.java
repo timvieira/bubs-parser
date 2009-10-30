@@ -11,14 +11,14 @@ import java.util.HashMap;
 import jsr166y.forkjoin.ForkJoinPool;
 import jsr166y.forkjoin.RecursiveAction;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
+import cltool.BaseCommandlineTool;
+import cltool.Threadable;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.common.Vocabulary;
-import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.matrices.FixedPointShortMatrix;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
@@ -37,14 +37,16 @@ import edu.ohsu.cslu.util.Math;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@Threadable
 public class CalculateDistances extends BaseCommandlineTool
 {
+    @Option(name = "-m", aliases = {"--method"}, metaVar = "method", usage = "Distance Calculation Method (pqgram, levenshtein). Default = levenshtein")
     private CalculationMethod calculationMethod;
+    @Option(name = "-p", aliases = {"--parameters"}, metaVar = "parameters", usage = "Additional parameters for the specified calucalation method")
     private String parameters;
-    private int maxThreads;
 
     @Override
-    public void execute() throws Exception
+    public void run() throws Exception
     {
         DistanceCalculator calculator = null;
 
@@ -88,44 +90,14 @@ public class CalculateDistances extends BaseCommandlineTool
     }
 
     @Override
-    @SuppressWarnings("static-access")
-    protected Options options() throws Exception
+    public void setup(CmdLineParser parser) throws Exception
     {
-        Options options = basicOptions();
-
-        options.addOption(OptionBuilder.hasArg().withArgName("method").withDescription(
-            "Distance Calculation Method (pqgram, levenshtein) (default levenshtein)").create('m'));
-        options.addOption(OptionBuilder.hasArg().withArgName("parameters").withDescription("parameters").create('p'));
-        options
-            .addOption(OptionBuilder.hasArg().withArgName("threads").withDescription("Maximum Threads").create("xt"));
-
-        return options;
-    }
-
-    @Override
-    public void setToolOptions(CommandLine commandLine) throws ParseException
-    {
-        calculationMethod = CalculationMethod.forString(commandLine.getOptionValue('m'));
-
-        parameters = commandLine.hasOption('p') ? commandLine.getOptionValue('p') : null;
         if (calculationMethod == CalculationMethod.Pqgram && parameters == null)
         {
-            throw new ParseException("P and Q parameters are required for pqgram distance calculation");
+            throw new CmdLineException(parser, "P and Q parameters are required for pqgram distance calculation");
         }
-
-        maxThreads = commandLine.hasOption("xt") ? Integer.parseInt(commandLine.getOptionValue("xt")) : Runtime
-            .getRuntime().availableProcessors();
     }
 
-    @Override
-    protected String usageArguments() throws Exception
-    {
-        return "[filename]";
-    }
-
-    /**
-     * @param args
-     */
     public static void main(String[] args)
     {
         run(args);
