@@ -17,24 +17,30 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
+import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.multiple.HmmMultipleSequenceAlignerForMorphology;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
-import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 
 public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
 {
+    @Option(name = "-dm", aliases = {"--distance-matrix"}, metaVar = "filename", usage = "Distance matrix file")
     private String distanceMatrixFilename;
+
+    @Option(name = "-pc", required = true, aliases = {"--pseudo-counts"}, metaVar = "counts", usage = "Pseudo-counts per vocabulary element")
     private int pseudoCountsPerElement;
-    
+
+    @Option(name = "-vm", aliases = {"--vocabulary-files"}, metaVar = "vocabulary=matrix,...", usage = "Vocabularies and Substitution Matrices separated by '='. sub-cost,gap-cost"
+        + " defines matrix, 'auto' induces vocabulary automatically")
+    private String vocabularyMatrixParam;
+
     private final List<String> substitutionMatrixOptions = new ArrayList<String>();
     private final List<String> vocabularyFiles = new ArrayList<String>();
     private final static String AUTO = "auto";
@@ -48,7 +54,7 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
     }
 
     @Override
-    public void execute() throws Exception
+    public void run() throws Exception
     {
         long startTime = System.currentTimeMillis();
 
@@ -62,7 +68,7 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
             sb.append(line);
             sb.append('\n');
         }
-        
+
         // String entireInput = sb.toString();
         //
         // Induce the vocabularies
@@ -130,18 +136,18 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
             }
         }
 
-        
-        MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(substitutionMatrices, vocabularies);
-        
-        
-        // Read in pairwise  distance file
+        MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(substitutionMatrices,
+            vocabularies);
+
+        // Read in pairwise distance file
         // TODO: Option to calculate the distance matrix on-the-fly
         Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
 
         // Align the sequences
-//        IterativePairwiseAligner aligner = new IterativePairwiseAligner();
-        HmmMultipleSequenceAlignerForMorphology aligner = 
-            new HmmMultipleSequenceAlignerForMorphology(new int[] {pseudoCountsPerElement}, 0); // Zero for DO NOT UPWEIGHT THE MOST SIMILAR SEQUENCE
+        // IterativePairwiseAligner aligner = new IterativePairwiseAligner();
+        HmmMultipleSequenceAlignerForMorphology aligner = new HmmMultipleSequenceAlignerForMorphology(
+            new int[] {pseudoCountsPerElement}, 0); // Zero for DO NOT UPWEIGHT THE MOST SIMILAR
+                                                    // SEQUENCE
         MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix, alignmentModel);
 
         System.out.format("Training Alignment of length %d (produced in %d ms)\n\n", trainingAlignment.length(), System
@@ -149,62 +155,19 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
             - startTime);
         System.out.println(trainingAlignment.toString());
         System.out.println();
-        
 
     }
 
     @Override
-    @SuppressWarnings("static-access")
-    protected Options options() throws Exception
+    public void setup(CmdLineParser parser)
     {
-        Options options = basicOptions();
-
-        options.addOption(OptionBuilder.hasArg().withArgName("matrix").withLongOpt("distance-matrix").withDescription(
-            "Distance Matrix File").create("dm"));
-
-        options.addOption(OptionBuilder.hasArgs().withArgName("vocabulary=matrix")
-            .withLongOpt("filenames/vocabularies").withDescription(
-                "Vocabularies and Substitution Matrices separated by '='. sub-cost,gap-cost"
-                    + " defines matrix, 'auto' induces vocabulary automatically").create("vm"));
-
-        options.addOption(OptionBuilder.hasArg().withArgName("devset").withLongOpt("development-set").withDescription(
-            "Development Set").create("ds"));
-        options.addOption(OptionBuilder.hasArg().withArgName("pseudo-counts").withLongOpt("pseudo-counts")
-            .withDescription("Pseudo-counts per vocabulary element").create("pc"));
-        options.addOption(OptionBuilder.hasArgs().withArgName("features").withLongOpt("devset-features")
-            .withDescription("Features to use when aligning development set (indices, comma-separated)")
-            .withValueSeparator(',').create("df"));
-
-        return options;
-    }
-
-    @Override
-    public void setToolOptions(CommandLine commandLine)
-    {
-        distanceMatrixFilename = commandLine.getOptionValue("dm");
-
-        String[] vmOptions = commandLine.getOptionValues("vm");
+        String[] vmOptions = vocabularyMatrixParam.split(",");
 
         for (int i = 0; i < vmOptions.length; i++)
         {
             String[] split = vmOptions[i].split("=");
-            if (split.length > 1)
-            {
-                vocabularyFiles.add(split[0]);
-                substitutionMatrixOptions.add(split[1]);
-            }
-            else
-            {
-                dataFiles.add(split[0]);
-            }
+            vocabularyFiles.add(split[0]);
+            substitutionMatrixOptions.add(split[1]);
         }
-        
-        pseudoCountsPerElement = Integer.parseInt(commandLine.getOptionValue("pc", "1"));
-    }
-
-    @Override
-    protected String usageArguments() throws Exception
-    {
-        return "[filenames]";
     }
 }

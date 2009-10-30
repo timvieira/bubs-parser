@@ -3,16 +3,11 @@ package edu.ohsu.cslu.tools;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.kohsuke.args4j.Option;
 
-import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
+import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 
 /**
@@ -25,11 +20,17 @@ import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
  */
 public class FilterSentences extends BaseCommandlineTool
 {
+    @Option(name = "-ml", aliases = {"--minlength"}, metaVar = "length", usage = "Minimum length (words)")
     private int minLength;
+
+    @Option(name = "-xl", aliases = {"--maxlength"}, metaVar = "length", usage = "Maximum length (words)")
     private int maxLength;
+
+    @Option(name = "-c", aliases = {"--count"}, metaVar = "count", usage = "Number of sentences")
     private int count;
-    private FileFormat inputFormat;
-    private List<String> filenames;
+
+    @Option(name = "-i", aliases = {"--input-format"}, metaVar = "format (tree|bracketed|square-bracketed|stanford)", usage = "Input format. Default = bracketed.")
+    private final FileFormat inputFormat = FileFormat.Bracketed;
 
     public static void main(String[] args)
     {
@@ -37,34 +38,31 @@ public class FilterSentences extends BaseCommandlineTool
     }
 
     @Override
-    public void execute() throws Exception
+    public void run() throws Exception
     {
         final ArrayList<String> sentences = new ArrayList<String>();
-        for (String filename : filenames)
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        for (String line = reader.readLine(); line != null; line = reader.readLine())
         {
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(fileAsInputStream(filename)));
-            for (String line = reader.readLine(); line != null; line = reader.readLine())
+            switch (inputFormat)
             {
-                switch (inputFormat)
-                {
-                    case BracketedTree :
-                        StringNaryTree parseTree = StringNaryTree.read(line);
-                        // Skip sentences which do not meet the size criteria
-                        if (parseTree.leaves() < minLength || parseTree.leaves() > maxLength)
-                        {
-                            continue;
-                        }
+                case BracketedTree :
+                    StringNaryTree parseTree = StringNaryTree.read(line);
+                    // Skip sentences which do not meet the size criteria
+                    if (parseTree.leaves() < minLength || parseTree.leaves() > maxLength)
+                    {
+                        continue;
+                    }
 
-                        sentences.add(parseTree.toString());
-                        break;
+                    sentences.add(parseTree.toString());
+                    break;
 
-                    // TODO: Implement other input formats
-                    default :
-                        throw new IllegalArgumentException("Unknown input format: " + inputFormat.toString());
-                }
+                // TODO: Implement other input formats
+                default :
+                    throw new IllegalArgumentException("Unknown input format: " + inputFormat.toString());
             }
-            reader.close();
         }
+        reader.close();
 
         if (count == Integer.MAX_VALUE)
         {
@@ -80,44 +78,5 @@ public class FilterSentences extends BaseCommandlineTool
         {
             System.out.println(sentences.get(i));
         }
-    }
-
-    @Override
-    @SuppressWarnings("static-access")
-    protected Options options() throws Exception
-    {
-        Options options = basicOptions();
-
-        options.addOption(OptionBuilder.hasArg().withArgName("type").withDescription(
-            "File Type (tree, tagged, simple). Default simple").create('t'));
-        options.addOption(OptionBuilder.hasArg().withArgName("length").withDescription("Minimum length").create("ml"));
-        options.addOption(OptionBuilder.hasArg().withArgName("length").withDescription("Maximum length").create("xl"));
-        options.addOption(OptionBuilder.hasArg().withArgName("count").withDescription("Number of sentences")
-            .create('c'));
-
-        return options;
-    }
-
-    @Override
-    public void setToolOptions(CommandLine commandLine) throws ParseException
-    {
-        inputFormat = FileFormat.forString(commandLine.getOptionValue('t'));
-        if (inputFormat != FileFormat.BracketedTree)
-        {
-            throw new ParseException("Unsupported input format: " + commandLine.getOptionValue('t'));
-        }
-
-        minLength = commandLine.hasOption("ml") ? Integer.parseInt(commandLine.getOptionValue("ml")) : 0;
-        maxLength = commandLine.hasOption("xl") ? Integer.parseInt(commandLine.getOptionValue("xl"))
-            : Integer.MAX_VALUE;
-        count = commandLine.hasOption('c') ? Integer.parseInt(commandLine.getOptionValue('c')) : Integer.MAX_VALUE;
-
-        filenames = Arrays.asList(commandLine.getArgs());
-    }
-
-    @Override
-    protected String usageArguments() throws Exception
-    {
-        return "[filenames]";
     }
 }

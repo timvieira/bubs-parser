@@ -1,14 +1,13 @@
 package edu.ohsu.cslu.alignment.tools;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import cltool.ToolTestCase;
 import edu.ohsu.cslu.alignment.TestSimpleVocabulary;
-import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
-import edu.ohsu.cslu.common.tools.ToolTestCase;
 import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Simple unit tests for {@link InduceMappedVocabularies}. The core functionality is tested in
@@ -55,7 +54,7 @@ public class TestInduceMappedVocabularies extends ToolTestCase
         sb.append("3 : _head : false\n");
         sb.append("\n");
 
-        String output = executeTool("",
+        String output = executeTool(new InduceMappedVocabularies(), "",
             "(DT The _sib) (NNS computers _head) (MD will _head) (VB display _head) (NN stock _sib) (. . _head)");
         assertEquals(sb.toString(), output);
     }
@@ -82,15 +81,8 @@ public class TestInduceMappedVocabularies extends ToolTestCase
         sb.append("14 : _sib : false\n");
         sb.append("\n");
 
-        String output = executeTool("-l",
+        String output = executeTool(new InduceMappedVocabularies(), "-l",
             "(DT The _sib) (NNS computers _head) (MD will _head) (VB display _head) (NN stock _sib) (. . _head)");
         assertEquals(sb.toString(), output);
     }
-
-    @Override
-    protected BaseCommandlineTool tool()
-    {
-        return new InduceMappedVocabularies();
-    }
-
 }

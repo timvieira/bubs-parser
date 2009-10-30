@@ -3,14 +3,12 @@ package edu.ohsu.cslu.alignment.tools;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
+import org.kohsuke.args4j.Option;
 
+import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.common.Vocabulary;
-import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 
 /**
  * Induces {@link Vocabulary} instances given an input in bracketed format.
@@ -36,9 +34,14 @@ import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
  */
 public class InduceMappedVocabularies extends BaseCommandlineTool
 {
-    private int tag = -1;
+    @Option(name = "-t", metaVar = "tag", usage = "Tag number")
+    private final int tag = -1;
+
+    @Option(name = "-l", usage = "Log-linear - create a single vocabulary mapping all tokens")
     private boolean logLinear;
-    private int rareTokenCutoff;
+
+    @Option(name = "-rtc", metaVar = "cutoff", usage = "Rare token cutoff. Default = 0")
+    private final int rareTokenCutoff = 0;
 
     public static void main(String[] args)
     {
@@ -46,7 +49,7 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
     }
 
     @Override
-    public void execute() throws Exception
+    public void run() throws Exception
     {
         if (logLinear)
         {
@@ -72,35 +75,4 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
             }
         }
     }
-
-    @Override
-    @SuppressWarnings("static-access")
-    protected Options options() throws Exception
-    {
-        Options options = basicOptions();
-
-        options.addOption(OptionBuilder.hasArg().withArgName("tag").withDescription("tag number (default 1)").create(
-            't'));
-        options.addOption(OptionBuilder.withDescription("Log-Linear - create a single vocabulary mapping all tokens")
-            .create('l'));
-        options.addOption(OptionBuilder.hasArg().withArgName("cutoff").withDescription("Rare token cutoff (default 0)")
-            .create("rtc"));
-
-        return options;
-    }
-
-    @Override
-    public void setToolOptions(CommandLine commandLine)
-    {
-        tag = Integer.parseInt(commandLine.getOptionValue('t', "-1"));
-        logLinear = commandLine.hasOption('l');
-        rareTokenCutoff = Integer.parseInt(commandLine.getOptionValue("rtc", "0"));
-    }
-
-    @Override
-    protected String usageArguments() throws Exception
-    {
-        return "[filename]";
-    }
-
 }

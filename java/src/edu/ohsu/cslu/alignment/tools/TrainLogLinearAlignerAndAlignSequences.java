@@ -7,10 +7,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
+import org.kohsuke.args4j.Option;
 
+import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.column.ColumnSequenceAligner;
@@ -20,7 +19,6 @@ import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.alignment.multiple.ReestimatingPssmMultipleSequenceAligner;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.MappedSequence;
-import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.vectors.NumericVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
@@ -28,11 +26,22 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
 {
+    @Option(name = "-dm", aliases = {"--distance-matrix"}, metaVar = "filename", usage = "Distance matrix file")
     private String distanceMatrixFile;
+
+    @Option(name = "-ds", aliases = {"--development-set"}, metaVar = "filename", usage = "Development set file")
     private String devSetFile;
+
+    @Option(name = "-vocab", aliases = {"--vocabulary-file"}, metaVar = "filename", usage = "Vocabulary file")
     private String vocabularyFile;
+
+    @Option(name = "-lpc", aliases = {"--pseudo-count-vector"}, metaVar = "filename", usage = "Laplace pseudo-count vector file")
     private String laplacePseudoCountVectorFile;
+
+    @Option(name = "-s", aliases = {"--scaling-vector"}, metaVar = "filename", usage = "Scaling vector file")
     private String scalingVectorFile;
+
+    @Option(name = "-gc", aliases = {"--gap-cost-vector"}, metaVar = "filename", usage = "Gap cost vector file")
     private String gapCostVectorFile;
 
     private final static String HEAD_VERB = "_head_verb";
@@ -46,7 +55,7 @@ public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
     }
 
     @Override
-    public void execute() throws Exception
+    public void run() throws Exception
     {
         long startTime = System.currentTimeMillis();
 
@@ -106,7 +115,8 @@ public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
 
         int trainHeadsCorrect = headVerbsInColumn(trainHeadColumn, trainingAlignment);
         System.out.format("Training: %4.2f%% identification accuracy of head verbs (%d out of %d )\n",
-            trainHeadsCorrect * 100f / trainingAlignment.numOfSequences(), trainHeadsCorrect, trainingAlignment.numOfSequences());
+            trainHeadsCorrect * 100f / trainingAlignment.numOfSequences(), trainHeadsCorrect, trainingAlignment
+                .numOfSequences());
 
         System.out.println("\nHead Column = " + trainHeadColumn + "\n");
 
@@ -197,49 +207,5 @@ public class TrainLogLinearAlignerAndAlignSequences extends BaseCommandlineTool
             }
         }
         return -1;
-    }
-
-    @Override
-    @SuppressWarnings("static-access")
-    protected Options options() throws Exception
-    {
-        Options options = basicOptions();
-
-        options.addOption(OptionBuilder.isRequired().hasArg().withArgName("file").withLongOpt("vocabulary-file")
-            .withDescription("Vocabulary File").create("v"));
-
-        options.addOption(OptionBuilder.isRequired().hasArg().withArgName("devset").withLongOpt("development-set")
-            .withDescription("Development Set").create("ds"));
-
-        options.addOption(OptionBuilder.isRequired().hasArg().withArgName("matrix").withLongOpt("distance-matrix")
-            .withDescription("Distance Matrix File").create("dm"));
-
-        options.addOption(OptionBuilder.isRequired().hasArg().withArgName("file").withLongOpt("laplace-vector")
-            .withDescription("Laplace Pseudo-count Vector File").create("lpc"));
-
-        options.addOption(OptionBuilder.isRequired().hasArg().withArgName("file").withLongOpt("scaling-vector")
-            .withDescription("Scaling Vector File").create("s"));
-
-        options.addOption(OptionBuilder.isRequired().hasArg().withArgName("cost vector").withLongOpt("gap-cost-file")
-            .withDescription("Gap Cost Vector File").create("gc"));
-
-        return options;
-    }
-
-    @Override
-    public void setToolOptions(CommandLine commandLine)
-    {
-        distanceMatrixFile = commandLine.getOptionValue("dm");
-        devSetFile = commandLine.getOptionValue("ds");
-        vocabularyFile = commandLine.getOptionValue('v');
-        laplacePseudoCountVectorFile = commandLine.getOptionValue("lpc");
-        scalingVectorFile = commandLine.getOptionValue("s");
-        gapCostVectorFile = commandLine.getOptionValue("gc");
-    }
-
-    @Override
-    protected String usageArguments() throws Exception
-    {
-        return "[training-set filenames]";
     }
 }

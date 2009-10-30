@@ -2,36 +2,49 @@ package edu.ohsu.cslu.alignment.tools;
 
 import java.io.InputStreamReader;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
+import org.kohsuke.args4j.Option;
 
+import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.common.FeatureClass;
-import edu.ohsu.cslu.common.tools.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
-import edu.ohsu.cslu.tools.LinguisticToolOptions;
 
 public class CreateVectorFromVocabulary extends BaseCommandlineTool
 {
     private final static String OPTION_NOT_FIRST_VERB = "nfv";
 
-    private float gap;
-    private float word;
-    private float stem;
-    private float pos;
-    private float notFirstVerb;
-    private float headVerb;
-    private float beforeHead;
-    private float afterHead;
-    private float previousWords;
-    private float subsequentWords;
-    private float previousPos;
-    private float subsequentPos;
-    private float capitalized;
-    private float allCaps;
-    private float hyphenated;
-    private float length;
+    @Option(name = "-g", metaVar = "weight", usage = "Gap feature weight")
+    private final float gap = -1;
+    @Option(name = "-w", metaVar = "weight", usage = "Word feature")
+    private final float word = -1;
+    @Option(name = "-s", metaVar = "weight", usage = "Stem feature")
+    private final float stem = -1;
+    @Option(name = "-p", metaVar = "weight", usage = "POS feature (_pos_...)")
+    private final float pos = -1;
+    @Option(name = "-nfv", metaVar = "weight", usage = "'Not first verb' feature")
+    private final float notFirstVerb = -1;
+    @Option(name = "-h", metaVar = "weight", usage = "Head verb feature (_head_verb)")
+    private final float headVerb = -1;
+    @Option(name = "-bh", metaVar = "weight", usage = "Before head verb feature (_before_head_verb)")
+    private final float beforeHead = -1;
+    @Option(name = "-ah", metaVar = "weight", usage = "After head verb feature (_after_head_verb)")
+    private final float afterHead = -1;
+    @Option(name = "-prevword", metaVar = "weight", usage = "Previous word(s) features")
+    private final float previousWords = -1;
+    @Option(name = "-subword", metaVar = "weight", usage = "Subsequent word(s) features")
+    private final float subsequentWords = -1;
+    @Option(name = "-prevpos", metaVar = "weight", usage = "Previous POS features")
+    private final float previousPos = -1;
+    @Option(name = "-subpos", metaVar = "weight", usage = "Subsequent POS features")
+    private final float subsequentPos = -1;
+    @Option(name = "-cap", metaVar = "weight", usage = "Capitalized word feature")
+    private final float capitalized = -1;
+    @Option(name = "-allcaps", metaVar = "weight", usage = "All-cap word feature")
+    private final float allCaps = -1;
+    @Option(name = "-hyphen", metaVar = "weight", usage = "Hyphenated word feature")
+    private final float hyphenated = -1;
+    @Option(name = "-length", metaVar = "weight", usage = "Word length features")
+    private final float length = -1;
 
     public static void main(String[] args)
     {
@@ -39,7 +52,7 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
     }
 
     @Override
-    public void execute() throws Exception
+    public void run() throws Exception
     {
         LogLinearVocabulary vocabulary = LogLinearVocabulary.read(new InputStreamReader(System.in));
         FloatVector vector = new FloatVector(vocabulary.size());
@@ -150,76 +163,5 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
             throw new IllegalArgumentException("Unexpected vocabulary element: " + mapping);
         }
         vector.set(index, value);
-    }
-
-    @Override
-    @SuppressWarnings("static-access")
-    protected Options options() throws Exception
-    {
-        Options options = basicOptions();
-
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Gap feature").create(
-            LinguisticToolOptions.OPTION_GAP));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Word feature").create(
-            LinguisticToolOptions.OPTION_WORD));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Stem feature").create(
-            LinguisticToolOptions.OPTION_STEM));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("POS feature (_pos_...)").create(
-            LinguisticToolOptions.OPTION_POS));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("_first_verb feature").create(
-            OPTION_NOT_FIRST_VERB));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("_head_verb feature").create(
-            LinguisticToolOptions.OPTION_HEAD_VERB));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("_before_head_verb feature")
-            .create(LinguisticToolOptions.OPTION_BEFORE_HEAD));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("_after_head_verb feature")
-            .create(LinguisticToolOptions.OPTION_AFTER_HEAD));
-
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Previous word(s) features")
-            .create(LinguisticToolOptions.OPTION_PREVIOUS_WORD));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Subsequent word(s) features")
-            .create(LinguisticToolOptions.OPTION_SUBSEQUENT_WORD));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Previous POS features").create(
-            LinguisticToolOptions.OPTION_PREVIOUS_POS));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Subsequent POS features")
-            .create(LinguisticToolOptions.OPTION_SUBSEQUENT_POS));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Capitalized word").create(
-            LinguisticToolOptions.OPTION_CAPITALIZED));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("All-cap word").create(
-            LinguisticToolOptions.OPTION_ALL_CAPS));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Hyphenated word").create(
-            LinguisticToolOptions.OPTION_HYPHENATED));
-        options.addOption(OptionBuilder.hasArg().withArgName("value").withDescription("Word Length").create(
-            LinguisticToolOptions.OPTION_LENGTH));
-
-        return options;
-    }
-
-    @Override
-    public void setToolOptions(CommandLine commandLine)
-    {
-        gap = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_GAP, "-1"));
-        word = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_WORD, "-1"));
-        stem = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_STEM, "-1"));
-        pos = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_POS, "-1"));
-        notFirstVerb = Float.parseFloat(commandLine.getOptionValue(OPTION_NOT_FIRST_VERB, "-1"));
-        headVerb = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_HEAD_VERB, "-1"));
-        beforeHead = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_BEFORE_HEAD, "-1"));
-        afterHead = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_AFTER_HEAD, "-1"));
-        previousWords = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_PREVIOUS_WORD, "-1"));
-        subsequentWords = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_SUBSEQUENT_WORD,
-            "-1"));
-        previousPos = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_PREVIOUS_POS, "-1"));
-        subsequentPos = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_SUBSEQUENT_POS, "-1"));
-        capitalized = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_CAPITALIZED, "-1"));
-        allCaps = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_ALL_CAPS, "-1"));
-        hyphenated = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_HYPHENATED, "-1"));
-        length = Float.parseFloat(commandLine.getOptionValue(LinguisticToolOptions.OPTION_LENGTH, "-1"));
-    }
-
-    @Override
-    protected String usageArguments() throws Exception
-    {
-        return "[vocabulary-file]";
     }
 }
