@@ -1,5 +1,14 @@
 package edu.ohsu.cslu.tools;
 
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_AFTER_HEAD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_BEFORE_HEAD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HEAD_VERB;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_WORD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_WORD;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,7 +27,6 @@ import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.*;
 
 /**
  * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse
@@ -66,7 +74,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
     @Option(name = "-lcw", aliases = {"--lowercase-word"}, usage = "Include lowercased token")
     private boolean includeLowercaseWord;
 
-    @Option(name = "-stem", usage = "Include word stem")
+    @Option(name = "-stem", usage = "Include word stem (_stem_...)")
     private boolean includeStem;
 
     @Option(name = "-h", aliases = {"--head-verb"}, usage = "Include _head_verb feature")

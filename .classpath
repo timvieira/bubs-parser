@@ -10,8 +10,8 @@
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/junit.jar" sourcepath="java/lgpl-lib/junit_src.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/trove-2.0.4.jar" sourcepath="java/lgpl-lib/trove-src-2.0.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/lingpipe.jar" sourcepath="java/lgpl-lib/lingpipe-src.jar"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/args4j"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/cltool"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/log4j.jar"/>
+	<classpathentry exported="true" kind="lib" path="java/bsd-lib/args4j.jar" sourcepath="java/bsd-lib/args4j-src.jar"/>
+	<classpathentry exported="true" kind="lib" path="java/bsd-lib/cltool.jar" sourcepath="java/bsd-lib/cltool-src.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
