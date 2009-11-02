@@ -74,11 +74,19 @@ public class UnigramFrequencyCounter implements Serializable
         return documents;
     }
 
+    /**
+     * @param term
+     * @return The total number of occurrences in the corpus
+     */
     public int totalCount(String term)
     {
         return totalTermCounts.getInt(term);
     }
 
+    /**
+     * @param term
+     * @return The number of documents in which the term occurs
+     */
     public int documentCount(String term)
     {
         return documentTermCounts.getInt(term);
