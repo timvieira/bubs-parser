@@ -1,14 +1,5 @@
 package edu.ohsu.cslu.tools;
 
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_AFTER_HEAD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_BEFORE_HEAD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HEAD_VERB;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_WORD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_WORD;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,6 +18,7 @@ import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.*;
 
 /**
  * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse
@@ -55,10 +47,10 @@ import edu.ohsu.cslu.util.Strings;
 public class SelectFeatures extends LinewiseCommandlineTool
 {
     @Option(name = "-i", aliases = {"--input-format"}, metaVar = "format (tree|bracketed|square-bracketed|stanford)", usage = "Input format. Default = bracketed.")
-    private final FileFormat inputFormat = FileFormat.Bracketed;
+    private FileFormat inputFormat = FileFormat.Bracketed;
 
-    @Option(name = "-out", aliases = {"--output-format"}, metaVar = "format (tree|bracketed|square-bracketed|stanford)", usage = "Output format. Default = bracketed.")
-    private final FileFormat outputFormat = FileFormat.Bracketed;
+    @Option(name = "-o", aliases = {"--output-format"}, metaVar = "format (tree|bracketed|square-bracketed|stanford)", usage = "Output format. Default = bracketed.")
+    private FileFormat outputFormat = FileFormat.Bracketed;
 
     /** TreeBank POS prefixed with 'pos_' e.g. pos_DT, pos_. */
     @Option(name = "-p", aliases = {"--pos", "--part-of-speech"}, usage = "Include POS feature (_pos_...)")
@@ -114,7 +106,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
     @Option(name = "-subpos", aliases = {"--subsequent-pos"}, metaVar = "count", usage = "Include pos for subsequent words")
     private int subsequentPos;
 
-    @Option(name = "-f", aliases = {"--word-index"}, metaVar = "index", usage = "Feature index (in bracketed input) of token to treat as the word (starting with 1) Default = 1")
+    @Option(name = "-f", aliases = {"--features"}, metaVar = "index", usage = "Feature index (in bracketed input) of token to treat as the word (starting with 1) Default = 1")
     private int[] selectedFeatures;
 
     private String beginBracket;
@@ -122,19 +114,12 @@ public class SelectFeatures extends LinewiseCommandlineTool
     private String featureDelimiter;
 
     @Option(name = "-wi", aliases = {"--word-index"}, metaVar = "index", usage = "Feature index (in bracketed input) of token to treat as the word (starting with 1) Default = 1")
-    private final int wordIndex = 1;
+    private int wordIndex = 1;
 
     // TODO: Allow other head-percolation rulesets?
     private final HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
 
     private final PorterStemmer porterStemmer = new PorterStemmer();
-
-    private final static String OPTION_INPUT_FORMAT = "i";
-    private final static String OPTION_OUTPUT_FORMAT = "o";
-    private final static String OPTION_NOT_FIRST_VERB = "nfv";
-
-    private final static String OPTION_WORD_INDEX = "wi";
-    private final static String OPTION_FEATURE_INDICES = "f";
 
     /** Features only supported when input is in tree format */
     static HashSet<String> TREE_FEATURES = new HashSet<String>();
@@ -153,13 +138,13 @@ public class SelectFeatures extends LinewiseCommandlineTool
         TREE_FEATURES.add(OPTION_SUBSEQUENT_POS); // subsequent pos (pos+n_NN)
     }
 
-    public static void main(String[] args)
+    public static void main(final String[] args)
     {
         run(args);
     }
 
     @Override
-    public void setup(CmdLineParser parser) throws CmdLineException
+    public void setup(final CmdLineParser parser) throws CmdLineException
     {
         // // If input is not in tree format, we cannot extract certain features
         // if (inputFormat != FileFormat.BracketedTree && inputFormat !=
@@ -219,21 +204,21 @@ public class SelectFeatures extends LinewiseCommandlineTool
         }
     }
 
-    private String selectTreeFeatures(String parsedSentence)
+    private String selectTreeFeatures(final String parsedSentence)
     {
-        StringNaryTree tree = StringNaryTree.read(parsedSentence);
-        StringBuilder sb = new StringBuilder(parsedSentence.length());
+        final StringNaryTree tree = StringNaryTree.read(parsedSentence);
+        final StringBuilder sb = new StringBuilder(parsedSentence.length());
 
         // Start with before_head
         int headPosition = 0;
         boolean foundFirstVerb = false;
 
         // Construct a flattened representation
-        ArrayList<String> wordList = new ArrayList<String>(64);
-        ArrayList<String> posList = new ArrayList<String>(64);
-        for (Iterator<NaryTree<String>> iter = tree.inOrderIterator(); iter.hasNext();)
+        final ArrayList<String> wordList = new ArrayList<String>(64);
+        final ArrayList<String> posList = new ArrayList<String>(64);
+        for (final Iterator<NaryTree<String>> iter = tree.inOrderIterator(); iter.hasNext();)
         {
-            StringNaryTree node = (StringNaryTree) iter.next();
+            final StringNaryTree node = (StringNaryTree) iter.next();
 
             if (node.isLeaf())
             {
@@ -243,9 +228,9 @@ public class SelectFeatures extends LinewiseCommandlineTool
         }
 
         int i = 0;
-        for (Iterator<NaryTree<String>> iter = tree.inOrderIterator(); iter.hasNext();)
+        for (final Iterator<NaryTree<String>> iter = tree.inOrderIterator(); iter.hasNext();)
         {
-            StringNaryTree node = (StringNaryTree) iter.next();
+            final StringNaryTree node = (StringNaryTree) iter.next();
             final String posLabel = node.parent() != null ? node.parent().stringLabel() : null;
 
             if (node.isLeaf())
@@ -348,7 +333,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
         return sb.toString();
     }
 
-    private void appendWordFeatures(StringBuilder sb, final String label)
+    private void appendWordFeatures(final StringBuilder sb, final String label)
     {
         if (capitalized && Character.isUpperCase(label.charAt(0)))
         {
@@ -370,7 +355,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
 
         if (length)
         {
-            int l = label.length();
+            final int l = label.length();
             if (l == 1)
             {
                 sb.append(FeatureClass.FEATURE_LENGTH_1);
@@ -391,7 +376,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
         }
     }
 
-    private void appendWord(StringBuilder sb, final String label)
+    private void appendWord(final StringBuilder sb, final String label)
     {
         if (includeWord)
         {
@@ -419,9 +404,9 @@ public class SelectFeatures extends LinewiseCommandlineTool
      * @param line
      * @return Feature string
      */
-    private String selectFlatFeatures(String line)
+    private String selectFlatFeatures(final String line)
     {
-        StringBuilder sb = new StringBuilder(line.length());
+        final StringBuilder sb = new StringBuilder(line.length());
         String[][] features;
 
         switch (inputFormat)
@@ -434,7 +419,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
                 break;
             case Stanford :
                 // Remove leading and trailing whitespace and split by spaces
-                String[] split = line.trim().split(" +");
+                final String[] split = line.trim().split(" +");
 
                 features = new String[split.length][];
                 for (int i = 0; i < split.length; i++)
@@ -470,7 +455,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
             for (int i = 0; i < features.length; i++)
             {
                 // Selecting by the specified 'word'
-                String word = features[i][wordIndex - 1];
+                final String word = features[i][wordIndex - 1];
 
                 sb.append(beginBracket);
                 appendWord(sb, word);
