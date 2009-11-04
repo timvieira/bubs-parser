@@ -4,7 +4,7 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.cli.ParseException;
+import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
@@ -23,21 +23,21 @@ public class Encode extends LinewiseCommandlineTool
     @Option(name = "-e", aliases = {"--encoding"}, metaVar = "encoding", usage = "Encoding (us-ascii | utf-8 | utf-16 | ...) Default = utf-8")
     private final String encoding = "utf-8";
 
-    public static void main(String[] args)
+    public static void main(final String[] args)
     {
         run(args);
     }
 
     @Override
-    public void setup(CmdLineParser parser) throws ParseException
+    public void setup(final CmdLineParser parser) throws CmdLineException
     {
         try
         {
             System.setOut(new PrintStream(System.out, true, encoding));
         }
-        catch (UnsupportedEncodingException e)
+        catch (final UnsupportedEncodingException e)
         {
-            throw new ParseException("Unknown encoding: " + encoding);
+            throw new CmdLineException(parser, "Unknown encoding: " + encoding);
         }
     }
 
