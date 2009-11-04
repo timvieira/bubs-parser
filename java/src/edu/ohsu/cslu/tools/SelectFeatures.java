@@ -106,7 +106,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
     @Option(name = "-subpos", aliases = {"--subsequent-pos"}, metaVar = "count", usage = "Include pos for subsequent words")
     private int subsequentPos;
 
-    @Option(name = "-f", aliases = {"--features"}, metaVar = "index", usage = "Feature index (in bracketed input) of token to treat as the word (starting with 1) Default = 1")
+    @Option(name = "-f", aliases = {"--features"}, separator = ",", metaVar = "index", usage = "Feature index (in bracketed input) of token to treat as the word (starting with 1) Default = 1")
     private int[] selectedFeatures;
 
     private String beginBracket;
@@ -159,7 +159,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
         // }
         // }
 
-        if (selectedFeatures != null && selectedFeatures.length > 0 && wordIndex != 0)
+        if (selectedFeatures != null && selectedFeatures.length > 0 && wordIndex != 1)
         {
             throw new CmdLineException(parser, "Cannot select both feature indices and word index");
         }
