@@ -1,6 +1,5 @@
 package edu.ohsu.cslu.tools;
 
-import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.Theories;
@@ -12,7 +11,8 @@ import cltool.ToolTestCase;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for {@link SelectFeatures}. Also a bit of a playground to try out new JUnit features.
@@ -33,17 +33,10 @@ public class TestSelectFeatures extends ToolTestCase
     public final static String BAD_ARGS_3 = "-i bracketed-tree -f 1,2";
 
     @Theory
-    public void testBadArgs(String args) throws Exception
+    public void testBadArgs(final String args) throws Exception
     {
-        // @Theory doesn't support (expected=...) so we have to use the old pattern of expecting an
-        // Exception
-        try
-        {
-            executeTool(new SelectFeatures(), args, "(Bracketed) (input)");
-            fail("Expected ParseException");
-        }
-        catch (ParseException expected)
-        {}
+        final String output = executeTool(new SelectFeatures(), args, "(Bracketed) (input)");
+        assertTrue(output.contains("Usage:"));
     }
 
     /**
@@ -193,9 +186,9 @@ public class TestSelectFeatures extends ToolTestCase
     @Test
     public void testMultiThreaded() throws Exception
     {
-        String input = new String(SharedNlpTests.readUnitTestData("tools/select-features.input"));
-        String expectedOutput = new String(SharedNlpTests.readUnitTestData("tools/select-features.output"));
-        String output = executeTool(new SelectFeatures(), "-i tree -w -p -h -bh -ah -xt 2", input);
+        final String input = new String(SharedNlpTests.readUnitTestData("tools/select-features.input"));
+        final String expectedOutput = new String(SharedNlpTests.readUnitTestData("tools/select-features.output"));
+        final String output = executeTool(new SelectFeatures(), "-i tree -w -p -h -bh -ah -xt 2", input);
         assertEquals(expectedOutput, output);
     }
 }

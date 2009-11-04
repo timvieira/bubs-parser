@@ -3,8 +3,6 @@
 	<classpathentry kind="src" path="java/src"/>
 	<classpathentry kind="src" path="unit-test-data"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry exported="true" kind="lib" path="java/bsd-lib/commons-cli-1.0.jar" sourcepath="java/bsd-lib/commons-cli-1.0-src.jar"/>
-	<classpathentry exported="true" kind="lib" path="java/bsd-lib/commons-collections-3.2.1.jar" sourcepath="java/bsd-lib/commons-collections-3.2.1-sources.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/fastutil.jar" sourcepath="java/bsd-lib/fastutil-src.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/jsr166y.jar" sourcepath="java/bsd-lib/jsr166y_src.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/junit.jar" sourcepath="java/lgpl-lib/junit_src.jar"/>
