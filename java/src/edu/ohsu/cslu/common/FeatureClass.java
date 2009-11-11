@@ -32,7 +32,18 @@ public enum FeatureClass implements Comparable<FeatureClass>
     Pos,
 
     /** Labels: _head_verb, _begin_sent, _initial_cap, etc. */
-    HeadVerb, NotFirstVerb, BeforeHead, AfterHead, BeginSentence, Capitalized, AllCaps, Hyphenated, StartsWithDigit,
+    HeadVerb,
+    NotFirstVerb,
+    BeforeHead,
+    AfterHead,
+    BeginSentence,
+    Capitalized,
+    AllCaps,
+    Hyphenated,
+    Numeric,
+    InitialNumeric,
+    StartWord,
+    EndWord,
 
     /** _stem_... */
     Stem,
@@ -50,7 +61,15 @@ public enum FeatureClass implements Comparable<FeatureClass>
     SubsequentPos,
 
     /** Length classes */
-    Length1, Length2to5, Length6to10, LengthGreaterThan10,
+    Length1,
+    Length2,
+    Length3,
+    Length4,
+    Length5to6,
+    Length7to8,
+    Length9to12,
+    Length13to18,
+    LengthGreaterThan18,
 
     /** Any token starting with an underscore which does not match other patterns */
     Other;
@@ -74,13 +93,20 @@ public enum FeatureClass implements Comparable<FeatureClass>
     public final static String FEATURE_CAPITALIZED = "_capitalized";
     public final static String FEATURE_ALL_CAPS = "_all_caps";
     public final static String FEATURE_HYPHENATED = "_hyphenated";
+    public final static String FEATURE_INITIAL_NUMERIC = "_initial_numeric";
+    public final static String FEATURE_NUMERIC = "_numeric";
+    public final static String FEATURE_START_WORD = "_start_word";
+    public final static String FEATURE_END_WORD = "_end_word";
 
     public final static String FEATURE_LENGTH_1 = "_length_1";
-    public final static String FEATURE_LENGTH_2_TO_5 = "_length_2_to_5";
-    public final static String FEATURE_LENGTH_6_TO_10 = "_length_6_to_10";
-    public final static String FEATURE_LENGTH_GREATER_THAN_10 = "_length_greater_than_10";
-
-    public final static String FEATURE_STARTS_WITH_DIGIT = "_starts_with_digit";
+    public final static String FEATURE_LENGTH_2 = "_length_2";
+    public final static String FEATURE_LENGTH_3 = "_length_3";
+    public final static String FEATURE_LENGTH_4 = "_length_4";
+    public final static String FEATURE_LENGTH_5_TO_6 = "_length_5_TO_6";
+    public final static String FEATURE_LENGTH_7_TO_8 = "_length_7_TO_8";
+    public final static String FEATURE_LENGTH_9_TO_12 = "_length_9_to_12";
+    public final static String FEATURE_LENGTH_13_TO_18 = "_length_13_to_18";
+    public final static String FEATURE_LENGTH_GREATER_THAN_18 = "_length_greater_than_18";
 
     private static HashMap<String, FeatureClass> knownLabels = new HashMap<String, FeatureClass>();
     static
@@ -94,13 +120,21 @@ public enum FeatureClass implements Comparable<FeatureClass>
         knownLabels.put(FEATURE_ALL_CAPS, AllCaps);
         knownLabels.put(FEATURE_HYPHENATED, Hyphenated);
         knownLabels.put(FEATURE_LENGTH_1, Length1);
-        knownLabels.put(FEATURE_LENGTH_2_TO_5, Length2to5);
-        knownLabels.put(FEATURE_LENGTH_6_TO_10, Length6to10);
-        knownLabels.put(FEATURE_LENGTH_GREATER_THAN_10, LengthGreaterThan10);
-        knownLabels.put(FEATURE_STARTS_WITH_DIGIT, StartsWithDigit);
+        knownLabels.put(FEATURE_LENGTH_2, Length2);
+        knownLabels.put(FEATURE_LENGTH_3, Length3);
+        knownLabels.put(FEATURE_LENGTH_4, Length4);
+        knownLabels.put(FEATURE_LENGTH_5_TO_6, Length5to6);
+        knownLabels.put(FEATURE_LENGTH_7_TO_8, Length7to8);
+        knownLabels.put(FEATURE_LENGTH_9_TO_12, Length9to12);
+        knownLabels.put(FEATURE_LENGTH_13_TO_18, Length13to18);
+        knownLabels.put(FEATURE_LENGTH_GREATER_THAN_18, LengthGreaterThan18);
+        knownLabels.put(FEATURE_NUMERIC, Numeric);
+        knownLabels.put(FEATURE_INITIAL_NUMERIC, InitialNumeric);
+        knownLabels.put(FEATURE_START_WORD, StartWord);
+        knownLabels.put(FEATURE_END_WORD, EndWord);
     }
 
-    public static FeatureClass forString(String s)
+    public static FeatureClass forString(final String s)
     {
         if (knownLabels.containsKey(s))
         {
@@ -180,16 +214,32 @@ public enum FeatureClass implements Comparable<FeatureClass>
                 return FEATURE_ALL_CAPS;
             case Hyphenated :
                 return FEATURE_HYPHENATED;
-            case StartsWithDigit :
-                return FEATURE_STARTS_WITH_DIGIT;
+            case Numeric :
+                return FEATURE_NUMERIC;
+            case InitialNumeric :
+                return FEATURE_INITIAL_NUMERIC;
+            case StartWord :
+                return FEATURE_START_WORD;
+            case EndWord :
+                return FEATURE_END_WORD;
             case Length1 :
                 return FEATURE_LENGTH_1;
-            case Length2to5 :
-                return FEATURE_LENGTH_2_TO_5;
-            case Length6to10 :
-                return FEATURE_LENGTH_6_TO_10;
-            case LengthGreaterThan10 :
-                return FEATURE_LENGTH_GREATER_THAN_10;
+            case Length2 :
+                return FEATURE_LENGTH_2;
+            case Length3 :
+                return FEATURE_LENGTH_3;
+            case Length4 :
+                return FEATURE_LENGTH_4;
+            case Length5to6 :
+                return FEATURE_LENGTH_5_TO_6;
+            case Length7to8 :
+                return FEATURE_LENGTH_7_TO_8;
+            case Length9to12 :
+                return FEATURE_LENGTH_9_TO_12;
+            case Length13to18 :
+                return FEATURE_LENGTH_13_TO_18;
+            case LengthGreaterThan18 :
+                return FEATURE_LENGTH_GREATER_THAN_18;
 
             default :
                 return super.toString();

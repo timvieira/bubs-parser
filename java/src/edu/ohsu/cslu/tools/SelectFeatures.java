@@ -1,5 +1,14 @@
 package edu.ohsu.cslu.tools;
 
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_AFTER_HEAD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_BEFORE_HEAD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HEAD_VERB;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_WORD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_WORD;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,7 +27,6 @@ import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.*;
 
 /**
  * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse
@@ -90,6 +98,20 @@ public class SelectFeatures extends LinewiseCommandlineTool
 
     @Option(name = "-hyphen", aliases = {"--hyphenated"}, usage = "Include hyphenization feature")
     private boolean hyphenated;
+
+    @Option(name = "-init-num", aliases = {"--initial-numeric"}, usage = "Include initial-numeric feature (starts with a numeral)")
+    private boolean initialNumeric;
+
+    @Option(name = "-num", aliases = {"--numeric"}, usage = "Include numeric feature (all numerals)")
+    private boolean numeric;
+
+    // TODO Support this for tree input
+    @Option(name = "-start", aliases = {"--start-word"}, usage = "Include start-word feature")
+    private boolean startWord;
+
+    // TODO Support this for tree input
+    @Option(name = "-end", aliases = {"--end-word"}, usage = "Include end-word feature")
+    private boolean endWord;
 
     @Option(name = "-length", aliases = {"--word-length"}, usage = "Include length features")
     private boolean length;
@@ -335,13 +357,14 @@ public class SelectFeatures extends LinewiseCommandlineTool
 
     private void appendWordFeatures(final StringBuilder sb, final String label)
     {
-        if (capitalized && Character.isUpperCase(label.charAt(0)))
+        final char initialChar = label.charAt(0);
+        if (capitalized && Character.isUpperCase(initialChar))
         {
             sb.append(FeatureClass.FEATURE_CAPITALIZED);
             sb.append(featureDelimiter);
         }
 
-        if (allcaps && Character.isUpperCase(label.charAt(0)) && label.equals(label.toUpperCase()))
+        if (allcaps && Character.isUpperCase(initialChar) && label.equals(label.toUpperCase()))
         {
             sb.append(FeatureClass.FEATURE_ALL_CAPS);
             sb.append(featureDelimiter);
@@ -353,24 +376,72 @@ public class SelectFeatures extends LinewiseCommandlineTool
             sb.append(featureDelimiter);
         }
 
+        if (initialNumeric && Character.isDigit(initialChar))
+        {
+            sb.append(FeatureClass.FEATURE_INITIAL_NUMERIC);
+            sb.append(featureDelimiter);
+        }
+
+        if (numeric && Character.isDigit(initialChar))
+        {
+            try
+            {
+                Integer.parseInt(label);
+                sb.append(FeatureClass.FEATURE_NUMERIC);
+                sb.append(featureDelimiter);
+            }
+            catch (final NumberFormatException ignore)
+            {}
+        }
+
+        // if (initialNumeric && Character.isDigit(initialChar))
+        // {
+        // sb.append(FeatureClass.FEATURE_INITIAL_NUMERIC);
+        // sb.append(featureDelimiter);
+        // }
+
         if (length)
         {
             final int l = label.length();
-            if (l == 1)
+            switch (label.length())
             {
-                sb.append(FeatureClass.FEATURE_LENGTH_1);
-            }
-            else if (l <= 5)
-            {
-                sb.append(FeatureClass.FEATURE_LENGTH_2_TO_5);
-            }
-            else if (l <= 10)
-            {
-                sb.append(FeatureClass.FEATURE_LENGTH_6_TO_10);
-            }
-            else
-            {
-                sb.append(FeatureClass.FEATURE_LENGTH_GREATER_THAN_10);
+                case 1 :
+                    sb.append(FeatureClass.FEATURE_LENGTH_1);
+                    break;
+                case 2 :
+                    sb.append(FeatureClass.FEATURE_LENGTH_2);
+                    break;
+                case 3 :
+                    sb.append(FeatureClass.FEATURE_LENGTH_3);
+                    break;
+                case 4 :
+                    sb.append(FeatureClass.FEATURE_LENGTH_4);
+                    break;
+                case 5 :
+                case 6 :
+                    sb.append(FeatureClass.FEATURE_LENGTH_5_TO_6);
+                    break;
+                case 7 :
+                case 8 :
+                    sb.append(FeatureClass.FEATURE_LENGTH_7_TO_8);
+                    break;
+                case 9 :
+                case 10 :
+                case 11 :
+                case 12 :
+                    sb.append(FeatureClass.FEATURE_LENGTH_9_TO_12);
+                    break;
+                case 13 :
+                case 14 :
+                case 15 :
+                case 16 :
+                case 17 :
+                case 18 :
+                    sb.append(FeatureClass.FEATURE_LENGTH_13_TO_18);
+                    break;
+                default :
+                    sb.append(FeatureClass.FEATURE_LENGTH_GREATER_THAN_18);
+
             }
             sb.append(featureDelimiter);
         }
@@ -460,6 +531,18 @@ public class SelectFeatures extends LinewiseCommandlineTool
                 sb.append(beginBracket);
                 appendWord(sb, word);
                 appendWordFeatures(sb, word);
+
+                if (startWord && i == 0)
+                {
+                    sb.append(FeatureClass.FEATURE_START_WORD);
+                    sb.append(featureDelimiter);
+                }
+
+                if (endWord && i == features.length - 1)
+                {
+                    sb.append(FeatureClass.FEATURE_END_WORD);
+                    sb.append(featureDelimiter);
+                }
 
                 // Remove the final (extra) delimiter
                 sb.delete(sb.length() - featureDelimiter.length(), sb.length());
