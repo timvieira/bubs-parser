@@ -102,8 +102,8 @@ public enum FeatureClass implements Comparable<FeatureClass>
     public final static String FEATURE_LENGTH_2 = "_length_2";
     public final static String FEATURE_LENGTH_3 = "_length_3";
     public final static String FEATURE_LENGTH_4 = "_length_4";
-    public final static String FEATURE_LENGTH_5_TO_6 = "_length_5_TO_6";
-    public final static String FEATURE_LENGTH_7_TO_8 = "_length_7_TO_8";
+    public final static String FEATURE_LENGTH_5_TO_6 = "_length_5_to_6";
+    public final static String FEATURE_LENGTH_7_TO_8 = "_length_7_to_8";
     public final static String FEATURE_LENGTH_9_TO_12 = "_length_9_to_12";
     public final static String FEATURE_LENGTH_13_TO_18 = "_length_13_to_18";
     public final static String FEATURE_LENGTH_GREATER_THAN_18 = "_length_greater_than_18";
