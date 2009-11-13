@@ -23,7 +23,7 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public boolean getBoolean(int i)
+    public boolean getBoolean(final int i)
     {
         return getInt(i) != 0;
     }
@@ -114,7 +114,7 @@ public abstract class BaseVector implements Vector, Serializable
         return minI;
     }
 
-    public NumericVector add(Vector v)
+    public NumericVector add(final Vector v)
     {
         if (v.length() != length && !(v instanceof SparseBitVector || v instanceof MutableSparseBitVector)
             && v.length() <= length)
@@ -123,7 +123,7 @@ public abstract class BaseVector implements Vector, Serializable
         }
 
         NumericVector newVector;
-        Class<?> vClass = v.getClass();
+        final Class<?> vClass = v.getClass();
         if (vClass == IntVector.class || vClass == PackedIntVector.class || v instanceof BitVector)
         {
             newVector = createIntVector();
@@ -142,9 +142,9 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public NumericVector scalarAdd(float addend)
+    public NumericVector scalarAdd(final float addend)
     {
-        NumericVector newVector = new FloatVector(length);
+        final NumericVector newVector = new FloatVector(length);
         for (int i = 0; i < newVector.length(); i++)
         {
             newVector.set(i, getFloat(i) + addend);
@@ -153,9 +153,9 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public NumericVector scalarAdd(int addend)
+    public NumericVector scalarAdd(final int addend)
     {
-        NumericVector newVector = createIntVector();
+        final NumericVector newVector = createIntVector();
         for (int i = 0; i < newVector.length(); i++)
         {
             newVector.set(i, getFloat(i) + addend);
@@ -163,7 +163,7 @@ public abstract class BaseVector implements Vector, Serializable
         return newVector;
     }
 
-    public Vector elementwiseMultiply(Vector v)
+    public Vector elementwiseMultiply(final Vector v)
     {
         // TODO: The return-types of various Vector class's elementwiseMultiply methods are somewhat
         // inconsistent. Think through the appropriate return-types for add(Vector),
@@ -175,7 +175,7 @@ public abstract class BaseVector implements Vector, Serializable
         }
 
         NumericVector newVector;
-        Class<?> vClass = v.getClass();
+        final Class<?> vClass = v.getClass();
         if (vClass == IntVector.class || vClass == PackedIntVector.class || v instanceof BitVector)
         {
             newVector = createIntVector();
@@ -194,9 +194,9 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public NumericVector scalarMultiply(float multiplier)
+    public FloatVector scalarMultiply(final float multiplier)
     {
-        NumericVector newVector = new FloatVector(length);
+        final FloatVector newVector = new FloatVector(length);
         for (int i = 0; i < newVector.length(); i++)
         {
             newVector.set(i, getFloat(i) * multiplier);
@@ -205,9 +205,9 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public NumericVector scalarMultiply(int multiplier)
+    public NumericVector scalarMultiply(final int multiplier)
     {
-        NumericVector newVector = createIntVector();
+        final NumericVector newVector = createIntVector();
         for (int i = 0; i < newVector.length(); i++)
         {
             newVector.set(i, getFloat(i) * multiplier);
@@ -231,7 +231,7 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     @Override
-    public float dotProduct(Vector v)
+    public float dotProduct(final Vector v)
     {
         // SparseBitVector dotProduct() implementation is more efficient.
         if (v instanceof SparseBitVector)
@@ -263,7 +263,7 @@ public abstract class BaseVector implements Vector, Serializable
         return sum;
     }
 
-    public void write(Writer writer, String headerLine) throws IOException
+    public void write(final Writer writer, final String headerLine) throws IOException
     {
         writer.write(headerLine);
 
@@ -302,7 +302,7 @@ public abstract class BaseVector implements Vector, Serializable
             return false;
         }
 
-        BaseVector other = (BaseVector) o;
+        final BaseVector other = (BaseVector) o;
 
         if (other.length != length)
         {
@@ -326,11 +326,11 @@ public abstract class BaseVector implements Vector, Serializable
     {
         try
         {
-            Writer writer = new StringWriter(length * 10);
+            final Writer writer = new StringWriter(length * 10);
             write(writer);
             return writer.toString();
         }
-        catch (IOException e)
+        catch (final IOException e)
         {
             return "Caught IOException in StringWriter";
         }

@@ -66,14 +66,14 @@ public class FloatVector extends BaseNumericVector
 
     /** Type-strengthen return-type */
     @Override
-    public FloatVector add(Vector v)
+    public FloatVector add(final Vector v)
     {
         return (FloatVector) super.add(v);
     }
 
     /** Type-strengthen return-type */
     @Override
-    public FloatVector elementwiseMultiply(Vector v)
+    public FloatVector elementwiseMultiply(final Vector v)
     {
         return (FloatVector) super.elementwiseMultiply(v);
     }
@@ -86,7 +86,7 @@ public class FloatVector extends BaseNumericVector
      * @param v addend, a vector of the same length.
      * @return a reference to this vector.
      */
-    public FloatVector inPlaceAdd(Vector v)
+    public FloatVector inPlaceAdd(final Vector v)
     {
         // Special-case for SparseBitVector
         if (v instanceof SparseBitVector)
@@ -96,7 +96,7 @@ public class FloatVector extends BaseNumericVector
                 throw new IllegalArgumentException("Vector length mismatch");
             }
 
-            for (int i : ((SparseBitVector) v).values())
+            for (final int i : ((SparseBitVector) v).values())
             {
                 vector[i] += 1;
             }
@@ -111,7 +111,7 @@ public class FloatVector extends BaseNumericVector
                 throw new IllegalArgumentException("Vector length mismatch");
             }
 
-            for (int i : ((MutableSparseBitVector) v).intSet())
+            for (final int i : ((MutableSparseBitVector) v).intSet())
             {
                 vector[i] += 1;
             }
@@ -139,7 +139,7 @@ public class FloatVector extends BaseNumericVector
      * @param v multiplicand, a vector of the same length.
      * @return a reference to this vector.
      */
-    public FloatVector inPlaceElementwiseMultiply(Vector v)
+    public FloatVector inPlaceElementwiseMultiply(final Vector v)
     {
         if (v.length() != length && !(v instanceof SparseBitVector && v.length() <= length))
         {
@@ -163,7 +163,7 @@ public class FloatVector extends BaseNumericVector
      * @param v divisor, a vector of the same length.
      * @return a reference to this vector.
      */
-    public FloatVector inPlaceElementwiseDivide(Vector v)
+    public FloatVector inPlaceElementwiseDivide(final Vector v)
     {
         if (v.length() != length)
         {
@@ -185,7 +185,7 @@ public class FloatVector extends BaseNumericVector
      * @param addend Scalar value.
      * @return a reference to this vector.
      */
-    public FloatVector inPlaceScalarAdd(float addend)
+    public FloatVector inPlaceScalarAdd(final float addend)
     {
         for (int i = 0; i < length; i++)
         {
@@ -202,7 +202,7 @@ public class FloatVector extends BaseNumericVector
      * @param multiplicand Scalar value.
      * @return a reference to this vector.
      */
-    public FloatVector inPlaceScalarMultiply(float multiplicand)
+    public FloatVector inPlaceScalarMultiply(final float multiplicand)
     {
         for (int i = 0; i < length; i++)
         {
@@ -252,13 +252,13 @@ public class FloatVector extends BaseNumericVector
     }
 
     @Override
-    public void set(final int i, boolean value)
+    public void set(final int i, final boolean value)
     {
         set(i, value ? 1f : 0f);
     }
 
     @Override
-    public void set(final int i, String newValue)
+    public void set(final int i, final String newValue)
     {
         set(i, Float.parseFloat(newValue));
     }
@@ -301,7 +301,7 @@ public class FloatVector extends BaseNumericVector
     {
         // For each j:
         // w(j) = w(j) + alpha(y - f(x))x(j)
-        float f = dotProduct(x);
+        final float f = dotProduct(x);
         for (int j = 0; j < length; j++)
         {
             vector[j] = vector[j] + alpha * (y - f) * x.getFloat(j);
@@ -329,7 +329,7 @@ public class FloatVector extends BaseNumericVector
     }
 
     @Override
-    public Vector clone()
+    public FloatVector clone()
     {
         final float[] newVector = new float[length];
         System.arraycopy(vector, 0, newVector, 0, length);
@@ -337,7 +337,7 @@ public class FloatVector extends BaseNumericVector
     }
 
     @Override
-    public void write(Writer writer) throws IOException
+    public void write(final Writer writer) throws IOException
     {
         writer.write(String.format("vector type=float length=%d\n", length));
 
