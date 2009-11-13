@@ -18,20 +18,20 @@ public class IntVector extends BaseNumericVector
 
     private final int[] vector;
 
-    public IntVector(int length)
+    public IntVector(final int length)
     {
         super(length);
         this.vector = new int[length];
     }
 
-    public IntVector(int length, int defaultValue)
+    public IntVector(final int length, final int defaultValue)
     {
         super(length);
         this.vector = new int[length];
         Arrays.fill(this.vector, defaultValue);
     }
 
-    public IntVector(int[] vector)
+    public IntVector(final int[] vector)
     {
         super(vector.length);
         this.vector = vector;
@@ -62,13 +62,13 @@ public class IntVector extends BaseNumericVector
     }
 
     @Override
-    public void set(final int i, boolean value)
+    public void set(final int i, final boolean value)
     {
         set(i, value ? 1 : 0);
     }
 
     @Override
-    public void set(final int i, String newValue)
+    public void set(final int i, final String newValue)
     {
         set(i, Float.parseFloat(newValue));
     }
@@ -94,7 +94,7 @@ public class IntVector extends BaseNumericVector
     }
 
     @Override
-    public Vector clone()
+    public IntVector clone()
     {
         final int[] newVector = new int[length];
         System.arraycopy(vector, 0, newVector, 0, length);
@@ -102,7 +102,7 @@ public class IntVector extends BaseNumericVector
     }
 
     @Override
-    public void write(Writer writer) throws IOException
+    public void write(final Writer writer) throws IOException
     {
         write(writer, String.format("vector type=int length=%d\n", length));
     }

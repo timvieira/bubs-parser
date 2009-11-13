@@ -92,7 +92,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     }
 
     @Override
-    public void set(final int i, boolean value)
+    public void set(final int i, final boolean value)
     {
         final int index = i >> 5;
         final int shift = (i & 0x1f);
@@ -110,13 +110,13 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     }
 
     @Override
-    public void set(final int i, String newValue)
+    public void set(final int i, final String newValue)
     {
         try
         {
             set(i, Integer.parseInt(newValue));
         }
-        catch (NumberFormatException e)
+        catch (final NumberFormatException e)
         {
             set(i, Boolean.parseBoolean(newValue));
         }
@@ -135,7 +135,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     }
 
     @Override
-    public Vector elementwiseMultiply(Vector v)
+    public Vector elementwiseMultiply(final Vector v)
     {
         if (!(v instanceof BitVector))
         {
@@ -162,7 +162,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
         }
 
         final int[] vArray = ((PackedBitVector) v).packedVector;
-        PackedBitVector newVector = new PackedBitVector(length);
+        final PackedBitVector newVector = new PackedBitVector(length);
         final int[] newArray = newVector.packedVector;
         for (int i = 0; i < packedVector.length; i++)
         {
@@ -173,7 +173,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     }
 
     @Override
-    public final float dotProduct(Vector v)
+    public final float dotProduct(final Vector v)
     {
         if (v.length() != length)
         {
@@ -201,7 +201,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     public Vector subVector(final int i0, final int i1)
     {
         final int subVectorLength = i1 - i0 + 1;
-        PackedBitVector subVector = new PackedBitVector(subVectorLength);
+        final PackedBitVector subVector = new PackedBitVector(subVectorLength);
         for (int i = 0; i < subVectorLength; i++)
         {
             subVector.set(i, getBoolean(i0 + i));
@@ -210,7 +210,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     }
 
     @Override
-    public void write(Writer writer) throws IOException
+    public void write(final Writer writer) throws IOException
     {
         write(writer, String.format("vector type=packed-bit length=%d\n", length));
     }
@@ -243,7 +243,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
      * 
      * @param toAdd elements to add to the set
      */
-    public final void addAll(IntSet toAdd)
+    public final void addAll(final IntSet toAdd)
     {
         for (final int i : toAdd)
         {
@@ -306,7 +306,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     }
 
     @Override
-    public BitVector intersection(BitVector v)
+    public BitVector intersection(final BitVector v)
     {
         return (BitVector) elementwiseMultiply(v);
     }
@@ -316,7 +316,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     {
         // Not very efficient, but we don't expect to use this method often with {@link
         // PackedBitVector}
-        IntList intList = new IntArrayList();
+        final IntList intList = new IntArrayList();
         for (int i = 0; i < length; i++)
         {
             if (getBoolean(i))
@@ -328,9 +328,9 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     }
 
     @Override
-    public Vector clone()
+    public PackedBitVector clone()
     {
-        PackedBitVector v = new PackedBitVector(length);
+        final PackedBitVector v = new PackedBitVector(length);
         System.arraycopy(packedVector, 0, v.packedVector, 0, packedVector.length);
         return v;
     }

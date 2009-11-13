@@ -34,9 +34,9 @@ public class SparseBitVector extends BaseVector implements BitVector
 
     /**
      * Constructs a {@link SparseBitVector} from an integer array. Note that the semantics of this
-     * constructor are different from those of most other {@link Vector} constructors with the same
-     * signature - the int values contained in the parameter are themselves populated, whereas most
-     * other constructors populate the _indices_ of the array which contain non-zero values.
+     * constructor are different from those of most other {@link BitVector} constructors with the
+     * same signature - the int values contained in the parameter are themselves populated, whereas
+     * most other constructors populate the _indices_ of the array which contain non-zero values.
      * 
      * @param array The vector indices to populate
      */
@@ -57,7 +57,7 @@ public class SparseBitVector extends BaseVector implements BitVector
     {
         super(array.length);
 
-        IntSet newElements = new IntRBTreeSet();
+        final IntSet newElements = new IntRBTreeSet();
         for (int i = 0; i < array.length; i++)
         {
             if (array[i])
@@ -70,7 +70,7 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public Vector elementwiseMultiply(Vector v)
+    public Vector elementwiseMultiply(final Vector v)
     {
         if (!(v instanceof BitVector))
         {
@@ -83,8 +83,8 @@ public class SparseBitVector extends BaseVector implements BitVector
             return ((SparseBitVector) v).elementwiseMultiply(this);
         }
 
-        IntSet newContents = new IntRBTreeSet();
-        for (int i : elements)
+        final IntSet newContents = new IntRBTreeSet();
+        for (final int i : elements)
         {
             if (v.getBoolean(i))
             {
@@ -96,28 +96,28 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public void add(int toAdd)
+    public void add(final int toAdd)
     {
         throw new UnsupportedOperationException("SparseBitVector is immutable");
     }
 
     @Override
-    public void addAll(int[] toAdd)
+    public void addAll(final int[] toAdd)
     {
         throw new UnsupportedOperationException("SparseBitVector is immutable");
     }
 
     @Override
-    public void addAll(IntSet toAdd)
+    public void addAll(final IntSet toAdd)
     {
         throw new UnsupportedOperationException("SparseBitVector is immutable");
     }
 
     @Override
-    public boolean contains(int i)
+    public boolean contains(final int i)
     {
         // TODO Since we maintain the elements in sorted order, we could use a binary search here
-        for (int element : elements)
+        for (final int element : elements)
         {
             if (element == i)
             {
@@ -128,19 +128,19 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public boolean remove(int toRemove)
+    public boolean remove(final int toRemove)
     {
         throw new UnsupportedOperationException("SparseBitVector is immutable");
     }
 
     @Override
-    public void removeAll(int[] toRemove)
+    public void removeAll(final int[] toRemove)
     {
         throw new UnsupportedOperationException("SparseBitVector is immutable");
     }
 
     @Override
-    public void removeAll(IntSet toRemove)
+    public void removeAll(final IntSet toRemove)
     {
         throw new UnsupportedOperationException("SparseBitVector is immutable");
     }
@@ -173,7 +173,7 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public float dotProduct(Vector v)
+    public float dotProduct(final Vector v)
     {
         try
         {
@@ -184,26 +184,26 @@ public class SparseBitVector extends BaseVector implements BitVector
             }
             return dotProduct;
         }
-        catch (ArrayIndexOutOfBoundsException e)
+        catch (final ArrayIndexOutOfBoundsException e)
         {
             throw new IllegalArgumentException("Vector length mismatch");
         }
     }
 
     @Override
-    public boolean getBoolean(int i)
+    public boolean getBoolean(final int i)
     {
         return contains(i);
     }
 
     @Override
-    public float getFloat(int i)
+    public float getFloat(final int i)
     {
         return contains(i) ? 1f : 0f;
     }
 
     @Override
-    public int getInt(int i)
+    public int getInt(final int i)
     {
         return contains(i) ? 1 : 0;
     }
@@ -254,10 +254,10 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public NumericVector scalarMultiply(float multiplier)
+    public FloatVector scalarMultiply(final float multiplier)
     {
-        NumericVector v = new FloatVector(length);
-        for (int i : elements)
+        final FloatVector v = new FloatVector(length);
+        for (final int i : elements)
         {
             v.set(i, multiplier);
         }
@@ -265,10 +265,10 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public NumericVector scalarMultiply(int multiplier)
+    public NumericVector scalarMultiply(final int multiplier)
     {
-        NumericVector v = createIntVector();
-        for (int i : elements)
+        final NumericVector v = createIntVector();
+        for (final int i : elements)
         {
             v.set(i, multiplier);
         }
@@ -276,19 +276,19 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public void set(int i, int value)
+    public void set(final int i, final int value)
     {
         set(i, value != 0);
     }
 
     @Override
-    public void set(int i, float value)
+    public void set(final int i, final float value)
     {
         set(i, value != 0);
     }
 
     @Override
-    public void set(int i, boolean value)
+    public void set(final int i, final boolean value)
     {
         if (value)
         {
@@ -301,22 +301,22 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public void set(int i, String newValue)
+    public void set(final int i, final String newValue)
     {
         try
         {
             set(i, Integer.parseInt(newValue));
         }
-        catch (NumberFormatException e)
+        catch (final NumberFormatException e)
         {
             set(i, Boolean.parseBoolean(newValue));
         }
     }
 
     @Override
-    public Vector subVector(int i0, int i1)
+    public Vector subVector(final int i0, final int i1)
     {
-        IntArrayList newElements = new IntArrayList();
+        final IntArrayList newElements = new IntArrayList();
         for (int i = 0; i < elements.length; i++)
         {
             if (elements[i] >= i0 && elements[i] <= i1)
@@ -328,7 +328,7 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public BitVector intersection(BitVector v)
+    public BitVector intersection(final BitVector v)
     {
         return (BitVector) elementwiseMultiply(v);
     }
@@ -340,7 +340,7 @@ public class SparseBitVector extends BaseVector implements BitVector
     }
 
     @Override
-    public void write(Writer writer) throws IOException
+    public void write(final Writer writer) throws IOException
     {
         // Unlike PackedBitVector, this outputs only the populated indices (e.g. "2 4...")
         writer.write(String.format("vector type=sparse-bit length=%d\n", length()));
