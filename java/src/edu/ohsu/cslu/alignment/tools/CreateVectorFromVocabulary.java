@@ -11,42 +11,67 @@ import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 
 public class CreateVectorFromVocabulary extends BaseCommandlineTool
 {
-    private final static String OPTION_NOT_FIRST_VERB = "nfv";
-
     @Option(name = "-g", metaVar = "weight", usage = "Gap feature weight")
     private final float gap = -1;
+
     @Option(name = "-w", metaVar = "weight", usage = "Word feature")
     private final float word = -1;
+
     @Option(name = "-s", metaVar = "weight", usage = "Stem feature")
     private final float stem = -1;
+
     @Option(name = "-p", metaVar = "weight", usage = "POS feature (_pos_...)")
     private final float pos = -1;
+
     @Option(name = "-nfv", metaVar = "weight", usage = "'Not first verb' feature")
     private final float notFirstVerb = -1;
+
     @Option(name = "-h", metaVar = "weight", usage = "Head verb feature (_head_verb)")
     private final float headVerb = -1;
+
     @Option(name = "-bh", metaVar = "weight", usage = "Before head verb feature (_before_head_verb)")
     private final float beforeHead = -1;
+
     @Option(name = "-ah", metaVar = "weight", usage = "After head verb feature (_after_head_verb)")
     private final float afterHead = -1;
+
     @Option(name = "-prevword", metaVar = "weight", usage = "Previous word(s) features")
     private final float previousWords = -1;
+
     @Option(name = "-subword", metaVar = "weight", usage = "Subsequent word(s) features")
     private final float subsequentWords = -1;
+
     @Option(name = "-prevpos", metaVar = "weight", usage = "Previous POS features")
     private final float previousPos = -1;
+
     @Option(name = "-subpos", metaVar = "weight", usage = "Subsequent POS features")
     private final float subsequentPos = -1;
+
     @Option(name = "-cap", metaVar = "weight", usage = "Capitalized word feature")
     private final float capitalized = -1;
+
     @Option(name = "-allcaps", metaVar = "weight", usage = "All-cap word feature")
     private final float allCaps = -1;
+
+    @Option(name = "-numeric", metaVar = "weight", usage = "Numeric feature")
+    private final float numeric = -1;
+
+    @Option(name = "-initial-num", metaVar = "weight", usage = "Initial numeric feature")
+    private final float initialNumeric = -1;
+
+    @Option(name = "-startword", metaVar = "weight", usage = "Start-word feature")
+    private final float endword = -1;
+
+    @Option(name = "-endword", metaVar = "weight", usage = "End-word feature")
+    private final float startword = -1;
+
     @Option(name = "-hyphen", metaVar = "weight", usage = "Hyphenated word feature")
     private final float hyphenated = -1;
+
     @Option(name = "-length", metaVar = "weight", usage = "Word length features")
     private final float length = -1;
 
-    public static void main(String[] args)
+    public static void main(final String[] args)
     {
         run(args);
     }
@@ -54,12 +79,12 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
     @Override
     public void run() throws Exception
     {
-        LogLinearVocabulary vocabulary = LogLinearVocabulary.read(new InputStreamReader(System.in));
-        FloatVector vector = new FloatVector(vocabulary.size());
+        final LogLinearVocabulary vocabulary = LogLinearVocabulary.read(new InputStreamReader(System.in));
+        final FloatVector vector = new FloatVector(vocabulary.size());
 
         for (int i = 0; i < vector.length(); i++)
         {
-            String mapping = vocabulary.map(i);
+            final String mapping = vocabulary.map(i);
             switch (FeatureClass.forString(mapping))
             {
                 case Gap :
@@ -98,12 +123,6 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
                 // case BeginSentence :
                 // setVectorValue(vector, i, beginSentence, mapping);
                 // break;
-                // case InitialCap :
-                // setVectorValue(vector, i, initialCap, mapping);
-                // break;
-                // case AllCaps :
-                // setVectorValue(vector, i, allCaps, mapping);
-                // break;
 
                 case PreviousWord :
                     setVectorValue(vector, i, previousWords, mapping);
@@ -134,10 +153,31 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
                     break;
 
                 case Length1 :
-                case Length2to5 :
-                case Length6to10 :
-                case LengthGreaterThan10 :
+                case Length2 :
+                case Length3 :
+                case Length4 :
+                case Length5to6 :
+                case Length7to8 :
+                case Length9to12 :
+                case Length13to18 :
+                case LengthGreaterThan18 :
                     setVectorValue(vector, i, length, mapping);
+                    break;
+
+                case Numeric :
+                    setVectorValue(vector, i, numeric, mapping);
+                    break;
+
+                case InitialNumeric :
+                    setVectorValue(vector, i, initialNumeric, mapping);
+                    break;
+
+                case StartWord :
+                    setVectorValue(vector, i, startword, mapping);
+                    break;
+
+                case EndWord :
+                    setVectorValue(vector, i, endword, mapping);
                     break;
 
                 default :
@@ -156,7 +196,7 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
      * @param mapping
      * @throws IllegalArgumentException if the value is unset (-1)
      */
-    private void setVectorValue(FloatVector vector, int index, float value, String mapping)
+    private void setVectorValue(final FloatVector vector, final int index, final float value, final String mapping)
     {
         if (value == -1)
         {

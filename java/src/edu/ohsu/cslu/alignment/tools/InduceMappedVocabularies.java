@@ -35,7 +35,7 @@ import edu.ohsu.cslu.common.Vocabulary;
 public class InduceMappedVocabularies extends BaseCommandlineTool
 {
     @Option(name = "-t", metaVar = "tag", usage = "Tag number")
-    private final int tag = -1;
+    private int tag = -1;
 
     @Option(name = "-l", usage = "Log-linear - create a single vocabulary mapping all tokens")
     private boolean logLinear;
@@ -43,7 +43,7 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
     @Option(name = "-rtc", metaVar = "cutoff", usage = "Rare token cutoff. Default = 0")
     private final int rareTokenCutoff = 0;
 
-    public static void main(String[] args)
+    public static void main(final String[] args)
     {
         run(args);
     }
@@ -53,15 +53,15 @@ public class InduceMappedVocabularies extends BaseCommandlineTool
     {
         if (logLinear)
         {
-            LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(new BufferedReader(new InputStreamReader(
+            final LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(new BufferedReader(new InputStreamReader(
                 System.in)), rareTokenCutoff);
             System.out.println(vocabulary.toString());
             return;
         }
 
         // Induce separate vocabularies for each tag in a set of tokens
-        SimpleVocabulary[] vocabularies = SimpleVocabulary.induceVocabularies(new BufferedReader(new InputStreamReader(
-            System.in)));
+        final SimpleVocabulary[] vocabularies = SimpleVocabulary.induceVocabularies(new BufferedReader(
+            new InputStreamReader(System.in)));
 
         if (tag >= 0)
         {
