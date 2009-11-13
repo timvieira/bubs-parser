@@ -5,14 +5,12 @@ import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_BEFORE_HEAD;
 import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HEAD_VERB;
 import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_POS;
 import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_WORD;
 import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_WORD;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.kohsuke.args4j.CmdLineException;
@@ -44,8 +42,6 @@ import edu.ohsu.cslu.util.Strings;
  * 
  * From flat bracketed input, arbitrary features can be selected in any order (e.g. features 1, 6,
  * and 3 output in that order).
- * 
- * TODO: Split out flat 'reordering' version and implement w, p, pw, sw, pp, sp for flat text.
  * 
  * @author Aaron Dunlop
  * @since Nov 17, 2008
@@ -80,9 +76,8 @@ public class SelectFeatures extends LinewiseCommandlineTool
     @Option(name = "-h", aliases = {"--head-verb"}, usage = "Include _head_verb feature")
     private boolean headVerb;
 
-    // TODO This should really be a Set for efficiency
     @Option(name = "-nfv", aliases = {"--not-first-verb"}, usage = "Include _first_verb feature")
-    private List<String> firstVerbPos;
+    private Set<String> firstVerbPos;
 
     @Option(name = "-bh", aliases = {"--before-head"}, usage = "Include _before_head_verb feature")
     private boolean beforeHead;
@@ -154,8 +149,6 @@ public class SelectFeatures extends LinewiseCommandlineTool
         TREE_FEATURES.add(OPTION_BEFORE_HEAD); // before_head
         TREE_FEATURES.add(OPTION_AFTER_HEAD); // after_head
 
-        TREE_FEATURES.add(OPTION_PREVIOUS_WORD); // previous word (word-n_foo)
-        TREE_FEATURES.add(OPTION_SUBSEQUENT_WORD); // subsequent word (word+n_bar)
         TREE_FEATURES.add(OPTION_PREVIOUS_POS); // previous pos (pos-n_NNP)
         TREE_FEATURES.add(OPTION_SUBSEQUENT_POS); // subsequent pos (pos+n_NN)
     }
@@ -168,18 +161,14 @@ public class SelectFeatures extends LinewiseCommandlineTool
     @Override
     public void setup(final CmdLineParser parser) throws CmdLineException
     {
-        // // If input is not in tree format, we cannot extract certain features
-        // if (inputFormat != FileFormat.BracketedTree && inputFormat !=
-        // FileFormat.SquareBracketedTree)
-        // {
-        // for (Option o : commandLine.getOptions())
-        // {
-        // if (TREE_FEATURES.contains(o.getOpt()))
-        // {
-        // throw new ParseException(o.getOpt() + " option only supported for tree input formats");
-        // }
-        // }
-        // }
+        // If input is not in tree format, we cannot extract certain features
+        if (inputFormat != FileFormat.BracketedTree && inputFormat != FileFormat.SquareBracketedTree)
+        {
+            if (pos || headVerb || beforeHead || afterHead || previousPos != 0 || previousWords != 0)
+            {
+                throw new CmdLineException(parser, "Option not supported for flat input");
+            }
+        }
 
         if (selectedFeatures != null && selectedFeatures.length > 0 && wordIndex != 1)
         {
@@ -213,6 +202,8 @@ public class SelectFeatures extends LinewiseCommandlineTool
                 endBracket = "";
                 featureDelimiter = "/";
                 break;
+            default :
+                throw new CmdLineException(parser, "Unsuppported output format: " + outputFormat);
         }
 
         if (selectedFeatures != null)
@@ -402,7 +393,6 @@ public class SelectFeatures extends LinewiseCommandlineTool
 
         if (length)
         {
-            final int l = label.length();
             switch (label.length())
             {
                 case 1 :
@@ -534,14 +524,26 @@ public class SelectFeatures extends LinewiseCommandlineTool
 
                 if (startWord && i == 0)
                 {
-                    sb.append(FeatureClass.FEATURE_START_WORD);
-                    sb.append(featureDelimiter);
+                    sb.append(String.format("%s%s", FeatureClass.FEATURE_START_WORD, featureDelimiter));
                 }
 
                 if (endWord && i == features.length - 1)
                 {
-                    sb.append(FeatureClass.FEATURE_END_WORD);
-                    sb.append(featureDelimiter);
+                    sb.append(String.format("%s%s", FeatureClass.FEATURE_END_WORD, featureDelimiter));
+                }
+
+                // Previous words
+                for (int j = 1; ((j <= previousWords) && (i - j >= 0)); j++)
+                {
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.PREFIX_PREVIOUS_WORD, j,
+                        features[i - j][wordIndex - 1], featureDelimiter));
+                }
+
+                // Subsequent words
+                for (int j = 1; ((j <= subsequentWords) && (i + j < features.length)); j++)
+                {
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.PREFIX_SUBSEQUENT_WORD, j,
+                        features[i + j][wordIndex - 1], featureDelimiter));
                 }
 
                 // Remove the final (extra) delimiter
