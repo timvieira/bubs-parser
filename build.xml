@@ -129,6 +129,10 @@
 			<manifest>
 				<attribute name="Main-Class" value="${root-class}" />
 			</manifest>
+
+			<!-- Include all args4j property files -->
+			<zipfileset src="${dir.shared.bsd.lib}/args4j.jar" includes="**/*.properties" />
+			<!-- And any additional jars specified by the caller -->
 			<zipgroupfileset dir="." includes="${additional-jars}" />
 		</genjar>
 
