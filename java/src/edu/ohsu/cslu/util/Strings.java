@@ -19,14 +19,14 @@ import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 
 public class Strings
 {
-    public static String fill(char c, int count)
+    public static String fill(final char c, final int count)
     {
         if (count < 0)
         {
             return "";
         }
 
-        char[] buf = new char[count];
+        final char[] buf = new char[count];
         Arrays.fill(buf, c);
         return new String(buf);
     }
@@ -37,11 +37,11 @@ public class Strings
      * @param parseTree Standard parenthesis-bracketed parse tree
      * @return tokens
      */
-    public static List<String> parseTreeTokens(String parseTree)
+    public static List<String> parseTreeTokens(final String parseTree)
     {
         // Split the string up into tokens '(', ')', tags, and words
         final char[] charArray = parseTree.toCharArray();
-        ArrayList<String> tokens = new ArrayList<String>(charArray.length);
+        final ArrayList<String> tokens = new ArrayList<String>(charArray.length);
         for (int i = 0; i < charArray.length; i++)
         {
             char c = charArray[i];
@@ -88,14 +88,14 @@ public class Strings
      * @param parsedSentence Penn Treebank formatted parse tree
      * @return POS-tagged words without any other parse structure
      */
-    public static String extractPos(String parsedSentence)
+    public static String extractPos(final String parsedSentence)
     {
-        StringNaryTree tree = StringNaryTree.read(parsedSentence);
-        StringBuilder sb = new StringBuilder(parsedSentence.length());
+        final StringNaryTree tree = StringNaryTree.read(parsedSentence);
+        final StringBuilder sb = new StringBuilder(parsedSentence.length());
 
-        for (Iterator<NaryTree<String>> i = tree.inOrderIterator(); i.hasNext();)
+        for (final Iterator<NaryTree<String>> i = tree.inOrderIterator(); i.hasNext();)
         {
-            NaryTree<String> node = i.next();
+            final NaryTree<String> node = i.next();
             if (node.isLeaf())
             {
                 sb.append('(');
@@ -121,14 +121,14 @@ public class Strings
      * @param ruleset head-percolation rules
      * @return POS-tagged words without any other parse structure
      */
-    public static String extractPosAndHead(String parsedSentence, HeadPercolationRuleset ruleset)
+    public static String extractPosAndHead(final String parsedSentence, final HeadPercolationRuleset ruleset)
     {
-        StringNaryTree tree = StringNaryTree.read(parsedSentence);
-        StringBuilder sb = new StringBuilder(parsedSentence.length());
+        final StringNaryTree tree = StringNaryTree.read(parsedSentence);
+        final StringBuilder sb = new StringBuilder(parsedSentence.length());
 
-        for (Iterator<NaryTree<String>> i = tree.inOrderIterator(); i.hasNext();)
+        for (final Iterator<NaryTree<String>> i = tree.inOrderIterator(); i.hasNext();)
         {
-            NaryTree<String> node = i.next();
+            final NaryTree<String> node = i.next();
             if (node.isLeaf())
             {
                 sb.append('(');
@@ -153,7 +153,7 @@ public class Strings
      * @param sequence
      * @return
      */
-    private static String[][] bracketedTags(String sequence, char closeBracket, final String endBracketPattern,
+    private static String[][] bracketedTags(String sequence, final char closeBracket, final String endBracketPattern,
         final String beginBracketPattern)
     {
         // Remove newlines and leading and trailing whitespace
@@ -166,8 +166,8 @@ public class Strings
             tokensPerBracket++;
         }
 
-        String[] split = sequence.split(endBracketPattern);
-        String[][] bracketedTags = new String[split.length][];
+        final String[] split = sequence.split(endBracketPattern);
+        final String[][] bracketedTags = new String[split.length][];
 
         for (int i = 0; i < split.length; i++)
         {
@@ -183,7 +183,7 @@ public class Strings
      * @param sequence
      * @return string tokens
      */
-    public static String[][] bracketedTags(String sequence)
+    public static String[][] bracketedTags(final String sequence)
     {
         return bracketedTags(sequence, ')', " *\\)", " *\\(");
     }
@@ -195,7 +195,7 @@ public class Strings
      * @param sequence
      * @return string tokens
      */
-    public static String[][] squareBracketedTags(String sequence)
+    public static String[][] squareBracketedTags(final String sequence)
     {
         return bracketedTags(sequence, ']', " *\\]", " *\\[");
     }
@@ -212,8 +212,8 @@ public class Strings
         // Remove newlines and leading and trailing whitespace
         sequence = sequence.replaceAll("\n|\r", " ").trim();
 
-        String[] split = sequence.split(" +");
-        String[][] bracketedTags = new String[split.length][];
+        final String[] split = sequence.split(" +");
+        final String[][] bracketedTags = new String[split.length][];
 
         for (int i = 0; i < split.length; i++)
         {
@@ -229,14 +229,14 @@ public class Strings
      * @param line
      * @return Map of attributes
      */
-    public static Map<String, String> headerAttributes(String line)
+    public static Map<String, String> headerAttributes(final String line)
     {
-        Map<String, String> attributes = new HashMap<String, String>();
+        final Map<String, String> attributes = new HashMap<String, String>();
         for (final String stringAttribute : line.split(" +"))
         {
             if (stringAttribute.indexOf('=') >= 0)
             {
-                String[] split = stringAttribute.split("=");
+                final String[] split = stringAttribute.split("=");
                 attributes.put(split[0], split[1]);
             }
         }
@@ -249,9 +249,9 @@ public class Strings
      * @param s a space-delimited string
      * @return All possible permutations of the tokens in the supplied string
      */
-    public static Set<String> permuteTokens(String s)
+    public static Set<String> permuteTokens(final String s)
     {
-        HashSet<String> permutations = new HashSet<String>();
+        final HashSet<String> permutations = new HashSet<String>();
         recursivePermute(permutations, "", s.split(" "));
         return permutations;
     }
@@ -262,10 +262,10 @@ public class Strings
      * @param s a bracketed feature list (e.g., "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
      * @return All possible permutations of the features in the supplied string
      */
-    public static Set<String> permuteFeatures(String s)
+    public static Set<String> permuteFeatures(final String s)
     {
-        HashSet<String> permutations = new HashSet<String>();
-        String[] split = s.split("\\) *");
+        final HashSet<String> permutations = new HashSet<String>();
+        final String[] split = s.split("\\) *");
         for (int i = 0; i < split.length; i++)
         {
             split[i] = split[i] + ")";
@@ -282,7 +282,8 @@ public class Strings
      * @param suffix
      * @return All permutations of the specified suffix
      */
-    private static Set<String> recursivePermute(Set<String> permutations, String prefix, String[] suffix)
+    private static Set<String> recursivePermute(final Set<String> permutations, final String prefix,
+        final String[] suffix)
     {
         // Base case of length 1
         if (suffix.length == 1)
@@ -294,7 +295,7 @@ public class Strings
         // Call recursively for each feature in toPermute
         for (int i = 0; i < suffix.length; i++)
         {
-            String[] newSuffix = new String[suffix.length - 1];
+            final String[] newSuffix = new String[suffix.length - 1];
             System.arraycopy(suffix, 0, newSuffix, 0, i);
             System.arraycopy(suffix, i + 1, newSuffix, i, newSuffix.length - i);
 
@@ -311,9 +312,9 @@ public class Strings
      * @param s Whitespace-delimited string
      * @return Pairs of tokens
      */
-    public static Set<String> tokenPairs(String s)
+    public static Set<String> tokenPairs(final String s)
     {
-        String[] tokens = s.split("\\s+");
+        final String[] tokens = s.split("\\s+");
         return tokenPairs(tokens);
     }
 
@@ -323,9 +324,9 @@ public class Strings
      * @param tokens
      * @return Pairs of tokens
      */
-    public static Set<String> tokenPairs(String[] tokens)
+    public static Set<String> tokenPairs(final String[] tokens)
     {
-        HashSet<String> pairs = new HashSet<String>();
+        final HashSet<String> pairs = new HashSet<String>();
         if (tokens.length == 1)
         {
             pairs.add(tokens[0]);
@@ -343,16 +344,16 @@ public class Strings
     }
 
     /**
-     * Splits the string by bracketed features, and returns all 2-bracket combinations.
+     * Splits the string by bracketed features, and returns all ordered 2-bracket combinations.
      * 
-     * @param s Bracketed representation of a sequence. (e.g.,
-     *            "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
-     * @return Pairs of bracketings
+     * @param s Bracketed representation of a sequence. (e.g., "(The) (cow) (ate) (.)")
+     * @return Ordered pairs of bracketings. (e.g. (The) (cow), (The) (ate), (The .), (cow) (ate)
+     *         ...)
      */
-    public static Set<String> featurePairs(String s)
+    public static Set<String> featurePairs(final String s)
     {
-        HashSet<String> pairs = new HashSet<String>();
-        String[] elements = s.split("\\) *");
+        final HashSet<String> pairs = new HashSet<String>();
+        final String[] elements = s.split("\\) *");
         if (elements.length == 1)
         {
             pairs.add(s);
@@ -379,13 +380,13 @@ public class Strings
      *            "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
      * @return words
      */
-    public static String[] words(String bracketedFeatures)
+    public static String[] words(final String bracketedFeatures)
     {
         final ArrayList<String> words = new ArrayList<String>();
         final String[] elements = bracketedFeatures.split("\\) *");
         for (final String element : elements)
         {
-            int index = element.indexOf(' ');
+            final int index = element.indexOf(' ');
             final String word = index > 0 ? element.substring(1, index) : element.substring(1);
             words.add(word);
         }
