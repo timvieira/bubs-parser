@@ -97,7 +97,7 @@
              will match, with a .jar suffix, and the SGE script will be named
              by prepending 'grid-'
          * heap-size (optional - default=128) Size in megabytes
-         * additional-jars (optional) List of any additional jars which should
+         * additional-libs (optional) List of any additional jars which should
              be included in their entirety
          * params (optional) Parameter list to pass to the grid engine script.
     ========================================================================
@@ -133,7 +133,7 @@
 			<!-- Include all args4j property files -->
 			<zipfileset src="${dir.shared.bsd.lib}/args4j.jar" includes="**/*.properties" />
 			<!-- And any additional jars specified by the caller -->
-			<zipgroupfileset dir="." includes="${additional-jars}" />
+			<zipgroupfileset dir="." includes="${additional-libs}" />
 		</genjar>
 
 		<!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
