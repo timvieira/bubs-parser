@@ -1,14 +1,11 @@
 package edu.ohsu.cslu.common;
 
-import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
 import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.util.Arrays;
 
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
-import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
@@ -61,14 +58,14 @@ public class LogLinearMappedSequence implements MappedSequence
      * @param vocabulary {@link LogLinearVocabulary} with which to map the tokens to
      *            {@link BitVector}s.
      */
-    public LogLinearMappedSequence(String bracketedSequence, AlignmentVocabulary vocabulary)
+    public LogLinearMappedSequence(final String bracketedSequence, final AlignmentVocabulary vocabulary)
     {
-        String[][] split = Strings.bracketedTags(bracketedSequence);
+        final String[][] split = Strings.bracketedTags(bracketedSequence);
         elements = new BitVector[split.length];
 
         for (int j = 0; j < split.length; j++)
         {
-            int[] features = new int[split[j].length];
+            final int[] features = new int[split[j].length];
             for (int i = 0; i < split[j].length; i++)
             {
                 features[i] = vocabulary.map(split[j][i]);
@@ -76,30 +73,30 @@ public class LogLinearMappedSequence implements MappedSequence
             elements[j] = new SparseBitVector(features);
         }
 
-//        for (int j = 0; j < split.length; j++)
-//        {
-//            final IntSet featureSet = new IntAVLTreeSet();
-//            for (int i = 0; i < split[j].length; i++)
-//            {
-//                final String token = split[j][i];
-//                if (vocabulary.isRareToken(token))
-//                {
-//                    featureSet.add(SimpleVocabulary.UNKNOWN_SYMBOL);
-//                }
-//                featureSet.add(vocabulary.map(token));
-//            }
-//            elements[j] = new SparseBitVector(featureSet.toIntArray());
-//        }
+        // for (int j = 0; j < split.length; j++)
+        // {
+        // final IntSet featureSet = new IntAVLTreeSet();
+        // for (int i = 0; i < split[j].length; i++)
+        // {
+        // final String token = split[j][i];
+        // if (vocabulary.isRareToken(token))
+        // {
+        // featureSet.add(SimpleVocabulary.UNKNOWN_SYMBOL);
+        // }
+        // featureSet.add(vocabulary.map(token));
+        // }
+        // elements[j] = new SparseBitVector(featureSet.toIntArray());
+        // }
         this.vocabulary = vocabulary;
     }
 
-    public LogLinearMappedSequence(BitVector[] elements, Vocabulary vocabulary)
+    public LogLinearMappedSequence(final BitVector[] elements, final Vocabulary vocabulary)
     {
         this.elements = elements;
         this.vocabulary = vocabulary;
     }
 
-    public LogLinearMappedSequence(int[] features, Vocabulary vocabulary)
+    public LogLinearMappedSequence(final int[] features, final Vocabulary vocabulary)
     {
         this.elements = new BitVector[features.length];
         for (int j = 0; j < features.length; j++)
@@ -109,7 +106,7 @@ public class LogLinearMappedSequence implements MappedSequence
         this.vocabulary = vocabulary;
     }
 
-    public LogLinearMappedSequence(int[][] features, Vocabulary vocabulary)
+    public LogLinearMappedSequence(final int[][] features, final Vocabulary vocabulary)
     {
         this.elements = new BitVector[features.length];
         for (int j = 0; j < features.length; j++)
@@ -143,13 +140,13 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public BitVector elementAt(int index)
+    public BitVector elementAt(final int index)
     {
         return elements[index];
     }
 
     @Override
-    public String stringFeature(int index, int featureIndex)
+    public String stringFeature(final int index, final int featureIndex)
     {
         // Return null if the specified element does not contain the specified feature
         if (!elements[index].getBoolean(featureIndex))
@@ -161,7 +158,7 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public String[] stringFeatures(int index)
+    public String[] stringFeatures(final int index)
     {
         final int[] values = elements[index].values();
         final String[] stringFeatures = new String[values.length];
@@ -173,7 +170,7 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public MappedSequence insertGaps(int[] gapIndices)
+    public MappedSequence insertGaps(final int[] gapIndices)
     {
         if (gapIndices.length == 0)
         {
@@ -211,7 +208,7 @@ public class LogLinearMappedSequence implements MappedSequence
             return clone();
         }
 
-        BitVector[] newElements = new BitVector[oldLength - gaps];
+        final BitVector[] newElements = new BitVector[oldLength - gaps];
 
         // Old and new column indices
         int newJ = 0;
@@ -229,12 +226,12 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public MappedSequence retainFeatures(int... features)
+    public MappedSequence retainFeatures(final int... features)
     {
         final BitVector[] newElements = new BitVector[elements.length];
         for (int j = 0; j < elements.length; j++)
         {
-            IntRBTreeSet newFeatures = new IntRBTreeSet();
+            final IntRBTreeSet newFeatures = new IntRBTreeSet();
             for (int i = 0; i < features.length; i++)
             {
                 if (elements[j].getBoolean(features[i]))
@@ -255,7 +252,7 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public Sequence subSequence(int beginIndex, int endIndex)
+    public Sequence subSequence(final int beginIndex, final int endIndex)
     {
         // Note that this does not clone all contained BitVectors. Efficient, but possibly
         // problematic in a functional-programming sense.
@@ -265,10 +262,10 @@ public class LogLinearMappedSequence implements MappedSequence
     @Override
     public String toBracketedString()
     {
-        StringBuilder sb = new StringBuilder(256);
+        final StringBuilder sb = new StringBuilder(256);
         for (int j = 0; j < elements.length; j++)
         {
-            int[] features = elements[j].values();
+            final int[] features = elements[j].values();
             sb.append("(");
             for (int i = 0; i < features.length; i++)
             {
@@ -291,10 +288,10 @@ public class LogLinearMappedSequence implements MappedSequence
     @Override
     public String toSlashSeparatedString()
     {
-        StringBuilder sb = new StringBuilder(256);
+        final StringBuilder sb = new StringBuilder(256);
         for (int j = 0; j < elements.length; j++)
         {
-            int[] features = elements[j].values();
+            final int[] features = elements[j].values();
             for (int i = 0; i < features.length; i++)
             {
                 sb.append(vocabulary.map(features[i]));
@@ -322,7 +319,7 @@ public class LogLinearMappedSequence implements MappedSequence
     @Override
     public final LogLinearMappedSequence clone()
     {
-        BitVector[] newElements = new BitVector[elements.length];
+        final BitVector[] newElements = new BitVector[elements.length];
         for (int j = 0; j < newElements.length; j++)
         {
             newElements[j] = (BitVector) elements[j].clone();
@@ -331,7 +328,7 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public boolean equals(Object o)
+    public boolean equals(final Object o)
     {
         if (!(o instanceof LogLinearMappedSequence))
         {
@@ -352,7 +349,7 @@ public class LogLinearMappedSequence implements MappedSequence
         final int length = length();
 
         // Find the maximum token length in each column
-        String[] formats = new String[length];
+        final String[] formats = new String[length];
 
         for (int j = 0; j < length; j++)
         {
@@ -360,7 +357,7 @@ public class LogLinearMappedSequence implements MappedSequence
             final int[] values = elements[j].values();
             for (int i = 0; i < values.length; i++)
             {
-                int featureLength = vocabulary.map(values[i]).length();
+                final int featureLength = vocabulary.map(values[i]).length();
                 if (featureLength > columnLength)
                 {
                     columnLength = featureLength;
@@ -380,7 +377,7 @@ public class LogLinearMappedSequence implements MappedSequence
      * @return String visualization of the sequence
      */
     @Override
-    public String toColumnString(String[] formats)
+    public String toColumnString(final String[] formats)
     {
         final int length = length();
 
@@ -395,7 +392,7 @@ public class LogLinearMappedSequence implements MappedSequence
             }
         }
 
-        StringBuilder sb = new StringBuilder(length * 20);
+        final StringBuilder sb = new StringBuilder(length * 20);
 
         // Rows
         for (int i = 0; i < maxFeatures; i++)
@@ -404,7 +401,7 @@ public class LogLinearMappedSequence implements MappedSequence
             for (int j = 0; j < length; j++)
             {
                 final int[] elementValues = elements[j].values();
-                String stringFeature = (i < elementValues.length) ? vocabulary.map(elementValues[i]) : "";
+                final String stringFeature = (i < elementValues.length) ? vocabulary.map(elementValues[i]) : "";
                 sb.append(String.format(formats[j], stringFeature));
             }
             sb.append('\n');
@@ -417,7 +414,7 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public int maxLabelLength(int index)
+    public int maxLabelLength(final int index)
     {
         final int[] features = elements[index].values();
 
