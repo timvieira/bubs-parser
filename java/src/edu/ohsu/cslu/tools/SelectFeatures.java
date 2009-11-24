@@ -136,8 +136,6 @@ public class SelectFeatures extends LinewiseCommandlineTool
     // TODO: Allow other head-percolation rulesets?
     private final HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
 
-    private final PorterStemmer porterStemmer = new PorterStemmer();
-
     /** Features only supported when input is in tree format */
     static HashSet<String> TREE_FEATURES = new HashSet<String>();
 
@@ -454,6 +452,8 @@ public class SelectFeatures extends LinewiseCommandlineTool
         if (includeStem)
         {
             sb.append(FeatureClass.PREFIX_STEM);
+            // TODO Make porterStemmer an instance variable, after making PorterStemmer thread-safe
+            final PorterStemmer porterStemmer = new PorterStemmer();
             sb.append(porterStemmer.stemWord(label.toLowerCase()));
             sb.append(featureDelimiter);
         }

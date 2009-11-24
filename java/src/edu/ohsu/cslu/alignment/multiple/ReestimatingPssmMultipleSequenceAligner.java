@@ -34,8 +34,8 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
     /**
      * TODO Document
      */
-    public ReestimatingPssmMultipleSequenceAligner(NumericVector laplacePseudoCounts,
-        NumericVector columnInsertionCostVector)
+    public ReestimatingPssmMultipleSequenceAligner(final NumericVector laplacePseudoCounts,
+        final NumericVector columnInsertionCostVector)
     {
         this.laplacePseudoCounts = laplacePseudoCounts;
         this.columnInsertionCostVector = columnInsertionCostVector;
@@ -70,10 +70,10 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
 
         // final TreeSet<PairwiseDistance> distanceTree = createDistanceTree(distanceMatrix);
 
-        MultipleSequenceAlignment alignedSequences = new MultipleSequenceAlignment();
+        final MultipleSequenceAlignment alignedSequences = new MultipleSequenceAlignment();
 
         // TODO: Bug
-        int firstSequenceToAlign = distanceMatrix.argMin()[0];
+        final int firstSequenceToAlign = distanceMatrix.argMin()[0];
 
         // Mark all distances to/from the aligned sequence as infinite, so we won't try to align
         // this sequence again.
@@ -143,7 +143,8 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
 
             // The first sequence in the pair is already aligned but the second isn't. Align
             // the unaligned sequence with the newly induced PSSM
-            SequenceAlignment alignment = pssmAligner.align(unalignedSequences[unalignedIndex], columnAlignmentModel);
+            final SequenceAlignment alignment = pssmAligner.align(unalignedSequences[unalignedIndex],
+                columnAlignmentModel);
 
             // Update already aligned sequences to include gaps where needed. For the moment,
             // we'll skip re-computing distance metrics...
@@ -160,9 +161,9 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
         return alignedSequences;
     }
 
-    public MultipleSequenceAlignment alignInOrder(final MappedSequence[] sequences, boolean verbose)
+    public MultipleSequenceAlignment alignInOrder(final MappedSequence[] sequences, final boolean verbose)
     {
-        MultipleSequenceAlignment alignedSequences = new MultipleSequenceAlignment();
+        final MultipleSequenceAlignment alignedSequences = new MultipleSequenceAlignment();
 
         alignedSequences.addSequence(sequences[0]);
 
@@ -181,10 +182,9 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
             }
 
             // Align the unaligned sequence with the newly induced PSSM
-            SequenceAlignment alignment = pssmAligner.align(sequences[i], columnAlignmentModel);
+            final SequenceAlignment alignment = pssmAligner.align(sequences[i], columnAlignmentModel);
 
-            // Update already aligned sequences to include gaps where needed. For the moment,
-            // we'll skip re-computing distance metrics...
+            // Update already aligned sequences to include gaps where needed.
             if (alignment.alignedSequence().length() != columnAlignmentModel.columnCount())
             {
                 alignedSequences.insertGaps(alignment.insertedColumnIndices());
