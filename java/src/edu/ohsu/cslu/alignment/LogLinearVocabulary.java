@@ -63,7 +63,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
         {
             return induce(new BufferedReader(new StringReader(s)), FeatureClass.FEATURE_GAP, rareTokenCutoff);
         }
-        catch (IOException e)
+        catch (final IOException e)
         {
             // We shouldn't ever IOException in a StringReader
             return null;
@@ -100,7 +100,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
         {
             return induce(new BufferedReader(new StringReader(s)), gapSymbol, rareTokenCutoff);
         }
-        catch (IOException e)
+        catch (final IOException e)
         {
             // We shouldn't ever IOException in a StringReader
             return null;
@@ -130,7 +130,6 @@ public class LogLinearVocabulary extends SimpleVocabulary
      *            the token counts need not all be identical. e.g.
      *            "(The DT start) (dog NN) (ran VB head_verb)"
      * @param rareTokenCutoff Greatest occurrence count at which a token will be counted as 'rare'
-     * @param storeKnownWords Maintain a set of lowercase words mapped by this vocabulary
      * @return induced vocabulary
      * @throws IOException
      */
@@ -163,14 +162,13 @@ public class LogLinearVocabulary extends SimpleVocabulary
      *            "(The DT start) (dog NN) (ran VB head_verb)"
      * @param gapSymbol
      * @param rareTokenCutoff Greatest occurrence count at which a token will be counted as 'rare'
-     * @param storeKnownWords Maintain a set of lowercase words mapped by this vocabulary
      * @return induced vocabulary
      * @throws IOException
      */
     public static LogLinearVocabulary induce(final BufferedReader reader, final String gapSymbol,
         final int rareTokenCutoff) throws IOException
     {
-        TreeMap<String, Integer> featureMap = new TreeMap<String, Integer>(new TokenComparator());
+        final TreeMap<String, Integer> featureMap = new TreeMap<String, Integer>(new TokenComparator());
         for (int i = 0; i < STATIC_SYMBOLS.length; i++)
         {
             featureMap.put(STATIC_SYMBOLS[i], 0);
@@ -178,13 +176,13 @@ public class LogLinearVocabulary extends SimpleVocabulary
 
         for (String line = reader.readLine(); line != null; line = reader.readLine())
         {
-            String[] features = line.replaceAll("\\(|\\)", " ").split(" +");
+            final String[] features = line.replaceAll("\\(|\\)", " ").split(" +");
 
-            for (String feature : features)
+            for (final String feature : features)
             {
                 if (feature.length() > 0)
                 {
-                    Integer count = featureMap.get(feature);
+                    final Integer count = featureMap.get(feature);
                     if (count == null)
                     {
                         featureMap.put(feature, 1);
@@ -201,10 +199,10 @@ public class LogLinearVocabulary extends SimpleVocabulary
 
         // Step through the sorted list of features, and mark a boundary each time we come to a new
         // {@link FeatureClass}
-        IntList categoryBoundaryList = new IntArrayList();
-        Iterator<String> iter = featureMap.keySet().iterator();
+        final IntList categoryBoundaryList = new IntArrayList();
+        final Iterator<String> iter = featureMap.keySet().iterator();
 
-        String[] featureArray = new String[featureMap.size()];
+        final String[] featureArray = new String[featureMap.size()];
 
         // Don't create boundaries on Static symbols
         int i;
@@ -237,7 +235,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
             }
         }
 
-        LogLinearVocabulary vocabulary = new LogLinearVocabulary(featureArray, categoryBoundaryList.toIntArray(),
+        final LogLinearVocabulary vocabulary = new LogLinearVocabulary(featureArray, categoryBoundaryList.toIntArray(),
             rareFeatures);
         return vocabulary;
     }
@@ -252,7 +250,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
     public static LogLinearVocabulary read(final Reader reader) throws IOException
     {
         final BufferedReader br = new BufferedReader(reader);
-        Map<String, String> attributes = Strings.headerAttributes(br.readLine());
+        final Map<String, String> attributes = Strings.headerAttributes(br.readLine());
         final HashSet<String> rareFeatures = new HashSet<String>();
 
         final int size = Integer.parseInt(attributes.get("size"));
@@ -269,8 +267,8 @@ public class LogLinearVocabulary extends SimpleVocabulary
         {
             if (line.length() > 0)
             {
-                String[] split = line.split(" +: +");
-                int index = Integer.parseInt(split[0]);
+                final String[] split = line.split(" +: +");
+                final int index = Integer.parseInt(split[0]);
                 tokens[index] = split[1];
                 if (split[2].equals("true"))
                 {
@@ -282,7 +280,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
     }
 
     @Override
-    protected void writeHeader(Writer writer) throws IOException
+    protected void writeHeader(final Writer writer) throws IOException
     {
         writer.write(String.format("vocabulary size=%d categoryboundaries=", size()));
         if (categoryBoundaries.length == 0)
@@ -303,7 +301,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
     }
 
     @Override
-    public int map(String token)
+    public int map(final String token)
     {
         final int value = super.map(token);
         if (value == Integer.MIN_VALUE && (!token.startsWith("_") || token.startsWith(FeatureClass.PREFIX_STEM)))
@@ -337,10 +335,10 @@ public class LogLinearVocabulary extends SimpleVocabulary
     {
 
         @Override
-        public int compare(String o1, String o2)
+        public int compare(final String o1, final String o2)
         {
             // First sort by feature classes
-            int featureComparison = FeatureClass.forString(o1).compareTo(FeatureClass.forString(o2));
+            final int featureComparison = FeatureClass.forString(o1).compareTo(FeatureClass.forString(o2));
             if (featureComparison != 0)
             {
                 return featureComparison;
