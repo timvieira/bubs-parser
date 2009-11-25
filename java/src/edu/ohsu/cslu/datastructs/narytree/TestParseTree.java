@@ -1,14 +1,7 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
@@ -23,6 +16,8 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.tests.FilteredRunner;
+
+import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link ParseTree}
@@ -44,14 +39,14 @@ public class TestParseTree
     private String stringSampleTree;
 
     private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] {"Wdt", "DT", "NP", "Wnnp", "NNP", "Wnn", "NN",
-                                                                        "S", "Wvbd", "VBD", "W.", ".", "TOP"};
+        "S", "Wvbd", "VBD", "W.", ".", "TOP"};
     private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] {"TOP", "S", "NP", "DT", "Wdt", "NNP", "Wnnp",
-                                                                         "NN", "Wnn", "VBD", "Wvbd", ".", "W."};
+        "NN", "Wnn", "VBD", "Wvbd", ".", "W."};
     private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] {"Wdt", "DT", "Wnnp", "NNP", "Wnn", "NN",
-                                                                          "NP", "Wvbd", "VBD", "W.", ".", "S", "TOP"};
+        "NP", "Wvbd", "VBD", "W.", ".", "S", "TOP"};
 
     @BeforeClass
-    public static void suiteSetUp() throws IOException
+    public static void suiteSetUp()
     {
         if (vocabulary == null)
         {
@@ -64,8 +59,8 @@ public class TestParseTree
     {
         sampleTree = new ParseTree("TOP", vocabulary);
 
-        ParseTree s = sampleTree.addChild("S");
-        ParseTree np = s.addChild("NP");
+        final ParseTree s = sampleTree.addChild("S");
+        final ParseTree np = s.addChild("NP");
         np.addChild("DT").addChild("Wdt");
         np.addChild("NNP").addChild("Wnnp");
         np.addChild("NN").addChild("Wnn");
@@ -79,7 +74,7 @@ public class TestParseTree
     @Test
     public void testAddChild() throws Exception
     {
-        ParseTree tree = new ParseTree("TOP", vocabulary);
+        final ParseTree tree = new ParseTree("TOP", vocabulary);
         assertEquals(1, tree.size());
         tree.addChild("S");
         assertEquals(2, tree.size());
@@ -90,7 +85,7 @@ public class TestParseTree
     @Test
     public void testAddChildren() throws Exception
     {
-        ParseTree tree = new ParseTree("TOP", vocabulary);
+        final ParseTree tree = new ParseTree("TOP", vocabulary);
         assertEquals(1, tree.size());
         tree.addChildren(new String[] {"S", "."});
         assertEquals(3, tree.size());
@@ -102,8 +97,8 @@ public class TestParseTree
     @Test
     public void testAddSubtree() throws Exception
     {
-        ParseTree tree = new ParseTree("TOP", vocabulary);
-        ParseTree s = new ParseTree("S", vocabulary);
+        final ParseTree tree = new ParseTree("TOP", vocabulary);
+        final ParseTree s = new ParseTree("S", vocabulary);
         s.addChildren(new String[] {"NP", "VBD"});
         tree.addSubtree(s);
         assertEquals(4, tree.size());
@@ -116,7 +111,7 @@ public class TestParseTree
     public void testRemoveChild() throws Exception
     {
         assertEquals(13, sampleTree.size());
-        ParseTree s = sampleTree.subtree("S");
+        final ParseTree s = sampleTree.subtree("S");
 
         s.removeChild("VBD");
         assertEquals(12, sampleTree.size());
@@ -138,7 +133,7 @@ public class TestParseTree
     @Test
     public void testRemoveChildrenByStringArray() throws Exception
     {
-        ParseTree s = sampleTree.subtree("S");
+        final ParseTree s = sampleTree.subtree("S");
         assertEquals(12, s.size());
 
         assertNull(s.subtree("DT"));
@@ -155,7 +150,7 @@ public class TestParseTree
     @Test
     public void testRemoveSubtree() throws Exception
     {
-        ParseTree s = sampleTree.subtree("S");
+        final ParseTree s = sampleTree.subtree("S");
         assertEquals(12, s.size());
 
         s.removeSubtree(".");
@@ -171,7 +166,7 @@ public class TestParseTree
     @Test
     public void testSubtree() throws Exception
     {
-        BaseNaryTree<String> s = sampleTree.subtree("S");
+        final BaseNaryTree<String> s = sampleTree.subtree("S");
         assertEquals(12, s.size());
         assertNotNull(s.subtree("NP"));
         assertNotNull(s.subtree("VBD"));
@@ -222,10 +217,10 @@ public class TestParseTree
     @Test
     public void testInOrderIterator() throws Exception
     {
-        Iterator<NaryTree<String>> iter = sampleTree.inOrderIterator();
+        final Iterator<NaryTree<String>> iter = sampleTree.inOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
-            BaseNaryTree<String> tree = (BaseNaryTree<String>) iter.next();
+            final BaseNaryTree<String> tree = (BaseNaryTree<String>) iter.next();
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], tree.stringLabel());
         }
     }
@@ -233,7 +228,7 @@ public class TestParseTree
     @Test
     public void testInOrderLabelIterator() throws Exception
     {
-        Iterator<String> iter = sampleTree.inOrderLabelIterator();
+        final Iterator<String> iter = sampleTree.inOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next());
@@ -243,10 +238,10 @@ public class TestParseTree
     @Test
     public void testPreOrderIterator() throws Exception
     {
-        Iterator<NaryTree<String>> iter = sampleTree.preOrderIterator();
+        final Iterator<NaryTree<String>> iter = sampleTree.preOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
-            BaseNaryTree<String> tree = (BaseNaryTree<String>) iter.next();
+            final BaseNaryTree<String> tree = (BaseNaryTree<String>) iter.next();
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], tree.stringLabel());
         }
     }
@@ -254,7 +249,7 @@ public class TestParseTree
     @Test
     public void testPreOrderLabelIterator() throws Exception
     {
-        Iterator<String> iter = sampleTree.preOrderLabelIterator();
+        final Iterator<String> iter = sampleTree.preOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next());
@@ -264,10 +259,10 @@ public class TestParseTree
     @Test
     public void testPostOrderIterator() throws Exception
     {
-        Iterator<NaryTree<String>> iter = sampleTree.postOrderIterator();
+        final Iterator<NaryTree<String>> iter = sampleTree.postOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
-            BaseNaryTree<String> tree = (BaseNaryTree<String>) iter.next();
+            final BaseNaryTree<String> tree = (BaseNaryTree<String>) iter.next();
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], tree.stringLabel());
         }
     }
@@ -275,7 +270,7 @@ public class TestParseTree
     @Test
     public void testPostOrderLabelIterator() throws Exception
     {
-        Iterator<String> iter = sampleTree.postOrderLabelIterator();
+        final Iterator<String> iter = sampleTree.postOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next());
@@ -286,8 +281,8 @@ public class TestParseTree
     public void testReadFromReader() throws Exception
     {
 
-        String stringSimpleTree = "(TOP (NP VP) .)";
-        ParseTree simpleTree = ParseTree.read(new StringReader(stringSimpleTree), vocabulary);
+        final String stringSimpleTree = "(TOP (NP VP) .)";
+        final ParseTree simpleTree = ParseTree.read(new StringReader(stringSimpleTree), vocabulary);
         assertEquals(4, simpleTree.size());
         assertEquals(2, simpleTree.subtree("NP").size());
 
@@ -296,8 +291,8 @@ public class TestParseTree
         assertEquals("VP", simpleTree.subtree("NP").subtree("VP").label());
         assertEquals(".", simpleTree.subtree(".").label());
 
-        String stringTestTree = "(TOP (S (NP (DT Wdt) (NNP Wnnp) (NN Wnn)) (VBD Wvbd) (. W.)))";
-        ParseTree testTree = ParseTree.read(new StringReader(stringTestTree), vocabulary);
+        final String stringTestTree = "(TOP (S (NP (DT Wdt) (NNP Wnnp) (NN Wnn)) (VBD Wvbd) (. W.)))";
+        final ParseTree testTree = ParseTree.read(new StringReader(stringTestTree), vocabulary);
         assertEquals(13, testTree.size());
         assertEquals(7, testTree.subtree("S").subtree("NP").size());
 
@@ -316,7 +311,7 @@ public class TestParseTree
         assertEquals(".", testTree.subtree("S").subtree(".").label());
         assertEquals("W.", testTree.subtree("S").subtree(".").subtree("W.").label());
 
-        ParseTree tree = ParseTree.read(new StringReader(stringSampleTree), vocabulary);
+        final ParseTree tree = ParseTree.read(new StringReader(stringSampleTree), vocabulary);
         assertEquals(sampleTree, tree);
     }
 
@@ -327,8 +322,8 @@ public class TestParseTree
         sampleTree.write(writer);
         assertEquals(stringSampleTree, writer.toString());
 
-        String stringSimpleTree = "(TOP (NP (NP (NP (NN Wnn) (NN Wnn)) (NN Wnn)) (NN Wnn)))";
-        ParseTree tree = new ParseTree("TOP", vocabulary);
+        final String stringSimpleTree = "(TOP (NP (NP (NP (NN Wnn) (NN Wnn)) (NN Wnn)) (NN Wnn)))";
+        final ParseTree tree = new ParseTree("TOP", vocabulary);
         tree.addChild("NP").addChild("NP").addChild("NP").addChild("NN").addChild("Wnn");
         tree.subtree("NP").subtree("NP").subtree("NP").addChild("NN").addChild("Wnn");
         tree.subtree("NP").subtree("NP").addChild("NN").addChild("Wnn");
@@ -351,13 +346,13 @@ public class TestParseTree
     @Test
     public void testEquals() throws Exception
     {
-        BaseNaryTree<String> tree1 = new ParseTree("TOP", vocabulary);
+        final BaseNaryTree<String> tree1 = new ParseTree("TOP", vocabulary);
         tree1.addChildren(new String[] {"S", "."});
 
-        BaseNaryTree<String> tree2 = new ParseTree("TOP", vocabulary);
+        final BaseNaryTree<String> tree2 = new ParseTree("TOP", vocabulary);
         tree2.addChildren(new String[] {"S", "."});
 
-        BaseNaryTree<String> tree3 = new ParseTree("TOP", vocabulary);
+        final BaseNaryTree<String> tree3 = new ParseTree("TOP", vocabulary);
         tree3.addChildren(new String[] {"VBD", "."});
 
         assertTrue(tree1.equals(tree2));
@@ -376,13 +371,13 @@ public class TestParseTree
     @SuppressWarnings("unchecked")
     public void testSerialize() throws Exception
     {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final ObjectOutputStream oos = new ObjectOutputStream(bos);
 
         oos.writeObject(sampleTree);
 
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
-        BaseNaryTree<Character> t = (BaseNaryTree<Character>) ois.readObject();
+        final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        final BaseNaryTree<Character> t = (BaseNaryTree<Character>) ois.readObject();
         assertTrue(sampleTree.equals(t));
     }
 
@@ -413,7 +408,7 @@ public class TestParseTree
 
         t1 = ParseTree.read("(TOP (S (NP (DT Wdt) (NNP Wnnp) (NN Wnn)) (VBD Wvbd) (. W.)))", vocabulary);
         t2 = ParseTree.read("(TOP (S (NP (DT Wdt) (NNP Wnnp)) (VBD  (NN Wnn) (VBD Wvbd)) (. W.)))", vocabulary);
-        ParseTree t3 = ParseTree.read("(TOP (S (DT Wdt) (NNP Wnnp) (NN Wnn) (VBD Wvbd) (. W.)))", vocabulary);
+        final ParseTree t3 = ParseTree.read("(TOP (S (DT Wdt) (NNP Wnnp) (NN Wnn) (VBD Wvbd) (. W.)))", vocabulary);
 
         assertEquals(0f, t1.pqgramDistance(t1, 3, 3), .01f);
         assertEquals(.36f, t1.pqgramDistance(t2, 3, 3), .01f);
@@ -430,24 +425,24 @@ public class TestParseTree
     @Test
     public void testHeadPercolation() throws Exception
     {
-        HeadPercolationRuleset charniakRuleset = new CharniakHeadPercolationRuleset();
-        HeadPercolationRuleset msaRuleset = new MsaHeadPercolationRuleset();
+        final HeadPercolationRuleset charniakRuleset = new CharniakHeadPercolationRuleset();
+        final HeadPercolationRuleset msaRuleset = new MsaHeadPercolationRuleset();
 
-        String sentence1 = "(TOP (S (NP (DT The) (JJ industrial) (NN average)) (VP (VBD closed)"
+        final String sentence1 = "(TOP (S (NP (DT The) (JJ industrial) (NN average)) (VP (VBD closed)"
             + " (ADVP (RB down) (NP (CD 18.65))) (, ,) (PP (TO to) (NP (CD 2638.73)))) (. .)))";
-        String sentence2 = "(TOP (S (NP (NN nobody)) (VP (VBD moved) (CC or) (VBD gestured))) (. .))";
-        String sentence3 = "(TOP (S (NP (NP (QP (IN About) ($ $) (CD 518) (CD million)))"
+        final String sentence2 = "(TOP (S (NP (NN nobody)) (VP (VBD moved) (CC or) (VBD gestured))) (. .))";
+        final String sentence3 = "(TOP (S (NP (NP (QP (IN About) ($ $) (CD 518) (CD million)))"
             + " (PP (IN of) (NP (NN debt)))) (VP (AUX is) (VP (VBN affected))) (. .)))";
-        String sentence4 = "(TOP (S (NP (NNP SHORT) (NNP SKIRTS)) (ADJP (RB not) (JJ welcome)) (PP (IN in) (NP (NNP Texas) (NN court))) (: :)))";
-        String sentence5 = "(TOP (S (NP (NP (PRP$ Their) (NN ridicule)) (PP (IN of) (TO to) (NP (PRP him))))"
+        final String sentence4 = "(TOP (S (NP (NNP SHORT) (NNP SKIRTS)) (ADJP (RB not) (JJ welcome)) (PP (IN in) (NP (NNP Texas) (NN court))) (: :)))";
+        final String sentence5 = "(TOP (S (NP (NP (PRP$ Their) (NN ridicule)) (PP (IN of) (TO to) (NP (PRP him))))"
             + " (VP (AUX is) (NP (NP (DT no) (NN substitute)) (PP (IN for) (NP (NN argument))))) (. .)))";
 
-        SimpleVocabulary vocabulary = SimpleVocabulary.induce(sentence1 + '\n' + sentence2 + '\n' + sentence3 + '\n'
-            + sentence4 + '\n' + sentence5);
-        ParseTree parseTree1 = ParseTree.read(sentence1, vocabulary);
+        final SimpleVocabulary vocabulary = SimpleVocabulary.induce(sentence1 + '\n' + sentence2 + '\n' + sentence3
+            + '\n' + sentence4 + '\n' + sentence5);
+        final ParseTree parseTree1 = ParseTree.read(sentence1, vocabulary);
 
         assertEquals("closed", parseTree1.headDescendant(charniakRuleset).label());
-        ParseTree s = parseTree1.subtree("S");
+        final ParseTree s = parseTree1.subtree("S");
         assertEquals("closed", s.headDescendant(charniakRuleset).label());
         assertEquals("average", s.subtree("NP").headDescendant(charniakRuleset).label());
         assertEquals("industrial", s.subtree("NP").subtree("JJ").headDescendant(charniakRuleset).label());
@@ -469,13 +464,13 @@ public class TestParseTree
         assertFalse(s.subtree("NP").subtree("NN").subtree("average").isHeadOfTreeRoot(charniakRuleset));
 
         // The VP has two 'VBD' children - we want to be sure the rightmost one is selected
-        ParseTree parseTree2 = ParseTree.read(sentence2, vocabulary);
+        final ParseTree parseTree2 = ParseTree.read(sentence2, vocabulary);
         assertEquals("gestured", parseTree2.subtree("S").subtree("VP").headDescendant(charniakRuleset).headDescendant(
             charniakRuleset).label());
 
         // Test secondary-preference behavior - a QP that doesn't contain another QP, but does
         // contain a '$'
-        ParseTree parseTree3 = ParseTree.read(sentence3, vocabulary);
+        final ParseTree parseTree3 = ParseTree.read(sentence3, vocabulary);
         assertEquals("$", parseTree3.subtree("S").subtree("NP").subtree("NP").subtree("QP").headDescendant(
             charniakRuleset).label());
         // Test alternate head-percolation rules, preferring embedded VP to AUX as head of a VP
@@ -484,14 +479,14 @@ public class TestParseTree
 
         // Test 'default' behavior - an S that doesn't contain any of its preferred children (no
         // verb phrase)
-        ParseTree parseTree4 = ParseTree.read(sentence4, vocabulary);
+        final ParseTree parseTree4 = ParseTree.read(sentence4, vocabulary);
         assertEquals("welcome", parseTree4.subtree("S").headDescendant(charniakRuleset).label());
 
         // Test selection of _leftmost_ preferred child of a PP. This sentence is arbitrarily
         // constructed (ungrammatically) such that the PP has both IN and TO children.
         // (A quick glance didn't turn up any real sentences in the WSJ corpus that exercised this
         // rule properly)
-        ParseTree parseTree5 = ParseTree.read(sentence5, vocabulary);
+        final ParseTree parseTree5 = ParseTree.read(sentence5, vocabulary);
         assertEquals("of", parseTree5.subtree("S").subtree("NP").subtree("PP").headDescendant(charniakRuleset).label());
     }
 }
