@@ -76,7 +76,7 @@ public class SelectFeatures extends LinewiseCommandlineTool
     @Option(name = "-h", aliases = {"--head-verb"}, usage = "Include _head_verb feature")
     private boolean headVerb;
 
-    @Option(name = "-nfv", aliases = {"--not-first-verb"}, usage = "Include _first_verb feature")
+    @Option(name = "-fv", aliases = {"--first-verb"}, multiValued = true, separator = ",", metaVar = "Parts-of-speech", usage = "Include _first_verb feature")
     private Set<String> firstVerbPos;
 
     @Option(name = "-bh", aliases = {"--before-head"}, usage = "Include _before_head_verb feature")
@@ -125,6 +125,9 @@ public class SelectFeatures extends LinewiseCommandlineTool
 
     @Option(name = "-f", aliases = {"--features"}, separator = ",", metaVar = "index", usage = "Feature index (in bracketed input) of token to treat as the word (starting with 1) Default = 1")
     private int[] selectedFeatures;
+
+    @Option(name = "-n", aliases = {"--negation", "--label-indicator-negation"}, usage = "Include labels for negation of indicator features (e.g. _not_numeric")
+    private boolean labelIndicatorNegations;
 
     private String beginBracket;
     private String endBracket;
@@ -320,10 +323,12 @@ public class SelectFeatures extends LinewiseCommandlineTool
                     if (posLabel != null && !foundFirstVerb && firstVerbPos.contains(posLabel))
                     {
                         foundFirstVerb = true;
+                        sb.append(FeatureClass.FEATURE_FIRST_VERB);
+                        sb.append(featureDelimiter);
                     }
-                    else
+                    else if (labelIndicatorNegations)
                     {
-                        sb.append(FeatureClass.FEATURE_NOT_FIRST_VERB);
+                        sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_FIRST_VERB);
                         sb.append(featureDelimiter);
                     }
                 }
@@ -347,47 +352,87 @@ public class SelectFeatures extends LinewiseCommandlineTool
     private void appendWordFeatures(final StringBuilder sb, final String label)
     {
         final char initialChar = label.charAt(0);
-        if (capitalized && Character.isUpperCase(initialChar))
+        if (capitalized)
         {
-            sb.append(FeatureClass.FEATURE_CAPITALIZED);
-            sb.append(featureDelimiter);
-        }
-
-        if (allcaps && Character.isUpperCase(initialChar) && label.equals(label.toUpperCase()))
-        {
-            sb.append(FeatureClass.FEATURE_ALL_CAPS);
-            sb.append(featureDelimiter);
-        }
-
-        if (hyphenated && label.indexOf('-') >= 0)
-        {
-            sb.append(FeatureClass.FEATURE_HYPHENATED);
-            sb.append(featureDelimiter);
-        }
-
-        if (initialNumeric && Character.isDigit(initialChar))
-        {
-            sb.append(FeatureClass.FEATURE_INITIAL_NUMERIC);
-            sb.append(featureDelimiter);
-        }
-
-        if (numeric && Character.isDigit(initialChar))
-        {
-            try
+            if (Character.isUpperCase(initialChar))
             {
-                Integer.parseInt(label);
-                sb.append(FeatureClass.FEATURE_NUMERIC);
+                sb.append(FeatureClass.FEATURE_CAPITALIZED);
                 sb.append(featureDelimiter);
             }
-            catch (final NumberFormatException ignore)
-            {}
+            else if (labelIndicatorNegations)
+            {
+                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_CAPITALIZED);
+                sb.append(featureDelimiter);
+            }
         }
 
-        // if (initialNumeric && Character.isDigit(initialChar))
-        // {
-        // sb.append(FeatureClass.FEATURE_INITIAL_NUMERIC);
-        // sb.append(featureDelimiter);
-        // }
+        if (allcaps)
+        {
+            if (Character.isUpperCase(initialChar) && label.equals(label.toUpperCase()))
+            {
+                sb.append(FeatureClass.FEATURE_ALL_CAPS);
+                sb.append(featureDelimiter);
+            }
+            else if (labelIndicatorNegations)
+            {
+                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_ALL_CAPS);
+                sb.append(featureDelimiter);
+            }
+        }
+
+        if (hyphenated)
+        {
+            if (label.indexOf('-') >= 0)
+            {
+                sb.append(FeatureClass.FEATURE_HYPHENATED);
+                sb.append(featureDelimiter);
+            }
+            else if (labelIndicatorNegations)
+            {
+                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_HYPHENATED);
+                sb.append(featureDelimiter);
+            }
+        }
+
+        if (initialNumeric)
+        {
+            if (Character.isDigit(initialChar))
+            {
+                sb.append(FeatureClass.FEATURE_INITIAL_NUMERIC);
+                sb.append(featureDelimiter);
+            }
+            else if (labelIndicatorNegations)
+            {
+                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_INITIAL_NUMERIC);
+                sb.append(featureDelimiter);
+            }
+        }
+
+        if (numeric)
+        {
+            if (Character.isDigit(initialChar))
+            {
+                try
+                {
+                    Integer.parseInt(label);
+                    sb.append(FeatureClass.FEATURE_NUMERIC);
+                    sb.append(featureDelimiter);
+                }
+                catch (final NumberFormatException ignore)
+                {
+                    if (labelIndicatorNegations)
+                    {
+                        sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_NUMERIC);
+                        sb.append(featureDelimiter);
+                    }
+                }
+            }
+            else if (labelIndicatorNegations)
+            {
+                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_NUMERIC);
+                sb.append(featureDelimiter);
+            }
+        }
 
         if (length)
         {
