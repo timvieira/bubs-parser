@@ -33,7 +33,7 @@ public enum FeatureClass implements Comparable<FeatureClass>
 
     /** Labels: _head_verb, _begin_sent, _initial_cap, etc. */
     HeadVerb,
-    NotFirstVerb,
+    FirstVerb,
     BeforeHead,
     AfterHead,
     BeginSentence,
@@ -85,7 +85,7 @@ public enum FeatureClass implements Comparable<FeatureClass>
     public final static String PREFIX_PREVIOUS_POS = "_pos-";
     public final static String PREFIX_SUBSEQUENT_POS = "_pos+";
 
-    public final static String FEATURE_NOT_FIRST_VERB = "_not_first_verb";
+    public final static String FEATURE_FIRST_VERB = "_first_verb";
     public final static String FEATURE_BEFORE_HEAD = "_before_head";
     public final static String FEATURE_HEAD_VERB = "_head_verb";
     public final static String FEATURE_AFTER_HEAD = "_after_head";
@@ -108,17 +108,24 @@ public enum FeatureClass implements Comparable<FeatureClass>
     public final static String FEATURE_LENGTH_13_TO_18 = "_length_13_to_18";
     public final static String FEATURE_LENGTH_GREATER_THAN_18 = "_length_greater_than_18";
 
+    public final static String NEGATION = "_not";
+
     private static HashMap<String, FeatureClass> knownLabels = new HashMap<String, FeatureClass>();
     static
     {
-        knownLabels.put(FEATURE_NOT_FIRST_VERB, NotFirstVerb);
         knownLabels.put(FEATURE_BEFORE_HEAD, BeforeHead);
         knownLabels.put(FEATURE_HEAD_VERB, HeadVerb);
         knownLabels.put(FEATURE_AFTER_HEAD, AfterHead);
+
+        knownLabels.put(FEATURE_FIRST_VERB, FirstVerb);
+        knownLabels.put(NEGATION + FEATURE_FIRST_VERB, FirstVerb);
         knownLabels.put(FEATURE_BEGIN_SENTENCE, BeginSentence);
         knownLabels.put(FEATURE_CAPITALIZED, Capitalized);
+        knownLabels.put(NEGATION + FEATURE_CAPITALIZED, Capitalized);
         knownLabels.put(FEATURE_ALL_CAPS, AllCaps);
+        knownLabels.put(NEGATION + FEATURE_ALL_CAPS, AllCaps);
         knownLabels.put(FEATURE_HYPHENATED, Hyphenated);
+        knownLabels.put(NEGATION + FEATURE_HYPHENATED, Hyphenated);
         knownLabels.put(FEATURE_LENGTH_1, Length1);
         knownLabels.put(FEATURE_LENGTH_2, Length2);
         knownLabels.put(FEATURE_LENGTH_3, Length3);
@@ -129,13 +136,23 @@ public enum FeatureClass implements Comparable<FeatureClass>
         knownLabels.put(FEATURE_LENGTH_13_TO_18, Length13to18);
         knownLabels.put(FEATURE_LENGTH_GREATER_THAN_18, LengthGreaterThan18);
         knownLabels.put(FEATURE_NUMERIC, Numeric);
+        knownLabels.put(NEGATION + FEATURE_NUMERIC, Numeric);
         knownLabels.put(FEATURE_INITIAL_NUMERIC, InitialNumeric);
+        knownLabels.put(NEGATION + FEATURE_INITIAL_NUMERIC, InitialNumeric);
         knownLabels.put(FEATURE_START_WORD, StartWord);
+        knownLabels.put(NEGATION + FEATURE_START_WORD, StartWord);
         knownLabels.put(FEATURE_END_WORD, EndWord);
+        knownLabels.put(NEGATION + FEATURE_END_WORD, EndWord);
     }
 
-    public static FeatureClass forString(final String s)
+    public static FeatureClass forString(String s)
     {
+        // Feature class for negations is the same as for the equivalent 'normal' feature
+        if (s.startsWith(NEGATION))
+        {
+            s = s.substring(4);
+        }
+
         if (knownLabels.containsKey(s))
         {
             return knownLabels.get(s);
@@ -200,8 +217,8 @@ public enum FeatureClass implements Comparable<FeatureClass>
                 return FEATURE_UNKNOWN;
             case HeadVerb :
                 return FEATURE_HEAD_VERB;
-            case NotFirstVerb :
-                return FEATURE_NOT_FIRST_VERB;
+            case FirstVerb :
+                return FEATURE_FIRST_VERB;
             case BeforeHead :
                 return FEATURE_BEFORE_HEAD;
             case AfterHead :
