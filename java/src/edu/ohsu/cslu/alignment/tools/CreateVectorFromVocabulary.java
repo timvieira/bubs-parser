@@ -23,8 +23,8 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
     @Option(name = "-p", metaVar = "weight", usage = "POS feature (_pos_...)")
     private final float pos = -1;
 
-    @Option(name = "-nfv", metaVar = "weight", usage = "'Not first verb' feature")
-    private final float notFirstVerb = -1;
+    @Option(name = "-fv", metaVar = "weight", usage = "'First verb' feature")
+    private final float firstVerb = -1;
 
     @Option(name = "-h", metaVar = "weight", usage = "Head verb feature (_head_verb)")
     private final float headVerb = -1;
@@ -104,8 +104,8 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
                     setVectorValue(vector, i, pos, mapping);
                     break;
 
-                case NotFirstVerb :
-                    setVectorValue(vector, i, notFirstVerb, mapping);
+                case FirstVerb :
+                    setVectorValue(vector, i, firstVerb, mapping);
                     break;
 
                 case BeforeHead :

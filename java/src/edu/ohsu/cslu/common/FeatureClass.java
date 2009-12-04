@@ -45,6 +45,10 @@ public enum FeatureClass implements Comparable<FeatureClass>
     StartWord,
     EndWord,
 
+    EndsWithLy,
+    EndsWithIng,
+    EndsWithEd,
+
     /** _stem_... */
     Stem,
 
@@ -98,6 +102,10 @@ public enum FeatureClass implements Comparable<FeatureClass>
     public final static String FEATURE_START_WORD = "_start_word";
     public final static String FEATURE_END_WORD = "_end_word";
 
+    public final static String FEATURE_ENDSWITH_LY = "_endswith_ly";
+    public final static String FEATURE_ENDSWITH_ING = "_endswith_ing";
+    public final static String FEATURE_ENDSWITH_ED = "_endswith_ed";
+
     public final static String FEATURE_LENGTH_1 = "_length_1";
     public final static String FEATURE_LENGTH_2 = "_length_2";
     public final static String FEATURE_LENGTH_3 = "_length_3";
@@ -143,6 +151,12 @@ public enum FeatureClass implements Comparable<FeatureClass>
         knownLabels.put(NEGATION + FEATURE_START_WORD, StartWord);
         knownLabels.put(FEATURE_END_WORD, EndWord);
         knownLabels.put(NEGATION + FEATURE_END_WORD, EndWord);
+        knownLabels.put(FEATURE_ENDSWITH_LY, EndsWithLy);
+        knownLabels.put(NEGATION + FEATURE_ENDSWITH_LY, EndsWithLy);
+        knownLabels.put(FEATURE_ENDSWITH_ING, EndsWithIng);
+        knownLabels.put(NEGATION + FEATURE_ENDSWITH_ING, EndsWithIng);
+        knownLabels.put(FEATURE_ENDSWITH_ED, EndsWithEd);
+        knownLabels.put(NEGATION + FEATURE_ENDSWITH_ED, EndsWithEd);
     }
 
     public static FeatureClass forString(String s)
