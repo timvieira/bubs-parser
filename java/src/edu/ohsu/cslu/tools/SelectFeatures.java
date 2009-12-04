@@ -108,6 +108,15 @@ public class SelectFeatures extends LinewiseCommandlineTool
     @Option(name = "-end", aliases = {"--end-word"}, usage = "Include end-word feature")
     private boolean endWord;
 
+    @Option(name = "-endly", aliases = {"--ends-with-ly"}, usage = "Include ends-with-ly feature")
+    private boolean endsWithLy;
+
+    @Option(name = "-ending", aliases = {"--ends-with-ing"}, usage = "Include ends-with-ing feature")
+    private boolean endsWithIng;
+
+    @Option(name = "-ended", aliases = {"--ends-with-ed"}, usage = "Include ends-with-ing feature")
+    private boolean endsWithEd;
+
     @Option(name = "-length", aliases = {"--word-length"}, usage = "Include length features")
     private boolean length;
 
@@ -349,64 +358,34 @@ public class SelectFeatures extends LinewiseCommandlineTool
         return sb.toString();
     }
 
+    private void appendIndicatorFeature(final StringBuilder sb, final boolean enabled, final boolean fired,
+        final String featureLabel)
+    {
+        if (enabled)
+        {
+
+            if (fired)
+            {
+                sb.append(featureLabel);
+                sb.append(featureDelimiter);
+            }
+            else if (labelIndicatorNegations)
+            {
+                sb.append(FeatureClass.NEGATION + featureLabel);
+                sb.append(featureDelimiter);
+            }
+        }
+    }
+
     private void appendWordFeatures(final StringBuilder sb, final String label)
     {
         final char initialChar = label.charAt(0);
-        if (capitalized)
-        {
-            if (Character.isUpperCase(initialChar))
-            {
-                sb.append(FeatureClass.FEATURE_CAPITALIZED);
-                sb.append(featureDelimiter);
-            }
-            else if (labelIndicatorNegations)
-            {
-                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_CAPITALIZED);
-                sb.append(featureDelimiter);
-            }
-        }
 
-        if (allcaps)
-        {
-            if (Character.isUpperCase(initialChar) && label.equals(label.toUpperCase()))
-            {
-                sb.append(FeatureClass.FEATURE_ALL_CAPS);
-                sb.append(featureDelimiter);
-            }
-            else if (labelIndicatorNegations)
-            {
-                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_ALL_CAPS);
-                sb.append(featureDelimiter);
-            }
-        }
-
-        if (hyphenated)
-        {
-            if (label.indexOf('-') >= 0)
-            {
-                sb.append(FeatureClass.FEATURE_HYPHENATED);
-                sb.append(featureDelimiter);
-            }
-            else if (labelIndicatorNegations)
-            {
-                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_HYPHENATED);
-                sb.append(featureDelimiter);
-            }
-        }
-
-        if (initialNumeric)
-        {
-            if (Character.isDigit(initialChar))
-            {
-                sb.append(FeatureClass.FEATURE_INITIAL_NUMERIC);
-                sb.append(featureDelimiter);
-            }
-            else if (labelIndicatorNegations)
-            {
-                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_INITIAL_NUMERIC);
-                sb.append(featureDelimiter);
-            }
-        }
+        appendIndicatorFeature(sb, capitalized, Character.isUpperCase(initialChar), FeatureClass.FEATURE_CAPITALIZED);
+        appendIndicatorFeature(sb, allcaps, Character.isUpperCase(initialChar) && label.equals(label.toUpperCase()),
+            FeatureClass.FEATURE_ALL_CAPS);
+        appendIndicatorFeature(sb, hyphenated, label.indexOf('-') >= 0, FeatureClass.FEATURE_HYPHENATED);
+        appendIndicatorFeature(sb, initialNumeric, Character.isDigit(initialChar), FeatureClass.FEATURE_INITIAL_NUMERIC);
 
         if (numeric)
         {
@@ -433,6 +412,10 @@ public class SelectFeatures extends LinewiseCommandlineTool
                 sb.append(featureDelimiter);
             }
         }
+
+        appendIndicatorFeature(sb, endsWithLy, label.endsWith("ly"), FeatureClass.FEATURE_ENDSWITH_LY);
+        appendIndicatorFeature(sb, endsWithIng, label.endsWith("ing"), FeatureClass.FEATURE_ENDSWITH_ING);
+        appendIndicatorFeature(sb, endsWithEd, label.endsWith("ed"), FeatureClass.FEATURE_ENDSWITH_ED);
 
         if (length)
         {
