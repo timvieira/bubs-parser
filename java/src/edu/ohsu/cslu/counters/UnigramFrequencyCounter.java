@@ -33,12 +33,12 @@ public class UnigramFrequencyCounter implements Serializable
         documentTermCounts.defaultReturnValue(0);
     }
 
-    public void addDocument(String text)
+    public void addDocument(final String text)
     {
         final HashSet<String> terms = new HashSet<String>();
 
         // Split the document into terms using LingPipe
-        Tokenizer tokenizer = tokenizerFactory.tokenizer(text.toCharArray(), 0, text.length());
+        final Tokenizer tokenizer = tokenizerFactory.tokenizer(text.toCharArray(), 0, text.length());
 
         for (final String term : tokenizer)
         {
@@ -56,10 +56,10 @@ public class UnigramFrequencyCounter implements Serializable
         documents++;
     }
 
-    public void addDocument(Reader reader) throws IOException
+    public void addDocument(final Reader reader) throws IOException
     {
-        StringBuilder sb = new StringBuilder(16384);
-        char[] buf = new char[1024];
+        final StringBuilder sb = new StringBuilder(16384);
+        final char[] buf = new char[1024];
         for (int i = reader.read(buf); i >= 0; i = reader.read(buf))
         {
             sb.append(buf, 0, i);
@@ -78,7 +78,7 @@ public class UnigramFrequencyCounter implements Serializable
      * @param term
      * @return The total number of occurrences in the corpus
      */
-    public int totalCount(String term)
+    public int totalCount(final String term)
     {
         return totalTermCounts.getInt(term);
     }
@@ -87,24 +87,28 @@ public class UnigramFrequencyCounter implements Serializable
      * @param term
      * @return The number of documents in which the term occurs
      */
-    public int documentCount(String term)
+    public int documentCount(final String term)
     {
         return documentTermCounts.getInt(term);
     }
 
-    public float documentProbability(String term)
+    /**
+     * @param term
+     * @return The probability that a term will occur in an individual document
+     */
+    public float documentProbability(final String term)
     {
         return ((float) documentCount(term)) / documents;
     }
 
     /**
-     * Returns the log of the inverse document frequency for a term. That is, ln (|corpus| / |
-     * documents containing term |).
+     * Returns the log of the inverse document frequency for a term. That is, ln (|corpus| / (1 +
+     * |documents containing term|)).
      * 
      * @param term
      * @return Log of the inverse document frequency
      */
-    public double logIdf(String term)
+    public double logIdf(final String term)
     {
         return Math.log(documents / (1.0 + documentCount(term)));
     }
@@ -112,8 +116,8 @@ public class UnigramFrequencyCounter implements Serializable
     @Override
     public String toString()
     {
-        StringBuilder sb = new StringBuilder(documentTermCounts.size() * 20);
-        for (String key : documentTermCounts.keySet())
+        final StringBuilder sb = new StringBuilder(documentTermCounts.size() * 20);
+        for (final String key : documentTermCounts.keySet())
         {
             sb.append(key);
             sb.append(" | ");
