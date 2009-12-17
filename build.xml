@@ -21,7 +21,7 @@
          gcc compilation, and better dependency analysis than classfileset -->
     <taskdef classpath="${dir.shared.build.lib}/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
     <taskdef classpath="${dir.shared.build.lib}/cpptasks.jar" resource="cpptasks.tasks" />
-    <taskdef classpath="${dir.shared.build.lib}/GenJar.jar" resource="genjar.properties" />
+    <taskdef classpath="${dir.shared.build.lib}/genjar.jar" resource="genjar.properties" />
 
 
 	<path id="classpath.libs">
