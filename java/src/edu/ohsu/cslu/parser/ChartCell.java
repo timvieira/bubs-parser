@@ -72,12 +72,12 @@ public class ChartCell {
     
     // alternate addEdge function so we aren't required to create a new ChartEdge object
     // in the CYK inner loop for every potential new edge entry
-    public boolean addEdge(Production p, double insideProb, ChartCell leftCell, ChartCell rightCell) {
+    public boolean addEdge(Production p, float insideProb, ChartCell leftCell, ChartCell rightCell) {
     	numEdgesConsidered+=1;
     	//System.out.println("Considering: "+new ChartEdge(p,insideProb,leftCell,rightCell));
     	ChartEdge prevBestEdge = bestEdge[p.parent];
 		if (prevBestEdge == null) {
-			bestEdge[p.parent] = new ChartEdge(p, insideProb, leftCell, rightCell);
+			bestEdge[p.parent] = new ChartEdge(p, leftCell, rightCell, insideProb);
 			bestEdgesHaveChanged = true;
 			numEdgesAdded+=1;
 			return true;

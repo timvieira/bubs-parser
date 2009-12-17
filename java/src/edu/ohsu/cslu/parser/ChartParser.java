@@ -1,16 +1,21 @@
 package edu.ohsu.cslu.parser;
 
+import java.util.List;
+
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public abstract class ChartParser extends Parser {
+public abstract class ChartParser implements Parser {
 
-	protected ChartCell chart[][];
-	protected int chartSize;
-	protected ChartCell rootChartCell;
+	public ChartCell chart[][];
+	public int chartSize;
+	public ChartCell rootChartCell;
+	protected Grammar grammar;
 	
-	public ChartParser(Grammar grammar, ParserOptions opts) {
-		super(grammar, opts);
+	public ChartParser(Grammar grammar) {
+		this.grammar = grammar;
 	}
 	
 	protected void initParser(int sentLength) {
@@ -25,8 +30,51 @@ public abstract class ChartParser extends Parser {
         }
 		rootChartCell = chart[0][chartSize];
 	}
+
+	protected void addLexicalProductions(Token sent[]) throws Exception {
+        List<Production> validProductions;
+        float edgeLogProb;
+        
+		// add lexical productions and unary productions to the base cells of the chart
+        for (int i=0; i<chartSize; i++) {
+        	for (Production lexProd : grammar.getLexProdsForToken(sent[i])) {
+                chart[i][i+1].addEdge(new ChartEdge(lexProd, chart[i][i+1], lexProd.prob));
+                                
+                validProductions = grammar.getUnaryProdsWithChild(lexProd.parent);
+                if (validProductions != null) {
+                    for (Production unaryProd : validProductions) {
+                        edgeLogProb = unaryProd.prob + lexProd.prob;
+                        chart[i][i+1].addEdge(new ChartEdge(unaryProd, chart[i][i+1], edgeLogProb));
+                    }
+                }
+            }
+        }
+	}
 	
-    protected ParseTree extractBestParse() {
+	/*
+	private void addFinalProductions() {
+        // add TOP productions
+        ChartCell topCell = chart[0][chartSize];
+        ChartEdge topCellEdge;
+        float edgeLogProb;
+        
+        //for (ChartEdge topCellEdge : topCell.getAllBestEdges()) {
+        for(int i=0; i<grammar.numNonTerms(); i++) {
+        	topCellEdge = topCell.getBestEdge(i);
+        	if (topCellEdge != null) {
+        		for (Production p : grammar.getUnaryProdsWithChild(topCellEdge.p.parent)) {
+	                if (p.parent == grammar.startSymbol) {
+	                    edgeLogProb = p.prob + topCellEdge.insideProb;
+	                    topCell.addEdge(new ChartEdge(p, topCell, topCell, edgeLogProb));
+	                }
+	            }
+        	}
+        }
+	}
+	*/
+	
+	
+	protected ParseTree extractBestParse() {
     	return extractBestParse(this.rootChartCell, this.grammar.startSymbol);
     }
 	
@@ -65,7 +113,7 @@ public abstract class ChartParser extends Parser {
 			}
 		}
 		
-		result += "STAT: sentLen="+chartSize+" chartEdges="+add+" processedEdges="+con;
+		result += " chartEdges="+add+" processedEdges="+con;
 		return result;
 	}
 }
