@@ -6,9 +6,11 @@ import java.util.List;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
+import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
+import edu.ohsu.cslu.parser.util.ParseTree;
 
 
-public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
+public class ECPGramLoopBerkFilter extends ExhaustiveChartParser  {
 
 	// tracks the spans of nonTerms in the chart so we don't have to consider them
 	// in the inner loop of fillChart()
@@ -24,8 +26,13 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
 	
 	private int tmpNL, tmpNR, tmpWR;
 	
-	public ECPGramLoopBerkFilter(Grammar grammar, ParserOptions opts) {
-		super(grammar, opts);
+	public ECPGramLoopBerkFilter(Grammar grammar, ChartTraversalType traversalType) {
+		super(grammar, traversalType);
+	}
+	
+	@Override
+	public ParseTree findMLParse(String sentence) throws Exception {
+		return findParse(sentence);
 	}
 	
 	public void initParser(int sentLength) {
@@ -48,19 +55,19 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
 
 	protected void addLexicalProductions(Token sent[]) throws Exception {
         List<Production> validProductions;
-        double edgeLogProb;
+        float edgeLogProb;
         
 		// add lexical productions and unary productions to the base cells of the chart
         for (int i=0; i<this.chartSize; i++) {
         	for (Production lexProd : grammar.getLexProdsForToken(sent[i])) {
-                chart[i][i+1].addEdge(new ChartEdge(lexProd, lexProd.prob, chart[i][i+1]));
+                chart[i][i+1].addEdge(new ChartEdge(lexProd, chart[i][i+1], lexProd.prob));
                 updateRuleConstraints(lexProd.parent, i, i+1);
                 
                 validProductions = grammar.getUnaryProdsWithChild(lexProd.parent);
                 if (validProductions != null) {
                     for (Production unaryProd : validProductions) {
                         edgeLogProb = unaryProd.prob + lexProd.prob;
-                        chart[i][i+1].addEdge(new ChartEdge(unaryProd, edgeLogProb, chart[i][i+1]));
+                        chart[i][i+1].addEdge(new ChartEdge(unaryProd, chart[i][i+1], edgeLogProb));
                         updateRuleConstraints(unaryProd.parent, i, i+1);
                     }
                 }
@@ -132,57 +139,51 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
 	}
 	*/
 	
-	protected void fillChart() {
-    	ChartCell parentCell, leftCell, rightCell;
+	protected void visitCell(ChartCell cell) {
+    	ChartCell leftCell, rightCell;
 		ChartEdge leftEdge, rightEdge, parentEdge, oldBestEdge;
-    	double prob;
-    	int end;
+    	float prob;
+    	int start=cell.start;
+    	int end=cell.end;
     	boolean foundBetter, edgeWasAdded;
-    	
-        for (int span=2; span<=chartSize; span++) {
-            for (int beg=0; beg<chartSize-span+1; beg++) {
-                end=beg+span;
-                parentCell=chart[beg][end];
-            	
-                for (Production p : grammar.binaryProds) {
-                	if (possibleRuleMidpoints(p, beg, end)) {
-						foundBetter = false;
-						oldBestEdge = parentCell.getBestEdge(p.parent);
-						
-						// possibleMidpointMin and possibleMidpointMax are global values set by
-						// calling possibleRuleMidpoints() since we can't return two ints easily
-						for (int mid=possibleMidpointMin; mid<=possibleMidpointMax; mid++) {
-							leftCell = chart[beg][mid];
-							leftEdge = leftCell.getBestEdge(p.leftChild);
-							if (leftEdge == null) continue;
-							
-							rightCell = chart[mid][end];
-							rightEdge = rightCell.getBestEdge(p.rightChild);
-							if (rightEdge == null) continue;
-							
-							prob = p.prob + leftEdge.insideProb + rightEdge.insideProb;
-							edgeWasAdded = parentCell.addEdge(p, prob, leftCell, rightCell);
-							foundBetter = (foundBetter || edgeWasAdded);
-						}
-						
-						if (foundBetter && (oldBestEdge == null)) {
-							updateRuleConstraints(p.parent, beg, end);
-						}
-	                }
-                }
-               
-	        	for (Production p : grammar.unaryProds) {
-	        		parentEdge = parentCell.getBestEdge(p.leftChild);
-	        		if ((parentEdge != null) && (parentEdge.p.isUnaryProd() == false)) {
-	        			prob = p.prob + parentEdge.insideProb;
-	        			// the child cell is also the parent cell for unary productions
-	        			edgeWasAdded = parentCell.addEdge(new ChartEdge(p, prob, parentCell));
-						if (edgeWasAdded) {
-							updateRuleConstraints(p.parent, beg, end);
-						}
-	        		}
-	        	}
+
+        for (Production p : grammar.binaryProds) {
+        	if (possibleRuleMidpoints(p, start, end)) {
+				foundBetter = false;
+				oldBestEdge = cell.getBestEdge(p.parent);
+				
+				// possibleMidpointMin and possibleMidpointMax are global values set by
+				// calling possibleRuleMidpoints() since we can't return two ints easily
+				for (int mid=possibleMidpointMin; mid<=possibleMidpointMax; mid++) {
+					leftCell = chart[start][mid];
+					leftEdge = leftCell.getBestEdge(p.leftChild);
+					if (leftEdge == null) continue;
+					
+					rightCell = chart[mid][end];
+					rightEdge = rightCell.getBestEdge(p.rightChild);
+					if (rightEdge == null) continue;
+					
+					prob = p.prob + leftEdge.insideProb + rightEdge.insideProb;
+					edgeWasAdded = cell.addEdge(p, prob, leftCell, rightCell);
+					foundBetter = (foundBetter || edgeWasAdded);
+				}
+				
+				if (foundBetter && (oldBestEdge == null)) {
+					updateRuleConstraints(p.parent, start, end);
+				}
             }
         }
+       
+    	for (Production p : grammar.unaryProds) {
+    		parentEdge = cell.getBestEdge(p.leftChild);
+    		if ((parentEdge != null) && (parentEdge.p.isUnaryProd() == false)) {
+    			prob = p.prob + parentEdge.insideProb;
+    			// the child cell is also the parent cell for unary productions
+    			edgeWasAdded = cell.addEdge(new ChartEdge(p, cell, prob));
+				if (edgeWasAdded) {
+					updateRuleConstraints(p.parent, start, end);
+				}
+    		}
+    	}
     }	
 }

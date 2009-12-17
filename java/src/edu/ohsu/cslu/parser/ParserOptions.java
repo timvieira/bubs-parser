@@ -5,7 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 
-import edu.ohsu.cslu.parser.ParserDriver.ParserType;
+import edu.ohsu.cslu.parser.fom.EdgeFOM.EdgeFOMType;
+import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.Log;
 
 
@@ -16,7 +17,25 @@ public class ParserOptions {
 	
 	public boolean printInsideProbs = false;
 	public boolean printUnkLabels = false;
-	public ParserType parserType = ParserType.ExhaustiveChartParserGramLoopBerkFilter;
+	
+	public ParserType parserType = null;
+	public ChartTraversalType chartTraversalType = null;
+	public ChartCellVisitationType chartCellVisitationType = null;
+	public EdgeFOMType edgeFOMType = null;
+	
+	static public enum ParserType { 
+		ExhaustiveChartParser,
+		AgendaParser,
+		AgendaParserWithGhostEdges,
+		SuperAgendaParser }
+	
+	static public enum ChartCellVisitationType {
+		CellCrossList,
+		CellCrossHash,
+		CellCrossMatrix,
+		GrammarLoop,
+		GrammarLoopBerkeleyFilter
+	}
 	
 	public ParserOptions(String[] argv) throws FileNotFoundException {
 		boolean foundGram=false;
@@ -31,13 +50,33 @@ public class ParserOptions {
 				foundGram=true;
 			}
 			if (argv[i].equals("-p") || argv[i].equals("-parser")) {
-				if (argv[i+1].equals("CCL")) parserType=ParserType.ExhaustiveChartParserCellCrossList;
-				else if (argv[i+1].equals("CCH")) parserType=ParserType.ExhaustiveChartParserCellCrossHash;
-				else if (argv[i+1].equals("CCM")) parserType=ParserType.ExhaustiveChartParserCellCrossMatrix;
-				else if (argv[i+1].equals("GL")) parserType=ParserType.ExhaustiveChartParserGramLoop;
-				else if (argv[i+1].equals("GLBF")) parserType=ParserType.ExhaustiveChartParserGramLoopBerkFilter;
-				else if (argv[i+1].equals("Agenda")) parserType=ParserType.AgendaMaximumLikelihoodChartParser;
-				else {
+				if (argv[i+1].equals("CCL")) {
+					parserType=ParserType.ExhaustiveChartParser;
+					chartTraversalType=ChartTraversalType.LeftRightBottomTopTraversal;
+					chartCellVisitationType=ChartCellVisitationType.CellCrossList;
+				} else if (argv[i+1].equals("CCH")) {
+					parserType=ParserType.ExhaustiveChartParser;
+					chartTraversalType=ChartTraversalType.LeftRightBottomTopTraversal;
+					chartCellVisitationType=ChartCellVisitationType.CellCrossHash;
+				} else if (argv[i+1].equals("CCM")) {
+					parserType=ParserType.ExhaustiveChartParser;
+					chartTraversalType=ChartTraversalType.LeftRightBottomTopTraversal;
+					chartCellVisitationType=ChartCellVisitationType.CellCrossMatrix;					
+				} else if (argv[i+1].equals("GL")) {
+					parserType=ParserType.ExhaustiveChartParser;
+					chartTraversalType=ChartTraversalType.LeftRightBottomTopTraversal;
+					chartCellVisitationType=ChartCellVisitationType.GrammarLoop;
+				} else if (argv[i+1].equals("GLBF")) {
+					parserType=ParserType.ExhaustiveChartParser;
+					chartTraversalType=ChartTraversalType.LeftRightBottomTopTraversal;
+					chartCellVisitationType=ChartCellVisitationType.GrammarLoopBerkeleyFilter;
+				} else if (argv[i+1].equals("A")) {
+					parserType=ParserType.AgendaParser;
+					edgeFOMType=EdgeFOMType.Inside;
+				} else if (argv[i+1].equals("AGE")) {
+					parserType=ParserType.AgendaParserWithGhostEdges;
+					edgeFOMType=EdgeFOMType.Inside;
+				} else {
 					Log.info(0, "ERROR: -parser value '"+argv[i+1]+"' not a valid option");
 					System.exit(1);
 				}
@@ -48,5 +87,27 @@ public class ParserOptions {
 			Log.info(0,"ERROR: Grammar file is required.  Use -g option to specify.");
 			System.exit(1);
 		}
+		
+		// default parser
+		if (parserType == null) { 
+			parserType = ParserType.ExhaustiveChartParser;
+			chartTraversalType = ChartTraversalType.LeftRightBottomTopTraversal;
+			chartCellVisitationType = ChartCellVisitationType.CellCrossList;
+		}
+
+	}
+	
+	public String toString() {
+		return toString("");
+	}
+	
+	public String toString(String prefix) {
+		String s="";
+		s+=prefix+" ParserType="+parserType+"\n";
+		s+=prefix+"  Traversal="+chartTraversalType+"\n";
+		s+=prefix+"  CellVisit="+chartCellVisitationType+"\n";
+		s+=prefix+"        FOM="+edgeFOMType+"";
+		
+		return s;
 	}
 }

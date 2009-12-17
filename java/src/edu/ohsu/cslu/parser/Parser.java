@@ -1,15 +1,8 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.util.ParseTree;
 
-public abstract class Parser {
-	protected Grammar grammar;
-	protected ParserOptions opts;
-	
-	public Parser(Grammar grammar, ParserOptions opts) {
-		this.grammar = grammar;
-		this.opts = opts;
-	}
-	
-	public abstract String getStats();
+public interface Parser {
+	public ParseTree findParse(String sentence) throws Exception;
+	public String getStats();
 }

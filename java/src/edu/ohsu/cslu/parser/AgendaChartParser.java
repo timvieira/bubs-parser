@@ -6,34 +6,38 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
+import edu.ohsu.cslu.parser.fom.EdgeFOM;
+import edu.ohsu.cslu.parser.fom.EdgeFOM.EdgeFOMType;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 
 public class AgendaChartParser extends ChartParser implements MaximumLikelihoodParser {
 
-	protected PriorityQueue<ChartEdge> agenda;;
+	protected PriorityQueue<ChartEdgeWithFOM> agenda;
 	protected GrammarByLeftNonTermList grammarByChildren;
-	protected LinkedList<ChartEdge>[][] needLeftGhostEdges, needRightGhostEdges;
 	protected int nAgendaPush, nAgendaPop, nChartEdges, nGhostEdges;
+	protected EdgeFOM edgeFOM;
 	
-	public AgendaChartParser(GrammarByLeftNonTermList grammar, ParserOptions opts) {
-		super(grammar, opts);
+	public AgendaChartParser(GrammarByLeftNonTermList grammar, EdgeFOMType fomType) {
+		super(grammar);
 		grammarByChildren = (GrammarByLeftNonTermList)grammar;
+		this.edgeFOM = EdgeFOM.create(fomType);
 	}
 	
-	@SuppressWarnings("unchecked")
 	protected void initParser(int sentLength) {
 		super.initParser(sentLength);
 		
-		agenda = new PriorityQueue<ChartEdge>();
-		needLeftGhostEdges = (LinkedList<ChartEdge>[][]) new LinkedList[grammar.numNonTerms()][chartSize+1];
-		needRightGhostEdges = (LinkedList<ChartEdge>[][]) new LinkedList[grammar.numNonTerms()][chartSize+1];
+		agenda = new PriorityQueue<ChartEdgeWithFOM>();
 		nAgendaPush=nAgendaPop=nChartEdges=nGhostEdges=0;
 		//System.out.println(grammar.numNonTerms()+" "+chartSize);
 	}
 	
 	public ParseTree findMLParse(String sentence) throws Exception {
+		return findParse(sentence);
+	}
+	
+	public ParseTree findParse(String sentence) throws Exception {
 		ChartCell parentCell;
 		boolean edgeAdded;
 		ChartEdge edge;
@@ -56,9 +60,8 @@ public class AgendaChartParser extends ChartParser implements MaximumLikelihoodP
 			
 			// if A->B C is added to chart but A was already in this chart cell, then the
 			// first edge must have been better than the current edge because we pull edges
-			// from the agenda best-first.  This also means that the exact same ghost edges
-			// have already been added.  Edges can be popped from the agenda, though, and be
-			// worse than the current best edge in the cell.  We just pass these by.
+			// from the agenda best-first.  This also means that the entire frontier 
+			// has already been added.  
 			if (edgeAdded) {
 				expandAgendaFrontier(edge.p.parent, parentCell);
 				nChartEdges+=1;
@@ -72,11 +75,7 @@ public class AgendaChartParser extends ChartParser implements MaximumLikelihoodP
        	return extractBestParse();
     }
 	
-	protected void addEdgeToAgenda(ChartEdge edge) {
-		// There are a lot of unnecessary edges being added to the agenda.  For example,
-		// edge[i][j][A] w/ prob=0.1 can be pushed, and if it isn't popped off the agenda
-		// by the time edge[i][j][A] w/ prob=0.0001 can be pushed, then it is also added
-		// to the agenda
+	protected void addEdgeToAgenda(ChartEdgeWithFOM edge) {
 		//System.out.println("Agenda Push: "+edge);
 		nAgendaPush+=1;
 		agenda.add(edge);
@@ -86,99 +85,75 @@ public class AgendaChartParser extends ChartParser implements MaximumLikelihoodP
 		// add lexical productions and unary productions to the base cells of the chart
         for (int i=0; i<chartSize; i++) {
         	for (Production lexProd : grammar.getLexProdsForToken(sent[i])) {
-        		addEdgeToAgenda(new ChartEdge(lexProd, lexProd.prob, chart[i][i+1]));
+        		addEdgeToAgenda(new ChartEdgeWithFOM(lexProd, chart[i][i+1], lexProd.prob, edgeFOM));
             }
         }
 	}
 	
 	protected void expandAgendaFrontier(int nonTerm, ChartCell cell) {
-		LinkedList<ChartEdge> possibleEdges;
-		LinkedList<Production> possibleRules;
+		LinkedList<Production> possibleGrammarProds;
 		ChartEdge newEdge = cell.getBestEdge(nonTerm);
-		ChartEdge curBestEdge;
-		double prob, partialProb;
+		ChartEdge leftEdge, rightEdge;
+		ChartCell rightCell, leftCell;
+		float prob;
 		
 		// unary edges are always possible in any cell, although we don't allow unary chains
 		if (newEdge.p.isUnaryProd() == false || newEdge.p.isLexProd() == true) {
 			for (Production p : grammar.getUnaryProdsWithChild(newEdge.p.parent)) {
     			prob = p.prob + newEdge.insideProb;
-    			addEdgeToAgenda(new ChartEdge(p, prob, cell));
+    			addEdgeToAgenda(new ChartEdgeWithFOM(p, cell, prob, edgeFOM));
 			}
     	}  
 		
 		if (cell == rootChartCell) {
-			// no ghost edges possible from here ... only add the root productions
-    		for (Production p : grammar.getUnaryProdsWithChild(newEdge.p.parent)) {
+			// no possible connections to other edges other than unary ... only add the root productions
+			// actually, TOP edges will already be added in the unary step
+			// TODO: separate TOP->X from other unary productions
+    		/*
+			for (Production p : grammar.getUnaryProdsWithChild(newEdge.p.parent)) {
                 if (p.parent == grammar.startSymbol) {
                 	prob = p.prob+newEdge.insideProb;
-                	addEdgeToAgenda(new ChartEdge(p, prob, rootChartCell, rootChartCell));
+                	addEdgeToAgenda(new ChartEdge(p, rootChartCell, rootChartCell, prob));
                 }
             }
+            */
 		} else {
-			// connect ghost edges that need left side
-			possibleEdges = needLeftGhostEdges[nonTerm][cell.end];
-			if (possibleEdges != null) {
-				for (ChartEdge ghostEdge : possibleEdges) {
-					curBestEdge=chart[cell.start][ghostEdge.rightCell.end].getBestEdge(ghostEdge.p.parent);
-					if (curBestEdge == null) {
-						// ghost edge inside prob = grammar rule prob + ONE CHILD inside prob
-						prob = newEdge.insideProb + ghostEdge.insideProb;
-						addEdgeToAgenda(new ChartEdge(ghostEdge.p, prob, cell, ghostEdge.rightCell));
-					}
-				}
-			}
-			
-			// connect ghost edges that need right side
-			possibleEdges = needRightGhostEdges[nonTerm][cell.start];
-			if (possibleEdges != null) {
-				for (ChartEdge ghostEdge : possibleEdges) {
-					curBestEdge=chart[ghostEdge.leftCell.start][cell.end].getBestEdge(ghostEdge.p.parent);
-					if (curBestEdge == null) {
-						prob = newEdge.insideProb + ghostEdge.insideProb;
-						addEdgeToAgenda(new ChartEdge(ghostEdge.p, prob, ghostEdge.leftCell, cell));
-					}
-				}
-			}
-			
-			// create left ghost edges.  Can't go left if we are on the very left side of the chart
-			if (cell.start > 0) {
-				possibleRules = grammarByChildren.getBinaryProdsWithRightChild(nonTerm);
-				if (possibleRules != null) {
-					for (Production p : possibleRules) {
-						if (needLeftGhostEdges[p.leftChild][cell.start] == null) {
-							needLeftGhostEdges[p.leftChild][cell.start] = new LinkedList<ChartEdge>();
+			// connect edge as possible right non-term
+			for (int beg=0; beg < cell.start; beg++) {
+				leftCell=chart[beg][cell.start];
+				possibleGrammarProds = grammarByChildren.getBinaryProdsWithRightChild(nonTerm);
+				if (possibleGrammarProds != null) {
+					for (Production p : possibleGrammarProds) {
+						leftEdge = leftCell.getBestEdge(p.leftChild);
+						if (leftEdge != null && chart[beg][cell.end].getBestEdge(p.parent) == null) {
+							prob = p.prob + newEdge.insideProb + leftEdge.insideProb;
+							//System.out.println("LEFT:"+new ChartEdge(p, prob, leftCell, cell));
+							addEdgeToAgenda(new ChartEdgeWithFOM(p, leftCell, cell, prob, edgeFOM));
 						}
-						partialProb = p.prob + newEdge.insideProb;
-						needLeftGhostEdges[p.leftChild][cell.start].add(new ChartEdge(p, partialProb, null, cell));
-						nGhostEdges+=1;
 					}
 				}
 			}
 			
-			// create right ghost edges.  Can't go right if we are on the very right side of the chart
-			if (cell.end < chartSize-1) {
-				possibleRules = grammarByChildren.getBinaryProdsWithLeftChild(nonTerm);
-				if (possibleRules != null) {
-					for (Production p : possibleRules) {
-						if (needRightGhostEdges[p.rightChild][cell.end] == null) {
-							needRightGhostEdges[p.rightChild][cell.end] = new LinkedList<ChartEdge>();
+			// connect edge as possible left non-term
+			for (int end=cell.end+1; end <= chartSize; end++) {
+				rightCell=chart[cell.end][end];
+				possibleGrammarProds = grammarByChildren.getBinaryProdsWithLeftChild(nonTerm);
+				if (possibleGrammarProds != null) {
+					for (Production p : possibleGrammarProds) {
+						rightEdge = rightCell.getBestEdge(p.rightChild);
+						if (rightEdge != null && chart[cell.start][end].getBestEdge(p.parent) == null) {
+							prob = p.prob + rightEdge.insideProb + newEdge.insideProb; 
+							//System.out.println("RIGHT: "+new ChartEdge(p, prob, cell, rightCell));
+							addEdgeToAgenda(new ChartEdgeWithFOM(p, cell, rightCell, prob, edgeFOM));
 						}
-						partialProb = p.prob + newEdge.insideProb;
-						needRightGhostEdges[p.rightChild][cell.end].add(new ChartEdge(p, partialProb, cell, null));
-						nGhostEdges+=1;
 					}
 				}
 			}
 		}
 	}
 	
-	public String getStats() {
-		//for (ChartEdge edge : needLeftGhostEdges[200][2]) {
-		//	System.out.println(edge);
-		//}
-		
-		return "STAT: sentLen="+chartSize+" chartEdges="+nChartEdges+" agendaPush="+nAgendaPush+
+	public String getStats() {	
+		return " chartEdges="+nChartEdges+" agendaPush="+nAgendaPush+
 			" agendaPop="+nAgendaPop+" ghostEdges="+nGhostEdges;
 	}
-
 }
