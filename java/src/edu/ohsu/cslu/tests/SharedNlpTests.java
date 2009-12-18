@@ -7,8 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -33,14 +32,14 @@ import edu.ohsu.cslu.util.AllUtilTests;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses( {AllCommonTests.class, TestExactMatchers.class, TestApproximateMatchers.class,
-                      ProfileMatchers.class, AllAlignmentTests.class, AllCounterTests.class,
-                      AllDataStructureTests.class, AllToolTests.class, AllUtilTests.class})
+    ProfileMatchers.class, AllAlignmentTests.class, AllCounterTests.class, AllDataStructureTests.class,
+    AllToolTests.class, AllUtilTests.class})
 public class SharedNlpTests
 {
     public final static String UNIT_TEST_DIR = "unit-test-data/";
     public final static String SHARED_UNIT_TEST_DIR = "../shared-nlp-code/" + UNIT_TEST_DIR;
 
-    public static InputStream unitTestDataAsStream(String filename) throws IOException
+    public static InputStream unitTestDataAsStream(final String filename) throws IOException
     {
         try
         {
@@ -51,7 +50,7 @@ public class SharedNlpTests
             }
             return is;
         }
-        catch (FileNotFoundException e)
+        catch (final FileNotFoundException e)
         {
             // A hack to read files in the shared unit test data directory from tests run within
             // other projects
@@ -64,20 +63,20 @@ public class SharedNlpTests
         }
     }
 
-    public static String unitTestDataAsString(String filename) throws IOException
+    public static String unitTestDataAsString(final String filename) throws IOException
     {
         return new String(readUnitTestData(filename));
     }
 
-    public static byte[] readUnitTestData(String filename) throws IOException
+    public static byte[] readUnitTestData(final String filename) throws IOException
     {
         return readUnitTestData(unitTestDataAsStream(filename));
     }
 
-    private static byte[] readUnitTestData(InputStream is) throws IOException
+    private static byte[] readUnitTestData(final InputStream is) throws IOException
     {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
-        byte[] buf = new byte[1024];
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
+        final byte[] buf = new byte[1024];
         for (int i = is.read(buf); i >= 0; i = is.read(buf))
         {
             bos.write(buf, 0, i);
@@ -86,21 +85,8 @@ public class SharedNlpTests
         return bos.toByteArray();
     }
 
-    public static void assertEquals(String message, float[] expected, float[] actual, float delta)
-    {
-        Assert.assertEquals(message, expected.length, actual.length);
-        for (int i = 0; i < expected.length; i++)
-        {
-            Assert.assertEquals(message, expected[i], actual[i], delta);
-        }
-    }
-
-    public static void assertEquals(float[] expected, float[] actual, float delta)
-    {
-        assertEquals(null, expected, actual, delta);
-    }
-
-    public static void assertEquals(String message, float[][] expected, float[][] actual, float delta)
+    public static void assertEquals(final String message, final float[][] expected, final float[][] actual,
+        final float delta)
     {
         for (int i = 0; i < actual.length; i++)
         {
@@ -111,50 +97,8 @@ public class SharedNlpTests
         }
     }
 
-    public static void assertEquals(float[][] expected, float[][] actual, float delta)
+    public static void assertEquals(final float[][] expected, final float[][] actual, final float delta)
     {
         assertEquals(null, expected, actual, delta);
-    }
-
-    public static void assertEquals(String message, int[] expected, int[] actual)
-    {
-        Assert.assertEquals(message + " (length mismatch)", expected.length, actual.length);
-        for (int i = 0; i < expected.length; i++)
-        {
-            Assert.assertEquals(message, expected[i], actual[i]);
-        }
-    }
-
-    public static void assertEquals(int[] expected, int[] actual)
-    {
-        assertEquals(null, expected, actual);
-    }
-
-    public static void assertEquals(String message, char[] expected, char[] actual)
-    {
-        Assert.assertEquals(message, expected.length, actual.length);
-        for (int i = 0; i < expected.length; i++)
-        {
-            Assert.assertEquals(message, expected[i], actual[i]);
-        }
-    }
-
-    public static void assertEquals(char[] expected, char[] actual)
-    {
-        assertEquals(null, expected, actual);
-    }
-
-    public static void assertEquals(String message, String[] expected, String[] actual)
-    {
-        Assert.assertEquals(message, expected.length, actual.length);
-        for (int i = 0; i < expected.length; i++)
-        {
-            Assert.assertEquals(message, expected[i], actual[i]);
-        }
-    }
-
-    public static void assertEquals(String[] expected, String[] actual)
-    {
-        assertEquals(null, expected, actual);
     }
 }

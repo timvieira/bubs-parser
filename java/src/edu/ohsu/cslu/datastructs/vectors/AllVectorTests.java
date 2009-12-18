@@ -5,6 +5,6 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses( {TestIntVector.class, TestPackedIntVector.class, TestFloatVector.class,
-    TestSparseFloatVector.class, TestPackedBitVector.class, TestSparseBitVector.class, TestMutableSparseBitVector.class})
+    TestHashSparseFloatVector.class, TestPackedBitVector.class, TestSparseBitVector.class, TestMutableSparseBitVector.class})
 public class AllVectorTests
 {}

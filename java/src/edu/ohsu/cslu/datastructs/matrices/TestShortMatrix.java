@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit Tests for {@link ShortMatrix}.
@@ -15,7 +15,7 @@ import static junit.framework.Assert.assertEquals;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestShortMatrix extends IntMatrixTestCase
+public class TestShortMatrix extends DenseIntMatrixTestCase
 {
     @Override
     protected String matrixType()
@@ -24,9 +24,9 @@ public class TestShortMatrix extends IntMatrixTestCase
     }
 
     @Override
-    protected Matrix create(float[][] array)
+    protected Matrix create(final float[][] array, boolean symmetric)
     {
-        short[][] shortArray = new short[array.length][array[0].length];
+        final short[][] shortArray = new short[array.length][array[0].length];
         for (int i = 0; i < array.length; i++)
         {
             for (int j = 0; j < array[0].length; j++)
@@ -38,9 +38,9 @@ public class TestShortMatrix extends IntMatrixTestCase
     }
 
     @Override
-    protected Matrix create(int[][] array, boolean symmetric)
+    protected Matrix create(final int[][] array, final boolean symmetric)
     {
-        short[][] shortArray = new short[array.length][];
+        final short[][] shortArray = new short[array.length][];
         for (int i = 0; i < array.length; i++)
         {
             shortArray[i] = new short[array[i].length];

@@ -1,11 +1,11 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link ByteMatrix}
@@ -16,7 +16,7 @@ import static junit.framework.Assert.assertEquals;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestByteMatrix extends IntMatrixTestCase
+public class TestByteMatrix extends DenseIntMatrixTestCase
 {
     @Override
     protected String matrixType()
@@ -25,9 +25,9 @@ public class TestByteMatrix extends IntMatrixTestCase
     }
 
     @Override
-    protected Matrix create(float[][] array)
+    protected Matrix create(final float[][] array, boolean symmetric)
     {
-        byte[][] byteArray = new byte[array.length][];
+        final byte[][] byteArray = new byte[array.length][];
         for (int i = 0; i < array.length; i++)
         {
             byteArray[i] = new byte[array[i].length];
@@ -40,9 +40,9 @@ public class TestByteMatrix extends IntMatrixTestCase
     }
 
     @Override
-    protected Matrix create(int[][] array, boolean symmetric)
+    protected Matrix create(final int[][] array, final boolean symmetric)
     {
-        byte[][] byteArray = new byte[array.length][];
+        final byte[][] byteArray = new byte[array.length][];
         for (int i = 0; i < array.length; i++)
         {
             byteArray[i] = new byte[array[i].length];

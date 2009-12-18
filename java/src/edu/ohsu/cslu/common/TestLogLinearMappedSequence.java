@@ -2,6 +2,7 @@ package edu.ohsu.cslu.common;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -10,7 +11,6 @@ import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.alignment.bio.LogLinearDnaVocabulary;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
  * Unit tests for {@link LogLinearMappedSequence}.
@@ -46,25 +46,25 @@ public class TestLogLinearMappedSequence
         LogLinearMappedSequence sequence = new LogLinearMappedSequence(new int[] {0, 1, 2, 3}, dnaVocabulary);
         assertEquals(6, sequence.featureCount());
         assertEquals(4, sequence.length());
-        SharedNlpTests.assertEquals(new int[] {0}, sequence.elementAt(0).values());
-        SharedNlpTests.assertEquals(new int[] {1}, sequence.elementAt(1).values());
-        SharedNlpTests.assertEquals(new int[] {2}, sequence.elementAt(2).values());
-        SharedNlpTests.assertEquals(new int[] {3}, sequence.elementAt(3).values());
+        assertArrayEquals(new int[] {0}, sequence.elementAt(0).values());
+        assertArrayEquals(new int[] {1}, sequence.elementAt(1).values());
+        assertArrayEquals(new int[] {2}, sequence.elementAt(2).values());
+        assertArrayEquals(new int[] {3}, sequence.elementAt(3).values());
 
-        int[][] array = new int[][] { {0, 1}, {1, 2}, {2, 3}, {3, 4}};
+        final int[][] array = new int[][] { {0, 1}, {1, 2}, {2, 3}, {3, 4}};
         sequence = new LogLinearMappedSequence(array, dnaVocabulary);
         assertEquals(6, sequence.featureCount());
         assertEquals(4, sequence.length());
-        SharedNlpTests.assertEquals(new int[] {0, 1}, sequence.elementAt(0).values());
-        SharedNlpTests.assertEquals(new int[] {1, 2}, sequence.elementAt(1).values());
-        SharedNlpTests.assertEquals(new int[] {2, 3}, sequence.elementAt(2).values());
-        SharedNlpTests.assertEquals(new int[] {3, 4}, sequence.elementAt(3).values());
+        assertArrayEquals(new int[] {0, 1}, sequence.elementAt(0).values());
+        assertArrayEquals(new int[] {1, 2}, sequence.elementAt(1).values());
+        assertArrayEquals(new int[] {2, 3}, sequence.elementAt(2).values());
+        assertArrayEquals(new int[] {3, 4}, sequence.elementAt(3).values());
     }
 
     @Test
     public void testReadBracketedSequence() throws Exception
     {
-        LogLinearMappedSequence sequence = new LogLinearMappedSequence(sentence1, vocabulary);
+        final LogLinearMappedSequence sequence = new LogLinearMappedSequence(sentence1, vocabulary);
 
         assertEquals(10, sequence.length());
         assertEquals(35, sequence.featureCount());
@@ -88,8 +88,8 @@ public class TestLogLinearMappedSequence
     @Test
     public void testInsertGaps() throws Exception
     {
-        LogLinearMappedSequence act = (LogLinearMappedSequence) dnaVocabulary.mapSequence("ACT");
-        LogLinearMappedSequence gac = (LogLinearMappedSequence) dnaVocabulary.mapSequence("GAC");
+        final LogLinearMappedSequence act = (LogLinearMappedSequence) dnaVocabulary.mapSequence("ACT");
+        final LogLinearMappedSequence gac = (LogLinearMappedSequence) dnaVocabulary.mapSequence("GAC");
 
         // No gap insertion
         assertEquals("ACT", dnaVocabulary.mapSequence(act.insertGaps(new int[] {})));
@@ -99,8 +99,8 @@ public class TestLogLinearMappedSequence
         assertEquals("-ACT-", dnaVocabulary.mapSequence(act.insertGaps(new int[] {0, 3})));
         assertEquals("-GAC-", dnaVocabulary.mapSequence(gac.insertGaps(new int[] {0, 3})));
 
-        LogLinearMappedSequence gacgac = (LogLinearMappedSequence) dnaVocabulary.mapSequence("GACGAC");
-        LogLinearMappedSequence actgac = (LogLinearMappedSequence) dnaVocabulary.mapSequence("ACTGAC");
+        final LogLinearMappedSequence gacgac = (LogLinearMappedSequence) dnaVocabulary.mapSequence("GACGAC");
+        final LogLinearMappedSequence actgac = (LogLinearMappedSequence) dnaVocabulary.mapSequence("ACTGAC");
 
         // Inserting two gaps in the same location
         assertEquals("-GACG--AC-", dnaVocabulary.mapSequence(gacgac.insertGaps(new int[] {0, 4, 4, 6})));
@@ -126,10 +126,10 @@ public class TestLogLinearMappedSequence
     public void testRemoveAllGaps() throws Exception
     {
         // Gaps at beginning and end
-        MappedSequence act = dnaVocabulary.mapSequence("ACT").insertGaps(new int[] {0, 3});
+        final MappedSequence act = dnaVocabulary.mapSequence("ACT").insertGaps(new int[] {0, 3});
         assertEquals("ACT", dnaVocabulary.mapSequence(act.removeAllGaps()));
 
-        MappedSequence gacgac = dnaVocabulary.mapSequence("GACGAC").insertGaps(new int[] {0, 4, 4, 6});
+        final MappedSequence gacgac = dnaVocabulary.mapSequence("GACGAC").insertGaps(new int[] {0, 4, 4, 6});
         assertEquals("GACGAC", dnaVocabulary.mapSequence(gacgac.removeAllGaps()));
 
         // Linguistic sequences
@@ -154,13 +154,13 @@ public class TestLogLinearMappedSequence
     @Test
     public void testRetainFeatures() throws Exception
     {
-        String words = "The computers will display stock prices selected by users .";
-        String pos = "_pos_DT _pos_NNS _pos_MD _pos_VB _pos_NN _pos_NNS _pos_VBN _pos_IN _pos_NNS _pos_.";
-        int[] wordFeatures = vocabulary.map(words.split(" "));
-        int[] posFeatures = vocabulary.map(pos.split(" "));
-        int[] allFeatures = vocabulary.map((words + " " + pos).split(" "));
+        final String words = "The computers will display stock prices selected by users .";
+        final String pos = "_pos_DT _pos_NNS _pos_MD _pos_VB _pos_NN _pos_NNS _pos_VBN _pos_IN _pos_NNS _pos_.";
+        final int[] wordFeatures = vocabulary.map(words.split(" "));
+        final int[] posFeatures = vocabulary.map(pos.split(" "));
+        final int[] allFeatures = vocabulary.map((words + " " + pos).split(" "));
 
-        Sequence sequence = new LogLinearMappedSequence(sentence1, vocabulary);
+        final Sequence sequence = new LogLinearMappedSequence(sentence1, vocabulary);
         assertEquals(sequence, sequence.retainFeatures(allFeatures));
 
         assertEquals(words, sequence.retainFeatures(wordFeatures).toSlashSeparatedString());
@@ -175,7 +175,7 @@ public class TestLogLinearMappedSequence
     @Test
     public void testSubsequence() throws Exception
     {
-        LogLinearMappedSequence sequence = new LogLinearMappedSequence(sentence1, vocabulary);
+        final LogLinearMappedSequence sequence = new LogLinearMappedSequence(sentence1, vocabulary);
 
         assertEquals(0, sequence.subSequence(0, 0).length());
         assertEquals(sequence, sequence.subSequence(0, 10));
@@ -192,7 +192,7 @@ public class TestLogLinearMappedSequence
         sequence = new LogLinearMappedSequence(new int[][] {{0, 1, 2}}, dnaVocabulary);
         assertEquals(" - |\n A |\n C |", sequence.toString());
 
-        String expected = "     The | computers |    will | display |   stock |   prices | selected |      by |    users |      . |\n"
+        final String expected = "     The | computers |    will | display |   stock |   prices | selected |      by |    users |      . |\n"
             + " _pos_DT |  _pos_NNS | _pos_MD | _pos_VB | _pos_NN | _pos_NNS | _pos_VBN | _pos_IN | _pos_NNS | _pos_. |";
 
         sequence = new LogLinearMappedSequence(sentence1, vocabulary);

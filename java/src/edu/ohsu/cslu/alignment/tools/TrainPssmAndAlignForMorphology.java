@@ -27,6 +27,7 @@ import edu.ohsu.cslu.alignment.multiple.HmmMultipleSequenceAlignerForMorphology;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.datastructs.matrices.DenseMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 
 public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
@@ -48,7 +49,7 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
     /**
      * @param args
      */
-    public static void main(String[] args)
+    public static void main(final String[] args)
     {
         run(args);
     }
@@ -56,9 +57,9 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
     @Override
     public void run() throws Exception
     {
-        long startTime = System.currentTimeMillis();
+        final long startTime = System.currentTimeMillis();
 
-        StringBuilder sb = new StringBuilder(8192);
+        final StringBuilder sb = new StringBuilder(8192);
 
         final ArrayList<String> sentences = new ArrayList<String>();
         final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -100,7 +101,7 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
         }
 
         // Translate into sequences
-        MappedSequence[] sequences = new MappedSequence[sentences.size()];
+        final MappedSequence[] sequences = new MappedSequence[sentences.size()];
         for (int i = 0; i < sequences.length; i++)
         {
             sequences[i] = new MultipleVocabularyMappedSequence(sentences.get(i), vocabularies);
@@ -110,16 +111,16 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
         }
 
         // Construct and/or read in substitution matrices
-        Matrix[] substitutionMatrices = new Matrix[substitutionMatrixOptions.size()];
+        final DenseMatrix[] substitutionMatrices = new DenseMatrix[substitutionMatrixOptions.size()];
 
         for (int i = 0; i < substitutionMatrices.length; i++)
         {
             if (substitutionMatrixOptions.get(i).indexOf(',') >= 0)
             {
                 // Construct from 'definition' (substitution-cost, gap-cost)
-                String[] costs = substitutionMatrixOptions.get(i).split(",");
-                float substitutionCost = Float.parseFloat(costs[0]);
-                float gapCost = costs.length > 1 ? Float.parseFloat(costs[1]) : substitutionCost;
+                final String[] costs = substitutionMatrixOptions.get(i).split(",");
+                final float substitutionCost = Float.parseFloat(costs[0]);
+                final float gapCost = costs.length > 1 ? Float.parseFloat(costs[1]) : substitutionCost;
 
                 substitutionMatrices[i] = Matrix.Factory.newSymmetricIdentityFloatMatrix(vocabularies[i].size(),
                     substitutionCost, 0f);
@@ -132,23 +133,23 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
             else
             {
                 // Read in matrix file
-                substitutionMatrices[i] = Matrix.Factory.read(new File(substitutionMatrixOptions.get(i)));
+                substitutionMatrices[i] = (DenseMatrix) Matrix.Factory.read(new File(substitutionMatrixOptions.get(i)));
             }
         }
 
-        MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(substitutionMatrices,
-            vocabularies);
+        final MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(
+            substitutionMatrices, vocabularies);
 
         // Read in pairwise distance file
         // TODO: Option to calculate the distance matrix on-the-fly
-        Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
+        final Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
 
         // Align the sequences
         // IterativePairwiseAligner aligner = new IterativePairwiseAligner();
-        HmmMultipleSequenceAlignerForMorphology aligner = new HmmMultipleSequenceAlignerForMorphology(
+        final HmmMultipleSequenceAlignerForMorphology aligner = new HmmMultipleSequenceAlignerForMorphology(
             new int[] {pseudoCountsPerElement}, 0); // Zero for DO NOT UPWEIGHT THE MOST SIMILAR
-                                                    // SEQUENCE
-        MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix, alignmentModel);
+        // SEQUENCE
+        final MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix, alignmentModel);
 
         System.out.format("Training Alignment of length %d (produced in %d ms)\n\n", trainingAlignment.length(), System
             .currentTimeMillis()
@@ -159,13 +160,13 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool
     }
 
     @Override
-    public void setup(CmdLineParser parser)
+    public void setup(final CmdLineParser parser)
     {
-        String[] vmOptions = vocabularyMatrixParam.split(",");
+        final String[] vmOptions = vocabularyMatrixParam.split(",");
 
         for (int i = 0; i < vmOptions.length; i++)
         {
-            String[] split = vmOptions[i].split("=");
+            final String[] split = vmOptions[i].split("=");
             vocabularyFiles.add(split[0]);
             substitutionMatrixOptions.add(split[1]);
         }

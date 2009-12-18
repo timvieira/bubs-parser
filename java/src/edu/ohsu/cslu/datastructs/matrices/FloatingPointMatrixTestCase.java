@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+import org.junit.Before;
 import org.junit.Test;
-
-import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
  * Unit tests shared by all floating-point matrix unit tests.
@@ -14,18 +14,72 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class FloatingPointMatrixTestCase extends MatrixTestCase
-{
+public abstract class FloatingPointMatrixTestCase extends MatrixTestCase {
+
+    @Before
+    public void setUp() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        sb.append("matrix type=" + matrixType() + " rows=3 columns=4 symmetric=false\n");
+        sb.append("11.1100 22.2200 33.3300 44.4400\n");
+        sb.append("55.5500 66.6600 77.7700 88.8800\n");
+        sb.append("99.9900 10.0000 11.1100 12.1100\n");
+        stringSampleMatrix = sb.toString();
+
+        final float[][] sampleArray = new float[][] { { 11.11f, 22.22f, 33.33f, 44.44f },
+                { 55.55f, 66.66f, 77.77f, 88.88f }, { 99.99f, 10.00f, 11.11f, 12.11f } };
+        sampleMatrix = create(sampleArray, false);
+
+        sb = new StringBuilder();
+        sb.append("matrix type=" + matrixType() + " rows=3 columns=4 symmetric=false\n");
+        sb.append("0.1111 0.2222 0.3333 0.4444\n");
+        sb.append("0.5555 0.6666 0.7777 0.8888\n");
+        sb.append("0.9999 0.1000 0.1111 0.1222\n");
+        stringSampleMatrix2 = sb.toString();
+
+        final float[][] sampleArray2 = new float[][] { { 0.1111f, 0.2222f, 0.3333f, 0.4444f },
+                { 0.5555f, 0.6666f, 0.7777f, 0.8888f }, { 0.9999f, 0.1000f, 0.1111f, 0.1222f } };
+        sampleMatrix2 = create(sampleArray2, false);
+
+        sb = new StringBuilder();
+        sb.append("matrix type=" + matrixType() + " rows=5 columns=5 symmetric=true\n");
+        sb.append("0.0000\n");
+        sb.append("11.1100 22.2200\n");
+        sb.append("33.3300 44.4400 55.5500\n");
+        sb.append("66.6600 77.7700 88.8800 99.9900\n");
+        sb.append("10.0000 11.1100 12.2200 13.3300 14.4400\n");
+        stringSymmetricMatrix = sb.toString();
+
+        final float[][] symmetricArray = new float[][] { { 0f }, { 11.11f, 22.22f },
+                { 33.33f, 44.44f, 55.55f }, { 66.66f, 77.77f, 88.88f, 99.99f },
+                { 10.00f, 11.11f, 12.22f, 13.33f, 14.44f } };
+        symmetricMatrix = create(symmetricArray, true);
+        matrixClass = symmetricMatrix.getClass();
+
+        sb = new StringBuilder();
+        sb.append("matrix type=" + matrixType() + " rows=5 columns=5 symmetric=true\n");
+        sb.append("0.0000\n");
+        sb.append("0.1111 0.2222\n");
+        sb.append("0.3333 0.4444 0.5555\n");
+        sb.append("0.6666 0.7777 0.8888 0.9999\n");
+        sb.append("0.1000 0.1111 0.1222 0.1333 0.1444\n");
+        stringSymmetricMatrix2 = sb.toString();
+
+        final float[][] symmetricArray2 = new float[][] { { 0 }, { 0.1111f, 0.2222f },
+                { 0.3333f, 0.4444f, 0.5555f }, { 0.6666f, 0.7777f, 0.8888f, 0.9999f },
+                { 0.1000f, 0.1111f, 0.1222f, 0.1333f, 0.1444f } };
+        symmetricMatrix2 = create(symmetricArray2, true);
+    }
+
     /**
      * Tests deserializing a matrix using a Reader
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testReadfromReader() throws Exception
-    {
-        Matrix m1 = Matrix.Factory.read(stringSampleMatrix);
+    public void testReadfromReader() throws Exception {
+        final Matrix m1 = Matrix.Factory.read(stringSampleMatrix);
         assertEquals(matrixClass, m1.getClass());
         assertEquals(3, m1.rows());
         assertEquals(4, m1.columns());
@@ -36,7 +90,7 @@ public abstract class FloatingPointMatrixTestCase extends MatrixTestCase
         assertEquals(11.11f, m1.getFloat(2, 2), .0001f);
         assertEquals(12.11f, m1.getFloat(2, 3), .0001f);
 
-        Matrix m2 = Matrix.Factory.read(stringSymmetricMatrix);
+        final Matrix m2 = Matrix.Factory.read(stringSymmetricMatrix);
         assertEquals(matrixClass, m2.getClass());
         assertEquals("Wrong number of rows", 5, m2.rows());
         assertEquals("Wrong number of columns", 5, m2.columns());
@@ -51,11 +105,11 @@ public abstract class FloatingPointMatrixTestCase extends MatrixTestCase
     /**
      * Tests 'getFloat', including reflection across the diagonal in symmetric matrices.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testGetFloat() throws Exception
-    {
+    public void testGetFloat() throws Exception {
         assertEquals("Wrong value", 11.11f, sampleMatrix.getFloat(0, 0), .0001);
         assertEquals("Wrong value", 22.22f, sampleMatrix.getFloat(0, 1), .0001);
         assertEquals("Wrong value", 55.55f, sampleMatrix.getFloat(1, 0), .0001);
@@ -84,35 +138,15 @@ public abstract class FloatingPointMatrixTestCase extends MatrixTestCase
         assertEquals("Wrong value", 0.8888f, symmetricMatrix2.getFloat(2, 3), .0001);
     }
 
-    @Test
-    public void testGetRow()
-    {
-        SharedNlpTests.assertEquals(new float[] {11.11f, 22.22f, 33.33f, 44.44f}, sampleMatrix.getRow(0), .01f);
-        SharedNlpTests.assertEquals(new float[] {55.55f, 66.66f, 77.77f, 88.88f}, sampleMatrix.getRow(1), .01f);
-        SharedNlpTests.assertEquals(new float[] {0, 11.11f, 33.33f, 66.66f, 10f}, symmetricMatrix.getRow(0), .01f);
-        SharedNlpTests.assertEquals(new float[] {66.66f, 77.77f, 88.88f, 99.99f, 13.33f}, symmetricMatrix.getRow(3), .01f);
-        SharedNlpTests.assertEquals(new float[] {10f, 11.11f, 12.22f, 13.33f, 14.44f}, symmetricMatrix.getRow(4), .01f);
-    }
-
-    @Test
-    public void testGetColumn()
-    {
-        SharedNlpTests.assertEquals(new float[] {11.11f, 55.55f, 99.99f}, sampleMatrix.getColumn(0), .01f);
-        SharedNlpTests.assertEquals(new float[] {44.44f, 88.88f, 12.11f}, sampleMatrix.getColumn(3), .01f);
-        SharedNlpTests.assertEquals(new float[] {0, 11.11f, 33.33f, 66.66f, 10f}, symmetricMatrix.getColumn(0), .01f);
-        SharedNlpTests.assertEquals(new float[] {33.33f, 44.44f, 55.55f, 88.88f, 12.22f}, symmetricMatrix.getColumn(2), .01f);
-        SharedNlpTests.assertEquals(new float[] {10.00f, 11.11f, 12.22f, 13.33f, 14.44f}, symmetricMatrix.getColumn(4), .01f);
-    }
-
     /**
      * Tests setting matrix elements
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testSet() throws Exception
-    {
+    public void testSet() throws Exception {
         assertEquals("Wrong value", 0.9999f, sampleMatrix2.getFloat(2, 0), .0001);
         sampleMatrix2.set(2, 0, 3);
         assertEquals("Wrong value", 3.0f, sampleMatrix2.getFloat(2, 0), .0001);
@@ -124,69 +158,15 @@ public abstract class FloatingPointMatrixTestCase extends MatrixTestCase
         assertEquals("Wrong value", 3.1f, symmetricMatrix2.getFloat(1, 3), .0001);
     }
 
-    @Override
-    @Test
-    public void testSetRow()
-    {
-        sampleMatrix.setRow(0, new int[] {13, 14, 15, 16});
-        SharedNlpTests.assertEquals(new int[] {13, 14, 15, 16}, sampleMatrix.getIntRow(0));
-        SharedNlpTests.assertEquals(new float[] {13f, 14f, 15f, 16f}, sampleMatrix.getRow(0), .01f);
-        sampleMatrix.setRow(2, new int[] {0, 1, 2, 3});
-        SharedNlpTests.assertEquals(new int[] {0, 1, 2, 3}, sampleMatrix.getIntRow(2));
-        SharedNlpTests.assertEquals(new float[] {0f, 1f, 2f, 3f}, sampleMatrix.getRow(2), .01f);
-
-        sampleMatrix2.setRow(2, 2.3f);
-        SharedNlpTests.assertEquals(new int[] {2, 2, 2, 2}, sampleMatrix2.getIntRow(2));
-        SharedNlpTests.assertEquals(new float[] {2.3f, 2.3f, 2.3f, 2.3f}, sampleMatrix2.getRow(2), .01f);
-
-        symmetricMatrix.setRow(0, new float[] {1.1f, 2.2f, 3.3f, 4.4f, 5.0f});
-        SharedNlpTests.assertEquals(new int[] {1, 2, 3, 4, 5}, symmetricMatrix.getIntRow(0));
-        SharedNlpTests.assertEquals(new float[] {1.1f, 2.2f, 3.3f, 4.4f, 5.0f}, symmetricMatrix.getRow(0), .01f);
-        symmetricMatrix.setRow(4, new float[] {10.1f, 11.1f, 12.1f, 13.1f, 14.1f});
-        SharedNlpTests.assertEquals(new int[] {10, 11, 12, 13, 14}, symmetricMatrix.getIntRow(4));
-        SharedNlpTests.assertEquals(new float[] {10.1f, 11.1f, 12.1f, 13.1f, 14.1f}, symmetricMatrix.getRow(4), .01f);
-
-        symmetricMatrix2.setRow(4, 1.51f);
-        SharedNlpTests.assertEquals(new int[] {2, 2, 2, 2, 2}, symmetricMatrix2.getIntRow(4));
-        SharedNlpTests.assertEquals(new float[] {1.51f, 1.51f, 1.51f, 1.51f, 1.51f}, symmetricMatrix2.getRow(4), .01f);
-    }
-
-    @Override
-    @Test
-    public void testSetColumn()
-    {
-        sampleMatrix.setColumn(0, new float[] {13.1f, 14.1f, 15.1f});
-        SharedNlpTests.assertEquals(new int[] {13, 14, 15}, sampleMatrix.getIntColumn(0));
-        SharedNlpTests.assertEquals(new float[] {13.1f, 14.1f, 15.1f}, sampleMatrix.getColumn(0), .01f);
-        sampleMatrix.setColumn(2, new float[] {0, 1.1f, 2.2f});
-        SharedNlpTests.assertEquals(new int[] {0, 1, 2}, sampleMatrix.getIntColumn(2));
-        SharedNlpTests.assertEquals(new float[] {0f, 1.1f, 2.2f}, sampleMatrix.getColumn(2), .01f);
-
-        sampleMatrix2.setColumn(2, 2.3f);
-        SharedNlpTests.assertEquals(new int[] {2, 2, 2}, sampleMatrix2.getIntColumn(2));
-        SharedNlpTests.assertEquals(new float[] {2.3f, 2.3f, 2.3f}, sampleMatrix2.getColumn(2), .01f);
-
-        symmetricMatrix.setColumn(0, new float[] {1.1f, 2.2f, 3.3f, 4.4f, 5.5f});
-        SharedNlpTests.assertEquals(new int[] {1, 2, 3, 4, 6}, symmetricMatrix.getIntColumn(0));
-        SharedNlpTests.assertEquals(new float[] {1.1f, 2.2f, 3.3f, 4.4f, 5.5f}, symmetricMatrix.getColumn(0), .01f);
-        symmetricMatrix.setColumn(4, new float[] {10.1f, 11.1f, 12.1f, 13.1f, 14.1f});
-        SharedNlpTests.assertEquals(new int[] {10, 11, 12, 13, 14}, symmetricMatrix.getIntColumn(4));
-        SharedNlpTests.assertEquals(new float[] {10.1f, 11.1f, 12.1f, 13.1f, 14.1f}, symmetricMatrix.getColumn(4), .01f);
-
-        symmetricMatrix2.setColumn(4, 1.51f);
-        SharedNlpTests.assertEquals(new int[] {2, 2, 2, 2, 2}, symmetricMatrix2.getIntColumn(4));
-        SharedNlpTests.assertEquals(new float[] {1.51f, 1.51f, 1.51f, 1.51f, 1.51f}, symmetricMatrix2.getColumn(4), .01f);
-    }
-
     /**
      * Tests scalar addition
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testScalarAdd() throws Exception
-    {
+    public void testScalarAdd() throws Exception {
         Matrix m = sampleMatrix.scalarAdd(3);
         assertEquals(80.77f, m.getFloat(1, 2), .01f);
         assertEquals(81, m.getInt(1, 2));
@@ -203,12 +183,12 @@ public abstract class FloatingPointMatrixTestCase extends MatrixTestCase
     /**
      * Tests scalar multiplication
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testScalarMultiply() throws Exception
-    {
+    public void testScalarMultiply() throws Exception {
         Matrix m = sampleMatrix.scalarMultiply(3);
         assertEquals(233.31f, m.getFloat(1, 2), .01f);
         assertEquals(233, m.getInt(1, 2));
@@ -220,5 +200,13 @@ public abstract class FloatingPointMatrixTestCase extends MatrixTestCase
         assertEquals(202, m.getInt(1, 2));
         assertEquals(31.486f, m.getFloat(2, 3), .01f);
         assertEquals(31, m.getInt(2, 3));
+    }
+
+    /**
+     * Tests matrix/vector multiplication
+     */
+    @Override
+    public void testVectorMultiply() throws Exception {
+        fail("Not Implemented");
     }
 }

@@ -17,7 +17,7 @@ public class CharSequence implements MappedSequence
         vectors = new Vector[string.length()];
         for (int i = 0; i < string.length(); i++)
         {
-            vectors[i] = new SparseBitVector(new int[] {string.charAt(i)});
+            vectors[i] = new SparseBitVector(new int[] {string.charAt(i)}, false);
         }
     }
 

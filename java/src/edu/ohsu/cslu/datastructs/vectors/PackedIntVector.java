@@ -99,11 +99,11 @@ public final class PackedIntVector extends BaseNumericVector
     }
 
     @Override
-    public NumericVector add(Vector v)
+    public NumericVector add(final Vector v)
     {
         if (v instanceof PackedIntVector && v.length() == length && ((PackedIntVector) v).bits == bits)
         {
-            NumericVector newVector = new PackedIntVector(length, bits);
+            final NumericVector newVector = new PackedIntVector(length, bits);
 
             for (int i = 0; i < length; i++)
             {
@@ -122,7 +122,7 @@ public final class PackedIntVector extends BaseNumericVector
      * @param index
      * @param value
      */
-    public final void set(int index, int value)
+    public final void set(final int index, final int value)
     {
         if (value < 0 || value > maxValue)
         {
@@ -146,7 +146,7 @@ public final class PackedIntVector extends BaseNumericVector
      * @param index
      * @return value at the specified location
      */
-    public final int getInt(int index)
+    public final int getInt(final int index)
     {
         if (index > capacity || index < 0)
         {
@@ -159,25 +159,25 @@ public final class PackedIntVector extends BaseNumericVector
     }
 
     @Override
-    public float getFloat(int i)
+    public float getFloat(final int i)
     {
         return getInt(i);
     }
 
     @Override
-    public void set(int i, float value)
+    public void set(final int i, final float value)
     {
         set(i, Math.round(value));
     }
 
     @Override
-    public void set(int i, boolean value)
+    public void set(final int i, final boolean value)
     {
         set(i, value ? 1 : 0);
     }
 
     @Override
-    public void set(int i, String newValue)
+    public void set(final int i, final String newValue)
     {
         set(i, Integer.parseInt(newValue));
     }
@@ -195,10 +195,10 @@ public final class PackedIntVector extends BaseNumericVector
     }
 
     @Override
-    public Vector subVector(int i0, int i1)
+    public Vector subVector(final int i0, final int i1)
     {
         final int subVectorLength = i1 - i0 + 1;
-        PackedIntVector subVector = new PackedIntVector(subVectorLength, bits);
+        final PackedIntVector subVector = new PackedIntVector(subVectorLength, bits);
         for (int i = 0; i < subVectorLength; i++)
         {
             subVector.set(i, getInt(i0 + i));
@@ -207,21 +207,27 @@ public final class PackedIntVector extends BaseNumericVector
     }
 
     @Override
-    protected NumericVector createIntVector()
+    protected NumericVector createIntVector(final int newVectorLength)
     {
-        return new PackedIntVector(length, bits);
+        return new PackedIntVector(newVectorLength, bits);
+    }
+
+    @Override
+    protected NumericVector createFloatVector(final int newVectorLength)
+    {
+        return new FloatVector(newVectorLength);
     }
 
     @Override
     public PackedIntVector clone()
     {
-        PackedIntVector v = new PackedIntVector(length, bits);
+        final PackedIntVector v = new PackedIntVector(length, bits);
         System.arraycopy(packedVector, 0, v.packedVector, 0, packedVector.length);
         return v;
     }
 
     @Override
-    public void write(Writer writer) throws IOException
+    public void write(final Writer writer) throws IOException
     {
         write(writer, String.format("vector type=packed-int length=%d bits=%d\n", length, bits));
     }

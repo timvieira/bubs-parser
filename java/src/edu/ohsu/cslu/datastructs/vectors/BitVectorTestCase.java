@@ -1,5 +1,8 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -7,10 +10,6 @@ import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
 import org.junit.Test;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
 
 /**
  * Tests for {@link PackedBitVector} implementations
@@ -31,23 +30,23 @@ public abstract class BitVectorTestCase extends VectorTestCase
 
     @SuppressWarnings("unchecked")
     @Override
-    protected Vector create(float[] array) throws Exception
+    protected Vector create(final float[] array) throws Exception
     {
-        boolean[] booleanArray = new boolean[array.length];
+        final boolean[] booleanArray = new boolean[array.length];
         for (int i = 0; i < array.length; i++)
         {
             booleanArray[i] = (array[i] != 0);
         }
-        Constructor<BitVector> c = (Constructor<BitVector>) vectorClass.getConstructor(boolean[].class);
+        final Constructor<BitVector> c = (Constructor<BitVector>) vectorClass.getConstructor(boolean[].class);
         return c.newInstance(booleanArray);
     }
 
     @Override
     public void testVectorAdd() throws Exception
     {
-        Vector vector = create(new float[] {1, 0, 1, 1});
-        IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
-        FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
+        final Vector vector = create(new float[] {1, 0, 1, 1});
+        final IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
+        final FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
 
         // If we add an {@link IntVector} we should get a new {@link IntVector}
         Vector sum = intVector.add(intVector);
@@ -77,7 +76,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
         assertEquals("Wrong value", 1, sum.getInt(3));
 
         // If we add a {@link SparseBitVector} we should get a new {@link IntVector}
-        sum = vector.add(new SparseBitVector(new int[] {1, 2}));
+        sum = vector.add(new SparseBitVector(new int[] {1, 1, 2, 1}, true));
         assertEquals("Wrong class: " + sum.getClass().getName(), IntVector.class, sum.getClass());
         assertEquals("Wrong length", 4, sum.length());
         assertEquals("Wrong value", 1, sum.getInt(0));
@@ -89,9 +88,9 @@ public abstract class BitVectorTestCase extends VectorTestCase
     @Override
     public void testElementwiseMultiply() throws Exception
     {
-        Vector vector = create(new float[] {1, 0, 1, 1});
-        IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
-        FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
+        final Vector vector = create(new float[] {1, 0, 1, 1});
+        final IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
+        final FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
 
         // If we multiply by an {@link IntVector} we should get a new {@link IntVector}
         Vector product = vector.elementwiseMultiply(intVector);
@@ -121,7 +120,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
         assertEquals("Wrong value", 0, product.getInt(3));
 
         // If we multiply by a {@link SparseBitVector} we should get a new {@link SparseBitVector}
-        product = vector.elementwiseMultiply(new SparseBitVector(new int[] {1, 2}));
+        product = vector.elementwiseMultiply(new SparseBitVector(new int[] {1, 1, 2, 1}, true));
         assertEquals("Wrong class: ", SparseBitVector.class, product.getClass());
         assertEquals("Wrong value", 0, product.getInt(0));
         assertEquals("Wrong value", 0, product.getInt(1));
@@ -129,9 +128,9 @@ public abstract class BitVectorTestCase extends VectorTestCase
         assertEquals("Wrong value", 0, product.getInt(3));
 
         // Multiply by a {@link MutableSparseBitVector}
-        Class<? extends BitVector> expectedClass = (vectorClass == SparseBitVector.class) ? SparseBitVector.class
+        final Class<? extends BitVector> expectedClass = (vectorClass == SparseBitVector.class) ? SparseBitVector.class
             : MutableSparseBitVector.class;
-        product = vector.elementwiseMultiply(new MutableSparseBitVector(new int[] {1, 2}));
+        product = vector.elementwiseMultiply(new MutableSparseBitVector(new int[] {1, 1, 2, 1}));
         assertEquals("Wrong class: ", expectedClass, product.getClass());
         assertEquals("Wrong value", 0, product.getInt(0));
         assertEquals("Wrong value", 0, product.getInt(1));
@@ -297,12 +296,10 @@ public abstract class BitVectorTestCase extends VectorTestCase
     @Override
     public void testDotProduct() throws Exception
     {
-        IntVector intVector = new IntVector(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-                                                       19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
-                                                       35});
-        FloatVector floatVector = new FloatVector(new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-                                                               17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-                                                               31, 32, 33, 34, 35});
+        final IntVector intVector = new IntVector(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+            18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35});
+        final FloatVector floatVector = new FloatVector(new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35});
 
         assertEquals(377f, sampleVector.dotProduct(intVector), .01f);
         assertEquals(377f, sampleVector.dotProduct(floatVector), .01f);
@@ -311,7 +308,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
     @Test
     public void testSetAdd()
     {
-        BitVector bitmap = createEmptyBitVector();
+        final BitVector bitmap = createEmptyBitVector();
         assertFalse("Did not expect 3", bitmap.contains(3));
         bitmap.add(3);
         assertTrue("Expected 3", bitmap.contains(3));
@@ -323,7 +320,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
     @Test
     public void testArrayAddAll()
     {
-        BitVector bitmap = createEmptyBitVector();
+        final BitVector bitmap = createEmptyBitVector();
         assertFalse("Did not expect 1", bitmap.contains(1));
         assertFalse("Did not expect 3", bitmap.contains(3));
         bitmap.addAll(new int[] {1, 3});
@@ -336,7 +333,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
     @Test
     public void testIntSetAddAll()
     {
-        BitVector bitmap = createEmptyBitVector();
+        final BitVector bitmap = createEmptyBitVector();
         assertFalse("Did not expect 1", bitmap.contains(1));
         assertFalse("Did not expect 3", bitmap.contains(3));
 
@@ -351,7 +348,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
     @Test
     public void testRemove()
     {
-        BitVector bitmap = createEmptyBitVector();
+        final BitVector bitmap = createEmptyBitVector();
         bitmap.add(1);
         bitmap.add(2);
         bitmap.add(3);
@@ -373,7 +370,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
     @Test
     public void testArrayRemoveAll()
     {
-        BitVector bitmap = createEmptyBitVector();
+        final BitVector bitmap = createEmptyBitVector();
         bitmap.addAll(new int[] {1, 2, 3, 4});
         assertTrue("Expected 1", bitmap.contains(1));
         assertTrue("Expected 3", bitmap.contains(3));
@@ -389,7 +386,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
     @Test
     public void testIntSetRemoveAll()
     {
-        BitVector bitmap = createEmptyBitVector();
+        final BitVector bitmap = createEmptyBitVector();
         bitmap.addAll(new int[] {1, 2, 3, 4});
         assertTrue("Expected 1", bitmap.contains(1));
         assertTrue("Expected 3", bitmap.contains(3));
@@ -404,7 +401,7 @@ public abstract class BitVectorTestCase extends VectorTestCase
 
     public void testValues()
     {
-        IntSet intSet = new IntOpenHashSet(((BitVector) sampleVector).values());
+        final IntSet intSet = new IntOpenHashSet(((BitVector) sampleVector).values());
 
         assertEquals(21, intSet.size());
 

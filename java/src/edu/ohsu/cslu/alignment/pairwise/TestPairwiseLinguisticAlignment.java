@@ -1,5 +1,8 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,10 +14,7 @@ import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
 import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.util.Strings;
-
-import static junit.framework.Assert.assertEquals;
 
 @RunWith(FilteredRunner.class)
 public class TestPairwiseLinguisticAlignment
@@ -33,7 +33,7 @@ public class TestPairwiseLinguisticAlignment
     public static void suiteSetUp() throws Exception
     {
         // Create Vocabulary
-        StringBuilder sb = new StringBuilder(1024);
+        final StringBuilder sb = new StringBuilder(1024);
         sb.append(Strings.extractPos(sampleSentence4));
         sb.append('\n');
         sb.append(Strings.extractPos(sampleSentence16));
@@ -48,12 +48,12 @@ public class TestPairwiseLinguisticAlignment
     @Test
     public void testSampleAlignment() throws Exception
     {
-        MappedSequence sequence1 = new MultipleVocabularyMappedSequence(Strings.extractPos(sampleSentence4),
+        final MappedSequence sequence1 = new MultipleVocabularyMappedSequence(Strings.extractPos(sampleSentence4),
             vocabularies);
-        MappedSequence sequence2 = new MultipleVocabularyMappedSequence(Strings.extractPos(sampleSentence16),
+        final MappedSequence sequence2 = new MultipleVocabularyMappedSequence(Strings.extractPos(sampleSentence16),
             vocabularies);
 
-        FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
+        final FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
         SequenceAlignment alignment = aligner.alignPair(sequence1, sequence2, simpleAlignmentModel);
 
         StringBuilder sb = new StringBuilder(512);
@@ -68,10 +68,10 @@ public class TestPairwiseLinguisticAlignment
         sb.append("  JJS | AUX |      VBN | TO |   VB |    IN |             JJ |    NNS | . |\n");
         sb.append(" Most | are | expected | to | fall | below | previous-month | levels | . |\n");
         assertEquals(sb.toString(), alignment.toString());
-        SharedNlpTests.assertEquals(new int[] {2}, alignment.insertedColumnIndices());
+        assertArrayEquals(new int[] {2}, alignment.insertedColumnIndices());
 
-        MultipleSequenceAlignment sequenceAlignment = new MultipleSequenceAlignment(
-            new MappedSequence[] {alignment.alignedSequence(), sequence1.insertGaps(alignment.insertedColumnIndices())});
+        final MultipleSequenceAlignment sequenceAlignment = new MultipleSequenceAlignment(new MappedSequence[] {
+            alignment.alignedSequence(), sequence1.insertGaps(alignment.insertedColumnIndices())});
         sb = new StringBuilder(512);
 
         sb.append("      JJS | AUX |      VBN | TO |    VB |    IN |             JJ |    NNS | . |\n");
