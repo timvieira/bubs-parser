@@ -13,13 +13,11 @@ import java.util.TreeSet;
  * 
  *        $Id$
  */
-public class SententialCoocurrenceCounter extends CoocurrenceCounter
-{
-    public SententialCoocurrenceCounter(Reader reader) throws IOException
-    {
+public class SententialCoocurrenceCounter extends CoocurrenceCounter {
+
+    public SententialCoocurrenceCounter(Reader reader) throws IOException {
         BufferedReader br = new BufferedReader(reader);
-        for (String line = br.readLine(); line != null; line = br.readLine())
-        {
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
             countSentence(line.split(" "));
         }
         br.close();
@@ -27,21 +25,17 @@ public class SententialCoocurrenceCounter extends CoocurrenceCounter
         trim();
     }
 
-    protected void countSentence(String[] wordArray)
-    {
+    protected void countSentence(String[] wordArray) {
         final TreeSet<String> words = new TreeSet<String>();
 
-        for (final String word : wordArray)
-        {
+        for (final String word : wordArray) {
             words.add(word);
         }
 
-        for (final String h : words)
-        {
+        for (final String h : words) {
             incrementCount(h);
 
-            for (final String w : words.tailSet(h, false))
-            {
+            for (final String w : words.tailSet(h, false)) {
                 incrementCount(h, w);
             }
         }

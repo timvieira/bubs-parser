@@ -11,35 +11,34 @@ import edu.ohsu.cslu.tests.FilteredRunner;
 import static junit.framework.Assert.assertEquals;
 
 @RunWith(FilteredRunner.class)
-public class TestSimpleSequence
-{
+public class TestSimpleSequence {
+
     private final static String sentence1BracketedInput = "(The DT) (computers NNS) (will MD) (display VB) (stock NN)\n"
-        + "(prices NNS) (selected VBN) (by IN) (users NNS) (. .)";
+            + "(prices NNS) (selected VBN) (by IN) (users NNS) (. .)";
     private final static String sentence1SlashDelimitedInput = "The/DT computers/NNS will/MD display/VB stock/NN\n"
-        + "prices/NNS selected/VBN by/IN users/NNS ./.";
+            + "prices/NNS selected/VBN by/IN users/NNS ./.";
     private final static String sentence1SquareBracketedInput = "[The DT] [computers NNS] [will MD] [display VB] [stock NN]\n"
-        + "[prices NNS] [selected VBN] [by IN] [users NNS] [. .]";
+            + "[prices NNS] [selected VBN] [by IN] [users NNS] [. .]";
 
     private final static String sentence1Bracketed = sentence1BracketedInput.replaceAll("\n", " ");
 
     private Sequence sequence1;
 
     @Before
-    public void setUp() throws Exception
-    {
+    public void setUp() throws Exception {
         sequence1 = new SimpleSequence(sentence1BracketedInput);
     }
 
     @Test
-    public void testConstructors() throws Exception
-    {
+    public void testConstructors() throws Exception {
         // Test reading a bracketed string
         assertEquals(sentence1Bracketed, new SimpleSequence(sentence1BracketedInput).toBracketedString());
         assertEquals(sentence1Bracketed, new SimpleSequence(new StringReader(sentence1BracketedInput))
             .toBracketedString());
 
         // And a square bracketed string
-        assertEquals(sentence1Bracketed, new SimpleSequence(sentence1SquareBracketedInput).toBracketedString());
+        assertEquals(sentence1Bracketed, new SimpleSequence(sentence1SquareBracketedInput)
+            .toBracketedString());
         assertEquals(sentence1Bracketed, new SimpleSequence(new StringReader(sentence1SquareBracketedInput))
             .toBracketedString());
 
@@ -49,14 +48,13 @@ public class TestSimpleSequence
             .toBracketedString());
 
         // Construct a sequence from a String array
-        assertEquals("(The DT) (aliens NNS) (will AUX) (win VB) (. .)", new SimpleSequence(
-            new String[][] { {"The", "DT"}, {"aliens", "NNS"}, {"will", "AUX"}, {"win", "VB"}, {".", "."}})
+        assertEquals("(The DT) (aliens NNS) (will AUX) (win VB) (. .)", new SimpleSequence(new String[][] {
+                { "The", "DT" }, { "aliens", "NNS" }, { "will", "AUX" }, { "win", "VB" }, { ".", "." } })
             .toBracketedString());
     }
 
     @Test
-    public void testReadBracketedSequence() throws Exception
-    {
+    public void testReadBracketedSequence() throws Exception {
         assertEquals(10, sequence1.length());
         assertEquals(2, sequence1.featureCount());
 
@@ -70,27 +68,27 @@ public class TestSimpleSequence
     /**
      * Tests the {@link MultipleVocabularyMappedSequence#retainFeatures(int...)} method.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testFeatures() throws Exception
-    {
-        assertEquals(sequence1, sequence1.retainFeatures(new int[] {0, 1}));
+    public void testFeatures() throws Exception {
+        assertEquals(sequence1, sequence1.retainFeatures(new int[] { 0, 1 }));
 
-        assertEquals("DT NNS MD VB NN NNS VBN IN NNS .", sequence1.retainFeatures(new int[] {1})
+        assertEquals("DT NNS MD VB NN NNS VBN IN NNS .", sequence1.retainFeatures(new int[] { 1 })
             .toSlashSeparatedString());
         assertEquals("The computers will display stock prices selected by users .", sequence1.retainFeatures(
-            new int[] {0}).toSlashSeparatedString());
+            new int[] { 0 }).toSlashSeparatedString());
     }
 
     /**
      * Tests {@link SimpleSequence#subSequence(int, int)} method.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testSubsequence() throws Exception
-    {
+    public void testSubsequence() throws Exception {
         assertEquals(0, sequence1.subSequence(0, 0).length());
         assertEquals(sequence1, sequence1.subSequence(0, 10));
         assertEquals("(The DT)", sequence1.subSequence(0, 1).toBracketedString());
@@ -100,16 +98,17 @@ public class TestSimpleSequence
     /**
      * Tests {@link SimpleSequence#splitIntoSentences()} method.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testSplitIntoSentences() throws Exception
-    {
+    public void testSplitIntoSentences() throws Exception {
         // First, verify that it splits appropriately when given explicit <s> and </s> tags (even if
         // the sentences contained therein are malformed)
         Sequence s1 = new SimpleSequence(
             "(<s> <s>) (The DT) (dog NN) (</s> </s>) (<s> <s>) (A DT) (cat NN) (</s> </s>) (<s> <s>) (Three DT) (fish NN) (</s> </s>)");
-        Sequence s2 = new SimpleSequence("(<s>) (The) (dog) (</s>) (<s>) (A) (cat) (</s>) (<s>) (Three) (fish) (</s>)");
+        Sequence s2 = new SimpleSequence(
+            "(<s>) (The) (dog) (</s>) (<s>) (A) (cat) (</s>) (<s>) (Three) (fish) (</s>)");
 
         Sequence[] sentences = s1.splitIntoSentences();
         assertEquals(3, sentences.length);
@@ -130,14 +129,16 @@ public class TestSimpleSequence
         assertEquals("fish", sentences[2].stringFeature(2, 0));
 
         // We don't expect the same sequences without explicit start and end tags to be split at all
-        assertEquals(1, new SimpleSequence("(The) (dog) (A) (cat) (Three) (fish)").splitIntoSentences().length);
+        assertEquals(1,
+            new SimpleSequence("(The) (dog) (A) (cat) (Three) (fish)").splitIntoSentences().length);
         assertEquals(1, new SimpleSequence("(The DT) (dog NN) (A DT) (cat NN) (Three DT) (fish NN)")
             .splitIntoSentences().length);
 
         // Now test something a little harder - not comprehensive tests of all sentence-breaking
         // tasks, but tests of a couple basic cases.
         sentences = new SimpleSequence(
-            "The dog at 415 4th Ave. is friendly. Is there a friendly dog at 415 4th Ave? Yes.").splitIntoSentences();
+            "The dog at 415 4th Ave. is friendly. Is there a friendly dog at 415 4th Ave? Yes.")
+            .splitIntoSentences();
         assertEquals(8, sentences[0].length());
         assertEquals(9, sentences[1].length());
         assertEquals(1, sentences[2].length());
@@ -151,9 +152,10 @@ public class TestSimpleSequence
         assertEquals(2, sentences[2].length());
 
         // The same sequence, with punctuation tokenized
-        sentences = new SimpleSequence("(The DT) (dog NN) (at IN) (415 JJ) (4th JJ) (Ave NN) (. :) (is VBP)\n"
-            + "(friendly JJ) (. .) (Is MD) (there EX) (a DT) (friendly JJ) (dog NN) (at IN) (415 JJ) (4th JJ)"
-            + " (Ave NN) (? .) (Yes UH) (. .)").splitIntoSentences();
+        sentences = new SimpleSequence(
+            "(The DT) (dog NN) (at IN) (415 JJ) (4th JJ) (Ave NN) (. :) (is VBP)\n"
+                    + "(friendly JJ) (. .) (Is MD) (there EX) (a DT) (friendly JJ) (dog NN) (at IN) (415 JJ) (4th JJ)"
+                    + " (Ave NN) (? .) (Yes UH) (. .)").splitIntoSentences();
         assertEquals(10, sentences[0].length());
         assertEquals(":", sentences[0].stringFeature(6, 1));
         assertEquals(10, sentences[1].length());

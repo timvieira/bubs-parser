@@ -22,19 +22,19 @@ import edu.ohsu.cslu.tests.FilteredRunner;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestSimpleVocabulary
-{
+public class TestSimpleVocabulary {
+
     private String sampleInput;
     private String stringSampleVocabulary;
     private SimpleVocabulary sampleVocabulary;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         StringBuilder sb = new StringBuilder(256);
         sb.append("(DT The) (NNS computers) (MD will) (VB display) (NN stock)");
         sb.append(" (NNS prices) (VBN selected) (IN by) (NNS users) (. .)\n");
-        sb.append("(IN At) (JJS least) (RB not) (WRB when) (PRP you) (AUX are) (VBG ascending) (. .) (-RRB- -RRB-)");
+        sb
+            .append("(IN At) (JJS least) (RB not) (WRB when) (PRP you) (AUX are) (VBG ascending) (. .) (-RRB- -RRB-)");
         sampleVocabulary = SimpleVocabulary.induce(sb.toString(), 1);
 
         sb = new StringBuilder(256);
@@ -84,13 +84,11 @@ public class TestSimpleVocabulary
     }
 
     @Test
-    public void testSampleVocabulary() throws Exception
-    {
+    public void testSampleVocabulary() throws Exception {
         checkSampleVocabulary(sampleVocabulary);
     }
 
-    private void checkSampleVocabulary(SimpleVocabulary vocabulary)
-    {
+    private void checkSampleVocabulary(SimpleVocabulary vocabulary) {
         assertEquals(33, vocabulary.size());
 
         assertEquals(2, vocabulary.map("DT"));
@@ -107,8 +105,7 @@ public class TestSimpleVocabulary
     }
 
     @Test
-    public void testThreeVocabularies() throws Exception
-    {
+    public void testThreeVocabularies() throws Exception {
         SimpleVocabulary[] vocabularies = SimpleVocabulary.induceVocabularies(sampleInput);
 
         assertEquals(3, vocabularies.length);
@@ -139,14 +136,12 @@ public class TestSimpleVocabulary
     }
 
     @Test
-    public void testRead() throws Exception
-    {
+    public void testRead() throws Exception {
         checkSampleVocabulary(SimpleVocabulary.read(new StringReader(stringSampleVocabulary)));
     }
 
     @Test
-    public void testWrite() throws Exception
-    {
+    public void testWrite() throws Exception {
         StringWriter writer = new StringWriter();
         sampleVocabulary.write(writer);
         checkSampleVocabulary(SimpleVocabulary.read(new StringReader(writer.toString())));

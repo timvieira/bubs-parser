@@ -34,8 +34,8 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestColumnAligners
-{
+public class TestColumnAligners {
+
     protected final static DnaVocabulary DNA_VOCABULARY = new DnaVocabulary();
 
     private String trainingData;
@@ -47,8 +47,7 @@ public class TestColumnAligners
     private ColumnAlignmentModel columnInsertionModel;
 
     @Before
-    public void setUp() throws IOException
-    {
+    public void setUp() throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append("Label 1\n");
         sb.append("CGA--T\n");
@@ -98,7 +97,8 @@ public class TestColumnAligners
         sb.append("-----\n");
         columnInsertionTrainingData = sb.toString();
 
-        pssmModel = new MaximumLikelihoodModel(new StringReader(columnInsertionTrainingData), DNA_VOCABULARY, false);
+        pssmModel = new MaximumLikelihoodModel(new StringReader(columnInsertionTrainingData), DNA_VOCABULARY,
+            false);
         ((MaximumLikelihoodModel) pssmModel).setColumnInsertionCost(Float.POSITIVE_INFINITY);
 
         columnInsertionModel = new MaximumLikelihoodModel(new StringReader(columnInsertionTrainingData),
@@ -107,21 +107,23 @@ public class TestColumnAligners
     }
 
     @Test
-    public void testFullColumnAligner() throws Exception
-    {
+    public void testFullColumnAligner() throws Exception {
         final FullColumnAligner aligner = new FullColumnAligner();
 
-        final MaximumLikelihoodModel simpleMlModel = new MaximumLikelihoodModel(new StringReader(simpleTrainingData),
-            DNA_VOCABULARY, true);
+        final MaximumLikelihoodModel simpleMlModel = new MaximumLikelihoodModel(new StringReader(
+            simpleTrainingData), DNA_VOCABULARY, true);
         assertEquals("Wrong ML alignment", "CAAC-T", alignString(aligner, "CAACT", simpleMlModel));
 
         final MaximumLikelihoodModel mlModel = new MaximumLikelihoodModel(new StringReader(trainingData),
             DNA_VOCABULARY, true);
-        final LaplaceModel laplaceModel0 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY, 0, true);
+        final LaplaceModel laplaceModel0 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY,
+            0, true);
         checkUnsmoothedModel(mlModel, laplaceModel0);
 
-        final LaplaceModel laplaceModel2 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY, 2, true);
-        final LaplaceModel laplaceModel6 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY, 6, true);
+        final LaplaceModel laplaceModel2 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY,
+            2, true);
+        final LaplaceModel laplaceModel6 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY,
+            6, true);
 
         sanityTest(aligner, mlModel);
         sanityTest(aligner, laplaceModel2);
@@ -134,28 +136,30 @@ public class TestColumnAligners
 
         assertEquals(longAlignedSequence(), alignString(aligner, longUnalignedSequence(), new LaplaceModel(
             new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream("alignment/current_prokMSA_aligned.fasta.train.set.100.gz")), DNA_VOCABULARY, 6,
-            true)));
+                .unitTestDataAsStream("alignment/current_prokMSA_aligned.fasta.train.set.100.gz")),
+            DNA_VOCABULARY, 6, true)));
 
         columnInsertionTest(aligner, pssmModel, columnInsertionModel);
     }
 
     @Test
-    public void testLinearColumnAligner() throws Exception
-    {
+    public void testLinearColumnAligner() throws Exception {
         final LinearColumnAligner aligner = new LinearColumnAligner();
 
-        final ColumnAlignmentModel simpleMlModel = new MaximumLikelihoodModel(new StringReader(simpleTrainingData),
-            DNA_VOCABULARY, true);
+        final ColumnAlignmentModel simpleMlModel = new MaximumLikelihoodModel(new StringReader(
+            simpleTrainingData), DNA_VOCABULARY, true);
         assertEquals("Wrong ML alignment", "CAAC-T", alignString(aligner, "CAACT", simpleMlModel));
 
-        final ColumnAlignmentModel mlModel = new MaximumLikelihoodModel(new StringReader(trainingData), DNA_VOCABULARY,
-            true);
-        final LaplaceModel laplaceModel0 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY, 0, true);
+        final ColumnAlignmentModel mlModel = new MaximumLikelihoodModel(new StringReader(trainingData),
+            DNA_VOCABULARY, true);
+        final LaplaceModel laplaceModel0 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY,
+            0, true);
         checkUnsmoothedModel(mlModel, laplaceModel0);
 
-        final LaplaceModel laplaceModel2 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY, 2, true);
-        final LaplaceModel laplaceModel6 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY, 6, true);
+        final LaplaceModel laplaceModel2 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY,
+            2, true);
+        final LaplaceModel laplaceModel6 = new LaplaceModel(new StringReader(trainingData), DNA_VOCABULARY,
+            6, true);
 
         sanityTest(aligner, mlModel);
         sanityTest(aligner, laplaceModel2);
@@ -168,32 +172,31 @@ public class TestColumnAligners
 
         assertEquals(longAlignedSequence(), alignString(aligner, longUnalignedSequence(), new LaplaceModel(
             new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream("alignment/current_prokMSA_aligned.fasta.train.set.100.gz")), DNA_VOCABULARY, 6,
-            true)));
+                .unitTestDataAsStream("alignment/current_prokMSA_aligned.fasta.train.set.100.gz")),
+            DNA_VOCABULARY, 6, true)));
 
         columnInsertionTest(aligner, pssmModel, columnInsertionModel);
     }
 
     @Test
-    public void testLogLinearAlignmentModel() throws Exception
-    {
+    public void testLogLinearAlignmentModel() throws Exception {
         final FullColumnAligner aligner = new FullColumnAligner();
         final DnaVocabulary dnaVocabulary = new LogLinearDnaVocabulary();
         final FloatVector dnaColumnInsertionCostVector = new FloatVector(6, Float.POSITIVE_INFINITY);
-        final LogLinearAlignmentModel simpleMlModel = new LogLinearAlignmentModel(new StringReader(simpleTrainingData),
-            dnaVocabulary, true, dnaColumnInsertionCostVector);
+        final LogLinearAlignmentModel simpleMlModel = new LogLinearAlignmentModel(new StringReader(
+            simpleTrainingData), dnaVocabulary, true, dnaColumnInsertionCostVector);
         assertEquals("Wrong ML alignment", "CAAC-T", alignString(aligner, "CAACT", simpleMlModel));
 
         final LogLinearAlignmentModel mlModel = new LogLinearAlignmentModel(new StringReader(trainingData),
             dnaVocabulary, true, dnaColumnInsertionCostVector);
-        final LogLinearAlignmentModel laplaceModel0 = new LogLinearAlignmentModel(new StringReader(trainingData),
-            dnaVocabulary, new FloatVector(6, 0), true, dnaColumnInsertionCostVector);
+        final LogLinearAlignmentModel laplaceModel0 = new LogLinearAlignmentModel(new StringReader(
+            trainingData), dnaVocabulary, new FloatVector(6, 0), true, dnaColumnInsertionCostVector);
         checkUnsmoothedModel(mlModel, laplaceModel0);
 
-        final LogLinearAlignmentModel laplaceModel2 = new LogLinearAlignmentModel(new StringReader(trainingData),
-            dnaVocabulary, new FloatVector(6, .333f), true, dnaColumnInsertionCostVector);
-        final LogLinearAlignmentModel laplaceModel6 = new LogLinearAlignmentModel(new StringReader(trainingData),
-            dnaVocabulary, new FloatVector(6, 1f), true, dnaColumnInsertionCostVector);
+        final LogLinearAlignmentModel laplaceModel2 = new LogLinearAlignmentModel(new StringReader(
+            trainingData), dnaVocabulary, new FloatVector(6, .333f), true, dnaColumnInsertionCostVector);
+        final LogLinearAlignmentModel laplaceModel6 = new LogLinearAlignmentModel(new StringReader(
+            trainingData), dnaVocabulary, new FloatVector(6, 1f), true, dnaColumnInsertionCostVector);
 
         sanityTest(aligner, mlModel);
         sanityTest(aligner, laplaceModel2);
@@ -204,25 +207,25 @@ public class TestColumnAligners
         laplaceTest(aligner, laplaceModel2);
         laplaceTest(aligner, laplaceModel6);
 
-        assertEquals(longAlignedSequence(), alignString(aligner, longUnalignedSequence(), new LogLinearAlignmentModel(
-            new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream("alignment/current_prokMSA_aligned.fasta.train.set.100.gz")), dnaVocabulary,
-            new FloatVector(6, 1f), true, dnaColumnInsertionCostVector)));
+        assertEquals(longAlignedSequence(), alignString(aligner, longUnalignedSequence(),
+            new LogLinearAlignmentModel(new InputStreamReader(SharedNlpTests
+                .unitTestDataAsStream("alignment/current_prokMSA_aligned.fasta.train.set.100.gz")),
+                dnaVocabulary, new FloatVector(6, 1f), true, dnaColumnInsertionCostVector)));
 
         columnInsertionModel = new LogLinearAlignmentModel(new StringReader(columnInsertionTrainingData),
             dnaVocabulary, true, new FloatVector(6, 2f));
         columnInsertionTest(aligner, pssmModel, columnInsertionModel);
 
         final String logLinearSentence1 = "(_-) (Delivery _pos_NN) (_-) (_-) (began _pos_AUX _head_verb) (in _pos_IN)"
-            + " (early _pos_JJ) (1991 _pos_CD) (. _pos_.)";
+                + " (early _pos_JJ) (1991 _pos_CD) (. _pos_.)";
         final String logLinearSentence2 = "(The _pos_DT) (venture _pos_NN) (will _pos_MD) (be _pos_AUX) (based _pos_VBN _head_verb) (in _pos_IN)"
-            + " (_-) (Indianapolis _pos_NNP) (. _pos_.)";
+                + " (_-) (Indianapolis _pos_NNP) (. _pos_.)";
         final String logLinearSentence3 = "(Most _pos_JJS) (will _pos_AUX) (fall _pos_VB _head_verb) (below _pos_IN)"
-            + " (previous-month _pos_JJ) (levels _pos_NNS) (. _pos_.)";
+                + " (previous-month _pos_JJ) (levels _pos_NNS) (. _pos_.)";
         final String logLinearSentence4 = "(mr. _pos_NNP) (rosen _pos_NNP) (and _pos_CC) (mr. _pos_NNP) (smith _pos_NNP)"
-            + " (are _pos_AUX) (also _pos_RB) (pushing _pos_VBG _head_verb) (retail _pos_JJ) (sales _pos_NNS) (. _pos_.)";
+                + " (are _pos_AUX) (also _pos_RB) (pushing _pos_VBG _head_verb) (retail _pos_JJ) (sales _pos_NNS) (. _pos_.)";
         final LogLinearVocabulary linguisticVocabulary = LogLinearVocabulary.induce(logLinearSentence1 + '\n'
-            + logLinearSentence2 + '\n' + logLinearSentence3 + '\n' + logLinearSentence4);
+                + logLinearSentence2 + '\n' + logLinearSentence3 + '\n' + logLinearSentence4);
 
         final MultipleSequenceAlignment msa = new MultipleSequenceAlignment();
         msa.addSequence(new LogLinearMappedSequence(logLinearSentence1, linguisticVocabulary));
@@ -230,60 +233,57 @@ public class TestColumnAligners
 
         final FloatVector columnInsertionCostVector = new FloatVector(linguisticVocabulary.size(), 10);
         columnInsertionCostVector.set(linguisticVocabulary.map("_head_verb"), Float.POSITIVE_INFINITY);
-        final LogLinearAlignmentModel linguisticModel = msa.induceLogLinearAlignmentModel(new FloatVector(new float[] {
-            2f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f,
-            1f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, 0}), null,
-            columnInsertionCostVector);
+        final LogLinearAlignmentModel linguisticModel = msa.induceLogLinearAlignmentModel(new FloatVector(
+            new float[] { 2f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f,
+                    1f, 1f, 1f, 1f, 1f, 1f, 1f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f, .2f,
+                    .2f, .2f, .2f, .2f, 0 }), null, columnInsertionCostVector);
 
-        MappedSequence unalignedSequence = new LogLinearMappedSequence(logLinearSentence3, linguisticVocabulary);
+        MappedSequence unalignedSequence = new LogLinearMappedSequence(logLinearSentence3,
+            linguisticVocabulary);
         SequenceAlignment alignment = aligner.align(unalignedSequence, linguisticModel);
         assertEquals("(_-) (Most _pos_JJS) (_-) (will _pos_AUX) (fall _pos_VB _head_verb) (below _pos_IN)"
-            + " (previous-month _pos_JJ) (levels _pos_NNS) (. _pos_.)", alignment.alignedSequence().toBracketedString());
+                + " (previous-month _pos_JJ) (levels _pos_NNS) (. _pos_.)", alignment.alignedSequence()
+            .toBracketedString());
         msa.insertGaps(alignment.insertedColumnIndices());
         msa.addSequence(alignment.alignedSequence());
 
         unalignedSequence = new LogLinearMappedSequence(logLinearSentence4, linguisticVocabulary);
         alignment = aligner.align(unalignedSequence, linguisticModel);
         assertEquals("(mr. _pos_NNP) (rosen _pos_NNP) (and _pos_CC) (mr. _pos_NNP) (smith _pos_NNP)"
-            + " (are _pos_AUX) (also _pos_RB) (pushing _pos_VBG _head_verb) (_-) (retail _pos_JJ)"
-            + " (sales _pos_NNS) (. _pos_.)", alignment.alignedSequence().toBracketedString());
+                + " (are _pos_AUX) (also _pos_RB) (pushing _pos_VBG _head_verb) (_-) (retail _pos_JJ)"
+                + " (sales _pos_NNS) (. _pos_.)", alignment.alignedSequence().toBracketedString());
         msa.insertGaps(alignment.insertedColumnIndices());
         msa.addSequence(alignment.alignedSequence());
     }
 
-    private void checkUnsmoothedModel(final ColumnAlignmentModel mlModel, final ColumnAlignmentModel unsmoothedModel)
-    {
+    private void checkUnsmoothedModel(final ColumnAlignmentModel mlModel,
+            final ColumnAlignmentModel unsmoothedModel) {
         // A quick sanity test to ensure that an un-smoothed model and the Maximum Likelihood model
         // agree.
-        for (int j = 0; j < mlModel.columnCount(); j++)
-        {
-            for (int i = 0; i < mlModel.featureCount(); i++)
-            {
-                final IntVector sampleVector = new IntVector(new int[] {i});
+        for (int j = 0; j < mlModel.columnCount(); j++) {
+            for (int i = 0; i < mlModel.featureCount(); i++) {
+                final IntVector sampleVector = new IntVector(new int[] { i });
                 assertEquals(mlModel.cost(sampleVector, j), unsmoothedModel.cost(sampleVector, j));
             }
         }
     }
 
-    private void checkUnsmoothedModel(final ColumnAlignmentModel mlModel, final LogLinearAlignmentModel unsmoothedModel)
-    {
+    private void checkUnsmoothedModel(final ColumnAlignmentModel mlModel,
+            final LogLinearAlignmentModel unsmoothedModel) {
         // TODO Combine two forms of this method (the only difference being the type of sample
         // vector we create)
 
         // A quick sanity test to ensure that an un-smoothed model and the Maximum Likelihood model
         // agree.
-        for (int j = 0; j < mlModel.columnCount(); j++)
-        {
-            for (int i = 0; i < mlModel.featureCount(); i++)
-            {
-                final SparseBitVector sampleVector = new SparseBitVector(new int[] {i}, false);
+        for (int j = 0; j < mlModel.columnCount(); j++) {
+            for (int i = 0; i < mlModel.featureCount(); i++) {
+                final SparseBitVector sampleVector = new SparseBitVector(new int[] { i }, false);
                 assertEquals(mlModel.cost(sampleVector, j), unsmoothedModel.cost(sampleVector, j));
             }
         }
     }
 
-    private String longAlignedSequence()
-    {
+    private String longAlignedSequence() {
         final StringBuilder sb = new StringBuilder(5000);
         sb.append("--------------------------------------------------------------------------------");
         sb.append("--------------------------------------------------------------------------------");
@@ -385,8 +385,7 @@ public class TestColumnAligners
         return sb.toString();
     }
 
-    public String longUnalignedSequence()
-    {
+    public String longUnalignedSequence() {
         return longAlignedSequence().replaceAll("-", "");
     }
 
@@ -400,8 +399,7 @@ public class TestColumnAligners
      * @return The supplied sequence, with gaps inserted to align it according to the model.
      */
     protected String alignString(final ColumnSequenceAligner aligner, final String sequence,
-        final ColumnAlignmentModel model)
-    {
+            final ColumnAlignmentModel model) {
         final CharVocabulary charVocabulary = (CharVocabulary) model.vocabularies()[0];
 
         final MappedSequence s = charVocabulary.mapSequence(sequence);
@@ -410,8 +408,8 @@ public class TestColumnAligners
     }
 
     /**
-     * Returns an alignment of the supplied sequence with a PSSM model, possibly inserting columns
-     * into the profile.
+     * Returns an alignment of the supplied sequence with a PSSM model, possibly inserting columns into the
+     * profile.
      * 
      * @param aligner
      * @param sequence
@@ -420,14 +418,12 @@ public class TestColumnAligners
      * @return The supplied sequence, with gaps inserted to align it according to the model.
      */
     protected SequenceAlignment align(final ColumnSequenceAligner aligner, final String sequence,
-        final ColumnAlignmentModel model)
-    {
+            final ColumnAlignmentModel model) {
         final MappedSequence s = ((CharVocabulary) model.vocabularies()[0]).mapSequence(sequence);
         return aligner.align(s, model);
     }
 
-    protected void sanityTest(final BaseColumnAligner aligner, final ColumnAlignmentModel model)
-    {
+    protected void sanityTest(final BaseColumnAligner aligner, final ColumnAlignmentModel model) {
         // The alignment length is fixed, so sequences of the same length should be unchanged,
         // regardless of the input characters
         assertEquals("Wrong sanity check alignment", "CCCCCCCCCCCCCCCCCCCCCCCCCC", alignString(aligner,
@@ -442,37 +438,39 @@ public class TestColumnAligners
             "ACGTACGTACGTACGTACGTACGTAC", model));
 
         // An empty sequence should map to all deletions
-        assertEquals("Wrong sanity check alignment", "--------------------------", alignString(aligner, "", model));
+        assertEquals("Wrong sanity check alignment", "--------------------------", alignString(aligner, "",
+            model));
     }
 
-    protected void maximumLikelihoodTest(final BaseColumnAligner aligner, final ColumnAlignmentModel model)
-    {
+    protected void maximumLikelihoodTest(final BaseColumnAligner aligner, final ColumnAlignmentModel model) {
         assertEquals("Wrong ML alignment", "-------------------------A", alignString(aligner, "A", model));
 
-        assertEquals("Wrong ML alignment", "TGA--T-CT-G--C-C-CTG--CA-C", alignString(aligner, "TGATCTGCCCTGCAC", model));
-        assertEquals("Wrong ML alignment", "TGA--T-CT-G--C-C-CTC--CA-C", alignString(aligner, "TGATCTGCCCTCCAC", model));
-        assertEquals("Wrong ML alignment", "TAA--C-CT-A--C-C-TGT--TA-G", alignString(aligner, "TAACCTACCTGTTAG", model));
+        assertEquals("Wrong ML alignment", "TGA--T-CT-G--C-C-CTG--CA-C", alignString(aligner,
+            "TGATCTGCCCTGCAC", model));
+        assertEquals("Wrong ML alignment", "TGA--T-CT-G--C-C-CTC--CA-C", alignString(aligner,
+            "TGATCTGCCCTCCAC", model));
+        assertEquals("Wrong ML alignment", "TAA--C-CT-A--C-C-TGT--TA-G", alignString(aligner,
+            "TAACCTACCTGTTAG", model));
     }
 
-    protected void laplaceTest(final BaseColumnAligner aligner, final ColumnAlignmentModel model)
-    {
-        assertEquals("Wrong Laplace alignment", "-----------------------A--", alignString(aligner, "A", model));
+    protected void laplaceTest(final BaseColumnAligner aligner, final ColumnAlignmentModel model) {
+        assertEquals("Wrong Laplace alignment", "-----------------------A--",
+            alignString(aligner, "A", model));
 
-        assertEquals("Wrong Laplace alignment", "TGA--T-CT-G--C-C-CTG--CA-C", alignString(aligner, "TGATCTGCCCTGCAC",
-            model));
-        assertEquals("Wrong Laplace alignment", "C-A--A-CTTA--C-C-CTT--CT-T", alignString(aligner, "CAACTTACCCTTCTT",
-            model));
-        assertEquals("Wrong Laplace alignment", "C-A--A-CTTA--C-C-CTT--CA-G", alignString(aligner, "CAACTTACCCTTCAG",
-            model));
-        assertEquals("Wrong Laplace alignment", "C-A--A-CTTA--C-C-CTT--CA-G", alignString(aligner, "CAACTTACCCTTCAG",
-            model));
+        assertEquals("Wrong Laplace alignment", "TGA--T-CT-G--C-C-CTG--CA-C", alignString(aligner,
+            "TGATCTGCCCTGCAC", model));
+        assertEquals("Wrong Laplace alignment", "C-A--A-CTTA--C-C-CTT--CT-T", alignString(aligner,
+            "CAACTTACCCTTCTT", model));
+        assertEquals("Wrong Laplace alignment", "C-A--A-CTTA--C-C-CTT--CA-G", alignString(aligner,
+            "CAACTTACCCTTCAG", model));
+        assertEquals("Wrong Laplace alignment", "C-A--A-CTTA--C-C-CTT--CA-G", alignString(aligner,
+            "CAACTTACCCTTCAG", model));
 
         // TODO: Add a test with more training and test data...
     }
 
-    protected void columnInsertionTest(final FullColumnAligner aligner, final ColumnAlignmentModel fixedColumnModel,
-        final ColumnAlignmentModel variableColumnModel)
-    {
+    protected void columnInsertionTest(final FullColumnAligner aligner,
+            final ColumnAlignmentModel fixedColumnModel, final ColumnAlignmentModel variableColumnModel) {
         // Aligning with a model which does not allow column insertion should return the sequence
         // as-is
         SequenceAlignment sequenceAlignment = align(aligner, "AACCG", fixedColumnModel);
@@ -481,8 +479,8 @@ public class TestColumnAligners
 
         // But the aligner should insert a column if we allow it.
         sequenceAlignment = align(aligner, "AACCG", variableColumnModel);
-        assertEquals("Wrong Column-insertion alignment", "AACCG-",
-            ((CharVocabulary) variableColumnModel.vocabularies()[0]).mapSequence(sequenceAlignment.alignedSequence()));
-        assertArrayEquals(new int[] {2}, sequenceAlignment.insertedColumnIndices());
+        assertEquals("Wrong Column-insertion alignment", "AACCG-", ((CharVocabulary) variableColumnModel
+            .vocabularies()[0]).mapSequence(sequenceAlignment.alignedSequence()));
+        assertArrayEquals(new int[] { 2 }, sequenceAlignment.insertedColumnIndices());
     }
 }

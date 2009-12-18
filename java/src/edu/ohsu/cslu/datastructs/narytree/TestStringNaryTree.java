@@ -25,21 +25,20 @@ import static junit.framework.Assert.*;
  *        $Id$
  */
 @RunWith(FilteredRunner.class)
-public class TestStringNaryTree
-{
+public class TestStringNaryTree {
+
     private StringNaryTree sampleTree;
     private String stringSampleTree;
 
-    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] {"a", "b", "c", "d", "e", "f", "g", "h", "i",
-                                                                        "j", "k"};
-    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] {"f", "d", "b", "a", "c", "e", "g", "i", "h",
-                                                                         "k", "j"};
-    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] {"a", "c", "b", "e", "d", "g", "h", "j", "k",
-                                                                          "i", "f"};
+    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "a", "b", "c", "d", "e", "f", "g",
+            "h", "i", "j", "k" };
+    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] { "f", "d", "b", "a", "c", "e", "g",
+            "i", "h", "k", "j" };
+    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "a", "c", "b", "e", "d", "g", "h",
+            "j", "k", "i", "f" };
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         sampleTree = new StringNaryTree("f");
 
         StringNaryTree tmp1 = new StringNaryTree("b");
@@ -80,8 +79,7 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testAddChild() throws Exception
-    {
+    public void testAddChild() throws Exception {
         StringNaryTree tree = new StringNaryTree("a");
         assertEquals(1, tree.size());
         tree.addChild("b");
@@ -91,11 +89,10 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testAddChildren() throws Exception
-    {
+    public void testAddChildren() throws Exception {
         StringNaryTree tree = new StringNaryTree("a");
         assertEquals(1, tree.size());
-        tree.addChildren(new String[] {"b", "c"});
+        tree.addChildren(new String[] { "b", "c" });
         assertEquals(3, tree.size());
         assertNull(tree.subtree("a"));
         assertNotNull(tree.subtree("b"));
@@ -103,11 +100,10 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testAddSubtree() throws Exception
-    {
+    public void testAddSubtree() throws Exception {
         StringNaryTree tree = new StringNaryTree("a");
         StringNaryTree tmp = new StringNaryTree("b");
-        tmp.addChildren(new String[] {"c", "d"});
+        tmp.addChildren(new String[] { "c", "d" });
         tree.addSubtree(tmp);
         assertEquals(4, tree.size());
         assertNotNull(tree.subtree("b"));
@@ -116,8 +112,7 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testRemoveChild() throws Exception
-    {
+    public void testRemoveChild() throws Exception {
         assertEquals(11, sampleTree.size());
 
         sampleTree.removeChild("g");
@@ -136,15 +131,14 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testRemoveChildrenByStringArray() throws Exception
-    {
+    public void testRemoveChildrenByStringArray() throws Exception {
         assertEquals(11, sampleTree.size());
 
         assertNull(sampleTree.subtree("h"));
         assertNull(sampleTree.subtree("j"));
 
         // Removing the "i" node should move its children up ("g" has no children)
-        sampleTree.removeChildren(new String[] {"g", "i"});
+        sampleTree.removeChildren(new String[] { "g", "i" });
         assertEquals(9, sampleTree.size());
 
         assertNotNull(sampleTree.subtree("h"));
@@ -152,8 +146,7 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testRemoveSubtree() throws Exception
-    {
+    public void testRemoveSubtree() throws Exception {
         assertEquals(11, sampleTree.size());
 
         sampleTree.removeSubtree("g");
@@ -167,8 +160,7 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testSubtree() throws Exception
-    {
+    public void testSubtree() throws Exception {
         StringNaryTree subtree = sampleTree.subtree("d");
         assertEquals(5, subtree.size());
         assertNotNull(subtree.subtree("b"));
@@ -179,8 +171,7 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testSize() throws Exception
-    {
+    public void testSize() throws Exception {
         assertEquals(11, sampleTree.size());
         sampleTree.subtree("i").removeSubtree("k");
         assertEquals(9, sampleTree.size());
@@ -189,8 +180,7 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testDepthFromRoot() throws Exception
-    {
+    public void testDepthFromRoot() throws Exception {
         assertEquals(0, sampleTree.depthFromRoot());
         assertEquals(1, sampleTree.subtree("d").depthFromRoot());
         assertEquals(2, sampleTree.subtree("i").subtree("k").depthFromRoot());
@@ -198,8 +188,7 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testLeaves() throws Exception
-    {
+    public void testLeaves() throws Exception {
         assertEquals(6, sampleTree.leaves());
         assertEquals(3, sampleTree.subtree("d").leaves());
 
@@ -223,76 +212,62 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testInOrderIterator() throws Exception
-    {
+    public void testInOrderIterator() throws Exception {
         Iterator<NaryTree<String>> iter = sampleTree.inOrderIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next().stringLabel());
         }
     }
 
     @Test
-    public void testInOrderLabelIterator() throws Exception
-    {
+    public void testInOrderLabelIterator() throws Exception {
         Iterator<String> iter = sampleTree.inOrderLabelIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next());
         }
     }
 
     @Test
-    public void testPreOrderIterator() throws Exception
-    {
+    public void testPreOrderIterator() throws Exception {
         Iterator<NaryTree<String>> iter = sampleTree.preOrderIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next().stringLabel());
         }
     }
 
     @Test
-    public void testPreOrderLabelIterator() throws Exception
-    {
+    public void testPreOrderLabelIterator() throws Exception {
         Iterator<String> iter = sampleTree.preOrderLabelIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next());
         }
     }
 
     @Test
-    public void testPostOrderIterator() throws Exception
-    {
+    public void testPostOrderIterator() throws Exception {
         Iterator<NaryTree<String>> iter = sampleTree.postOrderIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next().stringLabel());
         }
     }
 
     @Test
-    public void testPostOrderLabelIterator() throws Exception
-    {
+    public void testPostOrderLabelIterator() throws Exception {
         Iterator<String> iter = sampleTree.postOrderLabelIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next());
         }
     }
 
     @Test
-    public void testSetStringLabel() throws Exception
-    {
+    public void testSetStringLabel() throws Exception {
         StringNaryTree simpleTree = StringNaryTree.read(new StringReader("(a (b c) d)"));
         ((StringNaryTree) simpleTree.children().get(0)).setStringLabel("e");
         assertEquals("(a (e c) d)", simpleTree.toString());
     }
 
     @Test
-    public void testReadFromReader() throws Exception
-    {
+    public void testReadFromReader() throws Exception {
 
         String stringSimpleTree = "(a (b c) d)";
         StringNaryTree simpleTree = StringNaryTree.read(new StringReader(stringSimpleTree));
@@ -327,8 +302,7 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testWriteToWriter() throws Exception
-    {
+    public void testWriteToWriter() throws Exception {
         StringWriter writer = new StringWriter();
         sampleTree.write(writer);
         assertEquals(stringSampleTree, writer.toString());
@@ -346,8 +320,7 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testIsLeaf() throws Exception
-    {
+    public void testIsLeaf() throws Exception {
         assertFalse(sampleTree.isLeaf());
         assertFalse(sampleTree.subtree("d").isLeaf());
         assertTrue(sampleTree.subtree("g").isLeaf());
@@ -355,16 +328,15 @@ public class TestStringNaryTree
     }
 
     @Test
-    public void testEquals() throws Exception
-    {
+    public void testEquals() throws Exception {
         StringNaryTree tree1 = new StringNaryTree("a");
-        tree1.addChildren(new String[] {"b", "c"});
+        tree1.addChildren(new String[] { "b", "c" });
 
         StringNaryTree tree2 = new StringNaryTree("a");
-        tree2.addChildren(new String[] {"b", "c"});
+        tree2.addChildren(new String[] { "b", "c" });
 
         StringNaryTree tree3 = new StringNaryTree("a");
-        tree3.addChildren(new String[] {"b", "d"});
+        tree3.addChildren(new String[] { "b", "d" });
 
         assertTrue(tree1.equals(tree2));
         assertFalse(tree1.equals(tree3));
@@ -376,11 +348,11 @@ public class TestStringNaryTree
     /**
      * Tests Java serialization and deserialization of trees
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testSerialize() throws Exception
-    {
+    public void testSerialize() throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
 

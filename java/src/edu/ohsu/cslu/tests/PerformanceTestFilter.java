@@ -11,23 +11,20 @@ import org.junit.runner.manipulation.Filter;
  * 
  * @version $Revision$
  */
-public class PerformanceTestFilter extends Filter
-{
+public class PerformanceTestFilter extends Filter {
+
     @Override
-    public String describe()
-    {
+    public String describe() {
         return "Includes only performance tests";
     }
 
     @Override
-    public boolean shouldRun(Description description)
-    {
+    public boolean shouldRun(Description description) {
         Description methodDescription = description.getChildren().get(0);
 
         // Only run performance tests
         if ((description.getAnnotation(PerformanceTest.class) != null)
-            || methodDescription.getAnnotation(PerformanceTest.class) != null)
-        {
+                || methodDescription.getAnnotation(PerformanceTest.class) != null) {
             return true;
         }
 

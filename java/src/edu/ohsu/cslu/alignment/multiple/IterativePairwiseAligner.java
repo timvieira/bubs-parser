@@ -12,10 +12,10 @@ import edu.ohsu.cslu.common.Sequence;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 
 /**
- * A fairly standard iterative pairwise aligner. Iterates through a set of unaligned sequences,
- * choosing at each step the unaligned sequence which is 'closest' (as defined by a supplied
- * distance matrix) to an already-aligned sequence. Performs pairwise alignment of those two
- * sequences using {@link FullDynamicPairwiseAligner}.
+ * A fairly standard iterative pairwise aligner. Iterates through a set of unaligned sequences, choosing at
+ * each step the unaligned sequence which is 'closest' (as defined by a supplied distance matrix) to an
+ * already-aligned sequence. Performs pairwise alignment of those two sequences using
+ * {@link FullDynamicPairwiseAligner}.
  * 
  * TODO: Tune - we lost a lot of speed again somewhere
  * 
@@ -24,10 +24,9 @@ import edu.ohsu.cslu.datastructs.matrices.Matrix;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class IterativePairwiseAligner extends BaseMultipleSequenceAligner
-{
-    public IterativePairwiseAligner()
-    {
+public class IterativePairwiseAligner extends BaseMultipleSequenceAligner {
+
+    public IterativePairwiseAligner() {
         pairAligner = new FullDynamicPairwiseAligner();
     }
 
@@ -41,8 +40,7 @@ public class IterativePairwiseAligner extends BaseMultipleSequenceAligner
      */
     @Override
     protected SequenceAlignment align(MappedSequence alignedSequence, MappedSequence unalignedSequence,
-        final AlignmentModel alignmentModel)
-    {
+            final AlignmentModel alignmentModel) {
         return pairAligner.alignPair(unalignedSequence, alignedSequence, alignmentModel);
     }
 
@@ -52,31 +50,26 @@ public class IterativePairwiseAligner extends BaseMultipleSequenceAligner
      * @param sequences
      * @param gapIndices
      */
-    public static void insertGaps(Sequence[] sequences, int[] gapIndices)
-    {
-        if (gapIndices.length == 0)
-        {
+    public static void insertGaps(Sequence[] sequences, int[] gapIndices) {
+        if (gapIndices.length == 0) {
             return;
         }
 
-        for (int i = 0; i < sequences.length; i++)
-        {
+        for (int i = 0; i < sequences.length; i++) {
             MultipleVocabularyMappedSequence simpleSequence = (MultipleVocabularyMappedSequence) sequences[i];
-            if (simpleSequence != null)
-            {
+            if (simpleSequence != null) {
                 sequences[i] = simpleSequence.insertGaps(gapIndices);
             }
         }
     }
 
     @Override
-    protected int firstSequenceToAlign(MappedSequence[] sequences, Matrix distanceMatrix)
-    {
-        
+    protected int firstSequenceToAlign(MappedSequence[] sequences, Matrix distanceMatrix) {
+
         // TODO: A BUG!!! : distanceMatrix.argMin() can find that the minimal distance
-        //                  between two sequences is between sequence A and **itself**
-        //                  And we don't want to align a sentence with itself.
-        
+        // between two sequences is between sequence A and **itself**
+        // And we don't want to align a sentence with itself.
+
         return distanceMatrix.argMin()[0];
     }
 }

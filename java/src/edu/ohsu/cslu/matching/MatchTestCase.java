@@ -8,12 +8,9 @@ import java.util.Set;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
+public class MatchTestCase {
 
-public class MatchTestCase
-{
-
-    protected void exactMatchTest(Matcher matcher) throws IOException
-    {
+    protected void exactMatchTest(Matcher matcher) throws IOException {
         String text, pattern;
 
         text = "tpyxtpzxtpyxtpr";
@@ -36,8 +33,7 @@ public class MatchTestCase
         assertEquals("Wrong number of matches for 'resident'", 86, matcher.matches("resident", text));
     }
 
-    protected void multipatternMatchTest(Matcher matcher)
-    {
+    protected void multipatternMatchTest(Matcher matcher) {
         String text = "xluxtpxtdqwtdxtpxtsyxtpxtdy";
         String[] patterns = new String[] { "xtpxtd", "pxtsyx" };
         assertEquals("Wrong number of matches found in example", 3, matcher.matches(patterns, text));
@@ -47,8 +43,7 @@ public class MatchTestCase
         assertEquals("Wrong number of matches found in example", 7, matcher.matches(patterns, text));
     }
 
-    protected void locationMatchTest(Matcher matcher) throws IOException
-    {
+    protected void locationMatchTest(Matcher matcher) throws IOException {
         String text, pattern;
 
         text = "tpyxtpzxtpyxtpr";

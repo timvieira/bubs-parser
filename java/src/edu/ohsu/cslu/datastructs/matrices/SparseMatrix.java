@@ -8,8 +8,7 @@ package edu.ohsu.cslu.datastructs.matrices;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public interface SparseMatrix extends Matrix
-{
+public interface SparseMatrix extends Matrix {
     // TODO Add getters and setters with columns indexed by longs instead of ints (clearly those
     // methods aren't applicable for dense matrices)
 }

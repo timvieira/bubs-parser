@@ -1,16 +1,16 @@
 package edu.ohsu.cslu.tools;
 
 /**
- * Static constants and methods used by command-line tools which deal with commonly-used linguistic
- * options (words, POS, etc.)
+ * Static constants and methods used by command-line tools which deal with commonly-used linguistic options
+ * (words, POS, etc.)
  * 
  * @author Aaron Dunlop
  * @since Apr 2, 2009
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class LinguisticToolOptions
-{
+public class LinguisticToolOptions {
+
     public final static String OPTION_WORD = "-w";
     public final static String OPTION_LOWERCASE_WORD = "-lcw";
     public final static String OPTION_STEM = "-stem";

@@ -19,6 +19,7 @@ import edu.ohsu.cslu.tests.FilteredRunner;
  */
 @RunWith(FilteredRunner.class)
 public class TestFixedPointShortMatrix extends DenseFloatingPointMatrixTestCase {
+
     private float[][] sampleArray;
     private float[][] sampleArray2;
 

@@ -6,17 +6,17 @@ import java.io.Writer;
 /**
  * Represents a set of tokens legal in a sequence. Used for alignment and matching tasks.
  * 
- * {@link Vocabulary} implementations map the actual tokens contained to ints for efficient storage.
- * Special tokens such as 'TOP' (for parsing) and 'gap' (for alignment) should be mapped to
- * well-known ints (Usually 0 or negative ints).
+ * {@link Vocabulary} implementations map the actual tokens contained to ints for efficient storage. Special
+ * tokens such as 'TOP' (for parsing) and 'gap' (for alignment) should be mapped to well-known ints (Usually 0
+ * or negative ints).
  * 
  * @author Aaron Dunlop
  * @since Oct 4, 2008
  * 
  *        $Id$
  */
-public interface Vocabulary
-{
+public interface Vocabulary {
+
     /**
      * @return tokens supported by this vocabulary.
      */
@@ -32,7 +32,8 @@ public interface Vocabulary
     /**
      * Returns the token represented by the specified index
      * 
-     * @param index integer representation
+     * @param index
+     *            integer representation
      * @return the token represented by the specified index
      */
     public String map(int index);
@@ -40,7 +41,8 @@ public interface Vocabulary
     /**
      * Returns the tokens represented by the specified indices
      * 
-     * @param indices integer representation
+     * @param indices
+     *            integer representation
      * @return the tokens represented by the specified indices
      */
     public String[] map(int[] indices);
@@ -48,7 +50,8 @@ public interface Vocabulary
     /**
      * Returns the index representing the specified token
      * 
-     * @param token String token
+     * @param token
+     *            String token
      * @return the index representing the specified token
      */
     public int map(String token);
@@ -56,7 +59,8 @@ public interface Vocabulary
     /**
      * Returns the indices representing the specified tokens
      * 
-     * @param labels String tokens
+     * @param labels
+     *            String tokens
      * @return the indices representing the specified tokens
      */
     public int[] map(String[] labels);
@@ -65,7 +69,8 @@ public interface Vocabulary
      * Writes a human-readable representation of this vocabulary out to the specified writer
      * 
      * @param writer
-     * @throws IOException if the write fails
+     * @throws IOException
+     *             if the write fails
      */
     public void write(Writer writer) throws IOException;
 }

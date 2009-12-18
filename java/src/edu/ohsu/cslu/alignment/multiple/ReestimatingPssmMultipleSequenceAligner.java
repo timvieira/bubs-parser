@@ -13,16 +13,15 @@ import edu.ohsu.cslu.datastructs.vectors.NumericVector;
 /**
  * Aligns sequences using a PSSM model re-estimated at each iteration.
  * 
- * TODO: Share more code with {@link BaseMultipleSequenceAligner} and
- * {@link HmmMultipleSequenceAligner}.
+ * TODO: Share more code with {@link BaseMultipleSequenceAligner} and {@link HmmMultipleSequenceAligner}.
  * 
  * @author Aaron Dunlop
  * @since Mar 31, 2009
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequenceAligner
-{
+public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequenceAligner {
+
     private final ColumnSequenceAligner pssmAligner = new LinearColumnAligner();
     private final NumericVector laplacePseudoCounts;
     private final NumericVector columnInsertionCostVector;
@@ -35,21 +34,18 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
      * TODO Document
      */
     public ReestimatingPssmMultipleSequenceAligner(final NumericVector laplacePseudoCounts,
-        final NumericVector columnInsertionCostVector)
-    {
+            final NumericVector columnInsertionCostVector) {
         this.laplacePseudoCounts = laplacePseudoCounts;
         this.columnInsertionCostVector = columnInsertionCostVector;
     }
 
     @Override
     public MultipleSequenceAlignment align(final MappedSequence[] sequences, final Matrix distanceMatrix,
-        final AlignmentModel alignmentModel)
-    {
+            final AlignmentModel alignmentModel) {
         return align(sequences, distanceMatrix);
     }
 
-    public MultipleSequenceAlignment align(final MappedSequence[] sequences, final Matrix distanceMatrix)
-    {
+    public MultipleSequenceAlignment align(final MappedSequence[] sequences, final Matrix distanceMatrix) {
         final MappedSequence[] unalignedSequences = new MappedSequence[sequences.length];
         System.arraycopy(sequences, 0, unalignedSequences, 0, sequences.length);
 
@@ -84,31 +80,23 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
         int sequencesAligned = 1;
 
         // Once all sequences are aligned, we can stop
-        while (sequencesAligned < unalignedSequences.length)
-        {
+        while (sequencesAligned < unalignedSequences.length) {
             // Find the sequence closest to an already-aligned sequence
             // TODO: This search could probably be made more efficient. As it is, it's O(n^2) for
             // each sequence aligned, or O(n^3) total.
             int unalignedIndex = 1;
             float min = Float.POSITIVE_INFINITY;
-            for (int i = 0; i < distanceMatrix.rows(); i++)
-            {
+            for (int i = 0; i < distanceMatrix.rows(); i++) {
                 final boolean iUnaligned = (unalignedSequences[i] != null);
-                for (int j = 0; j <= i; j++)
-                {
+                for (int j = 0; j <= i; j++) {
                     final float distance = distanceMatrix.getFloat(i, j);
-                    if (distance < min)
-                    {
-                        if (iUnaligned)
-                        {
-                            if (unalignedSequences[j] != null)
-                            {
+                    if (distance < min) {
+                        if (iUnaligned) {
+                            if (unalignedSequences[j] != null) {
                                 unalignedIndex = i;
                                 min = distance;
                             }
-                        }
-                        else if (unalignedSequences[j] != null)
-                        {
+                        } else if (unalignedSequences[j] != null) {
                             unalignedIndex = j;
                             min = distance;
                         }
@@ -161,22 +149,19 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
         return alignedSequences;
     }
 
-    public MultipleSequenceAlignment alignInOrder(final MappedSequence[] sequences, final boolean verbose)
-    {
+    public MultipleSequenceAlignment alignInOrder(final MappedSequence[] sequences, final boolean verbose) {
         final MultipleSequenceAlignment alignedSequences = new MultipleSequenceAlignment();
 
         alignedSequences.addSequence(sequences[0]);
 
-        NumericVector cachedColumnInsertionCostVector = columnInsertionCostVector.scalarMultiply(alignedSequences
-            .length());
-        for (int i = 1; i < sequences.length; i++)
-        {
+        NumericVector cachedColumnInsertionCostVector = columnInsertionCostVector
+            .scalarMultiply(alignedSequences.length());
+        for (int i = 1; i < sequences.length; i++) {
             // Estimate a new PSSM
             final ColumnAlignmentModel columnAlignmentModel = alignedSequences.induceLogLinearAlignmentModel(
                 laplacePseudoCounts, null, cachedColumnInsertionCostVector);
 
-            if (verbose)
-            {
+            if (verbose) {
                 System.out.format("Aligning sentence %d (of %d). Current Alignment Length: %d\n", i + 1,
                     sequences.length, columnAlignmentModel.columnCount());
             }
@@ -185,10 +170,10 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
             final SequenceAlignment alignment = pssmAligner.align(sequences[i], columnAlignmentModel);
 
             // Update already aligned sequences to include gaps where needed.
-            if (alignment.alignedSequence().length() != columnAlignmentModel.columnCount())
-            {
+            if (alignment.alignedSequence().length() != columnAlignmentModel.columnCount()) {
                 alignedSequences.insertGaps(alignment.insertedColumnIndices());
-                cachedColumnInsertionCostVector = columnInsertionCostVector.scalarMultiply(alignedSequences.length());
+                cachedColumnInsertionCostVector = columnInsertionCostVector.scalarMultiply(alignedSequences
+                    .length());
             }
 
             alignedSequences.addSequence(alignment.alignedSequence());
@@ -197,17 +182,14 @@ public class ReestimatingPssmMultipleSequenceAligner implements MultipleSequence
     }
 
     private void blackoutAlignedSequence(final Matrix distanceMatrix, final Sequence[] unalignedSequences,
-        final int sequenceIndex)
-    {
+            final int sequenceIndex) {
         final float infinity = distanceMatrix.infinity();
 
         // Set all cells in row index2 of the distance matrix for columns of already-aligned
         // sequences to the maximum storable value (we don't need to consider the distance
         // between two already-aligned sequences)
-        for (int j = 0; j < distanceMatrix.columns(); j++)
-        {
-            if (unalignedSequences[j] == null)
-            {
+        for (int j = 0; j < distanceMatrix.columns(); j++) {
+            if (unalignedSequences[j] == null) {
                 distanceMatrix.set(sequenceIndex, j, infinity);
             }
         }

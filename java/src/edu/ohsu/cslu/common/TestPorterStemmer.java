@@ -8,11 +8,10 @@ import edu.ohsu.cslu.tests.FilteredRunner;
 import static junit.framework.Assert.assertEquals;
 
 @RunWith(FilteredRunner.class)
-public class TestPorterStemmer
-{
+public class TestPorterStemmer {
+
     @Test
-    public void testStem()
-    {
+    public void testStem() {
         PorterStemmer stemmer = new PorterStemmer();
 
         assertEquals("like", stemmer.stemWord("liking"));

@@ -9,16 +9,15 @@ import java.util.HashMap;
 import edu.ohsu.cslu.tools.SelectFeatures;
 
 /**
- * Enumeration of the various types of feature tokens produced by {@link SelectFeatures} and handled
- * by log-linear modeling tools.
+ * Enumeration of the various types of feature tokens produced by {@link SelectFeatures} and handled by
+ * log-linear modeling tools.
  * 
  * @author Aaron Dunlop
  * @since Mar 27, 2009
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public enum FeatureClass implements Comparable<FeatureClass>
-{
+public enum FeatureClass implements Comparable<FeatureClass> {
     /** Gap token */
     Gap,
 
@@ -32,22 +31,9 @@ public enum FeatureClass implements Comparable<FeatureClass>
     Pos,
 
     /** Labels: _head_verb, _begin_sent, _initial_cap, etc. */
-    HeadVerb,
-    FirstVerb,
-    BeforeHead,
-    AfterHead,
-    BeginSentence,
-    Capitalized,
-    AllCaps,
-    Hyphenated,
-    Numeric,
-    InitialNumeric,
-    StartWord,
-    EndWord,
+    HeadVerb, FirstVerb, BeforeHead, AfterHead, BeginSentence, Capitalized, AllCaps, Hyphenated, Numeric, InitialNumeric, StartWord, EndWord,
 
-    EndsWithLy,
-    EndsWithIng,
-    EndsWithEd,
+    EndsWithLy, EndsWithIng, EndsWithEd,
 
     /** _stem_... */
     Stem,
@@ -65,15 +51,7 @@ public enum FeatureClass implements Comparable<FeatureClass>
     SubsequentPos,
 
     /** Length classes */
-    Length1,
-    Length2,
-    Length3,
-    Length4,
-    Length5to6,
-    Length7to8,
-    Length9to12,
-    Length13to18,
-    LengthGreaterThan18,
+    Length1, Length2, Length3, Length4, Length5to6, Length7to8, Length9to12, Length13to18, LengthGreaterThan18,
 
     /** Any token starting with an underscore which does not match other patterns */
     Other;
@@ -119,8 +97,7 @@ public enum FeatureClass implements Comparable<FeatureClass>
     public final static String NEGATION = "_not";
 
     private static HashMap<String, FeatureClass> knownLabels = new HashMap<String, FeatureClass>();
-    static
-    {
+    static {
         knownLabels.put(FEATURE_BEFORE_HEAD, BeforeHead);
         knownLabels.put(FEATURE_HEAD_VERB, HeadVerb);
         knownLabels.put(FEATURE_AFTER_HEAD, AfterHead);
@@ -159,61 +136,49 @@ public enum FeatureClass implements Comparable<FeatureClass>
         knownLabels.put(NEGATION + FEATURE_ENDSWITH_ED, EndsWithEd);
     }
 
-    public static FeatureClass forString(String s)
-    {
+    public static FeatureClass forString(String s) {
         // Feature class for negations is the same as for the equivalent 'normal' feature
-        if (s.startsWith(NEGATION))
-        {
+        if (s.startsWith(NEGATION)) {
             s = s.substring(4);
         }
 
-        if (knownLabels.containsKey(s))
-        {
+        if (knownLabels.containsKey(s)) {
             return knownLabels.get(s);
         }
 
-        if (s.equals(FEATURE_GAP))
-        {
+        if (s.equals(FEATURE_GAP)) {
             return Gap;
         }
 
-        if (s.equals(FEATURE_UNKNOWN))
-        {
+        if (s.equals(FEATURE_UNKNOWN)) {
             return Unknown;
         }
 
-        if (!s.startsWith("_"))
-        {
+        if (!s.startsWith("_")) {
             return Word;
         }
 
-        if (s.startsWith(PREFIX_STEM))
-        {
+        if (s.startsWith(PREFIX_STEM)) {
             return Stem;
         }
 
-        if (s.startsWith(PREFIX_POS))
-        {
+        if (s.startsWith(PREFIX_POS)) {
             return Pos;
         }
 
-        if (s.startsWith(PREFIX_PREVIOUS_WORD))
-        {
+        if (s.startsWith(PREFIX_PREVIOUS_WORD)) {
             return PreviousWord;
         }
 
-        if (s.startsWith(PREFIX_SUBSEQUENT_WORD))
-        {
+        if (s.startsWith(PREFIX_SUBSEQUENT_WORD)) {
             return SubsequentWord;
         }
 
-        if (s.startsWith(PREFIX_PREVIOUS_POS))
-        {
+        if (s.startsWith(PREFIX_PREVIOUS_POS)) {
             return PreviousPos;
         }
 
-        if (s.startsWith(PREFIX_SUBSEQUENT_POS))
-        {
+        if (s.startsWith(PREFIX_SUBSEQUENT_POS)) {
             return SubsequentPos;
         }
 
@@ -221,59 +186,57 @@ public enum FeatureClass implements Comparable<FeatureClass>
     }
 
     @Override
-    public String toString()
-    {
-        switch (this)
-        {
-            case Gap :
-                return FEATURE_GAP;
-            case Unknown :
-                return FEATURE_UNKNOWN;
-            case HeadVerb :
-                return FEATURE_HEAD_VERB;
-            case FirstVerb :
-                return FEATURE_FIRST_VERB;
-            case BeforeHead :
-                return FEATURE_BEFORE_HEAD;
-            case AfterHead :
-                return FEATURE_AFTER_HEAD;
-            case BeginSentence :
-                return FEATURE_BEGIN_SENTENCE;
-            case Capitalized :
-                return FEATURE_CAPITALIZED;
-            case AllCaps :
-                return FEATURE_ALL_CAPS;
-            case Hyphenated :
-                return FEATURE_HYPHENATED;
-            case Numeric :
-                return FEATURE_NUMERIC;
-            case InitialNumeric :
-                return FEATURE_INITIAL_NUMERIC;
-            case StartWord :
-                return FEATURE_START_WORD;
-            case EndWord :
-                return FEATURE_END_WORD;
-            case Length1 :
-                return FEATURE_LENGTH_1;
-            case Length2 :
-                return FEATURE_LENGTH_2;
-            case Length3 :
-                return FEATURE_LENGTH_3;
-            case Length4 :
-                return FEATURE_LENGTH_4;
-            case Length5to6 :
-                return FEATURE_LENGTH_5_TO_6;
-            case Length7to8 :
-                return FEATURE_LENGTH_7_TO_8;
-            case Length9to12 :
-                return FEATURE_LENGTH_9_TO_12;
-            case Length13to18 :
-                return FEATURE_LENGTH_13_TO_18;
-            case LengthGreaterThan18 :
-                return FEATURE_LENGTH_GREATER_THAN_18;
+    public String toString() {
+        switch (this) {
+        case Gap:
+            return FEATURE_GAP;
+        case Unknown:
+            return FEATURE_UNKNOWN;
+        case HeadVerb:
+            return FEATURE_HEAD_VERB;
+        case FirstVerb:
+            return FEATURE_FIRST_VERB;
+        case BeforeHead:
+            return FEATURE_BEFORE_HEAD;
+        case AfterHead:
+            return FEATURE_AFTER_HEAD;
+        case BeginSentence:
+            return FEATURE_BEGIN_SENTENCE;
+        case Capitalized:
+            return FEATURE_CAPITALIZED;
+        case AllCaps:
+            return FEATURE_ALL_CAPS;
+        case Hyphenated:
+            return FEATURE_HYPHENATED;
+        case Numeric:
+            return FEATURE_NUMERIC;
+        case InitialNumeric:
+            return FEATURE_INITIAL_NUMERIC;
+        case StartWord:
+            return FEATURE_START_WORD;
+        case EndWord:
+            return FEATURE_END_WORD;
+        case Length1:
+            return FEATURE_LENGTH_1;
+        case Length2:
+            return FEATURE_LENGTH_2;
+        case Length3:
+            return FEATURE_LENGTH_3;
+        case Length4:
+            return FEATURE_LENGTH_4;
+        case Length5to6:
+            return FEATURE_LENGTH_5_TO_6;
+        case Length7to8:
+            return FEATURE_LENGTH_7_TO_8;
+        case Length9to12:
+            return FEATURE_LENGTH_9_TO_12;
+        case Length13to18:
+            return FEATURE_LENGTH_13_TO_18;
+        case LengthGreaterThan18:
+            return FEATURE_LENGTH_GREATER_THAN_18;
 
-            default :
-                return super.toString();
+        default:
+            return super.toString();
         }
     }
 }

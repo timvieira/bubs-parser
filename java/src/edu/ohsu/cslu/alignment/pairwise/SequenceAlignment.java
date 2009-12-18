@@ -6,8 +6,8 @@ package edu.ohsu.cslu.alignment.pairwise;
 import edu.ohsu.cslu.common.MappedSequence;
 
 /**
- * Represents an alignment of a single unaligned sequence with another sequence or with an existing
- * Multiple Sequence Alignment.
+ * Represents an alignment of a single unaligned sequence with another sequence or with an existing Multiple
+ * Sequence Alignment.
  * 
  * TODO: Move to alignment package
  * 
@@ -16,8 +16,8 @@ import edu.ohsu.cslu.common.MappedSequence;
  * 
  * @version $Revision:5203 $ $Date:2006-11-02 20:47:19 +0000 (Thu, 02 Nov 2006) $ $Author:timd $
  */
-public class SequenceAlignment
-{
+public class SequenceAlignment {
+
     /** Aligned sequence */
     private final MappedSequence newlyAlignedSequence;
 
@@ -27,8 +27,8 @@ public class SequenceAlignment
     /** Score assigned by the aligner */
     private final float score;
 
-    public SequenceAlignment(final MappedSequence newlyAlignedSequence, final int[] gapIndices, final float score)
-    {
+    public SequenceAlignment(final MappedSequence newlyAlignedSequence, final int[] gapIndices,
+            final float score) {
         this.newlyAlignedSequence = newlyAlignedSequence;
         this.gapIndices = gapIndices;
         this.score = score;
@@ -37,31 +37,27 @@ public class SequenceAlignment
     /**
      * @return The newly-aligned sequence (including any gaps inserted in the alignment process).
      */
-    public final MappedSequence alignedSequence()
-    {
+    public final MappedSequence alignedSequence() {
         return newlyAlignedSequence;
     }
 
     /**
-     * @return Any columns or gaps which must be inserted in the already-aligned sequence(s) as a
-     *         result of this new alignment.
+     * @return Any columns or gaps which must be inserted in the already-aligned sequence(s) as a result of
+     *         this new alignment.
      */
-    public final int[] insertedColumnIndices()
-    {
+    public final int[] insertedColumnIndices() {
         return gapIndices;
     }
 
     /**
      * @return The score assigned by the aligner when creating this alignment
      */
-    public float score()
-    {
+    public float score() {
         return score;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return newlyAlignedSequence.toString() + "\n";
     }
 }

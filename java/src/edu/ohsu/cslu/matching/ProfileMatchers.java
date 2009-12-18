@@ -22,7 +22,6 @@ import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
-
 /**
  * Performance tests for matchers.
  * 
@@ -33,103 +32,90 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  */
 @PerformanceTest
 @RunWith(FilteredRunner.class)
-public class ProfileMatchers
-{
+public class ProfileMatchers {
+
     public static String lingtext_full;
     public static String lingtext_2000;
-    private final static Set<String> searchSet = new HashSet<String>(Arrays
-        .asList(new String[] {"consis", "springing", "stocks", "strongest", "ident", "resident",
-                              "the Dow Jones Industrial Average", "it", "he said ."}));
+    private final static Set<String> searchSet = new HashSet<String>(Arrays.asList(new String[] { "consis",
+            "springing", "stocks", "strongest", "ident", "resident", "the Dow Jones Industrial Average",
+            "it", "he said ." }));
 
     @BeforeClass
-    public static void suiteSetUp() throws FileNotFoundException, IOException
-    {
+    public static void suiteSetUp() throws FileNotFoundException, IOException {
         lingtext_full = new String(SharedNlpTests.readUnitTestData("matching/lingtext"));
         lingtext_2000 = new String(SharedNlpTests.readUnitTestData("matching/lingtext.2000"));
     }
 
     @Test
     @PerformanceTest
-    public void profileNaiveMatcher()
-    {
+    public void profileNaiveMatcher() {
         profileExactMatcher(new NaiveMatcher(), "Naive (indexOf)", lingtext_full);
     }
 
     @Test
     @PerformanceTest
-    public void profileBoyerMooreMatcher()
-    {
+    public void profileBoyerMooreMatcher() {
         profileExactMatcher(new BoyerMooreMatcher(), "Boyer-Moore", lingtext_full);
     }
 
     @Test
     @PerformanceTest
-    public void profileKnuthMorrisPrattMatcher()
-    {
+    public void profileKnuthMorrisPrattMatcher() {
         profileExactMatcher(new KnuthMorrisPrattMatcher(), "Knuth-Morris-Pratt", lingtext_full);
     }
 
     @Test
     @PerformanceTest
-    public void profileAhoCorasickMatcher()
-    {
+    public void profileAhoCorasickMatcher() {
         profileExactMatcher(new AhoCorasickMatcher(), "Aho-Corasick", lingtext_full);
     }
 
     @Test
     @PerformanceTest
-    public void profileFullDynamicMatcher()
-    {
+    public void profileFullDynamicMatcher() {
         profileExactMatcher(new FullDynamicMatcher(99, 100), "Full Dynamic Matcher (exact)", lingtext_2000);
         profileApproximateMatch(new FullDynamicMatcher(99, 100), "Full Dynamic Matcher");
     }
 
     @Test
     @PerformanceTest
-    public void profileLinearDynamicMatcher()
-    {
-        profileExactMatcher(new LinearDynamicMatcher(99, 100), "Linear Dynamic Matcher (exact)", lingtext_2000);
+    public void profileLinearDynamicMatcher() {
+        profileExactMatcher(new LinearDynamicMatcher(99, 100), "Linear Dynamic Matcher (exact)",
+            lingtext_2000);
         profileApproximateMatch(new LinearDynamicMatcher(99, 100), "Linear Dynamic Matcher");
     }
 
     @Test
     @PerformanceTest
-    public void profileBaezaYatesPerlbergMatcher()
-    {
+    public void profileBaezaYatesPerlbergMatcher() {
         profileExactMatcher(new BaezaYatesPerlbergMatcher(99, 100), "Baeza-Yates-Perlberg Matcher (exact)",
             lingtext_2000);
         profileApproximateMatch(new BaezaYatesPerlbergMatcher(99, 100), "Baeza-Yates-Perlberg Matcher");
     }
 
-    private void profileExactMatcher(Matcher matcher, String name, String text)
-    {
+    private void profileExactMatcher(Matcher matcher, String name, String text) {
         // Warmup
-        for (int i = 0; i < 5; i++)
-        {
+        for (int i = 0; i < 5; i++) {
             matcher.matches(searchSet, text);
         }
 
         // Test Run
         long startTime = System.currentTimeMillis();
-        for (int i = 0; i < 25; i++)
-        {
+        for (int i = 0; i < 25; i++) {
             matcher.matches(searchSet, text);
         }
         System.out.println(name + " time: " + (System.currentTimeMillis() - startTime));
     }
 
-    public void profileApproximateMatch(ApproximateMatcher matcher, String name)
-    {
+    public void profileApproximateMatch(ApproximateMatcher matcher, String name) {
         // Warmup
-        for (int i = 0; i < 5; i++)
-        {
+        for (int i = 0; i < 5; i++) {
             matcher.matches(searchSet, lingtext_2000, 3);
         }
 
         // Test Run
         long startTime = System.currentTimeMillis();
-        for (int i = 0; i < 25; i++)
-        {
+        for (int i = 0; i < 25; i++) {
             matcher.matches(searchSet, lingtext_2000, 3);
         }
         System.out.println(name + " time: " + (System.currentTimeMillis() - startTime));

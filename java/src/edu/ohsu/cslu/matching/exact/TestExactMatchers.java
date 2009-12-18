@@ -27,11 +27,10 @@ import edu.ohsu.cslu.tests.FilteredRunner;
  *        $Id$
  */
 @RunWith(FilteredRunner.class)
-public class TestExactMatchers extends MatchTestCase
-{
+public class TestExactMatchers extends MatchTestCase {
+
     @Test
-    public void testNaiveMatcher() throws IOException
-    {
+    public void testNaiveMatcher() throws IOException {
         Matcher matcher = new NaiveMatcher();
         exactMatchTest(matcher);
         multipatternMatchTest(matcher);
@@ -39,8 +38,7 @@ public class TestExactMatchers extends MatchTestCase
     }
 
     @Test
-    public void testBoyerMooreMatcher() throws IOException
-    {
+    public void testBoyerMooreMatcher() throws IOException {
         Matcher matcher = new BoyerMooreMatcher();
         exactMatchTest(matcher);
         multipatternMatchTest(matcher);
@@ -48,8 +46,7 @@ public class TestExactMatchers extends MatchTestCase
     }
 
     @Test
-    public void testKnuthMorrisPrattMatcher() throws IOException
-    {
+    public void testKnuthMorrisPrattMatcher() throws IOException {
         Matcher matcher = new KnuthMorrisPrattMatcher();
         exactMatchTest(matcher);
         multipatternMatchTest(matcher);
@@ -57,8 +54,7 @@ public class TestExactMatchers extends MatchTestCase
     }
 
     @Test
-    public void testAhoCorasickMatcher() throws IOException
-    {
+    public void testAhoCorasickMatcher() throws IOException {
         AhoCorasickMatcher matcher = new AhoCorasickMatcher();
         exactMatchTest(matcher);
         multipatternMatchTest(matcher);

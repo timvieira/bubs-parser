@@ -26,15 +26,15 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  *        $Id$
  */
 @RunWith(FilteredRunner.class)
-public class TestCoocurrenceCounters extends TestCase
-{
+public class TestCoocurrenceCounters extends TestCase {
+
     @Test
-    public void testBigramCounter() throws Exception
-    {
+    public void testBigramCounter() throws Exception {
         String sampleSentences = "in an oct. 19 review of the misanthrope at chicago 's goodman theatre -lrb-"
-            + " revitalized classics take the stage in windy city , leisure & arts -rrb- , the role of celimene"
-            + " , played by kim cattrall , was mistakenly attributed to christina haag .\n"
-            + "ms. haag plays elianti while ms. cattral plays celimene .\n" + "ms. cattral made her debut in 1996.";
+                + " revitalized classics take the stage in windy city , leisure & arts -rrb- , the role of celimene"
+                + " , played by kim cattrall , was mistakenly attributed to christina haag .\n"
+                + "ms. haag plays elianti while ms. cattral plays celimene .\n"
+                + "ms. cattral made her debut in 1996.";
 
         CoocurrenceCounter cc = new BigramCounter(new StringReader(sampleSentences));
         assertEquals(3, cc.count("in"));
@@ -62,27 +62,24 @@ public class TestCoocurrenceCounters extends TestCase
     }
 
     @Test
-    public void testSentenceCounter() throws Exception
-    {
+    public void testSentenceCounter() throws Exception {
         checkSententialCoocurrenceCounter(sententialCoocurrenceCounter());
     }
 
     @Test
-    public void testSerialize() throws Exception
-    {
+    public void testSerialize() throws Exception {
         // Serialize a counter
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
         oos.writeObject(sententialCoocurrenceCounter());
 
         // Read in the counter and verify it.
-        CoocurrenceCounter cc = (CoocurrenceCounter) new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))
-            .readObject();
+        CoocurrenceCounter cc = (CoocurrenceCounter) new ObjectInputStream(new ByteArrayInputStream(bos
+            .toByteArray())).readObject();
         checkSententialCoocurrenceCounter(cc);
     }
 
-    private void checkSententialCoocurrenceCounter(CoocurrenceCounter cc)
-    {
+    private void checkSententialCoocurrenceCounter(CoocurrenceCounter cc) {
         assertEquals(2, cc.count("in"));
         assertEquals(2, cc.count("haag"));
         assertEquals(2, cc.count("."));
@@ -104,48 +101,49 @@ public class TestCoocurrenceCounters extends TestCase
         assertEquals(3.8712f, cc.logOddsRatio("haag", "ms."), .01);
     }
 
-    private CoocurrenceCounter sententialCoocurrenceCounter() throws IOException
-    {
+    private CoocurrenceCounter sententialCoocurrenceCounter() throws IOException {
         String sampleSentences = "in an oct. 19 review of the misanthrope at chicago 's goodman theatre -lrb-"
-            + " revitalized classics take the stage in windy city , leisure & arts -rrb- , the role of celimene"
-            + " , played by kim cattrall , was mistakenly attributed to christina haag .\n"
-            + "ms. haag plays elianti while ms. cattral plays celimene .\n" + "ms. cattral made her debut in 1996.";
+                + " revitalized classics take the stage in windy city , leisure & arts -rrb- , the role of celimene"
+                + " , played by kim cattrall , was mistakenly attributed to christina haag .\n"
+                + "ms. haag plays elianti while ms. cattral plays celimene .\n"
+                + "ms. cattral made her debut in 1996.";
 
         CoocurrenceCounter cc = new SententialCoocurrenceCounter(new StringReader(sampleSentences));
         return cc;
     }
 
     @Test
-    @PerformanceTest( {"d820", "4938"})
-    public void profileBigramCounter() throws Exception
-    {
+    @PerformanceTest( { "d820", "4938" })
+    public void profileBigramCounter() throws Exception {
         CoocurrenceCounter cc = new BigramCounter(new InputStreamReader(SharedNlpTests
             .unitTestDataAsStream("counters/f2-21.lowercase.txt.gz")));
 
         assertEquals("Wrong log likelihood for '64', '.'", 0f, cc.logLikelihoodRatio("64", "."), .01);
-        assertEquals("Wrong log likelihood for 'industry', 'than'", Float.NaN,
-            cc.logLikelihoodRatio("indstry", "than"), .01);
-        assertEquals("Wrong log likelihood for 'mr.', 'white'", 0f, cc.logLikelihoodRatio("mr.", "white"), .01);
-
-        assertEquals("Wrong log likelihood for 'helga', 'kern'", 25.0, cc.logLikelihoodRatio("helga", "kern"), .01);
-
-        assertEquals("Wrong log likelihood for 'massive', 'bill'", 6.6408f, cc.logLikelihoodRatio("massive", "bill"),
+        assertEquals("Wrong log likelihood for 'industry', 'than'", Float.NaN, cc.logLikelihoodRatio(
+            "indstry", "than"), .01);
+        assertEquals("Wrong log likelihood for 'mr.', 'white'", 0f, cc.logLikelihoodRatio("mr.", "white"),
             .01);
-        assertEquals("Wrong log likelihood for 'twin-engine', 'and'", 5.3197f, cc.logLikelihoodRatio("twin-engine",
-            "and"), .01);
+
+        assertEquals("Wrong log likelihood for 'helga', 'kern'", 25.0,
+            cc.logLikelihoodRatio("helga", "kern"), .01);
+
+        assertEquals("Wrong log likelihood for 'massive', 'bill'", 6.6408f, cc.logLikelihoodRatio("massive",
+            "bill"), .01);
+        assertEquals("Wrong log likelihood for 'twin-engine', 'and'", 5.3197f, cc.logLikelihoodRatio(
+            "twin-engine", "and"), .01);
 
         assertEquals("Wrong log likelihood for '.', '.'", 3378.9f, cc.logLikelihoodRatio(".", "."), .01);
         assertEquals("Wrong log likelihood for 'in', 'in'", 610.3038f, cc.logLikelihoodRatio("in", "in"), .01);
         assertEquals("Wrong log likelihood for 'a', 'and'", 718.2013f, cc.logLikelihoodRatio("a", "and"), .01);
-        assertEquals("Wrong log likelihood for 'dilutive', 'eqivalents'", 94.2626f, cc.logLikelihoodRatio("dilutive",
-            "equivalents"), .01);
-        assertEquals("Wrong log likelihood for 'k', 'mart'", 532.9244f, cc.logLikelihoodRatio("k", "mart"), .01);
+        assertEquals("Wrong log likelihood for 'dilutive', 'eqivalents'", 94.2626f, cc.logLikelihoodRatio(
+            "dilutive", "equivalents"), .01);
+        assertEquals("Wrong log likelihood for 'k', 'mart'", 532.9244f, cc.logLikelihoodRatio("k", "mart"),
+            .01);
     }
 
     @Test
-    @PerformanceTest( {"d820", "19297"})
-    public void profileSententialCoocurrenceCounter() throws Exception
-    {
+    @PerformanceTest( { "d820", "19297" })
+    public void profileSententialCoocurrenceCounter() throws Exception {
         CoocurrenceCounter cc = new SententialCoocurrenceCounter(new InputStreamReader(SharedNlpTests
             .unitTestDataAsStream("counters/f2-21.lowercase.txt.gz")));
 
@@ -155,20 +153,26 @@ public class TestCoocurrenceCounters extends TestCase
         //
         // System.out.println(bos.size());
 
-        assertEquals("Wrong log likelihood for 'repaying', 'said'", 10.024f, cc.logLikelihoodRatio("repaying", "said"),
+        assertEquals("Wrong log likelihood for 'repaying', 'said'", 10.024f, cc.logLikelihoodRatio(
+            "repaying", "said"), .01);
+        assertEquals("Wrong log likelihood for 'helga', 'move'", 15.8869f, cc.logLikelihoodRatio("helga",
+            "move"), .01);
+        assertEquals("Wrong log likelihood for '.', 'for'", 46478.395f, cc.logLikelihoodRatio(".", "for"),
             .01);
-        assertEquals("Wrong log likelihood for 'helga', 'move'", 15.8869f, cc.logLikelihoodRatio("helga", "move"), .01);
-        assertEquals("Wrong log likelihood for '.', 'for'", 46478.395f, cc.logLikelihoodRatio(".", "for"), .01);
-        assertEquals("Wrong log likelihood for 'of', 'the'", 83680.55f, cc.logLikelihoodRatio("of", "the"), .01);
-        assertEquals("Wrong log likelihood for 'and', 'the'", 57286.11f, cc.logLikelihoodRatio("and", "the"), .01);
+        assertEquals("Wrong log likelihood for 'of', 'the'", 83680.55f, cc.logLikelihoodRatio("of", "the"),
+            .01);
+        assertEquals("Wrong log likelihood for 'and', 'the'", 57286.11f, cc.logLikelihoodRatio("and", "the"),
+            .01);
 
-        assertEquals("Wrong log likelihood for 'million', 'she'", 0.2527f, cc.logLikelihoodRatio("million", "she"), .01);
-        assertEquals("Wrong log likelihood for 'composite', 'from'", 0.02775f, cc.logLikelihoodRatio("composite",
-            "from"), .01);
-        assertEquals("Wrong log likelihood for 'banca', 'nazionale'", 72.22401f, cc.logLikelihoodRatio("banca",
-            "nazionale"), .01);
-        assertEquals("Wrong log likelihood for 'basir', 'sri'", 119.4472f, cc.logLikelihoodRatio("basir", "sri"), .01);
-        assertEquals("Wrong log likelihood for 'burnham', 'lambert'", 951.8335f, cc.logLikelihoodRatio("burnham",
-            "lambert"), .01);
+        assertEquals("Wrong log likelihood for 'million', 'she'", 0.2527f, cc.logLikelihoodRatio("million",
+            "she"), .01);
+        assertEquals("Wrong log likelihood for 'composite', 'from'", 0.02775f, cc.logLikelihoodRatio(
+            "composite", "from"), .01);
+        assertEquals("Wrong log likelihood for 'banca', 'nazionale'", 72.22401f, cc.logLikelihoodRatio(
+            "banca", "nazionale"), .01);
+        assertEquals("Wrong log likelihood for 'basir', 'sri'", 119.4472f, cc.logLikelihoodRatio("basir",
+            "sri"), .01);
+        assertEquals("Wrong log likelihood for 'burnham', 'lambert'", 951.8335f, cc.logLikelihoodRatio(
+            "burnham", "lambert"), .01);
     }
 }

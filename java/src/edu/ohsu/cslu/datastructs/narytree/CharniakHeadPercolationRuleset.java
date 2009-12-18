@@ -13,18 +13,18 @@ import java.io.StringReader;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class CharniakHeadPercolationRuleset extends HeadPercolationRuleset
-{
-    public CharniakHeadPercolationRuleset() throws IOException
-    {
+public class CharniakHeadPercolationRuleset extends HeadPercolationRuleset {
+
+    public CharniakHeadPercolationRuleset() throws IOException {
         super(new StringReader(ruleset()));
     }
 
-    private static String ruleset()
-    {
+    private static String ruleset() {
         StringBuilder sb = new StringBuilder(2048);
-        sb.append("*default* (r AUX AUXG BES CC CD DT EX FW HVS IN JJ JJR JJS LS MD NN NNS NNP NNPS PDT POS PRP ");
-        sb.append("PRP$ RB RBR RBS RP SYM TO UH VB VBD VBG VBN VBP VBZ WDT WP WP$ WRB # $) (r ADJP ADVP CONJP ");
+        sb
+            .append("*default* (r AUX AUXG BES CC CD DT EX FW HVS IN JJ JJR JJS LS MD NN NNS NNP NNPS PDT POS PRP ");
+        sb
+            .append("PRP$ RB RBR RBS RP SYM TO UH VB VBD VBG VBN VBP VBZ WDT WP WP$ WRB # $) (r ADJP ADVP CONJP ");
         sb.append("FRAG INTJ LST NAC NML NP NX PRN PRT QP RRC S S1 SBAR SBARQ SINV SQ UCP VP WHADJP WHADVP ");
         sb.append("WHNP WHPP X) (r PP) (r . , : -RRB- -LRB- `` '' XX GW) (r)\n");
 

@@ -12,13 +12,11 @@ import java.util.Set;
 
 import edu.ohsu.cslu.matching.Matcher;
 
-
 /**
- * Implements the Aho-Corasick matching algorithm. Particularly effective for matching large sets of
- * long patterns within a text. With a few patterns, this algorithm is significantly faster than the
- * naive (String.indexOf()) approach. With a single pattern, the algorithmic overhead negates the
- * potential efficiency gain. The break-even point is 'a few' patterns (exact number and length of
- * patterns unknown).
+ * Implements the Aho-Corasick matching algorithm. Particularly effective for matching large sets of long
+ * patterns within a text. With a few patterns, this algorithm is significantly faster than the naive
+ * (String.indexOf()) approach. With a single pattern, the algorithmic overhead negates the potential
+ * efficiency gain. The break-even point is 'a few' patterns (exact number and length of patterns unknown).
  * 
  * Adapted from Seeger's code (which I believe was adapted from Brian's C version)
  * 
@@ -28,11 +26,10 @@ import edu.ohsu.cslu.matching.Matcher;
  * 
  *        $Id$
  */
-public final class AhoCorasickMatcher extends Matcher
-{
+public final class AhoCorasickMatcher extends Matcher {
+
     @Override
-    public final IntSet matchLocations(Set<String> patterns, String text)
-    {
+    public final IntSet matchLocations(Set<String> patterns, String text) {
         ArrayList<String> patternList = new ArrayList<String>(patterns.size());
         patternList.addAll(patterns);
         return internalMatch(patternList, text).locationSet();
@@ -45,8 +42,7 @@ public final class AhoCorasickMatcher extends Matcher
      * @param text
      * @return Map, match location -> match location
      */
-    public final Set<Match> patternMatchLocations(List<String> patterns, String text)
-    {
+    public final Set<Match> patternMatchLocations(List<String> patterns, String text) {
         return internalMatch(patterns, text).set();
     }
 
@@ -57,8 +53,7 @@ public final class AhoCorasickMatcher extends Matcher
      * @param text
      * @return Map, match location -> match location
      */
-    public final Set<Match> patternMatchLocations(Set<String> patterns, String text)
-    {
+    public final Set<Match> patternMatchLocations(Set<String> patterns, String text) {
         ArrayList<String> patternList = new ArrayList<String>(patterns.size());
         patternList.addAll(patterns);
         return internalMatch(patternList, text).set();
@@ -71,8 +66,7 @@ public final class AhoCorasickMatcher extends Matcher
      * @param text
      * @return Map, match location -> match location
      */
-    public final Set<Match> patternMatchLocations(String[] patterns, String text)
-    {
+    public final Set<Match> patternMatchLocations(String[] patterns, String text) {
         return internalMatch(Arrays.asList(patterns), text).set();
     }
 
@@ -83,8 +77,7 @@ public final class AhoCorasickMatcher extends Matcher
      * @param text
      * @return Map, match location -> match location
      */
-    private final MatchSet internalMatch(List<String> patterns, String text)
-    {
+    private final MatchSet internalMatch(List<String> patterns, String text) {
         final PreProcess preProcess = new PreProcess(patterns);
         final MatchSet matchLocations = new MatchSet();
 
@@ -104,15 +97,12 @@ public final class AhoCorasickMatcher extends Matcher
         KeyTree w = preProcess.ktreeRoot;
         KeyTree wPrime;
 
-        do
-        {
-            while (i < n && ((c = text.charAt(i)) < maxchar) && (w != null) && ((nextlinkIndex = (c - minchar)) >= 0)
-                && ((wPrime = w.nextlinks[nextlinkIndex]) != null))
-            {
-                for (KeyTree tree = wPrime; tree != null; tree = tree.zeroLink)
-                {
-                    if (tree.index != -1)
-                    {
+        do {
+            while (i < n && ((c = text.charAt(i)) < maxchar) && (w != null)
+                    && ((nextlinkIndex = (c - minchar)) >= 0)
+                    && ((wPrime = w.nextlinks[nextlinkIndex]) != null)) {
+                for (KeyTree tree = wPrime; tree != null; tree = tree.zeroLink) {
+                    if (tree.index != -1) {
                         matchLocations.addMatch(tree.index, i + 1);
                         break;
                     }
@@ -126,47 +116,39 @@ public final class AhoCorasickMatcher extends Matcher
 
             // n sub w - w's failure link
             w = w.zeroLink;
-            if (w == null)
-            {
+            if (w == null) {
                 w = root;
             }
-        }
-        while (i < n);
+        } while (i < n);
 
         return matchLocations;
     }
 
     // TODO: Pull this class and 'patternMatchLocations' methods up into Matcher?
-    public static class Match implements Comparable<Match>
-    {
+    public static class Match implements Comparable<Match> {
+
         private final int patternIndex;
         private final int location;
 
-        public Match(int patternIndex, int location)
-        {
+        public Match(int patternIndex, int location) {
             this.patternIndex = patternIndex;
             this.location = location;
         }
 
-        public int compareTo(Match o)
-        {
-            if (patternIndex > o.patternIndex)
-            {
+        public int compareTo(Match o) {
+            if (patternIndex > o.patternIndex) {
                 return 1;
             }
 
-            if (patternIndex < o.patternIndex)
-            {
+            if (patternIndex < o.patternIndex) {
                 return -1;
             }
 
-            if (location > o.location)
-            {
+            if (location > o.location) {
                 return 1;
             }
 
-            if (location < o.location)
-            {
+            if (location < o.location) {
                 return -1;
             }
 
@@ -174,10 +156,8 @@ public final class AhoCorasickMatcher extends Matcher
         }
 
         @Override
-        public boolean equals(Object o)
-        {
-            if (!(o instanceof Match))
-            {
+        public boolean equals(Object o) {
+            if (!(o instanceof Match)) {
                 return false;
             }
 
@@ -185,73 +165,62 @@ public final class AhoCorasickMatcher extends Matcher
             return (patternIndex == m.patternIndex && location == m.location);
         }
 
-        public int getPatternIndex()
-        {
+        public int getPatternIndex() {
             return patternIndex;
         }
 
-        public int getLocation()
-        {
+        public int getLocation() {
             return location;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return patternIndex + "," + location;
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             return location * 17 + patternIndex;
         }
     }
 
-    private class MatchSet
-    {
+    private class MatchSet {
+
         private final Set<Match> set = new HashSet<Match>();
 
-        public void addMatch(int patternIndex, int location)
-        {
+        public void addMatch(int patternIndex, int location) {
             set.add(new Match(patternIndex, location));
         }
 
-        public IntSet patternSet()
-        {
+        public IntSet patternSet() {
             IntSet patternSet = new IntOpenHashSet();
-            for (Match match : set)
-            {
+            for (Match match : set) {
                 patternSet.add(match.patternIndex);
             }
             return patternSet;
         }
 
-        public IntSet locationSet()
-        {
+        public IntSet locationSet() {
             IntSet locationSet = new IntOpenHashSet();
-            for (Match match : set)
-            {
+            for (Match match : set) {
                 locationSet.add(match.location);
             }
             return locationSet;
         }
 
-        public Set<Match> set()
-        {
+        public Set<Match> set() {
             return set;
         }
     }
 
-    private class KeyTree
-    {
+    private class KeyTree {
+
         private KeyTree zeroLink; // Reference to nextlinks[0] - saves repeated array accesses
         private final KeyTree[] nextlinks; // array of possible continuation letters
         private final int length; // length of prefix to this point
         private int index; // if final state, word number (else -1)
 
-        public KeyTree(int maxchar, int minchar, int wordNumber, int length)
-        {
+        public KeyTree(int maxchar, int minchar, int wordNumber, int length) {
             index = wordNumber;
             this.length = length;
             // initialize links -- ktree.nextlinks[0] is the failure link
@@ -259,29 +228,24 @@ public final class AhoCorasickMatcher extends Matcher
         }
     }
 
-    private class PreProcess
-    {
+    private class PreProcess {
+
         private final KeyTree ktreeRoot; // root of keyword tree
         private final int maxPatternChar; // maximum character in patterns
         private final int minPatternChar; // minimum character in patterns
 
-        public PreProcess(final Collection<String> patterns)
-        {
+        public PreProcess(final Collection<String> patterns) {
             char min = Character.MAX_VALUE;
             char max = 0;
 
             // TODO: Is there a faster way to do this?
-            for (String pattern : patterns)
-            {
-                for (int i = pattern.length() - 1; i >= 0; i--)
-                {
+            for (String pattern : patterns) {
+                for (int i = pattern.length() - 1; i >= 0; i--) {
                     char c = pattern.charAt(i);
-                    if (c > max)
-                    {
+                    if (c > max) {
                         max = c;
                     }
-                    if (c < min)
-                    {
+                    if (c < min) {
                         min = c;
                     }
                 }
@@ -298,34 +262,29 @@ public final class AhoCorasickMatcher extends Matcher
         /**
          * Builds the Keyword Tree
          */
-        private void buildKeywordTree(final Collection<String> patterns)
-        {
+        private void buildKeywordTree(final Collection<String> patterns) {
             int maximumDepth = 0;
             int i = 0;
-            for (String pattern : patterns)
-            {
+            for (String pattern : patterns) {
                 final int depth = growKeyTree(ktreeRoot, 0, pattern, i++); // keep growing keyword
-                                                                           // tree
-                if (depth > maximumDepth)
-                {
+                // tree
+                if (depth > maximumDepth) {
                     maximumDepth = depth;
                 }
             }
 
             // set failure links from depth 0 to the maximum depth, in depth order
-            for (int depth = 0; depth <= maximumDepth; depth++)
-            {
+            for (int depth = 0; depth <= maximumDepth; depth++) {
                 setFailureLinks(ktreeRoot, ktreeRoot, depth);
             }
         }
 
         // grow the keyword tree for a particular pattern
-        private int growKeyTree(final KeyTree ktree, final int pos, final String pattern, final int patternIndex)
-        {
+        private int growKeyTree(final KeyTree ktree, final int pos, final String pattern,
+                final int patternIndex) {
             int depth = 1;
             final int len = pattern.length();
-            if (pos >= len)
-            {
+            if (pos >= len) {
                 return depth;
             }
 
@@ -338,8 +297,7 @@ public final class AhoCorasickMatcher extends Matcher
                     ktree.length + 1);
             }
 
-            if (pos == len - 1)
-            {
+            if (pos == len - 1) {
                 ktree.nextlinks[tchar - minPatternChar].index = patternIndex;
             }
 
@@ -347,31 +305,25 @@ public final class AhoCorasickMatcher extends Matcher
             return depth;
         }
 
-        private void setFailureLinks(final KeyTree vPrime, final KeyTree root, final int depth)
-        {
-            for (int x = minPatternChar; x < maxPatternChar; x++)
-            {
+        private void setFailureLinks(final KeyTree vPrime, final KeyTree root, final int depth) {
+            for (int x = minPatternChar; x < maxPatternChar; x++) {
                 final KeyTree v = vPrime.nextlinks[x - minPatternChar];
 
-                if (v != null)
-                {
+                if (v != null) {
                     // v is a child of vPrime and
                     // x labels the edge from vPrime to v
                     KeyTree w = vPrime.nextlinks[0]; // vPrime's failure link
-                    while (w != null && w.nextlinks[x] == null)
-                    {
+                    while (w != null && w.nextlinks[x] == null) {
                         w = w.nextlinks[0];
                     }
 
                     v.zeroLink = v.nextlinks[0] = (w == null) ? null : w.nextlinks[x];
 
-                    if (v.zeroLink == null)
-                    {
+                    if (v.zeroLink == null) {
                         v.zeroLink = root;
                     }
 
-                    if (v.index >= 0)
-                    {
+                    if (v.index >= 0) {
                         setFailureLinks(v, root, depth + 1);
                     }
                 }

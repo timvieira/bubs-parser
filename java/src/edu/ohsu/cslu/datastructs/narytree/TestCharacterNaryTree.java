@@ -29,21 +29,20 @@ import edu.ohsu.cslu.tests.FilteredRunner;
  *        $Id$
  */
 @RunWith(FilteredRunner.class)
-public class TestCharacterNaryTree
-{
+public class TestCharacterNaryTree {
+
     private CharacterNaryTree sampleTree;
     private String stringSampleTree;
 
-    private final static char[] SAMPLE_IN_ORDER_ARRAY = new char[] {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-                                                                    'k'};
-    private final static char[] SAMPLE_PRE_ORDER_ARRAY = new char[] {'f', 'd', 'b', 'a', 'c', 'e', 'g', 'i', 'h', 'k',
-                                                                     'j'};
-    private final static char[] SAMPLE_POST_ORDER_ARRAY = new char[] {'a', 'c', 'b', 'e', 'd', 'g', 'h', 'j', 'k', 'i',
-                                                                      'f'};
+    private final static char[] SAMPLE_IN_ORDER_ARRAY = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+            'i', 'j', 'k' };
+    private final static char[] SAMPLE_PRE_ORDER_ARRAY = new char[] { 'f', 'd', 'b', 'a', 'c', 'e', 'g', 'i',
+            'h', 'k', 'j' };
+    private final static char[] SAMPLE_POST_ORDER_ARRAY = new char[] { 'a', 'c', 'b', 'e', 'd', 'g', 'h',
+            'j', 'k', 'i', 'f' };
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         sampleTree = new CharacterNaryTree('f');
 
         CharacterNaryTree tmp1 = new CharacterNaryTree('b');
@@ -67,8 +66,7 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testAddChild() throws Exception
-    {
+    public void testAddChild() throws Exception {
         CharacterNaryTree tree = new CharacterNaryTree('a');
         assertEquals(1, tree.size());
         tree.addChild('b');
@@ -78,11 +76,10 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testAddChildren() throws Exception
-    {
+    public void testAddChildren() throws Exception {
         CharacterNaryTree tree = new CharacterNaryTree('a');
         assertEquals(1, tree.size());
-        tree.addChildren(new int[] {'b', 'c'});
+        tree.addChildren(new int[] { 'b', 'c' });
         assertEquals(3, tree.size());
         assertNull(tree.subtree('a'));
         assertNotNull(tree.subtree('b'));
@@ -90,11 +87,10 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testAddSubtree() throws Exception
-    {
+    public void testAddSubtree() throws Exception {
         CharacterNaryTree tree = new CharacterNaryTree('a');
         CharacterNaryTree tmp = new CharacterNaryTree('b');
-        tmp.addChildren(new char[] {'c', 'd'});
+        tmp.addChildren(new char[] { 'c', 'd' });
         tree.addSubtree(tmp);
         assertEquals(4, tree.size());
         assertNotNull(tree.subtree('b'));
@@ -103,8 +99,7 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testRemoveChild() throws Exception
-    {
+    public void testRemoveChild() throws Exception {
         assertEquals(11, sampleTree.size());
 
         sampleTree.removeChild('g');
@@ -123,15 +118,14 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testRemoveChildrenByCharArray() throws Exception
-    {
+    public void testRemoveChildrenByCharArray() throws Exception {
         assertEquals(11, sampleTree.size());
 
         assertNull(sampleTree.subtree('h'));
         assertNull(sampleTree.subtree('j'));
 
         // Removing the 'i' node should move its children up ('g' has no children)
-        sampleTree.removeChildren(new char[] {'g', 'i'});
+        sampleTree.removeChildren(new char[] { 'g', 'i' });
         assertEquals(9, sampleTree.size());
 
         assertNotNull(sampleTree.subtree('h'));
@@ -139,15 +133,14 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testRemoveChildrenByCharacterArray() throws Exception
-    {
+    public void testRemoveChildrenByCharacterArray() throws Exception {
         assertEquals(11, sampleTree.size());
 
         assertNull(sampleTree.subtree('h'));
         assertNull(sampleTree.subtree('j'));
 
         // Removing the 'i' node should move its children up ('g' has no children)
-        sampleTree.removeChildren(new Character[] {new Character('g'), new Character('i')});
+        sampleTree.removeChildren(new Character[] { new Character('g'), new Character('i') });
         assertEquals(9, sampleTree.size());
 
         assertNotNull(sampleTree.subtree('h'));
@@ -155,8 +148,7 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testRemoveSubtree() throws Exception
-    {
+    public void testRemoveSubtree() throws Exception {
         assertEquals(11, sampleTree.size());
 
         sampleTree.removeSubtree('g');
@@ -170,8 +162,7 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testSubtree() throws Exception
-    {
+    public void testSubtree() throws Exception {
         BaseNaryTree<Character> subtree = sampleTree.subtree('d');
         assertEquals(5, subtree.size());
         assertNotNull(subtree.subtree('b'));
@@ -182,8 +173,7 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testSize() throws Exception
-    {
+    public void testSize() throws Exception {
         assertEquals(11, sampleTree.size());
         sampleTree.subtree('i').removeSubtree('k');
         assertEquals(9, sampleTree.size());
@@ -192,8 +182,7 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testDepthFromRoot() throws Exception
-    {
+    public void testDepthFromRoot() throws Exception {
         assertEquals(0, sampleTree.depthFromRoot());
         assertEquals(1, sampleTree.subtree('d').depthFromRoot());
         assertEquals(2, sampleTree.subtree('i').subtree('k').depthFromRoot());
@@ -201,8 +190,7 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testLeaves() throws Exception
-    {
+    public void testLeaves() throws Exception {
         assertEquals(6, sampleTree.leaves());
         assertEquals(3, sampleTree.subtree('d').leaves());
 
@@ -220,71 +208,58 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testInOrderIterator() throws Exception
-    {
+    public void testInOrderIterator() throws Exception {
         Iterator<NaryTree<Character>> iter = sampleTree.inOrderIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             BaseNaryTree<Character> tree = (BaseNaryTree<Character>) iter.next();
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], (char) tree.label);
         }
     }
 
     @Test
-    public void testInOrderLabelIterator() throws Exception
-    {
+    public void testInOrderLabelIterator() throws Exception {
         Iterator<Character> iter = sampleTree.inOrderLabelIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next().charValue());
         }
     }
 
     @Test
-    public void testPreOrderIterator() throws Exception
-    {
+    public void testPreOrderIterator() throws Exception {
         Iterator<NaryTree<Character>> iter = sampleTree.preOrderIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             BaseNaryTree<Character> tree = (BaseNaryTree<Character>) iter.next();
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], (char) tree.label);
         }
     }
 
     @Test
-    public void testPreOrderLabelIterator() throws Exception
-    {
+    public void testPreOrderLabelIterator() throws Exception {
         Iterator<Character> iter = sampleTree.preOrderLabelIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next().charValue());
         }
     }
 
     @Test
-    public void testPostOrderIterator() throws Exception
-    {
+    public void testPostOrderIterator() throws Exception {
         Iterator<NaryTree<Character>> iter = sampleTree.postOrderIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             BaseNaryTree<Character> tree = (BaseNaryTree<Character>) iter.next();
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], (char) tree.label);
         }
     }
 
     @Test
-    public void testPostOrderLabelIterator() throws Exception
-    {
+    public void testPostOrderLabelIterator() throws Exception {
         Iterator<Character> iter = sampleTree.postOrderLabelIterator();
-        for (int i = 0; i < sampleTree.size(); i++)
-        {
+        for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next().charValue());
         }
     }
 
     @Test
-    public void testReadFromReader() throws Exception
-    {
+    public void testReadFromReader() throws Exception {
 
         String stringSimpleTree = "(a (b c) d)";
         CharacterNaryTree simpleTree = CharacterNaryTree.read(new StringReader(stringSimpleTree));
@@ -306,9 +281,11 @@ public class TestCharacterNaryTree
         assertEquals('c', (char) testTree.subtree('b').subtree('c').intLabel());
         assertEquals('d', (char) testTree.subtree('b').subtree('c').subtree('d').intLabel());
         assertEquals('e', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('e').intLabel());
-        assertEquals('f', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('e').subtree('f').intLabel());
+        assertEquals('f', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('e').subtree('f')
+            .intLabel());
         assertEquals('g', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('g').intLabel());
-        assertEquals('h', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('g').subtree('h').intLabel());
+        assertEquals('h', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('g').subtree('h')
+            .intLabel());
         assertEquals('i', (char) testTree.subtree('b').subtree('c').subtree('i').intLabel());
         assertEquals('j', (char) testTree.subtree('b').subtree('c').subtree('i').subtree('j').intLabel());
         assertEquals('k', (char) testTree.subtree('b').subtree('k').intLabel());
@@ -319,8 +296,7 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testWriteToWriter() throws Exception
-    {
+    public void testWriteToWriter() throws Exception {
         StringWriter writer = new StringWriter();
         sampleTree.write(writer);
         assertEquals(stringSampleTree, writer.toString());
@@ -338,8 +314,7 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testIsLeaf() throws Exception
-    {
+    public void testIsLeaf() throws Exception {
         assertFalse(sampleTree.isLeaf());
         assertFalse(sampleTree.subtree('d').isLeaf());
         assertTrue(sampleTree.subtree('g').isLeaf());
@@ -347,16 +322,15 @@ public class TestCharacterNaryTree
     }
 
     @Test
-    public void testEquals() throws Exception
-    {
+    public void testEquals() throws Exception {
         BaseNaryTree<Character> tree1 = new CharacterNaryTree('a');
-        tree1.addChildren(new int[] {'b', 'c'});
+        tree1.addChildren(new int[] { 'b', 'c' });
 
         BaseNaryTree<Character> tree2 = new CharacterNaryTree('a');
-        tree2.addChildren(new int[] {'b', 'c'});
+        tree2.addChildren(new int[] { 'b', 'c' });
 
         BaseNaryTree<Character> tree3 = new CharacterNaryTree('a');
-        tree3.addChildren(new int[] {'b', 'd'});
+        tree3.addChildren(new int[] { 'b', 'd' });
 
         assertTrue(tree1.equals(tree2));
         assertFalse(tree1.equals(tree3));
@@ -368,12 +342,12 @@ public class TestCharacterNaryTree
     /**
      * Tests Java serialization and deserialization of trees
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     @SuppressWarnings("unchecked")
-    public void testSerialize() throws Exception
-    {
+    public void testSerialize() throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
 
@@ -387,11 +361,11 @@ public class TestCharacterNaryTree
     /**
      * Tests the pq-gram tree-edit-distance approximation between two trees
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testPqGramSimilarity() throws Exception
-    {
+    public void testPqGramSimilarity() throws Exception {
         // Example taken from Augsten, Bohlen, Gamper, 2005, page 304
         CharacterNaryTree t1 = new CharacterNaryTree('a');
         CharacterNaryTree tmp = t1.addChild('a');

@@ -21,10 +21,9 @@ import edu.ohsu.cslu.alignment.tools.TestInduceMappedVocabularies;
  *        $Id$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses( {TestSimpleVocabulary.class, TestLogLinearVocabulary.class, TestColumnAligners.class,
-                      ProfileGlobalSequenceAligners.class, TestMultipleSequenceAlignment.class,
-                      TestMultipleSequenceAligners.class, ProfileMultipleSequenceAligners.class,
-                      TestPairwiseAligners.class, TestPairwiseLinguisticAlignment.class,
-                      TestInduceMappedVocabularies.class})
-public class AllAlignmentTests
-{}
+@Suite.SuiteClasses( { TestSimpleVocabulary.class, TestLogLinearVocabulary.class, TestColumnAligners.class,
+        ProfileGlobalSequenceAligners.class, TestMultipleSequenceAlignment.class,
+        TestMultipleSequenceAligners.class, ProfileMultipleSequenceAligners.class,
+        TestPairwiseAligners.class, TestPairwiseLinguisticAlignment.class, TestInduceMappedVocabularies.class })
+public class AllAlignmentTests {
+}

@@ -16,36 +16,30 @@ import java.util.Set;
  * 
  *        $Id$
  */
-public class FullDynamicMatcher extends ApproximateMatcher
-{
-    public FullDynamicMatcher(int substitutionCost, int deleteCost)
-    {
+public class FullDynamicMatcher extends ApproximateMatcher {
+
+    public FullDynamicMatcher(int substitutionCost, int deleteCost) {
         super(substitutionCost, deleteCost);
     }
 
     @Override
-    public Int2IntMap matchEditValues(Set<String> patterns, String text, int edits)
-    {
+    public Int2IntMap matchEditValues(Set<String> patterns, String text, int edits) {
         final Int2IntMap matchEditValues = new Int2IntOpenHashMap();
         final int jSize = text.length() + 1;
         final char[] textChars = text.toCharArray();
 
         int maxISize = 0;
-        for (String pattern : patterns)
-        {
-            if (pattern.length() >= maxISize)
-            {
+        for (String pattern : patterns) {
+            if (pattern.length() >= maxISize) {
                 maxISize = pattern.length() + 1;
             }
         }
 
         final int[][] editArray = new int[maxISize][jSize];
 
-        for (final String pattern : patterns)
-        {
+        for (final String pattern : patterns) {
             // Skip patterns shorter than the specified edit distance
-            if (pattern.length() <= edits)
-            {
+            if (pattern.length() <= edits) {
                 continue;
             }
 
@@ -55,15 +49,12 @@ public class FullDynamicMatcher extends ApproximateMatcher
             // Note: Java arrays are initialized to 0, so
             // m_edits[i][0] == 0 for all i and
             // m_edits[0][j] == 0 for all j
-            for (int i = 1; i < iSize; i++)
-            {
+            for (int i = 1; i < iSize; i++) {
                 editArray[i][0] = editArray[i - 1][0] + deleteCost;
             }
 
-            for (int i = 1; i < iSize; i++)
-            {
-                for (int j = 1; j < jSize; j++)
-                {
+            for (int i = 1; i < iSize; i++) {
+                for (int j = 1; j < jSize; j++) {
                     // Find edit distance at i, j (given edit distances at [i-1, j] , [i, j-1], and
                     // [i-1, j-1]
                     final int f1 = editArray[i][j - 1] + deleteCost;
@@ -78,15 +69,12 @@ public class FullDynamicMatcher extends ApproximateMatcher
             final int maxDelta = edits * deleteCost;
             final int maxI = iSize - 1;
 
-            for (int j = pattern.length() - edits; j < jSize; j++)
-            {
+            for (int j = pattern.length() - edits; j < jSize; j++) {
                 int currentEdits = editArray[maxI][j];
-                if (currentEdits <= maxDelta)
-                {
+                if (currentEdits <= maxDelta) {
                     // Try to eliminate spurious duplicate matches
                     if ((j <= 0 || currentEdits <= editArray[maxI][j - 1])
-                        && (j >= (jSize - 1) || currentEdits <= editArray[maxI][j + 1]))
-                    {
+                            && (j >= (jSize - 1) || currentEdits <= editArray[maxI][j + 1])) {
                         matchEditValues.put(j, currentEdits);
                     }
                 }

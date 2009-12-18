@@ -22,19 +22,17 @@ import static org.junit.Assert.assertTrue;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestCalculateDistances extends ToolTestCase
-{
+public class TestCalculateDistances extends ToolTestCase {
+
     @Test
-    public void testNoParametersArgument() throws Exception
-    {
+    public void testNoParametersArgument() throws Exception {
         String output = executeTool(new CalculateDistances(), "-m pqgram", "(Bracketed) (input)");
         assertTrue("Missing error output", output
             .contains("P and Q parameters are required for pqgram distance calculation"));
     }
 
     @Test
-    public void testPqgramDistanceCalculator() throws Exception
-    {
+    public void testPqgramDistanceCalculator() throws Exception {
         String output = executeToolFromFile(new CalculateDistances(), "-m pqgram -p 2,3",
             "tools/calculate-distances-pqgram.input.gz");
         String expectedOutput = new String(SharedNlpTests
@@ -43,9 +41,8 @@ public class TestCalculateDistances extends ToolTestCase
     }
 
     @Test
-    @PerformanceTest( {"d820", "26469"})
-    public void profilePqgramDistanceCalculator() throws Exception
-    {
+    @PerformanceTest( { "d820", "26469" })
+    public void profilePqgramDistanceCalculator() throws Exception {
         long startTime = System.currentTimeMillis();
         String output = executeToolFromFile(new CalculateDistances(), "-m pqgram -p 2,3",
             "tools/calculate-distances-pqgram-profile.input.gz");
@@ -58,14 +55,13 @@ public class TestCalculateDistances extends ToolTestCase
     }
 
     @Test
-    public void testLevenshteinDistanceCalculator() throws Exception
-    {
-        IntMatrix intMatrix = new IntMatrix(new int[][] { {0}, {3, 0}, {1, 3, 0}}, true);
+    public void testLevenshteinDistanceCalculator() throws Exception {
+        IntMatrix intMatrix = new IntMatrix(new int[][] { { 0 }, { 3, 0 }, { 1, 3, 0 } }, true);
         assertEquals(intMatrix.toString(), executeTool(new CalculateDistances(), "-m levenshtein",
             "dance\ndancing\ndances"));
 
         // A couple examples from Wikipedia
-        intMatrix = new IntMatrix(new int[][] { {0}, {3, 0}, {7, 6, 0}, {5, 6, 3, 0}}, true);
+        intMatrix = new IntMatrix(new int[][] { { 0 }, { 3, 0 }, { 7, 6, 0 }, { 5, 6, 3, 0 } }, true);
         assertEquals(intMatrix.toString(), executeTool(new CalculateDistances(), "-m levenshtein",
             "kitten\nsitting\nsaturday\nsunday"));
     }

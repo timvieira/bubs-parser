@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.common;
 
-public interface MappedSequence extends Sequence
-{
+public interface MappedSequence extends Sequence {
+
     /**
      * @return the vocabularies used to map this sequence
      */

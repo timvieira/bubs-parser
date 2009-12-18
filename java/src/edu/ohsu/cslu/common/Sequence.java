@@ -3,9 +3,9 @@ package edu.ohsu.cslu.common;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
- * Represents an ordered sequence of tokens, possibly with multiple features for each token. The
- * first feature is generally assumed to be a word; other features such as POS tags, head_verb tags,
- * or segment BEGIN/CONTINUE/END are possible.
+ * Represents an ordered sequence of tokens, possibly with multiple features for each token. The first feature
+ * is generally assumed to be a word; other features such as POS tags, head_verb tags, or segment
+ * BEGIN/CONTINUE/END are possible.
  * 
  * TODO: Implement Iterable<Vector>? or Iterator<String> iterator(featureIndex)?
  * 
@@ -14,14 +14,14 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public interface Sequence
-{
+public interface Sequence {
+
     /**
      * @param index
      * @return the String representation of the token at the specified index
      * 
-     *         TODO: This doesn't make a lot of sense for FeatureMappedSequence - we'll very often
-     *         have to return null
+     *         TODO: This doesn't make a lot of sense for FeatureMappedSequence - we'll very often have to
+     *         return null
      */
     public String stringFeature(int index, int featureIndex);
 
@@ -48,7 +48,8 @@ public interface Sequence
     public int featureCount();
 
     /**
-     * @param features feature indices
+     * @param features
+     *            feature indices
      * @return a copy of this sequence containing only the specified features.
      */
     public Sequence retainFeatures(int... features);
@@ -56,13 +57,15 @@ public interface Sequence
     /**
      * Returns a new sequence that is a subsequence of this sequence.
      * 
-     * @param beginIndex the begin index, inclusive.
-     * @param endIndex the end index, exclusive.
+     * @param beginIndex
+     *            the begin index, inclusive.
+     * @param endIndex
+     *            the end index, exclusive.
      * @return the specified subsequence.
      * 
-     * @throws IndexOutOfBoundsException if <tt>beginIndex</tt> or <tt>endIndex</tt> are negative,
-     *             if <tt>endIndex</tt> is greater than <tt>length()</tt>, or if <tt>beginIndex</tt>
-     *             is greater than <tt>startIndex</tt>
+     * @throws IndexOutOfBoundsException
+     *             if <tt>beginIndex</tt> or <tt>endIndex</tt> are negative, if <tt>endIndex</tt> is greater
+     *             than <tt>length()</tt>, or if <tt>beginIndex</tt> is greater than <tt>startIndex</tt>
      */
     public Sequence subSequence(int beginIndex, int endIndex);
 
@@ -85,16 +88,15 @@ public interface Sequence
 
     /**
      * Returns the sequence formatted using slash-delimited features (e.g.
-     * "word1/pos1 word2/pos2 ... wordn/posn"). This is the format used by the Stanford toolset,
-     * including their POS tagger.
+     * "word1/pos1 word2/pos2 ... wordn/posn"). This is the format used by the Stanford toolset, including
+     * their POS tagger.
      * 
      * @return Slash-formatted string representation of the sequence
      */
     public String toSlashSeparatedString();
 
     /**
-     * Splits this sequence into sentences (single-sentence sequences should return a reference to
-     * themselves)
+     * Splits this sequence into sentences (single-sentence sequences should return a reference to themselves)
      * 
      * @return sentences
      */

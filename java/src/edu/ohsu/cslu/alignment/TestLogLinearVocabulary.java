@@ -24,17 +24,17 @@ import edu.ohsu.cslu.tests.FilteredRunner;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestLogLinearVocabulary
-{
+public class TestLogLinearVocabulary {
+
     private String sampleInput;
     private String stringSampleVocabulary;
     private LogLinearVocabulary sampleVocabulary;
 
     @Before
-    public void setUp() throws IOException
-    {
+    public void setUp() throws IOException {
         StringBuilder sb = new StringBuilder(256);
-        sb.append("(_pos_DT The _sib) (_pos_NNS computers _head) (_pos_MD will _head) (_pos_VB display _head) ");
+        sb
+            .append("(_pos_DT The _sib) (_pos_NNS computers _head) (_pos_MD will _head) (_pos_VB display _head) ");
         // Note missing space at end of line
         sb.append("(_pos_NN stock _sib) (_pos_NNS prices _head) (_pos_VBN selected _head) (_pos_IN by _sib)");
         sb.append("(_pos_NNS users _head) (_pos_. . _head) (_pos_IN At _sib) (_pos_JJS least _head) ");
@@ -85,12 +85,11 @@ public class TestLogLinearVocabulary
         sampleVocabulary = LogLinearVocabulary.read(new StringReader(stringSampleVocabulary));
     }
 
-    private void checkSampleVocabulary(final LogLinearVocabulary vocabulary)
-    {
+    private void checkSampleVocabulary(final LogLinearVocabulary vocabulary) {
         assertEquals(36, vocabulary.size());
 
         final int[] categoryBoundaries = vocabulary.categoryBoundaries();
-        assertArrayEquals("Wrong category boundary", new int[] {19, 34}, categoryBoundaries);
+        assertArrayEquals("Wrong category boundary", new int[] { 19, 34 }, categoryBoundaries);
 
         assertEquals(1, vocabulary.map("-RRB-"));
         assertEquals("-RRB-", vocabulary.map(1));
@@ -106,8 +105,7 @@ public class TestLogLinearVocabulary
     }
 
     @Test
-    public void testInduce() throws Exception
-    {
+    public void testInduce() throws Exception {
         final LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(sampleInput, 1);
 
         assertEquals(37, vocabulary.size());
@@ -135,18 +133,16 @@ public class TestLogLinearVocabulary
         // This token should not be mapped, even though we skipped the space between two parentheses
         assertEquals(Integer.MIN_VALUE, vocabulary.map("_sib_pos_NNS"));
 
-        assertArrayEquals("Wrong category boundary", new int[] {21, 36}, vocabulary.categoryBoundaries());
+        assertArrayEquals("Wrong category boundary", new int[] { 21, 36 }, vocabulary.categoryBoundaries());
     }
 
     @Test
-    public void testRead() throws Exception
-    {
+    public void testRead() throws Exception {
         checkSampleVocabulary(LogLinearVocabulary.read(new StringReader(stringSampleVocabulary)));
     }
 
     @Test
-    public void testWrite() throws Exception
-    {
+    public void testWrite() throws Exception {
         final StringWriter writer = new StringWriter();
         sampleVocabulary.write(writer);
         assertEquals(stringSampleVocabulary, writer.toString());

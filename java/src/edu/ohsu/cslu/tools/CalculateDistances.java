@@ -39,6 +39,7 @@ import edu.ohsu.cslu.util.Math;
  */
 @Threadable
 public class CalculateDistances extends BaseCommandlineTool {
+
     @Option(name = "-m", aliases = { "--method" }, metaVar = "method", usage = "Distance Calculation Method (pqgram, levenshtein). Default = levenshtein")
     private CalculationMethod calculationMethod;
     @Option(name = "-p", aliases = { "--parameters" }, metaVar = "parameters", usage = "Additional parameters for the specified calucalation method")
@@ -66,7 +67,7 @@ public class CalculateDistances extends BaseCommandlineTool {
 
         case Pqgram:
             final Vocabulary vocabulary = SimpleVocabulary
-                    .induce(new BufferedReader(new StringReader(input)));
+                .induce(new BufferedReader(new StringReader(input)));
             calculator = new PqgramDistanceCalculator(parameters, vocabulary, maxThreads);
             break;
 
@@ -89,7 +90,7 @@ public class CalculateDistances extends BaseCommandlineTool {
     public void setup(final CmdLineParser parser) throws Exception {
         if (calculationMethod == CalculationMethod.Pqgram && parameters == null) {
             throw new CmdLineException(parser,
-                    "P and Q parameters are required for pqgram distance calculation");
+                "P and Q parameters are required for pqgram distance calculation");
         }
     }
 
@@ -98,6 +99,7 @@ public class CalculateDistances extends BaseCommandlineTool {
     }
 
     public static interface DistanceCalculator {
+
         public void addElement(String element);
 
         public Matrix distance();
@@ -124,6 +126,7 @@ public class CalculateDistances extends BaseCommandlineTool {
     }
 
     public static class PqgramDistanceCalculator implements DistanceCalculator {
+
         private final int p;
         private final int q;
         private final ArrayList<BaseNaryTree<?>> trees = new ArrayList<BaseNaryTree<?>>();
@@ -170,6 +173,7 @@ public class CalculateDistances extends BaseCommandlineTool {
         }
 
         private class RowDistanceCalculator extends RecursiveAction {
+
             private final int begin;
             private final int end;
 
@@ -200,7 +204,7 @@ public class CalculateDistances extends BaseCommandlineTool {
 
                 final RowDistanceCalculator rdc1 = new RowDistanceCalculator(begin, begin + (end - begin) / 2);
                 final RowDistanceCalculator rdc2 = new RowDistanceCalculator(begin + (end - begin) / 2 + 1,
-                        end);
+                    end);
                 forkJoin(rdc1, rdc2);
             }
         }
@@ -208,6 +212,7 @@ public class CalculateDistances extends BaseCommandlineTool {
     }
 
     public static class LevenshteinDistanceCalculator implements DistanceCalculator {
+
         private final ArrayList<String> strings = new ArrayList<String>();
 
         @Override

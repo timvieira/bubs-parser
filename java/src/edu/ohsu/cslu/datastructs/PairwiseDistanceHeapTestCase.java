@@ -20,13 +20,12 @@ import edu.ohsu.cslu.datastructs.PairwiseDistanceHeap.PairwiseDistance;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class PairwiseDistanceHeapTestCase
-{
+public abstract class PairwiseDistanceHeapTestCase {
+
     protected PairwiseDistanceHeap distanceHeap;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         distanceHeap = create();
     }
 
@@ -50,58 +49,46 @@ public abstract class PairwiseDistanceHeapTestCase
     public abstract void testDistanceRange();
 
     @Test
-    public void testInsert()
-    {
+    public void testInsert() {
         assertEquals("Wrong size", 0, distanceHeap.size());
         distanceHeap.insert(0, 1, .5f);
         assertEquals("Wrong size", 1, distanceHeap.size());
 
         // Distances < 0 or Infinite are not valid
-        try
-        {
+        try {
             distanceHeap.insert(0, 1, -.5f);
             fail("Expected IllegalArgumentException on distance < 0");
+        } catch (IllegalArgumentException expected) {
         }
-        catch (IllegalArgumentException expected)
-        {}
 
-        try
-        {
+        try {
             distanceHeap.insert(0, 1, Float.POSITIVE_INFINITY);
             fail("Expected IllegalArgumentException on infinite distance");
+        } catch (IllegalArgumentException expected) {
         }
-        catch (IllegalArgumentException expected)
-        {}
 
-        try
-        {
+        try {
             distanceHeap.insert(0, 1, Float.NaN);
             fail("Expected IllegalArgumentException on Nan distance");
+        } catch (IllegalArgumentException expected) {
         }
-        catch (IllegalArgumentException expected)
-        {}
 
         // Indices < 0 are not valid
-        try
-        {
+        try {
             distanceHeap.insert(-1, 0, 0);
             fail("Expected IllegalArgumentException on index -1");
+        } catch (IllegalArgumentException expected) {
         }
-        catch (IllegalArgumentException expected)
-        {}
 
-        try
-        {
+        try {
             distanceHeap.insert(0, -1, 0);
             fail("Expected IllegalArgumentException on index -1");
+        } catch (IllegalArgumentException expected) {
         }
-        catch (IllegalArgumentException expected)
-        {}
     }
 
     @Test
-    public void testDeleteMin()
-    {
+    public void testDeleteMin() {
         distanceHeap.insert(0, 1, .5f);
         distanceHeap.insert(0, 2, .7f);
         distanceHeap.insert(1, 2, .2f);
@@ -124,18 +111,15 @@ public abstract class PairwiseDistanceHeapTestCase
         assertEquals(2, indices[1]);
         assertEquals("Wrong size", 0, distanceHeap.size());
 
-        try
-        {
+        try {
             distanceHeap.deleteMin();
             fail("Expected NoSuchElementException when attempting to delete from an empty heap");
+        } catch (NoSuchElementException expected) {
         }
-        catch (NoSuchElementException expected)
-        {}
     }
 
     @Test
-    public void testDeleteMinDistance()
-    {
+    public void testDeleteMinDistance() {
         distanceHeap.insert(0, 1, .5f);
         distanceHeap.insert(0, 2, .7f);
         distanceHeap.insert(1, 2, .2f);
@@ -158,18 +142,15 @@ public abstract class PairwiseDistanceHeapTestCase
         assertEquals(.7f, d.distance, .01f);
         assertEquals("Wrong size", 0, distanceHeap.size());
 
-        try
-        {
+        try {
             distanceHeap.deleteMin();
             fail("Expected NoSuchElementException when attempting to delete from an empty heap");
+        } catch (NoSuchElementException expected) {
         }
-        catch (NoSuchElementException expected)
-        {}
     }
 
     @Test
-    public void testSize()
-    {
+    public void testSize() {
         assertEquals("Wrong size", 0, distanceHeap.size());
         distanceHeap.insert(0, 0, 0);
         assertEquals("Wrong size", 1, distanceHeap.size());
@@ -183,8 +164,7 @@ public abstract class PairwiseDistanceHeapTestCase
     }
 
     @Test
-    public void testIsEmpty()
-    {
+    public void testIsEmpty() {
         assertTrue("Expected heap to be empty", distanceHeap.isEmpty());
         distanceHeap.insert(0, 0, 0);
         assertFalse("Did not expect heap to be empty", distanceHeap.isEmpty());

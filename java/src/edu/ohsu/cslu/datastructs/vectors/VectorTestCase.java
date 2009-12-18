@@ -19,8 +19,8 @@ import static junit.framework.Assert.assertEquals;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class VectorTestCase
-{
+public abstract class VectorTestCase {
+
     protected String stringSampleVector;
     protected Vector sampleVector;
 
@@ -41,11 +41,11 @@ public abstract class VectorTestCase
     /**
      * Tests deserializing a vector using a Reader
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testReadfromReader() throws Exception
-    {
+    public void testReadfromReader() throws Exception {
         Vector v = Vector.Factory.read(stringSampleVector);
         assertEquals(v, sampleVector);
     }
@@ -53,11 +53,11 @@ public abstract class VectorTestCase
     /**
      * Tests serializing a vector to a Writer
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testWriteToWriter() throws Exception
-    {
+    public void testWriteToWriter() throws Exception {
         StringWriter writer = new StringWriter();
         sampleVector.write(writer);
         assertEquals(stringSampleVector, writer.toString());
@@ -69,19 +69,18 @@ public abstract class VectorTestCase
      * @throws Exception
      */
     @Test
-    public void testLength() throws Exception
-    {
+    public void testLength() throws Exception {
         assertEquals("Wrong length", 11, sampleVector.length());
     }
 
     /**
      * Tests 'getInt' method
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testGetInt() throws Exception
-    {
+    public void testGetInt() throws Exception {
         assertEquals("Wrong value", -11, sampleVector.getInt(0));
         assertEquals("Wrong value", 0, sampleVector.getInt(1));
         assertEquals("Wrong value", 11, sampleVector.getInt(2));
@@ -98,11 +97,11 @@ public abstract class VectorTestCase
     /**
      * Tests 'getBoolean' method
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testGetBoolean() throws Exception
-    {
+    public void testGetBoolean() throws Exception {
         assertEquals("Wrong value", true, sampleVector.getBoolean(0));
         assertEquals("Wrong value", false, sampleVector.getBoolean(1));
         assertEquals("Wrong value", true, sampleVector.getBoolean(2));
@@ -119,11 +118,11 @@ public abstract class VectorTestCase
     /**
      * Tests 'getFloat' method
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testGetFloat() throws Exception
-    {
+    public void testGetFloat() throws Exception {
         assertEquals("Wrong value", -11, sampleVector.getFloat(0), 0.01f);
         assertEquals("Wrong value", 0, sampleVector.getFloat(1), 0.01f);
         assertEquals("Wrong value", 11, sampleVector.getFloat(2), 0.01f);
@@ -140,11 +139,11 @@ public abstract class VectorTestCase
     /**
      * Tests setting vector elements
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testSet() throws Exception
-    {
+    public void testSet() throws Exception {
         assertEquals("Wrong value", 11, sampleVector.getInt(2));
         assertEquals("Wrong value", 78, sampleVector.getInt(8));
         sampleVector.set(2, 3);
@@ -156,11 +155,11 @@ public abstract class VectorTestCase
     /**
      * Tests extracting a subvector from an existing vector.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testSubVector() throws Exception
-    {
+    public void testSubVector() throws Exception {
         // Single-element subvector
         Vector subvector = sampleVector.subVector(5, 5);
         assertEquals("Wrong length", 1, subvector.length());
@@ -176,11 +175,11 @@ public abstract class VectorTestCase
     /**
      * Tests min(), intMin(), and argMin() methods
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testMin() throws Exception
-    {
+    public void testMin() throws Exception {
         assertEquals(-11f, sampleVector.min(), .01f);
         assertEquals(-11, sampleVector.intMin());
         assertEquals(0, sampleVector.argMin());
@@ -195,11 +194,11 @@ public abstract class VectorTestCase
     /**
      * Tests max(), intMax(), and argMax() methods
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testMax() throws Exception
-    {
+    public void testMax() throws Exception {
         assertEquals(100, sampleVector.intMax());
         assertEquals(10, sampleVector.argMax());
 
@@ -213,7 +212,8 @@ public abstract class VectorTestCase
     /**
      * Tests vector addition
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public abstract void testVectorAdd() throws Exception;
@@ -221,7 +221,8 @@ public abstract class VectorTestCase
     /**
      * Tests element-wise multiplication
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public abstract void testElementwiseMultiply() throws Exception;
@@ -229,7 +230,8 @@ public abstract class VectorTestCase
     /**
      * Tests scalar addition
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public abstract void testScalarAdd() throws Exception;
@@ -237,7 +239,8 @@ public abstract class VectorTestCase
     /**
      * Tests scalar multiplication
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public abstract void testScalarMultiply() throws Exception;
@@ -245,7 +248,8 @@ public abstract class VectorTestCase
     /**
      * Tests inner / dot product multiplication
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public abstract void testDotProduct() throws Exception;
@@ -253,7 +257,8 @@ public abstract class VectorTestCase
     /**
      * Tests {@link Vector#infinity()} method
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public abstract void testInfinity() throws Exception;
@@ -261,7 +266,8 @@ public abstract class VectorTestCase
     /**
      * Tests {@link Vector#negativeInfinity()} method
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public abstract void testNegativeInfinity() throws Exception;
@@ -269,11 +275,11 @@ public abstract class VectorTestCase
     /**
      * Tests Java serialization and deserialization of matrices
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testSerialize() throws Exception
-    {
+    public void testSerialize() throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
 

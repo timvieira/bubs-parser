@@ -6,9 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Allows test methods or classes to be annotated as 'performance' tests. In general, performance
- * tests are long-running and will be excluded from standard regression test runs. However, running
- * performance tests occasionally will alert you to performance regressions.
+ * Allows test methods or classes to be annotated as 'performance' tests. In general, performance tests are
+ * long-running and will be excluded from standard regression test runs. However, running performance tests
+ * occasionally will alert you to performance regressions.
  * 
  * These annotations will only take effect when a test is run with {@link FilteredRunner}.
  * 
@@ -18,22 +18,23 @@ import java.lang.annotation.Target;
  * @version $Revision$ $Date$ $Author$
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target( {ElementType.METHOD, ElementType.TYPE})
+@Target( { ElementType.METHOD, ElementType.TYPE })
 public @interface PerformanceTest {
+
     /**
-     * Different test machines will of course perform differently, so the specific machine running
-     * the tests can be specified with a system property.
+     * Different test machines will of course perform differently, so the specific machine running the tests
+     * can be specified with a system property.
      * 
-     * If, at runtime, no 'test.hardware' system property is specified, the first hardware
-     * configuration in the annotation ({@link #value()}) will be assumed.
+     * If, at runtime, no 'test.hardware' system property is specified, the first hardware configuration in
+     * the annotation ({@link #value()}) will be assumed.
      */
     public final static String TEST_HARDWARE = "test.hardware";
 
     /**
-     * The configuration properties should be in pairs denoting the test hardware and the expected
-     * runtime in milliseconds. e.g. {"macbook", "1250", "sun-x4150", "1028"}. If no configuration
-     * properties are included in the annotation, the test will be classified and filtered as a
-     * performance test, but no expectation about its runtime will be made.
+     * The configuration properties should be in pairs denoting the test hardware and the expected runtime in
+     * milliseconds. e.g. {"macbook", "1250", "sun-x4150", "1028"}. If no configuration properties are
+     * included in the annotation, the test will be classified and filtered as a performance test, but no
+     * expectation about its runtime will be made.
      * 
      * @return performance test configuration properties
      */
