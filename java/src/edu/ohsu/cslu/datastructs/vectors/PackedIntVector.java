@@ -4,20 +4,20 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * Represents a vector of integer values of limited range The represented vector is packed into an
- * int array for compact storage.
+ * Represents a vector of integer values of limited range The represented vector is packed into an int array
+ * for compact storage.
  * 
- * Currently, only powers-of-2 are supported for bit-lengths (1, 2, 4, 8, 16, and 32 bits). Of
- * course, bit-lengths of 8, 16, and 32 would generally be better represented using the native byte,
- * short, and int types.
+ * Currently, only powers-of-2 are supported for bit-lengths (1, 2, 4, 8, 16, and 32 bits). Of course,
+ * bit-lengths of 8, 16, and 32 would generally be better represented using the native byte, short, and int
+ * types.
  * 
  * @author Aaron Dunlop
  * @since Nov 11, 2008
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public final class PackedIntVector extends BaseNumericVector
-{
+public final class PackedIntVector extends BaseNumericVector {
+
     // These 5 fields and constants must be modified to convert storage from int to long.
     // Preliminary
     // profiling on a 32-bit machine indicates a speed hit of ~30-35%, but that might not be the
@@ -47,8 +47,7 @@ public final class PackedIntVector extends BaseNumericVector
     private final int indexMask;
     private final int shiftShift;
 
-    public PackedIntVector(final int length, final int bits)
-    {
+    public PackedIntVector(final int length, final int bits) {
         super(length);
         packedVector = new int[(length * bits / STORAGE_BIT_LENGTH) + 1];
 
@@ -58,28 +57,27 @@ public final class PackedIntVector extends BaseNumericVector
 
         // There must be a more efficient way to do this, but it's in the constructor, so this isn't
         // too bad
-        switch (bits)
-        {
-            case 1 :
-                this.shiftShift = 0;
-                break;
-            case 2 :
-                this.shiftShift = 1;
-                break;
-            case 4 :
-                this.shiftShift = 2;
-                break;
-            case 8 :
-                this.shiftShift = 3;
-                break;
-            case 16 :
-                this.shiftShift = 4;
-                break;
-            case 32 :
-                this.shiftShift = 5;
-                break;
-            default :
-                throw new IllegalArgumentException("Packed Arrays must consist of a power-of-2 <= 32 bits");
+        switch (bits) {
+        case 1:
+            this.shiftShift = 0;
+            break;
+        case 2:
+            this.shiftShift = 1;
+            break;
+        case 4:
+            this.shiftShift = 2;
+            break;
+        case 8:
+            this.shiftShift = 3;
+            break;
+        case 16:
+            this.shiftShift = 4;
+            break;
+        case 32:
+            this.shiftShift = 5;
+            break;
+        default:
+            throw new IllegalArgumentException("Packed Arrays must consist of a power-of-2 <= 32 bits");
         }
 
         this.indexShift = ELEMENT_BIT_LENGTH_POWER - shiftShift;
@@ -88,25 +86,20 @@ public final class PackedIntVector extends BaseNumericVector
         this.indexMask = STORAGE_BIT_LENGTH / bits - 1;
     }
 
-    public PackedIntVector(final int[] vector, final int bits)
-    {
+    public PackedIntVector(final int[] vector, final int bits) {
         this(vector.length, bits);
 
-        for (int i = 0; i < length; i++)
-        {
+        for (int i = 0; i < length; i++) {
             set(i, vector[i]);
         }
     }
 
     @Override
-    public NumericVector add(final Vector v)
-    {
-        if (v instanceof PackedIntVector && v.length() == length && ((PackedIntVector) v).bits == bits)
-        {
+    public NumericVector add(final Vector v) {
+        if (v instanceof PackedIntVector && v.length() == length && ((PackedIntVector) v).bits == bits) {
             final NumericVector newVector = new PackedIntVector(length, bits);
 
-            for (int i = 0; i < length; i++)
-            {
+            for (int i = 0; i < length; i++) {
                 newVector.set(i, getFloat(i) + v.getFloat(i));
             }
 
@@ -122,22 +115,20 @@ public final class PackedIntVector extends BaseNumericVector
      * @param index
      * @param value
      */
-    public final void set(final int index, final int value)
-    {
-        if (value < 0 || value > maxValue)
-        {
+    public final void set(final int index, final int value) {
+        if (value < 0 || value > maxValue) {
             throw new IllegalArgumentException("Illegal value: " + value);
         }
 
-        if (index > capacity || index < 0)
-        {
+        if (index > capacity || index < 0) {
             throw new IllegalArgumentException("Illegal index: " + index);
         }
 
         final int arrayIndex = index >> indexShift;
         // index % (ELEMENT_BIT_LENGTH / bits) * # of bits
         final int shift = (index & indexMask) << shiftShift;
-        packedVector[arrayIndex] = packedVector[arrayIndex] & ~(maxValue << shift) | ((value & maxValue) << shift);
+        packedVector[arrayIndex] = packedVector[arrayIndex] & ~(maxValue << shift)
+                | ((value & maxValue) << shift);
     }
 
     /**
@@ -146,10 +137,8 @@ public final class PackedIntVector extends BaseNumericVector
      * @param index
      * @return value at the specified location
      */
-    public final int getInt(final int index)
-    {
-        if (index > capacity || index < 0)
-        {
+    public final int getInt(final int index) {
+        if (index > capacity || index < 0) {
             throw new IllegalArgumentException("Illegal index: " + index);
         }
 
@@ -159,76 +148,64 @@ public final class PackedIntVector extends BaseNumericVector
     }
 
     @Override
-    public float getFloat(final int i)
-    {
+    public float getFloat(final int i) {
         return getInt(i);
     }
 
     @Override
-    public void set(final int i, final float value)
-    {
+    public void set(final int i, final float value) {
         set(i, Math.round(value));
     }
 
     @Override
-    public void set(final int i, final boolean value)
-    {
+    public void set(final int i, final boolean value) {
         set(i, value ? 1 : 0);
     }
 
     @Override
-    public void set(final int i, final String newValue)
-    {
+    public void set(final int i, final String newValue) {
         set(i, Integer.parseInt(newValue));
     }
 
     @Override
-    public float infinity()
-    {
+    public float infinity() {
         return maxValue;
     }
 
     @Override
-    public float negativeInfinity()
-    {
+    public float negativeInfinity() {
         return 0;
     }
 
     @Override
-    public Vector subVector(final int i0, final int i1)
-    {
+    public Vector subVector(final int i0, final int i1) {
         final int subVectorLength = i1 - i0 + 1;
         final PackedIntVector subVector = new PackedIntVector(subVectorLength, bits);
-        for (int i = 0; i < subVectorLength; i++)
-        {
+        for (int i = 0; i < subVectorLength; i++) {
             subVector.set(i, getInt(i0 + i));
         }
         return subVector;
     }
 
     @Override
-    protected NumericVector createIntVector(final int newVectorLength)
-    {
+    protected NumericVector createIntVector(final int newVectorLength) {
         return new PackedIntVector(newVectorLength, bits);
     }
 
     @Override
-    protected NumericVector createFloatVector(final int newVectorLength)
-    {
+    protected NumericVector createFloatVector(final int newVectorLength) {
         return new FloatVector(newVectorLength);
     }
 
     @Override
-    public PackedIntVector clone()
-    {
+    public PackedIntVector clone() {
         final PackedIntVector v = new PackedIntVector(length, bits);
         System.arraycopy(packedVector, 0, v.packedVector, 0, packedVector.length);
         return v;
     }
 
     @Override
-    public void write(final Writer writer) throws IOException
-    {
+    public void write(final Writer writer) throws IOException {
         write(writer, String.format("vector type=packed-int length=%d bits=%d\n", length, bits));
     }
 }

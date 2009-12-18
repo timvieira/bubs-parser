@@ -19,49 +19,43 @@ import com.aliasi.tokenizer.TokenizerFactory;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class UnigramFrequencyCounter implements Serializable
-{
+public class UnigramFrequencyCounter implements Serializable {
+
     private final static TokenizerFactory tokenizerFactory = IndoEuropeanTokenizerFactory.INSTANCE;
 
     private int documents = 0;
     private final Object2IntOpenHashMap<String> totalTermCounts = new Object2IntOpenHashMap<String>();
     private final Object2IntOpenHashMap<String> documentTermCounts = new Object2IntOpenHashMap<String>();
 
-    public UnigramFrequencyCounter()
-    {
+    public UnigramFrequencyCounter() {
         totalTermCounts.defaultReturnValue(0);
         documentTermCounts.defaultReturnValue(0);
     }
 
-    public void addDocument(final String text)
-    {
+    public void addDocument(final String text) {
         final HashSet<String> terms = new HashSet<String>();
 
         // Split the document into terms using LingPipe
         final Tokenizer tokenizer = tokenizerFactory.tokenizer(text.toCharArray(), 0, text.length());
 
-        for (final String term : tokenizer)
-        {
+        for (final String term : tokenizer) {
             // Increment total term counts and add each term to the 'terms' set. We'll use it to
             // increment document term counts (but only once for each term).
             totalTermCounts.put(term, totalTermCounts.getInt(term) + 1);
             terms.add(term);
         }
 
-        for (final String term : terms)
-        {
+        for (final String term : terms) {
             documentTermCounts.put(term, documentTermCounts.getInt(term) + 1);
         }
 
         documents++;
     }
 
-    public void addDocument(final Reader reader) throws IOException
-    {
+    public void addDocument(final Reader reader) throws IOException {
         final StringBuilder sb = new StringBuilder(16384);
         final char[] buf = new char[1024];
-        for (int i = reader.read(buf); i >= 0; i = reader.read(buf))
-        {
+        for (int i = reader.read(buf); i >= 0; i = reader.read(buf)) {
             sb.append(buf, 0, i);
         }
         reader.close();
@@ -69,8 +63,7 @@ public class UnigramFrequencyCounter implements Serializable
         addDocument(sb.toString());
     }
 
-    public int documents()
-    {
+    public int documents() {
         return documents;
     }
 
@@ -78,8 +71,7 @@ public class UnigramFrequencyCounter implements Serializable
      * @param term
      * @return The total number of occurrences in the corpus
      */
-    public int totalCount(final String term)
-    {
+    public int totalCount(final String term) {
         return totalTermCounts.getInt(term);
     }
 
@@ -87,8 +79,7 @@ public class UnigramFrequencyCounter implements Serializable
      * @param term
      * @return The number of documents in which the term occurs
      */
-    public int documentCount(final String term)
-    {
+    public int documentCount(final String term) {
         return documentTermCounts.getInt(term);
     }
 
@@ -96,29 +87,25 @@ public class UnigramFrequencyCounter implements Serializable
      * @param term
      * @return The probability that a term will occur in an individual document
      */
-    public float documentProbability(final String term)
-    {
+    public float documentProbability(final String term) {
         return ((float) documentCount(term)) / documents;
     }
 
     /**
-     * Returns the log of the inverse document frequency for a term. That is, ln (|corpus| / (1 +
-     * |documents containing term|)).
+     * Returns the log of the inverse document frequency for a term. That is, ln (|corpus| / (1 + |documents
+     * containing term|)).
      * 
      * @param term
      * @return Log of the inverse document frequency
      */
-    public double logIdf(final String term)
-    {
+    public double logIdf(final String term) {
         return Math.log(documents / (1.0 + documentCount(term)));
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         final StringBuilder sb = new StringBuilder(documentTermCounts.size() * 20);
-        for (final String key : documentTermCounts.keySet())
-        {
+        for (final String key : documentTermCounts.keySet()) {
             sb.append(key);
             sb.append(" | ");
             sb.append(totalTermCounts.getInt(key));

@@ -11,17 +11,15 @@ import org.junit.runner.manipulation.Filter;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class AllTestFilter extends Filter
-{
+public class AllTestFilter extends Filter {
+
     @Override
-    public String describe()
-    {
+    public String describe() {
         return "Includes all tests, regardless of their annotations";
     }
 
     @Override
-    public boolean shouldRun(Description description)
-    {
+    public boolean shouldRun(Description description) {
         return true;
     }
 }

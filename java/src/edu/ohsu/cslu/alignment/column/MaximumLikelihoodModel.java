@@ -17,18 +17,16 @@ import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class MaximumLikelihoodModel extends MatrixColumnAlignmentModel
-{
-    public MaximumLikelihoodModel(java.io.Reader trainingData, CharVocabulary vocabulary, boolean ignoreLabelLines)
-        throws IOException
-    {
+public class MaximumLikelihoodModel extends MatrixColumnAlignmentModel {
+
+    public MaximumLikelihoodModel(java.io.Reader trainingData, CharVocabulary vocabulary,
+            boolean ignoreLabelLines) throws IOException {
         super(vocabulary);
 
         BufferedReader br = new BufferedReader(trainingData);
 
         String line = br.readLine();
-        if (ignoreLabelLines)
-        {
+        if (ignoreLabelLines) {
             // Discard label line
             line = br.readLine();
         }
@@ -42,10 +40,8 @@ public class MaximumLikelihoodModel extends MatrixColumnAlignmentModel
         // We already counted one line
         int totalCount = 1;
 
-        for (line = br.readLine(); line != null; line = br.readLine())
-        {
-            if (ignoreLabelLines)
-            {
+        for (line = br.readLine(); line != null; line = br.readLine()) {
+            if (ignoreLabelLines) {
                 // Discard label line
                 line = br.readLine();
             }
@@ -54,19 +50,15 @@ public class MaximumLikelihoodModel extends MatrixColumnAlignmentModel
         }
         trainingData.close();
 
-        for (int i = 0; i < rows; i++)
-        {
-            for (int j = 0; j < columns; j++)
-            {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
                 matrices[0].set(i, j, (float) -Math.log(counts.getFloat(i, j) / totalCount));
             }
         }
     }
 
-    private void countLine(CharVocabulary vocabulary, String sequence, final int columns, IntMatrix counts)
-    {
-        for (int j = 0; j < columns; j++)
-        {
+    private void countLine(CharVocabulary vocabulary, String sequence, final int columns, IntMatrix counts) {
+        for (int j = 0; j < columns; j++) {
             counts.increment(vocabulary.mapCharacter(sequence.charAt(j)), j);
         }
     }

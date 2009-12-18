@@ -7,19 +7,18 @@ import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
- * Implements {@link ColumnSequenceAligner} using linear space for the intermediate storage of
- * scores (O(mn) space is still required for the backtrace-array)
+ * Implements {@link ColumnSequenceAligner} using linear space for the intermediate storage of scores (O(mn)
+ * space is still required for the backtrace-array)
  * 
  * @author Aaron Dunlop
  * @since Nov 5, 2008
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public final class LinearColumnAligner extends FullColumnAligner
-{
+public final class LinearColumnAligner extends FullColumnAligner {
+
     @Override
-    public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model, int[] features)
-    {
+    public SequenceAlignment align(MappedSequence sequence, ColumnAlignmentModel model, int[] features) {
         final int maxI = sequence.length() + 1;
         final int maxJ = model.columnCount() + 1;
 
@@ -33,16 +32,14 @@ public final class LinearColumnAligner extends FullColumnAligner
         Arrays.fill(current, Float.MAX_VALUE);
 
         // Initialize all the 'start' columns - probabilities of gaps all the way through
-        for (int j = 1; j < maxJ; j++)
-        {
+        for (int j = 1; j < maxJ; j++) {
             previous[j] = previous[j - 1] + model.cost(gapVector, j - 1, features);
         }
         Arrays.fill(backpointer[0], BACKPOINTER_UNALIGNED_GAP);
 
         // Choose min of (emit, gap in unaligned sequence, insert column)
         // Emit should be i-1, j-1, gap in unaligned sequence i, j-1, insert column i-1,j
-        for (int i = 1; i < maxI; i++)
-        {
+        for (int i = 1; i < maxI; i++) {
             final int prevI = i - 1;
             final Vector currentElement = sequence.elementAt(prevI);
             final byte[] backpointerI = backpointer[i];
@@ -50,8 +47,7 @@ public final class LinearColumnAligner extends FullColumnAligner
             current[0] = previous[0] + model.columnInsertionCost(currentElement);
             backpointerI[0] = BACKPOINTER_INSERT_COLUMN;
 
-            for (int j = 1; j < maxJ; j++)
-            {
+            for (int j = 1; j < maxJ; j++) {
                 final int prevJ = j - 1;
 
                 // Probability of emission / gap in unaligned / insert column
@@ -61,18 +57,13 @@ public final class LinearColumnAligner extends FullColumnAligner
                 final float gapInPssm = previous[j] + model.columnInsertionCost(currentElement);
 
                 // Bias toward emission given equal probabilities
-                if (emit <= gapInPssm && emit <= gapInNewSequence)
-                {
+                if (emit <= gapInPssm && emit <= gapInNewSequence) {
                     current[j] = emit;
                     backpointerI[j] = BACKPOINTER_SUBSTITUTION;
-                }
-                else if (gapInNewSequence <= gapInPssm)
-                {
+                } else if (gapInNewSequence <= gapInPssm) {
                     current[j] = gapInNewSequence;
                     backpointerI[j] = BACKPOINTER_UNALIGNED_GAP;
-                }
-                else
-                {
+                } else {
                     current[j] = gapInPssm;
                     backpointerI[j] = BACKPOINTER_INSERT_COLUMN;
                 }

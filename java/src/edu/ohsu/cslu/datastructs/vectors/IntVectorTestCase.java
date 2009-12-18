@@ -11,22 +11,18 @@ import static junit.framework.Assert.fail;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class IntVectorTestCase extends NumericVectorTestCase
-{
-    @Override
-    public void testVectorAdd() throws Exception
-    {
-        final Vector vector = create(new float[] {1, 2, 3, 4});
-        final IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
-        final FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
+public abstract class IntVectorTestCase extends NumericVectorTestCase {
 
-        try
-        {
-            vector.add(create(new float[] {1}));
+    @Override
+    public void testVectorAdd() throws Exception {
+        final Vector vector = create(new float[] { 1, 2, 3, 4 });
+        final IntVector intVector = new IntVector(new int[] { 1, 2, 3, 4 });
+        final FloatVector floatVector = new FloatVector(new float[] { 4, 3, 2, 1 });
+
+        try {
+            vector.add(create(new float[] { 1 }));
             fail("Expected IllegalArgumentException");
-        }
-        catch (final IllegalArgumentException expected)
-        {
+        } catch (final IllegalArgumentException expected) {
             assertEquals("Vector length mismatch", expected.getMessage());
         }
 
@@ -58,7 +54,7 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
         assertEquals("Wrong value", 5, sum.getFloat(3), .01f);
 
         // If we add a {@link PackedBitVector} we should get a new instance of the same class
-        sum = vector.add(new PackedBitVector(new int[] {1, 1, 0, 0}));
+        sum = vector.add(new PackedBitVector(new int[] { 1, 1, 0, 0 }));
         assertEquals("Wrong class: " + sum.getClass().getName(), vector.getClass(), sum.getClass());
         assertEquals("Wrong length", 4, sum.length());
         assertEquals("Wrong value", 2, sum.getInt(0));
@@ -67,7 +63,7 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
         assertEquals("Wrong value", 4, sum.getInt(3));
 
         // If we add a {@link SparseBitVector} we should get a new instance of the same class
-        sum = vector.add(new SparseBitVector(new int[] {1, 1, 2, 1}, true));
+        sum = vector.add(new SparseBitVector(new int[] { 1, 1, 2, 1 }, true));
         assertEquals("Wrong class: " + sum.getClass().getName(), vector.getClass(), sum.getClass());
         assertEquals("Wrong length", 4, sum.length());
         assertEquals("Wrong value", 1, sum.getInt(0));
@@ -77,8 +73,7 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
     }
 
     @Override
-    public void testScalarAdd() throws Exception
-    {
+    public void testScalarAdd() throws Exception {
         Vector v = sampleVector.scalarAdd(1);
         assertEquals("Wrong class", IntVector.class, v.getClass());
         assertEquals("Wrong value", -10, v.getInt(0));
@@ -109,19 +104,15 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
     }
 
     @Override
-    public void testElementwiseMultiply() throws Exception
-    {
-        final Vector vector = create(new float[] {1, 2, 3, 4});
-        final IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
-        final FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
+    public void testElementwiseMultiply() throws Exception {
+        final Vector vector = create(new float[] { 1, 2, 3, 4 });
+        final IntVector intVector = new IntVector(new int[] { 1, 2, 3, 4 });
+        final FloatVector floatVector = new FloatVector(new float[] { 4, 3, 2, 1 });
 
-        try
-        {
-            vector.elementwiseMultiply(create(new float[] {1}));
+        try {
+            vector.elementwiseMultiply(create(new float[] { 1 }));
             fail("Expected IllegalArgumentException");
-        }
-        catch (final IllegalArgumentException expected)
-        {
+        } catch (final IllegalArgumentException expected) {
             assertEquals("Vector length mismatch", expected.getMessage());
         }
 
@@ -155,7 +146,7 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
 
         // If we multiply by a {@link PackedBitVector} we should get a new instance of the same
         // class
-        product = vector.elementwiseMultiply(new PackedBitVector(new int[] {1, 1, 0, 0}));
+        product = vector.elementwiseMultiply(new PackedBitVector(new int[] { 1, 1, 0, 0 }));
         assertEquals("Wrong class: " + product.getClass().getName(), vector.getClass(), product.getClass());
         assertEquals("Wrong length", 4, product.length());
         assertEquals("Wrong value", 1, product.getInt(0));
@@ -165,7 +156,7 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
 
         // If we multiply by a {@link SparseBitVector} we should get a new instance of the same
         // class
-        product = vector.elementwiseMultiply(new SparseBitVector(new int[] {1, 1, 2, 1}, true));
+        product = vector.elementwiseMultiply(new SparseBitVector(new int[] { 1, 1, 2, 1 }, true));
         assertEquals("Wrong class: " + product.getClass().getName(), vector.getClass(), product.getClass());
         assertEquals("Wrong length", 4, product.length());
         assertEquals("Wrong value", 0, product.getInt(0));
@@ -175,8 +166,7 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
     }
 
     @Override
-    public void testScalarMultiply() throws Exception
-    {
+    public void testScalarMultiply() throws Exception {
         Vector v = sampleVector.scalarMultiply(3);
         assertEquals("Wrong class", IntVector.class, v.getClass());
         assertEquals("Wrong value", -33, v.getInt(0));
@@ -207,12 +197,11 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
     }
 
     @Override
-    public void testDotProduct() throws Exception
-    {
-        final Vector v = new IntVector(new int[] {1, 2, 3, 4});
-        assertEquals(49, v.dotProduct(new IntVector(new int[] {4, 5, 5, 5})), .01f);
-        assertEquals(49f, v.dotProduct(new FloatVector(new float[] {4, 5, 5, 5})), .01f);
-        assertEquals(5f, v.dotProduct(new PackedBitVector(new int[] {0, 1, 1, 0})), .01f);
-        assertEquals(49, v.dotProduct(new PackedIntVector(new int[] {4, 5, 5, 5}, 4)), .01f);
+    public void testDotProduct() throws Exception {
+        final Vector v = new IntVector(new int[] { 1, 2, 3, 4 });
+        assertEquals(49, v.dotProduct(new IntVector(new int[] { 4, 5, 5, 5 })), .01f);
+        assertEquals(49f, v.dotProduct(new FloatVector(new float[] { 4, 5, 5, 5 })), .01f);
+        assertEquals(5f, v.dotProduct(new PackedBitVector(new int[] { 0, 1, 1, 0 })), .01f);
+        assertEquals(49, v.dotProduct(new PackedIntVector(new int[] { 4, 5, 5, 5 }, 4)), .01f);
     }
 }

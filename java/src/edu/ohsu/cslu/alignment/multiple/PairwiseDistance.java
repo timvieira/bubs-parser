@@ -6,10 +6,9 @@ package edu.ohsu.cslu.alignment.multiple;
 import java.util.SortedSet;
 
 /**
- * Represents the pairwise distance between two sequences. Allows ordered storage of these pairwise
- * distances (such as in a @link {@link SortedSet}). Handles a maximum of 2^16 sequences (Note -
- * indices are currently represented as ints to avoid requiring casting, even though shorts are long
- * enough)
+ * Represents the pairwise distance between two sequences. Allows ordered storage of these pairwise distances
+ * (such as in a @link {@link SortedSet}). Handles a maximum of 2^16 sequences (Note - indices are currently
+ * represented as ints to avoid requiring casting, even though shorts are long enough)
  * 
  * TODO: Extend to handle more than 32767 sequences.
  * 
@@ -18,17 +17,15 @@ import java.util.SortedSet;
  * 
  *        $Id$
  */
-public final class PairwiseDistance implements Comparable<PairwiseDistance>
-{
+public final class PairwiseDistance implements Comparable<PairwiseDistance> {
+
     public final int index1;
     public final int index2;
     private final float d;
     private final long hashCode;
 
-    public PairwiseDistance(final int index1, final int index2, final float distance)
-    {
-        if (index1 > 32767 || index2 > 32767)
-        {
+    public PairwiseDistance(final int index1, final int index2, final float distance) {
+        if (index1 > 32767 || index2 > 32767) {
             throw new RuntimeException("Maximum sequence count exceeded");
         }
 
@@ -42,15 +39,12 @@ public final class PairwiseDistance implements Comparable<PairwiseDistance>
     }
 
     @Override
-    public int compareTo(PairwiseDistance o)
-    {
-        if (hashCode < o.hashCode)
-        {
+    public int compareTo(PairwiseDistance o) {
+        if (hashCode < o.hashCode) {
             return -1;
         }
 
-        if (hashCode > o.hashCode)
-        {
+        if (hashCode > o.hashCode) {
             return 1;
         }
 
@@ -58,10 +52,8 @@ public final class PairwiseDistance implements Comparable<PairwiseDistance>
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == this)
-        {
+    public boolean equals(Object obj) {
+        if (obj == this) {
             return true;
         }
 
@@ -71,8 +63,7 @@ public final class PairwiseDistance implements Comparable<PairwiseDistance>
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "(" + index1 + ", " + index2 + " = " + d + ")";
     }
 }

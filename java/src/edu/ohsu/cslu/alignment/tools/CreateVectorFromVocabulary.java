@@ -9,8 +9,8 @@ import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.common.FeatureClass;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 
-public class CreateVectorFromVocabulary extends BaseCommandlineTool
-{
+public class CreateVectorFromVocabulary extends BaseCommandlineTool {
+
     @Option(name = "-g", metaVar = "weight", usage = "Gap feature weight")
     private final float gap = -1;
 
@@ -71,117 +71,113 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
     @Option(name = "-length", metaVar = "weight", usage = "Word length features")
     private final float length = -1;
 
-    public static void main(final String[] args)
-    {
+    public static void main(final String[] args) {
         run(args);
     }
 
     @Override
-    public void run() throws Exception
-    {
+    public void run() throws Exception {
         final LogLinearVocabulary vocabulary = LogLinearVocabulary.read(new InputStreamReader(System.in));
         final FloatVector vector = new FloatVector(vocabulary.size());
 
-        for (int i = 0; i < vector.length(); i++)
-        {
+        for (int i = 0; i < vector.length(); i++) {
             final String mapping = vocabulary.map(i);
-            switch (FeatureClass.forString(mapping))
-            {
-                case Gap :
-                    setVectorValue(vector, i, gap, mapping);
-                    break;
+            switch (FeatureClass.forString(mapping)) {
+            case Gap:
+                setVectorValue(vector, i, gap, mapping);
+                break;
 
-                case Word :
-                case Unknown :
-                    setVectorValue(vector, i, word, mapping);
-                    break;
+            case Word:
+            case Unknown:
+                setVectorValue(vector, i, word, mapping);
+                break;
 
-                case Stem :
-                    setVectorValue(vector, i, stem, mapping);
-                    break;
+            case Stem:
+                setVectorValue(vector, i, stem, mapping);
+                break;
 
-                case Pos :
-                    setVectorValue(vector, i, pos, mapping);
-                    break;
+            case Pos:
+                setVectorValue(vector, i, pos, mapping);
+                break;
 
-                case FirstVerb :
-                    setVectorValue(vector, i, firstVerb, mapping);
-                    break;
+            case FirstVerb:
+                setVectorValue(vector, i, firstVerb, mapping);
+                break;
 
-                case BeforeHead :
-                    setVectorValue(vector, i, beforeHead, mapping);
-                    break;
+            case BeforeHead:
+                setVectorValue(vector, i, beforeHead, mapping);
+                break;
 
-                case HeadVerb :
-                    setVectorValue(vector, i, headVerb, mapping);
-                    break;
+            case HeadVerb:
+                setVectorValue(vector, i, headVerb, mapping);
+                break;
 
-                case AfterHead :
-                    setVectorValue(vector, i, afterHead, mapping);
-                    break;
+            case AfterHead:
+                setVectorValue(vector, i, afterHead, mapping);
+                break;
 
-                // case BeginSentence :
-                // setVectorValue(vector, i, beginSentence, mapping);
-                // break;
+            // case BeginSentence :
+            // setVectorValue(vector, i, beginSentence, mapping);
+            // break;
 
-                case PreviousWord :
-                    setVectorValue(vector, i, previousWords, mapping);
-                    break;
+            case PreviousWord:
+                setVectorValue(vector, i, previousWords, mapping);
+                break;
 
-                case SubsequentWord :
-                    setVectorValue(vector, i, subsequentWords, mapping);
-                    break;
+            case SubsequentWord:
+                setVectorValue(vector, i, subsequentWords, mapping);
+                break;
 
-                case PreviousPos :
-                    setVectorValue(vector, i, previousPos, mapping);
-                    break;
+            case PreviousPos:
+                setVectorValue(vector, i, previousPos, mapping);
+                break;
 
-                case SubsequentPos :
-                    setVectorValue(vector, i, subsequentPos, mapping);
-                    break;
+            case SubsequentPos:
+                setVectorValue(vector, i, subsequentPos, mapping);
+                break;
 
-                case Capitalized :
-                    setVectorValue(vector, i, capitalized, mapping);
-                    break;
+            case Capitalized:
+                setVectorValue(vector, i, capitalized, mapping);
+                break;
 
-                case AllCaps :
-                    setVectorValue(vector, i, allCaps, mapping);
-                    break;
+            case AllCaps:
+                setVectorValue(vector, i, allCaps, mapping);
+                break;
 
-                case Hyphenated :
-                    setVectorValue(vector, i, hyphenated, mapping);
-                    break;
+            case Hyphenated:
+                setVectorValue(vector, i, hyphenated, mapping);
+                break;
 
-                case Length1 :
-                case Length2 :
-                case Length3 :
-                case Length4 :
-                case Length5to6 :
-                case Length7to8 :
-                case Length9to12 :
-                case Length13to18 :
-                case LengthGreaterThan18 :
-                    setVectorValue(vector, i, length, mapping);
-                    break;
+            case Length1:
+            case Length2:
+            case Length3:
+            case Length4:
+            case Length5to6:
+            case Length7to8:
+            case Length9to12:
+            case Length13to18:
+            case LengthGreaterThan18:
+                setVectorValue(vector, i, length, mapping);
+                break;
 
-                case Numeric :
-                    setVectorValue(vector, i, numeric, mapping);
-                    break;
+            case Numeric:
+                setVectorValue(vector, i, numeric, mapping);
+                break;
 
-                case InitialNumeric :
-                    setVectorValue(vector, i, initialNumeric, mapping);
-                    break;
+            case InitialNumeric:
+                setVectorValue(vector, i, initialNumeric, mapping);
+                break;
 
-                case StartWord :
-                    setVectorValue(vector, i, startword, mapping);
-                    break;
+            case StartWord:
+                setVectorValue(vector, i, startword, mapping);
+                break;
 
-                case EndWord :
-                    setVectorValue(vector, i, endword, mapping);
-                    break;
+            case EndWord:
+                setVectorValue(vector, i, endword, mapping);
+                break;
 
-                default :
-                    throw new IllegalArgumentException("Unknown feature class: " + mapping);
+            default:
+                throw new IllegalArgumentException("Unknown feature class: " + mapping);
             }
         }
         System.out.print(vector.toString());
@@ -194,12 +190,12 @@ public class CreateVectorFromVocabulary extends BaseCommandlineTool
      * @param index
      * @param value
      * @param mapping
-     * @throws IllegalArgumentException if the value is unset (-1)
+     * @throws IllegalArgumentException
+     *             if the value is unset (-1)
      */
-    private void setVectorValue(final FloatVector vector, final int index, final float value, final String mapping)
-    {
-        if (value == -1)
-        {
+    private void setVectorValue(final FloatVector vector, final int index, final float value,
+            final String mapping) {
+        if (value == -1) {
             throw new IllegalArgumentException("Unexpected vocabulary element: " + mapping);
         }
         vector.set(index, value);

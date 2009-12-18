@@ -26,8 +26,8 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
 
 @RunWith(FilteredRunner.class)
 @PerformanceTest
-public class ProfileMultipleSequenceAligners
-{
+public class ProfileMultipleSequenceAligners {
+
     public final static String CORPUS = "alignment/multiple/train.set.125.txt.gz";
     public final static String DISTANCE_MATRIX = "alignment/multiple/matrix.125.txt.gz";
 
@@ -38,9 +38,9 @@ public class ProfileMultipleSequenceAligners
     private Matrix distanceMatrix;
 
     @Before
-    public void setUp() throws IOException
-    {
-        BufferedReader br = new BufferedReader(new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)));
+    public void setUp() throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(SharedNlpTests
+            .unitTestDataAsStream(CORPUS)));
         int sequenceIndex = 0;
 
         List<String> corpusSequenceList = new LinkedList<String>();
@@ -67,24 +67,24 @@ public class ProfileMultipleSequenceAligners
     }
 
     @Test
-    @PerformanceTest( {"d820", "76256"})
-    public void profileIterativePairwiseAligner()
-    {
+    @PerformanceTest( { "d820", "76256" })
+    public void profileIterativePairwiseAligner() {
         SubstitutionAlignmentModel subModel = new MatrixSubstitutionAlignmentModel(10, 8,
-            new AlignmentVocabulary[] {DNA_VOCABULARY});
+            new AlignmentVocabulary[] { DNA_VOCABULARY });
 
-        new IterativePairwiseAligner().align(DNA_VOCABULARY.mapSequences(unalignedSequences), distanceMatrix, subModel);
+        new IterativePairwiseAligner().align(DNA_VOCABULARY.mapSequences(unalignedSequences), distanceMatrix,
+            subModel);
     }
 
     @Test
-    @PerformanceTest( {"d820", "88146"})
-    public void profileModelAligner() throws IOException
-    {
-        ColumnAlignmentModel model = new LaplaceModel(
-            new InputStreamReader(SharedNlpTests.unitTestDataAsStream(CORPUS)), new DnaVocabulary(), 6, true);
+    @PerformanceTest( { "d820", "88146" })
+    public void profileModelAligner() throws IOException {
+        ColumnAlignmentModel model = new LaplaceModel(new InputStreamReader(SharedNlpTests
+            .unitTestDataAsStream(CORPUS)), new DnaVocabulary(), 6, true);
         MultipleSequenceAlignment sequenceAlignment = new PssmAligner().align(DNA_VOCABULARY
             .mapSequences(unalignedSequences), distanceMatrix, model);
-        long[] eval = EvaluateAlignment.evaluate(DNA_VOCABULARY.mapSequences(sequenceAlignment.sequences()), corpus);
+        long[] eval = EvaluateAlignment.evaluate(DNA_VOCABULARY.mapSequences(sequenceAlignment.sequences()),
+            corpus);
         float accuracy = eval[0] * 100f / eval[1];
         assertEquals(94.78f, accuracy, .1);
     }

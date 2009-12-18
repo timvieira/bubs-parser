@@ -8,7 +8,6 @@ package edu.ohsu.cslu.datastructs.narytree;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public interface ShiftRegister
-{
+public interface ShiftRegister {
 
 }

@@ -2,8 +2,8 @@ package edu.ohsu.cslu.datastructs.matrices;
 
 import org.junit.Test;
 
-public interface DenseMatrixTestCase
-{
+public interface DenseMatrixTestCase {
+
     /**
      * Tests getRow() method.
      */

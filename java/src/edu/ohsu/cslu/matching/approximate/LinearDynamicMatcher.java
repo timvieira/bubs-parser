@@ -17,16 +17,14 @@ import java.util.Set;
  * 
  *        $Id$
  */
-public class LinearDynamicMatcher extends ApproximateMatcher
-{
-    public LinearDynamicMatcher(int substitutionCost, int deleteCost)
-    {
+public class LinearDynamicMatcher extends ApproximateMatcher {
+
+    public LinearDynamicMatcher(int substitutionCost, int deleteCost) {
         super(substitutionCost, deleteCost);
     }
 
     @Override
-    public Int2IntMap matchEditValues(Set<String> patterns, String text, int edits)
-    {
+    public Int2IntMap matchEditValues(Set<String> patterns, String text, int edits) {
         final Int2IntMap matchEditValues = new Int2IntOpenHashMap();
 
         final char[] textChars = text.toCharArray();
@@ -37,29 +35,25 @@ public class LinearDynamicMatcher extends ApproximateMatcher
         final int localDeleteCost = deleteCost;
         final int localSubstitutionCost = substitutionCost;
 
-        for (final String pattern : patterns)
-        {
+        for (final String pattern : patterns) {
             // Skip patterns shorter than the specified edit distance
-            if (pattern.length() <= edits)
-            {
+            if (pattern.length() <= edits) {
                 continue;
             }
 
             final char[] patternChars = pattern.toCharArray();
             Arrays.fill(previous, 0, previous.length - 1, 0);
 
-            for (int i = 0; i < patternChars.length; i++)
-            {
+            for (int i = 0; i < patternChars.length; i++) {
                 current[0] = previous[0] + localDeleteCost;
                 final char patternChar = patternChars[i];
 
-                for (int j = 1; j < jSize; j++)
-                {
+                for (int j = 1; j < jSize; j++) {
                     final int prevJ = j - 1;
                     final int f1 = current[prevJ] + localDeleteCost;
                     final int f2 = previous[j] + localDeleteCost;
-                    final int f3 = (patternChar != textChars[prevJ]) ? previous[prevJ] + localSubstitutionCost
-                        : previous[prevJ];
+                    final int f3 = (patternChar != textChars[prevJ]) ? previous[prevJ]
+                            + localSubstitutionCost : previous[prevJ];
 
                     current[j] = Math.min(f1, Math.min(f2, f3));
                 }
@@ -70,14 +64,12 @@ public class LinearDynamicMatcher extends ApproximateMatcher
 
             final int maxDelta = edits * localDeleteCost;
 
-            for (int j = pattern.length() - edits; j < jSize; j++)
-            {
+            for (int j = pattern.length() - edits; j < jSize; j++) {
                 final int lastEdits = previous[j];
-                if (lastEdits <= maxDelta)
-                {
+                if (lastEdits <= maxDelta) {
                     // Try to eliminate spurious duplicate matches
-                    if ((j <= 0 || lastEdits <= previous[j - 1]) && (j >= (jSize - 1) || lastEdits <= previous[j + 1]))
-                    {
+                    if ((j <= 0 || lastEdits <= previous[j - 1])
+                            && (j >= (jSize - 1) || lastEdits <= previous[j + 1])) {
                         matchEditValues.put(j, lastEdits);
                     }
                 }

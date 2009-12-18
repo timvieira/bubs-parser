@@ -17,31 +17,31 @@ public class ParserUtil {
 
         return tokens;
     }
-    
+
     public static boolean isUpperCase(String s) {
-    	return s == s.toUpperCase();
+        return s == s.toUpperCase();
     }
-    
+
     public static boolean isLowerCase(String s) {
-    	return s == s.toLowerCase();
+        return s == s.toLowerCase();
     }
-    
+
     public static boolean containsDigit(String s) {
-    	for (int i=0; i<s.length(); i++) {
-    		if (Character.isDigit(s.charAt(i))) return true;
-    	}
-    	return false;
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isDigit(s.charAt(i)))
+                return true;
+        }
+        return false;
     }
-    
-	public class Pair<Type1, Type2> {
-	    public final Type1 one;
-	    public final Type2 two;
-	    
-	    public Pair(Type1 a, Type2 b) {
-	    	one=a;
-	    	two=b;
-	    }
-	}
+
+    public class Pair<Type1, Type2> {
+
+        public final Type1 one;
+        public final Type2 two;
+
+        public Pair(Type1 a, Type2 b) {
+            one = a;
+            two = b;
+        }
+    }
 }
-
-

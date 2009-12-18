@@ -17,17 +17,15 @@ import static junit.framework.Assert.fail;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestFloatingPointLongPairwiseDistanceHeap extends PairwiseDistanceHeapTestCase
-{
+public class TestFloatingPointLongPairwiseDistanceHeap extends PairwiseDistanceHeapTestCase {
+
     @Override
-    protected PairwiseDistanceHeap create()
-    {
+    protected PairwiseDistanceHeap create() {
         return new FloatingPointLongPairwiseDistanceHeap();
     }
 
     @Test
-    public void testLargeDistances()
-    {
+    public void testLargeDistances() {
         distanceHeap.insert(0, 1, 1000000f);
         distanceHeap.insert(0, 2, 2e12f);
         distanceHeap.insert(1, 2, 10f);
@@ -50,34 +48,28 @@ public class TestFloatingPointLongPairwiseDistanceHeap extends PairwiseDistanceH
 
     @Override
     @Test
-    public void testIndexRange()
-    {
+    public void testIndexRange() {
         // Indices >= 0 and <= 2^16 (65536) are supported
 
         distanceHeap.insert(0, 65536, 0);
         distanceHeap.insert(65536, 0, 0);
 
-        try
-        {
+        try {
             distanceHeap.insert(65537, 0, 0);
             fail("Expected IllegalArgumentException on index 65537");
+        } catch (IllegalArgumentException expected) {
         }
-        catch (IllegalArgumentException expected)
-        {}
 
-        try
-        {
+        try {
             distanceHeap.insert(0, 65537, 0);
             fail("Expected IllegalArgumentException on index 65537");
+        } catch (IllegalArgumentException expected) {
         }
-        catch (IllegalArgumentException expected)
-        {}
     }
 
     @Override
     @Test
-    public void testDistanceRange()
-    {
+    public void testDistanceRange() {
         // FloatingPointLongDistanceHeap supports all Float values
         distanceHeap.insert(0, 1, Float.MIN_VALUE);
         distanceHeap.insert(0, 1, Float.MAX_VALUE);

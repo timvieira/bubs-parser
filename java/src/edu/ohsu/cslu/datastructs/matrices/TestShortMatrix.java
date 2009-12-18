@@ -15,22 +15,18 @@ import edu.ohsu.cslu.tests.FilteredRunner;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestShortMatrix extends DenseIntMatrixTestCase
-{
+public class TestShortMatrix extends DenseIntMatrixTestCase {
+
     @Override
-    protected String matrixType()
-    {
+    protected String matrixType() {
         return "short";
     }
 
     @Override
-    protected Matrix create(final float[][] array, boolean symmetric)
-    {
+    protected Matrix create(final float[][] array, boolean symmetric) {
         final short[][] shortArray = new short[array.length][array[0].length];
-        for (int i = 0; i < array.length; i++)
-        {
-            for (int j = 0; j < array[0].length; j++)
-            {
+        for (int i = 0; i < array.length; i++) {
+            for (int j = 0; j < array[0].length; j++) {
                 shortArray[i][j] = (short) Math.round(array[i][j]);
             }
         }
@@ -38,14 +34,11 @@ public class TestShortMatrix extends DenseIntMatrixTestCase
     }
 
     @Override
-    protected Matrix create(final int[][] array, final boolean symmetric)
-    {
+    protected Matrix create(final int[][] array, final boolean symmetric) {
         final short[][] shortArray = new short[array.length][];
-        for (int i = 0; i < array.length; i++)
-        {
+        for (int i = 0; i < array.length; i++) {
             shortArray[i] = new short[array[i].length];
-            for (int j = 0; j < array[i].length; j++)
-            {
+            for (int j = 0; j < array[i].length; j++) {
                 shortArray[i][j] = (short) Math.round(array[i][j]);
             }
         }
@@ -53,14 +46,12 @@ public class TestShortMatrix extends DenseIntMatrixTestCase
     }
 
     @Override
-    public void testInfinity() throws Exception
-    {
+    public void testInfinity() throws Exception {
         assertEquals(Short.MAX_VALUE, sampleMatrix.infinity(), .01f);
     }
 
     @Override
-    public void testNegativeInfinity() throws Exception
-    {
+    public void testNegativeInfinity() throws Exception {
         assertEquals(Short.MIN_VALUE, sampleMatrix.negativeInfinity(), .01f);
     }
 }

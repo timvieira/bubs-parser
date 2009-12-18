@@ -23,8 +23,8 @@ import edu.ohsu.cslu.util.Strings;
  * 
  *        $Id$
  */
-public interface Vector
-{
+public interface Vector {
+
     /**
      * Returns the length of the vector.
      * 
@@ -35,7 +35,8 @@ public interface Vector
     /**
      * Retrieves a vector element
      * 
-     * @param i index
+     * @param i
+     *            index
      * @return the vector element as an integer
      */
     public int getInt(final int i);
@@ -43,7 +44,8 @@ public interface Vector
     /**
      * Retrieves a vector element
      * 
-     * @param i index
+     * @param i
+     *            index
      * @return the vector element as a float
      */
     public float getFloat(final int i);
@@ -51,7 +53,8 @@ public interface Vector
     /**
      * Retrieves a vector element
      * 
-     * @param i index
+     * @param i
+     *            index
      * @return the vector element as a boolean
      */
     public boolean getBoolean(final int i);
@@ -59,39 +62,48 @@ public interface Vector
     /**
      * Sets a vector element
      * 
-     * @param i index
-     * @param value new value
+     * @param i
+     *            index
+     * @param value
+     *            new value
      */
     public void set(final int i, final int value);
 
     /**
      * Sets a vector element
      * 
-     * @param i index
-     * @param value new value
+     * @param i
+     *            index
+     * @param value
+     *            new value
      */
     public void set(final int i, final float value);
 
     /**
      * Sets a vector element
      * 
-     * @param i index
-     * @param value new value
+     * @param i
+     *            index
+     * @param value
+     *            new value
      */
     public void set(final int i, final boolean value);
 
     /**
      * Parses and sets a vector element
      * 
-     * @param i index
-     * @param newValue new value
+     * @param i
+     *            index
+     * @param newValue
+     *            new value
      */
     public void set(final int i, final String newValue);
 
     /**
      * Adds two {@link Vector}s, returning a new {@link Vector}
      * 
-     * @param v addend
+     * @param v
+     *            addend
      * @return sum of the two {@link Vector}s, as a new {@link Vector} instance
      */
     public NumericVector add(Vector v);
@@ -99,9 +111,10 @@ public interface Vector
     /**
      * Multiplies each element of two {@link Vector}s, returning a new {@link Vector}
      * 
-     * @param v multiplicand, a vector of the same length.
-     * @return a new vector in which each element is the multiple of the corresponding elements of
-     *         the two supplied {@link Vector}s.
+     * @param v
+     *            multiplicand, a vector of the same length.
+     * @return a new vector in which each element is the multiple of the corresponding elements of the two
+     *         supplied {@link Vector}s.
      */
     public Vector elementwiseMultiply(Vector v);
 
@@ -126,8 +139,8 @@ public interface Vector
     public int intMax();
 
     /**
-     * @return the index of the maximum value present in the vector; i such that
-     *         {@link #getInt(int)} will return the same value as {@link #max()}.
+     * @return the index of the maximum value present in the vector; i such that {@link #getInt(int)} will
+     *         return the same value as {@link #max()}.
      */
     public int argMax();
 
@@ -142,19 +155,21 @@ public interface Vector
     public int intMin();
 
     /**
-     * @return the index of the minimum value present in the vector; i such that
-     *         {@link #getInt(int)} will return the same value as {@link #min()}.
+     * @return the index of the minimum value present in the vector; i such that {@link #getInt(int)} will
+     *         return the same value as {@link #min()}.
      */
     public int argMin();
 
     /**
-     * @param addend The value to add
+     * @param addend
+     *            The value to add
      * @return a new vector scaled by the provided addend
      */
     public NumericVector scalarAdd(float addend);
 
     /**
-     * @param addend The value to add
+     * @param addend
+     *            The value to add
      * @return a new vector scaled by the provided addend
      */
     public NumericVector scalarAdd(int addend);
@@ -176,17 +191,19 @@ public interface Vector
     /**
      * Creates a subvector spanning the specified indices.
      * 
-     * @param i0 Initial index (inclusive)
-     * @param i1 Final index (inclusive)
+     * @param i0
+     *            Initial index (inclusive)
+     * @param i1
+     *            Final index (inclusive)
      * @return A(i0:i1)
-     * @throws ArrayIndexOutOfBoundsException if subVector indices are outside the range of the
-     *             Vector
+     * @throws ArrayIndexOutOfBoundsException
+     *             if subVector indices are outside the range of the Vector
      */
     public Vector subVector(final int i0, final int i1);
 
     /**
-     * Not terribly useful mathematically, but useful as a simple single statistic about a vector
-     * for unit testing.
+     * Not terribly useful mathematically, but useful as a simple single statistic about a vector for unit
+     * testing.
      * 
      * Note that we don't test this method, since it's not really meaningful anyway.
      * 
@@ -197,8 +214,10 @@ public interface Vector
     /**
      * Write this vector to the specified writer
      * 
-     * @param writer the output location
-     * @throws IOException if the write fails
+     * @param writer
+     *            the output location
+     * @throws IOException
+     *             if the write fails
      */
     public void write(Writer writer) throws IOException;
 
@@ -212,8 +231,8 @@ public interface Vector
     /**
      * Factory class for all vector types
      */
-    public static class Factory
-    {
+    public static class Factory {
+
         private final static String ATTRIBUTE_TYPE = "type";
         private final static String ATTRIBUTE_LENGTH = "length";
 
@@ -232,28 +251,23 @@ public interface Vector
         public final static String ATTRIBUTE_TYPE_SPARSE_BIT = "sparse-bit";
         public final static String ATTRIBUTE_TYPE_MUTABLE_SPARSE_BIT = "mutable-sparse-bit";
 
-        public static Vector read(final String s) throws IOException
-        {
+        public static Vector read(final String s) throws IOException {
             return read(new StringReader(s));
         }
 
-        public static Vector read(final File f) throws IOException
-        {
+        public static Vector read(final File f) throws IOException {
             InputStream is = new FileInputStream(f);
-            if (f.getName().endsWith(".gz"))
-            {
+            if (f.getName().endsWith(".gz")) {
                 is = new GZIPInputStream(is);
             }
             return read(is);
         }
 
-        public static Vector read(final InputStream inputStream) throws IOException
-        {
+        public static Vector read(final InputStream inputStream) throws IOException {
             return read(new InputStreamReader(inputStream));
         }
 
-        public static Vector read(final Reader reader) throws IOException
-        {
+        public static Vector read(final Reader reader) throws IOException {
             final BufferedReader br = new BufferedReader(reader);
             final Map<String, String> attributes = Strings.headerAttributes(br.readLine());
 
@@ -262,70 +276,45 @@ public interface Vector
             final int length = Integer.parseInt(attributes.get(ATTRIBUTE_LENGTH));
 
             final boolean sparse = attributes.containsKey(ATTRIBUTE_SPARSE)
-                && Boolean.parseBoolean(attributes.get(ATTRIBUTE_SPARSE));
+                    && Boolean.parseBoolean(attributes.get(ATTRIBUTE_SPARSE));
 
             Vector vector = null;
-            if (type.equals(ATTRIBUTE_TYPE_INT))
-            {
+            if (type.equals(ATTRIBUTE_TYPE_INT)) {
                 vector = new IntVector(length);
-            }
-            else if (type.equals(ATTRIBUTE_TYPE_FLOAT))
-            {
+            } else if (type.equals(ATTRIBUTE_TYPE_FLOAT)) {
                 vector = new FloatVector(length);
-            }
-            else if (type.equals(ATTRIBUTE_TYPE_HASH_SPARSE_FLOAT))
-            {
+            } else if (type.equals(ATTRIBUTE_TYPE_HASH_SPARSE_FLOAT)) {
                 vector = new HashSparseFloatVector(length);
-            }
-            else if (type.equals(ATTRIBUTE_TYPE_FIXED_POINT_SHORT))
-            {
+            } else if (type.equals(ATTRIBUTE_TYPE_FIXED_POINT_SHORT)) {
                 throw new RuntimeException(type + " type is not supported");
-            }
-            else if (type.equals(ATTRIBUTE_TYPE_PACKED_BIT))
-            {
+            } else if (type.equals(ATTRIBUTE_TYPE_PACKED_BIT)) {
                 vector = new PackedBitVector(length);
-            }
-            else if (type.equals(ATTRIBUTE_TYPE_SPARSE_BIT))
-            {
+            } else if (type.equals(ATTRIBUTE_TYPE_SPARSE_BIT)) {
                 return new SparseBitVector(readSparseIntArray(br), true);
-            }
-            else if (type.equals(ATTRIBUTE_TYPE_MUTABLE_SPARSE_BIT))
-            {
+            } else if (type.equals(ATTRIBUTE_TYPE_MUTABLE_SPARSE_BIT)) {
                 // Special-case, to read in the contents as an array of integers
                 return new MutableSparseBitVector(readSparseIntArray(br));
-            }
-            else if (type.equals(ATTRIBUTE_TYPE_PACKED_INTEGER))
-            {
+            } else if (type.equals(ATTRIBUTE_TYPE_PACKED_INTEGER)) {
                 final int bits = Integer.parseInt(attributes.get(ATTRIBUTE_BITS));
                 vector = new PackedIntVector(length, bits);
-            }
-            else if (type.equals("double"))
-            {
+            } else if (type.equals("double")) {
                 throw new RuntimeException(type + " type is not supported");
-            }
-            else
-            {
+            } else {
                 throw new RuntimeException(type + " type is not supported");
             }
 
             // Read and initialize vector
             final String[] split = br.readLine().split(" +");
 
-            if (sparse)
-            {
-                for (int i = 0; i < split.length; i = i + 2)
-                {
+            if (sparse) {
+                for (int i = 0; i < split.length; i = i + 2) {
                     vector.set(Integer.parseInt(split[i]), split[i + 1]);
                 }
-            }
-            else
-            {
-                if (split.length != length)
-                {
+            } else {
+                if (split.length != length) {
                     throw new IllegalArgumentException("Serialized vector length mismatch");
                 }
-                for (int i = 0; i < split.length; i++)
-                {
+                for (int i = 0; i < split.length; i++) {
                     vector.set(i, split[i]);
                 }
             }
@@ -333,32 +322,26 @@ public interface Vector
             return vector;
         }
 
-        private static int[] readSparseIntArray(final BufferedReader br) throws IOException
-        {
+        private static int[] readSparseIntArray(final BufferedReader br) throws IOException {
             final String[] split = br.readLine().split(" +");
             final int[] array = new int[split.length];
-            for (int i = 0; i < array.length; i++)
-            {
+            for (int i = 0; i < array.length; i++) {
                 array[i] = Integer.parseInt(split[i]);
             }
             return array;
         }
 
-        static int[] sparseIntElementArray(final int[] sparseIntArray)
-        {
+        static int[] sparseIntElementArray(final int[] sparseIntArray) {
             final int[] tmpElements = new int[sparseIntArray.length / 2];
             int j = 0;
-            for (int i = 0; i < sparseIntArray.length; i = i + 2)
-            {
-                if (sparseIntArray[i + 1] != 0)
-                {
+            for (int i = 0; i < sparseIntArray.length; i = i + 2) {
+                if (sparseIntArray[i + 1] != 0) {
                     tmpElements[j++] = sparseIntArray[i];
                 }
             }
             Arrays.sort(tmpElements);
 
-            if (j == sparseIntArray.length / 2)
-            {
+            if (j == sparseIntArray.length / 2) {
                 return tmpElements;
             }
 

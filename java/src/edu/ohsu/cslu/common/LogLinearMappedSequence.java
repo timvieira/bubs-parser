@@ -12,8 +12,8 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.util.Strings;
 
 /**
- * Represents an ordered sequence of elements, mapped using a {@link Vocabulary}. Each element is
- * represented by a {@link BitVector} denoting the features of that element.
+ * Represents an ordered sequence of elements, mapped using a {@link Vocabulary}. Each element is represented
+ * by a {@link BitVector} denoting the features of that element.
  * 
  * Elements are not required (and generally not expected) to have the same number of features.
  * 
@@ -41,8 +41,8 @@ import edu.ohsu.cslu.util.Strings;
  * 
  *        $Id$
  */
-public class LogLinearMappedSequence implements MappedSequence
-{
+public class LogLinearMappedSequence implements MappedSequence {
+
     // TODO: Represent as a {@link LinkedList} so we can insert and remove efficiently?
     private final BitVector[] elements;
     private final Vocabulary vocabulary;
@@ -55,19 +55,16 @@ public class LogLinearMappedSequence implements MappedSequence
      * </pre>
      * 
      * @param bracketedSequence
-     * @param vocabulary {@link LogLinearVocabulary} with which to map the tokens to
-     *            {@link BitVector}s.
+     * @param vocabulary
+     *            {@link LogLinearVocabulary} with which to map the tokens to {@link BitVector}s.
      */
-    public LogLinearMappedSequence(final String bracketedSequence, final AlignmentVocabulary vocabulary)
-    {
+    public LogLinearMappedSequence(final String bracketedSequence, final AlignmentVocabulary vocabulary) {
         final String[][] split = Strings.bracketedTags(bracketedSequence);
         elements = new BitVector[split.length];
 
-        for (int j = 0; j < split.length; j++)
-        {
+        for (int j = 0; j < split.length; j++) {
             final int[] features = new int[split[j].length];
-            for (int i = 0; i < split[j].length; i++)
-            {
+            for (int i = 0; i < split[j].length; i++) {
                 features[i] = vocabulary.map(split[j][i]);
             }
             elements[j] = new SparseBitVector(features, false);
@@ -90,67 +87,55 @@ public class LogLinearMappedSequence implements MappedSequence
         this.vocabulary = vocabulary;
     }
 
-    public LogLinearMappedSequence(final BitVector[] elements, final Vocabulary vocabulary)
-    {
+    public LogLinearMappedSequence(final BitVector[] elements, final Vocabulary vocabulary) {
         this.elements = elements;
         this.vocabulary = vocabulary;
     }
 
-    public LogLinearMappedSequence(final int[] features, final Vocabulary vocabulary)
-    {
+    public LogLinearMappedSequence(final int[] features, final Vocabulary vocabulary) {
         this.elements = new BitVector[features.length];
-        for (int j = 0; j < features.length; j++)
-        {
-            elements[j] = new SparseBitVector(new int[] {features[j]}, false);
+        for (int j = 0; j < features.length; j++) {
+            elements[j] = new SparseBitVector(new int[] { features[j] }, false);
         }
         this.vocabulary = vocabulary;
     }
 
-    public LogLinearMappedSequence(final int[][] features, final Vocabulary vocabulary)
-    {
+    public LogLinearMappedSequence(final int[][] features, final Vocabulary vocabulary) {
         this.elements = new BitVector[features.length];
-        for (int j = 0; j < features.length; j++)
-        {
+        for (int j = 0; j < features.length; j++) {
             elements[j] = new SparseBitVector(features[j], false);
         }
         this.vocabulary = vocabulary;
     }
 
     /**
-     * Convenience method, since {@link LogLinearMappedSequence} is always mapped by a single
-     * vocabulary.
+     * Convenience method, since {@link LogLinearMappedSequence} is always mapped by a single vocabulary.
      * 
      * @return mapping vocabulary
      */
-    public Vocabulary vocabulary()
-    {
+    public Vocabulary vocabulary() {
         return vocabulary;
     }
 
     @Override
-    public int featureCount()
-    {
+    public int featureCount() {
         return vocabulary.size();
     }
 
     @Override
-    public int length()
-    {
+    public int length() {
         return elements.length;
     }
 
     @Override
-    public BitVector elementAt(final int index)
-    {
+    public BitVector elementAt(final int index) {
         return elements[index];
     }
 
     @Override
-    public String stringFeature(final int index, final int featureIndex)
-    {
+    public String stringFeature(final int index, final int featureIndex) {
         // Return null if the specified element does not contain the specified feature
-        if (!elements[index].getBoolean(featureIndex))
-        {
+        if (!elements[index].getBoolean(featureIndex)) {
             return null;
         }
 
@@ -158,26 +143,23 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public String[] stringFeatures(final int index)
-    {
+    public String[] stringFeatures(final int index) {
         final int[] values = elements[index].values();
         final String[] stringFeatures = new String[values.length];
-        for (int i = 0; i < stringFeatures.length; i++)
-        {
+        for (int i = 0; i < stringFeatures.length; i++) {
             stringFeatures[i] = vocabulary.map(values[i]);
         }
         return stringFeatures;
     }
 
     @Override
-    public MappedSequence insertGaps(final int[] gapIndices)
-    {
-        if (gapIndices.length == 0)
-        {
+    public MappedSequence insertGaps(final int[] gapIndices) {
+        if (gapIndices.length == 0) {
             return clone();
         }
 
-        final BitVector gapVector = new SparseBitVector(new int[] {SubstitutionAlignmentModel.GAP_INDEX}, false);
+        final BitVector gapVector = new SparseBitVector(new int[] { SubstitutionAlignmentModel.GAP_INDEX },
+            false);
 
         final int gaps = gapIndices.length;
         final int newLength = length() + gaps;
@@ -191,20 +173,16 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public MappedSequence removeAllGaps()
-    {
+    public MappedSequence removeAllGaps() {
         final int oldLength = length();
         int gaps = 0;
-        for (int j = 0; j < oldLength; j++)
-        {
-            if (elements[j].getBoolean(SubstitutionAlignmentModel.GAP_INDEX))
-            {
+        for (int j = 0; j < oldLength; j++) {
+            if (elements[j].getBoolean(SubstitutionAlignmentModel.GAP_INDEX)) {
                 gaps++;
             }
         }
 
-        if (gaps == 0)
-        {
+        if (gaps == 0) {
             return clone();
         }
 
@@ -212,10 +190,8 @@ public class LogLinearMappedSequence implements MappedSequence
 
         // Old and new column indices
         int newJ = 0;
-        for (int oldJ = 0; oldJ < oldLength; oldJ++)
-        {
-            if (!elements[oldJ].getBoolean(SubstitutionAlignmentModel.GAP_INDEX))
-            {
+        for (int oldJ = 0; oldJ < oldLength; oldJ++) {
+            if (!elements[oldJ].getBoolean(SubstitutionAlignmentModel.GAP_INDEX)) {
                 newElements[newJ++] = elements[oldJ];
             }
         }
@@ -226,16 +202,12 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public MappedSequence retainFeatures(final int... features)
-    {
+    public MappedSequence retainFeatures(final int... features) {
         final BitVector[] newElements = new BitVector[elements.length];
-        for (int j = 0; j < elements.length; j++)
-        {
+        for (int j = 0; j < elements.length; j++) {
             final IntRBTreeSet newFeatures = new IntRBTreeSet();
-            for (int i = 0; i < features.length; i++)
-            {
-                if (elements[j].getBoolean(features[i]))
-                {
+            for (int i = 0; i < features.length; i++) {
+                if (elements[j].getBoolean(features[i])) {
                     newFeatures.add(features[i]);
                 }
             }
@@ -245,30 +217,25 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public MappedSequence[] splitIntoSentences()
-    {
+    public MappedSequence[] splitIntoSentences() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Sequence subSequence(final int beginIndex, final int endIndex)
-    {
+    public Sequence subSequence(final int beginIndex, final int endIndex) {
         // Note that this does not clone all contained BitVectors. Efficient, but possibly
         // problematic in a functional-programming sense.
         return new LogLinearMappedSequence(Arrays.copyOfRange(elements, beginIndex, endIndex), vocabulary);
     }
 
     @Override
-    public String toBracketedString()
-    {
+    public String toBracketedString() {
         final StringBuilder sb = new StringBuilder(256);
-        for (int j = 0; j < elements.length; j++)
-        {
+        for (int j = 0; j < elements.length; j++) {
             final int[] features = elements[j].values();
             sb.append("(");
-            for (int i = 0; i < features.length; i++)
-            {
+            for (int i = 0; i < features.length; i++) {
                 sb.append(vocabulary.map(features[i]));
                 sb.append(' ');
             }
@@ -277,8 +244,7 @@ public class LogLinearMappedSequence implements MappedSequence
         }
 
         // Remove the final space
-        if (sb.length() > 1)
-        {
+        if (sb.length() > 1) {
             sb.deleteCharAt(sb.length() - 1);
         }
 
@@ -286,14 +252,11 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public String toSlashSeparatedString()
-    {
+    public String toSlashSeparatedString() {
         final StringBuilder sb = new StringBuilder(256);
-        for (int j = 0; j < elements.length; j++)
-        {
+        for (int j = 0; j < elements.length; j++) {
             final int[] features = elements[j].values();
-            for (int i = 0; i < features.length; i++)
-            {
+            for (int i = 0; i < features.length; i++) {
                 sb.append(vocabulary.map(features[i]));
                 sb.append('/');
             }
@@ -302,8 +265,7 @@ public class LogLinearMappedSequence implements MappedSequence
         }
 
         // Remove the final space
-        if (sb.length() > 1)
-        {
+        if (sb.length() > 1) {
             sb.deleteCharAt(sb.length() - 1);
         }
 
@@ -311,27 +273,22 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public Vocabulary[] vocabularies()
-    {
-        return new Vocabulary[] {vocabulary};
+    public Vocabulary[] vocabularies() {
+        return new Vocabulary[] { vocabulary };
     }
 
     @Override
-    public final LogLinearMappedSequence clone()
-    {
+    public final LogLinearMappedSequence clone() {
         final BitVector[] newElements = new BitVector[elements.length];
-        for (int j = 0; j < newElements.length; j++)
-        {
+        for (int j = 0; j < newElements.length; j++) {
             newElements[j] = (BitVector) elements[j].clone();
         }
         return new LogLinearMappedSequence(newElements, vocabulary);
     }
 
     @Override
-    public boolean equals(final Object o)
-    {
-        if (!(o instanceof LogLinearMappedSequence))
-        {
+    public boolean equals(final Object o) {
+        if (!(o instanceof LogLinearMappedSequence)) {
             return false;
         }
 
@@ -339,27 +296,22 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return toColumnString();
     }
 
-    public final String toColumnString()
-    {
+    public final String toColumnString() {
         final int length = length();
 
         // Find the maximum token length in each column
         final String[] formats = new String[length];
 
-        for (int j = 0; j < length; j++)
-        {
+        for (int j = 0; j < length; j++) {
             int columnLength = 0;
             final int[] values = elements[j].values();
-            for (int i = 0; i < values.length; i++)
-            {
+            for (int i = 0; i < values.length; i++) {
                 final int featureLength = vocabulary.map(values[i]).length();
-                if (featureLength > columnLength)
-                {
+                if (featureLength > columnLength) {
                     columnLength = featureLength;
                 }
             }
@@ -377,17 +329,14 @@ public class LogLinearMappedSequence implements MappedSequence
      * @return String visualization of the sequence
      */
     @Override
-    public String toColumnString(final String[] formats)
-    {
+    public String toColumnString(final String[] formats) {
         final int length = length();
 
         // Find the maximum number of populated features (the number of rows we'll need to format)
         int maxFeatures = 0;
-        for (int j = 0; j < length; j++)
-        {
+        for (int j = 0; j < length; j++) {
             final int features = elements[j].values().length;
-            if (features > maxFeatures)
-            {
+            if (features > maxFeatures) {
                 maxFeatures = features;
             }
         }
@@ -395,13 +344,12 @@ public class LogLinearMappedSequence implements MappedSequence
         final StringBuilder sb = new StringBuilder(length * 20);
 
         // Rows
-        for (int i = 0; i < maxFeatures; i++)
-        {
+        for (int i = 0; i < maxFeatures; i++) {
             // Columns
-            for (int j = 0; j < length; j++)
-            {
+            for (int j = 0; j < length; j++) {
                 final int[] elementValues = elements[j].values();
-                final String stringFeature = (i < elementValues.length) ? vocabulary.map(elementValues[i]) : "";
+                final String stringFeature = (i < elementValues.length) ? vocabulary.map(elementValues[i])
+                        : "";
                 sb.append(String.format(formats[j], stringFeature));
             }
             sb.append('\n');
@@ -414,16 +362,13 @@ public class LogLinearMappedSequence implements MappedSequence
     }
 
     @Override
-    public int maxLabelLength(final int index)
-    {
+    public int maxLabelLength(final int index) {
         final int[] features = elements[index].values();
 
         int maxLength = 0;
-        for (int i = 0; i < features.length; i++)
-        {
+        for (int i = 0; i < features.length; i++) {
             final int length = vocabulary.map(features[i]).length();
-            if (length > maxLength)
-            {
+            if (length > maxLength) {
                 maxLength = length;
             }
         }

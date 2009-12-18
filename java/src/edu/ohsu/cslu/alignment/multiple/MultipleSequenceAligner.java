@@ -17,8 +17,8 @@ import edu.ohsu.cslu.datastructs.matrices.Matrix;
  * 
  *        $Id$
  */
-public interface MultipleSequenceAligner
-{
+public interface MultipleSequenceAligner {
+
     public MultipleSequenceAlignment align(MappedSequence[] unalignedSequences, Matrix distanceMatrix,
-        AlignmentModel alignmentModel) throws IOException;
+            AlignmentModel alignmentModel) throws IOException;
 }

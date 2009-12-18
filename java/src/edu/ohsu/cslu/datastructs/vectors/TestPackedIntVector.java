@@ -19,56 +19,51 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestPackedIntVector extends IntVectorTestCase
-{
+public class TestPackedIntVector extends IntVectorTestCase {
+
     private int[] sampleArray;
 
     @Override
-    public void setUp() throws Exception
-    {
+    public void setUp() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("vector type=packed-int length=11 bits=8\n");
         sb.append("11 0 11 22 33 44 56 67 78 89 100\n");
         stringSampleVector = sb.toString();
 
-        sampleArray = new int[] {11, 0, 11, 22, 33, 44, 56, 67, 78, 89, 100};
+        sampleArray = new int[] { 11, 0, 11, 22, 33, 44, 56, 67, 78, 89, 100 };
         sampleVector = new PackedIntVector(sampleArray, 8);
 
         vectorClass = PackedIntVector.class;
     }
 
     @Override
-    protected Vector create(float[] array)
-    {
+    protected Vector create(float[] array) {
         int[] intArray = new int[array.length];
-        for (int i = 0; i < array.length; i++)
-        {
+        for (int i = 0; i < array.length; i++) {
             intArray[i] = Math.round(array[i]);
         }
         return new PackedIntVector(intArray, 8);
     }
 
     @Override
-    public void testInfinity() throws Exception
-    {
+    public void testInfinity() throws Exception {
         assertEquals(255, sampleVector.infinity(), .001f);
     }
 
     @Override
-    public void testNegativeInfinity() throws Exception
-    {
+    public void testNegativeInfinity() throws Exception {
         assertEquals(0, sampleVector.negativeInfinity(), .001f);
     }
 
     /**
      * Tests 'getFloat' method
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testGetFloat() throws Exception
-    {
+    public void testGetFloat() throws Exception {
         assertEquals("Wrong value", 11, sampleVector.getFloat(0), 0.01f);
         assertEquals("Wrong value", 0, sampleVector.getFloat(1), 0.01f);
         assertEquals("Wrong value", 11, sampleVector.getFloat(2), 0.01f);
@@ -84,8 +79,7 @@ public class TestPackedIntVector extends IntVectorTestCase
 
     @Override
     @Test
-    public void testGetInt()
-    {
+    public void testGetInt() {
         PackedIntVector packedVector = new PackedIntVector(16, 2);
         assertEquals("Wrong value", 0, packedVector.getInt(1));
         assertEquals("Wrong value", 0, packedVector.getInt(2));
@@ -148,38 +142,33 @@ public class TestPackedIntVector extends IntVectorTestCase
         Random random = new Random();
         int[] intArray = new int[count];
         packedVector = new PackedIntVector(count, 2);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             int value = random.nextInt(4);
             intArray[i] = value;
             packedVector.set(i, value);
         }
 
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             assertEquals(intArray[i], packedVector.getInt(i));
         }
 
         // And a couple randomized stress-tests
         count = 1024;
         packedVector = new PackedIntVector(count, 4);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             int value = random.nextInt(8);
             intArray[i] = value;
             packedVector.set(i, value);
         }
 
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             assertEquals(intArray[i], packedVector.getInt(i));
         }
     }
 
     @Override
     @Test
-    public void testSet()
-    {
+    public void testSet() {
         PackedIntVector packedVector = new PackedIntVector(200, 2);
         packedVector.set(101, 1);
         packedVector.set(102, 2);
@@ -246,12 +235,12 @@ public class TestPackedIntVector extends IntVectorTestCase
     /**
      * Tests min(), intMin(), and argMin() methods
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testMin() throws Exception
-    {
+    public void testMin() throws Exception {
         assertEquals(0f, sampleVector.min(), .01f);
         assertEquals(0, sampleVector.intMin());
         assertEquals(1, sampleVector.argMin());
@@ -260,19 +249,18 @@ public class TestPackedIntVector extends IntVectorTestCase
     /**
      * Tests max(), intMax(), and argMax() methods
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testMax() throws Exception
-    {
+    public void testMax() throws Exception {
         assertEquals(100, sampleVector.intMax());
         assertEquals(10, sampleVector.argMax());
     }
 
     @Override
-    public void testScalarAdd() throws Exception
-    {
+    public void testScalarAdd() throws Exception {
         Vector v = sampleVector.scalarAdd(1);
         assertEquals("Wrong class", sampleVector.getClass(), v.getClass());
         assertEquals("Wrong value", 12, v.getInt(0));
@@ -303,8 +291,7 @@ public class TestPackedIntVector extends IntVectorTestCase
     }
 
     @Override
-    public void testScalarMultiply() throws Exception
-    {
+    public void testScalarMultiply() throws Exception {
         Vector v = sampleVector.scalarMultiply(2);
         assertEquals("Wrong class", sampleVector.getClass(), v.getClass());
         assertEquals("Wrong value", 22, v.getInt(0));
@@ -336,20 +323,17 @@ public class TestPackedIntVector extends IntVectorTestCase
 
     @PerformanceTest
     @Test
-    public void profilePackedIntVector()
-    {
+    public void profilePackedIntVector() {
         final int iterations = 100000000;
         final int length = 65536;
 
         long startTime = System.currentTimeMillis();
 
         PackedIntVector packedArray = new PackedIntVector(length, 2);
-        for (int i = 0; i < iterations; i++)
-        {
+        for (int i = 0; i < iterations; i++) {
             packedArray.set(i & 0xffff, i & 0x03);
         }
-        for (int i = 0; i < iterations; i++)
-        {
+        for (int i = 0; i < iterations; i++) {
             packedArray.getInt(i & 0xffff);
         }
 

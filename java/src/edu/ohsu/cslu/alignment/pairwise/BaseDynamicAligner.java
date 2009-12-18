@@ -12,16 +12,15 @@ import edu.ohsu.cslu.common.Vocabulary;
  * 
  *        $Id$
  */
-public abstract class BaseDynamicAligner implements PairwiseAligner
-{
+public abstract class BaseDynamicAligner implements PairwiseAligner {
+
     protected float m_costs[][];
     protected Sequence m_aligned;
     protected Sequence m_unaligned;
     protected AlignmentModel m_model;
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         int maxI = m_unaligned.length() + 1;
         int maxJ = m_aligned.length() + 1;
 
@@ -30,16 +29,15 @@ public abstract class BaseDynamicAligner implements PairwiseAligner
 
         StringBuffer sb = new StringBuffer(1024);
         sb.append("       ");
-        for (int j = 0; j < maxJ; j++)
-        {
-            sb.append(String.format("%6s |", j > 0 ? vocabulary.map(m_aligned.elementAt(j - 1).getInt(0)) : ""));
+        for (int j = 0; j < maxJ; j++) {
+            sb.append(String.format("%6s |", j > 0 ? vocabulary.map(m_aligned.elementAt(j - 1).getInt(0))
+                    : ""));
         }
         sb.append('\n');
-        for (int i = 0; i < maxI; i++)
-        {
-            sb.append(String.format("%5s |", i > 0 ? vocabulary.map(m_unaligned.elementAt(i - 1).getInt(0)) : ""));
-            for (int j = 0; j < maxJ; j++)
-            {
+        for (int i = 0; i < maxI; i++) {
+            sb.append(String.format("%5s |", i > 0 ? vocabulary.map(m_unaligned.elementAt(i - 1).getInt(0))
+                    : ""));
+            for (int j = 0; j < maxJ; j++) {
                 float value = m_costs[i][j];
                 sb.append(String.format(value > 10000 ? "  Max |" : " %5.2f |", value));
             }

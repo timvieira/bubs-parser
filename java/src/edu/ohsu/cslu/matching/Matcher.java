@@ -17,18 +17,20 @@ import java.util.TreeSet;
  * 
  *        $Id$
  */
-public abstract class Matcher
-{
+public abstract class Matcher {
+
     protected final static int MAX_TO_STRING_LENGTH = 4096;
 
-    protected Matcher()
-    {}
+    protected Matcher() {
+    }
 
     /**
      * Returns the locations of matches found in the text.
      * 
-     * @param patterns The patterns to search for
-     * @param text The text to search
+     * @param patterns
+     *            The patterns to search for
+     * @param text
+     *            The text to search
      * @return The start locations of any matches found
      */
     public abstract IntSet matchLocations(Set<String> patterns, String text);
@@ -36,12 +38,13 @@ public abstract class Matcher
     /**
      * Returns the locations of matches found in the text.
      * 
-     * @param pattern The pattern to search for
-     * @param text The text to search
+     * @param pattern
+     *            The pattern to search for
+     * @param text
+     *            The text to search
      * @return The start locations of any matches found
      */
-    public IntSet matchLocations(String pattern, String text)
-    {
+    public IntSet matchLocations(String pattern, String text) {
 
         return matchLocations(new TreeSet<String>(Arrays.asList(pattern)), text);
     }
@@ -49,48 +52,52 @@ public abstract class Matcher
     /**
      * Returns the locations of matches found in the text.
      * 
-     * @param patterns The patterns to search for
-     * @param text The text to search
+     * @param patterns
+     *            The patterns to search for
+     * @param text
+     *            The text to search
      * @return The start locations of matches found
      */
-    public IntSet matchLocations(String[] patterns, String text)
-    {
+    public IntSet matchLocations(String[] patterns, String text) {
         return matchLocations(new TreeSet<String>(Arrays.asList(patterns)), text);
     }
 
     /**
      * Returns the number of matches found in the text.
      * 
-     * @param patterns The patterns to search for
-     * @param text The text to search
+     * @param patterns
+     *            The patterns to search for
+     * @param text
+     *            The text to search
      * @return The number of matches found
      */
-    public int matches(Set<String> patterns, String text)
-    {
+    public int matches(Set<String> patterns, String text) {
         return matchLocations(patterns, text).size();
     }
 
     /**
      * Returns the number of matches found in the text.
      * 
-     * @param patterns The patterns to search for
-     * @param text The text to search
+     * @param patterns
+     *            The patterns to search for
+     * @param text
+     *            The text to search
      * @return The number of matches found
      */
-    public int matches(String[] patterns, String text)
-    {
+    public int matches(String[] patterns, String text) {
         return matches(new TreeSet<String>(Arrays.asList(patterns)), text);
     }
 
     /**
      * Returns the number of matches found in the text.
      * 
-     * @param pattern The pattern to search for
-     * @param text The text to search
+     * @param pattern
+     *            The pattern to search for
+     * @param text
+     *            The text to search
      * @return The number of matches found
      */
-    public int matches(String pattern, String text)
-    {
+    public int matches(String pattern, String text) {
         return matches(new TreeSet<String>(Arrays.asList(pattern)), text);
     }
 }

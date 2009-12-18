@@ -20,6 +20,7 @@ import edu.ohsu.cslu.datastructs.vectors.PackedIntVector;
  * @version $Revision$ $Date$ $Author$
  */
 public abstract class IntMatrixTestCase extends MatrixTestCase {
+
     protected int[][] sampleArray;
     protected int[][] symmetricArray;
 

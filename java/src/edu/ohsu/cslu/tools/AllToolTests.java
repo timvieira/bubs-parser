@@ -12,6 +12,6 @@ import org.junit.runners.Suite;
  *        $Id$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses( {TestCalculateDistances.class, TestSelectFeatures.class})
-public class AllToolTests
-{}
+@Suite.SuiteClasses( { TestCalculateDistances.class, TestSelectFeatures.class })
+public class AllToolTests {
+}

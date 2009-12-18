@@ -16,23 +16,19 @@ import edu.ohsu.cslu.tests.FilteredRunner;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestByteMatrix extends DenseIntMatrixTestCase
-{
+public class TestByteMatrix extends DenseIntMatrixTestCase {
+
     @Override
-    protected String matrixType()
-    {
+    protected String matrixType() {
         return "byte";
     }
 
     @Override
-    protected Matrix create(final float[][] array, boolean symmetric)
-    {
+    protected Matrix create(final float[][] array, boolean symmetric) {
         final byte[][] byteArray = new byte[array.length][];
-        for (int i = 0; i < array.length; i++)
-        {
+        for (int i = 0; i < array.length; i++) {
             byteArray[i] = new byte[array[i].length];
-            for (int j = 0; j < array[i].length; j++)
-            {
+            for (int j = 0; j < array[i].length; j++) {
                 byteArray[i][j] = (byte) Math.round(array[i][j]);
             }
         }
@@ -40,14 +36,11 @@ public class TestByteMatrix extends DenseIntMatrixTestCase
     }
 
     @Override
-    protected Matrix create(final int[][] array, final boolean symmetric)
-    {
+    protected Matrix create(final int[][] array, final boolean symmetric) {
         final byte[][] byteArray = new byte[array.length][];
-        for (int i = 0; i < array.length; i++)
-        {
+        for (int i = 0; i < array.length; i++) {
             byteArray[i] = new byte[array[i].length];
-            for (int j = 0; j < array[i].length; j++)
-            {
+            for (int j = 0; j < array[i].length; j++) {
                 byteArray[i][j] = (byte) Math.round(array[i][j]);
             }
         }
@@ -55,15 +48,15 @@ public class TestByteMatrix extends DenseIntMatrixTestCase
     }
 
     /**
-     * Tests scalar multiplication. Overrides implementation in {@link IntMatrixTestCase} because
-     * the multiplication exceeded the range of a byte.
+     * Tests scalar multiplication. Overrides implementation in {@link IntMatrixTestCase} because the
+     * multiplication exceeded the range of a byte.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testScalarMultiply() throws Exception
-    {
+    public void testScalarMultiply() throws Exception {
         Matrix m = sampleMatrix.scalarMultiply(3);
         assertEquals(matrixClass, m.getClass());
         assertEquals(-22, m.getInt(1, 2));
@@ -76,14 +69,12 @@ public class TestByteMatrix extends DenseIntMatrixTestCase
     }
 
     @Override
-    public void testInfinity() throws Exception
-    {
+    public void testInfinity() throws Exception {
         assertEquals(Byte.MAX_VALUE, sampleMatrix.infinity(), .01f);
     }
 
     @Override
-    public void testNegativeInfinity() throws Exception
-    {
+    public void testNegativeInfinity() throws Exception {
         assertEquals(Byte.MIN_VALUE, sampleMatrix.negativeInfinity(), .01f);
     }
 }

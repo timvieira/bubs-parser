@@ -19,31 +19,29 @@ import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.util.Strings;
 
 /**
- * {@link Vocabulary} implementation intended to map all features of interest - e.g. words, POS,
- * other labels (as opposed to {@link SimpleVocabulary}, which generally maps only a single class of
- * feature - one instance for words, another for POS, etc.). {@link LogLinearVocabulary} is
- * generally useful for log-linear modeling in which all features are binary.
+ * {@link Vocabulary} implementation intended to map all features of interest - e.g. words, POS, other labels
+ * (as opposed to {@link SimpleVocabulary}, which generally maps only a single class of feature - one instance
+ * for words, another for POS, etc.). {@link LogLinearVocabulary} is generally useful for log-linear modeling
+ * in which all features are binary.
  * 
- * In addition to the mappings themselves, {@link LogLinearVocabulary} maintains knowledge of
- * 'categories' of labels. It is important when smoothing a model that we be able to shift
- * probability mass between the POS tokens, for example, without shifting POS probability mass to
- * the head verb label.
+ * In addition to the mappings themselves, {@link LogLinearVocabulary} maintains knowledge of 'categories' of
+ * labels. It is important when smoothing a model that we be able to shift probability mass between the POS
+ * tokens, for example, without shifting POS probability mass to the head verb label.
  * 
- * Tokens within a category are expected to be mapped sequentially (e.g., words 0-25, POS 26-35,
- * _head_verb 36, _head_of_PP 37, etc.).
+ * Tokens within a category are expected to be mapped sequentially (e.g., words 0-25, POS 26-35, _head_verb
+ * 36, _head_of_PP 37, etc.).
  * 
  * @author Aaron Dunlop
  * @since Oct 9, 2008
  * 
  *        $Id$
  */
-public class LogLinearVocabulary extends SimpleVocabulary
-{
+public class LogLinearVocabulary extends SimpleVocabulary {
+
     private final int[] categoryBoundaries;
 
     private LogLinearVocabulary(final String[] tokens, final int[] categoryBoundaries,
-        final HashSet<String> rareFeatures)
-    {
+            final HashSet<String> rareFeatures) {
         super(tokens, rareFeatures);
         this.categoryBoundaries = categoryBoundaries;
     }
@@ -51,20 +49,17 @@ public class LogLinearVocabulary extends SimpleVocabulary
     /**
      * Induces a vocabulary from bracketed input. The gap symbol defaults to '_-'
      * 
-     * @param s Bracketed input. Each bracketed element must consist of one or more tokens, but the
-     *            token counts need not all be identical. e.g.
-     *            "(The DT start) (dog NN) (ran VB head_verb)"
-     * @param rareTokenCutoff Greatest occurrence count at which a token will be counted as 'rare'
+     * @param s
+     *            Bracketed input. Each bracketed element must consist of one or more tokens, but the token
+     *            counts need not all be identical. e.g. "(The DT start) (dog NN) (ran VB head_verb)"
+     * @param rareTokenCutoff
+     *            Greatest occurrence count at which a token will be counted as 'rare'
      * @return induced vocabulary
      */
-    public static LogLinearVocabulary induce(final String s, final int rareTokenCutoff)
-    {
-        try
-        {
+    public static LogLinearVocabulary induce(final String s, final int rareTokenCutoff) {
+        try {
             return induce(new BufferedReader(new StringReader(s)), FeatureClass.FEATURE_GAP, rareTokenCutoff);
-        }
-        catch (final IOException e)
-        {
+        } catch (final IOException e) {
             // We shouldn't ever IOException in a StringReader
             return null;
         }
@@ -73,122 +68,110 @@ public class LogLinearVocabulary extends SimpleVocabulary
     /**
      * Induces a vocabulary from bracketed input. The gap symbol defaults to '_-'
      * 
-     * @param s Bracketed input. Each bracketed element must consist of one or more tokens, but the
-     *            token counts need not all be identical. e.g.
-     *            "(The DT start) (dog NN) (ran VB head_verb)"
+     * @param s
+     *            Bracketed input. Each bracketed element must consist of one or more tokens, but the token
+     *            counts need not all be identical. e.g. "(The DT start) (dog NN) (ran VB head_verb)"
      * @return induced vocabulary
      */
-    public static LogLinearVocabulary induce(final String s)
-    {
+    public static LogLinearVocabulary induce(final String s) {
         return induce(s, 0);
     }
 
     /**
-     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in
-     * which all features are binary.
+     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in which all
+     * features are binary.
      * 
-     * @param s Bracketed input. Each bracketed element must consist of one or more tokens, but the
-     *            token counts need not all be identical. e.g.
-     *            "(The DT start) (dog NN) (ran VB head_verb)"
+     * @param s
+     *            Bracketed input. Each bracketed element must consist of one or more tokens, but the token
+     *            counts need not all be identical. e.g. "(The DT start) (dog NN) (ran VB head_verb)"
      * @param gapSymbol
-     * @param rareTokenCutoff Greatest occurrence count at which a token will be counted as 'rare'
+     * @param rareTokenCutoff
+     *            Greatest occurrence count at which a token will be counted as 'rare'
      * @return induced vocabulary
      */
-    public static LogLinearVocabulary induce(final String s, final String gapSymbol, final int rareTokenCutoff)
-    {
-        try
-        {
+    public static LogLinearVocabulary induce(final String s, final String gapSymbol, final int rareTokenCutoff) {
+        try {
             return induce(new BufferedReader(new StringReader(s)), gapSymbol, rareTokenCutoff);
-        }
-        catch (final IOException e)
-        {
+        } catch (final IOException e) {
             // We shouldn't ever IOException in a StringReader
             return null;
         }
     }
 
     /**
-     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in
-     * which all features are binary.
+     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in which all
+     * features are binary.
      * 
-     * @param s Bracketed input. Each bracketed element must consist of one or more tokens, but the
-     *            token counts need not all be identical. e.g.
-     *            "(The DT start) (dog NN) (ran VB head_verb)"
+     * @param s
+     *            Bracketed input. Each bracketed element must consist of one or more tokens, but the token
+     *            counts need not all be identical. e.g. "(The DT start) (dog NN) (ran VB head_verb)"
      * @param gapSymbol
      * @return induced vocabulary
      */
-    public static LogLinearVocabulary induce(final String s, final String gapSymbol)
-    {
+    public static LogLinearVocabulary induce(final String s, final String gapSymbol) {
         return induce(s, gapSymbol, 0);
     }
 
     /**
-     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in
-     * which all features are binary.
+     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in which all
+     * features are binary.
      * 
-     * @param reader Bracketed input. Each bracketed element must consist of one or more tokens, but
-     *            the token counts need not all be identical. e.g.
-     *            "(The DT start) (dog NN) (ran VB head_verb)"
-     * @param rareTokenCutoff Greatest occurrence count at which a token will be counted as 'rare'
+     * @param reader
+     *            Bracketed input. Each bracketed element must consist of one or more tokens, but the token
+     *            counts need not all be identical. e.g. "(The DT start) (dog NN) (ran VB head_verb)"
+     * @param rareTokenCutoff
+     *            Greatest occurrence count at which a token will be counted as 'rare'
      * @return induced vocabulary
      * @throws IOException
      */
-    public static LogLinearVocabulary induce(final BufferedReader reader, final int rareTokenCutoff) throws IOException
-    {
+    public static LogLinearVocabulary induce(final BufferedReader reader, final int rareTokenCutoff)
+            throws IOException {
         return induce(reader, FeatureClass.FEATURE_GAP, rareTokenCutoff);
     }
 
     /**
-     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in
-     * which all features are binary.
+     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in which all
+     * features are binary.
      * 
-     * @param reader Bracketed input. Each bracketed element must consist of one or more tokens, but
-     *            the token counts need not all be identical. e.g.
-     *            "(The DT start) (dog NN) (ran VB head_verb)"
+     * @param reader
+     *            Bracketed input. Each bracketed element must consist of one or more tokens, but the token
+     *            counts need not all be identical. e.g. "(The DT start) (dog NN) (ran VB head_verb)"
      * @return induced vocabulary
      * @throws IOException
      */
-    public static LogLinearVocabulary induce(final BufferedReader reader) throws IOException
-    {
+    public static LogLinearVocabulary induce(final BufferedReader reader) throws IOException {
         return induce(reader, FeatureClass.FEATURE_GAP, 0);
     }
 
     /**
-     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in
-     * which all features are binary.
+     * Induces a single vocabulary from bracketed input. Generally useful for log-linear modeling in which all
+     * features are binary.
      * 
-     * @param reader Bracketed input. Each bracketed element must consist of one or more tokens, but
-     *            the token counts need not all be identical. e.g.
-     *            "(The DT start) (dog NN) (ran VB head_verb)"
+     * @param reader
+     *            Bracketed input. Each bracketed element must consist of one or more tokens, but the token
+     *            counts need not all be identical. e.g. "(The DT start) (dog NN) (ran VB head_verb)"
      * @param gapSymbol
-     * @param rareTokenCutoff Greatest occurrence count at which a token will be counted as 'rare'
+     * @param rareTokenCutoff
+     *            Greatest occurrence count at which a token will be counted as 'rare'
      * @return induced vocabulary
      * @throws IOException
      */
     public static LogLinearVocabulary induce(final BufferedReader reader, final String gapSymbol,
-        final int rareTokenCutoff) throws IOException
-    {
+            final int rareTokenCutoff) throws IOException {
         final TreeMap<String, Integer> featureMap = new TreeMap<String, Integer>(new TokenComparator());
-        for (int i = 0; i < STATIC_SYMBOLS.length; i++)
-        {
+        for (int i = 0; i < STATIC_SYMBOLS.length; i++) {
             featureMap.put(STATIC_SYMBOLS[i], 0);
         }
 
-        for (String line = reader.readLine(); line != null; line = reader.readLine())
-        {
+        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             final String[] features = line.replaceAll("\\(|\\)", " ").split(" +");
 
-            for (final String feature : features)
-            {
-                if (feature.length() > 0)
-                {
+            for (final String feature : features) {
+                if (feature.length() > 0) {
                     final Integer count = featureMap.get(feature);
-                    if (count == null)
-                    {
+                    if (count == null) {
                         featureMap.put(feature, 1);
-                    }
-                    else
-                    {
+                    } else {
                         featureMap.put(feature, count.intValue() + 1);
                     }
                 }
@@ -206,37 +189,32 @@ public class LogLinearVocabulary extends SimpleVocabulary
 
         // Don't create boundaries on Static symbols
         int i;
-        for (i = 0; i < STATIC_SYMBOLS.length; i++)
-        {
+        for (i = 0; i < STATIC_SYMBOLS.length; i++) {
             featureArray[i] = iter.next();
         }
         featureArray[i] = iter.next();
         FeatureClass currentClass = FeatureClass.forString(featureArray[i]);
         i++;
 
-        while (iter.hasNext())
-        {
+        while (iter.hasNext()) {
             featureArray[i] = iter.next();
             final FeatureClass fc = FeatureClass.forString(featureArray[i]);
             i++;
             // Special-case - Unknown is considered part of the Word feature class
-            if (currentClass != fc)
-            {
+            if (currentClass != fc) {
                 currentClass = fc;
                 categoryBoundaryList.add(i);
             }
         }
 
-        for (final String feature : featureMap.keySet())
-        {
-            if (featureMap.get(feature) <= rareTokenCutoff)
-            {
+        for (final String feature : featureMap.keySet()) {
+            if (featureMap.get(feature) <= rareTokenCutoff) {
                 rareFeatures.add(feature);
             }
         }
 
-        final LogLinearVocabulary vocabulary = new LogLinearVocabulary(featureArray, categoryBoundaryList.toIntArray(),
-            rareFeatures);
+        final LogLinearVocabulary vocabulary = new LogLinearVocabulary(featureArray, categoryBoundaryList
+            .toIntArray(), rareFeatures);
         return vocabulary;
     }
 
@@ -247,8 +225,7 @@ public class LogLinearVocabulary extends SimpleVocabulary
      * @return Induced Vocabulary
      * @throws IOException
      */
-    public static LogLinearVocabulary read(final Reader reader) throws IOException
-    {
+    public static LogLinearVocabulary read(final Reader reader) throws IOException {
         final BufferedReader br = new BufferedReader(reader);
         final Map<String, String> attributes = Strings.headerAttributes(br.readLine());
         final HashSet<String> rareFeatures = new HashSet<String>();
@@ -257,21 +234,17 @@ public class LogLinearVocabulary extends SimpleVocabulary
 
         final String[] stringCategoryBoundaries = attributes.get("categoryboundaries").split(",");
         final int[] categoryBoundaries = new int[stringCategoryBoundaries.length];
-        for (int i = 0; i < categoryBoundaries.length; i++)
-        {
+        for (int i = 0; i < categoryBoundaries.length; i++) {
             categoryBoundaries[i] = Integer.parseInt(stringCategoryBoundaries[i]);
         }
 
         final String[] tokens = new String[size];
-        for (String line = br.readLine(); line != null; line = br.readLine())
-        {
-            if (line.length() > 0)
-            {
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
+            if (line.length() > 0) {
                 final String[] split = line.split(" +: +");
                 final int index = Integer.parseInt(split[0]);
                 tokens[index] = split[1];
-                if (split[2].equals("true"))
-                {
+                if (split[2].equals("true")) {
                     rareFeatures.add(split[1]);
                 }
             }
@@ -280,20 +253,16 @@ public class LogLinearVocabulary extends SimpleVocabulary
     }
 
     @Override
-    protected void writeHeader(final Writer writer) throws IOException
-    {
+    protected void writeHeader(final Writer writer) throws IOException {
         writer.write(String.format("vocabulary size=%d categoryboundaries=", size()));
-        if (categoryBoundaries.length == 0)
-        {
+        if (categoryBoundaries.length == 0) {
             writer.write(String.format("%d\n", size()));
             return;
         }
 
-        for (int i = 0; i < categoryBoundaries.length; i++)
-        {
+        for (int i = 0; i < categoryBoundaries.length; i++) {
             writer.write(Integer.toString(categoryBoundaries[i]));
-            if (i < (categoryBoundaries.length - 1))
-            {
+            if (i < (categoryBoundaries.length - 1)) {
                 writer.write(',');
             }
         }
@@ -301,18 +270,16 @@ public class LogLinearVocabulary extends SimpleVocabulary
     }
 
     @Override
-    public int map(final String token)
-    {
+    public int map(final String token) {
         final int value = super.map(token);
-        if (value == Integer.MIN_VALUE && (!token.startsWith("_") || token.startsWith(FeatureClass.PREFIX_STEM)))
-        {
+        if (value == Integer.MIN_VALUE
+                && (!token.startsWith("_") || token.startsWith(FeatureClass.PREFIX_STEM))) {
             return map(FeatureClass.FEATURE_UNKNOWN);
         }
         return value;
     }
 
-    public int[] categoryBoundaries()
-    {
+    public int[] categoryBoundaries() {
         return categoryBoundaries;
     }
 
@@ -331,16 +298,13 @@ public class LogLinearVocabulary extends SimpleVocabulary
      * <li>Other/Unknown labels (_...)</li>
      * </ol>
      */
-    private static class TokenComparator implements Comparator<String>
-    {
+    private static class TokenComparator implements Comparator<String> {
 
         @Override
-        public int compare(final String o1, final String o2)
-        {
+        public int compare(final String o1, final String o2) {
             // First sort by feature classes
             final int featureComparison = FeatureClass.forString(o1).compareTo(FeatureClass.forString(o2));
-            if (featureComparison != 0)
-            {
+            if (featureComparison != 0) {
                 return featureComparison;
             }
 

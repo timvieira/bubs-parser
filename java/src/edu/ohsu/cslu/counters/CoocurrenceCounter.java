@@ -15,22 +15,20 @@ import java.util.HashMap;
  * 
  *        $Id$
  */
-public abstract class CoocurrenceCounter implements Serializable
-{
+public abstract class CoocurrenceCounter implements Serializable {
+
     private final Object2IntOpenHashMap<String> singleWordCounts = new Object2IntOpenHashMap<String>();
     private final HashMap<String, Object2IntOpenHashMap<String>> twoWordCounts = new HashMap<String, Object2IntOpenHashMap<String>>();
 
     /** Total Word Count */
     private int N;
 
-    protected CoocurrenceCounter()
-    {}
+    protected CoocurrenceCounter() {
+    }
 
-    protected void trim()
-    {
+    protected void trim() {
         singleWordCounts.trim();
-        for (Object2IntOpenHashMap<String> map : twoWordCounts.values())
-        {
+        for (Object2IntOpenHashMap<String> map : twoWordCounts.values()) {
             map.trim();
         }
     }
@@ -38,10 +36,10 @@ public abstract class CoocurrenceCounter implements Serializable
     /**
      * Increments unigram word count for the specified word.
      * 
-     * @param w word
+     * @param w
+     *            word
      */
-    protected final void incrementCount(final String w)
-    {
+    protected final void incrementCount(final String w) {
         singleWordCounts.put(w, singleWordCounts.getInt(w) + 1);
         N++;
     }
@@ -49,14 +47,14 @@ public abstract class CoocurrenceCounter implements Serializable
     /**
      * Increments bigram word count for the specified words.
      * 
-     * @param h 'history' word
-     * @param w word
+     * @param h
+     *            'history' word
+     * @param w
+     *            word
      */
-    protected final void incrementCount(final String h, final String w)
-    {
+    protected final void incrementCount(final String h, final String w) {
         Object2IntOpenHashMap<String> map = twoWordCounts.get(h);
-        if (map == null)
-        {
+        if (map == null) {
             map = new Object2IntOpenHashMap<String>();
             twoWordCounts.put(h, map);
         }
@@ -67,26 +65,26 @@ public abstract class CoocurrenceCounter implements Serializable
     /**
      * Returns the count of the specified word.
      * 
-     * @param w word
+     * @param w
+     *            word
      * @return Number of occurrences of the specified word in the corpus.
      */
-    public final int count(String w)
-    {
+    public final int count(String w) {
         return singleWordCounts.getInt(w);
     }
 
     /**
      * Returns the count of the specified history / word pair.
      * 
-     * @param h 'history' word
-     * @param w word
+     * @param h
+     *            'history' word
+     * @param w
+     *            word
      * @return Number of occurrences of the specified bigram / pair in the corpus.
      */
-    public final int count(String h, String w)
-    {
+    public final int count(String h, String w) {
         final Object2IntOpenHashMap<String> map = twoWordCounts.get(h);
-        if (map == null)
-        {
+        if (map == null) {
             return 0;
         }
         return map.getInt(w);
@@ -95,46 +93,42 @@ public abstract class CoocurrenceCounter implements Serializable
     /**
      * Returns the log likelihood (G-squared) of a bigram, or -2 * log(lambda).
      * 
-     * @param h 'history' word
-     * @param w word
-     * @return G-squared statistic for the word pair under consideration. G-squared is always
-     *         positive; large values indicate strong dependence between w and h.
+     * @param h
+     *            'history' word
+     * @param w
+     *            word
+     * @return G-squared statistic for the word pair under consideration. G-squared is always positive; large
+     *         values indicate strong dependence between w and h.
      */
-    public final float logLikelihoodRatio(String h, String w)
-    {
+    public final float logLikelihoodRatio(String h, String w) {
         final int n = count(h);
         final int c = count(w);
         final int k = count(h, w);
 
-        if (k == 0)
-        {
+        if (k == 0) {
             // TODO: Is this the right thing to return if we couldn't find a coocurrence?
             return Float.NaN;
         }
 
         double logLambda = n * Math.log(n);
 
-        if (n != N)
-        {
+        if (n != N) {
             logLambda = logLambda + (N - n) * Math.log(N - n);
         }
 
         logLambda += c * Math.log(c);
 
-        if (c != N)
-        {
+        if (c != N) {
             logLambda = logLambda + (N - c) * Math.log(N - c);
         }
 
         logLambda = logLambda - N * Math.log(N) - k * Math.log(k);
 
-        if (n != k)
-        {
+        if (n != k) {
             logLambda = logLambda - (n - k) * Math.log(n - k);
         }
 
-        if (c != k)
-        {
+        if (c != k) {
             logLambda = logLambda - (c - k) * Math.log(c - k);
         }
 
@@ -143,8 +137,7 @@ public abstract class CoocurrenceCounter implements Serializable
         return (float) (-2 * logLambda);
     }
 
-    public float logOddsRatio(String h, String w)
-    {
+    public float logOddsRatio(String h, String w) {
         final int n = count(h);
         final int c = count(w);
         final int k = count(h, w);

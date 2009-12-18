@@ -22,8 +22,8 @@ import edu.ohsu.cslu.tools.AllToolTests;
 import edu.ohsu.cslu.util.AllUtilTests;
 
 /**
- * The entire regression suite for shared NLP code. This class also contains a number of static
- * helper methods used by other unit test classes.
+ * The entire regression suite for shared NLP code. This class also contains a number of static helper methods
+ * used by other unit test classes.
  * 
  * @author Aaron Dunlop
  * @since Sep 22, 2008
@@ -31,54 +31,44 @@ import edu.ohsu.cslu.util.AllUtilTests;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses( {AllCommonTests.class, TestExactMatchers.class, TestApproximateMatchers.class,
-    ProfileMatchers.class, AllAlignmentTests.class, AllCounterTests.class, AllDataStructureTests.class,
-    AllToolTests.class, AllUtilTests.class})
-public class SharedNlpTests
-{
+@Suite.SuiteClasses( { AllCommonTests.class, TestExactMatchers.class, TestApproximateMatchers.class,
+        ProfileMatchers.class, AllAlignmentTests.class, AllCounterTests.class, AllDataStructureTests.class,
+        AllToolTests.class, AllUtilTests.class })
+public class SharedNlpTests {
+
     public final static String UNIT_TEST_DIR = "unit-test-data/";
     public final static String SHARED_UNIT_TEST_DIR = "../shared-nlp-code/" + UNIT_TEST_DIR;
 
-    public static InputStream unitTestDataAsStream(final String filename) throws IOException
-    {
-        try
-        {
+    public static InputStream unitTestDataAsStream(final String filename) throws IOException {
+        try {
             InputStream is = new FileInputStream(SharedNlpTests.UNIT_TEST_DIR + filename);
-            if (filename.endsWith(".gz"))
-            {
+            if (filename.endsWith(".gz")) {
                 is = new GZIPInputStream(is);
             }
             return is;
-        }
-        catch (final FileNotFoundException e)
-        {
+        } catch (final FileNotFoundException e) {
             // A hack to read files in the shared unit test data directory from tests run within
             // other projects
             InputStream is = new FileInputStream(SharedNlpTests.SHARED_UNIT_TEST_DIR + filename);
-            if (filename.endsWith(".gz"))
-            {
+            if (filename.endsWith(".gz")) {
                 is = new GZIPInputStream(is);
             }
             return is;
         }
     }
 
-    public static String unitTestDataAsString(final String filename) throws IOException
-    {
+    public static String unitTestDataAsString(final String filename) throws IOException {
         return new String(readUnitTestData(filename));
     }
 
-    public static byte[] readUnitTestData(final String filename) throws IOException
-    {
+    public static byte[] readUnitTestData(final String filename) throws IOException {
         return readUnitTestData(unitTestDataAsStream(filename));
     }
 
-    private static byte[] readUnitTestData(final InputStream is) throws IOException
-    {
+    private static byte[] readUnitTestData(final InputStream is) throws IOException {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
         final byte[] buf = new byte[1024];
-        for (int i = is.read(buf); i >= 0; i = is.read(buf))
-        {
+        for (int i = is.read(buf); i >= 0; i = is.read(buf)) {
             bos.write(buf, 0, i);
         }
         is.close();
@@ -86,19 +76,15 @@ public class SharedNlpTests
     }
 
     public static void assertEquals(final String message, final float[][] expected, final float[][] actual,
-        final float delta)
-    {
-        for (int i = 0; i < actual.length; i++)
-        {
-            for (int j = 0; j < actual[0].length; j++)
-            {
+            final float delta) {
+        for (int i = 0; i < actual.length; i++) {
+            for (int j = 0; j < actual[0].length; j++) {
                 Assert.assertEquals(message, expected[i][j], actual[i][j], delta);
             }
         }
     }
 
-    public static void assertEquals(final float[][] expected, final float[][] actual, final float delta)
-    {
+    public static void assertEquals(final float[][] expected, final float[][] actual, final float delta) {
         assertEquals(null, expected, actual, delta);
     }
 }

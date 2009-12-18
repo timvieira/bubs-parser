@@ -18,37 +18,30 @@ import cltool.LinewiseCommandlineTool;
  * 
  * @version $Revision$
  */
-public class Encode extends LinewiseCommandlineTool
-{
-    @Option(name = "-e", aliases = {"--encoding"}, metaVar = "encoding", usage = "Encoding (us-ascii | utf-8 | utf-16 | ...) Default = utf-8")
+public class Encode extends LinewiseCommandlineTool {
+
+    @Option(name = "-e", aliases = { "--encoding" }, metaVar = "encoding", usage = "Encoding (us-ascii | utf-8 | utf-16 | ...) Default = utf-8")
     private final String encoding = "utf-8";
 
-    public static void main(final String[] args)
-    {
+    public static void main(final String[] args) {
         run(args);
     }
 
     @Override
-    public void setup(final CmdLineParser parser) throws CmdLineException
-    {
-        try
-        {
+    public void setup(final CmdLineParser parser) throws CmdLineException {
+        try {
             System.setOut(new PrintStream(System.out, true, encoding));
-        }
-        catch (final UnsupportedEncodingException e)
-        {
+        } catch (final UnsupportedEncodingException e) {
             throw new CmdLineException(parser, "Unknown encoding: " + encoding);
         }
     }
 
     @Override
-    protected Callable<String> lineTask(final String line)
-    {
-        return new Callable<String>()
-        {
+    protected Callable<String> lineTask(final String line) {
+        return new Callable<String>() {
+
             @Override
-            public String call()
-            {
+            public String call() {
                 return line;
             }
         };

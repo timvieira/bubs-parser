@@ -12,7 +12,7 @@ import org.junit.runners.Suite;
  *        $Id$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses( {TestIntegerNaryTree.class, TestCharacterNaryTree.class, TestParseTree.class,
-                      TestStringNaryTree.class, TestIntShiftRegister.class, TestCharShiftRegister.class})
-public class AllTreeTests
-{}
+@Suite.SuiteClasses( { TestIntegerNaryTree.class, TestCharacterNaryTree.class, TestParseTree.class,
+        TestStringNaryTree.class, TestIntShiftRegister.class, TestCharShiftRegister.class })
+public class AllTreeTests {
+}

@@ -15,22 +15,18 @@ import edu.ohsu.cslu.tests.FilteredRunner;
  *        $Id$
  */
 @RunWith(FilteredRunner.class)
-public class TestIntMatrix extends DenseIntMatrixTestCase
-{
+public class TestIntMatrix extends DenseIntMatrixTestCase {
+
     @Override
-    protected String matrixType()
-    {
+    protected String matrixType() {
         return "int";
     }
 
     @Override
-    protected Matrix create(final float[][] array, boolean symmetric)
-    {
+    protected Matrix create(final float[][] array, boolean symmetric) {
         final int[][] intArray = new int[array.length][array[0].length];
-        for (int i = 0; i < array.length; i++)
-        {
-            for (int j = 0; j < array[0].length; j++)
-            {
+        for (int i = 0; i < array.length; i++) {
+            for (int j = 0; j < array[0].length; j++) {
                 intArray[i][j] = Math.round(array[i][j]);
             }
         }
@@ -38,20 +34,17 @@ public class TestIntMatrix extends DenseIntMatrixTestCase
     }
 
     @Override
-    protected Matrix create(final int[][] array, final boolean symmetric)
-    {
+    protected Matrix create(final int[][] array, final boolean symmetric) {
         return new IntMatrix(array, symmetric);
     }
 
     @Override
-    public void testInfinity() throws Exception
-    {
+    public void testInfinity() throws Exception {
         assertEquals(Integer.MAX_VALUE, sampleMatrix.infinity(), .01f);
     }
 
     @Override
-    public void testNegativeInfinity() throws Exception
-    {
+    public void testNegativeInfinity() throws Exception {
         assertEquals(Integer.MIN_VALUE, sampleMatrix.negativeInfinity(), .01f);
     }
 }

@@ -23,13 +23,13 @@ import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.util.Strings;
 
-public class AlignSentences extends BaseCommandlineTool
-{
-    @Option(name = "-dm", aliases = {"--distance-matrix"}, metaVar = "filename", usage = "Distance matrix file")
+public class AlignSentences extends BaseCommandlineTool {
+
+    @Option(name = "-dm", aliases = { "--distance-matrix" }, metaVar = "filename", usage = "Distance matrix file")
     private String distanceMatrixFilename;
 
-    @Option(name = "-vm", aliases = {"--vocabulary-files"}, metaVar = "vocabulary=matrix,...", usage = "Vocabularies and Substitution Matrices separated by '='. sub-cost,gap-cost"
-        + " defines matrix, 'auto' induces vocabulary automatically")
+    @Option(name = "-vm", aliases = { "--vocabulary-files" }, metaVar = "vocabulary=matrix,...", usage = "Vocabularies and Substitution Matrices separated by '='. sub-cost,gap-cost"
+            + " defines matrix, 'auto' induces vocabulary automatically")
     private String vocabularyMatrixParam;
 
     private final List<String> substitutionMatrixOptions = new ArrayList<String>();
@@ -37,22 +37,19 @@ public class AlignSentences extends BaseCommandlineTool
 
     private final static String AUTO = "auto";
 
-    public static void main(final String[] args)
-    {
+    public static void main(final String[] args) {
         run(args);
     }
 
     @Override
-    public void run() throws Exception
-    {
+    public void run() throws Exception {
         final HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
 
         final ArrayList<String> sentences = new ArrayList<String>();
         final StringBuilder sb = new StringBuilder(8192);
 
         final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        for (String line = reader.readLine(); line != null; line = reader.readLine())
-        {
+        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             sentences.add(line);
             sb.append(Strings.extractPos(line));
             sb.append('\n');
@@ -65,21 +62,15 @@ public class AlignSentences extends BaseCommandlineTool
         final SimpleVocabulary[] inducedVocabularies = SimpleVocabulary.induceVocabularies(entireFile);
         SimpleVocabulary[] vocabularies = new SimpleVocabulary[inducedVocabularies.length];
 
-        if (vocabularyFiles != null)
-        {
-            if (vocabularyFiles.size() > vocabularies.length)
-            {
+        if (vocabularyFiles != null) {
+            if (vocabularyFiles.size() > vocabularies.length) {
                 vocabularies = new SimpleVocabulary[vocabularyFiles.size()];
             }
 
-            for (int i = 0; i < vocabularyFiles.size(); i++)
-            {
-                if (!vocabularyFiles.get(i).equalsIgnoreCase(AUTO))
-                {
+            for (int i = 0; i < vocabularyFiles.size(); i++) {
+                if (!vocabularyFiles.get(i).equalsIgnoreCase(AUTO)) {
                     vocabularies[i] = SimpleVocabulary.read(new FileReader(vocabularyFiles.get(i)));
-                }
-                else
-                {
+                } else {
                     vocabularies[i] = inducedVocabularies[i];
                 }
             }
@@ -87,37 +78,33 @@ public class AlignSentences extends BaseCommandlineTool
 
         // Translate into sequences
         final MappedSequence[] sequences = new MappedSequence[sentences.size()];
-        for (int i = 0; i < sequences.length; i++)
-        {
+        for (int i = 0; i < sequences.length; i++) {
             // TODO: extract pos from sentence
-            sequences[i] = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sentences.get(i), ruleset),
-                vocabularies);
+            sequences[i] = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sentences.get(i),
+                ruleset), vocabularies);
         }
 
         // Construct and/or read in substitution matrices
         final DenseMatrix[] substitutionMatrices = new DenseMatrix[substitutionMatrixOptions.size()];
 
-        for (int i = 0; i < substitutionMatrices.length; i++)
-        {
-            if (substitutionMatrixOptions.get(i).indexOf(',') >= 0)
-            {
+        for (int i = 0; i < substitutionMatrices.length; i++) {
+            if (substitutionMatrixOptions.get(i).indexOf(',') >= 0) {
                 // Construct from 'definition' (substitution-cost, gap-cost)
                 final String[] costs = substitutionMatrixOptions.get(i).split(",");
                 final float substitutionCost = Float.parseFloat(costs[0]);
                 final float gapCost = costs.length > 1 ? Float.parseFloat(costs[1]) : substitutionCost;
 
-                substitutionMatrices[i] = Matrix.Factory.newSymmetricIdentityFloatMatrix(vocabularies[i].size(),
-                    substitutionCost, 0f);
+                substitutionMatrices[i] = Matrix.Factory.newSymmetricIdentityFloatMatrix(vocabularies[i]
+                    .size(), substitutionCost, 0f);
 
                 // Specific (generally lower) cost for gaps
                 substitutionMatrices[i].setRow(0, gapCost);
                 substitutionMatrices[i].setColumn(0, gapCost);
                 substitutionMatrices[i].set(0, 0, 0f);
-            }
-            else
-            {
+            } else {
                 // Read in matrix file
-                substitutionMatrices[i] = (DenseMatrix) Matrix.Factory.read(new File(substitutionMatrixOptions.get(i)));
+                substitutionMatrices[i] = (DenseMatrix) Matrix.Factory.read(new File(
+                    substitutionMatrixOptions.get(i)));
             }
         }
 
@@ -136,12 +123,10 @@ public class AlignSentences extends BaseCommandlineTool
     }
 
     @Override
-    public void setup(final CmdLineParser parser)
-    {
+    public void setup(final CmdLineParser parser) {
         final String[] vmOptions = vocabularyMatrixParam.split(",");
 
-        for (int i = 0; i < vmOptions.length; i++)
-        {
+        for (int i = 0; i < vmOptions.length; i++) {
             final String[] split = vmOptions[i].split("=");
             vocabularyFiles.add(split[0]);
             substitutionMatrixOptions.add(split[1]);

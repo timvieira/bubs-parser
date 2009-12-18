@@ -12,13 +12,11 @@ import java.io.Reader;
  * 
  *        $Id$
  */
-public class BigramCounter extends CoocurrenceCounter
-{
-    public BigramCounter(Reader reader) throws IOException
-    {
+public class BigramCounter extends CoocurrenceCounter {
+
+    public BigramCounter(Reader reader) throws IOException {
         BufferedReader br = new BufferedReader(reader);
-        for (String line = br.readLine(); line != null; line = br.readLine())
-        {
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
             countSentence(line.split(" "));
         }
         br.close();
@@ -26,14 +24,12 @@ public class BigramCounter extends CoocurrenceCounter
         trim();
     }
 
-    protected void countSentence(String[] wordArray)
-    {
+    protected void countSentence(String[] wordArray) {
         // Count the first word separately
         incrementCount(wordArray[0]);
 
         // Count all bigram pairs
-        for (int i = 1; i < wordArray.length; i++)
-        {
+        for (int i = 1; i < wordArray.length; i++) {
             final String w = wordArray[i];
             incrementCount(w);
             incrementCount(wordArray[i - 1], w);

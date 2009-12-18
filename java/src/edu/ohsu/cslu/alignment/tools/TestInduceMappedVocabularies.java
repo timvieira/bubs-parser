@@ -11,8 +11,8 @@ import static junit.framework.Assert.assertEquals;
 
 /**
  * Simple unit tests for {@link InduceMappedVocabularies}. The core functionality is tested in
- * {@link TestSimpleVocabulary}, so these tests are only cursory verification that the command-line
- * tool structure works properly.
+ * {@link TestSimpleVocabulary}, so these tests are only cursory verification that the command-line tool
+ * structure works properly.
  * 
  * @author Aaron Dunlop
  * @since Mar 25, 2009
@@ -20,12 +20,10 @@ import static junit.framework.Assert.assertEquals;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public class TestInduceMappedVocabularies extends ToolTestCase
-{
+public class TestInduceMappedVocabularies extends ToolTestCase {
 
     @Test
-    public void testInduceVocabularies() throws Exception
-    {
+    public void testInduceVocabularies() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("vocabulary size=8\n");
         sb.append("0 : _- : false\n");
@@ -60,8 +58,7 @@ public class TestInduceMappedVocabularies extends ToolTestCase
     }
 
     @Test
-    public void testInduceLogLinearVocabulary() throws Exception
-    {
+    public void testInduceLogLinearVocabulary() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("vocabulary size=15 categoryboundaries=14\n");
         sb.append("0 : _- : true\n");

@@ -28,8 +28,8 @@ import edu.ohsu.cslu.util.Strings;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestHmmMultipleSequenceAligner
-{
+public class TestHmmMultipleSequenceAligner {
+
     private static SimpleVocabulary[] linguisticVocabularies;
     private static SubstitutionAlignmentModel linguisticAlignmentModel;
 
@@ -37,16 +37,15 @@ public class TestHmmMultipleSequenceAligner
 
     // Sentence 4
     private final static String sampleSentence4 = "(TOP (S (NP (NN Delivery)) (VP (AUX is) (S (VP (TO to)"
-        + " (VP (VB begin) (PP (IN in) (NP (JJ early) (CD 1991))))))) (. .)))";
+            + " (VP (VB begin) (PP (IN in) (NP (JJ early) (CD 1991))))))) (. .)))";
     // Sentence 8
     private final static String sampleSentence8 = "(TOP (S (NP (DT The) (NN venture)) (VP (MD will) (VP (AUX be) (VP (VBN based) (PP (IN in) (NP (NNP Indianapolis)))))) (. .)))";
     // Sentence 16
     private final static String sampleSentence16 = "(TOP (S (NP (JJS Most)) (VP (AUX are) (VP (VBN expected)"
-        + " (S (VP (TO to) (VP (VB fall) (PP (IN below) (NP (JJ previous-month) (NNS levels)))))))) (. .)))";
+            + " (S (VP (TO to) (VP (VB fall) (PP (IN below) (NP (JJ previous-month) (NNS levels)))))))) (. .)))";
 
     @BeforeClass
-    public static void suiteSetUp() throws Exception
-    {
+    public static void suiteSetUp() throws Exception {
         // Create Vocabularies
         final StringBuilder sb = new StringBuilder(1024);
         sb.append(Strings.extractPosAndHead(sampleSentence4, headPercolationRuleset));
@@ -58,25 +57,27 @@ public class TestHmmMultipleSequenceAligner
 
         // Create an alignment model based on the vocabularies - POS substitutions cost 10, word
         // substitutions 1, and HEAD substitutions 100. Gap insertions always cost 4, matches are 0.
-        final DenseMatrix matrix0 = Matrix.Factory.newIdentityIntMatrix(linguisticVocabularies[0].size(), 10, 0);
+        final DenseMatrix matrix0 = Matrix.Factory.newIdentityIntMatrix(linguisticVocabularies[0].size(), 10,
+            0);
         matrix0.setRow(0, 4);
         matrix0.setColumn(0, 4);
 
-        final DenseMatrix matrix1 = Matrix.Factory.newIdentityIntMatrix(linguisticVocabularies[1].size(), 1, 0);
+        final DenseMatrix matrix1 = Matrix.Factory.newIdentityIntMatrix(linguisticVocabularies[1].size(), 1,
+            0);
         matrix1.setRow(0, 4);
         matrix1.setColumn(0, 4);
 
-        final DenseMatrix matrix2 = Matrix.Factory.newIdentityIntMatrix(linguisticVocabularies[2].size(), 1000, 0);
+        final DenseMatrix matrix2 = Matrix.Factory.newIdentityIntMatrix(linguisticVocabularies[2].size(),
+            1000, 0);
         matrix2.setRow(0, 4);
         matrix2.setColumn(0, 4);
 
-        linguisticAlignmentModel = new MatrixSubstitutionAlignmentModel(new DenseMatrix[] {matrix0, matrix1, matrix2},
-            linguisticVocabularies);
+        linguisticAlignmentModel = new MatrixSubstitutionAlignmentModel(new DenseMatrix[] { matrix0, matrix1,
+                matrix2 }, linguisticVocabularies);
     }
 
     @Test
-    public void testCreateAlignment() throws Exception
-    {
+    public void testCreateAlignment() throws Exception {
         final MappedSequence sequence1 = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(
             sampleSentence4, headPercolationRuleset), linguisticVocabularies);
         final MappedSequence sequence2 = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(
@@ -84,10 +85,10 @@ public class TestHmmMultipleSequenceAligner
         final MappedSequence sequence3 = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(
             sampleSentence8, headPercolationRuleset), linguisticVocabularies);
 
-        final MultipleSequenceAligner aligner = new HmmMultipleSequenceAligner(new int[] {1, 1, 0}, 10);
-        Matrix distanceMatrix = new IntMatrix(new int[][] { {0, 1}, {1, 0}});
-        MultipleSequenceAlignment sequenceAlignment = aligner.align(new MappedSequence[] {sequence1, sequence2},
-            distanceMatrix, linguisticAlignmentModel);
+        final MultipleSequenceAligner aligner = new HmmMultipleSequenceAligner(new int[] { 1, 1, 0 }, 10);
+        Matrix distanceMatrix = new IntMatrix(new int[][] { { 0, 1 }, { 1, 0 } });
+        MultipleSequenceAlignment sequenceAlignment = aligner.align(new MappedSequence[] { sequence1,
+                sequence2 }, distanceMatrix, linguisticAlignmentModel);
 
         final StringBuilder sb = new StringBuilder(512);
 
@@ -109,9 +110,9 @@ public class TestHmmMultipleSequenceAligner
             .append("---------------------------------------------------------------------------------------------------\n");
         assertEquals(sb.toString(), sequenceAlignment.toString());
 
-        distanceMatrix = new IntMatrix(new int[][] { {0, 1, 2}, {1, 0, 2}, {2, 2, 0}});
-        sequenceAlignment = aligner.align(new MappedSequence[] {sequence1, sequence2, sequence3}, distanceMatrix,
-            linguisticAlignmentModel);
+        distanceMatrix = new IntMatrix(new int[][] { { 0, 1, 2 }, { 1, 0, 2 }, { 2, 2, 0 } });
+        sequenceAlignment = aligner.align(new MappedSequence[] { sequence1, sequence2, sequence3 },
+            distanceMatrix, linguisticAlignmentModel);
 
         final String expected = new String(SharedNlpTests
             .readUnitTestData("alignment/multiple/TestHmmMultipleSequenceAlignerSample.txt"));

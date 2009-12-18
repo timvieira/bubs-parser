@@ -23,9 +23,8 @@ import edu.ohsu.cslu.tests.FilteredRunner;
 /**
  * Unit tests for pairwise aligners.
  * 
- * TODO Implement pairwise alignment model for {@link LogLinearMappedSequence}s. It's quite
- * reasonable for a {@link SubstitutionAlignmentModel} to calculate the cost of aligning two
- * log-linear feature vectors.
+ * TODO Implement pairwise alignment model for {@link LogLinearMappedSequence}s. It's quite reasonable for a
+ * {@link SubstitutionAlignmentModel} to calculate the cost of aligning two log-linear feature vectors.
  * 
  * @author Aaron Dunlop
  * @since Oct 8, 2008
@@ -33,31 +32,29 @@ import edu.ohsu.cslu.tests.FilteredRunner;
  *        $Id$
  */
 @RunWith(FilteredRunner.class)
-public class TestPairwiseAligners
-{
+public class TestPairwiseAligners {
+
     private final static DnaVocabulary DNA_VOCABULARY = new DnaVocabulary();
 
     private static SubstitutionAlignmentModel identityMatrixModel;
 
     @BeforeClass
-    public static void suiteSetUp() throws Exception
-    {
-        final DenseMatrix alignmentMatrix = new FloatMatrix(new float[][] { {0f, 8f, 8f, 8f, 8f, 8f},
-            {8f, 0f, 10f, 10f, 10f, 10f}, {8f, 10f, 0f, 10f, 10f, 10f}, {8f, 10f, 10f, 0f, 10f, 10f},
-            {8f, 10f, 10f, 10f, 0f, 10f}, {8f, 10f, 10f, 10f, 10f, 0f}});
+    public static void suiteSetUp() throws Exception {
+        final DenseMatrix alignmentMatrix = new FloatMatrix(new float[][] { { 0f, 8f, 8f, 8f, 8f, 8f },
+                { 8f, 0f, 10f, 10f, 10f, 10f }, { 8f, 10f, 0f, 10f, 10f, 10f },
+                { 8f, 10f, 10f, 0f, 10f, 10f }, { 8f, 10f, 10f, 10f, 0f, 10f },
+                { 8f, 10f, 10f, 10f, 10f, 0f } });
         identityMatrixModel = new MatrixSubstitutionAlignmentModel(alignmentMatrix, DNA_VOCABULARY);
     }
 
-    private String alignStrings(final PairwiseAligner aligner, final AlignmentModel model, final String unaligned,
-        final String aligned)
-    {
+    private String alignStrings(final PairwiseAligner aligner, final AlignmentModel model,
+            final String unaligned, final String aligned) {
         return DNA_VOCABULARY.mapSequence(aligner.alignPair(DNA_VOCABULARY.mapSequence(unaligned),
             DNA_VOCABULARY.mapSequence(aligned), model).alignedSequence());
     }
 
     @Test
-    public void testFullDynamicAligner() throws Exception
-    {
+    public void testFullDynamicAligner() throws Exception {
         final FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
         testDnaAlignment(aligner);
 
@@ -67,15 +64,13 @@ public class TestPairwiseAligners
     }
 
     private String alignStringsAsCharSequences(final PairwiseAligner aligner, final String unaligned,
-        final String aligned)
-    {
+            final String aligned) {
         final Sequence s1 = new CharSequence(unaligned);
         final Sequence s2 = new CharSequence(aligned);
         return aligner.alignPair(s1, s2, new CharSubstitutionAlignmentModel()).alignedSequence().toString();
     }
 
-    private void testDnaAlignment(final FullDynamicPairwiseAligner aligner)
-    {
+    private void testDnaAlignment(final FullDynamicPairwiseAligner aligner) {
         assertEquals("AC--AC", alignStrings(aligner, identityMatrixModel, "ACAC", "ACT-AC"));
         assertEquals("-CTG-", alignStrings(aligner, identityMatrixModel, "CTG", "ACTGA"));
 
@@ -93,14 +88,14 @@ public class TestPairwiseAligners
         assertEquals(1, alignment.insertedColumnIndices().length);
         assertEquals(0, alignment.insertedColumnIndices()[0]);
 
-        alignment = aligner.alignPair(DNA_VOCABULARY.mapSequence("CTGACT"), DNA_VOCABULARY.mapSequence("AACTGAC"),
-            identityMatrixModel);
+        alignment = aligner.alignPair(DNA_VOCABULARY.mapSequence("CTGACT"), DNA_VOCABULARY
+            .mapSequence("AACTGAC"), identityMatrixModel);
         assertEquals("--CTGACT", DNA_VOCABULARY.mapSequence(alignment.alignedSequence()));
         assertEquals(1, alignment.insertedColumnIndices().length);
         assertEquals(7, alignment.insertedColumnIndices()[0]);
 
-        alignment = aligner.alignPair(DNA_VOCABULARY.mapSequence("CTGGACT"), DNA_VOCABULARY.mapSequence("ACTGAC"),
-            identityMatrixModel);
+        alignment = aligner.alignPair(DNA_VOCABULARY.mapSequence("CTGGACT"), DNA_VOCABULARY
+            .mapSequence("ACTGAC"), identityMatrixModel);
         assertEquals("-CTGGACT", DNA_VOCABULARY.mapSequence(alignment.alignedSequence()));
         assertEquals(2, alignment.insertedColumnIndices().length);
         assertEquals(3, alignment.insertedColumnIndices()[0]);
@@ -121,20 +116,17 @@ public class TestPairwiseAligners
         assertEquals("TAACGX", alignStrings(aligner, model, "TAACGX", "TACG-X"));
     }
 
-    private static class SixCharacterAlignmentModel extends MatrixSubstitutionAlignmentModel
-    {
-        public SixCharacterAlignmentModel(final float substitutionCost, final AlignmentVocabulary vocabulary)
-        {
-            super(new float[] {substitutionCost}, new float[] {substitutionCost},
-                new AlignmentVocabulary[] {vocabulary});
+    private static class SixCharacterAlignmentModel extends MatrixSubstitutionAlignmentModel {
+
+        public SixCharacterAlignmentModel(final float substitutionCost, final AlignmentVocabulary vocabulary) {
+            super(new float[] { substitutionCost }, new float[] { substitutionCost },
+                new AlignmentVocabulary[] { vocabulary });
         }
 
         @Override
-        public float gapInsertionCost(final int feature, final int sequenceLength)
-        {
+        public float gapInsertionCost(final int feature, final int sequenceLength) {
             float cost = super.cost(GAP_INDEX, feature);
-            if (sequenceLength >= 6)
-            {
+            if (sequenceLength >= 6) {
                 // Severely penalize gap insertion when the sequence is 6 or more elements long
                 cost += 200f;
             }
@@ -142,11 +134,9 @@ public class TestPairwiseAligners
         }
 
         @Override
-        public float gapInsertionCost(final Vector featureVector, final int sequenceLength)
-        {
+        public float gapInsertionCost(final Vector featureVector, final int sequenceLength) {
             float cost = super.cost(gapVector, featureVector);
-            if (sequenceLength >= 6)
-            {
+            if (sequenceLength >= 6) {
                 // Severely penalize gap insertion when the sequence is 6 or more elements long
                 cost += 200f;
             }

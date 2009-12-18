@@ -10,8 +10,8 @@ import edu.ohsu.cslu.common.Vocabulary;
  * 
  *        $Id$
  */
-public interface AlignmentVocabulary extends Vocabulary
-{
+public interface AlignmentVocabulary extends Vocabulary {
+
     /**
      * Returns the delete symbol of this vocabulary.
      * 
@@ -20,8 +20,8 @@ public interface AlignmentVocabulary extends Vocabulary
     public int gapSymbol();
 
     /**
-     * Returns true if the specified token is considered 'rare' and should be treated in the same
-     * class as unknown tokens.
+     * Returns true if the specified token is considered 'rare' and should be treated in the same class as
+     * unknown tokens.
      * 
      * @param token
      * @return true if the specified token is 'rare'
@@ -29,8 +29,8 @@ public interface AlignmentVocabulary extends Vocabulary
     public boolean isRareToken(String token);
 
     /**
-     * Returns true if the specified token is considered 'rare' and should be treated in the same
-     * class as unknown tokens.
+     * Returns true if the specified token is considered 'rare' and should be treated in the same class as
+     * unknown tokens.
      * 
      * @param index
      * @return true if the specified token is 'rare'

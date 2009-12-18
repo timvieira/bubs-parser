@@ -3,8 +3,7 @@ package edu.ohsu.cslu.alignment;
 import edu.ohsu.cslu.common.MappedSequence;
 
 /**
- * A character-based {@link AlignmentVocabulary} for a particular domain (e.g. A, C, G, and T for
- * DNA).
+ * A character-based {@link AlignmentVocabulary} for a particular domain (e.g. A, C, G, and T for DNA).
  * 
  * TODO: Remove
  * 
@@ -14,8 +13,8 @@ import edu.ohsu.cslu.common.MappedSequence;
  * 
  *        $Id$
  */
-public interface CharVocabulary extends AlignmentVocabulary
-{
+public interface CharVocabulary extends AlignmentVocabulary {
+
     /**
      * Returns the characters supported by this alphabet
      * 
@@ -31,8 +30,7 @@ public interface CharVocabulary extends AlignmentVocabulary
     public char charDeleteSymbol();
 
     /**
-     * Maps a character from the current alphabet to an integer index, allowing efficient array
-     * storage.
+     * Maps a character from the current alphabet to an integer index, allowing efficient array storage.
      * 
      * @param c
      * @return integer index
@@ -48,10 +46,10 @@ public interface CharVocabulary extends AlignmentVocabulary
     public char mapIndex(int i);
 
     /**
-     * Maps a string to a sequence of characters from the current alphabet to an array of integer
-     * indices.
+     * Maps a string to a sequence of characters from the current alphabet to an array of integer indices.
      * 
-     * @param sequence The string to map
+     * @param sequence
+     *            The string to map
      * @return Mapped sequence.
      */
     public MappedSequence mapSequence(String sequence);
@@ -59,7 +57,8 @@ public interface CharVocabulary extends AlignmentVocabulary
     /**
      * Maps a sequence of indices to a String.
      * 
-     * @param sequence The sequence to map
+     * @param sequence
+     *            The sequence to map
      * @return Mapped String.
      */
     public String mapSequence(MappedSequence sequence);

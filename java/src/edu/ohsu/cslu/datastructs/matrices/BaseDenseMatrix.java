@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Writer;
 
 public abstract class BaseDenseMatrix extends BaseMatrix implements DenseMatrix {
+
     BaseDenseMatrix(final int m, final int n, final boolean symmetric) {
         super(m, n, symmetric);
     }

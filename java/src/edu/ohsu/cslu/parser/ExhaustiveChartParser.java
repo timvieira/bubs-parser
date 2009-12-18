@@ -5,8 +5,8 @@ import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 
 public abstract class ExhaustiveChartParser extends ChartParserByTraversal implements MaximumLikelihoodParser {
 
-	public ExhaustiveChartParser(Grammar grammar, ChartTraversalType traversalType) {
-		super(grammar, traversalType);
-	}
+    public ExhaustiveChartParser(Grammar grammar, ChartTraversalType traversalType) {
+        super(grammar, traversalType);
+    }
 
 }
