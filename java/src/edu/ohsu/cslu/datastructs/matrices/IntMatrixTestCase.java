@@ -5,7 +5,11 @@ import static junit.framework.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.ohsu.cslu.tests.SharedNlpTests;
+import edu.ohsu.cslu.datastructs.vectors.FloatVector;
+import edu.ohsu.cslu.datastructs.vectors.HashSparseFloatVector;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
+import edu.ohsu.cslu.datastructs.vectors.NumericVector;
+import edu.ohsu.cslu.datastructs.vectors.PackedIntVector;
 
 /**
  * Unit tests shared by all integer matrices
@@ -15,18 +19,14 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class IntMatrixTestCase extends MatrixTestCase
-{
+public abstract class IntMatrixTestCase extends MatrixTestCase {
     protected int[][] sampleArray;
     protected int[][] symmetricArray;
 
     protected abstract Matrix create(int[][] array, boolean symmetric);
 
-    protected abstract String matrixType();
-
     @Before
-    public void setUp() throws Exception
-    {
+    public void setUp() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("matrix type=" + matrixType() + " rows=3 columns=4 symmetric=false\n");
         sb.append("11  22  33  44\n");
@@ -34,7 +34,7 @@ public abstract class IntMatrixTestCase extends MatrixTestCase
         sb.append("100 10  11  12\n");
         stringSampleMatrix = sb.toString();
 
-        sampleArray = new int[][] { {11, 22, 33, 44}, {56, 67, 78, 89}, {100, 10, 11, 12}};
+        sampleArray = new int[][] { { 11, 22, 33, 44 }, { 56, 67, 78, 89 }, { 100, 10, 11, 12 } };
         sampleMatrix = create(sampleArray, false);
 
         sb = new StringBuilder();
@@ -46,7 +46,8 @@ public abstract class IntMatrixTestCase extends MatrixTestCase
         sb.append("10  11  12  13  14\n");
         stringSymmetricMatrix = sb.toString();
 
-        symmetricArray = new int[][] { {0}, {11, 22}, {33, 44, 56}, {67, 78, 89, 100}, {10, 11, 12, 13, 14}};
+        symmetricArray = new int[][] { { 0 }, { 11, 22 }, { 33, 44, 56 }, { 67, 78, 89, 100 },
+                { 10, 11, 12, 13, 14 } };
         symmetricMatrix = create(symmetricArray, true);
 
         matrixClass = symmetricMatrix.getClass();
@@ -57,13 +58,13 @@ public abstract class IntMatrixTestCase extends MatrixTestCase
      * 
      * TODO: Combine with MatrixTestCase.testReadFromReader?
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testReadfromReader() throws Exception
-    {
-        Matrix m1 = Matrix.Factory.read(stringSampleMatrix);
+    public void testReadfromReader() throws Exception {
+        final Matrix m1 = Matrix.Factory.read(stringSampleMatrix);
         assertEquals(matrixClass, m1.getClass());
         assertEquals(3, m1.rows());
         assertEquals(4, m1.columns());
@@ -74,7 +75,7 @@ public abstract class IntMatrixTestCase extends MatrixTestCase
         assertEquals(11, m1.getInt(2, 2));
         assertEquals(12, m1.getInt(2, 3));
 
-        Matrix m2 = Matrix.Factory.read(stringSymmetricMatrix);
+        final Matrix m2 = Matrix.Factory.read(stringSymmetricMatrix);
         assertEquals(matrixClass, m2.getClass());
         assertEquals("Wrong number of rows", 5, m2.rows());
         assertEquals("Wrong number of columns", 5, m2.columns());
@@ -89,11 +90,11 @@ public abstract class IntMatrixTestCase extends MatrixTestCase
     /**
      * Tests 'getFloat', including reflection across the diagonal in symmetric matrices.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testGetFloat() throws Exception
-    {
+    public void testGetFloat() throws Exception {
         assertEquals("Wrong value", 11f, sampleMatrix.getFloat(0, 0), .0001f);
         assertEquals("Wrong value", 22f, sampleMatrix.getFloat(0, 1), .0001f);
         assertEquals("Wrong value", 56f, sampleMatrix.getFloat(1, 0), .0001f);
@@ -118,12 +119,12 @@ public abstract class IntMatrixTestCase extends MatrixTestCase
     /**
      * Tests setting matrix elements
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testSet() throws Exception
-    {
+    public void testSet() throws Exception {
         assertEquals("Wrong value", 100, sampleMatrix.getInt(2, 0));
         sampleMatrix.set(2, 0, 1);
         assertEquals("Wrong value", 1, sampleMatrix.getInt(2, 0));
@@ -141,54 +142,7 @@ public abstract class IntMatrixTestCase extends MatrixTestCase
 
     @Override
     @Test
-    public void testSetRow()
-    {
-        sampleMatrix.setRow(0, new int[] {13, 14, 15, 16});
-        SharedNlpTests.assertEquals(new int[] {13, 14, 15, 16}, sampleMatrix.getIntRow(0));
-        sampleMatrix.setRow(2, new int[] {0, 1, 2, 3});
-        SharedNlpTests.assertEquals(new int[] {0, 1, 2, 3}, sampleMatrix.getIntRow(2));
-
-        sampleMatrix.setRow(2, 3);
-        SharedNlpTests.assertEquals(new int[] {3, 3, 3, 3}, sampleMatrix.getIntRow(2));
-
-        symmetricMatrix.setRow(0, new int[] {1, 2, 3, 4, 5});
-        SharedNlpTests.assertEquals(new int[] {1, 2, 3, 4, 5}, symmetricMatrix.getIntRow(0));
-        symmetricMatrix.setRow(4, new int[] {10, 11, 12, 13, 14});
-        SharedNlpTests.assertEquals(new int[] {10, 11, 12, 13, 14}, symmetricMatrix.getIntRow(4));
-
-        symmetricMatrix.setRow(0, 10);
-        SharedNlpTests.assertEquals(new int[] {10, 10, 10, 10, 10}, symmetricMatrix.getIntRow(0));
-        symmetricMatrix.setRow(4, 15);
-        SharedNlpTests.assertEquals(new int[] {15, 15, 15, 15, 15}, symmetricMatrix.getIntRow(4));
-    }
-
-    @Override
-    @Test
-    public void testSetColumn()
-    {
-        sampleMatrix.setColumn(0, new int[] {13, 14, 15});
-        SharedNlpTests.assertEquals(new int[] {13, 14, 15}, sampleMatrix.getIntColumn(0));
-        sampleMatrix.setColumn(2, new int[] {0, 1, 2});
-        SharedNlpTests.assertEquals(new int[] {0, 1, 2}, sampleMatrix.getIntColumn(2));
-
-        sampleMatrix.setColumn(2, 3);
-        SharedNlpTests.assertEquals(new int[] {3, 3, 3}, sampleMatrix.getIntColumn(2));
-
-        symmetricMatrix.setColumn(0, new int[] {1, 2, 3, 4, 5});
-        SharedNlpTests.assertEquals(new int[] {1, 2, 3, 4, 5}, symmetricMatrix.getIntColumn(0));
-        symmetricMatrix.setColumn(4, new int[] {10, 11, 12, 13, 14});
-        SharedNlpTests.assertEquals(new int[] {10, 11, 12, 13, 14}, symmetricMatrix.getIntColumn(4));
-
-        symmetricMatrix.setColumn(0, 10);
-        SharedNlpTests.assertEquals(new int[] {10, 10, 10, 10, 10}, symmetricMatrix.getIntColumn(0));
-        symmetricMatrix.setColumn(4, 15);
-        SharedNlpTests.assertEquals(new int[] {15, 15, 15, 15, 15}, symmetricMatrix.getIntColumn(4));
-    }
-
-    @Override
-    @Test
-    public void testScalarAdd() throws Exception
-    {
+    public void testScalarAdd() throws Exception {
         Matrix m = sampleMatrix.scalarAdd(3);
         assertEquals(matrixClass, m.getClass());
         assertEquals(81, m.getInt(1, 2));
@@ -203,12 +157,12 @@ public abstract class IntMatrixTestCase extends MatrixTestCase
     /**
      * Tests scalar multiplication
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Override
     @Test
-    public void testScalarMultiply() throws Exception
-    {
+    public void testScalarMultiply() throws Exception {
         Matrix m = sampleMatrix.scalarMultiply(3);
         assertEquals(matrixClass, m.getClass());
         assertEquals(234, m.getInt(1, 2));
@@ -221,13 +175,46 @@ public abstract class IntMatrixTestCase extends MatrixTestCase
     }
 
     /**
+     * Tests matrix/vector multiplication
+     */
+    @Override
+    @Test
+    public void testVectorMultiply() throws Exception {
+        // Multiply by an IntVector
+        NumericVector v = new IntVector(new int[] { 1, 2, 3, 4 });
+        NumericVector product = sampleMatrix.multiply(v);
+        assertEquals(v.getClass(), product.getClass());
+        assertEquals(new IntVector(new int[] { 330, 780, 201 }), product);
+
+        // Multiply by a PackedIntVector
+        v = new PackedIntVector(new int[] { 1, 2, 3, 4 }, 16);
+        product = sampleMatrix.multiply(v);
+        assertEquals(v.getClass(), product.getClass());
+        assertEquals(new PackedIntVector(new int[] { 330, 780, 201 }, 16), product);
+
+        // Multiply by a FloatVector
+        v = new FloatVector(new float[] { 1, 2, 3, 4 });
+        product = sampleMatrix.multiply(v);
+        assertEquals(v.getClass(), product.getClass());
+        assertEquals(new FloatVector(new float[] { 330, 780, 201 }), product);
+
+        // Multiply by a HashSparseFloatVector
+        v = new HashSparseFloatVector(new float[] { 0, 1, 1, 2, 2, 3, 3, 4 });
+        product = sampleMatrix.multiply(v);
+        assertEquals(v.getClass(), product.getClass());
+        assertEquals(new HashSparseFloatVector(new float[] { 0, 330, 1, 780, 2, 201 }), product);
+
+        // TODO Add tests for all NumericVector implementations
+    }
+
+    /**
      * Tests equals() method
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
-    public void testEquals() throws Exception
-    {
+    public void testEquals() throws Exception {
         assertEquals(sampleMatrix, create(sampleArray, false));
         assertEquals(symmetricMatrix, create(symmetricArray, true));
     }

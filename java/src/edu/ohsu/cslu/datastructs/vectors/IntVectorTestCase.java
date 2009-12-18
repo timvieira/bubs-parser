@@ -16,16 +16,16 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
     @Override
     public void testVectorAdd() throws Exception
     {
-        Vector vector = create(new float[] {1, 2, 3, 4});
-        IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
-        FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
+        final Vector vector = create(new float[] {1, 2, 3, 4});
+        final IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
+        final FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
 
         try
         {
             vector.add(create(new float[] {1}));
             fail("Expected IllegalArgumentException");
         }
-        catch (IllegalArgumentException expected)
+        catch (final IllegalArgumentException expected)
         {
             assertEquals("Vector length mismatch", expected.getMessage());
         }
@@ -67,7 +67,7 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
         assertEquals("Wrong value", 4, sum.getInt(3));
 
         // If we add a {@link SparseBitVector} we should get a new instance of the same class
-        sum = vector.add(new SparseBitVector(new int[] {1, 2}));
+        sum = vector.add(new SparseBitVector(new int[] {1, 1, 2, 1}, true));
         assertEquals("Wrong class: " + sum.getClass().getName(), vector.getClass(), sum.getClass());
         assertEquals("Wrong length", 4, sum.length());
         assertEquals("Wrong value", 1, sum.getInt(0));
@@ -111,16 +111,16 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
     @Override
     public void testElementwiseMultiply() throws Exception
     {
-        Vector vector = create(new float[] {1, 2, 3, 4});
-        IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
-        FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
+        final Vector vector = create(new float[] {1, 2, 3, 4});
+        final IntVector intVector = new IntVector(new int[] {1, 2, 3, 4});
+        final FloatVector floatVector = new FloatVector(new float[] {4, 3, 2, 1});
 
         try
         {
             vector.elementwiseMultiply(create(new float[] {1}));
             fail("Expected IllegalArgumentException");
         }
-        catch (IllegalArgumentException expected)
+        catch (final IllegalArgumentException expected)
         {
             assertEquals("Vector length mismatch", expected.getMessage());
         }
@@ -165,7 +165,7 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
 
         // If we multiply by a {@link SparseBitVector} we should get a new instance of the same
         // class
-        product = vector.elementwiseMultiply(new SparseBitVector(new int[] {1, 2}));
+        product = vector.elementwiseMultiply(new SparseBitVector(new int[] {1, 1, 2, 1}, true));
         assertEquals("Wrong class: " + product.getClass().getName(), vector.getClass(), product.getClass());
         assertEquals("Wrong length", 4, product.length());
         assertEquals("Wrong value", 0, product.getInt(0));
@@ -209,7 +209,7 @@ public abstract class IntVectorTestCase extends NumericVectorTestCase
     @Override
     public void testDotProduct() throws Exception
     {
-        Vector v = new IntVector(new int[] {1, 2, 3, 4});
+        final Vector v = new IntVector(new int[] {1, 2, 3, 4});
         assertEquals(49, v.dotProduct(new IntVector(new int[] {4, 5, 5, 5})), .01f);
         assertEquals(49f, v.dotProduct(new FloatVector(new float[] {4, 5, 5, 5})), .01f);
         assertEquals(5f, v.dotProduct(new PackedBitVector(new int[] {0, 1, 1, 0})), .01f);

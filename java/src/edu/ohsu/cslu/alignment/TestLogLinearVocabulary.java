@@ -1,6 +1,7 @@
 package edu.ohsu.cslu.alignment;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -13,7 +14,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
  * Unit tests for {@link LogLinearVocabulary}
@@ -85,12 +85,12 @@ public class TestLogLinearVocabulary
         sampleVocabulary = LogLinearVocabulary.read(new StringReader(stringSampleVocabulary));
     }
 
-    private void checkSampleVocabulary(LogLinearVocabulary vocabulary)
+    private void checkSampleVocabulary(final LogLinearVocabulary vocabulary)
     {
         assertEquals(36, vocabulary.size());
 
-        int[] categoryBoundaries = vocabulary.categoryBoundaries();
-        SharedNlpTests.assertEquals("Wrong category boundary", new int[] {19, 34}, categoryBoundaries);
+        final int[] categoryBoundaries = vocabulary.categoryBoundaries();
+        assertArrayEquals("Wrong category boundary", new int[] {19, 34}, categoryBoundaries);
 
         assertEquals(1, vocabulary.map("-RRB-"));
         assertEquals("-RRB-", vocabulary.map(1));
@@ -108,7 +108,7 @@ public class TestLogLinearVocabulary
     @Test
     public void testInduce() throws Exception
     {
-        LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(sampleInput, 1);
+        final LogLinearVocabulary vocabulary = LogLinearVocabulary.induce(sampleInput, 1);
 
         assertEquals(37, vocabulary.size());
 
@@ -135,7 +135,7 @@ public class TestLogLinearVocabulary
         // This token should not be mapped, even though we skipped the space between two parentheses
         assertEquals(Integer.MIN_VALUE, vocabulary.map("_sib_pos_NNS"));
 
-        SharedNlpTests.assertEquals("Wrong category boundary", new int[] {21, 36}, vocabulary.categoryBoundaries());
+        assertArrayEquals("Wrong category boundary", new int[] {21, 36}, vocabulary.categoryBoundaries());
     }
 
     @Test
@@ -147,7 +147,7 @@ public class TestLogLinearVocabulary
     @Test
     public void testWrite() throws Exception
     {
-        StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter();
         sampleVocabulary.write(writer);
         assertEquals(stringSampleVocabulary, writer.toString());
     }

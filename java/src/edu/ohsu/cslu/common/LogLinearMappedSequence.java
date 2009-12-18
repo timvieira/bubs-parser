@@ -70,7 +70,7 @@ public class LogLinearMappedSequence implements MappedSequence
             {
                 features[i] = vocabulary.map(split[j][i]);
             }
-            elements[j] = new SparseBitVector(features);
+            elements[j] = new SparseBitVector(features, false);
         }
 
         // for (int j = 0; j < split.length; j++)
@@ -101,7 +101,7 @@ public class LogLinearMappedSequence implements MappedSequence
         this.elements = new BitVector[features.length];
         for (int j = 0; j < features.length; j++)
         {
-            elements[j] = new SparseBitVector(new int[] {features[j]});
+            elements[j] = new SparseBitVector(new int[] {features[j]}, false);
         }
         this.vocabulary = vocabulary;
     }
@@ -111,7 +111,7 @@ public class LogLinearMappedSequence implements MappedSequence
         this.elements = new BitVector[features.length];
         for (int j = 0; j < features.length; j++)
         {
-            elements[j] = new SparseBitVector(features[j]);
+            elements[j] = new SparseBitVector(features[j], false);
         }
         this.vocabulary = vocabulary;
     }
@@ -177,7 +177,7 @@ public class LogLinearMappedSequence implements MappedSequence
             return clone();
         }
 
-        final BitVector gapVector = new SparseBitVector(new int[] {SubstitutionAlignmentModel.GAP_INDEX});
+        final BitVector gapVector = new SparseBitVector(new int[] {SubstitutionAlignmentModel.GAP_INDEX}, false);
 
         final int gaps = gapIndices.length;
         final int newLength = length() + gaps;
@@ -239,7 +239,7 @@ public class LogLinearMappedSequence implements MappedSequence
                     newFeatures.add(features[i]);
                 }
             }
-            newElements[j] = new SparseBitVector(newFeatures.toIntArray());
+            newElements[j] = new SparseBitVector(newFeatures.toIntArray(), false);
         }
         return new LogLinearMappedSequence(newElements, vocabulary);
     }

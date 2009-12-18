@@ -1,6 +1,7 @@
 package edu.ohsu.cslu.common;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -11,7 +12,6 @@ import edu.ohsu.cslu.alignment.bio.DnaVocabulary;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
  * Unit tests for {@link MultipleVocabularyMappedSequence}.
@@ -46,7 +46,7 @@ public class TestMultipleVocabularyMappedSequence
         assertEquals(new IntVector(new int[] {0}), sequence.elementAt(0));
         assertEquals(new IntVector(new int[] {2}), sequence.elementAt(2));
 
-        int[][] array = new int[][] { {0, 1}, {1, 2}, {2, 3}, {3, 4}};
+        final int[][] array = new int[][] { {0, 1}, {1, 2}, {2, 3}, {3, 4}};
         sequence = new MultipleVocabularyMappedSequence(array, DNA_VOCABULARY);
         assertEquals(2, sequence.featureCount());
         assertEquals(4, sequence.length());
@@ -62,7 +62,7 @@ public class TestMultipleVocabularyMappedSequence
         assertEquals(new IntVector(new int[] {1, 2}), sequence.elementAt(1));
         assertEquals(new IntVector(new int[] {2, 3}), sequence.elementAt(2));
         assertEquals(new IntVector(new int[] {3, 4}), sequence.elementAt(3));
-        SharedNlpTests.assertEquals(new String[] {"G", "T"}, sequence.stringFeatures(3));
+        assertArrayEquals(new String[] {"G", "T"}, sequence.stringFeatures(3));
 
         sequence = new MultipleVocabularyMappedSequence(new int[][] {{0, 1, 2}}, DNA_VOCABULARY);
         assertEquals(3, sequence.featureCount());
@@ -73,7 +73,8 @@ public class TestMultipleVocabularyMappedSequence
     @Test
     public void testReadBracketedSequence() throws Exception
     {
-        MultipleVocabularyMappedSequence sequence = new MultipleVocabularyMappedSequence(sentence1, simpleVocabularies);
+        final MultipleVocabularyMappedSequence sequence = new MultipleVocabularyMappedSequence(sentence1,
+            simpleVocabularies);
 
         assertEquals(10, sequence.length());
         assertEquals(2, sequence.featureCount());
@@ -95,8 +96,8 @@ public class TestMultipleVocabularyMappedSequence
     public void testInsertGaps() throws Exception
     {
         // Test insertGaps() in DNA sequences
-        MappedSequence act = DNA_VOCABULARY.mapSequence("ACT");
-        MappedSequence gac = DNA_VOCABULARY.mapSequence("GAC");
+        final MappedSequence act = DNA_VOCABULARY.mapSequence("ACT");
+        final MappedSequence gac = DNA_VOCABULARY.mapSequence("GAC");
 
         // No gap insertion
         assertEquals("ACT", DNA_VOCABULARY.mapSequence(act.insertGaps(new int[] {})));
@@ -106,8 +107,8 @@ public class TestMultipleVocabularyMappedSequence
         assertEquals("-ACT-", DNA_VOCABULARY.mapSequence(act.insertGaps(new int[] {0, 3})));
         assertEquals("-GAC-", DNA_VOCABULARY.mapSequence(gac.insertGaps(new int[] {0, 3})));
 
-        MappedSequence gacgac = DNA_VOCABULARY.mapSequence("GACGAC");
-        MappedSequence actgac = DNA_VOCABULARY.mapSequence("ACTGAC");
+        final MappedSequence gacgac = DNA_VOCABULARY.mapSequence("GACGAC");
+        final MappedSequence actgac = DNA_VOCABULARY.mapSequence("ACTGAC");
 
         // Inserting two gaps in the same location
         assertEquals("-GACG--AC-", DNA_VOCABULARY.mapSequence(gacgac.insertGaps(new int[] {0, 4, 4, 6})));
@@ -136,10 +137,10 @@ public class TestMultipleVocabularyMappedSequence
     {
 
         // Gaps at beginning and end
-        MappedSequence act = DNA_VOCABULARY.mapSequence("ACT").insertGaps(new int[] {0, 3});
+        final MappedSequence act = DNA_VOCABULARY.mapSequence("ACT").insertGaps(new int[] {0, 3});
         assertEquals("ACT", DNA_VOCABULARY.mapSequence(act.removeAllGaps()));
 
-        MappedSequence gacgac = DNA_VOCABULARY.mapSequence("GACGAC").insertGaps(new int[] {0, 4, 4, 6});
+        final MappedSequence gacgac = DNA_VOCABULARY.mapSequence("GACGAC").insertGaps(new int[] {0, 4, 4, 6});
         assertEquals("GACGAC", DNA_VOCABULARY.mapSequence(gacgac.removeAllGaps()));
 
         // Linguistic sequences
@@ -166,7 +167,7 @@ public class TestMultipleVocabularyMappedSequence
     @Test
     public void testCopyFeatures() throws Exception
     {
-        Sequence sequence = new MultipleVocabularyMappedSequence(sentence1, simpleVocabularies);
+        final Sequence sequence = new MultipleVocabularyMappedSequence(sentence1, simpleVocabularies);
         assertEquals(sequence, sequence.retainFeatures(new int[] {0, 1}));
 
         assertEquals("The computers will display stock prices selected by users .", sequence.retainFeatures(
@@ -183,7 +184,8 @@ public class TestMultipleVocabularyMappedSequence
     @Test
     public void testSubsequence() throws Exception
     {
-        MultipleVocabularyMappedSequence sequence = new MultipleVocabularyMappedSequence(sentence1, simpleVocabularies);
+        final MultipleVocabularyMappedSequence sequence = new MultipleVocabularyMappedSequence(sentence1,
+            simpleVocabularies);
 
         assertEquals(0, sequence.subSequence(0, 0).length());
         assertEquals(sequence, sequence.subSequence(0, 10));
@@ -200,7 +202,7 @@ public class TestMultipleVocabularyMappedSequence
         sequence = new MultipleVocabularyMappedSequence(new int[][] {{0, 1, 2}}, DNA_VOCABULARY);
         assertEquals(" - |\n A |\n C |", sequence.toString());
 
-        StringBuilder sb = new StringBuilder(256);
+        final StringBuilder sb = new StringBuilder(256);
         sb.append(" The | computers | will | display | stock | prices | selected | by | users | . |\n");
         sb.append("  DT |       NNS |   MD |      VB |    NN |    NNS |      VBN | IN |   NNS | . |");
 

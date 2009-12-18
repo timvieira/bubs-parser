@@ -233,11 +233,11 @@ public class TestMultipleSequenceAlignment
     public void testInduceLogLinearAlignmentModel() throws IOException
     {
         LogLinearVocabulary dnaVocabulary = LogLinearVocabulary.induce("(A) (C) (G) (T) (-)", "-");
-        SparseBitVector DNA_A = new SparseBitVector(new int[] {dnaVocabulary.map("A")});
-        SparseBitVector DNA_C = new SparseBitVector(new int[] {dnaVocabulary.map("C")});
-        SparseBitVector DNA_G = new SparseBitVector(new int[] {dnaVocabulary.map("G")});
-        SparseBitVector DNA_T = new SparseBitVector(new int[] {dnaVocabulary.map("T")});
-        SparseBitVector DNA_GAP = new SparseBitVector(new int[] {dnaVocabulary.map("-")});
+        SparseBitVector DNA_A = new SparseBitVector(new int[] {dnaVocabulary.map("A")}, false);
+        SparseBitVector DNA_C = new SparseBitVector(new int[] {dnaVocabulary.map("C")}, false);
+        SparseBitVector DNA_G = new SparseBitVector(new int[] {dnaVocabulary.map("G")}, false);
+        SparseBitVector DNA_T = new SparseBitVector(new int[] {dnaVocabulary.map("T")}, false);
+        SparseBitVector DNA_GAP = new SparseBitVector(new int[] {dnaVocabulary.map("-")}, false);
 
         StringBuilder sb = new StringBuilder(256);
         sb.append("CGA--T-CT-G--C-C-CTG--CA-C\n");
@@ -286,21 +286,21 @@ public class TestMultipleSequenceAlignment
             new FloatVector(new float[] {10, 10, 10, 10, 10, 10, 10, 10, Float.POSITIVE_INFINITY}));
 
         // Gap
-        SparseBitVector gap = new SparseBitVector(new int[] {0});
+        SparseBitVector gap = new SparseBitVector(new int[] {0}, false);
         assertEquals(-Math.log(1f / 4), model.cost(gap, 0), .01f);
         assertEquals(-Math.log(2f / 4), model.cost(gap, 1), .01f);
         assertEquals(-Math.log(1f / 4), model.cost(gap, 2), .01f);
         // TODO: We should probably have an infinite cost of placing a gap in the _head_verb column
         assertEquals(-Math.log(1f / 4), model.cost(gap, 3), .01f);
 
-        SparseBitVector the = new SparseBitVector(new int[] {vocabulary.map("the")});
+        SparseBitVector the = new SparseBitVector(new int[] {vocabulary.map("the")}, false);
         assertEquals(-Math.log(5f / 16), model.cost(the, 0), .01f);
         assertEquals(-Math.log(1f / 16), model.cost(the, 1), .01f);
         assertEquals(-Math.log(1f / 16), model.cost(the, 2), .01f);
         // TODO: We should probably have an infinite cost of aligning 'the' in the _head_verb column
         assertEquals(-Math.log(1f / 16), model.cost(the, 3), .01f);
 
-        SparseBitVector theDT = new SparseBitVector(new int[] {vocabulary.map("the"), vocabulary.map("_pos_DT")});
+        SparseBitVector theDT = new SparseBitVector(new int[] {vocabulary.map("the"), vocabulary.map("_pos_DT")}, false);
         assertEquals(-(Math.log(5f / 16) + Math.log(1f / 2)), model.cost(theDT, 0), .01f);
         assertEquals(-(Math.log(1f / 16) + Math.log(1f / 4)), model.cost(theDT, 1), .01f);
         assertEquals(-(Math.log(1f / 16) + Math.log(1f / 4)), model.cost(theDT, 2), .01f);
@@ -309,7 +309,7 @@ public class TestMultipleSequenceAlignment
         assertEquals(-(Math.log(1f / 16) + Math.log(1f / 4)), model.cost(theDT, 3), .01f);
 
         SparseBitVector ranVBN = new SparseBitVector(new int[] {vocabulary.map("ran"), vocabulary.map("_pos_VBN"),
-                                                                vocabulary.map("_head_verb")});
+                                                                vocabulary.map("_head_verb")}, false);
         assertEquals(Float.POSITIVE_INFINITY, model.cost(ranVBN, 0), .01f);
         assertEquals(Float.POSITIVE_INFINITY, model.cost(ranVBN, 1), .01f);
         assertEquals(Float.POSITIVE_INFINITY, model.cost(ranVBN, 2), .01f);

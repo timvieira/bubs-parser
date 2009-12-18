@@ -17,6 +17,7 @@ import edu.ohsu.cslu.alignment.multiple.IterativePairwiseAligner;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.datastructs.matrices.DenseMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
@@ -36,7 +37,7 @@ public class AlignSentences extends BaseCommandlineTool
 
     private final static String AUTO = "auto";
 
-    public static void main(String[] args)
+    public static void main(final String[] args)
     {
         run(args);
     }
@@ -44,10 +45,10 @@ public class AlignSentences extends BaseCommandlineTool
     @Override
     public void run() throws Exception
     {
-        HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
+        final HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
 
         final ArrayList<String> sentences = new ArrayList<String>();
-        StringBuilder sb = new StringBuilder(8192);
+        final StringBuilder sb = new StringBuilder(8192);
 
         final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         for (String line = reader.readLine(); line != null; line = reader.readLine())
@@ -57,11 +58,11 @@ public class AlignSentences extends BaseCommandlineTool
             sb.append('\n');
         }
 
-        String entireFile = sb.toString();
+        final String entireFile = sb.toString();
 
         // Induce the vocabularies
         // TODO: induceVocabularies should handle tree-format
-        SimpleVocabulary[] inducedVocabularies = SimpleVocabulary.induceVocabularies(entireFile);
+        final SimpleVocabulary[] inducedVocabularies = SimpleVocabulary.induceVocabularies(entireFile);
         SimpleVocabulary[] vocabularies = new SimpleVocabulary[inducedVocabularies.length];
 
         if (vocabularyFiles != null)
@@ -85,7 +86,7 @@ public class AlignSentences extends BaseCommandlineTool
         }
 
         // Translate into sequences
-        MappedSequence[] sequences = new MappedSequence[sentences.size()];
+        final MappedSequence[] sequences = new MappedSequence[sentences.size()];
         for (int i = 0; i < sequences.length; i++)
         {
             // TODO: extract pos from sentence
@@ -94,16 +95,16 @@ public class AlignSentences extends BaseCommandlineTool
         }
 
         // Construct and/or read in substitution matrices
-        Matrix[] substitutionMatrices = new Matrix[substitutionMatrixOptions.size()];
+        final DenseMatrix[] substitutionMatrices = new DenseMatrix[substitutionMatrixOptions.size()];
 
         for (int i = 0; i < substitutionMatrices.length; i++)
         {
             if (substitutionMatrixOptions.get(i).indexOf(',') >= 0)
             {
                 // Construct from 'definition' (substitution-cost, gap-cost)
-                String[] costs = substitutionMatrixOptions.get(i).split(",");
-                float substitutionCost = Float.parseFloat(costs[0]);
-                float gapCost = costs.length > 1 ? Float.parseFloat(costs[1]) : substitutionCost;
+                final String[] costs = substitutionMatrixOptions.get(i).split(",");
+                final float substitutionCost = Float.parseFloat(costs[0]);
+                final float gapCost = costs.length > 1 ? Float.parseFloat(costs[1]) : substitutionCost;
 
                 substitutionMatrices[i] = Matrix.Factory.newSymmetricIdentityFloatMatrix(vocabularies[i].size(),
                     substitutionCost, 0f);
@@ -116,32 +117,32 @@ public class AlignSentences extends BaseCommandlineTool
             else
             {
                 // Read in matrix file
-                substitutionMatrices[i] = Matrix.Factory.read(new File(substitutionMatrixOptions.get(i)));
+                substitutionMatrices[i] = (DenseMatrix) Matrix.Factory.read(new File(substitutionMatrixOptions.get(i)));
             }
         }
 
-        MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(substitutionMatrices,
-            vocabularies);
+        final MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(
+            substitutionMatrices, vocabularies);
 
         // Read in pairwise tree distance file
         // TODO: Option to calculate the distance matrix on-the-fly
-        Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
+        final Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
 
         // Align the sequences
-        IterativePairwiseAligner aligner = new IterativePairwiseAligner();
-        MultipleSequenceAlignment alignment = aligner.align(sequences, distanceMatrix, alignmentModel);
+        final IterativePairwiseAligner aligner = new IterativePairwiseAligner();
+        final MultipleSequenceAlignment alignment = aligner.align(sequences, distanceMatrix, alignmentModel);
 
         System.out.println(alignment.toString());
     }
 
     @Override
-    public void setup(CmdLineParser parser)
+    public void setup(final CmdLineParser parser)
     {
-        String[] vmOptions = vocabularyMatrixParam.split(",");
+        final String[] vmOptions = vocabularyMatrixParam.split(",");
 
         for (int i = 0; i < vmOptions.length; i++)
         {
-            String[] split = vmOptions[i].split("=");
+            final String[] split = vmOptions[i].split("=");
             vocabularyFiles.add(split[0]);
             substitutionMatrixOptions.add(split[1]);
         }

@@ -13,7 +13,7 @@ public class LogLinearDnaVocabulary extends DnaVocabulary
         BitVector[] mappedSequence = new BitVector[sequence.length()];
         for (int i = 0; i < mappedSequence.length; i++)
         {
-            mappedSequence[i] = new SparseBitVector(new int[] {mapCharacter(sequence.charAt(i))});
+            mappedSequence[i] = new SparseBitVector(new int[] {mapCharacter(sequence.charAt(i))}, false);
         }
         return new LogLinearMappedSequence(mappedSequence, this);
     }

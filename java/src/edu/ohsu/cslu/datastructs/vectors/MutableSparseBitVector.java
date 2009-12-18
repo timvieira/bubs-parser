@@ -38,19 +38,21 @@ public class MutableSparseBitVector extends BaseVector implements BitVector
     /**
      * Constructs a {@link SparseBitVector} from an integer array. Note that the semantics of this
      * constructor are different from those of most other {@link Vector} constructors with the same
-     * signature - the int values contained in the parameter are themselves populated, whereas most
-     * other constructors populate the _indices_ of the array which contain non-zero values.
+     * signature. The array should consists of index, boolean tuples.
      * 
-     * @param array The vector indices to populate
+     * @param array Index, boolean tuples
      */
     public MutableSparseBitVector(final int[] array)
     {
         super(0);
         intSet = new IntRBTreeSet();
 
-        for (int i = 0; i < array.length; i++)
+        for (int i = 0; i < array.length; i = i + 2)
         {
-            add(array[i]);
+            if (array[i + 1] != 0)
+            {
+                add(array[i]);
+            }
         }
     }
 
@@ -372,20 +374,19 @@ public class MutableSparseBitVector extends BaseVector implements BitVector
     @Override
     public void write(final Writer writer) throws IOException
     {
-        // Unlike PackedBitVector, this outputs only the populated indices (e.g. "2 4...")
-        writer.write(String.format("vector type=mutable-sparse-bit length=%d\n", length()));
+        writer.write(String.format("vector type=mutable-sparse-bit length=%d sparse=true\n", length()));
 
-        // Write Vector contents
+        // Write Vector contents in sparse-vector notation
         for (final IntIterator iter = intSet.iterator(); iter.hasNext();)
         {
             final int element = iter.nextInt();
             if (iter.hasNext())
             {
-                writer.write(String.format("%d ", element));
+                writer.write(String.format("%d 1 ", element));
             }
             else
             {
-                writer.write(String.format("%d\n", element));
+                writer.write(String.format("%d 1\n", element));
             }
         }
         writer.flush();

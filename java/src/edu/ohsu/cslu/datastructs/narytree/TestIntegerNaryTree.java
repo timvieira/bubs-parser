@@ -1,5 +1,12 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -14,9 +21,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link IntegerNaryTree} class. Also tests the static inner class
@@ -90,7 +94,7 @@ public class TestIntegerNaryTree
     @Test
     public void testAddChild() throws Exception
     {
-        IntegerNaryTree tree = new IntegerNaryTree(1);
+        final IntegerNaryTree tree = new IntegerNaryTree(1);
         assertEquals(1, tree.size());
         tree.addChild(2);
         assertEquals(2, tree.size());
@@ -101,7 +105,7 @@ public class TestIntegerNaryTree
     @Test
     public void testAddChildren() throws Exception
     {
-        IntegerNaryTree tree = new IntegerNaryTree(1);
+        final IntegerNaryTree tree = new IntegerNaryTree(1);
         assertEquals(1, tree.size());
         tree.addChildren(new int[] {2, 3});
         assertEquals(3, tree.size());
@@ -113,8 +117,8 @@ public class TestIntegerNaryTree
     @Test
     public void testAddSubtree() throws Exception
     {
-        IntegerNaryTree tree = new IntegerNaryTree(1);
-        IntegerNaryTree tmp = new IntegerNaryTree(2);
+        final IntegerNaryTree tree = new IntegerNaryTree(1);
+        final IntegerNaryTree tmp = new IntegerNaryTree(2);
         tmp.addChildren(new int[] {3, 4});
         tree.addSubtree(tmp);
         assertEquals(4, tree.size());
@@ -193,7 +197,7 @@ public class TestIntegerNaryTree
     @Test
     public void testSubtree() throws Exception
     {
-        BaseNaryTree<Integer> subtree = sampleTree.subtree(4);
+        final BaseNaryTree<Integer> subtree = sampleTree.subtree(4);
         assertEquals(5, subtree.size());
         assertNotNull(subtree.subtree(2));
         assertNotNull(subtree.subtree(5));
@@ -243,10 +247,10 @@ public class TestIntegerNaryTree
     @Test
     public void testInOrderIterator() throws Exception
     {
-        Iterator<NaryTree<Integer>> iter = sampleTree.inOrderIterator();
+        final Iterator<NaryTree<Integer>> iter = sampleTree.inOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
-            BaseNaryTree<Integer> t = (BaseNaryTree<Integer>) iter.next();
+            final BaseNaryTree<Integer> t = (BaseNaryTree<Integer>) iter.next();
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], t.label);
         }
     }
@@ -254,7 +258,7 @@ public class TestIntegerNaryTree
     @Test
     public void testInOrderLabelIterator() throws Exception
     {
-        Iterator<Integer> iter = sampleTree.inOrderLabelIterator();
+        final Iterator<Integer> iter = sampleTree.inOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next().intValue());
@@ -264,16 +268,16 @@ public class TestIntegerNaryTree
     @Test
     public void testInOrderArray() throws Exception
     {
-        SharedNlpTests.assertEquals(SAMPLE_IN_ORDER_ARRAY, sampleTree.inOrderArray());
+        assertArrayEquals(SAMPLE_IN_ORDER_ARRAY, sampleTree.inOrderArray());
     }
 
     @Test
     public void testPreOrderIterator() throws Exception
     {
-        Iterator<NaryTree<Integer>> iter = sampleTree.preOrderIterator();
+        final Iterator<NaryTree<Integer>> iter = sampleTree.preOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
-            BaseNaryTree<Integer> t = (BaseNaryTree<Integer>) iter.next();
+            final BaseNaryTree<Integer> t = (BaseNaryTree<Integer>) iter.next();
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], t.label);
         }
     }
@@ -281,7 +285,7 @@ public class TestIntegerNaryTree
     @Test
     public void testPreOrderLabelIterator() throws Exception
     {
-        Iterator<Integer> iter = sampleTree.preOrderLabelIterator();
+        final Iterator<Integer> iter = sampleTree.preOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next().intValue());
@@ -291,16 +295,16 @@ public class TestIntegerNaryTree
     @Test
     public void testPreOrderArray() throws Exception
     {
-        SharedNlpTests.assertEquals(SAMPLE_PRE_ORDER_ARRAY, sampleTree.preOrderArray());
+        assertArrayEquals(SAMPLE_PRE_ORDER_ARRAY, sampleTree.preOrderArray());
     }
 
     @Test
     public void testPostOrderIterator() throws Exception
     {
-        Iterator<NaryTree<Integer>> iter = sampleTree.postOrderIterator();
+        final Iterator<NaryTree<Integer>> iter = sampleTree.postOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
-            BaseNaryTree<Integer> t = (BaseNaryTree<Integer>) iter.next();
+            final BaseNaryTree<Integer> t = (BaseNaryTree<Integer>) iter.next();
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], t.label);
         }
     }
@@ -308,7 +312,7 @@ public class TestIntegerNaryTree
     @Test
     public void testPostOrderLabelIterator() throws Exception
     {
-        Iterator<Integer> iter = sampleTree.postOrderLabelIterator();
+        final Iterator<Integer> iter = sampleTree.postOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++)
         {
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next().intValue());
@@ -318,15 +322,15 @@ public class TestIntegerNaryTree
     @Test
     public void testPostOrderArray() throws Exception
     {
-        SharedNlpTests.assertEquals(SAMPLE_POST_ORDER_ARRAY, sampleTree.postOrderArray());
+        assertArrayEquals(SAMPLE_POST_ORDER_ARRAY, sampleTree.postOrderArray());
     }
 
     @Test
     public void testReadFromReader() throws Exception
     {
 
-        String stringSimpleTree = "(1 (2 3) 4)";
-        IntegerNaryTree simpleTree = IntegerNaryTree.read(new StringReader(stringSimpleTree));
+        final String stringSimpleTree = "(1 (2 3) 4)";
+        final IntegerNaryTree simpleTree = IntegerNaryTree.read(new StringReader(stringSimpleTree));
         assertEquals(4, simpleTree.size());
         assertEquals(2, simpleTree.subtree(2).size());
 
@@ -335,8 +339,8 @@ public class TestIntegerNaryTree
         assertEquals(3, simpleTree.subtree(2).subtree(3).intLabel());
         assertEquals(4, simpleTree.subtree(4).intLabel());
 
-        String stringTestTree = "(1 (2 (3 (4 (5 6) (7 8)) (9 10)) (11 12)))";
-        IntegerNaryTree testTree = IntegerNaryTree.read(new StringReader(stringTestTree));
+        final String stringTestTree = "(1 (2 (3 (4 (5 6) (7 8)) (9 10)) (11 12)))";
+        final IntegerNaryTree testTree = IntegerNaryTree.read(new StringReader(stringTestTree));
         assertEquals(12, testTree.size());
         assertEquals(8, testTree.subtree(2).subtree(3).size());
 
@@ -353,7 +357,7 @@ public class TestIntegerNaryTree
         assertEquals(11, testTree.subtree(2).subtree(11).intLabel());
         assertEquals(12, testTree.subtree(2).subtree(11).subtree(12).intLabel());
 
-        IntegerNaryTree tree = IntegerNaryTree.read(new StringReader(stringSampleTree));
+        final IntegerNaryTree tree = IntegerNaryTree.read(new StringReader(stringSampleTree));
         assertEquals(sampleTree, tree);
     }
 
@@ -364,8 +368,8 @@ public class TestIntegerNaryTree
         sampleTree.write(writer);
         assertEquals(stringSampleTree, writer.toString());
 
-        String stringSimpleTree = "(1 (2 (3 (4 (5 6) (7 8)) (9 10)) (11 12)))";
-        IntegerNaryTree tree = new IntegerNaryTree(1);
+        final String stringSimpleTree = "(1 (2 (3 (4 (5 6) (7 8)) (9 10)) (11 12)))";
+        final IntegerNaryTree tree = new IntegerNaryTree(1);
         tree.addChild(2).addChild(3).addChild(4).addChild(5).addChild(6);
         tree.subtree(2).subtree(3).subtree(4).addChild(7).addChild(8);
         tree.subtree(2).subtree(3).addChild(9).addChild(10);
@@ -388,13 +392,13 @@ public class TestIntegerNaryTree
     @Test
     public void testEquals() throws Exception
     {
-        BaseNaryTree<Integer> tree1 = new IntegerNaryTree(1);
+        final BaseNaryTree<Integer> tree1 = new IntegerNaryTree(1);
         tree1.addChildren(new int[] {2, 3});
 
-        BaseNaryTree<Integer> tree2 = new IntegerNaryTree(1);
+        final BaseNaryTree<Integer> tree2 = new IntegerNaryTree(1);
         tree2.addChildren(new int[] {2, 3});
 
-        BaseNaryTree<Integer> tree3 = new IntegerNaryTree(1);
+        final BaseNaryTree<Integer> tree3 = new IntegerNaryTree(1);
         tree3.addChildren(new int[] {2, 4});
 
         assertTrue(tree1.equals(tree2));
@@ -413,13 +417,13 @@ public class TestIntegerNaryTree
     @SuppressWarnings("unchecked")
     public void testSerialize() throws Exception
     {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final ObjectOutputStream oos = new ObjectOutputStream(bos);
 
         oos.writeObject(sampleTree);
 
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
-        BaseNaryTree<Integer> t = (BaseNaryTree<Integer>) ois.readObject();
+        final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        final BaseNaryTree<Integer> t = (BaseNaryTree<Integer>) ois.readObject();
         assertTrue(sampleTree.equals(t));
     }
 
@@ -432,14 +436,14 @@ public class TestIntegerNaryTree
     public void testPqGramSimilarity() throws Exception
     {
         // Example taken from Augsten, Bohlen, Gamper, 2005, page 304
-        IntegerNaryTree t1 = new IntegerNaryTree(1);
+        final IntegerNaryTree t1 = new IntegerNaryTree(1);
         IntegerNaryTree tmp = t1.addChild(1);
         tmp.addChild(5);
         tmp.addChild(2);
         t1.addChild(2);
         t1.addChild(3);
 
-        IntegerNaryTree t2 = new IntegerNaryTree(1);
+        final IntegerNaryTree t2 = new IntegerNaryTree(1);
         tmp = t2.addChild(1);
         tmp.addChild(5);
         tmp.addChild(2);
@@ -449,7 +453,7 @@ public class TestIntegerNaryTree
         assertEquals(.31, t1.pqgramDistance(t2, 2, 3), .01f);
 
         // Example taken from Augsten, Bohlen, Gamper, 2005, page 308
-        IntegerNaryTree t = new IntegerNaryTree(1);
+        final IntegerNaryTree t = new IntegerNaryTree(1);
         t.addChild(2);
         tmp = t.addChild(3);
         tmp.addChild(4);
@@ -461,7 +465,7 @@ public class TestIntegerNaryTree
         tmp.addChild(9);
         tmp.addChild(10);
 
-        IntegerNaryTree tPrime = new IntegerNaryTree(1);
+        final IntegerNaryTree tPrime = new IntegerNaryTree(1);
         tPrime.addChild(2);
         tmp = tPrime.addChild(3);
         tmp.addChild(4);
@@ -471,7 +475,7 @@ public class TestIntegerNaryTree
         tmp.addChild(8);
         tmp.addChild(9);
 
-        IntegerNaryTree tDoublePrime = new IntegerNaryTree(1);
+        final IntegerNaryTree tDoublePrime = new IntegerNaryTree(1);
         tDoublePrime.addChild(2);
         tDoublePrime.addChild(4);
         tDoublePrime.addChild(8);
@@ -556,7 +560,7 @@ public class TestIntegerNaryTree
         assertTrue(b.contains(register1));
         assertFalse(b.contains(register2));
         assertFalse(b.contains(register3));
-        BaseNaryTree.PqgramProfile b2 = bag3.intersection(bag1);
+        final BaseNaryTree.PqgramProfile b2 = bag3.intersection(bag1);
         assertEquals(1, b2.size());
         assertEquals(b, b2);
 

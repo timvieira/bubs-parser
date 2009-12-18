@@ -6,14 +6,14 @@ import java.util.Arrays;
 
 /**
  * Implementation of the {@link Matrix} interface which stores bytes instead of floating-point. This
- * implementation is more memory-efficient than {@link IntMatrix} for applications which do not need
- * the full range of a 32-bit integer.
+ * implementation is more memory-efficient than {@link IntMatrix} for applications which do not need the full
+ * range of a 32-bit integer.
  * 
- * Reads and writes matrices to a standard human-readable storage format as well as to java
- * serialized objects.
+ * Reads and writes matrices to a standard human-readable storage format as well as to java serialized
+ * objects.
  * 
- * Like most {@link Matrix} implementations, this implementation includes special handling of
- * symmetric matrices, allowing them to be stored in a less memory-intensive manner.
+ * Like most {@link Matrix} implementations, this implementation includes special handling of symmetric
+ * matrices, allowing them to be stored in a less memory-intensive manner.
  * 
  * 
  * @author Aaron Dunlop
@@ -21,8 +21,8 @@ import java.util.Arrays;
  * 
  *        $Id$
  */
-public class ByteMatrix extends BaseMatrix
-{
+public class ByteMatrix extends BaseDenseMatrix {
+
     private final static long serialVersionUID = 369752896212698723L;
 
     private final byte[][] matrix;
@@ -30,34 +30,31 @@ public class ByteMatrix extends BaseMatrix
     /**
      * Construct a ByteMatrix
      * 
-     * @param matrix the byte array
+     * @param matrix
+     *            the byte array
      */
-    public ByteMatrix(final byte[][] matrix)
-    {
+    public ByteMatrix(final byte[][] matrix) {
         this(matrix, false);
     }
 
     /**
      * Construct a ByteMatrix
      * 
-     * @param m rows
-     * @param n columns
-     * @param symmetric Is this matrix symmetric? (Symmetric matrices can be stored more
-     *            efficiently)
+     * @param m
+     *            rows
+     * @param n
+     *            columns
+     * @param symmetric
+     *            Is this matrix symmetric? (Symmetric matrices can be stored more efficiently)
      */
-    public ByteMatrix(final int m, final int n, boolean symmetric)
-    {
+    public ByteMatrix(final int m, final int n, final boolean symmetric) {
         super(m, n, symmetric);
-        if (symmetric)
-        {
+        if (symmetric) {
             matrix = new byte[m][];
-            for (int i = 0; i < m; i++)
-            {
+            for (int i = 0; i < m; i++) {
                 matrix[i] = new byte[i + 1];
             }
-        }
-        else
-        {
+        } else {
             matrix = new byte[m][n];
         }
     }
@@ -65,32 +62,31 @@ public class ByteMatrix extends BaseMatrix
     /**
      * Construct a ByteMatrix
      * 
-     * @param m rows
-     * @param n columns
+     * @param m
+     *            rows
+     * @param n
+     *            columns
      */
-    public ByteMatrix(final int m, final int n)
-    {
+    public ByteMatrix(final int m, final int n) {
         this(m, n, false);
     }
 
     /**
      * Construct a ByteMatrix
      * 
-     * @param matrix the byte array
-     * @param symmetric Is this matrix symmetric? (Symmetric matrices can be stored more
-     *            efficiently)
+     * @param matrix
+     *            the byte array
+     * @param symmetric
+     *            Is this matrix symmetric? (Symmetric matrices can be stored more efficiently)
      */
-    public ByteMatrix(final byte[][] matrix, boolean symmetric)
-    {
+    public ByteMatrix(final byte[][] matrix, final boolean symmetric) {
         super(matrix.length, matrix.length == 0 ? 0 : matrix[matrix.length - 1].length, symmetric);
         this.matrix = matrix;
     }
 
     @Override
-    public int getInt(final int i, final int j)
-    {
-        if (symmetric && j > i)
-        {
+    public int getInt(final int i, final int j) {
+        if (symmetric && j > i) {
             return matrix[j][i];
         }
 
@@ -98,10 +94,8 @@ public class ByteMatrix extends BaseMatrix
     }
 
     @Override
-    public float getFloat(final int i, final int j)
-    {
-        if (symmetric && j > i)
-        {
+    public float getFloat(final int i, final int j) {
+        if (symmetric && j > i) {
             return matrix[j][i];
         }
 
@@ -112,59 +106,47 @@ public class ByteMatrix extends BaseMatrix
      * Override BaseMatrix implementation with a more efficient one.
      */
     @Override
-    public int[] getIntRow(int i)
-    {
-        if (!symmetric)
-        {
+    public int[] getIntRow(final int i) {
+        if (!symmetric) {
             final int[] row = new int[n];
-            for (int j = 0; j < n; j++)
-            {
+            for (int j = 0; j < n; j++) {
                 row[j] = matrix[i][j];
             }
             return row;
         }
 
         // For symmetric matrices, we have to copy and 'extend' the row
-        int[] row = new int[n];
-        for (int j = 0; j < n; j++)
-        {
+        final int[] row = new int[n];
+        for (int j = 0; j < n; j++) {
             row[j] = getInt(i, j);
         }
         return row;
     }
 
     @Override
-    public void set(final int i, final int j, final int value)
-    {
-        if (symmetric && j > i)
-        {
+    public void set(final int i, final int j, final int value) {
+        if (symmetric && j > i) {
             matrix[j][i] = (byte) value;
-        }
-        else
-        {
+        } else {
             matrix[i][j] = (byte) value;
         }
     }
 
     @Override
-    public void set(final int i, final int j, final float value)
-    {
+    public void set(final int i, final int j, final float value) {
         set(i, j, Math.round(value));
     }
 
     @Override
-    public void set(final int i, final int j, final String newValue)
-    {
+    public void set(final int i, final int j, final String newValue) {
         matrix[i][j] = Byte.parseByte(newValue);
     }
 
-    public void increment(final int i, final int j)
-    {
+    public void increment(final int i, final int j) {
         matrix[i][j]++;
     }
 
-    public void add(final int i, final int j, int addend)
-    {
+    public void add(final int i, final int j, final int addend) {
         matrix[i][j] += addend;
     }
 
@@ -172,8 +154,7 @@ public class ByteMatrix extends BaseMatrix
      * Override BaseMatrix implementation with a more efficient one.
      */
     @Override
-    public void setRow(final int i, final float value)
-    {
+    public void setRow(final int i, final float value) {
         setRow(i, (int) value);
     }
 
@@ -181,14 +162,10 @@ public class ByteMatrix extends BaseMatrix
      * Override BaseMatrix implementation with a more efficient one.
      */
     @Override
-    public void setRow(final int i, final int value)
-    {
-        if (symmetric)
-        {
+    public void setRow(final int i, final int value) {
+        if (symmetric) {
             super.setRow(i, value);
-        }
-        else
-        {
+        } else {
             Arrays.fill(matrix[i], (byte) value);
         }
     }
@@ -197,42 +174,35 @@ public class ByteMatrix extends BaseMatrix
      * Override BaseMatrix implementation to avoid repeated int->float conversions
      */
     @Override
-    public int[] argMax()
-    {
+    public int[] argMax() {
         int maxI = 0, maxJ = 0;
         int max = Integer.MIN_VALUE;
 
-        for (int i = 0; i < m; i++)
-        {
+        for (int i = 0; i < m; i++) {
             final int jBound = symmetric ? i + 1 : n;
-            for (int j = 0; j < jBound; j++)
-            {
+            for (int j = 0; j < jBound; j++) {
                 final int x = matrix[i][j];
-                if (x > max)
-                {
+                if (x > max) {
                     max = x;
                     maxI = i;
                     maxJ = j;
                 }
             }
         }
-        return new int[] {maxI, maxJ};
+        return new int[] { maxI, maxJ };
     }
 
     /**
      * Override BaseMatrix implementation to avoid repeated int->float conversions
      */
     @Override
-    public int rowArgMax(int i)
-    {
+    public int rowArgMax(final int i) {
         int maxJ = 0;
         int max = Integer.MIN_VALUE;
 
-        for (int j = 0; j < n; j++)
-        {
+        for (int j = 0; j < n; j++) {
             final int x = getInt(i, j);
-            if (x > max)
-            {
+            if (x > max) {
                 max = x;
                 maxJ = j;
             }
@@ -244,42 +214,35 @@ public class ByteMatrix extends BaseMatrix
      * Override BaseMatrix implementation to avoid repeated int->float conversions
      */
     @Override
-    public int[] argMin()
-    {
+    public int[] argMin() {
         int minI = 0, minJ = 0;
         int min = Integer.MAX_VALUE;
 
-        for (int i = 0; i < m; i++)
-        {
+        for (int i = 0; i < m; i++) {
             final int jBound = symmetric ? i + 1 : n;
-            for (int j = 0; j < jBound; j++)
-            {
+            for (int j = 0; j < jBound; j++) {
                 final int x = matrix[i][j];
-                if (x < min)
-                {
+                if (x < min) {
                     min = x;
                     minI = i;
                     minJ = j;
                 }
             }
         }
-        return new int[] {minI, minJ};
+        return new int[] { minI, minJ };
     }
 
     /**
      * Override BaseMatrix implementation to avoid repeated int->float conversions
      */
     @Override
-    public int rowArgMin(int i)
-    {
+    public int rowArgMin(final int i) {
         int minJ = 0;
         int min = Integer.MAX_VALUE;
 
-        for (int j = 0; j < n; j++)
-        {
+        for (int j = 0; j < n; j++) {
             final int x = getInt(i, j);
-            if (x < min)
-            {
+            if (x < min) {
                 min = x;
                 minJ = j;
             }
@@ -288,25 +251,21 @@ public class ByteMatrix extends BaseMatrix
     }
 
     /**
-     * Type-strengthen {@link Matrix#subMatrix(int, int, int, int)}
+     * Type-strengthen {@link DenseMatrix#subMatrix(int, int, int, int)}
      * 
-     * Note that a submatrix of a symmetric matrix may or may not be symmetric as well. This
-     * implementation correctly creates a symmetric submatrix when the specified indices indicate a
-     * submatrix reflected across the diagonal of the original matrix. Note that it does no element
-     * value comparisons, so a submatrix of a non-symmetric matrix will _never_ be labeled as
-     * symmetric (even if the submatrix is in fact mathematically a symmetric matrix).
+     * Note that a submatrix of a symmetric matrix may or may not be symmetric as well. This implementation
+     * correctly creates a symmetric submatrix when the specified indices indicate a submatrix reflected
+     * across the diagonal of the original matrix. Note that it does no element value comparisons, so a
+     * submatrix of a non-symmetric matrix will _never_ be labeled as symmetric (even if the submatrix is in
+     * fact mathematically a symmetric matrix).
      */
     @Override
-    public ByteMatrix subMatrix(final int i0, final int i1, final int j0, final int j1)
-    {
-        if (symmetric)
-        {
-            if (((i1 - i0) == (j1 - j0)) && (i1 == j1))
-            {
+    public ByteMatrix subMatrix(final int i0, final int i1, final int j0, final int j1) {
+        if (symmetric) {
+            if (((i1 - i0) == (j1 - j0)) && (i1 == j1)) {
                 // The resulting matrix will still be symmetric
                 final byte[][] submatrix = new byte[i1 - i0 + 1][];
-                for (int i = i0; i <= i1; i++)
-                {
+                for (int i = i0; i <= i1; i++) {
                     final int rowLength = i - i0 + 1;
                     final byte[] row = submatrix[i - i0] = new byte[rowLength];
                     System.arraycopy(matrix[i], j0, row, 0, rowLength);
@@ -316,12 +275,10 @@ public class ByteMatrix extends BaseMatrix
 
             // The resulting matrix will _not_ be symmetric
             final byte[][] submatrix = new byte[i1 - i0 + 1][];
-            for (int i = i0; i <= i1; i++)
-            {
+            for (int i = i0; i <= i1; i++) {
                 final int rowLength = j1 - j0 + 1;
                 final byte[] row = submatrix[i - i0] = new byte[rowLength];
-                for (int j = j0; j <= j1; j++)
-                {
+                for (int j = j0; j <= j1; j++) {
                     row[j - j0] = (byte) getInt(i, j);
                 }
             }
@@ -329,8 +286,7 @@ public class ByteMatrix extends BaseMatrix
         }
 
         final byte[][] submatrix = new byte[i1 - i0 + 1][];
-        for (int i = i0; i <= i1; i++)
-        {
+        for (int i = i0; i <= i1; i++) {
             final byte[] row = new byte[j1 - j0 + 1];
             System.arraycopy(matrix[i], j0, row, 0, row.length);
             submatrix[i - i0] = row;
@@ -342,18 +298,14 @@ public class ByteMatrix extends BaseMatrix
      * Type-strengthen {@link Matrix#transpose()}
      */
     @Override
-    public ByteMatrix transpose()
-    {
-        if (isSymmetric() || n == 0)
-        {
+    public ByteMatrix transpose() {
+        if (isSymmetric() || n == 0) {
             return clone();
         }
 
         final byte[][] array = new byte[n][m];
-        for (int i = 0; i < m; i++)
-        {
-            for (int j = 0; j < n; j++)
-            {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
                 array[j][i] = matrix[i][j];
             }
         }
@@ -361,14 +313,11 @@ public class ByteMatrix extends BaseMatrix
     }
 
     @Override
-    public Matrix scalarAdd(float addend)
-    {
+    public DenseMatrix scalarAdd(final float addend) {
         // scalarAdd() and scalarMultiply() with floats should return float matrices
-        float[][] array = new float[m][n];
-        for (int i = 0; i < m; i++)
-        {
-            for (int j = 0; j < n; j++)
-            {
+        final float[][] array = new float[m][n];
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
                 array[i][j] = matrix[i][j] + addend;
             }
         }
@@ -376,14 +325,11 @@ public class ByteMatrix extends BaseMatrix
     }
 
     @Override
-    public Matrix scalarMultiply(float multiplier)
-    {
+    public DenseMatrix scalarMultiply(final float multiplier) {
         // scalarAdd() and scalarMultiply() with floats should return float matrices
-        float[][] array = new float[m][n];
-        for (int i = 0; i < m; i++)
-        {
-            for (int j = 0; j < n; j++)
-            {
+        final float[][] array = new float[m][n];
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
                 array[i][j] = matrix[i][j] * multiplier;
             }
         }
@@ -391,23 +337,19 @@ public class ByteMatrix extends BaseMatrix
     }
 
     @Override
-    public float infinity()
-    {
+    public float infinity() {
         return Byte.MAX_VALUE;
     }
 
     @Override
-    public float negativeInfinity()
-    {
+    public float negativeInfinity() {
         return Byte.MIN_VALUE;
     }
 
     @Override
-    public ByteMatrix clone()
-    {
+    public ByteMatrix clone() {
         final byte[][] newMatrix = new byte[m][];
-        for (int i = 0; i < m; i++)
-        {
+        for (int i = 0; i < m; i++) {
             final int rowLength = matrix[i].length;
             newMatrix[i] = new byte[rowLength];
             System.arraycopy(matrix[i], 0, newMatrix[i], 0, rowLength);
@@ -416,8 +358,7 @@ public class ByteMatrix extends BaseMatrix
     }
 
     @Override
-    public void write(Writer writer) throws IOException
-    {
+    public void write(final Writer writer) throws IOException {
         // Header line
         writer.write(String.format("matrix type=byte rows=%d columns=%d symmetric=%s\n", m, n, symmetric));
 
@@ -426,10 +367,8 @@ public class ByteMatrix extends BaseMatrix
         final String format = "%-" + length + "d ";
         final String eolFormat = "%d\n";
 
-        for (int i = 0; i < m; i++)
-        {
-            for (int j = 0; j < matrix[i].length - 1; j++)
-            {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < matrix[i].length - 1; j++) {
                 writer.write(String.format(format, matrix[i][j]));
             }
             writer.write(String.format(eolFormat, matrix[i][matrix[i].length - 1]));

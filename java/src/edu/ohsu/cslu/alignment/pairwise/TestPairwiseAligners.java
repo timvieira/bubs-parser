@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.pairwise;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,12 +15,10 @@ import edu.ohsu.cslu.alignment.character.CharSequence;
 import edu.ohsu.cslu.alignment.character.CharSubstitutionAlignmentModel;
 import edu.ohsu.cslu.common.LogLinearMappedSequence;
 import edu.ohsu.cslu.common.Sequence;
+import edu.ohsu.cslu.datastructs.matrices.DenseMatrix;
 import edu.ohsu.cslu.datastructs.matrices.FloatMatrix;
-import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for pairwise aligners.
@@ -42,16 +42,14 @@ public class TestPairwiseAligners
     @BeforeClass
     public static void suiteSetUp() throws Exception
     {
-        Matrix alignmentMatrix = new FloatMatrix(new float[][] { {0f, 8f, 8f, 8f, 8f, 8f},
-                                                                {8f, 0f, 10f, 10f, 10f, 10f},
-                                                                {8f, 10f, 0f, 10f, 10f, 10f},
-                                                                {8f, 10f, 10f, 0f, 10f, 10f},
-                                                                {8f, 10f, 10f, 10f, 0f, 10f},
-                                                                {8f, 10f, 10f, 10f, 10f, 0f}});
+        final DenseMatrix alignmentMatrix = new FloatMatrix(new float[][] { {0f, 8f, 8f, 8f, 8f, 8f},
+            {8f, 0f, 10f, 10f, 10f, 10f}, {8f, 10f, 0f, 10f, 10f, 10f}, {8f, 10f, 10f, 0f, 10f, 10f},
+            {8f, 10f, 10f, 10f, 0f, 10f}, {8f, 10f, 10f, 10f, 10f, 0f}});
         identityMatrixModel = new MatrixSubstitutionAlignmentModel(alignmentMatrix, DNA_VOCABULARY);
     }
 
-    private String alignStrings(PairwiseAligner aligner, AlignmentModel model, String unaligned, String aligned)
+    private String alignStrings(final PairwiseAligner aligner, final AlignmentModel model, final String unaligned,
+        final String aligned)
     {
         return DNA_VOCABULARY.mapSequence(aligner.alignPair(DNA_VOCABULARY.mapSequence(unaligned),
             DNA_VOCABULARY.mapSequence(aligned), model).alignedSequence());
@@ -60,7 +58,7 @@ public class TestPairwiseAligners
     @Test
     public void testFullDynamicAligner() throws Exception
     {
-        FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
+        final FullDynamicPairwiseAligner aligner = new FullDynamicPairwiseAligner();
         testDnaAlignment(aligner);
 
         // And a character-based alignment
@@ -68,14 +66,15 @@ public class TestPairwiseAligners
             "the dog 's barking"));
     }
 
-    private String alignStringsAsCharSequences(PairwiseAligner aligner, String unaligned, String aligned)
+    private String alignStringsAsCharSequences(final PairwiseAligner aligner, final String unaligned,
+        final String aligned)
     {
-        Sequence s1 = new CharSequence(unaligned);
-        Sequence s2 = new CharSequence(aligned);
+        final Sequence s1 = new CharSequence(unaligned);
+        final Sequence s2 = new CharSequence(aligned);
         return aligner.alignPair(s1, s2, new CharSubstitutionAlignmentModel()).alignedSequence().toString();
     }
 
-    private void testDnaAlignment(FullDynamicPairwiseAligner aligner)
+    private void testDnaAlignment(final FullDynamicPairwiseAligner aligner)
     {
         assertEquals("AC--AC", alignStrings(aligner, identityMatrixModel, "ACAC", "ACT-AC"));
         assertEquals("-CTG-", alignStrings(aligner, identityMatrixModel, "CTG", "ACTGA"));
@@ -111,7 +110,7 @@ public class TestPairwiseAligners
 
         // Now test using SixCharacterAlignmentModel, which penalizes gap insertion in sequences
         // longer than 6 elements
-        SixCharacterAlignmentModel model = new SixCharacterAlignmentModel(10f, DNA_VOCABULARY);
+        final SixCharacterAlignmentModel model = new SixCharacterAlignmentModel(10f, DNA_VOCABULARY);
         // We expect 'normal' alignments with 5 and 6-character strings
         assertEquals("TAACG-", alignStrings(aligner, model, "TAACG", "TACG-"));
         assertEquals("TAACGG", alignStrings(aligner, model, "TAACGG", "TCACGG"));
@@ -124,14 +123,14 @@ public class TestPairwiseAligners
 
     private static class SixCharacterAlignmentModel extends MatrixSubstitutionAlignmentModel
     {
-        public SixCharacterAlignmentModel(float substitutionCost, AlignmentVocabulary vocabulary)
+        public SixCharacterAlignmentModel(final float substitutionCost, final AlignmentVocabulary vocabulary)
         {
             super(new float[] {substitutionCost}, new float[] {substitutionCost},
                 new AlignmentVocabulary[] {vocabulary});
         }
 
         @Override
-        public float gapInsertionCost(int feature, int sequenceLength)
+        public float gapInsertionCost(final int feature, final int sequenceLength)
         {
             float cost = super.cost(GAP_INDEX, feature);
             if (sequenceLength >= 6)
@@ -143,7 +142,7 @@ public class TestPairwiseAligners
         }
 
         @Override
-        public float gapInsertionCost(Vector featureVector, int sequenceLength)
+        public float gapInsertionCost(final Vector featureVector, final int sequenceLength)
         {
             float cost = super.cost(gapVector, featureVector);
             if (sequenceLength >= 6)

@@ -5,8 +5,8 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.alignment.AlignmentVocabulary;
 import edu.ohsu.cslu.alignment.SubstitutionAlignmentModel;
+import edu.ohsu.cslu.datastructs.matrices.DenseMatrix;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
-import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.util.Strings;
@@ -27,7 +27,7 @@ import edu.ohsu.cslu.util.Strings;
 public final class MultipleVocabularyMappedSequence implements MappedSequence, Cloneable, Serializable
 {
     private final Vocabulary[] vocabularies;
-    private final Matrix matrix;
+    private final DenseMatrix matrix;
 
     public MultipleVocabularyMappedSequence(final int[] sequence, final Vocabulary vocabulary)
     {
@@ -71,13 +71,13 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
         Arrays.fill(vocabularies, vocabulary);
     }
 
-    private MultipleVocabularyMappedSequence(final Matrix matrix, final Vocabulary[] vocabularies)
+    private MultipleVocabularyMappedSequence(final DenseMatrix matrix, final Vocabulary[] vocabularies)
     {
         this.matrix = matrix;
         this.vocabularies = vocabularies;
     }
 
-    public MultipleVocabularyMappedSequence(final Matrix matrix, final Vocabulary vocabulary)
+    public MultipleVocabularyMappedSequence(final DenseMatrix matrix, final Vocabulary vocabulary)
     {
         this.matrix = matrix;
         this.vocabularies = new AlignmentVocabulary[featureCount()];
@@ -94,9 +94,9 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
      * @param bracketedSequence
      * @param vocabularies
      */
-    public MultipleVocabularyMappedSequence(String bracketedSequence, AlignmentVocabulary[] vocabularies)
+    public MultipleVocabularyMappedSequence(final String bracketedSequence, final AlignmentVocabulary[] vocabularies)
     {
-        String[][] split = Strings.bracketedTags(bracketedSequence);
+        final String[][] split = Strings.bracketedTags(bracketedSequence);
         matrix = new IntMatrix(split.length, split[0].length);
 
         for (int j = 0; j < split.length; j++)
@@ -139,7 +139,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     @Override
     public final String[] stringFeatures(final int index)
     {
-        String[] stringFeatures = new String[featureCount()];
+        final String[] stringFeatures = new String[featureCount()];
         for (int i = 0; i < stringFeatures.length; i++)
         {
             stringFeatures[i] = stringFeature(index, i);
@@ -191,7 +191,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
         final int gaps = gapIndices.length;
         final int newLength = length() + gaps;
 
-        final Matrix newMatrix = new IntMatrix(newLength, featureCount());
+        final DenseMatrix newMatrix = new IntMatrix(newLength, featureCount());
         int currentGap = 0;
         int oldI = 0;
         for (int i = 0; i < newLength; i++)
@@ -228,7 +228,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
             return clone();
         }
 
-        Matrix newMatrix = new IntMatrix(oldLength - gaps, featureCount());
+        final DenseMatrix newMatrix = new IntMatrix(oldLength - gaps, featureCount());
 
         // Old and new column indices
         int newJ = 0;
@@ -243,10 +243,10 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     }
 
     @Override
-    public MappedSequence retainFeatures(int... features)
+    public MappedSequence retainFeatures(final int... features)
     {
-        int[][] newSequences = new int[features.length][];
-        Vocabulary[] newVocabularies = new Vocabulary[features.length];
+        final int[][] newSequences = new int[features.length][];
+        final Vocabulary[] newVocabularies = new Vocabulary[features.length];
         for (int i = 0; i < features.length; i++)
         {
             newVocabularies[i] = vocabularies[features[i]];
@@ -258,7 +258,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     }
 
     @Override
-    public Sequence subSequence(int beginIndex, int endIndex)
+    public Sequence subSequence(final int beginIndex, final int endIndex)
     {
         if (endIndex == beginIndex)
         {
@@ -276,7 +276,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     }
 
     @Override
-    public final boolean equals(Object o)
+    public final boolean equals(final Object o)
     {
         if (o == this)
         {
@@ -288,7 +288,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
             return false;
         }
 
-        MultipleVocabularyMappedSequence s = (MultipleVocabularyMappedSequence) o;
+        final MultipleVocabularyMappedSequence s = (MultipleVocabularyMappedSequence) o;
         if (vocabularies.length != s.vocabularies.length)
         {
             return false;
@@ -326,7 +326,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
         final int length = length();
         final int features = featureCount();
 
-        StringBuilder sb = new StringBuilder(length * 20);
+        final StringBuilder sb = new StringBuilder(length * 20);
 
         for (int i = 0; i < length; i++)
         {
@@ -351,7 +351,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
         final int length = length();
         final int features = featureCount();
 
-        StringBuilder sb = new StringBuilder(length * 20);
+        final StringBuilder sb = new StringBuilder(length * 20);
 
         for (int i = 0; i < length; i++)
         {
@@ -376,13 +376,13 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
         final int features = featureCount();
 
         // Find the maximum token length in each column
-        String[] formats = new String[length];
+        final String[] formats = new String[length];
         for (int j = 0; j < length; j++)
         {
             int columnLength = stringFeature(j, 0).length();
             for (int i = 1; i < features; i++)
             {
-                int featureLength = stringFeature(j, i).length();
+                final int featureLength = stringFeature(j, i).length();
                 if (featureLength > columnLength)
                 {
                     columnLength = featureLength;
@@ -401,12 +401,12 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
      * @param formats
      * @return String visualization of the sequence
      */
-    public String toColumnString(String[] formats)
+    public String toColumnString(final String[] formats)
     {
         final int length = length();
         final int features = featureCount();
 
-        StringBuilder sb = new StringBuilder(length * 20);
+        final StringBuilder sb = new StringBuilder(length * 20);
 
         for (int i = 0; i < features; i++)
         {
@@ -424,7 +424,7 @@ public final class MultipleVocabularyMappedSequence implements MappedSequence, C
     }
 
     @Override
-    public int maxLabelLength(int index)
+    public int maxLabelLength(final int index)
     {
         int maxLength = 0;
         for (int i = 0; i < featureCount(); i++)

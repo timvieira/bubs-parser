@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
+import edu.ohsu.cslu.datastructs.matrices.Matrix;
+
 /**
  * Base interface for numeric vector classes (essentially all {@link Vector}s which are not
  * {@link BitVector}s).
@@ -30,4 +32,11 @@ public interface NumericVector extends Vector
      */
     public FloatVector elementwiseLog();
 
+    /**
+     * Returns the result of multiplying the specified matrix by this vector.
+     * 
+     * @param m Matrix
+     * @return m x v
+     */
+    public NumericVector multiply(Matrix m);
 }

@@ -276,9 +276,15 @@ public class FloatVector extends BaseNumericVector
     }
 
     @Override
-    public NumericVector createIntVector()
+    public FloatVector createIntVector(final int newVectorLength)
     {
-        return new FloatVector(length);
+        return new FloatVector(newVectorLength);
+    }
+
+    @Override
+    public FloatVector createFloatVector(final int newVectorLength)
+    {
+        return new FloatVector(newVectorLength);
     }
 
     @Override
@@ -290,8 +296,7 @@ public class FloatVector extends BaseNumericVector
     }
 
     /**
-     * Performs the standard learning algorithm on the weight vector (w) of a perceptron. TODO
-     * Untested
+     * Performs the standard learning algorithm on the weight vector (w) of a perceptron.
      * 
      * @param x Input vector
      * @param y Expected output

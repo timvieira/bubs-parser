@@ -19,6 +19,7 @@ import edu.ohsu.cslu.alignment.multiple.HmmMultipleSequenceAligner;
 import edu.ohsu.cslu.alignment.multiple.MultipleSequenceAlignment;
 import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.common.MultipleVocabularyMappedSequence;
+import edu.ohsu.cslu.datastructs.matrices.DenseMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
@@ -50,7 +51,7 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
     /**
      * @param args
      */
-    public static void main(String[] args)
+    public static void main(final String[] args)
     {
         run(args);
     }
@@ -58,11 +59,11 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
     @Override
     public void run() throws Exception
     {
-        long startTime = System.currentTimeMillis();
-        HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
+        final long startTime = System.currentTimeMillis();
+        final HeadPercolationRuleset ruleset = new MsaHeadPercolationRuleset();
 
         final ArrayList<String> sentences = new ArrayList<String>();
-        StringBuilder sb = new StringBuilder(8192);
+        final StringBuilder sb = new StringBuilder(8192);
 
         final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         for (String line = reader.readLine(); line != null; line = reader.readLine())
@@ -71,11 +72,11 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
             sb.append(Strings.extractPos(line));
             sb.append('\n');
         }
-        String entireInput = sb.toString();
+        final String entireInput = sb.toString();
 
         // Induce the vocabularies
         // TODO: induceVocabularies should handle tree-format
-        SimpleVocabulary[] inducedVocabularies = SimpleVocabulary.induceVocabularies(entireInput);
+        final SimpleVocabulary[] inducedVocabularies = SimpleVocabulary.induceVocabularies(entireInput);
         SimpleVocabulary[] vocabularies = new SimpleVocabulary[inducedVocabularies.length];
 
         if (vocabularyFiles != null)
@@ -99,7 +100,7 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
         }
 
         // Translate into sequences
-        MappedSequence[] sequences = new MappedSequence[sentences.size()];
+        final MappedSequence[] sequences = new MappedSequence[sentences.size()];
         for (int i = 0; i < sequences.length; i++)
         {
             sequences[i] = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sentences.get(i), ruleset),
@@ -107,16 +108,16 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
         }
 
         // Construct and/or read in substitution matrices
-        Matrix[] substitutionMatrices = new Matrix[substitutionMatrixOptions.size()];
+        final DenseMatrix[] substitutionMatrices = new DenseMatrix[substitutionMatrixOptions.size()];
 
         for (int i = 0; i < substitutionMatrices.length; i++)
         {
             if (substitutionMatrixOptions.get(i).indexOf(',') >= 0)
             {
                 // Construct from 'definition' (substitution-cost, gap-cost)
-                String[] costs = substitutionMatrixOptions.get(i).split(",");
-                float substitutionCost = Float.parseFloat(costs[0]);
-                float gapCost = costs.length > 1 ? Float.parseFloat(costs[1]) : substitutionCost;
+                final String[] costs = substitutionMatrixOptions.get(i).split(",");
+                final float substitutionCost = Float.parseFloat(costs[0]);
+                final float gapCost = costs.length > 1 ? Float.parseFloat(costs[1]) : substitutionCost;
 
                 substitutionMatrices[i] = Matrix.Factory.newSymmetricIdentityFloatMatrix(vocabularies[i].size(),
                     substitutionCost, 0f);
@@ -129,21 +130,21 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
             else
             {
                 // Read in matrix file
-                substitutionMatrices[i] = Matrix.Factory.read(new File(substitutionMatrixOptions.get(i)));
+                substitutionMatrices[i] = (DenseMatrix) Matrix.Factory.read(new File(substitutionMatrixOptions.get(i)));
             }
         }
 
-        MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(substitutionMatrices,
-            vocabularies);
+        final MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(
+            substitutionMatrices, vocabularies);
 
         // Read in pairwise tree distance file
         // TODO: Option to calculate the distance matrix on-the-fly
-        Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
+        final Matrix distanceMatrix = Matrix.Factory.read(new File(distanceMatrixFilename));
 
         // Align the sequences
-        HmmMultipleSequenceAligner aligner = new HmmMultipleSequenceAligner(new int[] {pseudoCountsPerElement,
+        final HmmMultipleSequenceAligner aligner = new HmmMultipleSequenceAligner(new int[] {pseudoCountsPerElement,
             pseudoCountsPerElement, 0}, 10);
-        MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix, alignmentModel);
+        final MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix, alignmentModel);
 
         System.out.format("Training Alignment of length %d (produced in %d ms)\n\n", trainingAlignment.length(), System
             .currentTimeMillis()
@@ -151,13 +152,14 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
         // System.out.println(trainingAlignment.toString());
         // System.out.println();
 
-        ColumnAlignmentModel pssmAlignmentModel = trainingAlignment.inducePssmAlignmentModel(pseudoCountsPerElement);
+        final ColumnAlignmentModel pssmAlignmentModel = trainingAlignment
+            .inducePssmAlignmentModel(pseudoCountsPerElement);
 
         int trainHeadColumn = 0;
         float headP = Float.MAX_VALUE;
         for (int j = 0; j < pssmAlignmentModel.columnCount(); j++)
         {
-            float negativeLogP = pssmAlignmentModel.cost(new IntVector(new int[] {1, 1, 1}), j, new int[] {2});
+            final float negativeLogP = pssmAlignmentModel.cost(new IntVector(new int[] {1, 1, 1}), j, new int[] {2});
             if (negativeLogP < headP)
             {
                 headP = negativeLogP;
@@ -171,16 +173,16 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
 
         System.out.println("\nHead Column = " + trainHeadColumn + "\n");
 
-        BufferedReader devSetReader = new BufferedReader(new FileReader(devSetFilename));
-        LinearColumnAligner pssmAligner = new LinearColumnAligner();
-        MultipleSequenceAlignment devAlignment = new MultipleSequenceAlignment();
+        final BufferedReader devSetReader = new BufferedReader(new FileReader(devSetFilename));
+        final LinearColumnAligner pssmAligner = new LinearColumnAligner();
+        final MultipleSequenceAlignment devAlignment = new MultipleSequenceAlignment();
 
         for (String line = devSetReader.readLine(); line != null; line = devSetReader.readLine())
         {
-            MappedSequence unalignedSequence = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(line,
-                ruleset), vocabularies);
-            MappedSequence alignedSequence = pssmAligner.align(unalignedSequence, pssmAlignmentModel, devSetFeatures)
-                .alignedSequence();
+            final MappedSequence unalignedSequence = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(
+                line, ruleset), vocabularies);
+            final MappedSequence alignedSequence = pssmAligner.align(unalignedSequence, pssmAlignmentModel,
+                devSetFeatures).alignedSequence();
             devAlignment.addSequence(alignedSequence);
         }
 
@@ -192,7 +194,7 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
             * 100f / devAlignment.numOfSequences(), correct, devAlignment.numOfSequences());
     }
 
-    private int headVerbsInColumn(int column, MultipleSequenceAlignment sequenceAlignment)
+    private int headVerbsInColumn(final int column, final MultipleSequenceAlignment sequenceAlignment)
     {
         int correct = 0;
         for (int i = 0; i < sequenceAlignment.numOfSequences(); i++)
@@ -205,7 +207,7 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
         return correct;
     }
 
-    private int headColumn(MultipleVocabularyMappedSequence sequence)
+    private int headColumn(final MultipleVocabularyMappedSequence sequence)
     {
         for (int j = 0; j < sequence.length(); j++)
         {
@@ -218,13 +220,13 @@ public class TrainHmmAndAlignSequences extends BaseCommandlineTool
     }
 
     @Override
-    public void setup(CmdLineParser parser)
+    public void setup(final CmdLineParser parser)
     {
-        String[] vmOptions = vocabularyMatrixParam.split(",");
+        final String[] vmOptions = vocabularyMatrixParam.split(",");
 
         for (int i = 0; i < vmOptions.length; i++)
         {
-            String[] split = vmOptions[i].split("=");
+            final String[] split = vmOptions[i].split("=");
             vocabularyFiles.add(split[0]);
             substitutionMatrixOptions.add(split[1]);
         }

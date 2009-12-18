@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
@@ -215,25 +216,28 @@ public interface Vector
     {
         private final static String ATTRIBUTE_TYPE = "type";
         private final static String ATTRIBUTE_LENGTH = "length";
-        // /** Used for fixed-point implementations */
-        // private final static String ATTRIBUTE_PRECISION = "precision";
+
         /** Used for packed integer implementations */
         private final static String ATTRIBUTE_BITS = "bits";
+
+        /** Denotes a sparse vector representation */
+        private final static String ATTRIBUTE_SPARSE = "sparse";
 
         public final static String ATTRIBUTE_TYPE_INT = "int";
         public final static String ATTRIBUTE_TYPE_PACKED_INTEGER = "packed-int";
         public final static String ATTRIBUTE_TYPE_FLOAT = "float";
+        public final static String ATTRIBUTE_TYPE_HASH_SPARSE_FLOAT = "hash-sparse-float";
         public final static String ATTRIBUTE_TYPE_FIXED_POINT_SHORT = "fixed-point-short";
         public final static String ATTRIBUTE_TYPE_PACKED_BIT = "packed-bit";
         public final static String ATTRIBUTE_TYPE_SPARSE_BIT = "sparse-bit";
         public final static String ATTRIBUTE_TYPE_MUTABLE_SPARSE_BIT = "mutable-sparse-bit";
 
-        public static Vector read(String s) throws IOException
+        public static Vector read(final String s) throws IOException
         {
             return read(new StringReader(s));
         }
 
-        public static Vector read(File f) throws IOException
+        public static Vector read(final File f) throws IOException
         {
             InputStream is = new FileInputStream(f);
             if (f.getName().endsWith(".gz"))
@@ -243,19 +247,22 @@ public interface Vector
             return read(is);
         }
 
-        public static Vector read(InputStream inputStream) throws IOException
+        public static Vector read(final InputStream inputStream) throws IOException
         {
             return read(new InputStreamReader(inputStream));
         }
 
-        public static Vector read(Reader reader) throws IOException
+        public static Vector read(final Reader reader) throws IOException
         {
-            BufferedReader br = new BufferedReader(reader);
-            Map<String, String> attributes = Strings.headerAttributes(br.readLine());
+            final BufferedReader br = new BufferedReader(reader);
+            final Map<String, String> attributes = Strings.headerAttributes(br.readLine());
 
-            String type = attributes.get(ATTRIBUTE_TYPE);
+            final String type = attributes.get(ATTRIBUTE_TYPE);
 
-            int length = Integer.parseInt(attributes.get(ATTRIBUTE_LENGTH));
+            final int length = Integer.parseInt(attributes.get(ATTRIBUTE_LENGTH));
+
+            final boolean sparse = attributes.containsKey(ATTRIBUTE_SPARSE)
+                && Boolean.parseBoolean(attributes.get(ATTRIBUTE_SPARSE));
 
             Vector vector = null;
             if (type.equals(ATTRIBUTE_TYPE_INT))
@@ -265,6 +272,10 @@ public interface Vector
             else if (type.equals(ATTRIBUTE_TYPE_FLOAT))
             {
                 vector = new FloatVector(length);
+            }
+            else if (type.equals(ATTRIBUTE_TYPE_HASH_SPARSE_FLOAT))
+            {
+                vector = new HashSparseFloatVector(length);
             }
             else if (type.equals(ATTRIBUTE_TYPE_FIXED_POINT_SHORT))
             {
@@ -276,17 +287,16 @@ public interface Vector
             }
             else if (type.equals(ATTRIBUTE_TYPE_SPARSE_BIT))
             {
-                // Special-case, to read in the contents as an array of integers
-                return new SparseBitVector(readIntArray(br));
+                return new SparseBitVector(readSparseIntArray(br), true);
             }
             else if (type.equals(ATTRIBUTE_TYPE_MUTABLE_SPARSE_BIT))
             {
                 // Special-case, to read in the contents as an array of integers
-                return new MutableSparseBitVector(readIntArray(br));
+                return new MutableSparseBitVector(readSparseIntArray(br));
             }
             else if (type.equals(ATTRIBUTE_TYPE_PACKED_INTEGER))
             {
-                int bits = Integer.parseInt(attributes.get(ATTRIBUTE_BITS));
+                final int bits = Integer.parseInt(attributes.get(ATTRIBUTE_BITS));
                 vector = new PackedIntVector(length, bits);
             }
             else if (type.equals("double"))
@@ -299,27 +309,61 @@ public interface Vector
             }
 
             // Read and initialize vector
-            String[] split = br.readLine().split(" +");
-            if (split.length != length)
+            final String[] split = br.readLine().split(" +");
+
+            if (sparse)
             {
-                throw new IllegalArgumentException("Serialized vector length mismatch");
+                for (int i = 0; i < split.length; i = i + 2)
+                {
+                    vector.set(Integer.parseInt(split[i]), split[i + 1]);
+                }
             }
-            for (int i = 0; i < split.length; i++)
+            else
             {
-                vector.set(i, split[i]);
+                if (split.length != length)
+                {
+                    throw new IllegalArgumentException("Serialized vector length mismatch");
+                }
+                for (int i = 0; i < split.length; i++)
+                {
+                    vector.set(i, split[i]);
+                }
             }
 
             return vector;
         }
 
-        private static int[] readIntArray(BufferedReader br) throws IOException
+        private static int[] readSparseIntArray(final BufferedReader br) throws IOException
         {
-            String[] split = br.readLine().split(" +");
-            int[] elements = new int[split.length];
-            for (int i = 0; i < elements.length; i++)
+            final String[] split = br.readLine().split(" +");
+            final int[] array = new int[split.length];
+            for (int i = 0; i < array.length; i++)
             {
-                elements[i] = Integer.parseInt(split[i]);
+                array[i] = Integer.parseInt(split[i]);
             }
+            return array;
+        }
+
+        static int[] sparseIntElementArray(final int[] sparseIntArray)
+        {
+            final int[] tmpElements = new int[sparseIntArray.length / 2];
+            int j = 0;
+            for (int i = 0; i < sparseIntArray.length; i = i + 2)
+            {
+                if (sparseIntArray[i + 1] != 0)
+                {
+                    tmpElements[j++] = sparseIntArray[i];
+                }
+            }
+            Arrays.sort(tmpElements);
+
+            if (j == sparseIntArray.length / 2)
+            {
+                return tmpElements;
+            }
+
+            final int[] elements = new int[j];
+            System.arraycopy(tmpElements, 0, elements, 0, j);
             return elements;
         }
     }

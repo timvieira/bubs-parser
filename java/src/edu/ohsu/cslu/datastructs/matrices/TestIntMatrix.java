@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.datastructs.matrices;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Tests for the IntMatrix class
@@ -15,7 +15,7 @@ import static junit.framework.Assert.assertEquals;
  *        $Id$
  */
 @RunWith(FilteredRunner.class)
-public class TestIntMatrix extends IntMatrixTestCase
+public class TestIntMatrix extends DenseIntMatrixTestCase
 {
     @Override
     protected String matrixType()
@@ -24,9 +24,9 @@ public class TestIntMatrix extends IntMatrixTestCase
     }
 
     @Override
-    protected Matrix create(float[][] array)
+    protected Matrix create(final float[][] array, boolean symmetric)
     {
-        int[][] intArray = new int[array.length][array[0].length];
+        final int[][] intArray = new int[array.length][array[0].length];
         for (int i = 0; i < array.length; i++)
         {
             for (int j = 0; j < array[0].length; j++)
@@ -38,7 +38,7 @@ public class TestIntMatrix extends IntMatrixTestCase
     }
 
     @Override
-    protected Matrix create(int[][] array, boolean symmetric)
+    protected Matrix create(final int[][] array, final boolean symmetric)
     {
         return new IntMatrix(array, symmetric);
     }

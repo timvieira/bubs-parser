@@ -153,7 +153,7 @@ public class LogLinearAlignmentModel implements ColumnAlignmentModel
     @Override
     public Vector gapVector()
     {
-        return new SparseBitVector(new int[] {SubstitutionAlignmentModel.GAP_INDEX});
+        return new SparseBitVector(new int[] {SubstitutionAlignmentModel.GAP_INDEX}, false);
     }
 
     @Override

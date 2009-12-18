@@ -130,7 +130,7 @@ public abstract class BaseVector implements Vector, Serializable
         }
         else
         {
-            newVector = new FloatVector(length);
+            newVector = createFloatVector();
         }
 
         for (int i = 0; i < length; i++)
@@ -182,7 +182,7 @@ public abstract class BaseVector implements Vector, Serializable
         }
         else
         {
-            newVector = new FloatVector(length);
+            newVector = createFloatVector();
         }
 
         for (int i = 0; i < length; i++)
@@ -216,18 +216,51 @@ public abstract class BaseVector implements Vector, Serializable
     }
 
     /**
-     * Creates a new {@link Vector} of the same length and of a type appropriate to return from
+     * Creates a new {@link Vector} of the specified length and of a type appropriate to return from
      * integer operations ({@link #scalarAdd(int)}, {@link #scalarMultiply(int)}, etc.) This method
-     * will be overridden by floating-point {@link Vector} implementations and by
-     * {@link PackedIntVector}.
+     * will be overridden by floating-point {@link Vector} implementations, by
+     * {@link PackedIntVector}, and by sparse storage implementations.
      * 
-     * TODO: A better name?
+     * @return Vector
+     */
+    protected NumericVector createIntVector(final int newVectorLength)
+    {
+        return new IntVector(newVectorLength);
+    }
+
+    /**
+     * Creates a new {@link Vector} of the same length and of a type appropriate to return from
+     * integer operations.
      * 
      * @return Vector
      */
     protected NumericVector createIntVector()
     {
-        return new IntVector(length);
+        return createIntVector(length);
+    }
+
+    /**
+     * Creates a new {@link Vector} of the specified length and of a type appropriate to return from
+     * floating-point operations ({@link #scalarAdd(float)}, {@link #scalarMultiply(float)}, etc.)
+     * This method may be overridden by some {@link Vector} implementations.
+     * 
+     * @return Vector
+     */
+    protected NumericVector createFloatVector(final int newVectorLength)
+    {
+        return new FloatVector(newVectorLength);
+    }
+
+    /**
+     * Creates a new {@link Vector} of the same length and of a type appropriate to return from
+     * floating-point operations ({@link #scalarAdd(float)}, {@link #scalarMultiply(float)}, etc.)
+     * This method may be overridden by some {@link Vector} implementations.
+     * 
+     * @return Vector
+     */
+    protected NumericVector createFloatVector()
+    {
+        return createFloatVector(length);
     }
 
     @Override

@@ -55,7 +55,7 @@ public class CharSubstitutionAlignmentModel implements SubstitutionAlignmentMode
     @Override
     public Vector gapVector()
     {
-        return new SparseBitVector(new int[] {0});
+        return new SparseBitVector(new int[] {0}, false);
     }
 
     @Override
