@@ -1,12 +1,14 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-import static org.junit.Assert.assertEquals;
 
 public class TestExhaustiveChartParser {
 
@@ -95,13 +97,16 @@ public class TestExhaustiveChartParser {
             + "(DT the) (JJ easy)) (NNS gains)) (PP^<NP> (IN in) (S^<PP> (VP^<S> (VBG narrowing) (NP^<VP> (NP|<DT-NN>^<VP> "
             + "(DT the) (NN trade)) (NN gap)))))) (VP^<S> (VP|<AUX-RB>^<S> (AUX have) (RB already)) (VP^<VP> (AUX "
             + "been) (VP^<VP> (VBN made)))))))) (. .)))";
+
     private static Grammar grammar;
     private static Parser parser;
 
     @BeforeClass
     public static void suiteSetUp() throws Exception {
-        grammar = new Grammar(PCFG_FILE, LEX_FILE);
-        parser = new ECPGramLoopBerkFilter(grammar);
+        if (grammar == null) {
+            grammar = new Grammar(PCFG_FILE, LEX_FILE);
+            parser = new ECPGramLoopBerkFilter(grammar, ChartTraversalType.LeftRightBottomTopTraversal);
+        }
     }
 
     @Test
