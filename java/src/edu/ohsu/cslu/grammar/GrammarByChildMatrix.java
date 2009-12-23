@@ -1,6 +1,7 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -9,12 +10,20 @@ public class GrammarByChildMatrix extends Grammar {
     public ArrayList<ArrayList<LinkedList<Production>>> binaryProdMatrix;
     public LinkedList<Production>[][] binaryProdMatrix2;
 
-    @SuppressWarnings("unchecked")
-    public GrammarByChildMatrix(String gramFileName, String lexFileName) throws IOException {
-        super(gramFileName, lexFileName);
+    public GrammarByChildMatrix(final String grammarFile, final String lexiconFile) throws IOException {
+        super(grammarFile, lexiconFile);
+    }
 
-        binaryProdMatrix2 = (LinkedList<Production>[][]) new LinkedList[this.numNonTerms()][this
-            .numNonTerms()];
+    public GrammarByChildMatrix(final Reader grammarFile, final Reader lexiconFile) throws IOException {
+        super(grammarFile, lexiconFile);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    protected void init(final Reader grammarFile, final Reader lexiconFile) throws IOException {
+        super.init(grammarFile, lexiconFile);
+
+        binaryProdMatrix2 = new LinkedList[this.numNonTerms()][this.numNonTerms()];
 
         binaryProdMatrix = new ArrayList<ArrayList<LinkedList<Production>>>(this.numNonTerms());
         for (int i = 0; i < this.numNonTerms(); i++) {
@@ -24,7 +33,7 @@ public class GrammarByChildMatrix extends Grammar {
             }
         }
 
-        for (Production p : this.binaryProds) {
+        for (final Production p : this.binaryProds) {
             if (binaryProdMatrix.get(p.leftChild) == null) {
                 binaryProdMatrix.set(p.leftChild, new ArrayList<LinkedList<Production>>(this.numNonTerms()));
                 for (int i = 0; i < this.numNonTerms(); i++) {
@@ -46,8 +55,8 @@ public class GrammarByChildMatrix extends Grammar {
         this.binaryProds = null;
     }
 
-    public LinkedList<Production> getBinaryProdsByChildren(int leftChild, int rightChild) {
-        ArrayList<LinkedList<Production>> leftChildArray = binaryProdMatrix.get(leftChild);
+    public LinkedList<Production> getBinaryProdsByChildren(final int leftChild, final int rightChild) {
+        final ArrayList<LinkedList<Production>> leftChildArray = binaryProdMatrix.get(leftChild);
         if (binaryProdMatrix == null) {
             return null;
         } else {

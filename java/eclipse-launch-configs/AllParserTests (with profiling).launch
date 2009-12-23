@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="org.eclipse.jdt.junit.launchconfig">
-<stringAttribute key="bad_container_name" value="\nlp\shared-launch-config"/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/shared-nlp-code/java/src/edu/ohsu/cslu/tests/SharedNlpTests.java"/>
+<listEntry value="/shared-nlp-code/java/src/edu/ohsu/cslu/parser/AllParserTests.java"/>
 </listAttribute>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
 <listEntry value="1"/>
-</listAttribute>
-<booleanAttribute key="org.eclipse.debug.core.appendEnvironmentVariables" value="true"/>
-<listAttribute key="org.eclipse.debug.ui.favoriteGroups">
-<listEntry value="org.eclipse.debug.ui.launchGroup.debug"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.junit.CONTAINER" value=""/>
 <booleanAttribute key="org.eclipse.jdt.junit.KEEPRUNNING_ATTR" value="true"/>
 <stringAttribute key="org.eclipse.jdt.junit.TESTNAME" value=""/>
 <stringAttribute key="org.eclipse.jdt.junit.TEST_KIND" value="org.eclipse.jdt.junit.loader.junit4"/>
-<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.ohsu.cslu.tests.SharedNlpTests"/>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.ohsu.cslu.parser.AllParserTests"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="shared-nlp-code"/>
-<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xmx512m -server -XX:+UseParallelGC -Djunit.filter.class=edu.ohsu.cslu.tests.PerformanceTestFilter -Dtest.hardware=mbp"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xmx1024m -server -XX:+UseParallelGC -Djunit.filter.class=edu.ohsu.cslu.tests.AllTestFilter -Dtest.hardware=mbp"/>
 </launchConfiguration>

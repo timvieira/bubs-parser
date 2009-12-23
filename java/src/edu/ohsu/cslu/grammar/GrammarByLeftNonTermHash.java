@@ -1,6 +1,7 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -9,8 +10,17 @@ public class GrammarByLeftNonTermHash extends Grammar {
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
-    public GrammarByLeftNonTermHash(String gramFileName, String lexFileName) throws IOException {
-        super(gramFileName, lexFileName);
+    public GrammarByLeftNonTermHash(final String grammarFile, final String lexiconFile) throws IOException {
+        super(grammarFile, lexiconFile);
+    }
+
+    public GrammarByLeftNonTermHash(final Reader grammarFile, final Reader lexiconFile) throws IOException {
+        super(grammarFile, lexiconFile);
+    }
+
+    @Override
+    protected void init(final Reader grammarFile, final Reader lexiconFile) throws IOException {
+        super.init(grammarFile, lexiconFile);
 
         binaryProdHash = new ArrayList<HashMap<Integer, LinkedList<Production>>>(this.numNonTerms());
         for (int i = 0; i < this.numNonTerms(); i++) {
@@ -19,7 +29,7 @@ public class GrammarByLeftNonTermHash extends Grammar {
 
         // add productions to array (left child) of hash maps (right child) which returns
         // a list of valid productions
-        for (Production p : this.binaryProds) {
+        for (final Production p : this.binaryProds) {
             if (binaryProdHash.get(p.leftChild) == null) {
                 binaryProdHash.set(p.leftChild, new HashMap<Integer, LinkedList<Production>>());
             }
@@ -35,8 +45,8 @@ public class GrammarByLeftNonTermHash extends Grammar {
         this.binaryProds = null;
     }
 
-    public LinkedList<Production> getBinaryProdsByChildren(int leftChild, int rightChild) {
-        HashMap<Integer, LinkedList<Production>> leftChildHash = binaryProdHash.get(leftChild);
+    public LinkedList<Production> getBinaryProdsByChildren(final int leftChild, final int rightChild) {
+        final HashMap<Integer, LinkedList<Production>> leftChildHash = binaryProdHash.get(leftChild);
         if (leftChildHash == null) {
             return null;
         } else {
