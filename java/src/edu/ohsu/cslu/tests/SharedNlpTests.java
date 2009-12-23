@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.zip.GZIPInputStream;
 
 import org.junit.Assert;
@@ -18,6 +20,7 @@ import edu.ohsu.cslu.datastructs.AllDataStructureTests;
 import edu.ohsu.cslu.matching.ProfileMatchers;
 import edu.ohsu.cslu.matching.approximate.TestApproximateMatchers;
 import edu.ohsu.cslu.matching.exact.TestExactMatchers;
+import edu.ohsu.cslu.parser.AllParserTests;
 import edu.ohsu.cslu.tools.AllToolTests;
 import edu.ohsu.cslu.util.AllUtilTests;
 
@@ -33,12 +36,36 @@ import edu.ohsu.cslu.util.AllUtilTests;
 @RunWith(Suite.class)
 @Suite.SuiteClasses( { AllCommonTests.class, TestExactMatchers.class, TestApproximateMatchers.class,
         ProfileMatchers.class, AllAlignmentTests.class, AllCounterTests.class, AllDataStructureTests.class,
-        AllToolTests.class, AllUtilTests.class })
+        AllToolTests.class, AllUtilTests.class, AllParserTests.class })
 public class SharedNlpTests {
 
     public final static String UNIT_TEST_DIR = "unit-test-data/";
     public final static String SHARED_UNIT_TEST_DIR = "../shared-nlp-code/" + UNIT_TEST_DIR;
 
+    /**
+     * Returns a {@link Reader} reading the specified unit test file (from the shared unit test data
+     * directory). Uncompresses gzip-compressed files transparently.
+     * 
+     * @param filename
+     *            Unit test file
+     * @return a Reader reading the specified unit test file
+     * @throws IOException
+     *             If unable to find or open the file
+     */
+    public static Reader unitTestDataAsReader(final String filename) throws IOException {
+        return new InputStreamReader(unitTestDataAsStream(filename));
+    }
+
+    /**
+     * Returns an {@link InputStream} reading the specified unit test file (from the shared unit test data
+     * directory). Uncompresses gzip-compressed files transparently.
+     * 
+     * @param filename
+     *            Unit test file
+     * @return a InputStream reading the specified unit test file
+     * @throws IOException
+     *             If unable to find or open the file
+     */
     public static InputStream unitTestDataAsStream(final String filename) throws IOException {
         try {
             InputStream is = new FileInputStream(SharedNlpTests.UNIT_TEST_DIR + filename);
@@ -57,10 +84,21 @@ public class SharedNlpTests {
         }
     }
 
+    /**
+     * Returns a {@link String} containing the contents of the specified unit test file (from the shared unit
+     * test data directory). Uncompresses gzip-compressed files transparently.
+     * 
+     * @param filename
+     *            Unit test file
+     * @return a String containing the contents of the specified unit test file
+     * @throws IOException
+     *             If unable to find or open the file
+     */
     public static String unitTestDataAsString(final String filename) throws IOException {
         return new String(readUnitTestData(filename));
     }
 
+    // TODO Document, rename
     public static byte[] readUnitTestData(final String filename) throws IOException {
         return readUnitTestData(unitTestDataAsStream(filename));
     }

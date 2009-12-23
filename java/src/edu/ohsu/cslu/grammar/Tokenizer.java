@@ -1,14 +1,12 @@
 package edu.ohsu.cslu.grammar;
 
-import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class Tokenizer {
 
-    private static final Exception OutOfVocabException = null;
     private SymbolSet lexSet;
 
-    public Tokenizer(SymbolSet lexSet) {
+    public Tokenizer(final SymbolSet lexSet) {
         this.lexSet = lexSet;
     }
 
@@ -18,11 +16,12 @@ public class Tokenizer {
         public int index;
         private boolean isUnk;
 
-        public Token(String word) throws Exception {
+        public Token(final String word) throws Exception {
             this.word = word;
             setIndexAndUnk();
         }
 
+        @Override
         public String toString() {
             return this.toString(false);
         }
@@ -31,12 +30,11 @@ public class Tokenizer {
             return this.isUnk;
         }
 
-        public String toString(boolean appendUnkStr) {
+        public String toString(final boolean appendUnkStr) {
             if (appendUnkStr == true && isUnk() == true) {
                 return word + "::" + lexSet.getString(index);
-            } else {
-                return word;
             }
+            return word;
         }
 
         private void setIndexAndUnk() throws Exception {
@@ -55,18 +53,16 @@ public class Tokenizer {
                 }
 
                 if (lexSet.hasLabel(unkStr) == false) {
-                    Log.info(0, "ERROR: word '" + unkStr + "' not found in lexicon");
-                    throw OutOfVocabException;
-                } else {
-                    this.index = lexSet.getIndex(unkStr);
+                    throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
                 }
+                this.index = lexSet.getIndex(unkStr);
             }
         }
     }
 
-    public Token[] tokenize(String sentence) throws Exception {
-        String tokens[] = ParserUtil.tokenize(sentence);
-        Token[] sentTokens = new Token[tokens.length];
+    public Token[] tokenize(final String sentence) throws Exception {
+        final String tokens[] = ParserUtil.tokenize(sentence);
+        final Token[] sentTokens = new Token[tokens.length];
 
         for (int i = 0; i < tokens.length; i++) {
             sentTokens[i] = new Token(tokens[i]);
@@ -75,7 +71,7 @@ public class Tokenizer {
     }
 
     // taken from Berkeley Parser (getSignature)
-    public static String wordToUnkString(String word) {
+    public static String wordToUnkString(final String word) {
         String unkStr = "UNK";
 
         // word case
@@ -92,7 +88,7 @@ public class Tokenizer {
         if (word.contains("-"))
             unkStr += "-DASH";
 
-        String lcWord = word.toLowerCase();
+        final String lcWord = word.toLowerCase();
 
         if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us")
                 && !lcWord.endsWith("is"))

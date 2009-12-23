@@ -1,9 +1,9 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.BufferedReader;
-
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,32 +21,44 @@ public class Grammar {
     // private LinkedList<LexicalProduction>[] lexicalProds = new LinkedList<UnaryProduction>[5];
     // note: java doesn't allow generic array creation, so must do it like this:
     private Vector<List<Production>> lexicalProds;
-    private SymbolSet nonTermSet;
-    private SymbolSet lexSet;
+    private final SymbolSet nonTermSet;
+    private final SymbolSet lexSet;
     private Tokenizer tokenizer;
     private boolean[] possibleLeftChild;
     private boolean[] possibleRightChild;
 
-    public Grammar(String gramFileName, String lexFileName) throws IOException {
+    private Grammar() {
         binaryProds = new LinkedList<Production>();
         unaryProds = new LinkedList<Production>();
         nonTermSet = new SymbolSet();
         lexSet = new SymbolSet();
+    }
 
-        readGrammarFromFile(gramFileName);
+    public Grammar(final Reader grammarFile, final Reader lexiconFile) throws IOException {
+        this();
+        init(grammarFile, lexiconFile);
+    }
+
+    public Grammar(final String grammarFile, final String lexiconFile) throws IOException {
+        this();
+        init(new FileReader(grammarFile), new FileReader(lexiconFile));
+    }
+
+    protected void init(final Reader grammarFile, final Reader lexiconFile) throws IOException {
+        Log.info(1, "INFO: Reading grammar");
+        readGrammar(grammarFile);
         if (startSymbol == -1) {
-            Log
-                .info(0,
-                    "ERROR: No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
-            System.exit(1);
+            throw new IllegalArgumentException(
+                "No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
         }
 
-        readLexProdsFromFile(lexFileName);
+        Log.info(1, "INFO: Reading lexical productions");
+        readLexProds(lexiconFile);
         tokenizer = new Tokenizer(lexSet);
         markLeftRightChildren();
     }
 
-    public Token[] tokenize(String sentence) throws Exception {
+    public Token[] tokenize(final String sentence) throws Exception {
         return tokenizer.tokenize(sentence);
     }
 
@@ -54,11 +66,11 @@ public class Grammar {
         return nonTermSet.numSymbols();
     }
 
-    public boolean hasWord(String s) {
+    public boolean hasWord(final String s) {
         return lexSet.hasLabel(s);
     }
 
-    public List<Production> getLexProdsForToken(Token token) {
+    public List<Production> getLexProdsForToken(final Token token) {
         /*
          * if (token.isUnk()) { // make new lexical prods for the UNK words that will be deleted after parsing
          * the sentence List<Production> unkProds = new LinkedList<Production>(); for (Production p :
@@ -70,9 +82,9 @@ public class Grammar {
     }
 
     // TODO: not efficient. Should index by child
-    public List<Production> getUnaryProdsWithChild(int child) {
-        List<Production> matchingProds = new LinkedList<Production>();
-        for (Production p : unaryProds) {
+    public List<Production> getUnaryProdsWithChild(final int child) {
+        final List<Production> matchingProds = new LinkedList<Production>();
+        for (final Production p : unaryProds) {
             if (p.leftChild == child)
                 matchingProds.add(p);
         }
@@ -85,38 +97,35 @@ public class Grammar {
         possibleRightChild = new boolean[this.numNonTerms()];
         Arrays.fill(possibleLeftChild, false);
         Arrays.fill(possibleRightChild, false);
-        for (Production p : binaryProds) {
+        for (final Production p : binaryProds) {
             possibleLeftChild[p.leftChild] = true;
             possibleRightChild[p.rightChild] = true;
         }
     }
 
-    public boolean isLeftChild(int nonTerm) {
+    public boolean isLeftChild(final int nonTerm) {
         return possibleLeftChild[nonTerm];
     }
 
-    public boolean isRightChild(int nonTerm) {
+    public boolean isRightChild(final int nonTerm) {
         return possibleRightChild[nonTerm];
     }
 
-    private void readLexProdsFromFile(String lexFileName) throws IOException {
+    private void readLexProds(final Reader lexFile) throws IOException {
         String line;
         String[] tokens;
         Production lexProd;
-        List<Production> tmpProdList = new LinkedList<Production>();
+        final List<Production> tmpProdList = new LinkedList<Production>();
 
-        Log.info(1, "INFO: Reading lexical productions from: " + lexFileName);
-
-        BufferedReader lexFile = new BufferedReader(new FileReader(lexFileName));
-        while ((line = lexFile.readLine()) != null) {
+        final BufferedReader br = new BufferedReader(lexFile);
+        while ((line = br.readLine()) != null) {
             tokens = line.split("\\s");
             if (tokens.length == 4) {
                 // expecting: A -> B prob
                 lexProd = new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), true);
                 tmpProdList.add(lexProd);
             } else {
-                Log.info(0, "ERROR: unexpected line in lexical file " + lexFileName + "\n\t" + line);
-                System.exit(1);
+                throw new IllegalArgumentException("Unexpected line in lexical file\n\t" + line);
             }
         }
 
@@ -126,7 +135,7 @@ public class Grammar {
             lexicalProds.add(null);
         }
 
-        for (Production p : tmpProdList) {
+        for (final Production p : tmpProdList) {
             if (lexicalProds.get(p.leftChild) == null) {
                 lexicalProds.set(p.leftChild, new LinkedList<Production>());
             }
@@ -134,27 +143,24 @@ public class Grammar {
         }
     }
 
-    private void readGrammarFromFile(String gramFileName) throws IOException {
-        BufferedReader gramFile = new BufferedReader(new FileReader(gramFileName));
+    private void readGrammar(final Reader gramFile) throws IOException {
+        final BufferedReader br = new BufferedReader(gramFile);
 
         String line;
         String[] tokens;
         Production prod;
 
-        Log.info(1, "INFO: Reading grammar from: " + gramFileName);
-        while ((line = gramFile.readLine()) != null) {
+        while ((line = br.readLine()) != null) {
             tokens = line.split("\\s");
             if (tokens.length == 1) {
+
                 if (startSymbol != -1) {
-                    Log
-                        .info(
-                            0,
-                            "ERROR: grammar file must contain a single line with a single string representing the START SYMBOL.\nMore than one entry was found.  Last line: "
-                                    + line);
-                    System.exit(1);
-                } else {
-                    startSymbol = nonTermSet.getIndex(tokens[0]);
+                    throw new IllegalArgumentException(
+                        "Grammar file must contain a single line with a single string representing the START SYMBOL.\nMore than one entry was found.  Last line: "
+                                + line);
                 }
+
+                startSymbol = nonTermSet.getIndex(tokens[0]);
             } else if (tokens.length == 4) {
                 // expecting: A -> B prob
                 prod = new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), false);
@@ -165,8 +171,7 @@ public class Grammar {
                 prod = new Production(tokens[0], tokens[2], tokens[3], Float.valueOf(tokens[4]));
                 binaryProds.add(prod);
             } else {
-                Log.info(0, "ERROR: unexpected line in grammar file " + gramFileName + "\n\t" + line);
-                System.exit(1);
+                throw new IllegalArgumentException("Unexpected line in grammar file\n\t" + line);
             }
         }
     }
@@ -178,7 +183,8 @@ public class Grammar {
         private boolean isLex;
 
         // Binary production
-        public Production(String parent, String leftChild, String rightChild, float prob) {
+        public Production(final String parent, final String leftChild, final String rightChild,
+                final float prob) {
             this.parent = nonTermSet.getIndex(parent);
             this.leftChild = nonTermSet.getIndex(leftChild);
             this.rightChild = nonTermSet.getIndex(rightChild);
@@ -189,7 +195,7 @@ public class Grammar {
         }
 
         // Unary production
-        public Production(String parent, String child, float prob, boolean isLex) {
+        public Production(final String parent, final String child, final float prob, final boolean isLex) {
             this.parent = nonTermSet.getIndex(parent);
             if (isLex == false) {
                 this.leftChild = nonTermSet.getIndex(child);
@@ -205,7 +211,7 @@ public class Grammar {
         }
 
         public Production copy() {
-            Production p = new Production();
+            final Production p = new Production();
             p.parent = this.parent;
             p.leftChild = this.leftChild;
             p.rightChild = this.rightChild;
@@ -215,7 +221,7 @@ public class Grammar {
             return p;
         }
 
-        public boolean equals(Production otherProd) {
+        public boolean equals(final Production otherProd) {
             if (parent != otherProd.parent)
                 return false;
             if (leftChild != otherProd.leftChild)
@@ -248,6 +254,7 @@ public class Grammar {
             }
         }
 
+        @Override
         public String toString() {
             return parentToString() + " -> " + childrenToString() + " (p=" + Double.toString(prob) + ")";
         }
