@@ -4,32 +4,30 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
 
+import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.util.Log;
 
 public class Grammar {
 
-    public LinkedList<Production> binaryProds;
-    public LinkedList<Production> unaryProds;
+    public Production[] binaryProds;
+    public Production[] unaryProds;
     public int startSymbol = -1;
 
     // private LinkedList<LexicalProduction>[] lexicalProds = new LinkedList<UnaryProduction>[5];
     // note: java doesn't allow generic array creation, so must do it like this:
-    private Vector<List<Production>> lexicalProds;
+    private List<Production>[] lexicalProds;
     private final SymbolSet nonTermSet;
     private final SymbolSet lexSet;
     private Tokenizer tokenizer;
-    private boolean[] possibleLeftChild;
-    private boolean[] possibleRightChild;
+    private PackedBitVector possibleLeftChild;
+    private PackedBitVector possibleRightChild;
 
     private Grammar() {
-        binaryProds = new LinkedList<Production>();
-        unaryProds = new LinkedList<Production>();
         nonTermSet = new SymbolSet();
         lexSet = new SymbolSet();
     }
@@ -78,7 +76,7 @@ public class Grammar {
          * 
          * } else { return lexicalProds.get(token.index); }
          */
-        return lexicalProds.get(token.index);
+        return lexicalProds[token.index];
     }
 
     // TODO: not efficient. Should index by child
@@ -93,22 +91,22 @@ public class Grammar {
     }
 
     private void markLeftRightChildren() {
-        possibleLeftChild = new boolean[this.numNonTerms()];
-        possibleRightChild = new boolean[this.numNonTerms()];
-        Arrays.fill(possibleLeftChild, false);
-        Arrays.fill(possibleRightChild, false);
+        possibleLeftChild = new PackedBitVector(this.numNonTerms());
+        possibleRightChild = new PackedBitVector(this.numNonTerms());
+        // Arrays.fill(possibleLeftChild, false);
+        // Arrays.fill(possibleRightChild, false);
         for (final Production p : binaryProds) {
-            possibleLeftChild[p.leftChild] = true;
-            possibleRightChild[p.rightChild] = true;
+            possibleLeftChild.set(p.leftChild, true);
+            possibleRightChild.set(p.rightChild, true);
         }
     }
 
     public boolean isLeftChild(final int nonTerm) {
-        return possibleLeftChild[nonTerm];
+        return possibleLeftChild.getBoolean(nonTerm);
     }
 
     public boolean isRightChild(final int nonTerm) {
-        return possibleRightChild[nonTerm];
+        return possibleRightChild.getBoolean(nonTerm);
     }
 
     private void readLexProds(final Reader lexFile) throws IOException {
@@ -130,17 +128,19 @@ public class Grammar {
         }
 
         // store lexical prods indexed by the word
-        lexicalProds = new Vector<List<Production>>(lexSet.numSymbols());
+        final ArrayList<List<Production>> tmpLexicalProds = new ArrayList<List<Production>>(lexSet
+            .numSymbols());
         for (int i = 0; i < lexSet.numSymbols(); i++) {
-            lexicalProds.add(null);
+            tmpLexicalProds.add(null);
         }
 
         for (final Production p : tmpProdList) {
-            if (lexicalProds.get(p.leftChild) == null) {
-                lexicalProds.set(p.leftChild, new LinkedList<Production>());
+            if (tmpLexicalProds.get(p.leftChild) == null) {
+                tmpLexicalProds.set(p.leftChild, new LinkedList<Production>());
             }
-            lexicalProds.get(p.leftChild).add(p);
+            tmpLexicalProds.get(p.leftChild).add(p);
         }
+        lexicalProds = tmpLexicalProds.toArray(new LinkedList[tmpLexicalProds.size()]);
     }
 
     private void readGrammar(final Reader gramFile) throws IOException {
@@ -149,6 +149,9 @@ public class Grammar {
         String line;
         String[] tokens;
         Production prod;
+
+        final LinkedList<Production> tmpUnaryProds = new LinkedList<Production>();
+        final LinkedList<Production> tmpBinaryProds = new LinkedList<Production>();
 
         while ((line = br.readLine()) != null) {
             tokens = line.split("\\s");
@@ -165,15 +168,17 @@ public class Grammar {
                 // expecting: A -> B prob
                 prod = new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), false);
                 // should we make sure there aren't any duplicates?
-                unaryProds.add(prod);
+                tmpUnaryProds.add(prod);
             } else if (tokens.length == 5) {
                 // expecting: A -> B C prob
                 prod = new Production(tokens[0], tokens[2], tokens[3], Float.valueOf(tokens[4]));
-                binaryProds.add(prod);
+                tmpBinaryProds.add(prod);
             } else {
                 throw new IllegalArgumentException("Unexpected line in grammar file\n\t" + line);
             }
         }
+        unaryProds = tmpUnaryProds.toArray(new Production[tmpUnaryProds.size()]);
+        binaryProds = tmpBinaryProds.toArray(new Production[tmpBinaryProds.size()]);
     }
 
     public class Production {

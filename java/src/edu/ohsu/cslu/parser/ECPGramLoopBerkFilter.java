@@ -25,16 +25,17 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
 
     private int tmpNL, tmpNR, tmpWR;
 
-    public ECPGramLoopBerkFilter(Grammar grammar, ChartTraversalType traversalType) {
+    public ECPGramLoopBerkFilter(final Grammar grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
     }
 
     @Override
-    public ParseTree findMLParse(String sentence) throws Exception {
+    public ParseTree findMLParse(final String sentence) throws Exception {
         return findParse(sentence);
     }
 
-    public void initParser(int sentLength) {
+    @Override
+    public void initParser(final int sentLength) {
         super.initParser(sentLength);
 
         narrowRExtent = new int[sentLength + 1][grammar.numNonTerms()];
@@ -52,19 +53,20 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
         tmpNL = tmpNR = tmpWR = 0;
     }
 
-    protected void addLexicalProductions(Token sent[]) throws Exception {
+    @Override
+    protected void addLexicalProductions(final Token sent[]) throws Exception {
         List<Production> validProductions;
         float edgeLogProb;
 
         // add lexical productions and unary productions to the base cells of the chart
         for (int i = 0; i < this.chartSize; i++) {
-            for (Production lexProd : grammar.getLexProdsForToken(sent[i])) {
+            for (final Production lexProd : grammar.getLexProdsForToken(sent[i])) {
                 chart[i][i + 1].addEdge(new ChartEdge(lexProd, chart[i][i + 1], lexProd.prob));
                 updateRuleConstraints(lexProd.parent, i, i + 1);
 
                 validProductions = grammar.getUnaryProdsWithChild(lexProd.parent);
                 if (validProductions != null) {
-                    for (Production unaryProd : validProductions) {
+                    for (final Production unaryProd : validProductions) {
                         edgeLogProb = unaryProd.prob + lexProd.prob;
                         chart[i][i + 1].addEdge(new ChartEdge(unaryProd, chart[i][i + 1], edgeLogProb));
                         updateRuleConstraints(unaryProd.parent, i, i + 1);
@@ -79,28 +81,28 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
     // B[beg] --> narrowRight --> wideRight
     // || possible midpts ||
     // wideLeft <-- narrowLeft <-- C[end]
-    protected boolean possibleRuleMidpoints(Production p, int beg, int end) {
+    protected boolean possibleRuleMidpoints(final Production p, final int beg, final int end) {
         // can this left constituent leave space for a right constituent?
-        int narrowR = narrowRExtent[beg][p.leftChild];
+        final int narrowR = narrowRExtent[beg][p.leftChild];
         if (narrowR >= end) {
             tmpNR++;
             return false;
         }
 
         // can this right constituent fit next to the left constituent?
-        int narrowL = narrowLExtent[end][p.rightChild];
+        final int narrowL = narrowLExtent[end][p.rightChild];
         if (narrowL < narrowR) {
             tmpNL++;
             return false;
         }
 
-        int wideL = wideLExtent[end][p.rightChild];
+        final int wideL = wideLExtent[end][p.rightChild];
         // minMidpoint = max(narrowR, wideL)
-        int minMidpoint = (narrowR > wideL ? narrowR : wideL);
+        final int minMidpoint = (narrowR > wideL ? narrowR : wideL);
 
-        int wideR = wideRExtent[beg][p.leftChild];
+        final int wideR = wideRExtent[beg][p.leftChild];
         // maxMidpoint = min(wideR, narrowL)
-        int maxMidpoint = (wideR < narrowL ? wideR : narrowL);
+        final int maxMidpoint = (wideR < narrowL ? wideR : narrowL);
 
         // can the constituents stretch far enough to reach each other?
         if (minMidpoint > maxMidpoint) {
@@ -114,7 +116,7 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
         return true;
     }
 
-    protected void updateRuleConstraints(int nonTerm, int beg, int end) {
+    protected void updateRuleConstraints(final int nonTerm, final int beg, final int end) {
         if (beg > narrowLExtent[end][nonTerm])
             narrowLExtent[end][nonTerm] = beg;
         if (beg < wideLExtent[end][nonTerm])
@@ -141,15 +143,16 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
      * result; }
      */
 
-    protected void visitCell(ChartCell cell) {
+    @Override
+    protected void visitCell(final ChartCell cell) {
         ChartCell leftCell, rightCell;
         ChartEdge leftEdge, rightEdge, parentEdge, oldBestEdge;
         float prob;
-        int start = cell.start;
-        int end = cell.end;
+        final int start = cell.start;
+        final int end = cell.end;
         boolean foundBetter, edgeWasAdded;
 
-        for (Production p : grammar.binaryProds) {
+        for (final Production p : grammar.binaryProds) {
             if (possibleRuleMidpoints(p, start, end)) {
                 foundBetter = false;
                 oldBestEdge = cell.getBestEdge(p.parent);
@@ -169,7 +172,9 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
 
                     prob = p.prob + leftEdge.insideProb + rightEdge.insideProb;
                     edgeWasAdded = cell.addEdge(p, prob, leftCell, rightCell);
-                    foundBetter = (foundBetter || edgeWasAdded);
+                    if (edgeWasAdded) {
+                        foundBetter = true;
+                    }
                 }
 
                 if (foundBetter && (oldBestEdge == null)) {
@@ -178,7 +183,7 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
             }
         }
 
-        for (Production p : grammar.unaryProds) {
+        for (final Production p : grammar.unaryProds) {
             parentEdge = cell.getBestEdge(p.leftChild);
             if ((parentEdge != null) && (parentEdge.p.isUnaryProd() == false)) {
                 prob = p.prob + parentEdge.insideProb;

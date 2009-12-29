@@ -1,37 +1,39 @@
 package edu.ohsu.cslu.grammar;
 
-import java.util.Hashtable;
-import java.util.Vector;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+
+import java.util.ArrayList;
 
 public class SymbolSet {
 
-    private Vector<String> symbolVector;
-    private Hashtable<String, Integer> symbolHash;
+    private ArrayList<String> symbolVector;
+    private Object2IntOpenHashMap<String> symbolHash;
 
     public SymbolSet() {
-        symbolVector = new Vector<String>();
-        symbolHash = new Hashtable<String, Integer>();
+        symbolVector = new ArrayList<String>();
+        symbolHash = new Object2IntOpenHashMap<String>();
+        symbolHash.defaultReturnValue(-1);
     }
 
     // get integer index of label string. If it does not exist then
     // add it to the internal structures
-    public int getIndex(String label) {
-        Integer index = symbolHash.get(label);
-        if (index != null) {
-            return index;
-        } else {
-            index = symbolVector.size();
-            symbolHash.put(label, index.intValue());
-            symbolVector.add(label);
+    public int getIndex(final String label) {
+        int index = symbolHash.getInt(label);
+        if (index != -1) {
             return index;
         }
+
+        index = symbolVector.size();
+        symbolHash.put(label, index);
+        symbolVector.add(label);
+        return index;
     }
 
-    public boolean hasLabel(String label) {
-        return symbolHash.get(label) != null;
+    public boolean hasLabel(final String label) {
+        return symbolHash.containsKey(label);
     }
 
-    public String getString(int index) {
+    public String getString(final int index) {
         return symbolVector.get(index);
     }
 
