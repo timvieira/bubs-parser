@@ -1,6 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.Grammar;
@@ -14,7 +13,7 @@ public class ChartCell {
     boolean bestEdgesHaveChanged = true;
     Grammar grammar;
 
-    public ChartCell(int start, int end, Grammar grammar) {
+    public ChartCell(final int start, final int end, final Grammar grammar) {
         this.start = start;
         this.end = end;
         this.numEdgesAdded = 0;
@@ -22,10 +21,10 @@ public class ChartCell {
         this.grammar = grammar;
 
         bestEdge = new ChartEdge[grammar.numNonTerms()];
-        Arrays.fill(bestEdge, null);
+        // Arrays.fill(bestEdge, null);
     }
 
-    public ChartEdge getBestEdge(int nonTermIndex) {
+    public ChartEdge getBestEdge(final int nonTermIndex) {
         return bestEdge[nonTermIndex];
     }
 
@@ -57,11 +56,12 @@ public class ChartCell {
         }
     }
 
-    public boolean addEdge(ChartEdge edge) {
-        int parent = edge.p.parent;
+    public boolean addEdge(final ChartEdge edge) {
+        final int parent = edge.p.parent;
         numEdgesConsidered += 1;
         // System.out.println("Considering: "+edge);
-        if (bestEdge[parent] == null || edge.insideProb > bestEdge[parent].insideProb) {
+        final ChartEdge prevBestEdge = bestEdge[parent];
+        if (prevBestEdge == null || edge.insideProb > prevBestEdge.insideProb) {
             bestEdge[parent] = edge;
             bestEdgesHaveChanged = true;
             numEdgesAdded += 1;
@@ -73,10 +73,11 @@ public class ChartCell {
 
     // alternate addEdge function so we aren't required to create a new ChartEdge object
     // in the CYK inner loop for every potential new edge entry
-    public boolean addEdge(Production p, float insideProb, ChartCell leftCell, ChartCell rightCell) {
+    public boolean addEdge(final Production p, final float insideProb, final ChartCell leftCell,
+            final ChartCell rightCell) {
         numEdgesConsidered += 1;
         // System.out.println("Considering: "+new ChartEdge(p,insideProb,leftCell,rightCell));
-        ChartEdge prevBestEdge = bestEdge[p.parent];
+        final ChartEdge prevBestEdge = bestEdge[p.parent];
         if (prevBestEdge == null) {
             bestEdge[p.parent] = new ChartEdge(p, leftCell, rightCell, insideProb);
             bestEdgesHaveChanged = true;
@@ -108,6 +109,7 @@ public class ChartCell {
         return numEntries;
     }
 
+    @Override
     public String toString() {
         return "ChartCell[" + start + "][" + end + "] with " + getNumEdgeEntries() + " (of "
                 + grammar.numNonTerms() + ") edges";
