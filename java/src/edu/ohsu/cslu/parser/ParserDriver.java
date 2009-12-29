@@ -1,62 +1,139 @@
 package edu.ohsu.cslu.parser;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.EnumAliasMap;
+import org.kohsuke.args4j.Option;
+
+import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarByChildMatrix;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermHash;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
+import edu.ohsu.cslu.parser.fom.EdgeFOM.EdgeFOMType;
+import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 import edu.ohsu.cslu.parser.util.StringToMD5;
 
-public class ParserDriver {
+public class ParserDriver extends BaseCommandlineTool {
 
-    public static void main(String[] argv) throws Exception {
+    @Option(name = "-g", aliases = { "--grammar-file-prefix" }, required = true, metaVar = "prefix", usage = "Grammar file prefix")
+    private String pcfgPrefix;
+
+    @Option(name = "-scores", aliases = { "--print-inside-scores" }, usage = "Print inside probabilities")
+    private boolean printInsideProbs = false;
+
+    @Option(name = "-unk", aliases = { "--print-unk-labels" }, usage = "Print unknown labels")
+    private boolean printUnkLabels = false;
+
+    @Option(name = "-p", aliases = { "--parser", "--parser-implementation" }, metaVar = "parser", usage = "Parser implementation")
+    private ParserType parserType = ParserType.ExhaustiveChartParser;
+
+    // TODO Eventually we'd like to make this a command-line option, but not all combinations are implemented
+    // yet
+    private ChartTraversalType chartTraversalType = ChartTraversalType.LeftRightBottomTopTraversal;
+
+    @Option(name = "-vt", aliases = { "--visitation-type" }, metaVar = "type", usage = "Visitation type")
+    private ChartCellVisitationType chartCellVisitationType = ChartCellVisitationType.GrammarLoopBerkeleyFilter;
+
+    public EdgeFOMType edgeFOMType = EdgeFOMType.Inside;
+
+    private Grammar grammar;
+
+    public static void main(final String[] args) throws Exception {
+        run(args);
+    }
+
+    @Override
+    public void setup(final CmdLineParser cmdlineParser) throws CmdLineException {
+        final String pcfgFileName = pcfgPrefix + ".pcfg";
+        final String lexFileName = pcfgPrefix + ".lex";
+
+        try {
+            switch (parserType) {
+
+            case ExhaustiveChartParser:
+                switch (chartCellVisitationType) {
+
+                case CellCrossList:
+                    grammar = new GrammarByLeftNonTermList(pcfgFileName, lexFileName);
+                    break;
+
+                case CellCrossHash:
+                    grammar = new GrammarByLeftNonTermHash(pcfgFileName, lexFileName);
+                    break;
+
+                case CellCrossMatrix:
+                    grammar = new GrammarByChildMatrix(pcfgFileName, lexFileName);
+                    break;
+
+                case GrammarLoop:
+                case GrammarLoopBerkeleyFilter:
+                    grammar = new Grammar(pcfgFileName, lexFileName);
+                }
+                break;
+
+            // Both agenda parsers use GrammarByLeftNonTermList
+            case AgendaParser:
+            case AgendaParserWithGhostEdges:
+                grammar = new GrammarByLeftNonTermList(pcfgFileName, lexFileName);
+                break;
+
+            default:
+                throw new CmdLineException(cmdlineParser, "Unsupported parser type: " + parserType);
+
+            }
+        } catch (final IOException e) {
+            throw new CmdLineException(cmdlineParser, e);
+        }
+    }
+
+    @Override
+    public void run() throws Exception {
         ParseTree bestParseTree = null;
-        String sentence;
         int sentNum = 0;
         Parser parser = null;
 
-        ParserOptions opts = new ParserOptions(argv);
-        Grammar grammar;
-
-        if (opts.parserType == ParserOptions.ParserType.ExhaustiveChartParser) {
-            if (opts.chartCellVisitationType == ParserOptions.ChartCellVisitationType.CellCrossList) {
-                grammar = new GrammarByLeftNonTermList(opts.pcfgFileName, opts.lexFileName);
-                parser = new ECPCellCrossList((GrammarByLeftNonTermList) grammar, opts.chartTraversalType);
-            } else if (opts.chartCellVisitationType == ParserOptions.ChartCellVisitationType.CellCrossHash) {
-                grammar = new GrammarByLeftNonTermHash(opts.pcfgFileName, opts.lexFileName);
-                parser = new ECPCellCrossHash((GrammarByLeftNonTermHash) grammar, opts.chartTraversalType);
-            } else if (opts.chartCellVisitationType == ParserOptions.ChartCellVisitationType.CellCrossMatrix) {
-                grammar = new GrammarByChildMatrix(opts.pcfgFileName, opts.lexFileName);
-                parser = new ECPCellCrossMatrix((GrammarByChildMatrix) grammar, opts.chartTraversalType);
-            } else if (opts.chartCellVisitationType == ParserOptions.ChartCellVisitationType.GrammarLoop) {
-                grammar = new Grammar(opts.pcfgFileName, opts.lexFileName);
-                parser = new ECPGramLoop(grammar, opts.chartTraversalType);
-            } else if (opts.chartCellVisitationType == ParserOptions.ChartCellVisitationType.GrammarLoopBerkeleyFilter) {
-                grammar = new Grammar(opts.pcfgFileName, opts.lexFileName);
-                parser = new ECPGramLoopBerkFilter(grammar, opts.chartTraversalType);
+        switch (parserType) {
+        case ExhaustiveChartParser:
+            switch (chartCellVisitationType) {
+            case CellCrossList:
+                parser = new ECPCellCrossList((GrammarByLeftNonTermList) grammar, chartTraversalType);
+                break;
+            case CellCrossHash:
+                parser = new ECPCellCrossHash((GrammarByLeftNonTermHash) grammar, chartTraversalType);
+                break;
+            case CellCrossMatrix:
+                parser = new ECPCellCrossMatrix((GrammarByChildMatrix) grammar, chartTraversalType);
+                break;
+            case GrammarLoop:
+                parser = new ECPGramLoop(grammar, chartTraversalType);
+                break;
+            case GrammarLoopBerkeleyFilter:
+                parser = new ECPGramLoopBerkFilter(grammar, chartTraversalType);
             }
+            break;
+
+        case AgendaParser:
+            parser = new AgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOMType);
+            break;
+
+        case AgendaParserWithGhostEdges:
+            parser = new AgendaChartParserGhostEdges((GrammarByLeftNonTermList) grammar, edgeFOMType);
+            break;
+
+        default:
+            throw new IllegalArgumentException("Unsupported parser type");
         }
 
-        if (opts.parserType == ParserOptions.ParserType.AgendaParser) {
-            grammar = new GrammarByLeftNonTermList(opts.pcfgFileName, opts.lexFileName);
-            parser = new AgendaChartParser((GrammarByLeftNonTermList) grammar, opts.edgeFOMType);
-        }
-
-        if (opts.parserType == ParserOptions.ParserType.AgendaParserWithGhostEdges) {
-            grammar = new GrammarByLeftNonTermList(opts.pcfgFileName, opts.lexFileName);
-            parser = new AgendaChartParserGhostEdges((GrammarByLeftNonTermList) grammar, opts.edgeFOMType);
-        }
-
-        System.err.println(opts.toString("PARM: "));
-
-        // System.out.println(parser.getBestParse("the aged bottle Other-xx flies fast").toString());
-        // System.exit(1);
-
-        sentNum = 0;
-        String stats;
-        while ((sentence = opts.inputStream.readLine()) != null) {
+        final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
             if (parser instanceof MaximumLikelihoodParser) {
                 bestParseTree = ((MaximumLikelihoodParser) parser).findMLParse(sentence.trim());
             } else if (parser instanceof HeuristicParser) {
@@ -66,13 +143,13 @@ public class ParserDriver {
                 System.exit(1);
             }
 
-            stats = " sentNum=" + sentNum + " sentLen=" + ParserUtil.tokenize(sentence).length + " md5="
-                    + StringToMD5.computeMD5(sentence);
+            String stats = " sentNum=" + sentNum + " sentLen=" + ParserUtil.tokenize(sentence).length
+                    + " md5=" + StringToMD5.computeMD5(sentence);
             if (bestParseTree == null) {
                 System.out.println("No parse found.");
                 stats += " inside=-inf";
             } else {
-                System.out.println(bestParseTree.toString(opts.printInsideProbs));
+                System.out.println(bestParseTree.toString(printInsideProbs));
                 // System.out.println("STAT: sentNum="+sentNum+" inside="+bestParseTree.chartEdge.insideProb);
                 stats += " inside=" + bestParseTree.chartEdge.insideProb;
             }
@@ -81,4 +158,23 @@ public class ParserDriver {
             sentNum++;
         }
     }
+
+    static public enum ParserType {
+        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), SuperAgendaParser(
+                "sap");
+
+        private ParserType(final String... aliases) {
+            EnumAliasMap.singleton().addAliases(this, aliases);
+        }
+    }
+
+    static public enum ChartCellVisitationType {
+        CellCrossList("ccl"), CellCrossHash("cch"), CellCrossMatrix("ccm"), GrammarLoop("gl"), GrammarLoopBerkeleyFilter(
+                "glbf");
+
+        private ChartCellVisitationType(final String... aliases) {
+            EnumAliasMap.singleton().addAliases(this, aliases);
+        }
+    }
+
 }
