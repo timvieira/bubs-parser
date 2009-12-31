@@ -6,6 +6,8 @@ import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
 import java.io.IOException;
 import java.io.Writer;
 
+import edu.ohsu.cslu.datastructs.Semiring;
+
 /**
  * Sparse float vector which stores entries in a hash.
  * 
@@ -74,8 +76,16 @@ public class HashSparseFloatVector extends BaseNumericVector {
         return map.get(i);
     }
 
+    public float getFloat(final long i) {
+        return map.get(i);
+    }
+
     @Override
     public int getInt(final int i) {
+        return Math.round(map.get(i));
+    }
+
+    public int getInt(final long i) {
         return Math.round(map.get(i));
     }
 
@@ -94,8 +104,16 @@ public class HashSparseFloatVector extends BaseNumericVector {
         map.put(i, value);
     }
 
+    public void set(final long i, final int value) {
+        map.put(i, value);
+    }
+
     @Override
     public void set(final int i, final float value) {
+        map.put(i, value);
+    }
+
+    public void set(final long i, final float value) {
         map.put(i, value);
     }
 
@@ -104,8 +122,16 @@ public class HashSparseFloatVector extends BaseNumericVector {
         map.put(i, value ? 1 : 0);
     }
 
+    public void set(final long i, final boolean value) {
+        map.put(i, value ? 1 : 0);
+    }
+
     @Override
     public void set(final int i, final String newValue) {
+        map.put(i, Float.parseFloat(newValue));
+    }
+
+    public void set(final long i, final String newValue) {
         map.put(i, Float.parseFloat(newValue));
     }
 
@@ -120,6 +146,26 @@ public class HashSparseFloatVector extends BaseNumericVector {
         }
 
         return new HashSparseFloatVector(i1 - i0 + 1, newMap);
+    }
+
+    public HashSparseFloatVector union(final HashSparseFloatVector other, final Semiring semiring) {
+        if (semiring != Semiring.TROPICAL) {
+            throw new UnsupportedOperationException("Only the tropical semiring is supported");
+        }
+
+        if (other.map.defaultReturnValue() != map.defaultReturnValue()) {
+            throw new IllegalArgumentException("Default value of vectors must match");
+        }
+
+        final HashSparseFloatVector newVector = clone();
+        final Long2FloatOpenHashMap newMap = newVector.map;
+        final Long2FloatOpenHashMap otherMap = other.map;
+
+        newVector.length = Math.max(length, other.length);
+        for (final long key : otherMap.keySet()) {
+            newMap.put(key, Math.max(map.get(key), otherMap.get(key)));
+        }
+        return newVector;
     }
 
     @Override
