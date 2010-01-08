@@ -6,111 +6,131 @@ import java.util.LinkedList;
 import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 
-public class ArrayChartCell {
+public class ArrayChartCell implements ChartCell {
 
-	public int start, end, numEdgesAdded, numEdgesConsidered;
-	public ChartEdge[] bestEdge;
-	private LinkedList<ChartEdge> bestLeftEdges, bestRightEdges;
-	boolean bestEdgesHaveChanged = true;
-	ArrayGrammar grammar;
+    public final int start, end;
+    public int numEdgesAdded, numEdgesConsidered;
+    public ChartEdge[] bestEdge;
+    private LinkedList<ChartEdge> bestLeftEdges, bestRightEdges;
+    boolean bestEdgesHaveChanged = true;
+    ArrayGrammar grammar;
 
-	public ArrayChartCell(final int start, final int end, final ArrayGrammar grammar) {
-		this.start = start;
-		this.end = end;
-		this.numEdgesAdded = 0;
-		this.numEdgesConsidered = 0;
-		this.grammar = grammar;
+    public ArrayChartCell(final int start, final int end, final ArrayGrammar grammar) {
+        this.start = start;
+        this.end = end;
+        this.numEdgesAdded = 0;
+        this.numEdgesConsidered = 0;
+        this.grammar = grammar;
 
-		bestEdge = new ChartEdge[grammar.numNonTerms()];
-		Arrays.fill(bestEdge, null);
-	}
+        bestEdge = new ChartEdge[grammar.numNonTerms()];
+        Arrays.fill(bestEdge, null);
+    }
 
-	public ChartEdge getBestEdge(final int nonTermIndex) {
-		return bestEdge[nonTermIndex];
-	}
+    public ChartEdge getBestEdge(final int nonTermIndex) {
+        return bestEdge[nonTermIndex];
+    }
 
-	public LinkedList<ChartEdge> getBestLeftEdges() {
-		buildLeftRightEdgeLists();
-		return bestLeftEdges;
-	}
+    public LinkedList<ChartEdge> getBestLeftEdges() {
+        buildLeftRightEdgeLists();
+        return bestLeftEdges;
+    }
 
-	public LinkedList<ChartEdge> getBestRightEdges() {
-		buildLeftRightEdgeLists();
-		return bestRightEdges;
-	}
+    public LinkedList<ChartEdge> getBestRightEdges() {
+        buildLeftRightEdgeLists();
+        return bestRightEdges;
+    }
 
-	private void buildLeftRightEdgeLists() {
-		ChartEdge tmpEdge;
-		if (bestEdgesHaveChanged) {
-			bestLeftEdges = new LinkedList<ChartEdge>();
-			bestRightEdges = new LinkedList<ChartEdge>();
-			for (int i = 0; i < bestEdge.length; i++) {
-				tmpEdge = bestEdge[i];
-				if (tmpEdge != null) {
-					if (grammar.isLeftChild(tmpEdge.p.parent))
-						bestLeftEdges.add(tmpEdge);
-					if (grammar.isRightChild(tmpEdge.p.parent))
-						bestRightEdges.add(tmpEdge);
-				}
-			}
-			bestEdgesHaveChanged = false;
-		}
-	}
+    private void buildLeftRightEdgeLists() {
+        ChartEdge tmpEdge;
+        if (bestEdgesHaveChanged) {
+            bestLeftEdges = new LinkedList<ChartEdge>();
+            bestRightEdges = new LinkedList<ChartEdge>();
+            for (int i = 0; i < bestEdge.length; i++) {
+                tmpEdge = bestEdge[i];
+                if (tmpEdge != null) {
+                    if (grammar.isLeftChild(tmpEdge.p.parent))
+                        bestLeftEdges.add(tmpEdge);
+                    if (grammar.isRightChild(tmpEdge.p.parent))
+                        bestRightEdges.add(tmpEdge);
+                }
+            }
+            bestEdgesHaveChanged = false;
+        }
+    }
 
-	public boolean addEdge(final ChartEdge edge) {
-		final int parent = edge.p.parent;
-		numEdgesConsidered += 1;
-		// System.out.println("Considering: " + edge);
-		if (bestEdge[parent] == null || edge.insideProb > bestEdge[parent].insideProb) {
-			bestEdge[parent] = edge;
-			bestEdgesHaveChanged = true;
-			numEdgesAdded += 1;
-			return true;
-		}
+    public boolean addEdge(final ChartEdge edge) {
+        final int parent = edge.p.parent;
+        numEdgesConsidered += 1;
+        // System.out.println("Considering: " + edge);
+        if (bestEdge[parent] == null || edge.insideProb > bestEdge[parent].insideProb) {
+            bestEdge[parent] = edge;
+            bestEdgesHaveChanged = true;
+            numEdgesAdded += 1;
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	// alternate addEdge function so we aren't required to create a new ChartEdge object
-	// in the CYK inner loop for every potential new edge entry
-	public boolean addEdge(final Production p, final float insideProb, final ArrayChartCell leftCell, final ArrayChartCell rightCell) {
-		numEdgesConsidered += 1;
-		// System.out.println("Considering: " + new ChartEdge(p, leftCell, rightCell, insideProb));
+    /**
+     * Alternate addEdge() function so we aren't required to create a new ChartEdge object in the CYK inner loop for every potential new edge entry. Adds an edge to the cell if the
+     * edge's probability is greater than an existing edge with the same non-terminal. Optional operation (some {@link ChartCell} implementations may be immutable).
+     * 
+     * @param p The production to add
+     * @param insideProb The production probability
+     * @param leftCell The left child of this production
+     * @param rightCell The right child of this production
+     * @return True if the edge was added, false if another edge with greater probability was already present.
+     */
+    public boolean addEdge(final Production p, final float insideProb, final ArrayChartCell leftCell, final ArrayChartCell rightCell) {
+        numEdgesConsidered += 1;
+        // System.out.println("Considering: " + new ChartEdge(p, leftCell, rightCell, insideProb));
 
-		final ChartEdge prevBestEdge = bestEdge[p.parent];
-		if (prevBestEdge == null) {
-			bestEdge[p.parent] = new ChartEdge(p, leftCell, rightCell, insideProb);
-			bestEdgesHaveChanged = true;
-			numEdgesAdded += 1;
-			return true;
-		} else if (prevBestEdge.insideProb < insideProb) {
-			prevBestEdge.p = p;
-			prevBestEdge.insideProb = insideProb;
-			prevBestEdge.leftCell = leftCell;
-			prevBestEdge.rightCell = rightCell;
-			// bestLeftEdgesHasChanged = true; // pointer to old edge will still be correct
-			numEdgesAdded += 1;
-			return true;
-		}
+        final ChartEdge prevBestEdge = bestEdge[p.parent];
+        if (prevBestEdge == null) {
+            bestEdge[p.parent] = new ChartEdge(p, leftCell, rightCell, insideProb);
+            bestEdgesHaveChanged = true;
+            numEdgesAdded += 1;
+            return true;
+        } else if (prevBestEdge.insideProb < insideProb) {
+            prevBestEdge.p = p;
+            prevBestEdge.insideProb = insideProb;
+            prevBestEdge.leftCell = leftCell;
+            prevBestEdge.rightCell = rightCell;
+            // bestLeftEdgesHasChanged = true; // pointer to old edge will still be correct
+            numEdgesAdded += 1;
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	public int getNumEdgesAdded() {
-		return numEdgesAdded;
-	}
+    public int getNumEdgesAdded() {
+        return numEdgesAdded;
+    }
 
-	public int getNumEdgeEntries() {
-		int numEntries = 0;
-		for (int i = 0; i < bestEdge.length; i++) {
-			if (bestEdge[i] != null)
-				numEntries++;
-		}
-		return numEntries;
-	}
+    public int getNumEdgeEntries() {
+        int numEntries = 0;
+        for (int i = 0; i < bestEdge.length; i++) {
+            if (bestEdge[i] != null)
+                numEntries++;
+        }
+        return numEntries;
+    }
 
-	@Override
-	public String toString() {
-		return "ChartCell[" + start + "][" + end + "] with " + getNumEdgeEntries() + " (of " + grammar.numNonTerms() + ") edges";
-	}
+    @Override
+    public int end() {
+        return end;
+    }
+
+    @Override
+    public int start() {
+        return start;
+    }
+
+    @Override
+    public String toString() {
+        return "ChartCell[" + start + "][" + end + "] with " + getNumEdgeEntries() + " (of " + grammar.numNonTerms() + ") edges";
+    }
+
 }
