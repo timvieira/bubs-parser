@@ -17,19 +17,24 @@ public class Grammar {
     public Production[] binaryProds;
     public Production[] unaryProds;
     public int startSymbol = -1;
+    public int nullSymbol = -1;
+    public String nullSymbolStr = "<null>";
 
     // private LinkedList<LexicalProduction>[] lexicalProds = new LinkedList<UnaryProduction>[5];
     // note: java doesn't allow generic array creation, so must do it like this:
     private List<Production>[] lexicalProds;
-    private final SymbolSet nonTermSet;
-    private final SymbolSet lexSet;
+    public final SymbolSet<String> nonTermSet;
+    public final SymbolSet<Integer> posSet; // index into nonTermSet of POS non terms
+    private final SymbolSet<String> lexSet;
     private Tokenizer tokenizer;
     private PackedBitVector possibleLeftChild;
     private PackedBitVector possibleRightChild;
+    private int maxPOSIndex = -1; // TODO: should sort nonterms so ordered by POS then NTs
 
     private Grammar() {
-        nonTermSet = new SymbolSet();
-        lexSet = new SymbolSet();
+        nonTermSet = new SymbolSet<String>();
+        posSet = new SymbolSet<Integer>();
+        lexSet = new SymbolSet<String>();
     }
 
     public Grammar(final Reader grammarFile, final Reader lexiconFile) throws IOException {
@@ -44,10 +49,14 @@ public class Grammar {
 
     protected void init(final Reader grammarFile, final Reader lexiconFile) throws IOException {
         Log.info(1, "INFO: Reading grammar");
+
+        // the nullSymbol is used for start/end of sentence markers and dummy non-terminals
+        nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
+        posSet.addSymbol(nullSymbol);
+
         readGrammar(grammarFile);
         if (startSymbol == -1) {
-            throw new IllegalArgumentException(
-                "No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
+            throw new IllegalArgumentException("No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
         }
 
         Log.info(1, "INFO: Reading lexical productions");
@@ -70,9 +79,8 @@ public class Grammar {
 
     public List<Production> getLexProdsForToken(final Token token) {
         /*
-         * if (token.isUnk()) { // make new lexical prods for the UNK words that will be deleted after parsing
-         * the sentence List<Production> unkProds = new LinkedList<Production>(); for (Production p :
-         * lexicalProds.get(token.index)){ unkProds.add(p.copy()); }
+         * if (token.isUnk()) { // make new lexical prods for the UNK words that will be deleted after parsing the sentence List<Production> unkProds = new
+         * LinkedList<Production>(); for (Production p : lexicalProds.get(token.index)){ unkProds.add(p.copy()); }
          * 
          * } else { return lexicalProds.get(token.index); }
          */
@@ -128,8 +136,7 @@ public class Grammar {
         }
 
         // store lexical prods indexed by the word
-        final ArrayList<List<Production>> tmpLexicalProds = new ArrayList<List<Production>>(lexSet
-            .numSymbols());
+        final ArrayList<List<Production>> tmpLexicalProds = new ArrayList<List<Production>>(lexSet.numSymbols());
         for (int i = 0; i < lexSet.numSymbols(); i++) {
             tmpLexicalProds.add(null);
         }
@@ -159,8 +166,7 @@ public class Grammar {
 
                 if (startSymbol != -1) {
                     throw new IllegalArgumentException(
-                        "Grammar file must contain a single line with a single string representing the START SYMBOL.\nMore than one entry was found.  Last line: "
-                                + line);
+                            "Grammar file must contain a single line with a single string representing the START SYMBOL.\nMore than one entry was found.  Last line: " + line);
                 }
 
                 startSymbol = nonTermSet.getIndex(tokens[0]);
@@ -188,8 +194,7 @@ public class Grammar {
         private boolean isLex;
 
         // Binary production
-        public Production(final String parent, final String leftChild, final String rightChild,
-                final float prob) {
+        public Production(final String parent, final String leftChild, final String rightChild, final float prob) {
             this.parent = nonTermSet.getIndex(parent);
             this.leftChild = nonTermSet.getIndex(leftChild);
             this.rightChild = nonTermSet.getIndex(rightChild);
@@ -206,6 +211,10 @@ public class Grammar {
                 this.leftChild = nonTermSet.getIndex(child);
             } else {
                 this.leftChild = lexSet.getIndex(child);
+                posSet.addSymbol(this.parent);
+                if (this.parent > maxPOSIndex) {
+                    maxPOSIndex = this.parent;
+                }
             }
             this.rightChild = -1;
             this.prob = prob;
@@ -246,16 +255,16 @@ public class Grammar {
         }
 
         public String parentToString() {
-            return nonTermSet.getString(parent);
+            return nonTermSet.getSymbol(parent);
         }
 
         public String childrenToString() {
             if (rightChild != -1) {
-                return nonTermSet.getString(leftChild) + " " + nonTermSet.getString(rightChild);
+                return nonTermSet.getSymbol(leftChild) + " " + nonTermSet.getSymbol(rightChild);
             } else if (isLex == false) {
-                return nonTermSet.getString(leftChild);
+                return nonTermSet.getSymbol(leftChild);
             } else {
-                return lexSet.getString(leftChild);
+                return lexSet.getSymbol(leftChild);
             }
         }
 
@@ -265,41 +274,37 @@ public class Grammar {
         }
     }
 
+    public int maxPOSIndex() {
+        return maxPOSIndex;
+    }
+
     /*
      * public class Production { public int parent = -1; public double prob = -9999999;
      * 
      * public String parentToString() { return nonTermSet.getString(parent); } }
      * 
-     * public class BinaryProduction extends Production implements Comparable<BinaryProduction> { public int
-     * leftChild, rightChild;
+     * public class BinaryProduction extends Production implements Comparable<BinaryProduction> { public int leftChild, rightChild;
      * 
-     * public BinaryProduction(String A, String B, String C, double p) { parent=nonTermSet.getIndex(A);
-     * leftChild=nonTermSet.getIndex(B); rightChild=nonTermSet.getIndex(C); prob=p; }
+     * public BinaryProduction(String A, String B, String C, double p) { parent=nonTermSet.getIndex(A); leftChild=nonTermSet.getIndex(B); rightChild=nonTermSet.getIndex(C); prob=p;
+     * }
      * 
-     * public String toString() { return nonTermSet.getString(parent) + " -> " +
-     * nonTermSet.getString(leftChild) + " " + nonTermSet.getString(rightChild) + " (p=" +
+     * public String toString() { return nonTermSet.getString(parent) + " -> " + nonTermSet.getString(leftChild) + " " + nonTermSet.getString(rightChild) + " (p=" +
      * Double.toString(prob) + ")"; }
      * 
-     * public int compareTo(BinaryProduction other) { if (parent > other.parent) return 1; if (parent <
-     * other.parent) return -1; if (leftChild > other.leftChild) return 1; if (leftChild < other.leftChild)
-     * return -1; if (rightChild > other.rightChild) return 1; if (rightChild < other.rightChild) return -1;
-     * return 0; } }
+     * public int compareTo(BinaryProduction other) { if (parent > other.parent) return 1; if (parent < other.parent) return -1; if (leftChild > other.leftChild) return 1; if
+     * (leftChild < other.leftChild) return -1; if (rightChild > other.rightChild) return 1; if (rightChild < other.rightChild) return -1; return 0; } }
      * 
      * public class UnaryProduction extends Production { public int child;
      * 
-     * public UnaryProduction(String A, String B, double p) { parent=nonTermSet.getIndex(A);
-     * child=nonTermSet.getIndex(B); prob=p; }
+     * public UnaryProduction(String A, String B, double p) { parent=nonTermSet.getIndex(A); child=nonTermSet.getIndex(B); prob=p; }
      * 
-     * public String toString() { return nonTermSet.getString(parent) + " -> " + nonTermSet.getString(child) +
-     * " " + " (p=" + Double.toString(prob) + ")"; } }
+     * public String toString() { return nonTermSet.getString(parent) + " -> " + nonTermSet.getString(child) + " " + " (p=" + Double.toString(prob) + ")"; } }
      * 
      * public class LexicalProduction extends Production { public int child;
      * 
-     * public LexicalProduction(String A, String B, double p) { parent=nonTermSet.getIndex(A);
-     * child=lexSet.getIndex(B); prob=p; }
+     * public LexicalProduction(String A, String B, double p) { parent=nonTermSet.getIndex(A); child=lexSet.getIndex(B); prob=p; }
      * 
-     * public String toString() { return nonTermSet.getString(parent) + " -> " + lexSet.getString(child) + " "
-     * + " (p=" + Double.toString(prob) + ")"; }
+     * public String toString() { return nonTermSet.getString(parent) + " -> " + lexSet.getString(child) + " " + " (p=" + Double.toString(prob) + ")"; }
      * 
      * public String childToString() { return lexSet.getString(child); } }
      */

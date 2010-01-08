@@ -32,7 +32,7 @@ public class Tokenizer {
 
         public String toString(final boolean appendUnkStr) {
             if (appendUnkStr == true && isUnk() == true) {
-                return word + "::" + lexSet.getString(index);
+                return word + "::" + lexSet.getSymbol(index);
             }
             return word;
         }
