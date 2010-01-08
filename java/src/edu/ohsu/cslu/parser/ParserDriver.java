@@ -14,6 +14,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarByChildMatrix;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermHash;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
+import edu.ohsu.cslu.parser.fom.EdgeFOM;
 import edu.ohsu.cslu.parser.fom.EdgeFOM.EdgeFOMType;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.Log;
@@ -99,6 +100,7 @@ public class ParserDriver extends BaseCommandlineTool {
         ParseTree bestParseTree = null;
         int sentNum = 0;
         Parser parser = null;
+        EdgeFOM edgeFOM;
 
         switch (parserType) {
         case ExhaustiveChartParser:
@@ -121,11 +123,13 @@ public class ParserDriver extends BaseCommandlineTool {
             break;
 
         case AgendaParser:
-            parser = new AgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOMType);
+            edgeFOM = EdgeFOM.create(edgeFOMType, grammar);
+            parser = new AgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOM);
             break;
 
         case AgendaParserWithGhostEdges:
-            parser = new AgendaChartParserGhostEdges((GrammarByLeftNonTermList) grammar, edgeFOMType);
+            edgeFOM = EdgeFOM.create(edgeFOMType, grammar);
+            parser = new AgendaChartParserGhostEdges((GrammarByLeftNonTermList) grammar, edgeFOM);
             break;
 
         default:
@@ -143,8 +147,7 @@ public class ParserDriver extends BaseCommandlineTool {
                 System.exit(1);
             }
 
-            String stats = " sentNum=" + sentNum + " sentLen=" + ParserUtil.tokenize(sentence).length
-                    + " md5=" + StringToMD5.computeMD5(sentence);
+            String stats = " sentNum=" + sentNum + " sentLen=" + ParserUtil.tokenize(sentence).length + " md5=" + StringToMD5.computeMD5(sentence);
             if (bestParseTree == null) {
                 System.out.println("No parse found.");
                 stats += " inside=-inf";
@@ -160,8 +163,7 @@ public class ParserDriver extends BaseCommandlineTool {
     }
 
     static public enum ParserType {
-        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), SuperAgendaParser(
-                "sap");
+        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), SuperAgendaParser("sap");
 
         private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
@@ -169,8 +171,7 @@ public class ParserDriver extends BaseCommandlineTool {
     }
 
     static public enum ChartCellVisitationType {
-        CellCrossList("ccl"), CellCrossHash("cch"), CellCrossMatrix("ccm"), GrammarLoop("gl"), GrammarLoopBerkeleyFilter(
-                "glbf");
+        CellCrossList("ccl"), CellCrossHash("cch"), CellCrossMatrix("ccm"), GrammarLoop("gl"), GrammarLoopBerkeleyFilter("glbf");
 
         private ChartCellVisitationType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

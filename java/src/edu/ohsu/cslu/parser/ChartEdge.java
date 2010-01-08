@@ -3,61 +3,78 @@ package edu.ohsu.cslu.parser;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 
 public class ChartEdge {
+	public Production p;
+	public float insideProb;
+	public ChartCell leftCell, rightCell;
 
-    public Production p;
-    public float insideProb;
-    public ChartCell leftCell, rightCell;
+	public ChartEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
+		this.p = p;
+		this.insideProb = insideProb;
+		this.leftCell = leftCell;
+		this.rightCell = rightCell;
 
-    public ChartEdge(Production p, ChartCell leftCell, ChartCell rightCell, float insideProb) {
-        this.p = p;
-        this.insideProb = insideProb;
-        this.leftCell = leftCell;
-        this.rightCell = rightCell;
+		assert leftCell.end == rightCell.start;
+		assert leftCell.start < rightCell.end;
+	}
 
-        assert leftCell.end == rightCell.start;
-        assert leftCell.start < rightCell.end;
-    }
+	public ChartEdge(final Production p, final ChartCell childCell, final float insideProb) {
+		this.p = p;
+		this.insideProb = insideProb;
+		this.leftCell = childCell;
+		this.rightCell = null;
+	}
 
-    public ChartEdge(Production p, ChartCell childCell, float insideProb) {
-        this.p = p;
-        this.insideProb = insideProb;
-        this.leftCell = childCell;
-        this.rightCell = null;
-    }
+	public int start() {
+		return leftCell.start;
+	}
 
-    public String toString() {
-        // [start,mdpt,end] A -> B C (p=-0.xxx) (e=-0.yyy)
-        String start = "-", midpt = "-", end = "-", prod = "null";
+	public int end() {
+		if (rightCell == null) {
+			return leftCell.end;
+		}
+		return rightCell.end;
+	}
 
-        if (leftCell != null) {
-            start = "" + leftCell.start;
-            midpt = "" + leftCell.end;
-        }
-        if (rightCell != null) {
-            end = "" + rightCell.end;
-            midpt = "" + rightCell.start;
-        }
-        if (p != null) {
-            prod = p.toString();
-        }
+	public int midpt() throws Exception {
+		if (rightCell == null) {
+			throw new Exception("Midpoint do not exist for unary productions");
+		}
+		return leftCell.end;
+	}
 
-        return "[" + start + "," + midpt + "," + end + "] " + prod + " (e=" + String.valueOf(insideProb)
-                + ") ";
-    }
+	@Override
+	public String toString() {
+		// [start,mdpt,end] A -> B C (p=-0.xxx) (e=-0.yyy)
+		String start = "-", midpt = "-", end = "-", prod = "null";
 
-    public boolean equals(ChartEdge otherEdge) {
-        if (p != otherEdge.p)
-            return false; // Equal productions should have equal pointers
-        // if (!p.equals(otherEdge.p)) return false;
-        // if (insideProb != otherEdge.insideProb) return false; // there are rounding problems here, but if
-        // the productions and right/left cells are equal, then the edges must be equal
-        if (leftCell != otherEdge.leftCell)
-            return false;
-        if (rightCell != otherEdge.rightCell)
-            return false;
+		if (leftCell != null) {
+			start = "" + leftCell.start;
+			midpt = "" + leftCell.end;
+		}
+		if (rightCell != null) {
+			end = "" + rightCell.end;
+			midpt = "" + rightCell.start;
+		}
+		if (p != null) {
+			prod = p.toString();
+		}
 
-        // System.out.println(this + " == " + otherEdge);
+		return "[" + start + "," + midpt + "," + end + "] " + prod + " inside=" + String.valueOf(insideProb) + " ";
+	}
 
-        return true;
-    }
+	public boolean equals(final ChartEdge otherEdge) {
+		if (p != otherEdge.p)
+			return false; // Equal productions should have equal pointers
+		// if (!p.equals(otherEdge.p)) return false;
+		// if (insideProb != otherEdge.insideProb) return false; // there are rounding problems here, but if the productions and right/left cells are equal, then the edges must be
+		// equal
+		if (leftCell != otherEdge.leftCell)
+			return false;
+		if (rightCell != otherEdge.rightCell)
+			return false;
+
+		// System.out.println(this + " == " + otherEdge);
+
+		return true;
+	}
 }
