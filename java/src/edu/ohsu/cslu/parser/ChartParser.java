@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser;
 
 import java.util.List;
 
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
@@ -12,10 +12,10 @@ public abstract class ChartParser implements Parser {
 	public ArrayChartCell chart[][];
 	public int chartSize;
 	public ArrayChartCell rootChartCell;
-	public Grammar grammar;
+	public ArrayGrammar grammar;
 	public ParserOptions opts = null; // TODO: fix this
 
-	public ChartParser(final Grammar grammar) {
+	public ChartParser(final ArrayGrammar grammar) {
 		this.grammar = grammar;
 	}
 

@@ -9,7 +9,7 @@ import java.util.Map.Entry;
 
 import edu.ohsu.cslu.counters.SimpleCounter;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ArrayChartCell;
 import edu.ohsu.cslu.parser.ChartEdgeWithFOM;
@@ -20,11 +20,11 @@ import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class EdgeFOMBoundaryNgram extends EdgeFOM {
 
-	private Grammar grammar;
+	private ArrayGrammar grammar;
 	private float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
 	private float outsideLeft[][], outsideRight[][];
 
-	public EdgeFOMBoundaryNgram(final Grammar grammar) {
+	public EdgeFOMBoundaryNgram(final ArrayGrammar grammar) {
 		this.grammar = grammar;
 	}
 

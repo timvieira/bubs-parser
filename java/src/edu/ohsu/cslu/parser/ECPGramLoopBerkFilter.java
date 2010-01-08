@@ -3,8 +3,8 @@ package edu.ohsu.cslu.parser;
 import java.util.Arrays;
 import java.util.List;
 
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -25,7 +25,7 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
 
     private int tmpNL, tmpNR, tmpWR;
 
-    public ECPGramLoopBerkFilter(final Grammar grammar, final ChartTraversalType traversalType) {
+    public ECPGramLoopBerkFilter(final ArrayGrammar grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
     }
 

@@ -1,13 +1,13 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class ECPGramLoop extends ExhaustiveChartParser {
 
-    public ECPGramLoop(Grammar grammar, ChartTraversalType traversalType) {
+    public ECPGramLoop(ArrayGrammar grammar, ChartTraversalType traversalType) {
         super(grammar, traversalType);
     }
 

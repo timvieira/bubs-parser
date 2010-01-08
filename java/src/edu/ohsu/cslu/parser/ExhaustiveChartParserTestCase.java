@@ -13,7 +13,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.tests.FilteredRunner;
@@ -40,7 +40,7 @@ public abstract class ExhaustiveChartParserTestCase {
     private final static String LEX_FILE = "grammars/f2-21-R2-p1-unk.lex";
 
     /** Grammar induced from WSJ sections 2-21 */
-    protected static Grammar f2_21_grammar;
+    protected static ArrayGrammar f2_21_grammar;
 
     /** WSJ section 24 sentences 1-20 */
     private static ArrayList<String[]> sentences = new ArrayList<String[]>();
@@ -57,15 +57,15 @@ public abstract class ExhaustiveChartParserTestCase {
      *            The chart traversal order
      * @return Parser instance
      */
-    protected abstract MaximumLikelihoodParser createParser(Grammar grammar,
+    protected abstract MaximumLikelihoodParser createParser(ArrayGrammar grammar,
             ChartTraversalType chartTraversalType);
 
     /**
      * @return the grammar class appropriate for the parser under test
      */
-    protected abstract Class<? extends Grammar> grammarClass();
+    protected abstract Class<? extends ArrayGrammar> grammarClass();
 
-    private Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
+    private ArrayGrammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class, Reader.class }).newInstance(
             new Object[] { grammarReader, lexiconReader });
     }
@@ -136,7 +136,7 @@ public abstract class ExhaustiveChartParserTestCase {
         grammarSb.append("NP => NN NP -2.302585\n");
         grammarSb.append("NP => NP NP -2.302585\n");
 
-        final Grammar simpleGrammar = createGrammar(new StringReader(grammarSb.toString()), new StringReader(
+        final ArrayGrammar simpleGrammar = createGrammar(new StringReader(grammarSb.toString()), new StringReader(
             lexiconSb.toString()));
         final MaximumLikelihoodParser p = createParser(simpleGrammar,
             ChartTraversalType.LeftRightBottomTopTraversal);

@@ -3,9 +3,9 @@ package edu.ohsu.cslu.parser;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 import edu.ohsu.cslu.parser.fom.EdgeFOM;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -31,7 +31,7 @@ public class CellAgendaChartParser extends ChartParserByTraversal implements Heu
 	}
 
 	// public CellAgendaChartParser(final Grammar grammar, final ChartTraversalType traversalType, final EdgeFOMType fomType) {
-	public CellAgendaChartParser(final Grammar grammar, final ChartTraversalType traversalType, final EdgeFOM edgeFOM) {
+	public CellAgendaChartParser(final ArrayGrammar grammar, final ChartTraversalType traversalType, final EdgeFOM edgeFOM) {
 		super(grammar, traversalType);
 
 		grammarByChildren = (GrammarByLeftNonTermList) grammar;

@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser;
 import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 import edu.ohsu.cslu.parser.fom.EdgeFOM;
 
 public class AgendaChartParserGhostEdges extends AgendaChartParser {

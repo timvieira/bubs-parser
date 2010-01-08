@@ -5,7 +5,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-public class GrammarByLeftNonTermList extends Grammar {
+public class GrammarByLeftNonTermList extends ArrayGrammar {
 
     private ArrayList<LinkedList<Production>> binaryProdsByLeftNonTerm, binaryProdsByRightNonTerm;
 

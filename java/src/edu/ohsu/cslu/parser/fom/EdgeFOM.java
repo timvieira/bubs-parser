@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.fom;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.parser.ChartEdgeWithFOM;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.util.Log;
@@ -16,7 +16,7 @@ public abstract class EdgeFOM {
 
 	public abstract float calcFOM(ChartEdgeWithFOM edge, ChartParser parser);
 
-	public static EdgeFOM create(final EdgeFOMType type, final Grammar grammar) {
+	public static EdgeFOM create(final EdgeFOMType type, final ArrayGrammar grammar) {
 		switch (type) {
 		case Inside:
 			return new EdgeFOMInsideProb();
