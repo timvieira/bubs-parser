@@ -12,7 +12,7 @@ import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.util.Log;
 
-public class ArrayGrammar {
+public class ArrayGrammar implements Grammar {
 
     public Production[] binaryProds;
     public Production[] unaryProds;
@@ -65,7 +65,7 @@ public class ArrayGrammar {
         markLeftRightChildren();
     }
 
-    public Token[] tokenize(final String sentence) throws Exception {
+    public Token[] tokenize(final String sentence) {
         return tokenizer.tokenize(sentence);
     }
 

@@ -4,9 +4,9 @@ import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class Tokenizer {
 
-    private SymbolSet lexSet;
+    private SymbolSet<String> lexSet;
 
-    public Tokenizer(final SymbolSet lexSet) {
+    public Tokenizer(final SymbolSet<String> lexSet) {
         this.lexSet = lexSet;
     }
 
@@ -16,7 +16,7 @@ public class Tokenizer {
         public int index;
         private boolean isUnk;
 
-        public Token(final String word) throws Exception {
+        public Token(final String word) {
             this.word = word;
             setIndexAndUnk();
         }
@@ -37,7 +37,7 @@ public class Tokenizer {
             return word;
         }
 
-        private void setIndexAndUnk() throws Exception {
+        private void setIndexAndUnk() {
             assert this.word != null;
             String unkStr;
 
@@ -60,7 +60,7 @@ public class Tokenizer {
         }
     }
 
-    public Token[] tokenize(final String sentence) throws Exception {
+    public Token[] tokenize(final String sentence) {
         final String tokens[] = ParserUtil.tokenize(sentence);
         final Token[] sentTokens = new Token[tokens.length];
 
@@ -90,8 +90,7 @@ public class Tokenizer {
 
         final String lcWord = word.toLowerCase();
 
-        if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us")
-                && !lcWord.endsWith("is"))
+        if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us") && !lcWord.endsWith("is"))
             unkStr += "-s";
         if (lcWord.endsWith("ed"))
             unkStr += "-ed";
