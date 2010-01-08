@@ -17,10 +17,10 @@ public class CellAgendaChartParser extends ChartParserByTraversal implements Heu
 	private EdgeFOM edgeFOM;
 
 	protected class FrontierCell {
-		protected ChartCell chartCell;
+		protected ArrayChartCell chartCell;
 		protected PriorityQueue<ChartEdge> edgeAgenda;
 
-		public FrontierCell(final ChartCell chartCell) {
+		public FrontierCell(final ArrayChartCell chartCell) {
 			this.chartCell = chartCell;
 			this.edgeAgenda = new PriorityQueue<ChartEdge>();
 		}
@@ -60,7 +60,7 @@ public class CellAgendaChartParser extends ChartParserByTraversal implements Heu
 	}
 
 	@Override
-	protected void visitCell(final ChartCell cell) {
+	protected void visitCell(final ArrayChartCell cell) {
 		final ChartEdge edge = frontier[cell.start][cell.end].edgeAgenda.poll();
 		final boolean addedEdge = cell.addEdge(edge);
 
@@ -69,11 +69,11 @@ public class CellAgendaChartParser extends ChartParserByTraversal implements Heu
 		}
 	}
 
-	private void expandFrontier(final int nonTerm, final ChartCell cell) {
+	private void expandFrontier(final int nonTerm, final ArrayChartCell cell) {
 		LinkedList<Production> possibleGrammarProds;
 		ChartEdge leftEdge, rightEdge, edge;
 		final ChartEdge addedEdge = cell.getBestEdge(nonTerm);
-		ChartCell rightCell, leftCell;
+		ArrayChartCell rightCell, leftCell;
 		FrontierCell frontierCell;
 		float insideProb;
 

@@ -144,8 +144,8 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
      */
 
     @Override
-    protected void visitCell(final ChartCell cell) {
-        ChartCell leftCell, rightCell;
+    protected void visitCell(final ArrayChartCell cell) {
+        ArrayChartCell leftCell, rightCell;
         ChartEdge leftEdge, rightEdge, parentEdge, oldBestEdge;
         float prob;
         final int start = cell.start;

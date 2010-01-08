@@ -11,7 +11,7 @@ import edu.ohsu.cslu.counters.SimpleCounter;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.parser.ChartCell;
+import edu.ohsu.cslu.parser.ArrayChartCell;
 import edu.ohsu.cslu.parser.ChartEdgeWithFOM;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.util.Log;
@@ -158,7 +158,7 @@ public class EdgeFOMBoundaryNgram extends EdgeFOM {
 		if (startIndex < 0 || endIndex > parser.chartSize) {
 			posList.addLast(grammar.nullSymbol);
 		} else {
-			final ChartCell chartCell = parser.chart[startIndex][endIndex];
+			final ArrayChartCell chartCell = parser.chart[startIndex][endIndex];
 			// TODO: could track POS entries in chartCell as they are placed in
 			for (final int posIndex : parser.grammar.posSet) {
 				if (chartCell.getBestEdge(posIndex) != null) {

@@ -16,8 +16,8 @@ public class ECPGramLoop extends ExhaustiveChartParser {
         return findParse(sentence);
     }
 
-    protected void visitCell(ChartCell cell) {
-        ChartCell leftCell, rightCell;
+    protected void visitCell(ArrayChartCell cell) {
+        ArrayChartCell leftCell, rightCell;
         ChartEdge leftEdge, rightEdge, parentEdge;
         float prob;
         int start = cell.start;

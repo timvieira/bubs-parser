@@ -22,10 +22,10 @@ public abstract class ChartParserByTraversal extends ChartParser {
 	}
 
 	// overwrite this method for the inner-loop implementation
-	protected abstract void visitCell(ChartCell cell);
+	protected abstract void visitCell(ArrayChartCell cell);
 
 	public ParseTree findParse(final String sentence) throws Exception {
-		ChartCell cell;
+		ArrayChartCell cell;
 		final Token sent[] = grammar.tokenize(sentence);
 
 		initParser(sent.length);

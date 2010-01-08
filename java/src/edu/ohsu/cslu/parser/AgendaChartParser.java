@@ -48,7 +48,7 @@ public class AgendaChartParser extends ChartParser implements MaximumLikelihoodP
 			edge = agenda.poll(); // get and remove top agenda edge
 			nAgendaPop += 1;
 			// System.out.println("AgendaPop: " + edge);
-			ChartCell parentCell;
+			ArrayChartCell parentCell;
 
 			parentCell = chart[edge.start()][edge.end()];
 			edgeAdded = parentCell.addEdge(edge);
@@ -106,11 +106,11 @@ public class AgendaChartParser extends ChartParser implements MaximumLikelihoodP
 		}
 	}
 
-	protected void expandAgendaFrontier(final int nonTerm, final ChartCell cell) {
+	protected void expandAgendaFrontier(final int nonTerm, final ArrayChartCell cell) {
 		LinkedList<Production> possibleGrammarProds;
 		final ChartEdge newEdge = cell.getBestEdge(nonTerm);
 		ChartEdge leftEdge, rightEdge;
-		ChartCell rightCell, leftCell;
+		ArrayChartCell rightCell, leftCell;
 		float prob;
 
 		// unary edges are always possible in any cell, although we don't allow

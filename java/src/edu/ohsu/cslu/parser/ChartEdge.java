@@ -5,9 +5,9 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 public class ChartEdge {
 	public Production p;
 	public float insideProb;
-	public ChartCell leftCell, rightCell;
+	public ArrayChartCell leftCell, rightCell;
 
-	public ChartEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
+	public ChartEdge(final Production p, final ArrayChartCell leftCell, final ArrayChartCell rightCell, final float insideProb) {
 		this.p = p;
 		this.insideProb = insideProb;
 		this.leftCell = leftCell;
@@ -17,7 +17,7 @@ public class ChartEdge {
 		assert leftCell.start < rightCell.end;
 	}
 
-	public ChartEdge(final Production p, final ChartCell childCell, final float insideProb) {
+	public ChartEdge(final Production p, final ArrayChartCell childCell, final float insideProb) {
 		this.p = p;
 		this.insideProb = insideProb;
 		this.leftCell = childCell;
