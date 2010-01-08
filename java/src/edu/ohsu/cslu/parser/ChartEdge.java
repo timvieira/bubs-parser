@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 
 public class ChartEdge {
 	public Production p;

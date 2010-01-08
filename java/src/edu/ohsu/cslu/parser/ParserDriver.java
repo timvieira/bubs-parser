@@ -10,7 +10,7 @@ import org.kohsuke.args4j.EnumAliasMap;
 import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.grammar.GrammarByChildMatrix;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermHash;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
@@ -45,7 +45,7 @@ public class ParserDriver extends BaseCommandlineTool {
 
     public EdgeFOMType edgeFOMType = EdgeFOMType.Inside;
 
-    private Grammar grammar;
+    private ArrayGrammar grammar;
 
     public static void main(final String[] args) throws Exception {
         run(args);
@@ -76,7 +76,7 @@ public class ParserDriver extends BaseCommandlineTool {
 
                 case GrammarLoop:
                 case GrammarLoopBerkeleyFilter:
-                    grammar = new Grammar(pcfgFileName, lexFileName);
+                    grammar = new ArrayGrammar(pcfgFileName, lexFileName);
                 }
                 break;
 

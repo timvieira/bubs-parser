@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-public class GrammarByLeftNonTermHash extends Grammar {
+public class GrammarByLeftNonTermHash extends ArrayGrammar {
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 

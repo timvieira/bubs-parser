@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.fom.EdgeFOM;
 import edu.ohsu.cslu.parser.util.Log;

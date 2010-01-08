@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser;
 import java.util.List;
 
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermHash;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
 

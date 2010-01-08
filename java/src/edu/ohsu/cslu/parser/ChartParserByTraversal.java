@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
@@ -10,7 +10,7 @@ public abstract class ChartParserByTraversal extends ChartParser {
 
 	protected ChartTraversalType traversalType;
 
-	public ChartParserByTraversal(final Grammar grammar, final ChartTraversalType traversalType) {
+	public ChartParserByTraversal(final ArrayGrammar grammar, final ChartTraversalType traversalType) {
 		super(grammar);
 
 		this.traversalType = traversalType;

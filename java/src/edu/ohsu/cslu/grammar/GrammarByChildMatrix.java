@@ -5,7 +5,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-public class GrammarByChildMatrix extends Grammar {
+public class GrammarByChildMatrix extends ArrayGrammar {
 
     public ArrayList<ArrayList<LinkedList<Production>>> binaryProdMatrix;
     public LinkedList<Production>[][] binaryProdMatrix2;

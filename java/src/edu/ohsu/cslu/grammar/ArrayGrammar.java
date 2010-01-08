@@ -12,7 +12,7 @@ import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.util.Log;
 
-public class Grammar {
+public class ArrayGrammar {
 
     public Production[] binaryProds;
     public Production[] unaryProds;
@@ -31,18 +31,18 @@ public class Grammar {
     private PackedBitVector possibleRightChild;
     private int maxPOSIndex = -1; // TODO: should sort nonterms so ordered by POS then NTs
 
-    private Grammar() {
+    private ArrayGrammar() {
         nonTermSet = new SymbolSet<String>();
         posSet = new SymbolSet<Integer>();
         lexSet = new SymbolSet<String>();
     }
 
-    public Grammar(final Reader grammarFile, final Reader lexiconFile) throws IOException {
+    public ArrayGrammar(final Reader grammarFile, final Reader lexiconFile) throws IOException {
         this();
         init(grammarFile, lexiconFile);
     }
 
-    public Grammar(final String grammarFile, final String lexiconFile) throws IOException {
+    public ArrayGrammar(final String grammarFile, final String lexiconFile) throws IOException {
         this();
         init(new FileReader(grammarFile), new FileReader(lexiconFile));
     }

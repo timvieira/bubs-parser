@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermHash;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.tests.PerformanceTest;
@@ -18,13 +18,13 @@ import edu.ohsu.cslu.tests.PerformanceTest;
 public class TestECPCellCrossHash extends ExhaustiveChartParserTestCase {
 
     @Override
-    protected MaximumLikelihoodParser createParser(final Grammar grammar,
+    protected MaximumLikelihoodParser createParser(final ArrayGrammar grammar,
             final ChartTraversalType chartTraversalType) {
         return new ECPCellCrossHash((GrammarByLeftNonTermHash) grammar, chartTraversalType);
     }
 
     @Override
-    protected Class<? extends Grammar> grammarClass() {
+    protected Class<? extends ArrayGrammar> grammarClass() {
         return GrammarByLeftNonTermHash.class;
     }
 

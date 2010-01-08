@@ -3,8 +3,8 @@ package edu.ohsu.cslu.parser;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
 
 public class ArrayChartCell {
 
@@ -12,9 +12,9 @@ public class ArrayChartCell {
 	public ChartEdge[] bestEdge;
 	private LinkedList<ChartEdge> bestLeftEdges, bestRightEdges;
 	boolean bestEdgesHaveChanged = true;
-	Grammar grammar;
+	ArrayGrammar grammar;
 
-	public ArrayChartCell(final int start, final int end, final Grammar grammar) {
+	public ArrayChartCell(final int start, final int end, final ArrayGrammar grammar) {
 		this.start = start;
 		this.end = end;
 		this.numEdgesAdded = 0;
