@@ -9,9 +9,9 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class ChartParser implements Parser {
 
-	public ChartCell chart[][];
+	public ArrayChartCell chart[][];
 	public int chartSize;
-	public ChartCell rootChartCell;
+	public ArrayChartCell rootChartCell;
 	public Grammar grammar;
 	public ParserOptions opts = null; // TODO: fix this
 
@@ -21,12 +21,12 @@ public abstract class ChartParser implements Parser {
 
 	protected void initParser(final int sentLength) {
 		chartSize = sentLength;
-		chart = new ChartCell[chartSize][chartSize + 1];
+		chart = new ArrayChartCell[chartSize][chartSize + 1];
 
 		// The chart is (chartSize+1)*chartSize/2
 		for (int start = 0; start < chartSize; start++) {
 			for (int end = start + 1; end < chartSize + 1; end++) {
-				chart[start][end] = new ChartCell(start, end, grammar);
+				chart[start][end] = new ArrayChartCell(start, end, grammar);
 			}
 		}
 		rootChartCell = chart[0][chartSize];
@@ -64,7 +64,7 @@ public abstract class ChartParser implements Parser {
 		return extractBestParse(this.rootChartCell, this.grammar.startSymbol);
 	}
 
-	protected ParseTree extractBestParse(final ChartCell cell, final int nonTermIndex) {
+	protected ParseTree extractBestParse(final ArrayChartCell cell, final int nonTermIndex) {
 		ChartEdge bestEdge;
 		ParseTree curNode = null;
 

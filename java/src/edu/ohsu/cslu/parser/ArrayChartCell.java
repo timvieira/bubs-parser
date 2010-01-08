@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 
-public class ChartCell {
+public class ArrayChartCell {
 
 	public int start, end, numEdgesAdded, numEdgesConsidered;
 	public ChartEdge[] bestEdge;
@@ -14,7 +14,7 @@ public class ChartCell {
 	boolean bestEdgesHaveChanged = true;
 	Grammar grammar;
 
-	public ChartCell(final int start, final int end, final Grammar grammar) {
+	public ArrayChartCell(final int start, final int end, final Grammar grammar) {
 		this.start = start;
 		this.end = end;
 		this.numEdgesAdded = 0;
@@ -73,7 +73,7 @@ public class ChartCell {
 
 	// alternate addEdge function so we aren't required to create a new ChartEdge object
 	// in the CYK inner loop for every potential new edge entry
-	public boolean addEdge(final Production p, final float insideProb, final ChartCell leftCell, final ChartCell rightCell) {
+	public boolean addEdge(final Production p, final float insideProb, final ArrayChartCell leftCell, final ArrayChartCell rightCell) {
 		numEdgesConsidered += 1;
 		// System.out.println("Considering: " + new ChartEdge(p, leftCell, rightCell, insideProb));
 

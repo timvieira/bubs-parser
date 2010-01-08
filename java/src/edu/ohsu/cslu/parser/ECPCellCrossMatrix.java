@@ -20,8 +20,8 @@ public class ECPCellCrossMatrix extends ExhaustiveChartParser {
     }
 
     @Override
-    protected void visitCell(ChartCell cell) {
-        ChartCell leftCell, rightCell;
+    protected void visitCell(ArrayChartCell cell) {
+        ArrayChartCell leftCell, rightCell;
         ChartEdge parentEdge;
         List<Production> validProductions;
         LinkedList<Production>[] gramByLeft;

@@ -37,7 +37,7 @@ public class AgendaChartParserGhostEdges extends AgendaChartParser {
 	}
 
 	@Override
-	protected void expandAgendaFrontier(final int nonTerm, final ChartCell cell) {
+	protected void expandAgendaFrontier(final int nonTerm, final ArrayChartCell cell) {
 		LinkedList<ChartEdge> possibleEdges;
 		LinkedList<Production> possibleRules;
 		final ChartEdge newEdge = cell.getBestEdge(nonTerm);

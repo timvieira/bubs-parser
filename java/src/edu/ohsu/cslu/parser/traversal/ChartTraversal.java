@@ -2,11 +2,11 @@ package edu.ohsu.cslu.parser.traversal;
 
 import java.util.Iterator;
 
-import edu.ohsu.cslu.parser.ChartCell;
+import edu.ohsu.cslu.parser.ArrayChartCell;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.util.Log;
 
-public abstract class ChartTraversal implements Iterator<ChartCell> {
+public abstract class ChartTraversal implements Iterator<ArrayChartCell> {
 
 	static public enum ChartTraversalType {
 		LeftRightBottomTopTraversal, LeftCornerTraversal, BlockedCellByPOSTraversal, HeuristicTraversal

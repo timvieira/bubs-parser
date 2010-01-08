@@ -2,20 +2,20 @@ package edu.ohsu.cslu.parser.traversal;
 
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.parser.ChartCell;
+import edu.ohsu.cslu.parser.ArrayChartCell;
 import edu.ohsu.cslu.parser.ChartParser;
 
 public class BlockedCellByPOSTraversal extends ChartTraversal {
 
-    private LinkedList<ChartCell> cellList;
+    private LinkedList<ArrayChartCell> cellList;
 
     public BlockedCellByPOSTraversal(ChartParser parser) {
-        cellList = new LinkedList<ChartCell>();
+        cellList = new LinkedList<ArrayChartCell>();
         // build list of traversable cells based on (Kristy's?) POS tagger and cell classifier
     }
 
     @Override
-    public ChartCell next() {
+    public ArrayChartCell next() {
         return cellList.poll();
     }
 

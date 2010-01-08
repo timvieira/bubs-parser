@@ -1,11 +1,11 @@
 package edu.ohsu.cslu.parser.util;
 
-import edu.ohsu.cslu.parser.ChartCell;
+import edu.ohsu.cslu.parser.ArrayChartCell;
 
 //public class CellScoreFunction implements ScoreFunction {
 public class CellScoreFunction {
 
-    public float score(ChartCell cell) {
+    public float score(ArrayChartCell cell) {
         return 0;
     }
 

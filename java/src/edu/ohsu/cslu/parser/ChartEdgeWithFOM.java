@@ -7,12 +7,12 @@ public class ChartEdgeWithFOM extends ChartEdge implements Comparable<ChartEdgeW
 
 	public float figureOfMerit;
 
-	public ChartEdgeWithFOM(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideScore, final EdgeFOM edgeFOM, final ChartParser parser) {
+	public ChartEdgeWithFOM(final Production p, final ArrayChartCell leftCell, final ArrayChartCell rightCell, final float insideScore, final EdgeFOM edgeFOM, final ChartParser parser) {
 		super(p, leftCell, rightCell, insideScore);
 		this.figureOfMerit = edgeFOM.calcFOM(this, parser);
 	}
 
-	public ChartEdgeWithFOM(final Production p, final ChartCell childCell, final float insideScore, final EdgeFOM edgeFOM, final ChartParser parser) {
+	public ChartEdgeWithFOM(final Production p, final ArrayChartCell childCell, final float insideScore, final EdgeFOM edgeFOM, final ChartParser parser) {
 		super(p, childCell, insideScore);
 		this.figureOfMerit = edgeFOM.calcFOM(this, parser);
 	}
