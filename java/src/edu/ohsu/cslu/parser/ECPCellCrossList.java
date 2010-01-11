@@ -16,7 +16,7 @@ public class ECPCellCrossList extends ExhaustiveChartParser {
 
     @Override
     public ParseTree findMLParse(final String sentence) throws Exception {
-        return findParse(sentence);
+        return findBestParse(sentence);
     }
 
     @Override

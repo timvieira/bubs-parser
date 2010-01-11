@@ -1,9 +1,11 @@
 package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -40,11 +42,14 @@ public class ParserDriver extends BaseCommandlineTool {
     // TODO Eventually we'd like to make this a command-line option, but not all combinations are implemented yet
     private ChartTraversalType chartTraversalType = ChartTraversalType.LeftRightBottomTopTraversal;
 
-    @Option(name = "-pt", aliases = { "--processing-type" }, metaVar = "type", usage = "Chart cell processing type")
+    @Option(name = "-ct", aliases = { "--cell-processing-type" }, metaVar = "type", usage = "Chart cell processing type")
     private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
 
     @Option(name = "-fom", aliases = { "--figure-of-merit", "-FOM" }, metaVar = "fom", usage = "Figure of Merit")
     private EdgeFOMType edgeFOMType = EdgeFOMType.Inside;
+
+    @Option(name = "-fomTrain", usage = "Train the specified FOM model")
+    private boolean fomTrain = false;
 
     @Option(name = "-fudge", metaVar = "fudge", usage = "Fudge factor for FOM calculations")
     public static float fudgeFactor = (float) 1.0;
@@ -54,6 +59,8 @@ public class ParserDriver extends BaseCommandlineTool {
     private BufferedReader fomModelStream = null;
 
     private ArrayGrammar grammar;
+    private BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
+    private BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
     public static void main(final String[] args) throws Exception {
         run(args);
@@ -96,6 +103,10 @@ public class ParserDriver extends BaseCommandlineTool {
                 fomModelStream = new BufferedReader(new FileReader(fomModelFileName));
             }
 
+            if (edgeFOMType == EdgeFOMType.BoundaryNgram && fomTrain == false && fomModelFileName == null) {
+                throw new CmdLineException(cmdlineParser, "BoundaryNgram FOM must also have -fomTrain or -fomModel param set");
+            }
+
         } catch (final IOException e) {
             throw new CmdLineException(cmdlineParser, e);
         }
@@ -106,17 +117,62 @@ public class ParserDriver extends BaseCommandlineTool {
         s += prefix + "Traversal=" + chartTraversalType + "\n";
         s += prefix + "CellProcess=" + chartCellProcessingType + "\n";
         s += prefix + "FOM=" + edgeFOMType + "";
-        System.out.println(s);
+        Log.info(0, s);
     }
 
     @Override
     public void run() throws Exception {
         ParseTree bestParseTree = null;
         int sentNum = 0;
-        Parser parser = null;
-        EdgeFOM edgeFOM;
         long sentStartTimeMS;
         double sentParseTimeSeconds, totalParseTimeSeconds = 0.0;
+        String insideProbStr;
+
+        if (fomTrain == true) {
+            final EdgeFOM fom = EdgeFOM.create(edgeFOMType, grammar);
+            fom.train(inputStream);
+            fom.writeModel(outputStream);
+            System.exit(0);
+        }
+
+        final Parser parser = createParser();
+
+        for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
+            sentStartTimeMS = System.currentTimeMillis();
+
+            bestParseTree = parser.findBestParse(sentence.trim());
+
+            sentParseTimeSeconds = (System.currentTimeMillis() - sentStartTimeMS) / 1000.0;
+            totalParseTimeSeconds += sentParseTimeSeconds;
+
+            if (bestParseTree == null) {
+                outputStream.write("No parse found.\n");
+                insideProbStr = "-inf";
+            } else {
+                if (printUnkLabels == false) {
+                    bestParseTree.replaceLeafNodes(ParserUtil.tokenize(sentence));
+                }
+                outputStream.write(bestParseTree.toString(printInsideProbs) + "\n");
+                // System.out.println("STAT: sentNum="+sentNum+" inside="+bestParseTree.chartEdge.insideProb);
+                insideProbStr = Float.toString(bestParseTree.chartEdge.insideProb);
+            }
+
+            final String stats = " sentNum=" + sentNum + " sentLen=" + ParserUtil.tokenize(sentence).length + " md5=" + StringToMD5.computeMD5(sentence) + " seconds="
+                    + sentParseTimeSeconds + " inside=" + insideProbStr + " " + parser.getStats();
+            outputStream.write("STAT:" + stats + "\n");
+            outputStream.flush();
+            sentNum++;
+        }
+
+        // TODO: allow gold trees as input and report F-score
+        // TODO: need to port python tree transforms / de-transforms to Java
+        // and either write our own eval or make external call to EVALB
+        Log.info(1, "INFO: numSentences=" + sentNum + " totalSeconds=" + totalParseTimeSeconds + " avgSecondsPerSent=" + (totalParseTimeSeconds / sentNum));
+    }
+
+    private Parser createParser() throws Exception {
+        Parser parser = null;
+        EdgeFOM edgeFOM = null;
 
         switch (parserType) {
         case ExhaustiveChartParser:
@@ -157,44 +213,7 @@ public class ParserDriver extends BaseCommandlineTool {
             throw new IllegalArgumentException("Unsupported parser type");
         }
 
-        final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
-            sentStartTimeMS = System.currentTimeMillis();
-            if (parser instanceof MaximumLikelihoodParser) {
-                bestParseTree = ((MaximumLikelihoodParser) parser).findMLParse(sentence.trim());
-            } else if (parser instanceof HeuristicParser) {
-                bestParseTree = ((HeuristicParser) parser).findGoodParse(sentence.trim());
-            } else {
-                Log.info(0, "ERROR: Parser does not implement necessary decoding interface.");
-                System.exit(1);
-            }
-
-            sentParseTimeSeconds = (System.currentTimeMillis() - sentStartTimeMS) / 1000.0;
-            totalParseTimeSeconds += sentParseTimeSeconds;
-
-            String stats = " sentNum=" + sentNum + " sentLen=" + ParserUtil.tokenize(sentence).length + " md5=" + StringToMD5.computeMD5(sentence) + " seconds="
-                    + sentParseTimeSeconds;
-
-            if (bestParseTree == null) {
-                System.out.println("No parse found.");
-                stats += " inside=-inf";
-            } else {
-                if (printUnkLabels == false) {
-                    bestParseTree.replaceLeafNodes(ParserUtil.tokenize(sentence));
-                }
-                System.out.println(bestParseTree.toString(printInsideProbs));
-                // System.out.println("STAT: sentNum="+sentNum+" inside="+bestParseTree.chartEdge.insideProb);
-                stats += " inside=" + bestParseTree.chartEdge.insideProb;
-            }
-            stats += parser.getStats();
-            System.out.println("STAT:" + stats);
-            sentNum++;
-        }
-
-        // TODO: allow gold trees as input and report F-score
-        // TODO: need to port python tree transforms / de-transforms to Java
-        // and either write our own eval or make external call to EVALB
-        System.err.println("INFO: numSentences=" + sentNum + " totalSeconds=" + totalParseTimeSeconds + " avgSecondsPerSent=" + (totalParseTimeSeconds / sentNum));
+        return parser;
     }
 
     static public enum ParserType {
