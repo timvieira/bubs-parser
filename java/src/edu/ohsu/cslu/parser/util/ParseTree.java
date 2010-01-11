@@ -248,13 +248,37 @@ public class ParseTree {
 
     public void replaceLeafNodes(final String[] newLeafNodes) {
         int i = 0;
-        for (final ParseTree node : preOrderTraversal()) {
-            if (node.isLeaf()) {
-                node.contents = newLeafNodes[i];
-                i++;
-            }
+        for (final ParseTree node : getLeafNodes()) {
+            node.contents = newLeafNodes[i];
+            i++;
         }
 
         assert i == newLeafNodes.length;
+    }
+
+    public LinkedList<ParseTree> getLeafNodes() {
+        final LinkedList<ParseTree> list = new LinkedList<ParseTree>();
+        for (final ParseTree node : preOrderTraversal()) {
+            if (node.isLeaf()) {
+                list.add(node);
+            }
+        }
+        return list;
+    }
+
+    public LinkedList<String> getLeafNodesContent() {
+        final LinkedList<String> list = new LinkedList<String>();
+        for (final ParseTree node : getLeafNodes()) {
+            list.add(node.contents);
+        }
+        return list;
+    }
+
+    public static boolean isBracketFormat(String inputStr) {
+        inputStr = inputStr.trim();
+        if (inputStr.length() > 0 && inputStr.startsWith("(") && inputStr.endsWith(")")) {
+            return true;
+        }
+        return false;
     }
 }
