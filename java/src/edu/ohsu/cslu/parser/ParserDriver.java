@@ -122,7 +122,7 @@ public class ParserDriver extends BaseCommandlineTool {
 
     @Override
     public void run() throws Exception {
-        ParseTree bestParseTree = null;
+        ParseTree inputTree = null, bestParseTree = null;
         int sentNum = 0;
         long sentStartTimeMS;
         double sentParseTimeSeconds, totalParseTimeSeconds = 0.0;
@@ -138,6 +138,10 @@ public class ParserDriver extends BaseCommandlineTool {
         final Parser parser = createParser();
 
         for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
+            if (ParseTree.isBracketFormat(sentence)) {
+                inputTree = ParseTree.readBracketFormat(sentence);
+                sentence = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
+            }
             sentStartTimeMS = System.currentTimeMillis();
 
             bestParseTree = parser.findBestParse(sentence.trim());
@@ -156,6 +160,7 @@ public class ParserDriver extends BaseCommandlineTool {
                 // System.out.println("STAT: sentNum="+sentNum+" inside="+bestParseTree.chartEdge.insideProb);
                 insideProbStr = Float.toString(bestParseTree.chartEdge.insideProb);
             }
+            // if (inputTree != null) { outputStream.write("GOLD: " + inputTree.toString() + "\n"); }
 
             final String stats = " sentNum=" + sentNum + " sentLen=" + ParserUtil.tokenize(sentence).length + " md5=" + StringToMD5.computeMD5(sentence) + " seconds="
                     + sentParseTimeSeconds + " inside=" + insideProbStr + " " + parser.getStats();
