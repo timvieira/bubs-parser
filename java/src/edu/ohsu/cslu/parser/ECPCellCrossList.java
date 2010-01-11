@@ -9,29 +9,29 @@ public class ECPCellCrossList extends ExhaustiveChartParser {
 
     private GrammarByLeftNonTermList grammarByLeftNonTermList;
 
-    public ECPCellCrossList(GrammarByLeftNonTermList grammar, ChartTraversalType traversalType) {
+    public ECPCellCrossList(final GrammarByLeftNonTermList grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
-        grammarByLeftNonTermList = (GrammarByLeftNonTermList) grammar;
+        grammarByLeftNonTermList = grammar;
     }
 
     @Override
-    public ParseTree findMLParse(String sentence) throws Exception {
+    public ParseTree findMLParse(final String sentence) throws Exception {
         return findParse(sentence);
     }
 
     @Override
-    protected void visitCell(ArrayChartCell cell) {
+    protected void visitCell(final ArrayChartCell cell) {
         ArrayChartCell leftCell, rightCell;
         ChartEdge rightEdge, parentEdge;
         float prob;
-        int start = cell.start;
-        int end = cell.end;
+        final int start = cell.start;
+        final int end = cell.end;
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             leftCell = chart[start][mid];
             rightCell = chart[mid][end];
-            for (ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
-                for (Production p : grammarByLeftNonTermList.getBinaryProdsWithLeftChild(leftEdge.p.parent)) {
+            for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
+                for (final Production p : grammarByLeftNonTermList.getBinaryProdsWithLeftChild(leftEdge.p.parent)) {
                     rightEdge = rightCell.getBestEdge(p.rightChild);
                     if (rightEdge != null) {
                         prob = p.prob + leftEdge.insideProb + rightEdge.insideProb;
@@ -41,7 +41,7 @@ public class ECPCellCrossList extends ExhaustiveChartParser {
             }
         }
 
-        for (Production p : grammar.unaryProds) {
+        for (final Production p : grammar.unaryProds) {
             parentEdge = cell.getBestEdge(p.leftChild);
             if ((parentEdge != null) && (parentEdge.p.isUnaryProd() == false)) {
                 prob = p.prob + parentEdge.insideProb;
