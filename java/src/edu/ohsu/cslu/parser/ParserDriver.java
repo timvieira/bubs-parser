@@ -174,11 +174,14 @@ public class ParserDriver extends BaseCommandlineTool {
 
             String stats = " sentNum=" + sentNum + " sentLen=" + ParserUtil.tokenize(sentence).length + " md5=" + StringToMD5.computeMD5(sentence) + " seconds="
                     + sentParseTimeSeconds;
-            ;
+
             if (bestParseTree == null) {
                 System.out.println("No parse found.");
                 stats += " inside=-inf";
             } else {
+                if (printUnkLabels == false) {
+                    bestParseTree.replaceLeafNodes(ParserUtil.tokenize(sentence));
+                }
                 System.out.println(bestParseTree.toString(printInsideProbs));
                 // System.out.println("STAT: sentNum="+sentNum+" inside="+bestParseTree.chartEdge.insideProb);
                 stats += " inside=" + bestParseTree.chartEdge.insideProb;
