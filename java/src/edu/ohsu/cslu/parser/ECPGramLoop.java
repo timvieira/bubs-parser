@@ -7,27 +7,28 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class ECPGramLoop extends ExhaustiveChartParser {
 
-    public ECPGramLoop(ArrayGrammar grammar, ChartTraversalType traversalType) {
+    public ECPGramLoop(final ArrayGrammar grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
     }
 
     @Override
-    public ParseTree findMLParse(String sentence) throws Exception {
-        return findParse(sentence);
+    public ParseTree findMLParse(final String sentence) throws Exception {
+        return findBestParse(sentence);
     }
 
-    protected void visitCell(ArrayChartCell cell) {
+    @Override
+    protected void visitCell(final ArrayChartCell cell) {
         ArrayChartCell leftCell, rightCell;
         ChartEdge leftEdge, rightEdge, parentEdge;
         float prob;
-        int start = cell.start;
-        int end = cell.end;
+        final int start = cell.start;
+        final int end = cell.end;
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             // naive traversal through all grammar rules
             leftCell = chart[start][mid];
             rightCell = chart[mid][end];
-            for (Production p : grammar.binaryProds) {
+            for (final Production p : grammar.binaryProds) {
                 leftEdge = leftCell.getBestEdge(p.leftChild);
                 rightEdge = rightCell.getBestEdge(p.rightChild);
                 if ((leftEdge != null) && (rightEdge != null)) {
@@ -38,7 +39,7 @@ public class ECPGramLoop extends ExhaustiveChartParser {
             }
         }
 
-        for (Production p : grammar.unaryProds) {
+        for (final Production p : grammar.unaryProds) {
             parentEdge = cell.getBestEdge(p.leftChild);
             if ((parentEdge != null) && (parentEdge.p.isUnaryProd() == false)) {
                 prob = p.prob + parentEdge.insideProb;

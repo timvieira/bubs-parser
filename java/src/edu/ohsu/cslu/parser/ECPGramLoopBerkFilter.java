@@ -31,7 +31,7 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
 
     @Override
     public ParseTree findMLParse(final String sentence) throws Exception {
-        return findParse(sentence);
+        return findBestParse(sentence);
     }
 
     @Override
@@ -127,20 +127,17 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
             wideRExtent[beg][nonTerm] = end;
 
         /*
-         * if (beg > narrowLExtent[end][nonTerm]) { narrowLExtent[end][nonTerm] = beg;
-         * wideLExtent[end][nonTerm] = beg; } else if (beg < wideLExtent[end][nonTerm]) {
+         * if (beg > narrowLExtent[end][nonTerm]) { narrowLExtent[end][nonTerm] = beg; wideLExtent[end][nonTerm] = beg; } else if (beg < wideLExtent[end][nonTerm]) {
          * wideLExtent[end][nonTerm] = beg; }
          * 
-         * if (end < narrowRExtent[beg][nonTerm]) { narrowRExtent[beg][nonTerm] = end;
-         * wideRExtent[beg][nonTerm] = end; } else if (end > wideRExtent[beg][nonTerm]) {
+         * if (end < narrowRExtent[beg][nonTerm]) { narrowRExtent[beg][nonTerm] = end; wideRExtent[beg][nonTerm] = end; } else if (end > wideRExtent[beg][nonTerm]) {
          * wideRExtent[beg][nonTerm] = end; }
          */
     }
 
     /*
-     * public String getStats() { String result="STAT: narrowRight: " + tmpNR; result += "STAT:   wideRight: "
-     * + tmpWR; result += "STAT:  narrowLeft: " + tmpNL; result += "STAT:    wideLeft: " + tmpWL; return
-     * result; }
+     * public String getStats() { String result="STAT: narrowRight: " + tmpNR; result += "STAT:   wideRight: " + tmpWR; result += "STAT:  narrowLeft: " + tmpNL; result +=
+     * "STAT:    wideLeft: " + tmpWL; return result; }
      */
 
     @Override
