@@ -10,6 +10,7 @@ import java.util.List;
 
 import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
+import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 import edu.ohsu.cslu.parser.util.Log;
 
 public class ArrayGrammar implements Grammar {
@@ -37,24 +38,24 @@ public class ArrayGrammar implements Grammar {
         lexSet = new SymbolSet<String>();
     }
 
-    public ArrayGrammar(final Reader grammarFile, final Reader lexiconFile) throws IOException {
+    public ArrayGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         this();
-        init(grammarFile, lexiconFile);
+        init(grammarFile, lexiconFile, grammarFormat);
     }
 
-    public ArrayGrammar(final String grammarFile, final String lexiconFile) throws IOException {
+    public ArrayGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         this();
-        init(new FileReader(grammarFile), new FileReader(lexiconFile));
+        init(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
-    protected void init(final Reader grammarFile, final Reader lexiconFile) throws IOException {
+    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         Log.info(1, "INFO: Reading grammar");
 
         // the nullSymbol is used for start/end of sentence markers and dummy non-terminals
         nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
         posSet.addSymbol(nullSymbol);
 
-        readGrammar(grammarFile);
+        readGrammar(grammarFile, grammarFormat);
         if (startSymbol == -1) {
             throw new IllegalArgumentException("No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
         }
@@ -150,7 +151,7 @@ public class ArrayGrammar implements Grammar {
         lexicalProds = tmpLexicalProds.toArray(new LinkedList[tmpLexicalProds.size()]);
     }
 
-    private void readGrammar(final Reader gramFile) throws IOException {
+    private void readGrammar(final Reader gramFile, final GrammarFormatType grammarFormat) throws IOException {
         final BufferedReader br = new BufferedReader(gramFile);
 
         String line;
@@ -159,6 +160,10 @@ public class ArrayGrammar implements Grammar {
 
         final LinkedList<Production> tmpUnaryProds = new LinkedList<Production>();
         final LinkedList<Production> tmpBinaryProds = new LinkedList<Production>();
+
+        if (grammarFormat == GrammarFormatType.Roark) {
+            startSymbol = nonTermSet.addSymbol("TOP");
+        }
 
         while ((line = br.readLine()) != null) {
             tokens = line.split("\\s");

@@ -6,21 +6,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+
 public class GrammarByLeftNonTermHash extends ArrayGrammar {
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
-    public GrammarByLeftNonTermHash(final String grammarFile, final String lexiconFile) throws IOException {
-        super(grammarFile, lexiconFile);
+    public GrammarByLeftNonTermHash(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        super(grammarFile, lexiconFile, grammarFormat);
     }
 
-    public GrammarByLeftNonTermHash(final Reader grammarFile, final Reader lexiconFile) throws IOException {
-        super(grammarFile, lexiconFile);
+    public GrammarByLeftNonTermHash(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        super(grammarFile, lexiconFile, grammarFormat);
     }
 
     @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile) throws IOException {
-        super.init(grammarFile, lexiconFile);
+    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        super.init(grammarFile, lexiconFile, grammarFormat);
 
         binaryProdHash = new ArrayList<HashMap<Integer, LinkedList<Production>>>(this.numNonTerms());
         for (int i = 0; i < this.numNonTerms(); i++) {
