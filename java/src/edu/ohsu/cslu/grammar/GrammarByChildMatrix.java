@@ -5,23 +5,25 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+
 public class GrammarByChildMatrix extends ArrayGrammar {
 
     public ArrayList<ArrayList<LinkedList<Production>>> binaryProdMatrix;
     public LinkedList<Production>[][] binaryProdMatrix2;
 
-    public GrammarByChildMatrix(final String grammarFile, final String lexiconFile) throws IOException {
-        super(grammarFile, lexiconFile);
+    public GrammarByChildMatrix(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        super(grammarFile, lexiconFile, grammarFormat);
     }
 
-    public GrammarByChildMatrix(final Reader grammarFile, final Reader lexiconFile) throws IOException {
-        super(grammarFile, lexiconFile);
+    public GrammarByChildMatrix(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        super(grammarFile, lexiconFile, grammarFormat);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile) throws IOException {
-        super.init(grammarFile, lexiconFile);
+    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        super.init(grammarFile, lexiconFile, grammarFormat);
 
         binaryProdMatrix2 = new LinkedList[this.numNonTerms()][this.numNonTerms()];
 

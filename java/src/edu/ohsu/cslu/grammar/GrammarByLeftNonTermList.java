@@ -5,21 +5,23 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+
 public class GrammarByLeftNonTermList extends ArrayGrammar {
 
     private ArrayList<LinkedList<Production>> binaryProdsByLeftNonTerm, binaryProdsByRightNonTerm;
 
-    public GrammarByLeftNonTermList(final String grammarFile, final String lexiconFile) throws IOException {
-        super(grammarFile, lexiconFile);
+    public GrammarByLeftNonTermList(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        super(grammarFile, lexiconFile, grammarFormat);
     }
 
-    public GrammarByLeftNonTermList(final Reader grammarFile, final Reader lexiconFile) throws IOException {
-        super(grammarFile, lexiconFile);
+    public GrammarByLeftNonTermList(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        super(grammarFile, lexiconFile, grammarFormat);
     }
 
     @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile) throws IOException {
-        super.init(grammarFile, lexiconFile);
+    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        super.init(grammarFile, lexiconFile, grammarFormat);
 
         binaryProdsByLeftNonTerm = new ArrayList<LinkedList<Production>>(this.numNonTerms());
         binaryProdsByRightNonTerm = new ArrayList<LinkedList<Production>>(this.numNonTerms());
