@@ -30,6 +30,12 @@ public class ParserDriver extends BaseCommandlineTool {
     @Option(name = "-g", aliases = { "--grammar-file-prefix" }, required = true, metaVar = "prefix", usage = "Grammar file prefix")
     private String pcfgPrefix;
 
+    @Option(name = "-lex", aliases = { "--lexicon-file" }, metaVar = "FILE", usage = "Lexicon file if full grammar file is specified for -g option")
+    private String lexFileName = null;
+
+    @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of grammar file")
+    private GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
+
     @Option(name = "-scores", aliases = { "--print-inside-scores" }, usage = "Print inside probabilities")
     private boolean printInsideProbs = false;
 
@@ -44,6 +50,9 @@ public class ParserDriver extends BaseCommandlineTool {
 
     @Option(name = "-ct", aliases = { "--cell-processing-type" }, metaVar = "type", usage = "Chart cell processing type")
     private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
+
+    @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
+    private int maxLength = 200;
 
     @Option(name = "-fom", aliases = { "--figure-of-merit", "-FOM" }, metaVar = "fom", usage = "Figure of Merit")
     private EdgeFOMType edgeFOMType = EdgeFOMType.Inside;
@@ -69,31 +78,34 @@ public class ParserDriver extends BaseCommandlineTool {
     @Override
     public void setup(final CmdLineParser cmdlineParser) throws CmdLineException {
         // setup() is run once for multiple threads
-        final String pcfgFileName = pcfgPrefix + ".pcfg";
-        final String lexFileName = pcfgPrefix + ".lex";
+        String pcfgFileName = pcfgPrefix;
+        if (lexFileName == null) {
+            pcfgFileName = pcfgPrefix + ".pcfg";
+            lexFileName = pcfgPrefix + ".lex";
+        }
 
         try {
             switch (parserType) {
             case ExhaustiveChartParser:
                 switch (chartCellProcessingType) {
                 case CellCrossList:
-                    grammar = new GrammarByLeftNonTermList(pcfgFileName, lexFileName);
+                    grammar = new GrammarByLeftNonTermList(pcfgFileName, lexFileName, grammarFormat);
                     break;
                 case CellCrossHash:
-                    grammar = new GrammarByLeftNonTermHash(pcfgFileName, lexFileName);
+                    grammar = new GrammarByLeftNonTermHash(pcfgFileName, lexFileName, grammarFormat);
                     break;
                 case CellCrossMatrix:
-                    grammar = new GrammarByChildMatrix(pcfgFileName, lexFileName);
+                    grammar = new GrammarByChildMatrix(pcfgFileName, lexFileName, grammarFormat);
                     break;
                 case GrammarLoop:
                 case GrammarLoopBerkeleyFilter:
-                    grammar = new ArrayGrammar(pcfgFileName, lexFileName);
+                    grammar = new ArrayGrammar(pcfgFileName, lexFileName, grammarFormat);
                 }
                 break;
             // Both agenda parsers use GrammarByLeftNonTermList
             case AgendaParser:
             case AgendaParserWithGhostEdges:
-                grammar = new GrammarByLeftNonTermList(pcfgFileName, lexFileName);
+                grammar = new GrammarByLeftNonTermList(pcfgFileName, lexFileName, grammarFormat);
                 break;
             default:
                 throw new CmdLineException(cmdlineParser, "Unsupported parser type: " + parserType);
@@ -103,8 +115,8 @@ public class ParserDriver extends BaseCommandlineTool {
                 fomModelStream = new BufferedReader(new FileReader(fomModelFileName));
             }
 
-            if (edgeFOMType == EdgeFOMType.BoundaryNgram && fomTrain == false && fomModelFileName == null) {
-                throw new CmdLineException(cmdlineParser, "BoundaryNgram FOM must also have -fomTrain or -fomModel param set");
+            if (edgeFOMType == EdgeFOMType.BoundaryInOut && fomTrain == false && fomModelFileName == null) {
+                throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomTrain or -fomModel param set");
             }
 
         } catch (final IOException e) {
@@ -142,31 +154,37 @@ public class ParserDriver extends BaseCommandlineTool {
                 inputTree = ParseTree.readBracketFormat(sentence);
                 sentence = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
             }
-            sentStartTimeMS = System.currentTimeMillis();
+            final String[] tokens = ParserUtil.tokenize(sentence);
+            if (tokens.length <= maxLength) {
+                sentStartTimeMS = System.currentTimeMillis();
 
-            bestParseTree = parser.findBestParse(sentence.trim());
+                bestParseTree = parser.findBestParse(sentence.trim());
 
-            sentParseTimeSeconds = (System.currentTimeMillis() - sentStartTimeMS) / 1000.0;
-            totalParseTimeSeconds += sentParseTimeSeconds;
+                sentParseTimeSeconds = (System.currentTimeMillis() - sentStartTimeMS) / 1000.0;
+                totalParseTimeSeconds += sentParseTimeSeconds;
 
-            if (bestParseTree == null) {
-                outputStream.write("No parse found.\n");
-                insideProbStr = "-inf";
-            } else {
-                if (printUnkLabels == false) {
-                    bestParseTree.replaceLeafNodes(ParserUtil.tokenize(sentence));
+                if (bestParseTree == null) {
+                    outputStream.write("No parse found.\n");
+                    insideProbStr = "-inf";
+                } else {
+                    if (printUnkLabels == false) {
+                        bestParseTree.replaceLeafNodes(tokens);
+                    }
+                    outputStream.write(bestParseTree.toString(printInsideProbs) + "\n");
+                    // System.out.println("STAT: sentNum="+sentNum+" inside="+bestParseTree.chartEdge.insideProb);
+                    insideProbStr = Float.toString(bestParseTree.chartEdge.insideProb);
                 }
-                outputStream.write(bestParseTree.toString(printInsideProbs) + "\n");
-                // System.out.println("STAT: sentNum="+sentNum+" inside="+bestParseTree.chartEdge.insideProb);
-                insideProbStr = Float.toString(bestParseTree.chartEdge.insideProb);
-            }
-            // if (inputTree != null) { outputStream.write("GOLD: " + inputTree.toString() + "\n"); }
+                // if (inputTree != null) { outputStream.write("GOLD: " + inputTree.toString() + "\n"); }
 
-            final String stats = " sentNum=" + sentNum + " sentLen=" + ParserUtil.tokenize(sentence).length + " md5=" + StringToMD5.computeMD5(sentence) + " seconds="
-                    + sentParseTimeSeconds + " inside=" + insideProbStr + " " + parser.getStats();
-            outputStream.write("STAT:" + stats + "\n");
-            outputStream.flush();
-            sentNum++;
+                final String stats = " sentNum=" + sentNum + " sentLen=" + tokens.length + " md5=" + StringToMD5.computeMD5(sentence) + " seconds=" + sentParseTimeSeconds
+                        + " inside=" + insideProbStr + " " + parser.getStats();
+                outputStream.write("STAT:" + stats + "\n");
+                outputStream.flush();
+                sentNum++;
+            } else {
+                Log.info(1, "INFO: Skipping sentence. Length of " + tokens.length + " is greater than maxLength (" + maxLength + ")");
+            }
+
         }
 
         // TODO: allow gold trees as input and report F-score
@@ -235,5 +253,9 @@ public class ParserDriver extends BaseCommandlineTool {
         private ChartCellProcessingType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
         }
+    }
+
+    static public enum GrammarFormatType {
+        CSLU, Roark, Berkeley;
     }
 }
