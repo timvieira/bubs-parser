@@ -19,13 +19,13 @@ import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
-public class EdgeFOMBoundaryNgram extends EdgeFOM {
+public class BoundaryInOut extends EdgeFOM {
 
     private ArrayGrammar grammar;
     private float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
     private float outsideLeft[][], outsideRight[][];
 
-    public EdgeFOMBoundaryNgram(final ArrayGrammar grammar) {
+    public BoundaryInOut(final ArrayGrammar grammar) {
         this.grammar = grammar;
     }
 
@@ -92,7 +92,7 @@ public class EdgeFOMBoundaryNgram extends EdgeFOM {
         }
 
         // System.out.println("INFO: forward=" + forward[fbSize - 1][grammar.nullSymbol]+" backward=" + backward[0][grammar.nullSymbol]);
-        final float totalFB = forward[fbSize - 1][grammar.nullSymbol];
+        // final float totalFB = forward[fbSize - 1][grammar.nullSymbol];
 
         // calc outside right and left probs. These are not dependent on the span
         // size so we can pre calc them before we do any parsing.
@@ -100,10 +100,25 @@ public class EdgeFOMBoundaryNgram extends EdgeFOM {
         // outside(A->B C, TL, TR) = FB(TL) * P(A|TL) * FB(TR) * P(TR|A)
         float fbLeft, fbRight;
         for (int leftIndex = 0; leftIndex < fbSize; leftIndex++) {
+            // System.out.println("i=" + leftIndex);
             final int rightIndex = fbSize - leftIndex - 1;
+            float fbLeftTotal = Float.NEGATIVE_INFINITY, fbRightTotal = Float.NEGATIVE_INFINITY;
+            for (final int pos : getPOSListFromChart(parser, leftIndex - 1)) {
+                fbLeftTotal = (float) ParserUtil.logSum(fbLeftTotal, forward[leftIndex][pos] + backward[leftIndex][pos]);
+            }
+            for (final int pos : getPOSListFromChart(parser, rightIndex - 1)) {
+                fbRightTotal = (float) ParserUtil.logSum(fbRightTotal, forward[rightIndex][pos] + backward[rightIndex][pos]);
+            }
+
             for (final int pos : grammar.posSet) {
-                fbLeft = forward[leftIndex][pos] + backward[leftIndex][pos] - totalFB;
-                fbRight = forward[rightIndex][pos] + backward[rightIndex][pos] - totalFB;
+                fbLeft = forward[leftIndex][pos] + backward[leftIndex][pos] - fbLeftTotal;
+                fbRight = forward[rightIndex][pos] + backward[rightIndex][pos] - fbRightTotal;
+
+                // if (fbLeft > Float.NEGATIVE_INFINITY) {
+                // System.out.println("  " + grammar.nonTermSet.getSymbol(pos) + " fwd=" + forward[leftIndex][pos] + " bk=" + backward[leftIndex][pos] + " fbTotal=" + fbLeftTotal
+                // + " fbNorm=" + fbLeft + " emis=" + posEmissionLogProb(parser, leftIndex - 1, pos));
+                // }
+
                 for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
                     score = fbLeft + leftBoundaryLogProb[nonTerm][pos];
                     if (score > outsideLeft[leftIndex][nonTerm]) {
@@ -121,13 +136,13 @@ public class EdgeFOMBoundaryNgram extends EdgeFOM {
         final double totalTimeSec = (System.currentTimeMillis() - startTimeMS) / 1000.0;
         Log.info(3, "INFO: FOM.init() time = " + totalTimeSec + " seconds");
 
-        for (int i = 0; i < fbSize; i++) {
-            System.out.println("i=" + i);
-            for (final int pos : getPOSListFromChart(parser, i - 1)) {
-                System.out.println("  " + grammar.nonTermSet.getSymbol(pos) + " = " + (forward[i][pos] + backward[i][pos] - totalFB) + " emis="
-                        + posEmissionLogProb(parser, i - 1, pos));
-            }
-        }
+        // for (int i = 0; i < fbSize; i++) {
+        // System.out.println("i=" + i);
+        // for (final int pos : getPOSListFromChart(parser, i - 1)) {
+        // System.out.println("  " + grammar.nonTermSet.getSymbol(pos) + " = " + (forward[i][pos] + backward[i][pos]) + " emis="
+        // + posEmissionLogProb(parser, i - 1, pos));
+        // }
+        // }
     }
 
     @Override
@@ -149,8 +164,9 @@ public class EdgeFOMBoundaryNgram extends EdgeFOM {
         // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
         // are padded with a begin and end <null> value which shifts the entire array to
         // the right by one
+        final int spanLength = edge.end() - edge.start();
         final float outside = outsideLeft[edge.start() - 1 + 1][edge.p.parent] + outsideRight[edge.end() + 1][edge.p.parent];
-        return edge.insideProb + outside * ParserDriver.fudgeFactor;
+        return edge.insideProb + outside + ParserDriver.fudgeFactor * spanLength;
     }
 
     private LinkedList<Integer> getPOSListFromChart(final ChartParser parser, final int startIndex) {

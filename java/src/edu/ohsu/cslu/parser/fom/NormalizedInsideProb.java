@@ -1,23 +1,15 @@
 package edu.ohsu.cslu.parser.fom;
 
-import edu.ohsu.cslu.parser.ArrayChartCell;
 import edu.ohsu.cslu.parser.ChartEdgeWithFOM;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 
-public class EdgeFOMNormInsideProb extends EdgeFOM {
+public class NormalizedInsideProb extends EdgeFOM {
 
     @Override
     public float calcFOM(final ChartEdgeWithFOM edge, final ChartParser parser) {
-        // if (edge.p.isUnaryProd()) {
-        // return edge.insideProb;
-        // }
-        ArrayChartCell rightCell = edge.rightCell;
-        if (rightCell == null) {
-            rightCell = edge.leftCell;
-        }
 
-        final int spanLength = rightCell.end - edge.leftCell.start;
+        final int spanLength = edge.end() - edge.start();
         // return edge.insideProb / spanLength;
         // return edge.insideProb - (float) (Math.log(spanLength) * 0.01);
         // return edge.insideProb - (float) Math.pow(0.7, spanLength);
