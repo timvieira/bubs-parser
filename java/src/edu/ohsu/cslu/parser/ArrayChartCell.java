@@ -64,8 +64,10 @@ public class ArrayChartCell implements ChartCell {
         // System.out.println("Considering: " + edge);
         if (bestEdge[parent] == null || edge.insideProb > bestEdge[parent].insideProb) {
             bestEdge[parent] = edge;
-            bestEdgesHaveChanged = true;
-            numEdgesAdded += 1;
+            if (bestEdge[parent] == null) {
+                bestEdgesHaveChanged = true;
+                numEdgesAdded += 1;
+            }
             return true;
         }
 
@@ -76,10 +78,14 @@ public class ArrayChartCell implements ChartCell {
      * Alternate addEdge() function so we aren't required to create a new ChartEdge object in the CYK inner loop for every potential new edge entry. Adds an edge to the cell if the
      * edge's probability is greater than an existing edge with the same non-terminal. Optional operation (some {@link ChartCell} implementations may be immutable).
      * 
-     * @param p The production to add
-     * @param insideProb The production probability
-     * @param leftCell The left child of this production
-     * @param rightCell The right child of this production
+     * @param p
+     *            The production to add
+     * @param insideProb
+     *            The production probability
+     * @param leftCell
+     *            The left child of this production
+     * @param rightCell
+     *            The right child of this production
      * @return True if the edge was added, false if another edge with greater probability was already present.
      */
     public boolean addEdge(final Production p, final float insideProb, final ArrayChartCell leftCell, final ArrayChartCell rightCell) {
@@ -98,7 +104,7 @@ public class ArrayChartCell implements ChartCell {
             prevBestEdge.leftCell = leftCell;
             prevBestEdge.rightCell = rightCell;
             // bestLeftEdgesHasChanged = true; // pointer to old edge will still be correct
-            numEdgesAdded += 1;
+            // numEdgesAdded += 1; // we are replacing an edge, so the same number are in the chart
             return true;
         }
 

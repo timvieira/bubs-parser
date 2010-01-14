@@ -1,124 +1,106 @@
 package edu.ohsu.cslu.parser;
 
-import java.util.LinkedList;
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
-import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
+import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.fom.EdgeFOM;
+import edu.ohsu.cslu.parser.traversal.ChartTraversal;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public class CellAgendaChartParser extends ChartParserByTraversal implements HeuristicParser {
+public class CellAgendaChartParser extends AgendaChartParser {
 
-    private GrammarByLeftNonTermList grammarByChildren;
     private FrontierCell frontier[][];
-    private EdgeFOM edgeFOM;
+    private ChartTraversalType traversalType;
 
-    protected class FrontierCell {
-        protected ArrayChartCell chartCell;
-        protected PriorityQueue<ChartEdge> edgeAgenda;
-
-        public FrontierCell(final ArrayChartCell chartCell) {
-            this.chartCell = chartCell;
-            this.edgeAgenda = new PriorityQueue<ChartEdge>();
-        }
-
-        public void addEdge(final ChartEdge edge) {
-            this.edgeAgenda.add(edge);
-        }
-    }
-
-    // public CellAgendaChartParser(final Grammar grammar, final ChartTraversalType traversalType, final EdgeFOMType fomType) {
-    public CellAgendaChartParser(final ArrayGrammar grammar, final ChartTraversalType traversalType, final EdgeFOM edgeFOM) {
-        super(grammar, traversalType);
-
-        grammarByChildren = (GrammarByLeftNonTermList) grammar;
-        // this.edgeFOM = EdgeFOM.create(fomType, this);
-        this.edgeFOM = edgeFOM;
+    public CellAgendaChartParser(final GrammarByLeftNonTermList grammar, final EdgeFOM edgeFOM, final ChartTraversalType traversalType) {
+        super(grammar, edgeFOM);
+        this.traversalType = traversalType;
     }
 
     @Override
     protected void initParser(final int sentLength) {
         super.initParser(sentLength);
 
-        frontier = new FrontierCell[chartSize][chartSize + 1];
-
         // parallel structure with chart to hold possible edges
+        frontier = new FrontierCell[chartSize][chartSize + 1];
         for (int start = 0; start < chartSize; start++) {
             for (int end = start + 1; end < chartSize + 1; end++) {
                 frontier[start][end] = new FrontierCell(chart[start][end]);
             }
         }
-    }
 
-    public ParseTree findGoodParse(final String sentence) throws Exception {
-        // will traverse chart cells in ChartTraversal order and populate
-        // cells via populateCell(cell)
-        return super.findBestParse(sentence);
+        // we shouldn't be using the global edge agenda ...
+        // TODO: if we generalize to a FrontierManager, then each subclass
+        // can manage how the frontier is expanded on their own
+        agenda = null;
     }
 
     @Override
+    public ParseTree findBestParse(final String sentence) throws Exception {
+        ArrayChartCell cell;
+        final Token sent[] = grammar.tokenize(sentence);
+
+        initParser(sent.length);
+        addLexicalProductions(sent);
+
+        final ChartTraversal chartTraversal = ChartTraversal.create(traversalType, this);
+        while (chartTraversal.hasNext()) {
+            cell = chartTraversal.next();
+            visitCell(cell);
+            // System.out.println(cell + " numFront=" + frontier[cell.start][cell.end].edgeAgenda.size());
+        }
+
+        return extractBestParse();
+    }
+
     protected void visitCell(final ArrayChartCell cell) {
-        final ChartEdge edge = frontier[cell.start][cell.end].edgeAgenda.poll();
-        final boolean addedEdge = cell.addEdge(edge);
+        ChartEdgeWithFOM edge;
+        boolean addedEdge = false;
+        final FrontierCell frontierCell = frontier[cell.start][cell.end];
 
-        if (addedEdge == true) {
-            expandFrontier(edge.p.parent, cell);
-        }
-    }
+        // while (addedEdge == false) {
+        while (!frontierCell.edgeAgenda.isEmpty()) {
+            nAgendaPop += 1;
+            edge = frontierCell.edgeAgenda.poll();
+            addedEdge = cell.addEdge(edge);
 
-    private void expandFrontier(final int nonTerm, final ArrayChartCell cell) {
-        LinkedList<Production> possibleGrammarProds;
-        ChartEdge leftEdge, rightEdge, edge;
-        final ChartEdge addedEdge = cell.getBestEdge(nonTerm);
-        ArrayChartCell rightCell, leftCell;
-        FrontierCell frontierCell;
-        float insideProb;
-
-        // unary edges are always possible in any cell, although we don't allow unary chains
-        frontierCell = frontier[cell.start][cell.end];
-        if (addedEdge.p.isUnaryProd() == false || addedEdge.p.isLexProd() == true) {
-            for (final Production p : grammar.getUnaryProdsWithChild(addedEdge.p.parent)) {
-                insideProb = addedEdge.insideProb + p.prob;
-                edge = new ChartEdgeWithFOM(p, cell, insideProb, edgeFOM, this);
-                frontierCell.addEdge(edge);
-            }
-        }
-
-        // connect edge as possible right non-term
-        for (int beg = 0; beg < cell.start; beg++) {
-            leftCell = chart[beg][cell.start];
-            frontierCell = frontier[beg][cell.end];
-            possibleGrammarProds = grammarByChildren.getBinaryProdsWithRightChild(nonTerm);
-            if (possibleGrammarProds != null) {
-                for (final Production p : possibleGrammarProds) {
-                    leftEdge = leftCell.getBestEdge(p.leftChild);
-                    if (leftEdge != null && chart[beg][cell.end].getBestEdge(p.parent) == null) {
-                        insideProb = leftEdge.insideProb + p.prob + addedEdge.insideProb;
-                        edge = new ChartEdgeWithFOM(p, leftCell, cell, insideProb, edgeFOM, this);
-                        frontierCell.addEdge(edge);
-                    }
-                }
-            }
-        }
-
-        // connect edge as possible left non-term
-        for (int end = cell.end + 1; end <= chartSize; end++) {
-            rightCell = chart[cell.end][end];
-            frontierCell = frontier[cell.start][end];
-            possibleGrammarProds = grammarByChildren.getBinaryProdsWithLeftChild(nonTerm);
-            if (possibleGrammarProds != null) {
-                for (final Production p : possibleGrammarProds) {
-                    rightEdge = rightCell.getBestEdge(p.rightChild);
-                    if (rightEdge != null && chart[cell.start][end].getBestEdge(p.parent) == null) {
-                        insideProb = addedEdge.insideProb + p.prob + rightEdge.insideProb;
-                        edge = new ChartEdgeWithFOM(p, cell, rightCell, insideProb, edgeFOM, this);
-                        frontierCell.addEdge(edge);
-                    }
-                }
+            if (addedEdge == true) {
+                expandFrontier(edge, cell);
+                nChartEdges += 1;
             }
         }
     }
+
+    @Override
+    protected void addEdgeToFrontier(final ChartEdgeWithFOM edge) {
+        final boolean addedEdge = frontier[edge.start()][edge.end()].addEdgeToCellAgenda(edge);
+        if (addedEdge) {
+            nAgendaPush += 1;
+        }
+    }
+
+    protected class FrontierCell {
+        // protected ArrayChartCell chartCell;
+        protected PriorityQueue<ChartEdgeWithFOM> edgeAgenda;
+        protected ChartEdgeWithFOM agendaMemory[];
+
+        public FrontierCell(final ArrayChartCell chartCell) {
+            // this.chartCell = chartCell;
+            this.edgeAgenda = new PriorityQueue<ChartEdgeWithFOM>();
+            this.agendaMemory = new ChartEdgeWithFOM[grammar.numNonTerms()];
+        }
+
+        public boolean addEdgeToCellAgenda(final ChartEdgeWithFOM edge) {
+            final ChartEdgeWithFOM bestAgendaEdge = agendaMemory[edge.p.parent];
+            if (bestAgendaEdge == null || edge.figureOfMerit > bestAgendaEdge.figureOfMerit) {
+                this.edgeAgenda.add(edge);
+                agendaMemory[edge.p.parent] = edge;
+                return true;
+            }
+            return false;
+        }
+    }
+
 }

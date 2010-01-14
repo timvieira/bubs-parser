@@ -16,14 +16,19 @@ public abstract class EdgeFOM {
 
     public abstract float calcFOM(ChartEdgeWithFOM edge, ChartParser parser);
 
-    public static EdgeFOM create(final EdgeFOMType type, final ArrayGrammar grammar) {
+    public static EdgeFOM create(final EdgeFOMType type, final BufferedReader fomModelStream, final ArrayGrammar grammar) throws Exception {
         switch (type) {
         case Inside:
             return new InsideProb();
         case NormalizedInside:
             return new NormalizedInsideProb();
         case BoundaryInOut:
-            return new BoundaryInOut(grammar);
+            final EdgeFOM model = new BoundaryInOut(grammar);
+            // no input model stream when estimating the model
+            if (fomModelStream != null) {
+                model.readModel(fomModelStream);
+            }
+            return model;
         case WeightedFeatures:
             return new WeightedFeatures(grammar);
         default:
