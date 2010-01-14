@@ -48,7 +48,7 @@ public class ParserDriver extends BaseCommandlineTool {
     // TODO Eventually we'd like to make this a command-line option, but not all combinations are implemented yet
     private ChartTraversalType chartTraversalType = ChartTraversalType.LeftRightBottomTopTraversal;
 
-    @Option(name = "-ct", aliases = { "--cell-processing-type" }, metaVar = "type", usage = "Chart cell processing type")
+    @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage = "Chart cell processing type")
     private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
 
     @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
@@ -104,6 +104,7 @@ public class ParserDriver extends BaseCommandlineTool {
                 break;
             // Both agenda parsers use GrammarByLeftNonTermList
             case AgendaParser:
+            case CellAgendaParser:
             case AgendaParserWithGhostEdges:
                 grammar = new GrammarByLeftNonTermList(pcfgFileName, lexFileName, grammarFormat);
                 break;
@@ -141,7 +142,7 @@ public class ParserDriver extends BaseCommandlineTool {
         String insideProbStr;
 
         if (fomTrain == true) {
-            final EdgeFOM fom = EdgeFOM.create(edgeFOMType, grammar);
+            final EdgeFOM fom = EdgeFOM.create(edgeFOMType, fomModelStream, grammar);
             fom.train(inputStream);
             fom.writeModel(outputStream);
             System.exit(0);
@@ -218,17 +219,20 @@ public class ParserDriver extends BaseCommandlineTool {
             break;
 
         case AgendaParser:
-            edgeFOM = EdgeFOM.create(edgeFOMType, grammar);
+            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, grammar);
             // TODO: this whole FOM setup is pretty ugly. It needs to be changed
             // TODO: the program should know which FOM to use given the model file
-            if (fomModelStream != null) {
-                edgeFOM.readModel(fomModelStream);
-            }
-            parser = new AgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOM);
+            // parser = new AgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOM);
+            parser = new AgendaChartParserWithMemory((GrammarByLeftNonTermList) grammar, edgeFOM);
+            break;
+
+        case CellAgendaParser:
+            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, grammar);
+            parser = new CellAgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOM, chartTraversalType);
             break;
 
         case AgendaParserWithGhostEdges:
-            edgeFOM = EdgeFOM.create(edgeFOMType, grammar);
+            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, grammar);
             parser = new AgendaChartParserGhostEdges((GrammarByLeftNonTermList) grammar, edgeFOM);
             break;
 
@@ -240,7 +244,7 @@ public class ParserDriver extends BaseCommandlineTool {
     }
 
     static public enum ParserType {
-        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), SuperAgendaParser("sap");
+        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), CellAgendaParser("cellagenda");
 
         private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

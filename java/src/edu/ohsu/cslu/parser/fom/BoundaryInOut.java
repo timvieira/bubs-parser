@@ -30,6 +30,31 @@ public class BoundaryInOut extends EdgeFOM {
     }
 
     @Override
+    public float calcFOM(final ChartEdgeWithFOM edge, final ChartParser parser) {
+
+        if (edge.p.isLexProd()) {
+            return edge.insideProb;
+        }
+
+        // System.out.println("FOM: n="
+        // + (edge.end() - edge.start()) + " i=" + edge.insideProb + " oL=" + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " oR="
+        // + outsideRight[edge.end() + 1][edge.p.parent]+ " fom=" + (edge.insideProb + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + outsideRight[edge.end() +
+        // 1][edge.p.parent]) +);
+
+        // System.out.println("FOM: " + (edge.end() - edge.start()) + " " + edge.insideProb + " " + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " "
+        // + outsideRight[edge.end() + 1][edge.p.parent] + " "
+        // + (edge.insideProb + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + outsideRight[edge.end() + 1][edge.p.parent]));
+
+        // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
+        // are padded with a begin and end <null> value which shifts the entire array to
+        // the right by one
+        final int spanLength = edge.end() - edge.start();
+        final float outside = outsideLeft[edge.start() - 1 + 1][edge.p.parent] + outsideRight[edge.end() + 1][edge.p.parent];
+        return edge.insideProb + outside + spanLength * ParserDriver.fudgeFactor;
+        // return edge.insideProb + outside * ParserDriver.fudgeFactor + spanLength * 2;
+    }
+
+    @Override
     public void init(final ChartParser parser) {
         final double startTimeMS = System.currentTimeMillis();
         // compute forward-backwards probs across ambiguous POS tags
@@ -143,30 +168,6 @@ public class BoundaryInOut extends EdgeFOM {
         // + posEmissionLogProb(parser, i - 1, pos));
         // }
         // }
-    }
-
-    @Override
-    public float calcFOM(final ChartEdgeWithFOM edge, final ChartParser parser) {
-
-        if (edge.p.isLexProd()) {
-            return edge.insideProb;
-        }
-
-        // System.out.println("FOM: n="
-        // + (edge.end() - edge.start()) + " i=" + edge.insideProb + " oL=" + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " oR="
-        // + outsideRight[edge.end() + 1][edge.p.parent]+ " fom=" + (edge.insideProb + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + outsideRight[edge.end() +
-        // 1][edge.p.parent]) +);
-
-        // System.out.println("FOM: " + (edge.end() - edge.start()) + " " + edge.insideProb + " " + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " "
-        // + outsideRight[edge.end() + 1][edge.p.parent] + " "
-        // + (edge.insideProb + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + outsideRight[edge.end() + 1][edge.p.parent]));
-
-        // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
-        // are padded with a begin and end <null> value which shifts the entire array to
-        // the right by one
-        final int spanLength = edge.end() - edge.start();
-        final float outside = outsideLeft[edge.start() - 1 + 1][edge.p.parent] + outsideRight[edge.end() + 1][edge.p.parent];
-        return edge.insideProb + outside + ParserDriver.fudgeFactor * spanLength;
     }
 
     private LinkedList<Integer> getPOSListFromChart(final ChartParser parser, final int startIndex) {

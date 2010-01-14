@@ -9,10 +9,11 @@ public class LeftRightBottomTopTraversal extends ChartTraversal {
 
     private LinkedList<ArrayChartCell> cellList;
 
-    public LeftRightBottomTopTraversal(ChartParser parser) {
+    public LeftRightBottomTopTraversal(final ChartParser parser) {
 
         cellList = new LinkedList<ArrayChartCell>();
-        for (int span = 2; span <= parser.chartSize; span++) {
+        // for (int span = 2; span <= parser.chartSize; span++) {
+        for (int span = 1; span <= parser.chartSize; span++) {
             for (int beg = 0; beg < parser.chartSize - span + 1; beg++) { // beginning
                 cellList.add(parser.chart[beg][beg + span]);
             }
