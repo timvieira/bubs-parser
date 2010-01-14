@@ -47,10 +47,19 @@ public class GrammarByLeftNonTermList extends ArrayGrammar {
     }
 
     public LinkedList<Production> getBinaryProdsWithLeftChild(final int nonTerm) {
-        return binaryProdsByLeftNonTerm.get(nonTerm);
+        final LinkedList<Production> prodList = binaryProdsByLeftNonTerm.get(nonTerm);
+        if (prodList != null) {
+            return prodList;
+        }
+        // return an empty list instead of 'null' so we can still iterate over it
+        return new LinkedList<Production>();
     }
 
     public LinkedList<Production> getBinaryProdsWithRightChild(final int nonTerm) {
-        return binaryProdsByRightNonTerm.get(nonTerm);
+        final LinkedList<Production> prodList = binaryProdsByRightNonTerm.get(nonTerm);
+        if (prodList != null) {
+            return prodList;
+        }
+        return new LinkedList<Production>();
     }
 }
