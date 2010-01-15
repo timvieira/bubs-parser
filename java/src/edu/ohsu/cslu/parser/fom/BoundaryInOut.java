@@ -176,7 +176,7 @@ public class BoundaryInOut extends EdgeFOM {
         if (startIndex < 0 || endIndex > parser.chartSize) {
             posList.addLast(grammar.nullSymbol);
         } else {
-            final ArrayChartCell chartCell = parser.chart[startIndex][endIndex];
+            final ArrayChartCell chartCell = (ArrayChartCell) parser.chart[startIndex][endIndex];
             // TODO: could track POS entries in chartCell as they are placed in
             for (final int posIndex : parser.grammar.posSet) {
                 if (chartCell.getBestEdge(posIndex) != null) {
@@ -471,7 +471,7 @@ public class BoundaryInOut extends EdgeFOM {
         // final SymbolSet<String> symbols = parser.grammar.nonTermSet;
         float prevDpScore[] = new float[parser.grammar.numNonTerms()];
         final float dpScore[] = new float[parser.grammar.numNonTerms()];
-        final int start = edge.leftCell.start;
+        final int start = edge.leftCell.start();
         LinkedList<Integer> prevPOSList = getPOSListFromChart(parser, start - 1);
         LinkedList<Integer> curPOSList;
 

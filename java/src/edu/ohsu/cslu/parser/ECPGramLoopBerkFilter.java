@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.ohsu.cslu.grammar.ArrayGrammar;
-import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
+import edu.ohsu.cslu.grammar.BaseGrammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -141,34 +141,35 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
      */
 
     @Override
-    protected void visitCell(final ArrayChartCell cell) {
+    protected void visitCell(final ChartCell cell) {
+        final ArrayChartCell arrayChartCell = (ArrayChartCell) cell;
         ArrayChartCell leftCell, rightCell;
         ChartEdge leftEdge, rightEdge, parentEdge, oldBestEdge;
         float prob;
-        final int start = cell.start;
-        final int end = cell.end;
+        final int start = arrayChartCell.start;
+        final int end = arrayChartCell.end;
         boolean foundBetter, edgeWasAdded;
 
-        for (final Production p : grammar.binaryProds) {
+        for (final Production p : ((ArrayGrammar) grammar).binaryProds) {
             if (possibleRuleMidpoints(p, start, end)) {
                 foundBetter = false;
-                oldBestEdge = cell.getBestEdge(p.parent);
+                oldBestEdge = arrayChartCell.getBestEdge(p.parent);
 
                 // possibleMidpointMin and possibleMidpointMax are global values set by
                 // calling possibleRuleMidpoints() since we can't return two ints easily
                 for (int mid = possibleMidpointMin; mid <= possibleMidpointMax; mid++) {
-                    leftCell = chart[start][mid];
+                    leftCell = (ArrayChartCell) chart[start][mid];
                     leftEdge = leftCell.getBestEdge(p.leftChild);
                     if (leftEdge == null)
                         continue;
 
-                    rightCell = chart[mid][end];
+                    rightCell = (ArrayChartCell) chart[mid][end];
                     rightEdge = rightCell.getBestEdge(p.rightChild);
                     if (rightEdge == null)
                         continue;
 
                     prob = p.prob + leftEdge.insideProb + rightEdge.insideProb;
-                    edgeWasAdded = cell.addEdge(p, prob, leftCell, rightCell);
+                    edgeWasAdded = arrayChartCell.addEdge(p, prob, leftCell, rightCell);
                     if (edgeWasAdded) {
                         foundBetter = true;
                     }
@@ -180,12 +181,12 @@ public class ECPGramLoopBerkFilter extends ExhaustiveChartParser {
             }
         }
 
-        for (final Production p : grammar.unaryProds) {
-            parentEdge = cell.getBestEdge(p.leftChild);
+        for (final Production p : ((ArrayGrammar) grammar).unaryProds) {
+            parentEdge = arrayChartCell.getBestEdge(p.leftChild);
             if ((parentEdge != null) && (parentEdge.p.isUnaryProd() == false)) {
                 prob = p.prob + parentEdge.insideProb;
                 // the child cell is also the parent cell for unary productions
-                edgeWasAdded = cell.addEdge(new ChartEdge(p, cell, prob));
+                edgeWasAdded = arrayChartCell.addEdge(new ChartEdge(p, arrayChartCell, prob));
                 if (edgeWasAdded) {
                     updateRuleConstraints(p.parent, start, end);
                 }

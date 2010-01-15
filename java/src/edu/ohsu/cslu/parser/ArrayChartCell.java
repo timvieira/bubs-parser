@@ -4,70 +4,67 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.ArrayGrammar;
-import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
+import edu.ohsu.cslu.grammar.BaseGrammar.Production;
 
-public class ArrayChartCell implements ChartCell {
+public final class ArrayChartCell extends BaseChartCell {
 
-    public final int start, end;
-    public int numEdgesAdded, numEdgesConsidered;
     public ChartEdge[] bestEdge;
     private LinkedList<ChartEdge> bestLeftEdges, bestRightEdges;
     boolean bestEdgesHaveChanged = true;
-    ArrayGrammar grammar;
+    private final ArrayGrammar arrayGrammar;
 
     public ArrayChartCell(final int start, final int end, final ArrayGrammar grammar) {
-        this.start = start;
-        this.end = end;
-        this.numEdgesAdded = 0;
-        this.numEdgesConsidered = 0;
-        this.grammar = grammar;
+        super(start, end, grammar);
+        this.arrayGrammar = grammar;
 
         bestEdge = new ChartEdge[grammar.numNonTerms()];
-        Arrays.fill(bestEdge, null);
     }
 
+    @Override
     public ChartEdge getBestEdge(final int nonTermIndex) {
         return bestEdge[nonTermIndex];
     }
 
     public LinkedList<ChartEdge> getBestLeftEdges() {
-        buildLeftRightEdgeLists();
+        if (bestEdgesHaveChanged) {
+            buildLeftRightEdgeLists();
+        }
         return bestLeftEdges;
     }
 
     public LinkedList<ChartEdge> getBestRightEdges() {
-        buildLeftRightEdgeLists();
+        if (bestEdgesHaveChanged) {
+            buildLeftRightEdgeLists();
+        }
         return bestRightEdges;
     }
 
     private void buildLeftRightEdgeLists() {
-        ChartEdge tmpEdge;
-        if (bestEdgesHaveChanged) {
-            bestLeftEdges = new LinkedList<ChartEdge>();
-            bestRightEdges = new LinkedList<ChartEdge>();
-            for (int i = 0; i < bestEdge.length; i++) {
-                tmpEdge = bestEdge[i];
-                if (tmpEdge != null) {
-                    if (grammar.isLeftChild(tmpEdge.p.parent))
-                        bestLeftEdges.add(tmpEdge);
-                    if (grammar.isRightChild(tmpEdge.p.parent))
-                        bestRightEdges.add(tmpEdge);
-                }
+        bestLeftEdges = new LinkedList<ChartEdge>();
+        bestRightEdges = new LinkedList<ChartEdge>();
+        for (int i = 0; i < bestEdge.length; i++) {
+            final ChartEdge tmpEdge = bestEdge[i];
+            if (tmpEdge != null) {
+                final int parent = tmpEdge.p.parent;
+                if (arrayGrammar.isLeftChild(parent))
+                    bestLeftEdges.add(tmpEdge);
+                if (arrayGrammar.isRightChild(parent))
+                    bestRightEdges.add(tmpEdge);
             }
-            bestEdgesHaveChanged = false;
         }
+        bestEdgesHaveChanged = false;
     }
 
+    @Override
     public boolean addEdge(final ChartEdge edge) {
         final int parent = edge.p.parent;
         numEdgesConsidered += 1;
-        // System.out.println("Considering: " + edge);
-        if (bestEdge[parent] == null || edge.insideProb > bestEdge[parent].insideProb) {
+        // System.out.println("Considering: "+edge);
+        final ChartEdge prevBestEdge = bestEdge[parent];
+        if (prevBestEdge == null || edge.insideProb > prevBestEdge.insideProb) {
             bestEdge[parent] = edge;
-            if (bestEdge[parent] == null) {
-                bestEdgesHaveChanged = true;
-                numEdgesAdded += 1;
-            }
+            bestEdgesHaveChanged = true;
+            numEdgesAdded++;
             return true;
         }
 
@@ -78,17 +75,14 @@ public class ArrayChartCell implements ChartCell {
      * Alternate addEdge() function so we aren't required to create a new ChartEdge object in the CYK inner loop for every potential new edge entry. Adds an edge to the cell if the
      * edge's probability is greater than an existing edge with the same non-terminal. Optional operation (some {@link ChartCell} implementations may be immutable).
      * 
-     * @param p
-     *            The production to add
-     * @param insideProb
-     *            The production probability
-     * @param leftCell
-     *            The left child of this production
-     * @param rightCell
-     *            The right child of this production
+     * @param p The production to add
+     * @param insideProb The production probability
+     * @param leftCell The left child of this production
+     * @param rightCell The right child of this production
      * @return True if the edge was added, false if another edge with greater probability was already present.
      */
-    public boolean addEdge(final Production p, final float insideProb, final ArrayChartCell leftCell, final ArrayChartCell rightCell) {
+    @Override
+    public boolean addEdge(final Production p, final float insideProb, final ChartCell leftCell, final ChartCell rightCell) {
         numEdgesConsidered += 1;
         // System.out.println("Considering: " + new ChartEdge(p, leftCell, rightCell, insideProb));
 
@@ -111,10 +105,7 @@ public class ArrayChartCell implements ChartCell {
         return false;
     }
 
-    public int getNumEdgesAdded() {
-        return numEdgesAdded;
-    }
-
+    @Override
     public int getNumEdgeEntries() {
         int numEntries = 0;
         for (int i = 0; i < bestEdge.length; i++) {
@@ -122,16 +113,6 @@ public class ArrayChartCell implements ChartCell {
                 numEntries++;
         }
         return numEntries;
-    }
-
-    @Override
-    public int end() {
-        return end;
-    }
-
-    @Override
-    public int start() {
-        return start;
     }
 
     @Override

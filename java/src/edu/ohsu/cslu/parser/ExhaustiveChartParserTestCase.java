@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 
 import org.junit.Before;
@@ -13,7 +12,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarTestCase;
+import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.tests.FilteredRunner;
@@ -21,9 +22,8 @@ import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
- * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a trivial
- * sentence using a very simple grammar and the first 10 sentences of WSJ section 24 using a reasonable PCFG.
- * Profiles sentences 11-20 to aid in performance tuning and prevent performance regressions.
+ * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a trivial sentence using a very simple grammar and the first 10 sentences of WSJ
+ * section 24 using a reasonable PCFG. Profiles sentences 11-20 to aid in performance tuning and prevent performance regressions.
  * 
  * TODO More documentation
  * 
@@ -40,55 +40,47 @@ public abstract class ExhaustiveChartParserTestCase {
     private final static String LEX_FILE = "grammars/f2-21-R2-p1-unk.lex";
 
     /** Grammar induced from WSJ sections 2-21 */
-    protected static ArrayGrammar f2_21_grammar;
+    protected static Grammar f2_21_grammar;
 
     /** WSJ section 24 sentences 1-20 */
     private static ArrayList<String[]> sentences = new ArrayList<String[]>();
 
     /** The parser under test */
-    private MaximumLikelihoodParser parser;
+    protected MaximumLikelihoodParser parser;
 
     /**
      * Creates the appropriate parser for each test class.
      * 
-     * @param grammar
-     *            The grammar to use when parsing
-     * @param chartTraversalType
-     *            The chart traversal order
+     * @param grammar The grammar to use when parsing
+     * @param chartTraversalType The chart traversal order
      * @return Parser instance
      */
-    protected abstract MaximumLikelihoodParser createParser(ArrayGrammar grammar,
-            ChartTraversalType chartTraversalType);
+    protected abstract MaximumLikelihoodParser createParser(Grammar grammar, ChartTraversalType chartTraversalType);
 
     /**
      * @return the grammar class appropriate for the parser under test
      */
-    protected abstract Class<? extends ArrayGrammar> grammarClass();
+    protected abstract Class<? extends Grammar> grammarClass();
 
-    private ArrayGrammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class, Reader.class }).newInstance(
-            new Object[] { grammarReader, lexiconReader });
+    private Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
+        return grammarClass().getConstructor(new Class[] { Reader.class, Reader.class, GrammarFormatType.class }).newInstance(
+                new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
     }
 
     /**
-     * Reads in the first 20 sentences of WSJ section 24. Run once for the class, prior to execution of the
-     * first test method.
+     * Reads in the first 20 sentences of WSJ section 24. Run once for the class, prior to execution of the first test method.
      * 
-     * @throws Exception
-     *             if unable to read
+     * @throws Exception if unable to read
      */
     @BeforeClass
     public static void suiteSetUp() throws Exception {
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
-        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
-            .unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
-            .unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
+        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
 
-        for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader
-            .readLine()) {
+        for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
             sentences.add(new String[] { sentence, parsedSentence });
         }
@@ -97,14 +89,12 @@ public abstract class ExhaustiveChartParserTestCase {
     /**
      * Constructs the grammar (if necessary) and a new parser instance. Run prior to each test method.
      * 
-     * @throws Exception
-     *             if unable to construct grammar or parser.
+     * @throws Exception if unable to construct grammar or parser.
      */
     @Before
     public void setUp() throws Exception {
         if (f2_21_grammar == null || f2_21_grammar.getClass() != grammarClass()) {
-            f2_21_grammar = createGrammar(SharedNlpTests.unitTestDataAsReader(PCFG_FILE), SharedNlpTests
-                .unitTestDataAsReader(LEX_FILE));
+            f2_21_grammar = createGrammar(SharedNlpTests.unitTestDataAsReader(PCFG_FILE), SharedNlpTests.unitTestDataAsReader(LEX_FILE));
         }
 
         // TODO Parameterize ChartTraversalType (this will require a custom Runner implementation)
@@ -114,36 +104,19 @@ public abstract class ExhaustiveChartParserTestCase {
     /**
      * Tests parsing with a _very_ simple grammar.
      * 
-     * @throws Exception
-     *             if something bad happens
+     * TODO Share grammar creation with GrammarTestCase
+     * 
+     * @throws Exception if something bad happens
      */
     @Test
     public void testSimpleGrammar() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        final StringBuilder lexiconSb = new StringBuilder(256);
-        lexiconSb.append("NN => systems 0\n");
-        lexiconSb.append("NN => analyst 0\n");
-        lexiconSb.append("NN => arbitration 0\n");
-        lexiconSb.append("NN => chef 0\n");
-        lexiconSb.append("NN => UNK 0\n");
-
-        final StringBuilder grammarSb = new StringBuilder(256);
-        grammarSb.append("TOP\n");
-        grammarSb.append("TOP => NP 0\n");
-        grammarSb.append("NP => NN NN -0.693147\n");
-        grammarSb.append("NP => NP NN -1.203972\n");
-        grammarSb.append("NP => NN NP -2.302585\n");
-        grammarSb.append("NP => NP NP -2.302585\n");
-
-        final ArrayGrammar simpleGrammar = createGrammar(new StringReader(grammarSb.toString()), new StringReader(
-            lexiconSb.toString()));
-        final MaximumLikelihoodParser p = createParser(simpleGrammar,
-            ChartTraversalType.LeftRightBottomTopTraversal);
+        final Grammar simpleGrammar = GrammarTestCase.createSimpleGrammar(grammarClass());
+        final MaximumLikelihoodParser p = createParser(simpleGrammar, ChartTraversalType.LeftRightBottomTopTraversal);
 
         final ParseTree bestParseTree = p.findMLParse(sentence);
-        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))",
-            bestParseTree.toString());
+        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree.toString());
     }
 
     @Test
@@ -197,9 +170,8 @@ public abstract class ExhaustiveChartParserTestCase {
     }
 
     /**
-     * Profiles parsing sentences 11-20 of WSJ section 24. This method must be overridden (calling
-     * {@link #internalProfileSentences11Through20()}) in each subclass, simply to allow re-annotating the
-     * {@link PerformanceTest} annotation with the expected performance for that implementation.
+     * Profiles parsing sentences 11-20 of WSJ section 24. This method must be overridden (calling {@link #internalProfileSentences11Through20()}) in each subclass, simply to allow
+     * re-annotating the {@link PerformanceTest} annotation with the expected performance for that implementation.
      * 
      * @throws Exception
      */
