@@ -2,16 +2,16 @@ package edu.ohsu.cslu.parser.traversal;
 
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.parser.ArrayChartCell;
+import edu.ohsu.cslu.parser.ChartCell;
 import edu.ohsu.cslu.parser.ChartParser;
 
 public class LeftRightBottomTopTraversal extends ChartTraversal {
 
-    private LinkedList<ArrayChartCell> cellList;
+    private LinkedList<ChartCell> cellList;
 
     public LeftRightBottomTopTraversal(final ChartParser parser) {
 
-        cellList = new LinkedList<ArrayChartCell>();
+        cellList = new LinkedList<ChartCell>();
         // for (int span = 2; span <= parser.chartSize; span++) {
         for (int span = 1; span <= parser.chartSize; span++) {
             for (int beg = 0; beg < parser.chartSize - span + 1; beg++) { // beginning
@@ -21,7 +21,7 @@ public class LeftRightBottomTopTraversal extends ChartTraversal {
     }
 
     @Override
-    public ArrayChartCell next() {
+    public ChartCell next() {
         return cellList.pollFirst();
     }
 

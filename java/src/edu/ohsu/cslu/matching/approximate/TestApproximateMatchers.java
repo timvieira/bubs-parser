@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.matching.approximate;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -12,9 +14,6 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.matching.MatchTestCase;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 
 @RunWith(FilteredRunner.class)
 public class TestApproximateMatchers extends MatchTestCase {

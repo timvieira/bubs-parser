@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.BaseGrammar;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
@@ -10,22 +10,17 @@ public abstract class ChartParserByTraversal extends ChartParser {
 
     protected ChartTraversalType traversalType;
 
-    public ChartParserByTraversal(final ArrayGrammar grammar, final ChartTraversalType traversalType) {
+    public ChartParserByTraversal(final BaseGrammar grammar, final ChartTraversalType traversalType) {
         super(grammar);
 
         this.traversalType = traversalType;
     }
 
-    @Override
-    protected void initParser(final int sentLength) {
-        super.initParser(sentLength);
-    }
-
     // overwrite this method for the inner-loop implementation
-    protected abstract void visitCell(ArrayChartCell cell);
+    protected abstract void visitCell(ChartCell cell);
 
     public ParseTree findBestParse(final String sentence) throws Exception {
-        ArrayChartCell cell;
+        ChartCell cell;
         final Token sent[] = grammar.tokenize(sentence);
 
         initParser(sent.length);

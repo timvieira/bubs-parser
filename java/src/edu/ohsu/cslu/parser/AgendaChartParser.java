@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
-import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
+import edu.ohsu.cslu.grammar.BaseGrammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.fom.EdgeFOM;
 import edu.ohsu.cslu.parser.util.Log;
@@ -49,7 +49,7 @@ public class AgendaChartParser extends ChartParser implements MaximumLikelihoodP
             nAgendaPop += 1;
             // System.out.println("AgendaPop: " + edge);
 
-            parentCell = chart[edge.start()][edge.end()];
+            parentCell = (ArrayChartCell) chart[edge.start()][edge.end()];
             edgeAdded = parentCell.addEdge(edge);
 
             // if A->B C is added to chart but A->X Y was already in this chart cell, then the
@@ -100,7 +100,7 @@ public class AgendaChartParser extends ChartParser implements MaximumLikelihoodP
         edgeFOM.init(this);
 
         for (final ChartEdgeWithFOM edge : edgesToExpand) {
-            expandFrontier(edge, chart[edge.leftCell.start][edge.leftCell.end]);
+            expandFrontier(edge, (ArrayChartCell) chart[edge.leftCell.start()][edge.leftCell.end()]);
         }
     }
 
@@ -120,7 +120,7 @@ public class AgendaChartParser extends ChartParser implements MaximumLikelihoodP
 
         // connect edge as possible right non-term
         for (int beg = 0; beg < cell.start; beg++) {
-            leftCell = chart[beg][cell.start];
+            leftCell = (ArrayChartCell) chart[beg][cell.start];
             for (final Production p : grammarByChildren.getBinaryProdsWithRightChild(nonTerm)) {
                 leftEdge = leftCell.getBestEdge(p.leftChild);
                 if (leftEdge != null && chart[beg][cell.end].getBestEdge(p.parent) == null) {
@@ -133,7 +133,7 @@ public class AgendaChartParser extends ChartParser implements MaximumLikelihoodP
 
         // connect edge as possible left non-term
         for (int end = cell.end + 1; end <= chartSize; end++) {
-            rightCell = chart[cell.end][end];
+            rightCell = (ArrayChartCell) chart[cell.end][end];
             for (final Production p : grammarByChildren.getBinaryProdsWithLeftChild(nonTerm)) {
                 rightEdge = rightCell.getBestEdge(p.rightChild);
                 if (rightEdge != null && chart[cell.start][end].getBestEdge(p.parent) == null) {

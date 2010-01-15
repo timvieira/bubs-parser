@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser;
 import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
-import edu.ohsu.cslu.grammar.ArrayGrammar.Production;
+import edu.ohsu.cslu.grammar.BaseGrammar.Production;
 import edu.ohsu.cslu.parser.fom.EdgeFOM;
 
 public class AgendaChartParserGhostEdges extends AgendaChartParser {
@@ -65,12 +65,12 @@ public class AgendaChartParserGhostEdges extends AgendaChartParser {
             possibleEdges = needLeftGhostEdges[nonTerm][cell.end];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
-                    curBestEdge = chart[cell.start][ghostEdge.rightCell.end].getBestEdge(ghostEdge.p.parent);
+                    curBestEdge = chart[cell.start][ghostEdge.rightCell.end()].getBestEdge(ghostEdge.p.parent);
                     if (curBestEdge == null) {
                         // ghost edge inside prob = grammar rule prob + ONE
                         // CHILD inside prob
                         prob = newEdge.insideProb + ghostEdge.insideProb;
-                        addEdgeToFrontier(new ChartEdgeWithFOM(ghostEdge.p, cell, ghostEdge.rightCell, prob, edgeFOM, this));
+                        addEdgeToFrontier(new ChartEdgeWithFOM(ghostEdge.p, cell, (BaseChartCell) ghostEdge.rightCell, prob, edgeFOM, this));
                     }
                 }
             }
@@ -79,10 +79,10 @@ public class AgendaChartParserGhostEdges extends AgendaChartParser {
             possibleEdges = needRightGhostEdges[nonTerm][cell.start];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
-                    curBestEdge = chart[ghostEdge.leftCell.start][cell.end].getBestEdge(ghostEdge.p.parent);
+                    curBestEdge = chart[ghostEdge.leftCell.start()][cell.end].getBestEdge(ghostEdge.p.parent);
                     if (curBestEdge == null) {
                         prob = newEdge.insideProb + ghostEdge.insideProb;
-                        addEdgeToFrontier(new ChartEdgeWithFOM(ghostEdge.p, ghostEdge.leftCell, cell, prob, edgeFOM, this));
+                        addEdgeToFrontier(new ChartEdgeWithFOM(ghostEdge.p, (BaseChartCell) ghostEdge.leftCell, cell, prob, edgeFOM, this));
                     }
                 }
             }

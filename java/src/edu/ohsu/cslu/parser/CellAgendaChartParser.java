@@ -27,7 +27,7 @@ public class CellAgendaChartParser extends AgendaChartParser {
         frontier = new FrontierCell[chartSize][chartSize + 1];
         for (int start = 0; start < chartSize; start++) {
             for (int end = start + 1; end < chartSize + 1; end++) {
-                frontier[start][end] = new FrontierCell(chart[start][end]);
+                frontier[start][end] = new FrontierCell((ArrayChartCell) chart[start][end]);
             }
         }
 
@@ -47,7 +47,7 @@ public class CellAgendaChartParser extends AgendaChartParser {
 
         final ChartTraversal chartTraversal = ChartTraversal.create(traversalType, this);
         while (chartTraversal.hasNext()) {
-            cell = chartTraversal.next();
+            cell = (ArrayChartCell) chartTraversal.next();
             visitCell(cell);
             // System.out.println(cell + " numFront=" + frontier[cell.start][cell.end].edgeAgenda.size());
         }

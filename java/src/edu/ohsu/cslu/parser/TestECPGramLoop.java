@@ -3,6 +3,7 @@ package edu.ohsu.cslu.parser;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
@@ -22,9 +23,8 @@ public class TestECPGramLoop extends ExhaustiveChartParserTestCase {
     }
 
     @Override
-    protected MaximumLikelihoodParser createParser(final ArrayGrammar grammar,
-            final ChartTraversalType chartTraversalType) {
-        return new ECPGramLoop(grammar, chartTraversalType);
+    protected MaximumLikelihoodParser createParser(final Grammar grammar, final ChartTraversalType chartTraversalType) {
+        return new ECPGramLoop((ArrayGrammar) grammar, chartTraversalType);
     }
 
     @Override
