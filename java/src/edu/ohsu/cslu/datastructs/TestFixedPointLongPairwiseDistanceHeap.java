@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.datastructs;
 
+import static junit.framework.Assert.fail;
+
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.fail;
 
 /**
  * Unit tests for {@link FixedPointLongPairwiseDistanceHeap}.

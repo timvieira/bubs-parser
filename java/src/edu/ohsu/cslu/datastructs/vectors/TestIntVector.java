@@ -1,11 +1,11 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link IntVector}

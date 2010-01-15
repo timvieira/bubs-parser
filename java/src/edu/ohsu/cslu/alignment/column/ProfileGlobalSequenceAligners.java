@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.alignment.column;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -13,8 +15,6 @@ import edu.ohsu.cslu.common.MappedSequence;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
 
 @RunWith(FilteredRunner.class)
 @PerformanceTest

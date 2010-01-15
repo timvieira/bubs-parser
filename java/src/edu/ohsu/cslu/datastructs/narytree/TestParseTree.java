@@ -1,5 +1,11 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -16,8 +22,6 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link ParseTree}
