@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -8,8 +10,6 @@ import java.io.StringWriter;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests common to all {@link Vector} implementations

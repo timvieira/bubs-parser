@@ -1,5 +1,8 @@
 package edu.ohsu.cslu.util;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
@@ -11,9 +14,6 @@ import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 
 @RunWith(FilteredRunner.class)
 public class TestStrings {

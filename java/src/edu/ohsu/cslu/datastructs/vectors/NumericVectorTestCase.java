@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
-import org.junit.Test;
-
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.fail;
+
+import org.junit.Test;
 
 /**
  * Unit tests common to all {@link NumericVector} implementations

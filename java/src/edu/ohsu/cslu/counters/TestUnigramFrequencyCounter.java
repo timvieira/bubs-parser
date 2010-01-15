@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.counters;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -9,8 +11,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
 
 /**
  * Unit tests for {@link UnigramFrequencyCounter}

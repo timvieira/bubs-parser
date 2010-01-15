@@ -1,5 +1,8 @@
 package edu.ohsu.cslu.tools;
 
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.Theories;
@@ -9,10 +12,6 @@ import org.junit.runner.RunWith;
 import cltool.LinewiseCommandlineTool;
 import cltool.ToolTestCase;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-
-import static junit.framework.Assert.assertEquals;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for {@link SelectFeatures}. Also a bit of a playground to try out new JUnit features.

@@ -1,8 +1,8 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
-import org.junit.Before;
-
 import static junit.framework.Assert.assertEquals;
+
+import org.junit.Before;
 
 /**
  * Unit test for {@link MutableSparseBitVector}

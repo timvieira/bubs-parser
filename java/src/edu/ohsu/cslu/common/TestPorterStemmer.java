@@ -1,11 +1,11 @@
 package edu.ohsu.cslu.common;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
 
 @RunWith(FilteredRunner.class)
 public class TestPorterStemmer {
