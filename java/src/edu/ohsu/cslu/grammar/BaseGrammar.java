@@ -14,63 +14,65 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 import edu.ohsu.cslu.parser.util.Log;
 
 public abstract class BaseGrammar implements Grammar {
-    public int startSymbol = -1;
-    public int nullSymbol = -1;
-    public final String nullSymbolStr = "<null>";
-
-    private List<Production>[] lexicalProds;
-    public final SymbolSet<String> nonTermSet;
-    public final SymbolSet<Integer> posSet; // index into nonTermSet of POS non terms
-    protected final SymbolSet<String> lexSet;
-    private Tokenizer tokenizer;
-    private int maxPOSIndex = -1; // TODO: should sort nonterms so ordered by POS then NTs
-
     protected Collection<Production> binaryProductions;
     protected Collection<Production> unaryProductions;
+    public int startSymbol = -1;
+    public int nullSymbol = -1;
+    public String nullSymbolStr = "<null>";
 
-    private BaseGrammar() {
+    // private LinkedList<LexicalProduction>[] lexicalProds = new LinkedList<UnaryProduction>[5];
+    // note: java doesn't allow generic array creation, so must do it like this:
+    private List<Production>[] lexicalProds;
+    public int numLexProds;
+    public final SymbolSet<String> nonTermSet;
+    public final SymbolSet<Integer> posSet; // index into nonTermSet of POS non terms
+    private final SymbolSet<String> lexSet;
+    private final Tokenizer tokenizer;
+    private int maxPOSIndex = -1; // TODO: should sort nonterms so ordered by POS then NTs
+
+    protected BaseGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         nonTermSet = new SymbolSet<String>();
         posSet = new SymbolSet<Integer>();
         lexSet = new SymbolSet<String>();
-    }
 
-    protected BaseGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this();
         init(grammarFile, lexiconFile, grammarFormat);
+
+        tokenizer = new Tokenizer(lexSet);
     }
 
-    public BaseGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this();
-        init(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    protected BaseGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        Log.info(1, "INFO: Reading lexical productions");
-        readLexProds(lexiconFile);
+        Log.info(1, "INFO: Reading grammar");
 
         // the nullSymbol is used for start/end of sentence markers and dummy non-terminals
         nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
         posSet.addSymbol(nullSymbol);
 
-        Log.info(1, "INFO: Reading grammar");
         readGrammar(grammarFile, grammarFormat);
         if (startSymbol == -1) {
             throw new IllegalArgumentException("No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
         }
 
-        tokenizer = new Tokenizer(lexSet);
+        Log.info(1, "INFO: Reading lexical productions");
+        readLexProds(lexiconFile);
     }
 
     @SuppressWarnings("unchecked")
     private void readLexProds(final Reader lexFile) throws IOException {
+        String line;
+        String[] tokens;
+        Production lexProd;
         final List<Production> tmpProdList = new LinkedList<Production>();
 
         final BufferedReader br = new BufferedReader(lexFile);
-        for (String line = br.readLine(); line != null; line = br.readLine()) {
-            final String[] tokens = line.split("\\s");
+        while ((line = br.readLine()) != null) {
+            tokens = line.split("\\s");
             if (tokens.length == 4) {
                 // expecting: A -> B prob
-                final Production lexProd = new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), true);
+                lexProd = new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), true);
                 tmpProdList.add(lexProd);
             } else {
                 throw new IllegalArgumentException("Unexpected line in lexical file\n\t" + line);
@@ -88,8 +90,9 @@ public abstract class BaseGrammar implements Grammar {
                 tmpLexicalProds.set(p.leftChild, new LinkedList<Production>());
             }
             tmpLexicalProds.get(p.leftChild).add(p);
+            numLexProds++;
         }
-        lexicalProds = tmpLexicalProds.toArray(new List[tmpLexicalProds.size()]);
+        lexicalProds = tmpLexicalProds.toArray(new LinkedList[tmpLexicalProds.size()]);
     }
 
     private void readGrammar(final Reader gramFile, final GrammarFormatType grammarFormat) throws IOException {
@@ -131,12 +134,24 @@ public abstract class BaseGrammar implements Grammar {
         }
     }
 
-    public final Token[] tokenize(final String sentence) throws Exception {
+    public final Token[] tokenize(final String sentence) {
         return tokenizer.tokenize(sentence);
     }
 
     public final int numNonTerms() {
         return nonTermSet.numSymbols();
+    }
+
+    public final int numLexSymbols() {
+        return lexSet.size();
+    }
+
+    public final int numPosSymbols() {
+        return posSet.size();
+    }
+
+    public final String startSymbol() {
+        return nonTermSet.getSymbol(startSymbol);
     }
 
     public final boolean hasWord(final String s) {
@@ -169,14 +184,8 @@ public abstract class BaseGrammar implements Grammar {
         return lexicalProds[token.index];
     }
 
-    public final List<Production> getLexProdsForToken(final String token) {
-        return getLexProdsForToken(tokenizer.new Token(token));
-    }
-
     // TODO: not efficient. Should index by child
-    // TODO: Could be overridden in ArrayGrammar to use more efficient array storage instead, but it's only
-    // used during chart initialization, so that's probably not crucial
-    public final List<Production> getUnaryProdsWithChild(final int child) {
+    public List<Production> getUnaryProdsWithChild(final int child) {
         final List<Production> matchingProds = new LinkedList<Production>();
         for (final Production p : unaryProductions) {
             if (p.leftChild == child)
@@ -188,12 +197,8 @@ public abstract class BaseGrammar implements Grammar {
 
     /**
      * Terribly inefficient; should be overridden by child classes
-     * 
-     * @param parent
-     * @param leftChild
-     * @param rightChild
-     * @return
      */
+    @Override
     public float logProbability(final String parent, final String leftChild, final String rightChild) {
         final int parentIndex = nonTermSet.getIndex(parent);
         final int leftChildIndex = nonTermSet.getIndex(leftChild);
@@ -210,11 +215,8 @@ public abstract class BaseGrammar implements Grammar {
 
     /**
      * Terribly inefficient; should be overridden by child classes
-     * 
-     * @param parent
-     * @param child
-     * @return
      */
+    @Override
     public float logProbability(final String parent, final String child) {
         final int parentIndex = nonTermSet.getIndex(parent);
         final int leftChildIndex = nonTermSet.getIndex(child);
@@ -230,11 +232,8 @@ public abstract class BaseGrammar implements Grammar {
 
     /**
      * Terribly inefficient; should be overridden by child classes
-     * 
-     * @param parent
-     * @param child
-     * @return
      */
+    @Override
     public float lexicalLogProbability(final String parent, final String child) {
         final int parentIndex = nonTermSet.getIndex(parent);
         if (!lexSet.hasLabel(child)) {
@@ -249,24 +248,8 @@ public abstract class BaseGrammar implements Grammar {
         return Float.NEGATIVE_INFINITY;
     }
 
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder(1024);
-        for (final Production p : binaryProductions) {
-            sb.append(p.toString());
-            sb.append('\n');
-        }
+    public final class Production {
 
-        for (final Production p : unaryProductions) {
-            sb.append(p.toString());
-            sb.append('\n');
-        }
-        return sb.toString();
-    }
-
-    // TODO Implement hashCode()
-
-    public class Production {
         // if rightChild == -1, it's a unary prod, if -2, it's a lexical prod
         public final static int UNARY_PRODUCTION = -1;
         public final static int LEXICAL_PRODUCTION = -2;
