@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.grammar;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 
@@ -31,7 +32,7 @@ public class ArrayGrammar extends BaseGrammar {
     }
 
     public ArrayGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super(grammarFile, lexiconFile, grammarFormat);
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     @Override
