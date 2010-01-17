@@ -34,7 +34,7 @@ public class SymbolSet<E> implements Iterable<E> {
         return this.getIndex(symbol);
     }
 
-    public boolean hasLabel(final String label) {
+    public boolean hasSymbol(final String label) {
         return symbolHash.containsKey(label);
     }
 
