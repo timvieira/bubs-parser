@@ -41,18 +41,18 @@ public class Tokenizer {
             assert this.word != null;
             String unkStr;
 
-            if (lexSet.hasLabel(word)) {
+            if (lexSet.hasSymbol(word)) {
                 this.index = lexSet.getIndex(word);
                 this.isUnk = false;
             } else {
                 this.isUnk = true;
                 unkStr = wordToUnkString(word);
                 // remove last feature from unk string until we find a matching entry in the lexicon
-                while (!lexSet.hasLabel(unkStr) && unkStr.contains("-")) {
+                while (!lexSet.hasSymbol(unkStr) && unkStr.contains("-")) {
                     unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
                 }
 
-                if (lexSet.hasLabel(unkStr) == false) {
+                if (lexSet.hasSymbol(unkStr) == false) {
                     throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
                 }
                 this.index = lexSet.getIndex(unkStr);

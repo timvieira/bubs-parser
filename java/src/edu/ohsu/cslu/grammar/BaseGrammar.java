@@ -155,7 +155,7 @@ public abstract class BaseGrammar implements Grammar {
     }
 
     public final boolean hasWord(final String s) {
-        return lexSet.hasLabel(s);
+        return lexSet.hasSymbol(s);
     }
 
     public final int getNonTermIndex(final String token) {
@@ -236,7 +236,7 @@ public abstract class BaseGrammar implements Grammar {
     @Override
     public float lexicalLogProbability(final String parent, final String child) {
         final int parentIndex = nonTermSet.getIndex(parent);
-        if (!lexSet.hasLabel(child)) {
+        if (!lexSet.hasSymbol(child)) {
             return Float.NEGATIVE_INFINITY;
         }
 
