@@ -14,7 +14,7 @@ public abstract class EdgeFOM {
         Inside, NormalizedInside, BoundaryInOut, WeightedFeatures
     }
 
-    public abstract float calcFOM(ChartEdgeWithFOM edge, ChartParser parser);
+    public abstract float calcFOM(ChartEdgeWithFOM edge);
 
     public static EdgeFOM create(final EdgeFOMType type, final BufferedReader fomModelStream, final ArrayGrammar grammar) throws Exception {
         switch (type) {

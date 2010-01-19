@@ -29,7 +29,7 @@ public class BoundaryInOut extends EdgeFOM {
     }
 
     @Override
-    public float calcFOM(final ChartEdgeWithFOM edge, final ChartParser parser) {
+    public float calcFOM(final ChartEdgeWithFOM edge) {
 
         if (edge.p.isLexProd()) {
             return edge.insideProb;
@@ -42,11 +42,30 @@ public class BoundaryInOut extends EdgeFOM {
         final float outside = outsideLeft[edge.start() - 1 + 1][edge.p.parent] + outsideRight[edge.end() + 1][edge.p.parent];
         final float fom = edge.insideProb + outside + spanLength * ParserDriver.fudgeFactor;
 
-        // System.out.println("FOM: chart[" + edge.start() + "," + edge.end() + "]" + " n=" + spanLength + " p=" + edge.p.toString() + " i=" + edge.insideProb + " o=" + outside
-        // + " oL[" + (edge.start() - 1 + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " oR["
-        // + (edge.end() + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" + outsideRight[edge.end() + 1][edge.p.parent] + " fom=" + fom);
+        // System.out.println(calcFOMToString(edge));
 
         return fom;
+    }
+
+    public String calcFOMToString(final ChartEdgeWithFOM edge) {
+        final int spanLength = edge.end() - edge.start();
+        final float outside = outsideLeft[edge.start() - 1 + 1][edge.p.parent] + outsideRight[edge.end() + 1][edge.p.parent];
+        final float fom = edge.insideProb + outside + spanLength * ParserDriver.fudgeFactor;
+
+        // String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]" + " n=" + spanLength + " p=" + edge.p.toString() + " i=" + edge.insideProb + " o=" + outside
+        // + " oL[" + (edge.start() - 1 + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " oR["
+        // + (edge.end() + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" + outsideRight[edge.end() + 1][edge.p.parent] + " fom=" + fom;
+
+        String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]";
+        s += " n=" + spanLength;
+        s += " p=" + edge.p.toString();
+        s += " i=" + edge.insideProb;
+        s += " o=" + outside;
+        s += " oL[" + (edge.start() - 1 + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" + outsideLeft[edge.start() - 1 + 1][edge.p.parent];
+        s += " oR[" + (edge.end() + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" + outsideRight[edge.end() + 1][edge.p.parent];
+        s += " fom=" + fom;
+
+        return s;
     }
 
     @Override
@@ -65,6 +84,9 @@ public class BoundaryInOut extends EdgeFOM {
         outsideRight = new float[fbSize][grammar.numNonTerms()];
         LinkedList<Integer> prevPOSList, curPOSList;
 
+        // TODO: we can problably make this faster by only initilizing the cells that
+        // are going to be accessed (ie. only the POS cells for a given span. Not sure
+        // about the outsideLeft and Right ...
         for (int i = 0; i < fbSize; i++) {
             for (int j = 0; j < posSize; j++) {
                 forward[i][j] = Float.NEGATIVE_INFINITY;
@@ -120,7 +142,7 @@ public class BoundaryInOut extends EdgeFOM {
         // calc outside right and left probs. These are not dependent on the span
         // size so we can pre calc them before we do any parsing.
         // outside(A->B C where TL and TR are the POS tag directly left and right of the consituent)
-        // outside(A->B C, TL, TR) = FB(TL) * P(A|TL) * FB(TR) * P(TR|A)
+        // outside(A->B C, TL, TR) = Fwd(TL) * P(A|TL) * P(TR|A) * Bkw(TR)
         float fbLeft, fbRight;
         for (int leftIndex = 0; leftIndex < fbSize; leftIndex++) {
             // System.out.println("i=" + leftIndex);
@@ -129,8 +151,9 @@ public class BoundaryInOut extends EdgeFOM {
                 fbLeft = forward[leftIndex][pos];
                 fbRight = backward[rightIndex][pos];
 
-                // if (fbLeft > Float.NEGATIVE_INFINITY) System.out.println("  " + grammar.nonTermSet.getSymbol(pos) + " fwd=" + forward[leftIndex][pos] + " bk=" +
-                // backward[leftIndex][pos]);
+                // if (fbLeft > Float.NEGATIVE_INFINITY) {
+                // System.out.println("  " + grammar.nonTermSet.getSymbol(pos) + " fwd=" + forward[leftIndex][pos] + " bk=" + backward[leftIndex][pos]);
+                // }
                 for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
                     score = fbLeft + leftBoundaryLogProb[nonTerm][pos];
                     if (score > outsideLeft[leftIndex][nonTerm]) {
@@ -172,7 +195,7 @@ public class BoundaryInOut extends EdgeFOM {
                         System.out.println("WARNING: edge[" + start + "][" + end + "][" + node.contents + "] not in chart!");
                     } else {
                         System.out.print("INPUT_TREE: ");
-                        this.calcFOM(edge, parser);
+                        this.calcFOM(edge);
                     }
                 } else {
                     System.out.println("WARNING: '" + node.contents + "' not in nonTermSet!");
@@ -182,21 +205,13 @@ public class BoundaryInOut extends EdgeFOM {
     }
 
     private LinkedList<Integer> getPOSListFromChart(final ChartParser parser, final int startIndex) {
-        final LinkedList<Integer> posList = new LinkedList<Integer>();
         final int endIndex = startIndex + 1;
         if (startIndex < 0 || endIndex > parser.chartSize) {
+            final LinkedList<Integer> posList = new LinkedList<Integer>();
             posList.addLast(grammar.nullSymbol);
-        } else {
-            final ArrayChartCell chartCell = (ArrayChartCell) parser.chart[startIndex][endIndex];
-            // TODO: could track POS entries in chartCell as they are placed in
-            for (final int posIndex : parser.grammar.posSet) {
-                if (chartCell.getBestEdge(posIndex) != null) {
-                    posList.addLast(posIndex);
-                }
-            }
+            return posList;
         }
-
-        return posList;
+        return ((ArrayChartCell) parser.chart[startIndex][endIndex]).getPosEntries();
     }
 
     public float leftBoundaryLogProb(final int nonTerm, final int pos) {
@@ -223,7 +238,7 @@ public class BoundaryInOut extends EdgeFOM {
     public void readModel(final BufferedReader inStream) throws IOException {
         final int numNT = grammar.numNonTerms();
         final int maxPOSIndex = grammar.maxPOSIndex();
-        System.out.println("numNT=" + numNT + " maxPOS=" + maxPOSIndex);
+        // System.out.println("numNT=" + numNT + " maxPOS=" + maxPOSIndex);
         // final int numPOS = grammar.posSet.size();
         leftBoundaryLogProb = new float[numNT][maxPOSIndex + 1];
         rightBoundaryLogProb = new float[maxPOSIndex + 1][numNT];

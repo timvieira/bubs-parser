@@ -26,12 +26,12 @@ public class WeightedFeatures extends EdgeFOM {
     }
 
     @Override
-    public float calcFOM(final ChartEdgeWithFOM edge, final ChartParser parser) {
-        final double[] featVector = getFeatureVector(edge, parser);
+    public float calcFOM(final ChartEdgeWithFOM edge) {
+        final double[] featVector = getFeatureVector(edge);
         return 0; // model.score(featVector); // we want a regressor here, not a classifier
     }
 
-    public double[] getFeatureVector(final ChartEdgeWithFOM edge, final ChartParser parser) {
+    public double[] getFeatureVector(final ChartEdgeWithFOM edge) {
         final double[] feats = new double[numFeatures];
         Arrays.fill(feats, 0.0);
 
