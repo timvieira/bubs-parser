@@ -1,6 +1,8 @@
 package edu.ohsu.cslu.grammar;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -31,6 +33,10 @@ public class PackedSparseMatrixGrammar extends BaseGrammar {
     /** Unary productions, stored in the order read in from the grammar file */
     public Production[] unaryProds;
 
+    private LongOpenHashSet validProductionPairs;
+
+    private IntOpenHashSet validLeftChildren;
+
     public PackedSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
     }
@@ -43,17 +49,20 @@ public class PackedSparseMatrixGrammar extends BaseGrammar {
     protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super.init(grammarFile, lexiconFile, grammarFormat);
 
+        validProductionPairs = new LongOpenHashSet(50000);
+        validLeftChildren = new IntOpenHashSet(5000);
         unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
 
         final Long2FloatOpenHashMap[] maps = new Long2FloatOpenHashMap[numNonTerms()];
         entries = new long[numNonTerms()][];
         for (int i = 0; i < numNonTerms(); i++) {
             maps[i] = new Long2FloatOpenHashMap(1000);
-            entries[i] = new long[numNonTerms()];
         }
 
         for (final Production p : binaryProductions) {
             maps[p.parent].put(pack(p.leftChild, p.rightChild), p.prob);
+            validProductionPairs.add(pack(p.leftChild, p.rightChild));
+            validLeftChildren.add(p.leftChild);
         }
 
         for (int parent = 0; parent < numNonTerms(); parent++) {
@@ -116,5 +125,30 @@ public class PackedSparseMatrixGrammar extends BaseGrammar {
 
     public long[] entries(final int parent) {
         return entries[parent];
+    }
+
+    public boolean isValidLeftChild(final int leftChild) {
+        return validLeftChildren.contains(leftChild);
+    }
+
+    public boolean isValidProductionPair(final long children) {
+        return validProductionPairs.contains(children);
+    }
+
+    public boolean isValidProductionPair(final int leftChild, final int rightChild) {
+        return isValidProductionPair(pack(leftChild, rightChild));
+    }
+
+    public int validProductionPairs() {
+        return validProductionPairs.size();
+    }
+
+    @Override
+    public String getStats() {
+        final StringBuilder sb = new StringBuilder(1024);
+        sb.append(super.getStats());
+        sb.append("Valid production pairs: " + validProductionPairs.size() + '\n');
+        sb.append("Valid left children: " + validLeftChildren.size() + '\n');
+        return sb.toString();
     }
 }

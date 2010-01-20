@@ -14,8 +14,11 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class SparseMatrixVectorParser extends ChartParserByTraversal implements MaximumLikelihoodParser {
 
+    private final PackedSparseMatrixGrammar spMatrixGrammar;
+
     public SparseMatrixVectorParser(final PackedSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
+        this.spMatrixGrammar = grammar;
     }
 
     @Override
@@ -119,40 +122,52 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
     private final class CrossProductVector {
 
         private final long[] entries;
+        private int size = 0;
 
         public CrossProductVector(final long[] entries) {
             this.entries = entries;
+            this.size = entries.length >> 1;
         }
 
         public CrossProductVector(final SparseVectorChartCell leftCell, final SparseVectorChartCell rightCell, final int midpoint) {
             final int leftChildSize = leftCell.size();
             final int rightChildSize = rightCell.size();
-            entries = new long[leftChildSize * rightChildSize * 2];
+            final int maxEntries = Math.min(spMatrixGrammar.validProductionPairs(), leftChildSize * rightChildSize);
+            entries = new long[maxEntries << 1];
 
+            int index = 0;
             for (int i = 0; i < leftChildSize; i++) {
 
+                final int leftChild = leftCell.nonterminal(i);
+                if (!spMatrixGrammar.isValidLeftChild(leftChild)) {
+                    continue;
+                }
                 final float leftProbability = leftCell.probability(i);
-                final int leftNonterminal = leftCell.nonterminal(i);
 
                 for (int j = 0; j < rightChildSize; j++) {
                     final float rightProbability = rightCell.probability(j);
-                    final int index = (i * rightChildSize + j) * 2;
 
-                    final long key = pack(leftNonterminal, rightCell.nonterminal(j));
-                    entries[index] = key;
-                    entries[index + 1] = pack(midpoint, leftProbability + rightProbability);
+                    final long children = pack(leftChild, rightCell.nonterminal(j));
+                    if (!spMatrixGrammar.isValidProductionPair(children)) {
+                        continue;
+                    }
+                    entries[index++] = children;
+                    entries[index++] = pack(midpoint, leftProbability + rightProbability);
                 }
             }
+            size = index >> 1;
         }
 
         public final CrossProductVector union(final CrossProductVector other, final int start, final int end) {
-            final int size = size();
+            final int thisLength = size << 1;
             final int otherSize = other.size();
-            final long[] newEntries = new long[(size + otherSize) * 2];
+            final int otherLength = otherSize << 1;
+
+            final long[] newEntries = new long[thisLength + otherLength];
             final long[] otherEntries = other.entries;
             int newIndex = 0, thisIndex = 0, otherIndex = 0;
 
-            while (thisIndex < entries.length && otherIndex < otherEntries.length) {
+            while (thisIndex < thisLength && otherIndex < otherLength) {
 
                 if (entries[thisIndex] < otherEntries[otherIndex]) {
                     newEntries[newIndex++] = entries[thisIndex++];
@@ -184,10 +199,10 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
 
             // TODO: Store an end index so we won't have to copy every time
             // Copy from the end of each array to the new array
-            System.arraycopy(entries, thisIndex, newEntries, newIndex, entries.length - thisIndex);
-            newIndex += entries.length - thisIndex;
-            System.arraycopy(otherEntries, otherIndex, newEntries, newIndex, otherEntries.length - otherIndex);
-            newIndex += otherEntries.length - otherIndex;
+            System.arraycopy(entries, thisIndex, newEntries, newIndex, thisLength - thisIndex);
+            newIndex += thisLength - thisIndex;
+            System.arraycopy(otherEntries, otherIndex, newEntries, newIndex, otherLength - otherIndex);
+            newIndex += otherLength - otherIndex;
 
             final long[] trimmedNewEntries = new long[newIndex];
             System.arraycopy(newEntries, 0, trimmedNewEntries, 0, newIndex);
@@ -196,13 +211,13 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
         }
 
         public final int size() {
-            return entries.length / 2;
+            return size;
         }
 
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder(256);
-            for (int i = 0; i < entries.length; i = i + 2) {
+            for (int i = 0; i < (size << 1); i = i + 2) {
                 final int leftChild = (int) (entries[i] >> 32);
                 final int rightChild = (int) entries[i];
                 final int midpoint = (int) (entries[i + 1] >> 32);
@@ -387,7 +402,7 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
 
                 if (p.isLexProd()) {
                     // Store -2 in right child to mark lexical productions
-                    children.put(parent, pack(p.leftChild, -2));
+                    children.put(parent, pack(p.leftChild, Production.LEXICAL_PRODUCTION));
                 } else {
                     children.put(parent, pack(p.leftChild, p.rightChild));
                 }
@@ -409,7 +424,7 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
                 probabilities.put(parent, insideProb);
                 if (p.isLexProd()) {
                     // Store -2 in right child to mark lexical productions
-                    children.put(parent, pack(p.leftChild, -2));
+                    children.put(parent, pack(p.leftChild, Production.LEXICAL_PRODUCTION));
                 } else {
                     children.put(parent, pack(p.leftChild, p.rightChild));
                 }

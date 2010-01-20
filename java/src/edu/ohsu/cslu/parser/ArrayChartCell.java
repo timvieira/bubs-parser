@@ -1,6 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.ArrayGrammar;

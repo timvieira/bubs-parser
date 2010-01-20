@@ -248,6 +248,23 @@ public abstract class BaseGrammar implements Grammar {
         return Float.NEGATIVE_INFINITY;
     }
 
+    public String getStats() {
+        final StringBuilder sb = new StringBuilder(256);
+        sb.append("Binary rules: " + binaryProductions.size() + '\n');
+        sb.append("Unary rules: " + unaryProductions.size() + '\n');
+        sb.append("Lexical rules: " + numLexProds + '\n');
+
+        sb.append("Non Terminals: " + nonTermSet.size() + '\n');
+        sb.append("Lexical symbols: " + lexSet.size() + '\n');
+        sb.append("POS symbols: " + posSet.size() + '\n');
+        sb.append("Max POS index: " + maxPOSIndex + '\n');
+
+        sb.append("Start symbol: " + nonTermSet.getSymbol(startSymbol) + '\n');
+        sb.append("Null symbol: " + nonTermSet.getSymbol(nullSymbol) + '\n');
+
+        return sb.toString();
+    }
+
     public final class Production {
 
         // if rightChild == -1, it's a unary prod, if -2, it's a lexical prod
