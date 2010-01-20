@@ -48,4 +48,12 @@ public interface Grammar {
      * @return Log probability of the specified rule
      */
     public float lexicalLogProbability(final String parent, final String child);
+
+    /**
+     * Returns a string representation of important statistics about the grammar (number of non-terminals, counts of unary, binary, and lexical rules, etc.). Grammar
+     * implementations should provide any statistics significant to their own storage formats.
+     * 
+     * @return a string representation of important statistics about the grammar
+     */
+    public String getStats();
 }
