@@ -336,12 +336,12 @@ public abstract class BaseGrammar implements Grammar {
         }
 
         public String childrenToString() {
-            if (!isLexProd()) {
-                return nonTermSet.getSymbol(leftChild);
-            } else if (isUnaryProd()) {
-                return nonTermSet.getSymbol(leftChild) + " " + nonTermSet.getSymbol(rightChild);
-            } else {
+            if (isLexProd()) {
                 return lexSet.getSymbol(leftChild);
+            } else if (isUnaryProd()) {
+                return nonTermSet.getSymbol(leftChild);
+            } else {
+                return nonTermSet.getSymbol(leftChild) + " " + nonTermSet.getSymbol(rightChild);
             }
         }
 
