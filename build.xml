@@ -235,7 +235,15 @@
 		</antcall>
 	</target>
 
-    <target name="parse" depends="compile-java" description="Package parser driver">
+    <target name="summarize-grammar" depends="compile-java" description="Package grammar statistics tool">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
+            <param name="tool-name" value="summarize-grammar" />
+            <param name="heap-size" value="1024" />
+        </antcall>
+    </target>
+
+	<target name="parse" depends="compile-java" description="Package parser driver">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.ParserDriver" />
             <param name="tool-name" value="parse" />
@@ -250,7 +258,7 @@
     -->
     <!-- TODO: Re-add compile-native -->
 	<target name="dist"
-	        depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,create-vector,parse"
+	        depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,create-vector,summarize-grammar,parse"
 	        description="Package all NLP application">
 	</target>
 

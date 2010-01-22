@@ -37,6 +37,8 @@ public class PackedSparseMatrixGrammar extends BaseGrammar {
 
     private IntOpenHashSet validLeftChildren;
 
+    private IntOpenHashSet validRightChildren;
+
     public PackedSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
     }
@@ -51,6 +53,8 @@ public class PackedSparseMatrixGrammar extends BaseGrammar {
 
         validProductionPairs = new LongOpenHashSet(50000);
         validLeftChildren = new IntOpenHashSet(5000);
+        validRightChildren = new IntOpenHashSet(5000);
+
         unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
 
         final Long2FloatOpenHashMap[] maps = new Long2FloatOpenHashMap[numNonTerms()];
@@ -63,6 +67,7 @@ public class PackedSparseMatrixGrammar extends BaseGrammar {
             maps[p.parent].put(pack(p.leftChild, p.rightChild), p.prob);
             validProductionPairs.add(pack(p.leftChild, p.rightChild));
             validLeftChildren.add(p.leftChild);
+            validRightChildren.add(p.rightChild);
         }
 
         for (int parent = 0; parent < numNonTerms(); parent++) {
@@ -127,8 +132,12 @@ public class PackedSparseMatrixGrammar extends BaseGrammar {
         return entries[parent];
     }
 
-    public boolean isValidLeftChild(final int leftChild) {
-        return validLeftChildren.contains(leftChild);
+    public boolean isValidLeftChild(final int child) {
+        return validLeftChildren.contains(child);
+    }
+
+    public boolean isValidRightChild(final int child) {
+        return validRightChildren.contains(child);
     }
 
     public boolean isValidProductionPair(final long children) {
@@ -149,6 +158,25 @@ public class PackedSparseMatrixGrammar extends BaseGrammar {
         sb.append(super.getStats());
         sb.append("Valid production pairs: " + validProductionPairs.size() + '\n');
         sb.append("Valid left children: " + validLeftChildren.size() + '\n');
+        sb.append("Valid right children: " + validRightChildren.size() + '\n');
+
+        int maxLeftChild = 0;
+        for (final int leftChild : validLeftChildren) {
+            if (leftChild > maxLeftChild) {
+                maxLeftChild = leftChild;
+            }
+        }
+
+        int maxRightChild = 0;
+        for (final int rightChild : validRightChildren) {
+            if (rightChild > maxRightChild) {
+                maxRightChild = rightChild;
+            }
+        }
+
+        sb.append("Max left child: " + maxLeftChild + '\n');
+        sb.append("Max right child: " + maxRightChild + '\n');
+
         return sb.toString();
     }
 }

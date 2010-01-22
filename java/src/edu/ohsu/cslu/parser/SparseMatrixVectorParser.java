@@ -1,8 +1,12 @@
 package edu.ohsu.cslu.parser;
 
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.floats.FloatList;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 
 import java.util.Arrays;
 
@@ -57,7 +61,7 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
 
         final long t0 = System.currentTimeMillis();
 
-        CrossProductVector crossProduct = new CrossProductVector(new long[0]);
+        CrossProductVector crossProduct = new CrossProductVector(new long[0], 0);
 
         int totalProducts = 0;
 
@@ -124,30 +128,30 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
         private final long[] entries;
         private int size = 0;
 
-        public CrossProductVector(final long[] entries) {
+        public CrossProductVector(final long[] entries, final int size) {
             this.entries = entries;
-            this.size = entries.length >> 1;
+            this.size = size;
         }
 
         public CrossProductVector(final SparseVectorChartCell leftCell, final SparseVectorChartCell rightCell, final int midpoint) {
-            final int leftChildSize = leftCell.size();
-            final int rightChildSize = rightCell.size();
+            final int leftChildSize = leftCell.validLeftChildren.length;
+            final int rightChildSize = rightCell.validRightChildren.length;
             final int maxEntries = Math.min(spMatrixGrammar.validProductionPairs(), leftChildSize * rightChildSize);
             entries = new long[maxEntries << 1];
 
             int index = 0;
             for (int i = 0; i < leftChildSize; i++) {
 
-                final int leftChild = leftCell.nonterminal(i);
-                if (!spMatrixGrammar.isValidLeftChild(leftChild)) {
-                    continue;
-                }
-                final float leftProbability = leftCell.probability(i);
+                final int leftChild = leftCell.validLeftChildren[i];
+                // if (!spMatrixGrammar.isValidLeftChild(leftChild)) {
+                // continue;
+                // }
+                final float leftProbability = leftCell.validLeftChildrenProbabilities[i];
 
                 for (int j = 0; j < rightChildSize; j++) {
-                    final float rightProbability = rightCell.probability(j);
+                    final float rightProbability = rightCell.validRightChildrenProbabilities[j];
 
-                    final long children = pack(leftChild, rightCell.nonterminal(j));
+                    final long children = pack(leftChild, rightCell.validRightChildren[j]);
                     if (!spMatrixGrammar.isValidProductionPair(children)) {
                         continue;
                     }
@@ -190,24 +194,20 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
                     } else {
                         newEntries[newIndex++] = otherEntries[otherIndex];
                         newEntries[newIndex++] = otherEntries[otherIndex + 1];
-
                     }
-                    thisIndex = thisIndex + 2;
-                    otherIndex = otherIndex + 2;
+
+                    thisIndex += 2;
+                    otherIndex += 2;
                 }
             }
 
-            // TODO: Store an end index so we won't have to copy every time
             // Copy from the end of each array to the new array
             System.arraycopy(entries, thisIndex, newEntries, newIndex, thisLength - thisIndex);
             newIndex += thisLength - thisIndex;
             System.arraycopy(otherEntries, otherIndex, newEntries, newIndex, otherLength - otherIndex);
             newIndex += otherLength - otherIndex;
 
-            final long[] trimmedNewEntries = new long[newIndex];
-            System.arraycopy(newEntries, 0, trimmedNewEntries, 0, newIndex);
-
-            return new CrossProductVector(trimmedNewEntries);
+            return new CrossProductVector(newEntries, newIndex >> 1);
         }
 
         public final int size() {
@@ -262,6 +262,12 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
         /** Number of populated indices in {@link SparseVectorChartCell#entries} (actual entry count * 3) */
         private int entriesLength;
 
+        public int[] validLeftChildren;
+        public float[] validLeftChildrenProbabilities;
+
+        public int[] validRightChildren;
+        public float[] validRightChildrenProbabilities;
+
         private final BaseChartCell[][] chart;
 
         public SparseVectorChartCell(final int start, final int end, final PackedSparseMatrixGrammar grammar, final BaseChartCell[][] chart) {
@@ -284,17 +290,35 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
         public void finalizeCell() {
 
             entriesLength = probabilities.size() * 3;
+            final IntList validLeftChildList = new IntArrayList(probabilities.size());
+            final FloatList validLeftChildProbabilityList = new FloatArrayList(probabilities.size());
+            final IntList validRightChildList = new IntArrayList(probabilities.size());
+            final FloatList validRightChildProbabilityList = new FloatArrayList(probabilities.size());
 
             final int[] productionIndices = probabilities.keySet().toIntArray();
             Arrays.sort(productionIndices);
 
             int i = 0;
             for (final int productionIndex : productionIndices) {
-                entries[i] = ((long) productionIndex) << 32 | (Float.floatToIntBits(probabilities.get(productionIndex)) & 0xffffffffl);
+                final float probability = probabilities.get(productionIndex);
+                entries[i] = ((long) productionIndex) << 32 | (Float.floatToIntBits(probability) & 0xffffffffl);
                 entries[i + 1] = midpoints.get(productionIndex);
                 entries[i + 2] = children.get(productionIndex);
                 i = i + 3;
+
+                if (spMatrixGrammar.isValidLeftChild(productionIndex)) {
+                    validLeftChildList.add(productionIndex);
+                    validLeftChildProbabilityList.add(probability);
+                }
+                if (spMatrixGrammar.isValidRightChild(productionIndex)) {
+                    validRightChildList.add(productionIndex);
+                    validRightChildProbabilityList.add(probability);
+                }
             }
+            validLeftChildren = validLeftChildList.toIntArray();
+            validLeftChildrenProbabilities = validLeftChildProbabilityList.toFloatArray();
+            validRightChildren = validRightChildList.toIntArray();
+            validRightChildrenProbabilities = validRightChildProbabilityList.toFloatArray();
         }
 
         public final int size() {
