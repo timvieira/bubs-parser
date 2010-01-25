@@ -16,11 +16,11 @@ import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public class SparseMatrixVectorParser extends ChartParserByTraversal implements MaximumLikelihoodParser {
+public class PackedSparseMatrixVectorParser extends ChartParserByTraversal implements MaximumLikelihoodParser {
 
     private final PackedSparseMatrixGrammar spMatrixGrammar;
 
-    public SparseMatrixVectorParser(final PackedSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
+    public PackedSparseMatrixVectorParser(final PackedSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
         this.spMatrixGrammar = grammar;
     }
@@ -143,9 +143,6 @@ public class SparseMatrixVectorParser extends ChartParserByTraversal implements 
             for (int i = 0; i < leftChildSize; i++) {
 
                 final int leftChild = leftCell.validLeftChildren[i];
-                // if (!spMatrixGrammar.isValidLeftChild(leftChild)) {
-                // continue;
-                // }
                 final float leftProbability = leftCell.validLeftChildrenProbabilities[i];
 
                 for (int j = 0; j < rightChildSize; j++) {
