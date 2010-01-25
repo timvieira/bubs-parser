@@ -12,26 +12,17 @@ import java.util.Arrays;
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 
 /**
- * Stores a grammar as a sparse matrix of probabilities.
- * 
- * Matrix columns are indexed by production index (an int).
- * 
- * Matrix rows are indexed by the concatenation of left and right child indices (two 32-bit ints concatenated into a long).
- * 
- * TODO Generalize into an abstract superclass and a subclass implemented with a hash (allowing alternate sparse matrix implementations)
+ * Packs a sparse-matrix grammar into an array of longs
  * 
  * @author Aaron Dunlop
  * @since Dec 31, 2009
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class PackedSparseMatrixGrammar extends BaseSortedGrammar {
+public class PackedSparseMatrixGrammar extends BaseSparseMatrixGrammar {
 
     /** Binary productions, stored as a long followed by a float using {@link Float#floatToIntBits(float)} */
     private long[][] entries;
-
-    /** Unary productions, stored in the order read in from the grammar file */
-    public Production[] unaryProds;
 
     private LongOpenHashSet validProductionPairs;
 
@@ -54,8 +45,6 @@ public class PackedSparseMatrixGrammar extends BaseSortedGrammar {
         validProductionPairs = new LongOpenHashSet(50000);
         validLeftChildren = new IntOpenHashSet(5000);
         validRightChildren = new IntOpenHashSet(5000);
-
-        unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
 
         final Long2FloatOpenHashMap[] maps = new Long2FloatOpenHashMap[numNonTerms()];
         entries = new long[numNonTerms()][];
@@ -91,9 +80,28 @@ public class PackedSparseMatrixGrammar extends BaseSortedGrammar {
         return ((long) i) << 32 | (Float.floatToIntBits(f) & 0xffffffffl);
     }
 
-    @Override
-    public final float lexicalLogProbability(final String parent, final String child) {
-        return super.lexicalLogProbability(parent, child);
+    public long[] entries(final int parent) {
+        return entries[parent];
+    }
+
+    public boolean isValidLeftChild(final int child) {
+        return validLeftChildren.contains(child);
+    }
+
+    public boolean isValidRightChild(final int child) {
+        return validRightChildren.contains(child);
+    }
+
+    public boolean isValidProductionPair(final long children) {
+        return validProductionPairs.contains(children);
+    }
+
+    public boolean isValidProductionPair(final int leftChild, final int rightChild) {
+        return isValidProductionPair(pack(leftChild, rightChild));
+    }
+
+    public int validProductionPairs() {
+        return validProductionPairs.size();
     }
 
     @Override
@@ -121,35 +129,6 @@ public class PackedSparseMatrixGrammar extends BaseSortedGrammar {
             }
         }
         return Float.NEGATIVE_INFINITY;
-    }
-
-    @Override
-    public final float logProbability(final String parent, final String child) {
-        return super.logProbability(parent, child);
-    }
-
-    public long[] entries(final int parent) {
-        return entries[parent];
-    }
-
-    public boolean isValidLeftChild(final int child) {
-        return validLeftChildren.contains(child);
-    }
-
-    public boolean isValidRightChild(final int child) {
-        return validRightChildren.contains(child);
-    }
-
-    public boolean isValidProductionPair(final long children) {
-        return validProductionPairs.contains(children);
-    }
-
-    public boolean isValidProductionPair(final int leftChild, final int rightChild) {
-        return isValidProductionPair(pack(leftChild, rightChild));
-    }
-
-    public int validProductionPairs() {
-        return validProductionPairs.size();
     }
 
     @Override

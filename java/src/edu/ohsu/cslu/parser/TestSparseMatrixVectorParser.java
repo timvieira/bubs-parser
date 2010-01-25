@@ -20,7 +20,7 @@ public class TestSparseMatrixVectorParser extends ExhaustiveChartParserTestCase 
 
     @Override
     protected MaximumLikelihoodParser createParser(final Grammar grammar, final ChartTraversalType chartTraversalType) {
-        return new SparseMatrixVectorParser((PackedSparseMatrixGrammar) grammar, chartTraversalType);
+        return new PackedSparseMatrixVectorParser((PackedSparseMatrixGrammar) grammar, chartTraversalType);
     }
 
     @Override
