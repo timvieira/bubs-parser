@@ -22,13 +22,13 @@ public abstract class BaseGrammar implements Grammar {
 
     // private LinkedList<LexicalProduction>[] lexicalProds = new LinkedList<UnaryProduction>[5];
     // note: java doesn't allow generic array creation, so must do it like this:
-    private List<Production>[] lexicalProds;
+    protected List<Production>[] lexicalProds;
     public int numLexProds;
     public final SymbolSet<String> nonTermSet;
     public final SymbolSet<Integer> posSet; // index into nonTermSet of POS non terms
-    private final SymbolSet<String> lexSet;
+    protected final SymbolSet<String> lexSet;
     private final Tokenizer tokenizer;
-    private int maxPOSIndex = -1; // TODO: should sort nonterms so ordered by POS then NTs
+    protected int maxPOSIndex = -1; // TODO: should sort nonterms so ordered by POS then NTs
 
     protected BaseGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         nonTermSet = new SymbolSet<String>();
@@ -73,6 +73,12 @@ public abstract class BaseGrammar implements Grammar {
             if (tokens.length == 4) {
                 // expecting: A -> B prob
                 lexProd = new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), true);
+
+                posSet.addSymbol(lexProd.parent);
+                if (lexProd.parent > maxPOSIndex) {
+                    maxPOSIndex = lexProd.parent;
+                }
+
                 tmpProdList.add(lexProd);
             } else {
                 throw new IllegalArgumentException("Unexpected line in lexical file\n\t" + line);
@@ -295,10 +301,6 @@ public abstract class BaseGrammar implements Grammar {
                 this.rightChild = UNARY_PRODUCTION;
             } else {
                 this.leftChild = child;
-                posSet.addSymbol(this.parent);
-                if (this.parent > maxPOSIndex) {
-                    maxPOSIndex = this.parent;
-                }
                 this.rightChild = LEXICAL_PRODUCTION;
             }
             this.prob = prob;

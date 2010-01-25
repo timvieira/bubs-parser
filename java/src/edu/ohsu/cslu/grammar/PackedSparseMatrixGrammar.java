@@ -25,7 +25,7 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class PackedSparseMatrixGrammar extends BaseGrammar {
+public class PackedSparseMatrixGrammar extends BaseSortedGrammar {
 
     /** Binary productions, stored as a long followed by a float using {@link Float#floatToIntBits(float)} */
     private long[][] entries;
