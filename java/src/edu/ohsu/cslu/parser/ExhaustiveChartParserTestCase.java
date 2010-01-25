@@ -36,8 +36,8 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
 public abstract class ExhaustiveChartParserTestCase {
 
     // Grammar file paths, relative to unit test data root directory
-    private final static String PCFG_FILE = "grammars/f2-21-R2-p1-unk.pcfg";
-    private final static String LEX_FILE = "grammars/f2-21-R2-p1-unk.lex";
+    private final static String PCFG_FILE = "grammars/f2-21-R2-p1-unk.pcfg.gz";
+    private final static String LEX_FILE = "grammars/f2-21-R2-p1-unk.lex.gz";
 
     /** Grammar induced from WSJ sections 2-21 */
     protected static Grammar f2_21_grammar;
