@@ -14,20 +14,14 @@ import edu.ohsu.cslu.grammar.PackedSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.BaseGrammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
-import edu.ohsu.cslu.parser.util.ParseTree;
 
-public class PackedSparseMatrixVectorParser extends ChartParserByTraversal implements MaximumLikelihoodParser {
+public class PackedSparseMatrixVectorParser extends SparseMatrixVectorParser implements MaximumLikelihoodParser {
 
     private final PackedSparseMatrixGrammar spMatrixGrammar;
 
     public PackedSparseMatrixVectorParser(final PackedSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
         this.spMatrixGrammar = grammar;
-    }
-
-    @Override
-    public ParseTree findMLParse(final String sentence) throws Exception {
-        return findBestParse(sentence);
     }
 
     @Override
@@ -222,17 +216,18 @@ public class PackedSparseMatrixVectorParser extends ChartParserByTraversal imple
 
                 final PackedSparseMatrixGrammar psmg = (PackedSparseMatrixGrammar) grammar;
 
-                if (rightChild == -1) {
+                if (rightChild == Production.UNARY_PRODUCTION) {
                     // Unary production
-                    sb.append(String.format("%s %.3f (%d)\n", psmg.mapNonterminal(leftChild), probability, midpoint));
+                    sb.append(String.format("%s (%d) %.3f (%d)\n", psmg.mapNonterminal(leftChild), leftChild, probability, midpoint));
 
-                } else if (rightChild == -2) {
+                } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                     // Lexical production
-                    sb.append(String.format("%s %.3f (%d)\n", psmg.mapLexicalEntry(leftChild), probability, midpoint));
+                    sb.append(String.format("%s (%d) %.3f (%d)\n", psmg.mapLexicalEntry(leftChild), leftChild, probability, midpoint));
 
                 } else {
                     // Binary production
-                    sb.append(String.format("%s,%s %.3f (%d)\n", psmg.mapNonterminal(leftChild), psmg.mapNonterminal(rightChild), probability, midpoint));
+                    sb.append(String.format("%s (%d),%s (%d) %.3f (%d)\n", psmg.mapNonterminal(leftChild), leftChild, psmg.mapNonterminal(rightChild), rightChild, probability,
+                            midpoint));
                 }
             }
             return sb.toString();

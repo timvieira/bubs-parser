@@ -35,6 +35,9 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
     @SuppressWarnings("unchecked")
     protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
 
+        rightChildOnlyStart = 0;
+        eitherChildStart = leftChildOnlyStart = unaryChildOnlyStart = posStart = -1;
+
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
@@ -127,11 +130,11 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
                 case LEFT_CHILD_ONLY:
                     leftChildOnlyStart = index;
                     break;
-                case UNARY_CHILD_ONLY:
-                    unaryChildOnlyStart = index;
-                    break;
                 case POS:
                     posStart = index;
+                    break;
+                case UNARY_CHILD_ONLY:
+                    unaryChildOnlyStart = index;
                     break;
                 }
                 ntClass = nonTerminal.ntClass;
@@ -142,12 +145,16 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
             }
         }
 
+        if (leftChildOnlyStart == -1) {
+            leftChildOnlyStart = posStart;
+        }
+
         // If there are no NTs which occur as either child, set the index to the beginning of the left children
-        if (eitherChildStart < 0) {
+        if (eitherChildStart == -1) {
             eitherChildStart = leftChildOnlyStart;
         }
 
-        maxPOSIndex = posStart + posSet.size();
+        maxPOSIndex = posStart + posSet.size() - 1;
 
         startSymbol = nonTermSet.getIndex(startSymbolStr);
         nullSymbol = nonTermSet.getIndex(nullSymbolStr);
@@ -257,6 +264,18 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
 
     public final int numUnaryRules() {
         return unaryProductions.size();
+    }
+
+    public final boolean isPos(final int child) {
+        return child >= posStart && child < unaryChildOnlyStart;
+    }
+
+    public final boolean isValidRightChild(final int child) {
+        return (child >= rightChildOnlyStart && child < leftChildOnlyStart) || isPos(child);
+    }
+
+    public final boolean isValidLeftChild(final int child) {
+        return child >= eitherChildStart;
     }
 
     // TODO: not efficient. Should index by child

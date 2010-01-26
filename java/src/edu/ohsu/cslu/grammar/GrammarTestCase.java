@@ -41,7 +41,7 @@ public abstract class GrammarTestCase {
     }
 
     /**
-     * Tests parsing with a _very_ simple grammar.
+     * Tests a _very_ simple grammar.
      * 
      * TODO Share grammar creation with GrammarTestCase
      * 
