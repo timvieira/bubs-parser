@@ -84,14 +84,6 @@ public class PackedSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         return entries[parent];
     }
 
-    public boolean isValidLeftChild(final int child) {
-        return validLeftChildren.contains(child);
-    }
-
-    public boolean isValidRightChild(final int child) {
-        return validRightChildren.contains(child);
-    }
-
     public boolean isValidProductionPair(final long children) {
         return validProductionPairs.contains(children);
     }
