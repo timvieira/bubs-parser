@@ -26,15 +26,6 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
 
     protected BaseSortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
-    }
-
-    protected BaseSortedGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
 
         rightChildOnlyStart = 0;
         eitherChildStart = leftChildOnlyStart = unaryChildOnlyStart = posStart = -1;
@@ -200,6 +191,16 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
                 unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild, grammarRule.probability, false));
             }
         }
+    }
+
+    protected BaseSortedGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+
     }
 
     private List<StringRule> readLexProds(final Reader lexFile) throws IOException {
