@@ -1,9 +1,10 @@
 package edu.ohsu.cslu.grammar;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
-import static org.junit.Assert.assertEquals;
 
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
@@ -26,13 +27,6 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(0f, simpleGrammar.lexicalLogProbability("NN", "chef"), .01f);
         assertEquals(Float.NEGATIVE_INFINITY, simpleGrammar.lexicalLogProbability("NP", "foo"), .01f);
 
-        assertEquals(-0.693147f, simpleGrammar.logProbability("NP", "NN", "NN"), .01f);
-        assertEquals(-1.203972f, simpleGrammar.logProbability("NP", "NP", "NN"), .01f);
-        assertEquals(-2.302585f, simpleGrammar.logProbability("NP", "NN", "NP"), .01f);
-        assertEquals(-2.302585f, simpleGrammar.logProbability("NP", "NP", "NP"), .01f);
-        assertEquals(Float.NEGATIVE_INFINITY, simpleGrammar.logProbability("TOP", "NP", "NP"), .01f);
-        assertEquals(0f, simpleGrammar.logProbability("TOP", "NP"), .01f);
-
         assertEquals(4, simpleGrammar.numBinaryRules());
         assertEquals(1, simpleGrammar.numUnaryRules());
         assertEquals(5, simpleGrammar.numLexProds);
@@ -43,12 +37,18 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals("<null>", simpleGrammar.nullSymbolStr);
 
         assertEquals(0, simpleGrammar.rightChildOnlyStart);
-        assertEquals(0, simpleGrammar.eitherChildStart);
-        assertEquals(1, simpleGrammar.leftChildOnlyStart);
-        assertEquals(1, simpleGrammar.posStart);
+        assertEquals(0, simpleGrammar.posStart);
+        assertEquals(1, simpleGrammar.maxPOSIndex);
+        assertEquals(2, simpleGrammar.eitherChildStart);
+        assertEquals(3, simpleGrammar.leftChildOnlyStart);
         assertEquals(3, simpleGrammar.unaryChildOnlyStart);
 
-        assertEquals(2, simpleGrammar.maxPOSIndex());
+        assertEquals(-0.693147f, simpleGrammar.logProbability("NP", "NN", "NN"), .01f);
+        assertEquals(-1.203972f, simpleGrammar.logProbability("NP", "NP", "NN"), .01f);
+        assertEquals(-2.302585f, simpleGrammar.logProbability("NP", "NN", "NP"), .01f);
+        assertEquals(-2.302585f, simpleGrammar.logProbability("NP", "NP", "NP"), .01f);
+        assertEquals(Float.NEGATIVE_INFINITY, simpleGrammar.logProbability("TOP", "NP", "NP"), .01f);
+        assertEquals(0f, simpleGrammar.logProbability("TOP", "NP"), .01f);
     }
 
     @Test
@@ -68,12 +68,12 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(-12.116870f, g.lexicalLogProbability("NNP", "Ranger"), 0.01f);
 
         assertEquals(0, g.rightChildOnlyStart);
-        assertEquals(1, g.eitherChildStart);
-        assertEquals(25, g.leftChildOnlyStart);
-        assertEquals(2610, g.posStart);
+        assertEquals(1, g.posStart);
+        assertEquals(46, g.maxPOSIndex());
+        assertEquals(47, g.eitherChildStart);
+        assertEquals(71, g.leftChildOnlyStart);
         assertEquals(2656, g.unaryChildOnlyStart);
 
-        assertEquals(2655, g.maxPOSIndex());
     }
 
     @Test
@@ -92,11 +92,10 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals("3,200", g.mapLexicalEntry(40000));
 
         assertEquals(0, g.rightChildOnlyStart);
-        assertEquals(103, g.eitherChildStart);
-        assertEquals(240, g.leftChildOnlyStart);
-        assertEquals(6014, g.posStart);
+        assertEquals(103, g.posStart);
+        assertEquals(148, g.maxPOSIndex());
+        assertEquals(149, g.eitherChildStart);
+        assertEquals(286, g.leftChildOnlyStart);
         assertEquals(6060, g.unaryChildOnlyStart);
-
-        assertEquals(6059, g.maxPOSIndex());
     }
 }
