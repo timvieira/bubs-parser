@@ -32,16 +32,22 @@ public class TestCsrSparseMatrixVectorParser extends ExhaustiveChartParserTestCa
     @Override
     @Test
     public void testSimpleGrammar() throws Exception {
+        final long startTime = System.currentTimeMillis();
         super.testSimpleGrammar();
+        System.out.format("%6.3f,%5d,%5d\n", (System.currentTimeMillis() - startTime) / 1000f, ((CsrSparseMatrixVectorParser) parser).totalCrossProductTime,
+                ((CsrSparseMatrixVectorParser) parser).totalSpMVTime);
     }
 
     @Test
     public void testPartialSentence2() throws Exception {
+        final long startTime = System.currentTimeMillis();
         // final String sentence = "The most troublesome report may be due out tomorrow .";
         final String sentence = "The report is due out tomorrow .";
         final ParseTree bestParseTree = parser.findMLParse(sentence);
         assertEquals("(TOP (S^<TOP> (S|<NP-VP>^<TOP> (NP^<S> (DT The) (NN report)) (VP^<S> (AUX is) (ADJP^<VP> (JJ due) (PP^<ADJP> (IN out) (NP^<PP> (NN tomorrow)))))) (. .)))",
                 bestParseTree.toString());
+        System.out.format("%6.3f,%5d,%5d\n", (System.currentTimeMillis() - startTime) / 1000f, ((CsrSparseMatrixVectorParser) parser).totalCrossProductTime,
+                ((CsrSparseMatrixVectorParser) parser).totalSpMVTime);
     }
 
     // @Override
@@ -55,7 +61,7 @@ public class TestCsrSparseMatrixVectorParser extends ExhaustiveChartParserTestCa
     // public void testSentence2() throws Exception {
     // fail("Not Implemented");
     // }
-
+    //
     // @Override
     // @Test
     // public void testSentence3() throws Exception {
@@ -101,7 +107,17 @@ public class TestCsrSparseMatrixVectorParser extends ExhaustiveChartParserTestCa
     // @Override
     // @Test
     // public void testSentence10() throws Exception {
-    // fail("Not Implemented");
+    // super.testSentence10();
     // }
+
+    @Override
+    protected void parseTreebankSentence(final int index) throws Exception {
+        final long startTime = System.currentTimeMillis();
+        final ParseTree bestParseTree = parser.findMLParse(sentences.get(index)[0]);
+        assertEquals(sentences.get(index)[1], bestParseTree.toString());
+
+        System.out.format("%6.3f,%5d,%5d\n", (System.currentTimeMillis() - startTime) / 1000f, ((CsrSparseMatrixVectorParser) parser).totalCrossProductTime,
+                ((CsrSparseMatrixVectorParser) parser).totalSpMVTime);
+    }
 
 }

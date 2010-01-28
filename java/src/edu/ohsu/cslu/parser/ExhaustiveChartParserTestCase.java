@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -20,6 +18,7 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a trivial sentence using a very simple grammar and the first 10 sentences of WSJ
@@ -43,7 +42,7 @@ public abstract class ExhaustiveChartParserTestCase {
     protected static Grammar f2_21_grammar;
 
     /** WSJ section 24 sentences 1-20 */
-    private static ArrayList<String[]> sentences = new ArrayList<String[]>();
+    protected static ArrayList<String[]> sentences = new ArrayList<String[]>();
 
     /** The parser under test */
     protected MaximumLikelihoodParser parser;
@@ -188,6 +187,10 @@ public abstract class ExhaustiveChartParserTestCase {
     protected void parseTreebankSentence(final int index) throws Exception {
         final ParseTree bestParseTree = parser.findMLParse(sentences.get(index)[0]);
         assertEquals(sentences.get(index)[1], bestParseTree.toString());
+
+        if (parser instanceof CsrSparseMatrixVectorParser) {
+            System.out.format("Total cross-product time: %d\n", ((CsrSparseMatrixVectorParser) parser).totalCrossProductTime);
+        }
     }
 
 }

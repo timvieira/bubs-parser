@@ -25,20 +25,23 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
 
     private int[][] csrChildrenIndices;
     private float[][] probabilities;
+    public final int leftChildShift;
+    private final int rightChildShift;
+    private final int mask;
 
     private IntOpenHashSet validProductionPairs;
 
     public CsrSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
-    }
 
-    public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
-    @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super.init(grammarFile, lexiconFile, grammarFormat);
+        // Add 1 bit to leave empty for sign
+        leftChildShift = edu.ohsu.cslu.util.Math.logBase2(leftChildOnlyStart) + 1;
+        rightChildShift = 32 - leftChildShift;
+        int m = 0;
+        for (int i = 0; i < leftChildShift; i++) {
+            m = m << 1 | 1;
+        }
+        mask = m;
 
         validProductionPairs = new IntOpenHashSet(50000);
 
@@ -66,8 +69,20 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         }
     }
 
-    public final static int pack(final short leftChild, final short rightChild) {
-        return leftChild << 16 | (rightChild & 0xffff);
+    public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    }
+
+    public final int pack(final int leftChild, final short rightChild) {
+        return leftChild << leftChildShift | (rightChild & mask);
+    }
+
+    public final int unpackLeftChild(final int children) {
+        return children >>> leftChildShift;
+    }
+
+    public final short unpackRightChild(final int children) {
+        return (short) ((children << rightChildShift) >> rightChildShift);
     }
 
     public final int[] children(final int parent) {
@@ -124,7 +139,7 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         final StringBuilder sb = new StringBuilder(1024);
         sb.append(super.getStats());
         sb.append("Valid production pairs: " + validProductionPairs.size() + '\n');
-        sb.append("Valid left children: " + (numNonTerms() - eitherChildStart) + '\n');
+        sb.append("Valid left children: " + (numNonTerms() - posStart) + '\n');
         sb.append("Valid right children: " + leftChildOnlyStart + '\n');
 
         sb.append("Max left child: " + (numNonTerms() - 1) + '\n');

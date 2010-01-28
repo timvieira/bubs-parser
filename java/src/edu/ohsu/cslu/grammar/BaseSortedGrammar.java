@@ -18,10 +18,11 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
     public String startSymbolStr = null;
 
     public int rightChildOnlyStart;
+    // posStart should equal eitherChildStart
     public int eitherChildStart;
+    public int posStart;
     public int leftChildOnlyStart;
     public int unaryChildOnlyStart;
-    public int posStart;
 
     protected BaseSortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
@@ -145,11 +146,12 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
             }
         }
 
+        // If there are no NTs which occur as right children only, set the index to the beginning of the unary set
         if (leftChildOnlyStart == -1) {
-            leftChildOnlyStart = posStart;
+            leftChildOnlyStart = unaryChildOnlyStart;
         }
 
-        // If there are no NTs which occur as either child, set the index to the beginning of the left children
+        // If there are no NTs which occur as either child, set the index to the beginning of the left child only set
         if (eitherChildStart == -1) {
             eitherChildStart = leftChildOnlyStart;
         }
@@ -267,15 +269,15 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
     }
 
     public final boolean isPos(final int child) {
-        return child >= posStart && child < unaryChildOnlyStart;
+        return child >= posStart && child <= maxPOSIndex;
     }
 
     public final boolean isValidRightChild(final int child) {
-        return (child >= rightChildOnlyStart && child < leftChildOnlyStart) || isPos(child);
+        return (child >= rightChildOnlyStart && child < leftChildOnlyStart);
     }
 
     public final boolean isValidLeftChild(final int child) {
-        return child >= eitherChildStart;
+        return child >= posStart;
     }
 
     // TODO: not efficient. Should index by child
@@ -424,6 +426,6 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
      * 5 - Unary children only
      */
     private enum NonTerminalClass {
-        RIGHT_CHILD_ONLY, EITHER_CHILD, LEFT_CHILD_ONLY, POS, UNARY_CHILD_ONLY;
+        RIGHT_CHILD_ONLY, POS, EITHER_CHILD, LEFT_CHILD_ONLY, UNARY_CHILD_ONLY;
     }
 }
