@@ -26,17 +26,12 @@ public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
 
     public BaseSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
+
+        unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
     }
 
     public BaseSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
-    @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super.init(grammarFile, lexiconFile, grammarFormat);
-
-        unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
     }
 
     @Override

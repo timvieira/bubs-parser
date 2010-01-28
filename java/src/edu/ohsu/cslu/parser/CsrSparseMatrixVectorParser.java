@@ -14,6 +14,15 @@ import edu.ohsu.cslu.grammar.BaseGrammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 
+/**
+ * SparseMatrixVectorParser implementation which uses a grammar stored in compressed-sparse-row (CSR) format. Stores cell populations and cross-product densely, for efficient array
+ * access and to avoid hashing (even though it's not quite as memory-efficient).
+ * 
+ * @author Aaron Dunlop
+ * @since Jan 28, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
     private final CsrSparseMatrixGrammar spMatrixGrammar;
@@ -123,9 +132,9 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
         public CrossProductVector(final int size) {
             this.probabilities = new float[size];
-            Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
             this.midpoints = new short[size];
-            this.size = size;
+
+            clear();
         }
 
         public final void union(final SparseVectorChartCell leftCell, final SparseVectorChartCell rightCell, final short midpoint) {
@@ -147,7 +156,15 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
                     final float jointProbability = leftProbability + rightChildrenProbabilities[j];
                     final int child = spMatrixGrammar.pack(leftChild, rightChildren[j]);
 
-                    if (jointProbability > probabilities[child]) {
+                    final float currentProbability = probabilities[child];
+
+                    // TODO We could add a BitVector to check for valid child production pairs, but that amount to n^3 grammar intersections instead of n^2
+
+                    if (currentProbability == Float.NEGATIVE_INFINITY) {
+                        probabilities[child] = jointProbability;
+                        midpoints[child] = midpoint;
+                        size++;
+                    } else if (jointProbability > currentProbability) {
                         probabilities[child] = jointProbability;
                         midpoints[child] = midpoint;
                     }
@@ -166,7 +183,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder(256);
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < probabilities.length; i++) {
                 if (probabilities[i] != Float.NEGATIVE_INFINITY) {
                     final int leftChild = spMatrixGrammar.unpackLeftChild(i);
                     final short rightChild = spMatrixGrammar.unpackRightChild(i);
@@ -274,7 +291,6 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
          */
         public void spmvMultiply(final CrossProductVector crossProductVector) {
 
-            // final int[] crossProductChildren = crossProductVector.children;
             final float[] crossProductProbabilities = crossProductVector.probabilities;
             final short[] crossProductMidpoints = crossProductVector.midpoints;
 
@@ -321,21 +337,13 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
             final short parent = (short) p.parent;
             numEdgesConsidered++;
 
-            final float currentProbability = probabilities[parent];
-            if (insideProb > currentProbability) {
+            if (insideProb > probabilities[parent]) {
 
-                // Midpoint == start for unary productions
-                final short midpoint = (short) leftCell.end();
-
-                midpoints[parent] = midpoint;
+                // TODO Midpoint == start or end? for unary productions
+                midpoints[parent] = (short) leftCell.end();
                 probabilities[parent] = insideProb;
+                children[parent] = spMatrixGrammar.pack(p.leftChild, (short) p.rightChild);
 
-                if (p.isLexProd()) {
-                    // Store -2 in right child to mark lexical productions
-                    children[parent] = spMatrixGrammar.pack(p.leftChild, (short) Production.LEXICAL_PRODUCTION);
-                } else {
-                    children[parent] = spMatrixGrammar.pack(p.leftChild, (short) p.rightChild);
-                }
                 numEdgesAdded++;
                 return true;
             }

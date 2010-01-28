@@ -53,8 +53,8 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         }
 
         for (final Production p : binaryProductions) {
-            maps[p.parent].put(pack((short) p.leftChild, (short) p.rightChild), p.prob);
-            validProductionPairs.add(pack((short) p.leftChild, (short) p.rightChild));
+            maps[p.parent].put(pack(p.leftChild, (short) p.rightChild), p.prob);
+            validProductionPairs.add(pack(p.leftChild, (short) p.rightChild));
         }
 
         for (int parent = 0; parent < numNonTerms(); parent++) {
@@ -115,7 +115,7 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
     }
 
     public final float logProbability(final int parent, final int leftChild, final int rightChild) {
-        return logProbability(parent, pack((short) leftChild, (short) rightChild));
+        return logProbability(parent, pack(leftChild, (short) rightChild));
     }
 
     public final float logProbability(final int parent, final int children) {
