@@ -21,27 +21,11 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 
 public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
 
-    /** Unary productions, stored in the order read in from the grammar file */
-    public Production[] unaryProds;
-
     public BaseSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
-
-        unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
     }
 
     public BaseSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
-
-    @Override
-    public final float lexicalLogProbability(final String parent, final String child) {
-        return super.lexicalLogProbability(parent, child);
-    }
-
-    @Override
-    public final float logProbability(final String parent, final String child) {
-        return super.logProbability(parent, child);
-    }
-
 }

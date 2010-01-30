@@ -33,7 +33,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
     public CsrSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
         this.spMatrixGrammar = grammar;
-        crossProductVector = new CrossProductVector(spMatrixGrammar.numNonTerms() << spMatrixGrammar.leftChildShift);
+        crossProductVector = new CrossProductVector(spMatrixGrammar.packedArraySize());
     }
 
     @Override
@@ -93,25 +93,21 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
         // Multiply the unioned vector with the grammar matrix and populate the current cell with the
         // vector resulting from the matrix-vector multiplication
-        spvChartCell.spmvMultiply(crossProductVector);
+        spvChartCell.spmvMultiply(crossProductVector, spMatrixGrammar.binaryRuleMatrix(), spMatrixGrammar.binaryProbabilities());
 
         final long t2 = System.currentTimeMillis();
-        final double spmvTime = t2 - t1;
+        final double binarySpmvTime = t2 - t1;
 
         // Handle unary productions
-        for (final Production p : ((CsrSparseMatrixGrammar) grammar).unaryProds) {
-            final ChartEdge parentEdge = cell.getBestEdge(p.leftChild);
-            if ((parentEdge != null) && (parentEdge.p.isUnaryProd() == false)) {
-                final float prob = p.prob + parentEdge.insideProb;
-                spvChartCell.addEdge(new ChartEdge(p, cell, prob));
-            }
-        }
+        // TODO: This only goes through unary rules one time, so it can't create unary chains unless such chains are encoded in the grammar. Iterating a few times would probably
+        // work, although it's a big-time hack.
+        spvChartCell.spmvMultiply(spMatrixGrammar.unaryRuleMatrix(), spMatrixGrammar.unaryProbabilities());
+
+        final long t3 = System.currentTimeMillis();
+        final double unarySpmvTime = t3 - t2;
 
         // TODO We won't need to do this once we're storing directly into the packed array
         spvChartCell.finalizeCell();
-
-        final long t3 = System.currentTimeMillis();
-        final double unaryTime = t3 - t2;
 
         final int crossProductSize = crossProductVector.size();
         // final int edges = spvChartCell.size();
@@ -121,7 +117,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
         // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n", start, end, t3
         // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime, edges, spmvTime, edges / spmvTime);
         totalCrossProductTime += crossProductTime;
-        totalSpMVTime += spmvTime;
+        totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
     private final class CrossProductVector {
@@ -288,8 +284,10 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
          * Multiplies the grammar matrix (stored sparsely) by the supplied cross-product vector (stored densely), and populates this chart cell.
          * 
          * @param crossProductVector
+         * @param grammarRuleMatrix
+         * @param grammarProbabilities
          */
-        public void spmvMultiply(final CrossProductVector crossProductVector) {
+        public void spmvMultiply(final CrossProductVector crossProductVector, final int[][] grammarRuleMatrix, final float[][] grammarProbabilities) {
 
             final float[] crossProductProbabilities = crossProductVector.probabilities;
             final short[] crossProductMidpoints = crossProductVector.midpoints;
@@ -297,8 +295,8 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
             // Iterate over possible parents
             for (int parent = 0; parent < spMatrixGrammar.numNonTerms(); parent++) {
 
-                final int[] grammarChildrenForParent = spMatrixGrammar.children(parent);
-                final float[] grammarProbabilitiesForParent = spMatrixGrammar.probabilities(parent);
+                final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
+                final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
 
                 // Production winningProduction = null;
                 float winningProbability = Float.NEGATIVE_INFINITY;
@@ -320,9 +318,54 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
                 }
 
                 if (winningProbability != Float.NEGATIVE_INFINITY) {
-                    children[parent] = winningChildren;
-                    probabilities[parent] = winningProbability;
-                    midpoints[parent] = winningMidpoint;
+                    this.children[parent] = winningChildren;
+                    this.probabilities[parent] = winningProbability;
+                    this.midpoints[parent] = winningMidpoint;
+                }
+            }
+        }
+
+        /**
+         * Multiplies the grammar matrix (stored sparsely) by the contents of this cell (stored densely), and populates this chart cell. Used to populate unary rules.
+         * 
+         * @param grammarRuleMatrix
+         * @param grammarProbabilities
+         */
+        public void spmvMultiply(final int[][] grammarRuleMatrix, final float[][] grammarProbabilities) {
+
+            // System.out.println(this.toString());
+
+            // Iterate over possible parents
+            for (int parent = 0; parent < spMatrixGrammar.numNonTerms(); parent++) {
+                final String parentString = spMatrixGrammar.mapNonterminal(parent);
+
+                final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
+                final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
+
+                // Production winningProduction = null;
+                float winningProbability = this.probabilities[parent];
+                int winningChildren = Integer.MIN_VALUE;
+                short winningMidpoint = 0;
+
+                for (int i = 0; i < grammarChildrenForParent.length; i++) {
+                    final int packedChildren = grammarChildrenForParent[i];
+                    final int child = spMatrixGrammar.unpackLeftChild(packedChildren);
+
+                    final float grammarProbability = grammarProbabilitiesForParent[i];
+                    final float crossProductProbability = this.probabilities[child];
+                    final float jointProbability = grammarProbability + crossProductProbability;
+
+                    if (jointProbability > winningProbability) {
+                        winningProbability = jointProbability;
+                        winningChildren = packedChildren;
+                        winningMidpoint = (short) end();
+                    }
+                }
+
+                if (winningChildren != Integer.MIN_VALUE) {
+                    this.children[parent] = winningChildren;
+                    this.probabilities[parent] = winningProbability;
+                    this.midpoints[parent] = winningMidpoint;
                 }
             }
         }
@@ -339,7 +382,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
             if (insideProb > probabilities[parent]) {
 
-                // TODO Midpoint == start or end? for unary productions
+                // Midpoint == end for unary productions
                 midpoints[parent] = (short) leftCell.end();
                 probabilities[parent] = insideProb;
                 children[parent] = spMatrixGrammar.pack(p.leftChild, (short) p.rightChild);
@@ -386,17 +429,22 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
                 if (probabilities[nonterminal] != Float.NEGATIVE_INFINITY) {
                     final int childProductions = children[nonterminal];
                     final float probability = probabilities[nonterminal];
+                    final int midpoint = midpoints[nonterminal];
+
                     final int leftChild = spMatrixGrammar.unpackLeftChild(childProductions);
                     final short rightChild = spMatrixGrammar.unpackRightChild(childProductions);
+
                     if (rightChild == Production.UNARY_PRODUCTION) {
                         // Unary Production
-                        sb.append(spMatrixGrammar.mapNonterminal(nonterminal) + " -> " + spMatrixGrammar.mapNonterminal(leftChild) + " " + " (" + probability + ")\n");
+                        sb.append(String.format("%s -> %s (%.5f, %d)\n", spMatrixGrammar.mapNonterminal(nonterminal), spMatrixGrammar.mapNonterminal(leftChild), probability,
+                                midpoint));
                     } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                         // Lexical Production
-                        sb.append(spMatrixGrammar.mapNonterminal(nonterminal) + " -> " + spMatrixGrammar.mapLexicalEntry(leftChild) + " " + " (" + probability + ")\n");
+                        sb.append(String.format("%s -> %s (%.5f, %d)\n", spMatrixGrammar.mapNonterminal(nonterminal), spMatrixGrammar.mapLexicalEntry(leftChild), probability,
+                                midpoint));
                     } else {
-                        sb.append(spMatrixGrammar.mapNonterminal(nonterminal) + " -> " + spMatrixGrammar.mapNonterminal(leftChild) + " "
-                                + spMatrixGrammar.mapNonterminal(rightChild) + " (" + probability + ")\n");
+                        sb.append(String.format("%s -> %s %s (%.5f, %d)\n", spMatrixGrammar.mapNonterminal(nonterminal), spMatrixGrammar.mapNonterminal(leftChild), spMatrixGrammar
+                                .mapNonterminal(rightChild), probability, midpoint));
                     }
                 }
             }

@@ -25,7 +25,7 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
     public int unaryChildOnlyStart;
 
     protected BaseSortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super(grammarFile, lexiconFile, grammarFormat);
+        super();
 
         rightChildOnlyStart = 0;
         eitherChildStart = leftChildOnlyStart = unaryChildOnlyStart = posStart = -1;
@@ -100,7 +100,10 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
         // Now, sort the NTs by class (see NonTerminalClass).
         final TreeSet<NonTerminal> sortedNonTerminals = new TreeSet<NonTerminal>();
         for (final String nt : nonTerminals) {
-            sortedNonTerminals.add(new NonTerminal(nt, leftChildren, rightChildren, bothChildren, unaryOnly, pos));
+            final NonTerminal n = create(nt, leftChildren, rightChildren, bothChildren, unaryOnly, pos);
+            if (n != null) {
+                sortedNonTerminals.add(n);
+            }
         }
 
         // Map all NTs with shorts (limiting the total NT count to 32767, which is probably reasonable.
@@ -195,12 +198,6 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
 
     protected BaseSortedGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-
     }
 
     private List<StringRule> readLexProds(final Reader lexFile) throws IOException {
@@ -352,8 +349,8 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
         public final float probability;
 
         public StringRule(final String parent, final String leftChild, final float probability) {
-            this.parent = parent;
-            this.leftChild = leftChild;
+            this.parent = parent.intern();
+            this.leftChild = leftChild.intern();
             this.probability = probability;
         }
 
@@ -368,7 +365,7 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
 
         public BinaryStringRule(final String parent, final String leftChild, final String rightChild, final float probability) {
             super(parent, leftChild, probability);
-            this.rightChild = rightChild;
+            this.rightChild = rightChild.intern();
         }
 
         @Override
@@ -377,26 +374,33 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
         }
     }
 
+    public NonTerminal create(final String label, final Set<String> leftChildrenOnly, final Set<String> rightChildrenOnly, final Set<String> bothChildren,
+            final Set<String> unaryChildren, final HashSet<String> pos) {
+        final String internLabel = label.intern();
+
+        if (pos.contains(internLabel)) {
+            return new NonTerminal(internLabel, NonTerminalClass.POS);
+        } else if (leftChildrenOnly.contains(internLabel)) {
+            return new NonTerminal(internLabel, NonTerminalClass.LEFT_CHILD_ONLY);
+        } else if (rightChildrenOnly.contains(internLabel)) {
+            return new NonTerminal(internLabel, NonTerminalClass.RIGHT_CHILD_ONLY);
+        } else if (bothChildren.contains(internLabel)) {
+            return new NonTerminal(internLabel, NonTerminalClass.EITHER_CHILD);
+        } else if (unaryChildren.contains(internLabel)) {
+            return new NonTerminal(internLabel, NonTerminalClass.UNARY_CHILD_ONLY);
+        }
+
+        return null;
+        // throw new IllegalArgumentException("Could not find " + label + " in any class");
+    }
+
     private final class NonTerminal implements Comparable<NonTerminal> {
         public final String label;
         public final NonTerminalClass ntClass;
 
-        public NonTerminal(final String label, final Set<String> leftChildrenOnly, final Set<String> rightChildrenOnly, final Set<String> bothChildren,
-                final Set<String> unaryChildren, final HashSet<String> pos) {
+        protected NonTerminal(final String label, final NonTerminalClass ntClass) {
             this.label = label;
-            if (pos.contains(label)) {
-                ntClass = NonTerminalClass.POS;
-            } else if (leftChildrenOnly.contains(label)) {
-                ntClass = NonTerminalClass.LEFT_CHILD_ONLY;
-            } else if (rightChildrenOnly.contains(label)) {
-                ntClass = NonTerminalClass.RIGHT_CHILD_ONLY;
-            } else if (bothChildren.contains(label)) {
-                ntClass = NonTerminalClass.EITHER_CHILD;
-            } else if (unaryChildren.contains(label)) {
-                ntClass = NonTerminalClass.UNARY_CHILD_ONLY;
-            } else {
-                throw new IllegalArgumentException("Could not find " + label + " in any class");
-            }
+            this.ntClass = ntClass;
         }
 
         @Override

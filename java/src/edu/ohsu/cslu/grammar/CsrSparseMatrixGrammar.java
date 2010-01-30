@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
+import java.util.Collection;
 
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 
@@ -14,7 +15,8 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  * Stores a sparse-matrix grammar in Java-Sparse-Array format (standard compressed-sparse-row with the exception that row lengths can vary, since Java stores 2-d arrays as arrays
  * of arrays)
  * 
- * Assumes less than 32767 total non-terminals (so that a production pair will fit into a signed 32-bit int)
+ * Assumes less than 2^30 total non-terminals combinations (so that a production pair will fit into a signed 32-bit int). This limit _may_ still allow more than 2^15 total
+ * non-terminals, depending on the grammar's factorization. In general, we assume a left-factored grammar with many fewer valid right child productions than left children.
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
@@ -23,13 +25,27 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  */
 public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
 
-    private int[][] csrChildrenIndices;
-    private float[][] probabilities;
-    public final int leftChildShift;
+    /** Unary productions, stored in the order read in from the grammar file */
+    public final Production[] unaryProds;
+
+    /** Binary rules */
+    private int[][] csrBinaryRules;
+
+    /** Binary rule probabilities */
+    private float[][] csrBinaryProbabilities;
+
+    /** Binary rules */
+    private int[][] csrUnaryRules;
+
+    /** Binary rule probabilities */
+    private float[][] csrUnaryProbabilities;
+
+    // Shift lengths and mask for packing and unpacking non-terminals into an int
+    private final int leftChildShift;
     private final int rightChildShift;
     private final int mask;
 
-    private IntOpenHashSet validProductionPairs;
+    private final int validProductionPairs;
 
     public CsrSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
@@ -43,34 +59,54 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         }
         mask = m;
 
-        validProductionPairs = new IntOpenHashSet(50000);
+        // Bin all binary rules by parent, mapping packed children -> probability
+        csrBinaryRules = new int[numNonTerms()][];
+        csrBinaryProbabilities = new float[numNonTerms()][];
+        validProductionPairs = storeRulesAsMatrix(binaryProductions, csrBinaryRules, csrBinaryProbabilities);
 
+        // And all unary rules
+        csrUnaryRules = new int[numNonTerms()][];
+        csrUnaryProbabilities = new float[numNonTerms()][];
+        storeRulesAsMatrix(unaryProductions, csrUnaryRules, csrUnaryProbabilities);
+
+        unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
+        tokenizer = new Tokenizer(lexSet);
+    }
+
+    private int storeRulesAsMatrix(final Collection<Production> productions, final int[][] productionMatrix, final float[][] probabilityMatrix) {
+        final IntOpenHashSet productionPairs = new IntOpenHashSet(50000);
+
+        // Bin all binary rules by parent, mapping packed children -> probability
         final Int2FloatOpenHashMap[] maps = new Int2FloatOpenHashMap[numNonTerms()];
-        csrChildrenIndices = new int[numNonTerms()][];
-        probabilities = new float[numNonTerms()][];
         for (int i = 0; i < numNonTerms(); i++) {
             maps[i] = new Int2FloatOpenHashMap(1000);
         }
 
-        for (final Production p : binaryProductions) {
+        for (final Production p : productions) {
             maps[p.parent].put(pack(p.leftChild, (short) p.rightChild), p.prob);
-            validProductionPairs.add(pack(p.leftChild, (short) p.rightChild));
+            productionPairs.add(pack(p.leftChild, (short) p.rightChild));
         }
 
+        // Store rules in parent bins, sorted by packed children
         for (int parent = 0; parent < numNonTerms(); parent++) {
 
-            csrChildrenIndices[parent] = maps[parent].keySet().toIntArray();
-            Arrays.sort(csrChildrenIndices[parent]);
-            probabilities[parent] = new float[csrChildrenIndices[parent].length];
+            productionMatrix[parent] = maps[parent].keySet().toIntArray();
+            Arrays.sort(productionMatrix[parent]);
+            probabilityMatrix[parent] = new float[productionMatrix[parent].length];
 
-            for (int j = 0; j < csrChildrenIndices[parent].length; j++) {
-                probabilities[parent][j] = maps[parent].get(csrChildrenIndices[parent][j]);
+            for (int j = 0; j < productionMatrix[parent].length; j++) {
+                probabilityMatrix[parent][j] = maps[parent].get(productionMatrix[parent][j]);
             }
         }
+        return productionPairs.size();
     }
 
     public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    }
+
+    public final int packedArraySize() {
+        return numNonTerms() << leftChildShift;
     }
 
     public final int pack(final int leftChild, final short rightChild) {
@@ -85,24 +121,20 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         return (short) ((children << rightChildShift) >> rightChildShift);
     }
 
-    public final int[] children(final int parent) {
-        return csrChildrenIndices[parent];
+    public final int[][] binaryRuleMatrix() {
+        return csrBinaryRules;
     }
 
-    public final float[] probabilities(final int parent) {
-        return probabilities[parent];
+    public final float[][] binaryProbabilities() {
+        return csrBinaryProbabilities;
     }
 
-    public boolean isValidProductionPair(final short leftChild, final short rightChild) {
-        return isValidProductionPair(pack(leftChild, rightChild));
+    public final int[][] unaryRuleMatrix() {
+        return csrUnaryRules;
     }
 
-    public boolean isValidProductionPair(final int children) {
-        return validProductionPairs.contains(children);
-    }
-
-    public int validProductionPairs() {
-        return validProductionPairs.size();
+    public final float[][] unaryProbabilities() {
+        return csrUnaryProbabilities;
     }
 
     @Override
@@ -119,8 +151,31 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
     }
 
     public final float logProbability(final int parent, final int children) {
-        final int[] rowIndices = csrChildrenIndices[parent];
-        final float[] rowProbabilities = probabilities[parent];
+        final int[] rowIndices = csrBinaryRules[parent];
+        final float[] rowProbabilities = csrBinaryProbabilities[parent];
+
+        for (int i = 0; i < rowIndices.length; i++) {
+            final int c = rowIndices[i];
+            if (c == children) {
+                return rowProbabilities[i];
+            }
+            if (c > children) {
+                return Float.NEGATIVE_INFINITY;
+            }
+        }
+        return Float.NEGATIVE_INFINITY;
+    }
+
+    @Override
+    public float logProbability(final String parent, final String child) {
+        final int parentIndex = nonTermSet.getIndex(parent);
+        final int leftChildIndex = nonTermSet.getIndex(child);
+        final short rightChildIndex = Production.UNARY_PRODUCTION;
+
+        final int children = pack(leftChildIndex, rightChildIndex);
+
+        final int[] rowIndices = csrUnaryRules[parentIndex];
+        final float[] rowProbabilities = csrUnaryProbabilities[parentIndex];
 
         for (int i = 0; i < rowIndices.length; i++) {
             final int c = rowIndices[i];
@@ -138,7 +193,7 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
     public String getStats() {
         final StringBuilder sb = new StringBuilder(1024);
         sb.append(super.getStats());
-        sb.append("Valid production pairs: " + validProductionPairs.size() + '\n');
+        sb.append("Valid production pairs: " + validProductionPairs + '\n');
         sb.append("Valid left children: " + (numNonTerms() - posStart) + '\n');
         sb.append("Valid right children: " + leftChildOnlyStart + '\n');
 

@@ -34,15 +34,6 @@ public final class HashSparseMatrixGrammar extends BaseGrammar {
 
     public HashSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
-    }
-
-    public HashSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
-    @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super.init(grammarFile, lexiconFile, grammarFormat);
 
         unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
 
@@ -60,6 +51,10 @@ public final class HashSparseMatrixGrammar extends BaseGrammar {
         for (int i = 0; i < binaryRuleMatrix.length; i++) {
             keys[i] = binaryRuleMatrix[i].keySet().toLongArray();
         }
+    }
+
+    public HashSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     private long key(final int leftChild, final int rightChild) {
