@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.grammar;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -12,17 +13,8 @@ public class GrammarByLeftNonTermHash extends ArrayGrammar {
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
-    public GrammarByLeftNonTermHash(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super(grammarFile, lexiconFile, grammarFormat);
-    }
-
     public GrammarByLeftNonTermHash(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
-    }
-
-    @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super.init(grammarFile, lexiconFile, grammarFormat);
 
         binaryProdHash = new ArrayList<HashMap<Integer, LinkedList<Production>>>(this.numNonTerms());
         for (int i = 0; i < this.numNonTerms(); i++) {
@@ -45,6 +37,10 @@ public class GrammarByLeftNonTermHash extends ArrayGrammar {
 
         // delete the original binary prods since we're storing them by left child now
         this.binaryProds = null;
+    }
+
+    public GrammarByLeftNonTermHash(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     public LinkedList<Production> getBinaryProdsByChildren(final int leftChild, final int rightChild) {

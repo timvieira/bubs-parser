@@ -29,20 +29,15 @@ public class ArrayGrammar extends BaseGrammar {
 
     public ArrayGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
-    }
-
-    public ArrayGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
-    @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super.init(grammarFile, lexiconFile, grammarFormat);
 
         unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
         binaryProds = binaryProductions.toArray(new Production[binaryProductions.size()]);
 
         markLeftRightChildren();
+    }
+
+    public ArrayGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     private void markLeftRightChildren() {

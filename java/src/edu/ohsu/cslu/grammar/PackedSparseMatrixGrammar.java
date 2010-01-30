@@ -21,6 +21,9 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  */
 public class PackedSparseMatrixGrammar extends BaseSparseMatrixGrammar {
 
+    /** Unary productions, stored in the order read in from the grammar file */
+    public Production[] unaryProds;
+
     /** Binary productions, stored as a long followed by a float using {@link Float#floatToIntBits(float)} */
     private long[][] entries;
 
@@ -32,15 +35,6 @@ public class PackedSparseMatrixGrammar extends BaseSparseMatrixGrammar {
 
     public PackedSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
-    }
-
-    public PackedSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
-    @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super.init(grammarFile, lexiconFile, grammarFormat);
 
         validProductionPairs = new LongOpenHashSet(50000);
         validLeftChildren = new IntOpenHashSet(5000);
@@ -70,6 +64,13 @@ public class PackedSparseMatrixGrammar extends BaseSparseMatrixGrammar {
                 entries[parent][j * 2 + 1] = pack(0, maps[parent].get(children[j]));
             }
         }
+
+        unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
+        tokenizer = new Tokenizer(lexSet);
+    }
+
+    public PackedSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     private long pack(final int leftChild, final int rightChild) {

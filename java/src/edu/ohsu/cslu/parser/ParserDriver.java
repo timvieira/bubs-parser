@@ -2,10 +2,14 @@ package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.util.zip.GZIPInputStream;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -14,6 +18,8 @@ import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.BaseGrammar;
+import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.GrammarByChildMatrix;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermHash;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
@@ -27,10 +33,10 @@ import edu.ohsu.cslu.parser.util.StringToMD5;
 
 public class ParserDriver extends BaseCommandlineTool {
 
-    @Option(name = "-g", aliases = { "--grammar-file-prefix" }, required = true, metaVar = "prefix", usage = "Grammar file prefix")
-    private String pcfgPrefix;
+    @Option(name = "-g", aliases = { "--grammar-file" }, required = true, metaVar = "pcfg file or prefix", usage = "Grammar file or prefix")
+    private String pcfgFilenameOrPrefix;
 
-    @Option(name = "-lex", aliases = { "--lexicon-file" }, metaVar = "FILE", usage = "Lexicon file if full grammar file is specified for -g option")
+    @Option(name = "-lex", aliases = { "--lexicon-file" }, metaVar = "lexicon file", usage = "Lexicon file if full grammar file is specified for -g option")
     private String lexFileName = null;
 
     @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of grammar file")
@@ -67,21 +73,38 @@ public class ParserDriver extends BaseCommandlineTool {
     private String fomModelFileName = null;
     private BufferedReader fomModelStream = null;
 
-    private ArrayGrammar grammar;
+    private BaseGrammar grammar;
     private BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
-    private BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
     public static void main(final String[] args) throws Exception {
         run(args);
     }
 
     @Override
-    public void setup(final CmdLineParser cmdlineParser) throws CmdLineException {
+    public void setup(final CmdLineParser cmdlineParser) throws CmdLineException, IOException {
         // setup() is run once for multiple threads
-        String pcfgFileName = pcfgPrefix;
-        if (lexFileName == null) {
-            pcfgFileName = pcfgPrefix + ".pcfg";
-            lexFileName = pcfgPrefix + ".lex";
+
+        // Add appropriate grammar file suffixes if the command-line specified a prefix
+        File pcfgFile = new File(pcfgFilenameOrPrefix);
+        File lexiconFile;
+
+        if (pcfgFile.exists()) {
+            lexiconFile = new File(lexFileName);
+        } else {
+            pcfgFile = new File(pcfgFilenameOrPrefix + ".pcfg");
+            lexiconFile = new File(pcfgFilenameOrPrefix + ".lex");
+        }
+
+        // Open the grammar file whether it's gzipped or not
+        Reader pcfgReader;
+        Reader lexiconReader;
+
+        if (pcfgFile.exists()) {
+            pcfgReader = new FileReader(pcfgFile);
+            lexiconReader = new FileReader(lexiconFile);
+        } else {
+            pcfgReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(pcfgFile.getAbsolutePath() + ".gz")));
+            lexiconReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(lexiconFile.getAbsolutePath() + ".gz")));
         }
 
         try {
@@ -89,24 +112,29 @@ public class ParserDriver extends BaseCommandlineTool {
             case ExhaustiveChartParser:
                 switch (chartCellProcessingType) {
                 case CellCrossList:
-                    grammar = new GrammarByLeftNonTermList(pcfgFileName, lexFileName, grammarFormat);
+                    grammar = new GrammarByLeftNonTermList(pcfgReader, lexiconReader, grammarFormat);
                     break;
                 case CellCrossHash:
-                    grammar = new GrammarByLeftNonTermHash(pcfgFileName, lexFileName, grammarFormat);
+                    grammar = new GrammarByLeftNonTermHash(pcfgReader, lexiconReader, grammarFormat);
                     break;
                 case CellCrossMatrix:
-                    grammar = new GrammarByChildMatrix(pcfgFileName, lexFileName, grammarFormat);
+                    grammar = new GrammarByChildMatrix(pcfgReader, lexiconReader, grammarFormat);
                     break;
                 case GrammarLoop:
                 case GrammarLoopBerkeleyFilter:
-                    grammar = new ArrayGrammar(pcfgFileName, lexFileName, grammarFormat);
+                    grammar = new ArrayGrammar(pcfgReader, lexiconReader, grammarFormat);
                 }
                 break;
+
+            case CsrSparseMatrixVector:
+                grammar = new CsrSparseMatrixGrammar(pcfgReader, lexiconReader, grammarFormat);
+                break;
+
             // Both agenda parsers use GrammarByLeftNonTermList
             case AgendaParser:
             case CellAgendaParser:
             case AgendaParserWithGhostEdges:
-                grammar = new GrammarByLeftNonTermList(pcfgFileName, lexFileName, grammarFormat);
+                grammar = new GrammarByLeftNonTermList(pcfgReader, lexiconReader, grammarFormat);
                 break;
             default:
                 throw new CmdLineException(cmdlineParser, "Unsupported parser type: " + parserType);
@@ -141,16 +169,17 @@ public class ParserDriver extends BaseCommandlineTool {
         double sentParseTimeSeconds, totalParseTimeSeconds = 0.0;
         String insideProbStr;
 
+        final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         if (fomTrain == true) {
-            final EdgeFOM fom = EdgeFOM.create(edgeFOMType, fomModelStream, grammar);
-            fom.train(inputStream);
+            final EdgeFOM fom = EdgeFOM.create(edgeFOMType, fomModelStream, (ArrayGrammar) grammar);
+            fom.train(br);
             fom.writeModel(outputStream);
             System.exit(0);
         }
 
         final Parser parser = createParser();
 
-        for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
+        for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
             if (ParseTree.isBracketFormat(sentence)) {
                 inputTree = ParseTree.readBracketFormat(sentence);
                 sentence = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
@@ -211,15 +240,19 @@ public class ParserDriver extends BaseCommandlineTool {
                 parser = new ECPCellCrossMatrix((GrammarByChildMatrix) grammar, chartTraversalType);
                 break;
             case GrammarLoop:
-                parser = new ECPGramLoop(grammar, chartTraversalType);
+                parser = new ECPGramLoop((ArrayGrammar) grammar, chartTraversalType);
                 break;
             case GrammarLoopBerkeleyFilter:
-                parser = new ECPGramLoopBerkFilter(grammar, chartTraversalType);
+                parser = new ECPGramLoopBerkFilter((ArrayGrammar) grammar, chartTraversalType);
             }
             break;
 
+        case CsrSparseMatrixVector:
+            parser = new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, chartTraversalType);
+            break;
+
         case AgendaParser:
-            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, grammar);
+            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, (ArrayGrammar) grammar);
             // TODO: this whole FOM setup is pretty ugly. It needs to be changed
             // TODO: the program should know which FOM to use given the model file
             // parser = new AgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOM);
@@ -227,12 +260,12 @@ public class ParserDriver extends BaseCommandlineTool {
             break;
 
         case CellAgendaParser:
-            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, grammar);
+            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, (ArrayGrammar) grammar);
             parser = new CellAgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOM, chartTraversalType);
             break;
 
         case AgendaParserWithGhostEdges:
-            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, grammar);
+            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, (ArrayGrammar) grammar);
             parser = new AgendaChartParserGhostEdges((GrammarByLeftNonTermList) grammar, edgeFOM);
             break;
 
@@ -243,8 +276,9 @@ public class ParserDriver extends BaseCommandlineTool {
         return parser;
     }
 
+    // TODO: Parameterize with parser and grammar classes
     static public enum ParserType {
-        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), CellAgendaParser("cellagenda");
+        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), CellAgendaParser("cellagenda"), CsrSparseMatrixVector("spmv");
 
         private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

@@ -27,24 +27,18 @@ public abstract class BaseGrammar implements Grammar {
     public final SymbolSet<String> nonTermSet;
     public final SymbolSet<Integer> posSet; // index into nonTermSet of POS non terms
     protected final SymbolSet<String> lexSet;
-    private final Tokenizer tokenizer;
+    protected Tokenizer tokenizer;
     protected int maxPOSIndex = -1; // TODO: should sort nonterms so ordered by POS then NTs
 
-    protected BaseGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    protected BaseGrammar() {
         nonTermSet = new SymbolSet<String>();
         posSet = new SymbolSet<Integer>();
         lexSet = new SymbolSet<String>();
-
-        init(grammarFile, lexiconFile, grammarFormat);
-
-        tokenizer = new Tokenizer(lexSet);
     }
 
-    protected BaseGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
+    protected BaseGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this();
 
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         Log.info(1, "INFO: Reading grammar");
 
         // the nullSymbol is used for start/end of sentence markers and dummy non-terminals
@@ -58,6 +52,12 @@ public abstract class BaseGrammar implements Grammar {
 
         Log.info(1, "INFO: Reading lexical productions");
         readLexProds(lexiconFile);
+
+        tokenizer = new Tokenizer(lexSet);
+    }
+
+    protected BaseGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     @SuppressWarnings("unchecked")
