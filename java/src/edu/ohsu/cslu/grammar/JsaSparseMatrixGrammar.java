@@ -23,22 +23,22 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
+public class JsaSparseMatrixGrammar extends BaseSparseMatrixGrammar {
 
     /** Unary productions, stored in the order read in from the grammar file */
     public final Production[] unaryProds;
 
     /** Binary rules */
-    private int[][] csrBinaryRules;
+    private int[][] jsaBinaryRules;
 
     /** Binary rule probabilities */
-    private float[][] csrBinaryProbabilities;
+    private float[][] jsaBinaryProbabilities;
 
     /** Binary rules */
-    private int[][] csrUnaryRules;
+    private int[][] jsaUnaryRules;
 
     /** Binary rule probabilities */
-    private float[][] csrUnaryProbabilities;
+    private float[][] jsaUnaryProbabilities;
 
     // Shift lengths and mask for packing and unpacking non-terminals into an int
     private final int leftChildShift;
@@ -47,7 +47,7 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
 
     private final int validProductionPairs;
 
-    public CsrSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    public JsaSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
 
         // Add 1 bit to leave empty for sign
@@ -60,14 +60,14 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         mask = m;
 
         // Bin all binary rules by parent, mapping packed children -> probability
-        csrBinaryRules = new int[numNonTerms()][];
-        csrBinaryProbabilities = new float[numNonTerms()][];
-        validProductionPairs = storeRulesAsMatrix(binaryProductions, csrBinaryRules, csrBinaryProbabilities);
+        jsaBinaryRules = new int[numNonTerms()][];
+        jsaBinaryProbabilities = new float[numNonTerms()][];
+        validProductionPairs = storeRulesAsMatrix(binaryProductions, jsaBinaryRules, jsaBinaryProbabilities);
 
         // And all unary rules
-        csrUnaryRules = new int[numNonTerms()][];
-        csrUnaryProbabilities = new float[numNonTerms()][];
-        storeRulesAsMatrix(unaryProductions, csrUnaryRules, csrUnaryProbabilities);
+        jsaUnaryRules = new int[numNonTerms()][];
+        jsaUnaryProbabilities = new float[numNonTerms()][];
+        storeRulesAsMatrix(unaryProductions, jsaUnaryRules, jsaUnaryProbabilities);
 
         unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
         tokenizer = new Tokenizer(lexSet);
@@ -101,7 +101,7 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         return productionPairs.size();
     }
 
-    public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    public JsaSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
@@ -122,19 +122,19 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
     }
 
     public final int[][] binaryRuleMatrix() {
-        return csrBinaryRules;
+        return jsaBinaryRules;
     }
 
     public final float[][] binaryProbabilities() {
-        return csrBinaryProbabilities;
+        return jsaBinaryProbabilities;
     }
 
     public final int[][] unaryRuleMatrix() {
-        return csrUnaryRules;
+        return jsaUnaryRules;
     }
 
     public final float[][] unaryProbabilities() {
-        return csrUnaryProbabilities;
+        return jsaUnaryProbabilities;
     }
 
     @Override
@@ -151,8 +151,8 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
     }
 
     public final float logProbability(final int parent, final int children) {
-        final int[] rowIndices = csrBinaryRules[parent];
-        final float[] rowProbabilities = csrBinaryProbabilities[parent];
+        final int[] rowIndices = jsaBinaryRules[parent];
+        final float[] rowProbabilities = jsaBinaryProbabilities[parent];
 
         for (int i = 0; i < rowIndices.length; i++) {
             final int c = rowIndices[i];
@@ -174,8 +174,8 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
 
         final int children = pack(leftChildIndex, rightChildIndex);
 
-        final int[] rowIndices = csrUnaryRules[parentIndex];
-        final float[] rowProbabilities = csrUnaryProbabilities[parentIndex];
+        final int[] rowIndices = jsaUnaryRules[parentIndex];
+        final float[] rowProbabilities = jsaUnaryProbabilities[parentIndex];
 
         for (int i = 0; i < rowIndices.length; i++) {
             final int c = rowIndices[i];

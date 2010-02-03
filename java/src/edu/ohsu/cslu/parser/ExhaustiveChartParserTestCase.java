@@ -188,8 +188,8 @@ public abstract class ExhaustiveChartParserTestCase {
         final ParseTree bestParseTree = parser.findMLParse(sentences.get(index)[0]);
         assertEquals(sentences.get(index)[1], bestParseTree.toString());
 
-        if (parser instanceof CsrSparseMatrixVectorParser) {
-            System.out.format("Total cross-product time: %d\n", ((CsrSparseMatrixVectorParser) parser).totalCrossProductTime);
+        if (parser instanceof JsaSparseMatrixVectorParser) {
+            System.out.format("Total cross-product time: %d\n", ((JsaSparseMatrixVectorParser) parser).totalCrossProductTime);
         }
     }
 

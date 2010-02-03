@@ -9,7 +9,7 @@ import it.unimi.dsi.fastutil.shorts.ShortList;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.BaseGrammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
@@ -23,17 +23,19 @@ import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
+public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
-    private final CsrSparseMatrixGrammar spMatrixGrammar;
+    private final JsaSparseMatrixGrammar spMatrixGrammar;
     public long totalCrossProductTime = 0;
     public long totalSpMVTime = 0;
-    private final CrossProductVector crossProductVector;
+    private final float[] crossProductProbabilities;
+    private final short[] crossProductMidpoints;
 
-    public CsrSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
+    public JsaSparseMatrixVectorParser(final JsaSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
         this.spMatrixGrammar = grammar;
-        crossProductVector = new CrossProductVector(spMatrixGrammar.packedArraySize());
+        crossProductProbabilities = new float[spMatrixGrammar.packedArraySize()];
+        crossProductMidpoints = new short[spMatrixGrammar.packedArraySize()];
     }
 
     @Override
@@ -44,12 +46,13 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
         // The chart is (chartSize+1)*chartSize/2
         for (int start = 0; start < chartSize; start++) {
             for (int end = start + 1; end < chartSize + 1; end++) {
-                chart[start][end] = new SparseVectorChartCell(start, end, (CsrSparseMatrixGrammar) grammar, chart);
+                chart[start][end] = new SparseVectorChartCell(start, end, (JsaSparseMatrixGrammar) grammar, chart);
             }
         }
         rootChartCell = chart[0][chartSize];
     }
 
+    // TODO Do this with a matrix multiply as well?
     @Override
     protected void addLexicalProductions(final Token[] sent) throws Exception {
         super.addLexicalProductions(sent);
@@ -70,23 +73,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
         // int totalProducts = 0;
 
-        crossProductVector.clear();
-
-        // Iterate over all possible midpoints, unioning together the cross-product of discovered
-        // non-terminals in each left/right child pair
-        // midpoint = index of right child
-        for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
-            final SparseVectorChartCell leftCell = (SparseVectorChartCell) chart[start][midpoint];
-            final SparseVectorChartCell rightCell = (SparseVectorChartCell) chart[midpoint][end];
-
-            crossProductVector.union(leftCell, rightCell, midpoint);
-
-            // TODO: Calculate totalProducts again (once we start storing size again in chart cell)
-            // final int leftChildSize = leftCell.size();
-            // final int rightChildSize = rightCell.size();
-            //
-            // totalProducts += leftChildSize * rightChildSize;
-        }
+        final CrossProductVector crossProductVector = new CrossProductVector(spMatrixGrammar, crossProductProbabilities, crossProductMidpoints, chart, start, end);
 
         final long t1 = System.currentTimeMillis();
         final double crossProductTime = t1 - t0;
@@ -109,60 +96,83 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
         // TODO We won't need to do this once we're storing directly into the packed array
         spvChartCell.finalizeCell();
 
-        final int crossProductSize = crossProductVector.size();
-        // final int edges = spvChartCell.size();
-
-        spvChartCell.finalizeCell();
-
         // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n", start, end, t3
         // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime, edges, spmvTime, edges / spmvTime);
         totalCrossProductTime += crossProductTime;
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
-    private final class CrossProductVector {
+    @Override
+    public String getStats() {
+        // TODO Auto-generated method stub
+        return super.getStats() + String.format(" Cross-product time=%d ms; SpMV time=%d ms", totalCrossProductTime, totalSpMVTime);
+    }
 
+    public final static class CrossProductVector {
+
+        private final JsaSparseMatrixGrammar grammar;
         private final float[] probabilities;
         private final short[] midpoints;
         private int size = 0;
 
-        public CrossProductVector(final int size) {
+        /**
+         * Initial constructor; allocates new parallel arrays. Subsequent cross-product vectors will generally reuse the same arrays.
+         * 
+         * @param grammar
+         * @param size
+         */
+        public CrossProductVector(final JsaSparseMatrixGrammar grammar, final int size) {
+            this.grammar = grammar;
             this.probabilities = new float[size];
             this.midpoints = new short[size];
 
             clear();
         }
 
-        public final void union(final SparseVectorChartCell leftCell, final SparseVectorChartCell rightCell, final short midpoint) {
-            final int[] leftChildren = leftCell.validLeftChildren;
-            final float[] leftChildrenProbabilities = leftCell.validLeftChildrenProbabilities;
-            final short[] rightChildren = rightCell.validRightChildren;
-            final float[] rightChildrenProbabilities = rightCell.validRightChildrenProbabilities;
+        public CrossProductVector(final JsaSparseMatrixGrammar grammar, final float[] probabilities, final short[] midpoints, final ChartCell[][] chart, final int start,
+                final int end) {
+            this.grammar = grammar;
+            this.probabilities = probabilities;
+            this.midpoints = midpoints;
+            clear();
 
-            final int leftChildSize = leftChildren.length;
-            final int rightChildSize = rightChildren.length;
+            // Iterate over all possible midpoints, unioning together the cross-product of discovered
+            // non-terminals in each left/right child pair
+            // midpoint = index of right child
+            for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
+                final SparseVectorChartCell leftCell = (SparseVectorChartCell) chart[start][midpoint];
+                final SparseVectorChartCell rightCell = (SparseVectorChartCell) chart[midpoint][end];
 
-            for (int i = 0; i < leftChildSize; i++) {
+                final int[] leftChildren = leftCell.validLeftChildren;
+                final float[] leftChildrenProbabilities = leftCell.validLeftChildrenProbabilities;
+                final short[] rightChildren = rightCell.validRightChildren;
+                final float[] rightChildrenProbabilities = rightCell.validRightChildrenProbabilities;
 
-                final int leftChild = leftChildren[i];
-                final float leftProbability = leftChildrenProbabilities[i];
+                final int leftChildSize = leftChildren.length;
+                final int rightChildSize = rightChildren.length;
 
-                for (int j = 0; j < rightChildSize; j++) {
+                for (int i = 0; i < leftChildSize; i++) {
 
-                    final float jointProbability = leftProbability + rightChildrenProbabilities[j];
-                    final int child = spMatrixGrammar.pack(leftChild, rightChildren[j]);
+                    final int leftChild = leftChildren[i];
+                    final float leftProbability = leftChildrenProbabilities[i];
 
-                    final float currentProbability = probabilities[child];
+                    for (int j = 0; j < rightChildSize; j++) {
 
-                    // TODO We could add a BitVector to check for valid child production pairs, but that amount to n^3 grammar intersections instead of n^2
+                        final float jointProbability = leftProbability + rightChildrenProbabilities[j];
+                        final int child = grammar.pack(leftChild, rightChildren[j]);
 
-                    if (currentProbability == Float.NEGATIVE_INFINITY) {
-                        probabilities[child] = jointProbability;
-                        midpoints[child] = midpoint;
-                        size++;
-                    } else if (jointProbability > currentProbability) {
-                        probabilities[child] = jointProbability;
-                        midpoints[child] = midpoint;
+                        final float currentProbability = probabilities[child];
+
+                        // TODO We could add a BitVector to check for valid child production pairs, but that amount to n^3 grammar intersections instead of n^2
+
+                        if (currentProbability == Float.NEGATIVE_INFINITY) {
+                            probabilities[child] = jointProbability;
+                            midpoints[child] = midpoint;
+                            size++;
+                        } else if (jointProbability > currentProbability) {
+                            probabilities[child] = jointProbability;
+                            midpoints[child] = midpoint;
+                        }
                     }
                 }
             }
@@ -181,25 +191,23 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
             final StringBuilder sb = new StringBuilder(256);
             for (int i = 0; i < probabilities.length; i++) {
                 if (probabilities[i] != Float.NEGATIVE_INFINITY) {
-                    final int leftChild = spMatrixGrammar.unpackLeftChild(i);
-                    final short rightChild = spMatrixGrammar.unpackRightChild(i);
+                    final int leftChild = grammar.unpackLeftChild(i);
+                    final short rightChild = grammar.unpackRightChild(i);
                     final int midpoint = midpoints[i];
                     final float probability = probabilities[i];
 
-                    final CsrSparseMatrixGrammar smg = (CsrSparseMatrixGrammar) grammar;
-
                     if (rightChild == Production.UNARY_PRODUCTION) {
                         // Unary production
-                        sb.append(String.format("%s (%d) %.3f (%d)\n", smg.mapNonterminal(leftChild), leftChild, probability, midpoint));
+                        sb.append(String.format("%s (%d) %.3f (%d)\n", grammar.mapNonterminal(leftChild), leftChild, probability, midpoint));
 
                     } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                         // Lexical production
-                        sb.append(String.format("%s (%d) %.3f (%d)\n", smg.mapLexicalEntry(leftChild), leftChild, probability, midpoint));
+                        sb.append(String.format("%s (%d) %.3f (%d)\n", grammar.mapLexicalEntry(leftChild), leftChild, probability, midpoint));
 
                     } else {
                         // Binary production
-                        sb.append(String.format("%s (%d),%s (%d) %.3f (%d)\n", smg.mapNonterminal(leftChild), leftChild, smg.mapNonterminal(rightChild), rightChild, probability,
-                                midpoint));
+                        sb.append(String.format("%s (%d),%s (%d) %.3f (%d)\n", grammar.mapNonterminal(leftChild), leftChild, grammar.mapNonterminal(rightChild), rightChild,
+                                probability, midpoint));
                     }
                 }
             }
@@ -209,7 +217,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
     public static class SparseVectorChartCell extends BaseChartCell {
 
-        private final CsrSparseMatrixGrammar spMatrixGrammar;
+        private final JsaSparseMatrixGrammar spMatrixGrammar;
 
         /** Indexed by parent non-terminal */
         private float[] probabilities;
@@ -227,7 +235,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
         private final BaseChartCell[][] chart;
 
-        public SparseVectorChartCell(final int start, final int end, final CsrSparseMatrixGrammar grammar, final BaseChartCell[][] chart) {
+        public SparseVectorChartCell(final int start, final int end, final JsaSparseMatrixGrammar grammar, final BaseChartCell[][] chart) {
             super(start, end, grammar);
             this.spMatrixGrammar = grammar;
             this.chart = chart;
@@ -242,17 +250,19 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
             // this.size = grammar.numNonTerms();
         }
 
-        public SparseVectorChartCell(final int start, final int end, final CsrSparseMatrixGrammar grammar) {
+        public SparseVectorChartCell(final int start, final int end, final JsaSparseMatrixGrammar grammar) {
             this(start, end, grammar, null);
         }
 
         public void finalizeCell() {
 
             // TODO: Size these arrays sensibly
-            final IntList validLeftChildList = new IntArrayList(spMatrixGrammar.numNonTerms() >> 2);
-            final FloatList validLeftChildProbabilityList = new FloatArrayList(spMatrixGrammar.numNonTerms() >> 2);
-            final ShortList validRightChildList = new ShortArrayList(spMatrixGrammar.numNonTerms() >> 4);
-            final FloatList validRightChildProbabilityList = new FloatArrayList(spMatrixGrammar.numNonTerms() >> 4);
+            final int leftChildListSize = spMatrixGrammar.numNonTerms() >> 2;
+            final int rightChildListSize = leftChildListSize >> 2;
+            final IntList validLeftChildList = new IntArrayList(leftChildListSize);
+            final FloatList validLeftChildProbabilityList = new FloatArrayList(leftChildListSize);
+            final ShortList validRightChildList = new ShortArrayList(rightChildListSize);
+            final FloatList validRightChildProbabilityList = new FloatArrayList(rightChildListSize);
 
             for (int nonterminal = 0; nonterminal < spMatrixGrammar.numNonTerms(); nonterminal++) {
                 final float probability = probabilities[nonterminal];
@@ -337,8 +347,6 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
             // Iterate over possible parents
             for (int parent = 0; parent < spMatrixGrammar.numNonTerms(); parent++) {
-                final String parentString = spMatrixGrammar.mapNonterminal(parent);
-
                 final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
                 final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
 
