@@ -19,10 +19,10 @@ import org.kohsuke.args4j.Option;
 import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.grammar.BaseGrammar;
-import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.GrammarByChildMatrix;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermHash;
 import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
+import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.fom.EdgeFOM;
 import edu.ohsu.cslu.parser.fom.EdgeFOM.EdgeFOMType;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
@@ -126,8 +126,8 @@ public class ParserDriver extends BaseCommandlineTool {
                 }
                 break;
 
-            case CsrSparseMatrixVector:
-                grammar = new CsrSparseMatrixGrammar(pcfgReader, lexiconReader, grammarFormat);
+            case JsaSparseMatrixVector:
+                grammar = new JsaSparseMatrixGrammar(pcfgReader, lexiconReader, grammarFormat);
                 break;
 
             // Both agenda parsers use GrammarByLeftNonTermList
@@ -247,8 +247,8 @@ public class ParserDriver extends BaseCommandlineTool {
             }
             break;
 
-        case CsrSparseMatrixVector:
-            parser = new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, chartTraversalType);
+        case JsaSparseMatrixVector:
+            parser = new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar, chartTraversalType);
             break;
 
         case AgendaParser:
@@ -278,7 +278,7 @@ public class ParserDriver extends BaseCommandlineTool {
 
     // TODO: Parameterize with parser and grammar classes
     static public enum ParserType {
-        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), CellAgendaParser("cellagenda"), CsrSparseMatrixVector("spmv");
+        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), CellAgendaParser("cellagenda"), JsaSparseMatrixVector("jsa", "spmv-jsa");
 
         private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

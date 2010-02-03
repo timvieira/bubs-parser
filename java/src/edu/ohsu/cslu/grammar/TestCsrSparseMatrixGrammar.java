@@ -10,12 +10,12 @@ public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
 
     @Override
     protected Class<? extends Grammar> grammarClass() {
-        return CsrSparseMatrixGrammar.class;
+        return JsaSparseMatrixGrammar.class;
     }
 
     @Test
     public void testPack() throws Exception {
-        final CsrSparseMatrixGrammar g = (CsrSparseMatrixGrammar) createSimpleGrammar(grammarClass());
+        final JsaSparseMatrixGrammar g = (JsaSparseMatrixGrammar) createSimpleGrammar(grammarClass());
         assertEquals(10, g.unpackLeftChild(g.pack((short) 10, (short) 2)));
         assertEquals(2, g.unpackRightChild(g.pack((short) 10, (short) 2)));
 
@@ -45,7 +45,7 @@ public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
     @Test
     public void testF2_21_R2_p1_unk() throws Exception {
     // TODO: Avoid copy-and-paste from SortedGrammarTestCase
-        final CsrSparseMatrixGrammar g = (CsrSparseMatrixGrammar) createGrammar(grammarClass(), SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"),
+        final JsaSparseMatrixGrammar g = (JsaSparseMatrixGrammar) createGrammar(grammarClass(), SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"),
                 SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.lex.gz"));
         assertEquals(22299, g.numBinaryRules());
         assertEquals(745, g.numUnaryRules());

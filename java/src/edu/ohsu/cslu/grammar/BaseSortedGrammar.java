@@ -91,11 +91,11 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
         leftChildren.removeAll(bothChildren);
         rightChildren.removeAll(bothChildren);
 
-        System.out.format("Right children only: %d\n", rightChildren.size());
-        System.out.format("Both children: %d\n", bothChildren.size());
-        System.out.format("Left children only: %d\n", leftChildren.size());
-        System.out.format("Unary children only: %d\n", unaryOnly.size());
-        System.out.format("POS: %d\n", pos.size());
+        // System.out.format("Right children only: %d\n", rightChildren.size());
+        // System.out.format("Both children: %d\n", bothChildren.size());
+        // System.out.format("Left children only: %d\n", leftChildren.size());
+        // System.out.format("Unary children only: %d\n", unaryOnly.size());
+        // System.out.format("POS: %d\n", pos.size());
 
         // Now, sort the NTs by class (see NonTerminalClass).
         final TreeSet<NonTerminal> sortedNonTerminals = new TreeSet<NonTerminal>();
