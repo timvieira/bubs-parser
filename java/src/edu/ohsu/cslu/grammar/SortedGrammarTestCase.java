@@ -1,12 +1,40 @@
 package edu.ohsu.cslu.grammar;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
+import static junit.framework.Assert.assertEquals;
+
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
+
+    @Test
+    public void testPack() throws Exception {
+        final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) createSimpleGrammar(grammarClass());
+        assertEquals(10, g.unpackLeftChild(g.pack(10, (short) 2)));
+        assertEquals(2, g.unpackRightChild(g.pack(10, (short) 2)));
+
+        assertEquals(1000, g.unpackLeftChild(g.pack(1000, (short) 2)));
+        assertEquals(2, g.unpackRightChild(g.pack(1000, (short) 2)));
+
+        assertEquals(1000, g.unpackLeftChild(g.pack(1000, (short) -1)));
+        assertEquals(-1, g.unpackRightChild(g.pack(1000, (short) -1)));
+
+        assertEquals(10, g.unpackLeftChild(g.pack(10, (short) -2)));
+        assertEquals(-2, g.unpackRightChild(g.pack(10, (short) -2)));
+
+        assertEquals(0, g.unpackLeftChild(g.pack(0, (short) -2)));
+        assertEquals(-2, g.unpackRightChild(g.pack(0, (short) -2)));
+
+        assertEquals(0, g.unpackLeftChild(g.pack(0, (short) 0)));
+        assertEquals(0, g.unpackRightChild(g.pack(0, (short) 0)));
+
+        assertEquals(0, g.unpackLeftChild(g.pack(0, (short) 2)));
+        assertEquals(2, g.unpackRightChild(g.pack(0, (short) 2)));
+
+        assertEquals(2, g.unpackLeftChild(g.pack(2, (short) 0)));
+        assertEquals(0, g.unpackRightChild(g.pack(2, (short) 0)));
+    }
 
     /**
      * Tests a _very_ simple grammar.
@@ -78,8 +106,8 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
     @Test
     public void testF2_21_R2_p1_unk() throws Exception {
-        final BaseSortedGrammar g = (BaseSortedGrammar) createGrammar(grammarClass(), SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"), SharedNlpTests
-                .unitTestDataAsReader("grammars/f2-21-R2-p1-unk.lex.gz"));
+        final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) createGrammar(grammarClass(), SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"),
+                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.lex.gz"));
         assertEquals(22299, g.numBinaryRules());
         assertEquals(745, g.numUnaryRules());
         assertEquals(52000, g.numLexProds);
@@ -97,5 +125,8 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(149, g.eitherChildStart);
         assertEquals(286, g.leftChildOnlyStart);
         assertEquals(6060, g.unaryChildOnlyStart);
+
+        assertEquals(193, g.unpackLeftChild(g.pack(193, (short) 266)));
+        assertEquals(266, g.unpackRightChild(g.pack(266, (short) 266)));
     }
 }

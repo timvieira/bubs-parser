@@ -189,7 +189,7 @@ public abstract class ExhaustiveChartParserTestCase {
         assertEquals(sentences.get(index)[1], bestParseTree.toString());
 
         if (parser instanceof JsaSparseMatrixVectorParser) {
-            System.out.format("Total cross-product time: %d\n", ((JsaSparseMatrixVectorParser) parser).totalCrossProductTime);
+            System.out.format("Total cross-product time: %d\n", ((SparseMatrixVectorParser) parser).totalCrossProductTime);
         }
     }
 
