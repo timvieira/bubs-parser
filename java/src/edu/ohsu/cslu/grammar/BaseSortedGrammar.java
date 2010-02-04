@@ -24,6 +24,7 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
     public int leftChildOnlyStart;
     public int unaryChildOnlyStart;
 
+    @SuppressWarnings("unchecked")
     protected BaseSortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super();
 

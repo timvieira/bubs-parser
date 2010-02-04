@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.grammar;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -12,21 +11,17 @@ import java.util.Collection;
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 
 /**
- * Stores a sparse-matrix grammar in Java-Sparse-Array format (standard compressed-sparse-row with the exception that row lengths can vary, since Java stores 2-d arrays as arrays
- * of arrays)
+ * Stores a sparse-matrix grammar in Java-Sparse-Array format (similar to standard compressed-sparse-row (CSR) format with the exception that row lengths can vary, since Java
+ * stores 2-d arrays as arrays of arrays)
  * 
- * Assumes less than 2^30 total non-terminals combinations (so that a production pair will fit into a signed 32-bit int). This limit _may_ still allow more than 2^15 total
- * non-terminals, depending on the grammar's factorization. In general, we assume a left-factored grammar with many fewer valid right child productions than left children.
+ * Assumes fewer than 2^30 total non-terminals combinations (see {@link BaseSparseMatrixGrammar} documentation for details).
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class JsaSparseMatrixGrammar extends BaseSparseMatrixGrammar {
-
-    /** Unary productions, stored in the order read in from the grammar file */
-    public final Production[] unaryProds;
+public final class JsaSparseMatrixGrammar extends BaseSparseMatrixGrammar {
 
     /** Binary rules */
     private int[][] jsaBinaryRules;
@@ -40,52 +35,29 @@ public class JsaSparseMatrixGrammar extends BaseSparseMatrixGrammar {
     /** Binary rule probabilities */
     private float[][] jsaUnaryProbabilities;
 
-    // Shift lengths and mask for packing and unpacking non-terminals into an int
-    private final int leftChildShift;
-    private final int rightChildShift;
-    private final int mask;
-
-    private final int validProductionPairs;
-
     public JsaSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
         super(grammarFile, lexiconFile, grammarFormat);
-
-        // Add 1 bit to leave empty for sign
-        leftChildShift = edu.ohsu.cslu.util.Math.logBase2(leftChildOnlyStart) + 1;
-        rightChildShift = 32 - leftChildShift;
-        int m = 0;
-        for (int i = 0; i < leftChildShift; i++) {
-            m = m << 1 | 1;
-        }
-        mask = m;
 
         // Bin all binary rules by parent, mapping packed children -> probability
         jsaBinaryRules = new int[numNonTerms()][];
         jsaBinaryProbabilities = new float[numNonTerms()][];
-        validProductionPairs = storeRulesAsMatrix(binaryProductions, jsaBinaryRules, jsaBinaryProbabilities);
+        storeRulesAsMatrix(binaryProductions, jsaBinaryRules, jsaBinaryProbabilities);
 
         // And all unary rules
         jsaUnaryRules = new int[numNonTerms()][];
         jsaUnaryProbabilities = new float[numNonTerms()][];
         storeRulesAsMatrix(unaryProductions, jsaUnaryRules, jsaUnaryProbabilities);
 
-        unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
         tokenizer = new Tokenizer(lexSet);
     }
 
-    private int storeRulesAsMatrix(final Collection<Production> productions, final int[][] productionMatrix, final float[][] probabilityMatrix) {
-        final IntOpenHashSet productionPairs = new IntOpenHashSet(50000);
+    public JsaSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    }
 
-        // Bin all binary rules by parent, mapping packed children -> probability
-        final Int2FloatOpenHashMap[] maps = new Int2FloatOpenHashMap[numNonTerms()];
-        for (int i = 0; i < numNonTerms(); i++) {
-            maps[i] = new Int2FloatOpenHashMap(1000);
-        }
+    private void storeRulesAsMatrix(final Collection<Production> productions, final int[][] productionMatrix, final float[][] probabilityMatrix) {
 
-        for (final Production p : productions) {
-            maps[p.parent].put(pack(p.leftChild, (short) p.rightChild), p.prob);
-            productionPairs.add(pack(p.leftChild, (short) p.rightChild));
-        }
+        final Int2FloatOpenHashMap[] maps = mapRules(productions);
 
         // Store rules in parent bins, sorted by packed children
         for (int parent = 0; parent < numNonTerms(); parent++) {
@@ -98,27 +70,6 @@ public class JsaSparseMatrixGrammar extends BaseSparseMatrixGrammar {
                 probabilityMatrix[parent][j] = maps[parent].get(productionMatrix[parent][j]);
             }
         }
-        return productionPairs.size();
-    }
-
-    public JsaSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
-    public final int packedArraySize() {
-        return numNonTerms() << leftChildShift;
-    }
-
-    public final int pack(final int leftChild, final short rightChild) {
-        return leftChild << leftChildShift | (rightChild & mask);
-    }
-
-    public final int unpackLeftChild(final int children) {
-        return children >>> leftChildShift;
-    }
-
-    public final short unpackRightChild(final int children) {
-        return (short) ((children << rightChildShift) >> rightChildShift);
     }
 
     public final int[][] binaryRuleMatrix() {
@@ -138,19 +89,7 @@ public class JsaSparseMatrixGrammar extends BaseSparseMatrixGrammar {
     }
 
     @Override
-    public final float logProbability(final String parent, final String leftChild, final String rightChild) {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        final int leftChildIndex = nonTermSet.getIndex(leftChild);
-        final int rightChildIndex = nonTermSet.getIndex(rightChild);
-
-        return logProbability(parentIndex, leftChildIndex, rightChildIndex);
-    }
-
-    public final float logProbability(final int parent, final int leftChild, final int rightChild) {
-        return logProbability(parent, pack(leftChild, (short) rightChild));
-    }
-
-    public final float logProbability(final int parent, final int children) {
+    public final float binaryLogProbability(final int parent, final int children) {
         final int[] rowIndices = jsaBinaryRules[parent];
         final float[] rowProbabilities = jsaBinaryProbabilities[parent];
 
@@ -167,15 +106,12 @@ public class JsaSparseMatrixGrammar extends BaseSparseMatrixGrammar {
     }
 
     @Override
-    public float logProbability(final String parent, final String child) {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        final int leftChildIndex = nonTermSet.getIndex(child);
+    public final float unaryLogProbability(final int parent, final int child) {
         final short rightChildIndex = Production.UNARY_PRODUCTION;
+        final int children = pack(child, rightChildIndex);
 
-        final int children = pack(leftChildIndex, rightChildIndex);
-
-        final int[] rowIndices = jsaUnaryRules[parentIndex];
-        final float[] rowProbabilities = jsaUnaryProbabilities[parentIndex];
+        final int[] rowIndices = jsaUnaryRules[parent];
+        final float[] rowProbabilities = jsaUnaryProbabilities[parent];
 
         for (int i = 0; i < rowIndices.length; i++) {
             final int c = rowIndices[i];
@@ -188,19 +124,4 @@ public class JsaSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         }
         return Float.NEGATIVE_INFINITY;
     }
-
-    @Override
-    public String getStats() {
-        final StringBuilder sb = new StringBuilder(1024);
-        sb.append(super.getStats());
-        sb.append("Valid production pairs: " + validProductionPairs + '\n');
-        sb.append("Valid left children: " + (numNonTerms() - posStart) + '\n');
-        sb.append("Valid right children: " + leftChildOnlyStart + '\n');
-
-        sb.append("Max left child: " + (numNonTerms() - 1) + '\n');
-        sb.append("Max right child: " + (leftChildOnlyStart - 1) + '\n');
-
-        return sb.toString();
-    }
-
 }
