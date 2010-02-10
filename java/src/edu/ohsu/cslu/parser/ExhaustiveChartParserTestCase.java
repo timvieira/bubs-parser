@@ -1,8 +1,11 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 
 import org.junit.Before;
@@ -18,7 +21,6 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a trivial sentence using a very simple grammar and the first 10 sentences of WSJ
@@ -37,6 +39,12 @@ public abstract class ExhaustiveChartParserTestCase {
     // Grammar file paths, relative to unit test data root directory
     private final static String PCFG_FILE = "grammars/f2-21-R2-p1-unk.pcfg.gz";
     private final static String LEX_FILE = "grammars/f2-21-R2-p1-unk.lex.gz";
+
+    /** Very simple grammar for parsing 'systems analyst arbitration chef' */
+    protected static Grammar simpleGrammar1;
+
+    /** Slightly larger grammar for parsing 'The fish market stands last' */
+    protected static Grammar simpleGrammar2;
 
     /** Grammar induced from WSJ sections 2-21 */
     protected static Grammar f2_21_grammar;
@@ -96,26 +104,76 @@ public abstract class ExhaustiveChartParserTestCase {
             f2_21_grammar = createGrammar(SharedNlpTests.unitTestDataAsReader(PCFG_FILE), SharedNlpTests.unitTestDataAsReader(LEX_FILE));
         }
 
+        if (simpleGrammar1 == null || simpleGrammar1.getClass() != grammarClass()) {
+            simpleGrammar1 = GrammarTestCase.createSimpleGrammar(grammarClass());
+        }
+
+        if (simpleGrammar2 == null || simpleGrammar2.getClass() != grammarClass()) {
+            simpleGrammar2 = createSimpleGrammar2(grammarClass());
+        }
+
         // TODO Parameterize ChartTraversalType (this will require a custom Runner implementation)
         parser = createParser(f2_21_grammar, ChartTraversalType.LeftRightBottomTopTraversal);
+    }
+
+    public static Grammar createSimpleGrammar2(final Class<? extends Grammar> grammarClass) throws Exception {
+        final StringBuilder lexiconSb = new StringBuilder(256);
+        lexiconSb.append("DT => The 0\n");
+        lexiconSb.append("NN => fish 0\n");
+        lexiconSb.append("NN => market -0.405465108\n");
+        lexiconSb.append("VB => market -1.098612289\n");
+        lexiconSb.append("NN => stands -0.693147181\n");
+        lexiconSb.append("VB => stands -0.693147181\n");
+        lexiconSb.append("RB => last -0.405465108\n");
+        lexiconSb.append("VB => last -1.098612289\n");
+        lexiconSb.append("NN => UNK 0\n");
+
+        final StringBuilder grammarSb = new StringBuilder(256);
+        grammarSb.append("TOP\n");
+        grammarSb.append("S => NP VP 0\n");
+        grammarSb.append("TOP => S 0\n");
+        grammarSb.append("NP => DT NP -1.386294361\n");
+        grammarSb.append("NP => DT NN -1.386294361\n");
+        grammarSb.append("NP => NN NN -1.791759469\n");
+        grammarSb.append("NP => NN NP-NN -1.791759469\n");
+        grammarSb.append("NP => NN RB -1.791759469\n");
+        grammarSb.append("NP-NN => NN NN 0\n");
+        grammarSb.append("VP => VB RB -0.693147181\n");
+        grammarSb.append("VP => VB VP-VB -1.386294361\n");
+        grammarSb.append("VP => VB -1.386294361\n");
+        grammarSb.append("VP-VB => NP 0\n");
+
+        return GrammarTestCase.createGrammar(grammarClass, new StringReader(grammarSb.toString()), new StringReader(lexiconSb.toString()));
     }
 
     /**
      * Tests parsing with a _very_ simple grammar.
      * 
-     * TODO Share grammar creation with GrammarTestCase
+     * @throws Exception if something bad happens
+     */
+    @Test
+    public void testSimpleGrammar1() throws Exception {
+        final String sentence = "systems analyst arbitration chef";
+
+        final MaximumLikelihoodParser p = createParser(simpleGrammar1, ChartTraversalType.LeftRightBottomTopTraversal);
+
+        final ParseTree bestParseTree = p.findMLParse(sentence);
+        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree.toString());
+    }
+
+    /**
+     * Tests parsing with a slightly larger grammar.
      * 
      * @throws Exception if something bad happens
      */
     @Test
-    public void testSimpleGrammar() throws Exception {
-        final String sentence = "systems analyst arbitration chef";
+    public void testSimpleGrammar2() throws Exception {
+        final String sentence = "The fish market stands last";
 
-        final Grammar simpleGrammar = GrammarTestCase.createSimpleGrammar(grammarClass());
-        final MaximumLikelihoodParser p = createParser(simpleGrammar, ChartTraversalType.LeftRightBottomTopTraversal);
+        final MaximumLikelihoodParser p = createParser(simpleGrammar2, ChartTraversalType.LeftRightBottomTopTraversal);
 
         final ParseTree bestParseTree = p.findMLParse(sentence);
-        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree.toString());
+        assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree.toString());
     }
 
     @Test

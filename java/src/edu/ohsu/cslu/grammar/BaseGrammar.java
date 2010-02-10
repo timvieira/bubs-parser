@@ -176,8 +176,16 @@ public abstract class BaseGrammar implements Grammar {
         return nonTermSet.getSymbol(nonterminal);
     }
 
+    public final int mapNonterminal(final String nonterminal) {
+        return nonTermSet.getIndex(nonterminal);
+    }
+
     public final String mapLexicalEntry(final int lexicalEntry) {
         return lexSet.getSymbol(lexicalEntry);
+    }
+
+    public final int mapLexicalEntry(final String lexicalEntry) {
+        return lexSet.getIndex(lexicalEntry);
     }
 
     public final List<Production> getLexProdsForToken(final Token token) {

@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import java.util.Arrays;
-
 import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
@@ -32,7 +30,7 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
         // The chart is (chartSize+1)*chartSize/2
         for (int start = 0; start < chartSize; start++) {
             for (int end = start + 1; end < chartSize + 1; end++) {
-                chart[start][end] = new JsaSparseVectorChartCell(chart, (JsaSparseMatrixGrammar) grammar, start, end);
+                chart[start][end] = new DenseVectorChartCell(chart, start, end, (JsaSparseMatrixGrammar) grammar);
             }
         }
         rootChartCell = chart[0][chartSize];
@@ -43,14 +41,14 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
     protected void addLexicalProductions(final Token[] sent) throws Exception {
         super.addLexicalProductions(sent);
         for (int start = 0; start < chartSize; start++) {
-            ((SparseVectorChartCell) chart[start][start + 1]).finalizeCell();
+            ((DenseVectorChartCell) chart[start][start + 1]).finalizeCell();
         }
     }
 
     @Override
     protected void visitCell(final ChartCell cell) {
 
-        final JsaSparseVectorChartCell spvChartCell = (JsaSparseVectorChartCell) cell;
+        final DenseVectorChartCell spvChartCell = (DenseVectorChartCell) cell;
         // TODO Change ChartCell.start() and end() to return shorts (since we shouldn't have to handle sentences longer than 32767)
         final short start = (short) cell.start();
         final short end = (short) cell.end();
@@ -65,7 +63,7 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
         // Multiply the unioned vector with the grammar matrix and populate the current cell with the
         // vector resulting from the matrix-vector multiplication
-        spvChartCell.spmvMultiply(crossProductVector, jsaSparseMatrixGrammar.binaryRuleMatrix(), jsaSparseMatrixGrammar.binaryProbabilities());
+        binarySpmvMultiply(crossProductVector, spvChartCell);
 
         final long t2 = System.currentTimeMillis();
         final double binarySpmvTime = t2 - t1;
@@ -73,7 +71,7 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
         // Handle unary productions
         // TODO: This only goes through unary rules one time, so it can't create unary chains unless such chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
-        spvChartCell.spmvMultiply(jsaSparseMatrixGrammar.unaryRuleMatrix(), jsaSparseMatrixGrammar.unaryProbabilities());
+        unarySpmvMultiply(spvChartCell);
 
         final long t3 = System.currentTimeMillis();
         final double unarySpmvTime = t3 - t2;
@@ -87,107 +85,92 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
-    public static class JsaSparseVectorChartCell extends SparseVectorChartCell {
+    @Override
+    public void binarySpmvMultiply(final CrossProductVector crossProductVector, final DenseVectorChartCell chartCell) {
 
-        final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
+        final int[][] grammarRuleMatrix = jsaSparseMatrixGrammar.binaryRuleMatrix();
+        final float[][] grammarProbabilities = jsaSparseMatrixGrammar.binaryProbabilities();
 
-        public JsaSparseVectorChartCell(final BaseChartCell[][] chart, final JsaSparseMatrixGrammar grammar, final int start, final int end) {
-            super(chart, start, end, grammar);
-            this.jsaSparseMatrixGrammar = grammar;
+        final float[] crossProductProbabilities = crossProductVector.probabilities;
+        final short[] crossProductMidpoints = crossProductVector.midpoints;
 
-            final int arraySize = grammar.numNonTerms();
-            this.probabilities = new float[arraySize];
-            Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
-            this.midpoints = new short[arraySize];
-            this.children = new int[arraySize];
+        final int[] chartCellChildren = chartCell.children;
+        final float[] chartCellProbabilities = chartCell.probabilities;
+        final short[] chartCellMidpoints = chartCell.midpoints;
 
-            // TODO: Set size to the actual number of populated non-terminals in spmvMultiply()
-            // this.size = grammar.numNonTerms();
-        }
+        // Iterate over possible parents
+        for (int parent = 0; parent < jsaSparseMatrixGrammar.numNonTerms(); parent++) {
 
-        /**
-         * Multiplies the grammar matrix (stored sparsely) by the supplied cross-product vector (stored densely), and populates this chart cell.
-         * 
-         * @param crossProductVector
-         * @param grammarRuleMatrix
-         * @param grammarProbabilities
-         */
-        public void spmvMultiply(final CrossProductVector crossProductVector, final int[][] grammarRuleMatrix, final float[][] grammarProbabilities) {
+            final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
+            final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
 
-            final float[] crossProductProbabilities = crossProductVector.probabilities;
-            final short[] crossProductMidpoints = crossProductVector.midpoints;
+            // Production winningProduction = null;
+            float winningProbability = Float.NEGATIVE_INFINITY;
+            int winningChildren = Integer.MIN_VALUE;
+            short winningMidpoint = 0;
 
-            // Iterate over possible parents
-            for (int parent = 0; parent < jsaSparseMatrixGrammar.numNonTerms(); parent++) {
+            for (int i = 0; i < grammarChildrenForParent.length; i++) {
+                final int grammarChildren = grammarChildrenForParent[i];
 
-                final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
-                final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
+                final float grammarProbability = grammarProbabilitiesForParent[i];
+                final float crossProductProbability = crossProductProbabilities[grammarChildren];
+                final float jointProbability = grammarProbability + crossProductProbability;
 
-                // Production winningProduction = null;
-                float winningProbability = Float.NEGATIVE_INFINITY;
-                int winningChildren = Integer.MIN_VALUE;
-                short winningMidpoint = 0;
-
-                for (int i = 0; i < grammarChildrenForParent.length; i++) {
-                    final int grammarChildren = grammarChildrenForParent[i];
-
-                    final float grammarProbability = grammarProbabilitiesForParent[i];
-                    final float crossProductProbability = crossProductProbabilities[grammarChildren];
-                    final float jointProbability = grammarProbability + crossProductProbability;
-
-                    if (jointProbability > winningProbability) {
-                        winningProbability = jointProbability;
-                        winningChildren = grammarChildren;
-                        winningMidpoint = crossProductMidpoints[grammarChildren];
-                    }
-                }
-
-                if (winningProbability != Float.NEGATIVE_INFINITY) {
-                    this.children[parent] = winningChildren;
-                    this.probabilities[parent] = winningProbability;
-                    this.midpoints[parent] = winningMidpoint;
+                if (jointProbability > winningProbability) {
+                    winningProbability = jointProbability;
+                    winningChildren = grammarChildren;
+                    winningMidpoint = crossProductMidpoints[grammarChildren];
                 }
             }
+
+            if (winningProbability != Float.NEGATIVE_INFINITY) {
+                chartCellChildren[parent] = winningChildren;
+                chartCellProbabilities[parent] = winningProbability;
+                chartCellMidpoints[parent] = winningMidpoint;
+            }
         }
+    }
 
-        /**
-         * Multiplies the grammar matrix (stored sparsely) by the contents of this cell (stored densely), and populates this chart cell. Used to populate unary rules.
-         * 
-         * @param grammarRuleMatrix
-         * @param grammarProbabilities
-         */
-        public void spmvMultiply(final int[][] grammarRuleMatrix, final float[][] grammarProbabilities) {
+    @Override
+    public void unarySpmvMultiply(final DenseVectorChartCell chartCell) {
 
-            // Iterate over possible parents
-            for (int parent = 0; parent < jsaSparseMatrixGrammar.numNonTerms(); parent++) {
-                final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
-                final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
+        final int[][] grammarRuleMatrix = jsaSparseMatrixGrammar.unaryRuleMatrix();
+        final float[][] grammarProbabilities = jsaSparseMatrixGrammar.unaryProbabilities();
 
-                // Production winningProduction = null;
-                float winningProbability = this.probabilities[parent];
-                int winningChildren = Integer.MIN_VALUE;
-                short winningMidpoint = 0;
+        final int[] chartCellChildren = chartCell.children;
+        final float[] chartCellProbabilities = chartCell.probabilities;
+        final short[] chartCellMidpoints = chartCell.midpoints;
+        final short chartCellEnd = (short) chartCell.end();
 
-                for (int i = 0; i < grammarChildrenForParent.length; i++) {
-                    final int packedChildren = grammarChildrenForParent[i];
-                    final int child = jsaSparseMatrixGrammar.unpackLeftChild(packedChildren);
+        // Iterate over possible parents
+        for (int parent = 0; parent < jsaSparseMatrixGrammar.numNonTerms(); parent++) {
+            final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
+            final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
 
-                    final float grammarProbability = grammarProbabilitiesForParent[i];
-                    final float crossProductProbability = this.probabilities[child];
-                    final float jointProbability = grammarProbability + crossProductProbability;
+            // Production winningProduction = null;
+            float winningProbability = chartCellProbabilities[parent];
+            int winningChildren = Integer.MIN_VALUE;
+            short winningMidpoint = 0;
 
-                    if (jointProbability > winningProbability) {
-                        winningProbability = jointProbability;
-                        winningChildren = packedChildren;
-                        winningMidpoint = (short) end();
-                    }
+            for (int i = 0; i < grammarChildrenForParent.length; i++) {
+                final int packedChildren = grammarChildrenForParent[i];
+                final int child = jsaSparseMatrixGrammar.unpackLeftChild(packedChildren);
+
+                final float grammarProbability = grammarProbabilitiesForParent[i];
+                final float crossProductProbability = chartCellProbabilities[child];
+                final float jointProbability = grammarProbability + crossProductProbability;
+
+                if (jointProbability > winningProbability) {
+                    winningProbability = jointProbability;
+                    winningChildren = packedChildren;
+                    winningMidpoint = chartCellEnd;
                 }
+            }
 
-                if (winningChildren != Integer.MIN_VALUE) {
-                    this.children[parent] = winningChildren;
-                    this.probabilities[parent] = winningProbability;
-                    this.midpoints[parent] = winningMidpoint;
-                }
+            if (winningChildren != Integer.MIN_VALUE) {
+                chartCellChildren[parent] = winningChildren;
+                chartCellProbabilities[parent] = winningProbability;
+                chartCellMidpoints[parent] = winningMidpoint;
             }
         }
     }
