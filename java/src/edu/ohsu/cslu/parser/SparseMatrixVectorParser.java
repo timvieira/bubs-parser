@@ -46,8 +46,8 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         // Iterate over all possible midpoints, unioning together the cross-product of discovered
         // non-terminals in each left/right child pair
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
-            final SparseVectorChartCell leftCell = (SparseVectorChartCell) chart[start][midpoint];
-            final SparseVectorChartCell rightCell = (SparseVectorChartCell) chart[midpoint][end];
+            final DenseVectorChartCell leftCell = (DenseVectorChartCell) chart[start][midpoint];
+            final DenseVectorChartCell rightCell = (DenseVectorChartCell) chart[midpoint][end];
 
             final int[] leftChildren = leftCell.validLeftChildren;
             final float[] leftChildrenProbabilities = leftCell.validLeftChildrenProbabilities;
@@ -80,6 +80,21 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         return new CrossProductVector(sparseMatrixGrammar, crossProductProbabilities, crossProductMidpoints, size);
     }
 
+    /**
+     * Multiplies the grammar matrix (stored sparsely) by the supplied cross-product vector (stored densely), and populates this chart cell.
+     * 
+     * @param crossProductVector
+     * @param chartCell
+     */
+    public abstract void binarySpmvMultiply(final CrossProductVector crossProductVector, final DenseVectorChartCell chartCell);
+
+    /**
+     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and populates this chart cell. Used to populate unary rules.
+     * 
+     * @param chartCell
+     */
+    public abstract void unarySpmvMultiply(final DenseVectorChartCell chartCell);
+
     @Override
     public ParseTree findMLParse(final String sentence) throws Exception {
         return findBestParse(sentence);
@@ -90,15 +105,15 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         return super.getStats() + String.format(" Cross-product time=%d ms; SpMV time=%d ms", totalCrossProductTime, totalSpMVTime);
     }
 
-    protected abstract static class SparseVectorChartCell extends BaseChartCell {
+    protected static class DenseVectorChartCell extends BaseChartCell {
 
         private final BaseSparseMatrixGrammar sparseMatrixGrammar;
         protected final BaseChartCell[][] chart;
 
         /** Indexed by parent non-terminal */
-        protected float[] probabilities;
-        protected short[] midpoints;
-        protected int[] children;
+        protected final float[] probabilities;
+        protected final short[] midpoints;
+        protected final int[] children;
 
         /** Stores packed children and their probabilities */
         public int[] validLeftChildren;
@@ -107,10 +122,16 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         public short[] validRightChildren;
         public float[] validRightChildrenProbabilities;
 
-        protected SparseVectorChartCell(final BaseChartCell[][] chart, final int start, final int end, final BaseSparseMatrixGrammar grammar) {
+        protected DenseVectorChartCell(final BaseChartCell[][] chart, final int start, final int end, final BaseSparseMatrixGrammar grammar) {
             super(start, end, grammar);
             this.chart = chart;
             this.sparseMatrixGrammar = grammar;
+
+            final int arraySize = grammar.numNonTerms();
+            this.probabilities = new float[arraySize];
+            Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
+            this.midpoints = new short[arraySize];
+            this.children = new int[arraySize];
         }
 
         public void finalizeCell() {
@@ -181,8 +202,8 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
             final int midpoint = midpoints[nonTermIndex];
             final float probability = probabilities[nonTermIndex];
 
-            final SparseVectorChartCell leftChildCell = (SparseVectorChartCell) chart[start][midpoint];
-            final SparseVectorChartCell rightChildCell = midpoint < chart.length ? (SparseVectorChartCell) chart[midpoint][end] : null;
+            final DenseVectorChartCell leftChildCell = (DenseVectorChartCell) chart[start][midpoint];
+            final DenseVectorChartCell rightChildCell = midpoint < chart.length ? (DenseVectorChartCell) chart[midpoint][end] : null;
 
             if (rightChild == Production.LEXICAL_PRODUCTION) {
                 // Lexical production
