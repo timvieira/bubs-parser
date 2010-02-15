@@ -272,11 +272,11 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
     }
 
     public final boolean isValidRightChild(final int child) {
-        return (child >= rightChildOnlyStart && child < leftChildOnlyStart);
+        return (child >= rightChildOnlyStart && child < leftChildOnlyStart && child != nullSymbol);
     }
 
     public final boolean isValidLeftChild(final int child) {
-        return child >= posStart;
+        return (child >= posStart && child < unaryChildOnlyStart && child != nullSymbol);
     }
 
     // TODO: not efficient. Should index by child

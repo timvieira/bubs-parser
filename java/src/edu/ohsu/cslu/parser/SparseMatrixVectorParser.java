@@ -11,14 +11,15 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.BaseSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.BaseGrammar.Production;
+import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class SparseMatrixVectorParser extends ChartParserByTraversal implements MaximumLikelihoodParser {
 
     private final BaseSparseMatrixGrammar sparseMatrixGrammar;
-    private final float[] crossProductProbabilities;
-    private final short[] crossProductMidpoints;
+    private float[] crossProductProbabilities;
+    private short[] crossProductMidpoints;
 
     public long totalCrossProductTime = 0;
     public long totalSpMVTime = 0;
@@ -27,8 +28,47 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         super(grammar, traversalType);
 
         this.sparseMatrixGrammar = grammar;
-        crossProductProbabilities = new float[grammar.packedArraySize()];
-        crossProductMidpoints = new short[grammar.packedArraySize()];
+    }
+
+    /**
+     * Multiplies the grammar matrix (stored sparsely) by the supplied cross-product vector (stored densely), and populates this chart cell.
+     * 
+     * @param crossProductVector
+     * @param chartCell
+     */
+    public abstract void binarySpmvMultiply(final CrossProductVector crossProductVector, final DenseVectorChartCell chartCell);
+
+    /**
+     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and populates this chart cell. Used to populate unary rules.
+     * 
+     * @param chartCell
+     */
+    public abstract void unarySpmvMultiply(final DenseVectorChartCell chartCell);
+
+    @Override
+    protected void initParser(final int sentLength) {
+        chartSize = sentLength;
+        chart = new BaseChartCell[chartSize][chartSize + 1];
+
+        // The chart is (chartSize+1)*chartSize/2
+        for (int start = 0; start < chartSize; start++) {
+            for (int end = start + 1; end < chartSize + 1; end++) {
+                chart[start][end] = new DenseVectorChartCell(chart, start, end, (BaseSparseMatrixGrammar) grammar);
+            }
+        }
+        rootChartCell = chart[0][chartSize];
+
+        totalSpMVTime = 0;
+        totalCrossProductTime = 0;
+    }
+
+    // TODO Do this with a matrix multiply?
+    @Override
+    protected void addLexicalProductions(final Token[] sent) throws Exception {
+        super.addLexicalProductions(sent);
+        for (int start = 0; start < chartSize; start++) {
+            ((DenseVectorChartCell) chart[start][start + 1]).finalizeCell();
+        }
     }
 
     /**
@@ -38,7 +78,12 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
      * @param end
      * @return Unioned cross-product
      */
-    protected final CrossProductVector crossProductUnion(final int start, final int end) {
+    protected CrossProductVector crossProductUnion(final int start, final int end) {
+
+        if (crossProductProbabilities == null) {
+            crossProductProbabilities = new float[sparseMatrixGrammar.packedArraySize()];
+            crossProductMidpoints = new short[sparseMatrixGrammar.packedArraySize()];
+        }
 
         Arrays.fill(crossProductProbabilities, Float.NEGATIVE_INFINITY);
         int size = 0;
@@ -65,13 +110,13 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
                     final int child = sparseMatrixGrammar.pack(leftChild, rightChildren[j]);
                     final float currentProbability = crossProductProbabilities[child];
 
-                    if (currentProbability == Float.NEGATIVE_INFINITY) {
+                    if (jointProbability > currentProbability) {
                         crossProductProbabilities[child] = jointProbability;
                         crossProductMidpoints[child] = midpoint;
-                        size++;
-                    } else if (jointProbability > currentProbability) {
-                        crossProductProbabilities[child] = jointProbability;
-                        crossProductMidpoints[child] = midpoint;
+
+                        if (currentProbability == Float.NEGATIVE_INFINITY) {
+                            size++;
+                        }
                     }
                 }
             }
@@ -79,21 +124,6 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
 
         return new CrossProductVector(sparseMatrixGrammar, crossProductProbabilities, crossProductMidpoints, size);
     }
-
-    /**
-     * Multiplies the grammar matrix (stored sparsely) by the supplied cross-product vector (stored densely), and populates this chart cell.
-     * 
-     * @param crossProductVector
-     * @param chartCell
-     */
-    public abstract void binarySpmvMultiply(final CrossProductVector crossProductVector, final DenseVectorChartCell chartCell);
-
-    /**
-     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and populates this chart cell. Used to populate unary rules.
-     * 
-     * @param chartCell
-     */
-    public abstract void unarySpmvMultiply(final DenseVectorChartCell chartCell);
 
     @Override
     public ParseTree findMLParse(final String sentence) throws Exception {
