@@ -8,6 +8,14 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
+/**
+ * Tests for {@link CsrSparseMatrixVectorParser}.
+ * 
+ * @author Aaron Dunlop
+ * @since Feb 11, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class TestCsrSparseMatrixVectorParser extends SparseMatrixVectorParserTestCase {
 
     @Override
@@ -22,7 +30,7 @@ public class TestCsrSparseMatrixVectorParser extends SparseMatrixVectorParserTes
 
     @Override
     @Test
-    @PerformanceTest( { "mbp", "500000", "d820", "500000" })
+    @PerformanceTest( { "mbp", "83206", "d820", "200000" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

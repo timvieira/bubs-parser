@@ -1,9 +1,18 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 
+/**
+ * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
+ * 
+ * @see OpenClSparseMatrixVectorParser
+ * 
+ * @author Aaron Dunlop
+ * @since Feb 11, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
     private final CsrSparseMatrixGrammar csrSparseMatrixGrammar;
@@ -11,29 +20,6 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
     public CsrSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
         super(grammar, traversalType);
         this.csrSparseMatrixGrammar = grammar;
-    }
-
-    @Override
-    protected void initParser(final int sentLength) {
-        chartSize = sentLength;
-        chart = new BaseChartCell[chartSize][chartSize + 1];
-
-        // The chart is (chartSize+1)*chartSize/2
-        for (int start = 0; start < chartSize; start++) {
-            for (int end = start + 1; end < chartSize + 1; end++) {
-                chart[start][end] = new DenseVectorChartCell(chart, start, end, (CsrSparseMatrixGrammar) grammar);
-            }
-        }
-        rootChartCell = chart[0][chartSize];
-    }
-
-    // TODO Do this with a matrix multiply?
-    @Override
-    protected void addLexicalProductions(final Token[] sent) throws Exception {
-        super.addLexicalProductions(sent);
-        for (int start = 0; start < chartSize; start++) {
-            ((DenseVectorChartCell) chart[start][start + 1]).finalizeCell();
-        }
     }
 
     @Override
@@ -45,21 +31,22 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
         final short end = (short) cell.end();
 
         final long t0 = System.currentTimeMillis();
+        long t1 = t0;
+        long crossProductTime = 0;
 
-        // int totalProducts = 0;
+        // Skip binary grammar intersection for span-1 cells
+        if (end - start > 1) {
+            final CrossProductVector crossProductVector = crossProductUnion(start, end);
 
-        // TODO Change this constructor to a factory method
-        final CrossProductVector crossProductVector = crossProductUnion(start, end);
+            t1 = System.currentTimeMillis();
+            crossProductTime = t1 - t0;
 
-        final long t1 = System.currentTimeMillis();
-        final double crossProductTime = t1 - t0;
-
-        // Multiply the unioned vector with the grammar matrix and populate the current cell with the
-        // vector resulting from the matrix-vector multiplication
-        binarySpmvMultiply(crossProductVector, spvChartCell);
-
+            // Multiply the unioned vector with the grammar matrix and populate the current cell with the
+            // vector resulting from the matrix-vector multiplication
+            binarySpmvMultiply(crossProductVector, spvChartCell);
+        }
         final long t2 = System.currentTimeMillis();
-        final double binarySpmvTime = t2 - t1;
+        final long binarySpmvTime = t2 - t1;
 
         // Handle unary productions
         // TODO: This only goes through unary rules one time, so it can't create unary chains unless such chains are encoded in the grammar. Iterating a few times would probably
@@ -67,7 +54,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
         unarySpmvMultiply(spvChartCell);
 
         final long t3 = System.currentTimeMillis();
-        final double unarySpmvTime = t3 - t2;
+        final long unarySpmvTime = t3 - t2;
 
         // TODO We won't need to do this once we're storing directly into the packed array
         spvChartCell.finalizeCell();
