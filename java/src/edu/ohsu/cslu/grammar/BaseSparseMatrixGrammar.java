@@ -25,9 +25,9 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
 
     // Shift lengths and mask for packing and unpacking non-terminals into an int
-    private final int leftChildShift;
-    private final int rightChildShift;
-    private final int mask;
+    public final int leftChildShift;
+    public final int rightChildShift;
+    public final int mask;
     protected final int validProductionPairs;
 
     public BaseSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
