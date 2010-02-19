@@ -79,6 +79,8 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
         final float[] chartCellProbabilities = chartCell.probabilities;
         final short[] chartCellMidpoints = chartCell.midpoints;
 
+        int numValidLeftChildren = 0, numValidRightChildren = 0;
+
         // Iterate over possible parents (matrix rows)
         for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
 
@@ -106,8 +108,17 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
                 chartCellChildren[parent] = winningChildren;
                 chartCellProbabilities[parent] = winningProbability;
                 chartCellMidpoints[parent] = winningMidpoint;
+
+                if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
+                    numValidLeftChildren++;
+                }
+                if (csrSparseMatrixGrammar.isValidRightChild(parent)) {
+                    numValidRightChildren++;
+                }
             }
         }
+        chartCell.numValidLeftChildren = numValidLeftChildren;
+        chartCell.numValidRightChildren = numValidRightChildren;
     }
 
     @Override
@@ -125,7 +136,8 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
         // Iterate over possible parents (matrix rows)
         for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
 
-            float winningProbability = chartCellProbabilities[parent];
+            final float currentProbability = chartCellProbabilities[parent];
+            float winningProbability = currentProbability;
             int winningChildren = Integer.MIN_VALUE;
             short winningMidpoint = 0;
 
@@ -136,8 +148,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
                 final int child = csrSparseMatrixGrammar.unpackLeftChild(grammarChildren);
                 final float grammarProbability = unaryRuleMatrixProbabilities[i];
 
-                final float currentProbability = chartCell.probabilities[child];
-                final float jointProbability = grammarProbability + currentProbability;
+                final float jointProbability = grammarProbability + chartCellProbabilities[child];
 
                 if (jointProbability > winningProbability) {
                     winningProbability = jointProbability;
@@ -150,6 +161,15 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
                 chartCellChildren[parent] = winningChildren;
                 chartCellProbabilities[parent] = winningProbability;
                 chartCellMidpoints[parent] = winningMidpoint;
+
+                if (currentProbability == Float.NEGATIVE_INFINITY) {
+                    if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
+                        chartCell.numValidLeftChildren++;
+                    }
+                    if (csrSparseMatrixGrammar.isValidRightChild(parent)) {
+                        chartCell.numValidRightChildren++;
+                    }
+                }
             }
         }
     }

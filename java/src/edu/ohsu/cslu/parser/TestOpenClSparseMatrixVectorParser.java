@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.BaseGrammar;
@@ -34,4 +36,55 @@ public class TestOpenClSparseMatrixVectorParser extends SparseMatrixVectorParser
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
+
+    @Override
+    public void testSentence1() throws Exception {
+        fail("Skipping");
+    }
+
+    @Override
+    public void testSentence10() throws Exception {
+        fail("Skipping");
+    }
+
+    @Override
+    public void testSentence2() throws Exception {
+        fail("Skipping");
+    }
+
+    @Override
+    public void testSentence3() throws Exception {
+        fail("Skipping");
+    }
+
+    @Override
+    public void testSentence4() throws Exception {
+        fail("Skipping");
+    }
+
+    @Override
+    public void testSentence5() throws Exception {
+        fail("Skipping");
+    }
+
+    @Override
+    public void testSentence6() throws Exception {
+        fail("Skipping");
+    }
+
+    @Override
+    public void testSentence7() throws Exception {
+        fail("Skipping");
+    }
+
+    @Override
+    public void testSentence8() throws Exception {
+        fail("Skipping");
+    }
+
+    @Override
+    public void testSentence9() throws Exception {
+        fail("Skipping");
+    }
+
 }

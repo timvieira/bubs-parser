@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CrossProductVector;
 import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
 
 /**
@@ -78,6 +77,8 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
         final float[] chartCellProbabilities = chartCell.probabilities;
         final short[] chartCellMidpoints = chartCell.midpoints;
 
+        int numValidLeftChildren = 0, numValidRightChildren = 0;
+
         // Iterate over possible parents
         for (int parent = 0; parent < jsaSparseMatrixGrammar.numNonTerms(); parent++) {
 
@@ -107,8 +108,17 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
                 chartCellChildren[parent] = winningChildren;
                 chartCellProbabilities[parent] = winningProbability;
                 chartCellMidpoints[parent] = winningMidpoint;
+
+                if (jsaSparseMatrixGrammar.isValidLeftChild(parent)) {
+                    numValidLeftChildren++;
+                }
+                if (jsaSparseMatrixGrammar.isValidRightChild(parent)) {
+                    numValidRightChildren++;
+                }
             }
         }
+        chartCell.numValidLeftChildren = numValidLeftChildren;
+        chartCell.numValidRightChildren = numValidRightChildren;
     }
 
     @Override
@@ -127,8 +137,8 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
             final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
             final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
 
-            // Production winningProduction = null;
-            float winningProbability = chartCellProbabilities[parent];
+            final float currentProbability = chartCellProbabilities[parent];
+            float winningProbability = currentProbability;
             int winningChildren = Integer.MIN_VALUE;
             short winningMidpoint = 0;
 
@@ -151,6 +161,15 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
                 chartCellChildren[parent] = winningChildren;
                 chartCellProbabilities[parent] = winningProbability;
                 chartCellMidpoints[parent] = winningMidpoint;
+
+                if (currentProbability == Float.NEGATIVE_INFINITY) {
+                    if (jsaSparseMatrixGrammar.isValidLeftChild(parent)) {
+                        chartCell.numValidLeftChildren++;
+                    }
+                    if (jsaSparseMatrixGrammar.isValidRightChild(parent)) {
+                        chartCell.numValidRightChildren++;
+                    }
+                }
             }
         }
     }

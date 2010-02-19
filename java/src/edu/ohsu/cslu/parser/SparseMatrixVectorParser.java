@@ -1,12 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import it.unimi.dsi.fastutil.floats.FloatList;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.shorts.ShortArrayList;
-import it.unimi.dsi.fastutil.shorts.ShortList;
-
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.BaseSparseMatrixGrammar;
@@ -137,7 +130,7 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
 
     protected static class DenseVectorChartCell extends BaseChartCell {
 
-        private final BaseSparseMatrixGrammar sparseMatrixGrammar;
+        protected final BaseSparseMatrixGrammar sparseMatrixGrammar;
         protected final BaseChartCell[][] chart;
 
         /** Indexed by parent non-terminal */
@@ -146,9 +139,11 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         protected final int[] children;
 
         /** Stores packed children and their probabilities */
+        public int numValidLeftChildren;
         public int[] validLeftChildren;
         public float[] validLeftChildrenProbabilities;
 
+        public int numValidRightChildren;
         public short[] validRightChildren;
         public float[] validRightChildrenProbabilities;
 
@@ -166,13 +161,12 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
 
         public void finalizeCell() {
 
-            // TODO: Size these arrays sensibly
-            final int leftChildListSize = sparseMatrixGrammar.numNonTerms() >> 2;
-            final int rightChildListSize = leftChildListSize >> 2;
-            final IntList validLeftChildList = new IntArrayList(leftChildListSize);
-            final FloatList validLeftChildProbabilityList = new FloatArrayList(leftChildListSize);
-            final ShortList validRightChildList = new ShortArrayList(rightChildListSize);
-            final FloatList validRightChildProbabilityList = new FloatArrayList(rightChildListSize);
+            validLeftChildren = new int[numValidLeftChildren];
+            validLeftChildrenProbabilities = new float[numValidLeftChildren];
+            validRightChildren = new short[numValidRightChildren];
+            validRightChildrenProbabilities = new float[numValidRightChildren];
+
+            int leftIndex = 0, rightIndex = 0;
 
             for (int nonterminal = 0; nonterminal < sparseMatrixGrammar.numNonTerms(); nonterminal++) {
                 final float probability = probabilities[nonterminal];
@@ -180,20 +174,15 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
                 if (probability != Float.NEGATIVE_INFINITY) {
 
                     if (sparseMatrixGrammar.isValidLeftChild(nonterminal)) {
-                        validLeftChildList.add(nonterminal);
-                        validLeftChildProbabilityList.add(probability);
+                        validLeftChildren[leftIndex] = nonterminal;
+                        validLeftChildrenProbabilities[leftIndex++] = probability;
                     }
                     if (sparseMatrixGrammar.isValidRightChild(nonterminal)) {
-                        validRightChildList.add((short) nonterminal);
-                        validRightChildProbabilityList.add(probability);
+                        validRightChildren[rightIndex] = (short) nonterminal;
+                        validRightChildrenProbabilities[rightIndex++] = probability;
                     }
                 }
             }
-
-            validLeftChildren = validLeftChildList.toIntArray();
-            validLeftChildrenProbabilities = validLeftChildProbabilityList.toFloatArray();
-            validRightChildren = validRightChildList.toShortArray();
-            validRightChildrenProbabilities = validRightChildProbabilityList.toFloatArray();
         }
 
         @Override
@@ -205,6 +194,15 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         public boolean addEdge(final Production p, final float insideProb, final ChartCell leftCell, final ChartCell rightCell) {
             final int parent = p.parent;
             numEdgesConsidered++;
+
+            if (probabilities[parent] == Float.NEGATIVE_INFINITY) {
+                if (sparseMatrixGrammar.isValidLeftChild(parent)) {
+                    numValidLeftChildren++;
+                }
+                if (sparseMatrixGrammar.isValidRightChild(parent)) {
+                    numValidRightChildren++;
+                }
+            }
 
             if (insideProb > probabilities[parent]) {
 
