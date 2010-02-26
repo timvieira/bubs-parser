@@ -123,9 +123,9 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
         clUnaryRuleMatrixProbabilities = copyToDevice(csrSparseMatrixGrammar.unaryRuleMatrixProbabilities(), CLMem.Usage.Input);
 
         // Allocate OpenCL-hosted memory for temporary chart cell storage
-        clChartCellChildren = context.createIntBuffer(CLMem.Usage.Output, csrSparseMatrixGrammar.numNonTerms());
-        clChartCellProbabilities = context.createFloatBuffer(CLMem.Usage.Output, csrSparseMatrixGrammar.numNonTerms());
-        clChartCellMidpoints = context.createShortBuffer(CLMem.Usage.Output, csrSparseMatrixGrammar.numNonTerms());
+        clChartCellChildren = context.createIntBuffer(CLMem.Usage.InputOutput, csrSparseMatrixGrammar.numNonTerms());
+        clChartCellProbabilities = context.createFloatBuffer(CLMem.Usage.InputOutput, csrSparseMatrixGrammar.numNonTerms());
+        clChartCellMidpoints = context.createShortBuffer(CLMem.Usage.InputOutput, csrSparseMatrixGrammar.numNonTerms());
 
         // And for cross-product storage
         clCrossProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, csrSparseMatrixGrammar.packedArraySize());
@@ -165,6 +165,17 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
         // TODO: This only goes through unary rules one time, so it can't create unary chains unless such chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
         unarySpmvMultiply(spvChartCell);
+
+        // final int[] children = copyFromDevice(clChartCellChildren, spvChartCell.children.length);
+        // final float[] probabilities = copyFromDevice(clChartCellProbabilities, spvChartCell.probabilities.length);
+        // final short[] midpoints = copyFromDevice(clChartCellMidpoints, spvChartCell.midpoints.length);
+        // assertArrayEquals(spvChartCell.children, children);
+        // assertArrayEquals(spvChartCell.probabilities, probabilities, .01f);
+        // assertArrayEquals(spvChartCell.midpoints, midpoints);
+
+        // copyToDevice(clChartCellChildren, spvChartCell.children);
+        // copyToDevice(clChartCellProbabilities, spvChartCell.probabilities);
+        // copyToDevice(clChartCellMidpoints, spvChartCell.midpoints);
         // internalUnarySpmvMultiply(end);
         // copyFromDevice(clChartCellChildren, spvChartCell.children);
         // copyFromDevice(clChartCellProbabilities, spvChartCell.probabilities);
@@ -215,6 +226,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
     private void internalCrossProductUnion(final int start, final int end) {
 
+        // TODO Do this on the device instead of copying
         final float[] nullProbabilities = new float[csrSparseMatrixGrammar.packedArraySize()];
         Arrays.fill(nullProbabilities, Float.NEGATIVE_INFINITY);
         copyToDevice(clCrossProductProbabilities0, nullProbabilities);
@@ -266,7 +278,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
                 clValidRightChildrenProbabilities, rightCell.validRightChildren.length, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints, (short) rightCell.start());
 
         // Call the kernel and wait for results
-        crossProductKernel.enqueueNDRange(clQueue, new int[] { leftCell.validLeftChildren.length }, new int[] { 1 });
+        crossProductKernel.enqueueNDRange(clQueue, new int[] { leftCell.validLeftChildren.length * rightCell.validRightChildren.length }, new int[] { 1 });
 
         clQueue.finish();
         clValidLeftChildren.release();
