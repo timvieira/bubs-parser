@@ -4,7 +4,6 @@ import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
 
@@ -30,7 +29,7 @@ public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
     public final int mask;
     protected final int validProductionPairs;
 
-    public BaseSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    public BaseSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
 
         // Add 1 bit to leave empty for sign
@@ -50,7 +49,7 @@ public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
         validProductionPairs = productionPairs.size();
     }
 
-    public BaseSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    public BaseSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
@@ -92,7 +91,7 @@ public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
     }
 
     @Override
-    public final float logProbability(final String parent, final String leftChild, final String rightChild) {
+    public final float logProbability(final String parent, final String leftChild, final String rightChild) throws Exception {
         final int parentIndex = nonTermSet.getIndex(parent);
         final int leftChildIndex = nonTermSet.getIndex(leftChild);
         final int rightChildIndex = nonTermSet.getIndex(rightChild);
@@ -105,7 +104,7 @@ public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
     }
 
     @Override
-    public final float logProbability(final String parent, final String child) {
+    public final float logProbability(final String parent, final String child) throws Exception {
         return unaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(child));
     }
 

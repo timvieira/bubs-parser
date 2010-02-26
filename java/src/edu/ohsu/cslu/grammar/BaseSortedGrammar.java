@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.TreeSet;
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 import edu.ohsu.cslu.parser.util.Log;
 
-public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
+public abstract class BaseSortedGrammar extends Grammar {
     public String startSymbolStr = null;
 
     public int rightChildOnlyStart;
@@ -25,9 +26,7 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
     public int unaryChildOnlyStart;
 
     @SuppressWarnings("unchecked")
-    protected BaseSortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        super();
-
+    protected BaseSortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         rightChildOnlyStart = 0;
         eitherChildStart = leftChildOnlyStart = unaryChildOnlyStart = posStart = -1;
 
@@ -197,7 +196,7 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
         }
     }
 
-    protected BaseSortedGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    protected BaseSortedGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
@@ -281,7 +280,7 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
 
     // TODO: not efficient. Should index by child
     @Override
-    public List<Production> getUnaryProdsWithChild(final int child) {
+    public Collection<Production> getUnaryProductionsWithChild(final int child) {
         final List<Production> matchingProds = new LinkedList<Production>();
         for (final Production p : unaryProductions) {
             if (p.leftChild == child)
@@ -293,9 +292,11 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
 
     /**
      * Terribly inefficient; should be overridden by child classes
+     * 
+     * @throws Exception
      */
     @Override
-    public float logProbability(final String parent, final String leftChild, final String rightChild) {
+    public float logProbability(final String parent, final String leftChild, final String rightChild) throws Exception {
         final int parentIndex = nonTermSet.getIndex(parent);
         final int leftChildIndex = nonTermSet.getIndex(leftChild);
         final int rightChildIndex = nonTermSet.getIndex(rightChild);
@@ -311,9 +312,11 @@ public abstract class BaseSortedGrammar extends BaseGrammar implements Grammar {
 
     /**
      * Terribly inefficient; should be overridden by child classes
+     * 
+     * @throws Exception
      */
     @Override
-    public float logProbability(final String parent, final String child) {
+    public float logProbability(final String parent, final String child) throws Exception {
         final int parentIndex = nonTermSet.getIndex(parent);
         final int leftChildIndex = nonTermSet.getIndex(child);
 

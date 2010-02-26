@@ -17,7 +17,7 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 public class SummarizeGrammar extends BaseCommandlineTool {
 
     @Option(name = "-c", aliases = { "--class" }, metaVar = "class name", usage = "Grammar class")
-    private String grammarClass = ArrayGrammar.class.getName();
+    private String grammarClass = Grammar.class.getName();
 
     @Argument(index = 0, required = true, metaVar = "prefix", usage = "Grammar file prefix")
     private String prefix;
