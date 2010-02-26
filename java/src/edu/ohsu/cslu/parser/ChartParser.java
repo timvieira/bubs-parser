@@ -2,66 +2,42 @@ package edu.ohsu.cslu.parser;
 
 import java.util.List;
 
-import edu.ohsu.cslu.grammar.ArrayGrammar;
-import edu.ohsu.cslu.grammar.BaseGrammar;
-import edu.ohsu.cslu.grammar.BaseGrammar.Production;
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public abstract class ChartParser implements Parser {
+public abstract class ChartParser extends Parser {
 
-    public BaseChartCell chart[][];
-    public int chartSize;
-    public BaseChartCell rootChartCell;
-    public BaseGrammar grammar;
-    public ParserOptions opts = null; // TODO: fix this
+    public Chart<? extends ChartCell> chart;
 
-    public ChartParser(final BaseGrammar grammar) {
+    public ChartParser(final Grammar grammar) {
         this.grammar = grammar;
     }
 
-    // TODO Genericize the ChartCell type
     protected void initParser(final int sentLength) {
-        chartSize = sentLength;
-        chart = new ArrayChartCell[chartSize][chartSize + 1];
-
-        // The chart is (chartSize+1)*chartSize/2
-        for (int start = 0; start < chartSize; start++) {
-            for (int end = start + 1; end < chartSize + 1; end++) {
-                chart[start][end] = new ArrayChartCell(start, end, (ArrayGrammar) grammar);
-            }
-        }
-        rootChartCell = chart[0][chartSize];
+        chart = new Chart<ArrayChartCell>(sentLength, ArrayChartCell.class, grammar);
     }
 
-    protected void addLexicalProductions(final Token sent[]) throws Exception {
-
-        // add lexical productions and unary productions to the base cells of the chart
-        for (int i = 0; i < chartSize; i++) {
-            for (final Production lexProd : grammar.getLexProdsForToken(sent[i])) {
-                chart[i][i + 1].addEdge(new ChartEdge(lexProd, chart[i][i + 1], lexProd.prob));
-
-                final List<Production> validProductions = grammar.getUnaryProdsWithChild(lexProd.parent);
-                if (validProductions != null) {
-                    for (final Production unaryProd : validProductions) {
-                        final float edgeLogProb = unaryProd.prob + lexProd.prob;
-                        chart[i][i + 1].addEdge(new ChartEdge(unaryProd, chart[i][i + 1], edgeLogProb));
-                    }
-                }
+    protected List<ChartEdge> addLexicalProductions(final Token sent[]) throws Exception {
+        ChartCell cell;
+        // add lexical productions to the base cells of the chart
+        for (int i = 0; i < chart.size(); i++) {
+            for (final Production lexProd : grammar.getLexProdsByToken(sent[i])) {
+                cell = chart.getCell(i, i + 1);
+                cell.addEdge(new ChartEdge(lexProd, cell, lexProd.prob));
             }
         }
+
+        return null;
     }
 
-    /*
-     * private void addFinalProductions() { // add TOP productions ChartCell topCell = chart[0][chartSize]; ChartEdge topCellEdge; float edgeLogProb;
-     * 
-     * //for (ChartEdge topCellEdge : topCell.getAllBestEdges()) { for(int i=0; i<grammar.numNonTerms(); i++) { topCellEdge = topCell.getBestEdge(i); if (topCellEdge != null) { for
-     * (Production p : grammar.getUnaryProdsWithChild(topCellEdge.p.parent)) { if (p.parent == grammar.startSymbol) { edgeLogProb = p.prob + topCellEdge.insideProb;
-     * topCell.addEdge(new ChartEdge(p, topCell, topCell, edgeLogProb)); } } } } }
-     */
+    public boolean hasCompleteParse() {
+        return chart.getRootCell().getBestEdge(grammar.startSymbol) != null;
+    }
 
     protected ParseTree extractBestParse() {
-        return extractBestParse(this.rootChartCell, this.grammar.startSymbol);
+        return extractBestParse(chart.getRootCell(), this.grammar.startSymbol);
     }
 
     protected ParseTree extractBestParse(final ChartCell cell, final int nonTermIndex) {
@@ -72,13 +48,13 @@ public abstract class ChartParser implements Parser {
             bestEdge = cell.getBestEdge(nonTermIndex);
             if (bestEdge != null) {
                 curNode = new ParseTree(bestEdge);
-                if (bestEdge.p.isUnaryProd()) {
-                    curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.p.leftChild));
-                } else if (bestEdge.p.isLexProd()) {
-                    curNode.addChild(new ParseTree(bestEdge.p.childrenToString()));
+                if (bestEdge.prod.isUnaryProd()) {
+                    curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
+                } else if (bestEdge.prod.isLexProd()) {
+                    curNode.addChild(new ParseTree(bestEdge.prod.childrenToString()));
                 } else { // binary production
-                    curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.p.leftChild));
-                    curNode.children.add(extractBestParse(bestEdge.rightCell, bestEdge.p.rightChild));
+                    curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
+                    curNode.children.add(extractBestParse(bestEdge.rightCell, bestEdge.prod.rightChild));
                 }
             }
         }
@@ -86,14 +62,15 @@ public abstract class ChartParser implements Parser {
         return curNode;
     }
 
+    @Override
     public String getStats() {
         String result = "";
         int con = 0, add = 0;
 
-        for (int start = 0; start < chartSize; start++) {
-            for (int end = start + 1; end < chartSize + 1; end++) {
-                con += chart[start][end].numEdgesConsidered;
-                add += chart[start][end].numEdgesAdded;
+        for (int start = 0; start < chart.size(); start++) {
+            for (int end = start + 1; end < chart.size() + 1; end++) {
+                con += chart.getCell(start, end).numEdgesConsidered;
+                add += chart.getCell(start, end).numEdgesAdded;
             }
         }
 

@@ -1,15 +1,26 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.BaseGrammar.Production;
+import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
-public class ChartEdge {
-    public Production p;
-    public float insideProb;
+public class ChartEdge implements Comparable<ChartEdge> {
+    public Production prod;
+    public float fom; // figure of merit
+    public float inside;
+
+    // TODO: should we create a getLeftCell() and getRightCell(). We'd need to keep a chart pointer...
     public ChartCell leftCell, rightCell;
 
-    public ChartEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
-        this.p = p;
-        this.insideProb = insideProb;
+    // binary production w/ FOM
+    public ChartEdge(final Production prod, final ChartCell leftCell, final ChartCell rightCell, final float inside, final EdgeSelector edgeSelector) {
+        this(prod, leftCell, rightCell, inside);
+        this.fom = edgeSelector.calcFOM(this);
+    }
+
+    // binary production
+    public ChartEdge(final Production prod, final ChartCell leftCell, final ChartCell rightCell, final float inside) {
+        this.prod = prod;
+        this.inside = inside;
         this.leftCell = leftCell;
         this.rightCell = rightCell;
 
@@ -17,9 +28,16 @@ public class ChartEdge {
         assert leftCell.start() < rightCell.end();
     }
 
-    public ChartEdge(final Production p, final ChartCell childCell, final float insideProb) {
-        this.p = p;
-        this.insideProb = insideProb;
+    // unary production w/ FOM
+    public ChartEdge(final Production prod, final ChartCell childCell, final float inside, final EdgeSelector edgeSelector) {
+        this(prod, childCell, inside);
+        this.fom = edgeSelector.calcFOM(this);
+    }
+
+    // unary production
+    public ChartEdge(final Production prod, final ChartCell childCell, final float inside) {
+        this.prod = prod;
+        this.inside = inside;
         this.leftCell = childCell;
         this.rightCell = null;
     }
@@ -37,29 +55,56 @@ public class ChartEdge {
 
     public final int midpt() throws Exception {
         if (rightCell == null) {
-            throw new Exception("Midpoint do not exist for unary productions");
+            if (leftCell == null) {
+                throw new Exception("right/leftCell must be set to use start(), end(), and midpt()");
+            }
+            throw new Exception("Unary productions do not have midpoints");
         }
         return leftCell.end();
+    }
+
+    public ChartEdge copy() {
+        return new ChartEdge(this.prod, this.leftCell, this.rightCell, this.inside);
+    }
+
+    @Override
+    public int compareTo(final ChartEdge otherEdge) {
+        if (this.equals(otherEdge)) {
+            return 0;
+        } else if (fom > otherEdge.fom) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+
+    public int spanLength() {
+        return end() - start();
     }
 
     @Override
     public String toString() {
         // [start,mdpt,end] A -> B C (p=-0.xxx) (e=-0.yyy)
-        String start = "-", midpt = "-", end = "-", prod = "null";
+        String start = "-", midpt = "-", end = "-", prodStr = "null";
 
         if (leftCell != null) {
             start = "" + leftCell.start();
-            midpt = "" + leftCell.end();
+            if (rightCell != null) {
+                midpt = "" + leftCell.end();
+            } else {
+                end = "" + leftCell.end();
+            }
         }
         if (rightCell != null) {
             end = "" + rightCell.end();
-            midpt = "" + rightCell.start();
+            assert leftCell.end() == rightCell.start();
+            // midpt = "" + rightCell.start();
         }
-        if (p != null) {
-            prod = p.toString();
+        if (prod != null) {
+            prodStr = prod.toString();
         }
 
-        return "[" + start + "," + midpt + "," + end + "] " + prod + " inside=" + String.valueOf(insideProb) + " ";
+        return String.format("[%s,%s,%s] %s inside=%f fom=%f", start, midpt, end, prodStr, inside, fom);
     }
 
     @Override
@@ -74,30 +119,30 @@ public class ChartEdge {
             }
 
             final ChartEdge otherEdge = (ChartEdge) other;
-            if (p == null && otherEdge.p != null) {
+            if (prod == null && otherEdge.prod != null) {
                 return false;
             }
 
-            if (!p.equals(otherEdge.p)) {
+            if (!prod.equals(otherEdge.prod)) {
                 return false;
             }
-            // if (!p.equals(otherEdge.p)) return false;
-            // if (insideProb != otherEdge.insideProb) return false; // there are rounding problems here, but
-            // if
-            // the productions and right/left cells are equal, then the edges must be equal
-            if (!leftCell.equals(otherEdge.leftCell)) {
+
+            // not comparing left/right cell object pointers because I want to be able to compare
+            // cells from different charts
+            if (start() != otherEdge.start()) {
                 return false;
             }
-            if ((rightCell == null && otherEdge.rightCell != null)) {
+
+            if (end() != otherEdge.end()) {
                 return false;
             }
-            if (rightCell != null && !rightCell.equals(otherEdge.rightCell)) {
+
+            if (prod.isBinaryProd() && (midpt() != otherEdge.midpt())) {
                 return false;
             }
-            // System.out.println(this + " == " + otherEdge);
 
             return true;
-        } catch (final ClassCastException e) {
+        } catch (final Exception e) {
             return false;
         }
     }

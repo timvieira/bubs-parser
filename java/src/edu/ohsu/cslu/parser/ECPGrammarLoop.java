@@ -1,16 +1,13 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public class ECPCellCrossHash extends ExhaustiveChartParser {
+public class ECPGrammarLoop extends ExhaustiveChartParser {
 
-    LeftHashGrammar leftHashGrammar;
-
-    public ECPCellCrossHash(final LeftHashGrammar grammar, final CellSelector cellSelector) {
-        super(grammar, cellSelector);
-        leftHashGrammar = grammar;
+    public ECPGrammarLoop(final Grammar grammar, final CellSelector spanSelector) {
+        super(grammar, spanSelector);
     }
 
     @Override
@@ -18,14 +15,15 @@ public class ECPCellCrossHash extends ExhaustiveChartParser {
         final int start = cell.start(), end = cell.end();
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
+            // naive traversal through all grammar rules
             final ChartCell leftCell = chart.getCell(start, mid);
             final ChartCell rightCell = chart.getCell(mid, end);
-            for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
-                for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                    for (final Production p : leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent)) {
-                        final float prob = p.prob + leftEdge.inside + rightEdge.inside;
-                        cell.addEdge(p, leftCell, rightCell, prob);
-                    }
+            for (final Production p : grammar.getBinaryProductions()) {
+                final ChartEdge leftEdge = leftCell.getBestEdge(p.leftChild);
+                final ChartEdge rightEdge = rightCell.getBestEdge(p.rightChild);
+                if ((leftEdge != null) && (rightEdge != null)) {
+                    final float prob = p.prob + leftEdge.inside + rightEdge.inside;
+                    cell.addEdge(p, leftCell, rightCell, prob);
                 }
             }
         }

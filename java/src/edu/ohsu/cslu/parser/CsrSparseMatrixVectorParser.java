@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
+import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
@@ -17,8 +17,8 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
     private final CsrSparseMatrixGrammar csrSparseMatrixGrammar;
 
-    public CsrSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
-        super(grammar, traversalType);
+    public CsrSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar, final CellSelector cellSelector) {
+        super(grammar, cellSelector);
         this.csrSparseMatrixGrammar = grammar;
     }
 
