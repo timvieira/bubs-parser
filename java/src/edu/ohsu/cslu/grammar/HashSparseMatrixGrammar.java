@@ -3,7 +3,6 @@ package edu.ohsu.cslu.grammar;
 import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
 
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.Reader;
 
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
@@ -22,7 +21,7 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public final class HashSparseMatrixGrammar extends BaseGrammar {
+public final class HashSparseMatrixGrammar extends Grammar {
 
     /** Binary productions, stored as a matrix */
     private Long2FloatOpenHashMap[] binaryRuleMatrix;
@@ -32,8 +31,17 @@ public final class HashSparseMatrixGrammar extends BaseGrammar {
     /** Unary productions, stored in the order read in from the grammar file */
     public Production[] unaryProds;
 
-    public HashSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    public HashSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
+    }
+
+    public HashSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    }
+
+    @Override
+    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+        super.init(grammarFile, lexiconFile, grammarFormat);
 
         unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
 
@@ -53,10 +61,6 @@ public final class HashSparseMatrixGrammar extends BaseGrammar {
         }
     }
 
-    public HashSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
     private long key(final int leftChild, final int rightChild) {
         return ((long) leftChild) << 32 | rightChild;
     }
@@ -70,12 +74,12 @@ public final class HashSparseMatrixGrammar extends BaseGrammar {
     }
 
     @Override
-    public final float lexicalLogProbability(final String parent, final String child) {
+    public final float lexicalLogProbability(final String parent, final String child) throws Exception {
         return super.lexicalLogProbability(parent, child);
     }
 
     @Override
-    public final float logProbability(final String parent, final String leftChild, final String rightChild) {
+    public final float logProbability(final String parent, final String leftChild, final String rightChild) throws Exception {
         final int parentIndex = nonTermSet.getIndex(parent);
         final int leftChildIndex = nonTermSet.getIndex(leftChild);
         final int rightChildIndex = nonTermSet.getIndex(rightChild);
@@ -92,7 +96,7 @@ public final class HashSparseMatrixGrammar extends BaseGrammar {
     }
 
     @Override
-    public final float logProbability(final String parent, final String child) {
+    public final float logProbability(final String parent, final String child) throws Exception {
         return super.logProbability(parent, child);
     }
 

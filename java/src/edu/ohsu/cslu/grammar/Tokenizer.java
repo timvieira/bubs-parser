@@ -16,7 +16,7 @@ public class Tokenizer {
         public int index;
         private boolean isUnk;
 
-        public Token(final String word) {
+        public Token(final String word) throws Exception {
             this.word = word;
             setIndexAndUnk();
         }
@@ -37,7 +37,23 @@ public class Tokenizer {
             return word;
         }
 
-        private void setIndexAndUnk() {
+        // public String getToken(String wordStr) {
+        // if (lexSet.hasSymbol(word)) {
+        // return wordStr;
+        // }
+        // wordStr = wordToUnkString(wordStr);
+        // // remove last feature from unk string until we find a matching entry in the lexicon
+        // while (!lexSet.hasSymbol(wordStr) && wordStr.contains("-")) {
+        // wordStr = wordStr.substring(0, wordStr.lastIndexOf('-'));
+        // }
+        //
+        // if (lexSet.hasSymbol(wordStr) == false) {
+        // throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
+        // }
+        // return wordStr;
+        // }
+
+        private void setIndexAndUnk() throws Exception {
             assert this.word != null;
             String unkStr;
 
@@ -60,7 +76,7 @@ public class Tokenizer {
         }
     }
 
-    public Token[] tokenize(final String sentence) {
+    public Token[] tokenize(final String sentence) throws Exception {
         final String tokens[] = ParserUtil.tokenize(sentence);
         final Token[] sentTokens = new Token[tokens.length];
 

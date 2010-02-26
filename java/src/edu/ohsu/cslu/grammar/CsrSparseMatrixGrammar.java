@@ -3,7 +3,6 @@ package edu.ohsu.cslu.grammar;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,7 +42,7 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
     /** Binary rule probabilities */
     private float[] csrUnaryProbabilities;
 
-    public CsrSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    public CsrSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
 
         // Bin all binary rules by parent, mapping packed children -> probability
@@ -63,7 +62,7 @@ public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
         tokenizer = new Tokenizer(lexSet);
     }
 
-    public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
