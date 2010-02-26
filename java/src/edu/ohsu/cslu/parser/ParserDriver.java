@@ -2,14 +2,9 @@ package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.util.zip.GZIPInputStream;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -17,26 +12,27 @@ import org.kohsuke.args4j.EnumAliasMap;
 import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
-import edu.ohsu.cslu.grammar.ArrayGrammar;
-import edu.ohsu.cslu.grammar.BaseGrammar;
-import edu.ohsu.cslu.grammar.GrammarByChildMatrix;
-import edu.ohsu.cslu.grammar.GrammarByLeftNonTermHash;
-import edu.ohsu.cslu.grammar.GrammarByLeftNonTermList;
+import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
+import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.fom.EdgeFOM;
-import edu.ohsu.cslu.parser.fom.EdgeFOM.EdgeFOMType;
-import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.grammar.LeftListGrammar;
+import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
+import edu.ohsu.cslu.parser.cellselector.CellSelector;
+import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
+import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.parser.util.Log;
-import edu.ohsu.cslu.parser.util.ParseTree;
-import edu.ohsu.cslu.parser.util.ParserUtil;
-import edu.ohsu.cslu.parser.util.StringToMD5;
 
 public class ParserDriver extends BaseCommandlineTool {
 
-    @Option(name = "-g", aliases = { "--grammar-file" }, required = true, metaVar = "pcfg file or prefix", usage = "Grammar file or prefix")
-    private String pcfgFilenameOrPrefix;
+    @Option(name = "-g", aliases = { "--grammar-file-prefix" }, required = true, metaVar = "prefix", usage = "Grammar file prefix")
+    private String pcfgFileName;
 
-    @Option(name = "-lex", aliases = { "--lexicon-file" }, metaVar = "lexicon file", usage = "Lexicon file if full grammar file is specified for -g option")
+    @Option(name = "-lex", aliases = { "--lexicon-file" }, metaVar = "FILE", usage = "Lexicon file if full grammar file is specified for -g option")
     private String lexFileName = null;
 
     @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of grammar file")
@@ -49,246 +45,224 @@ public class ParserDriver extends BaseCommandlineTool {
     private boolean printUnkLabels = false;
 
     @Option(name = "-p", aliases = { "--parser", "--parser-implementation" }, metaVar = "parser", usage = "Parser implementation")
-    private ParserType parserType = ParserType.ExhaustiveChartParser;
+    private ParserType parserType = ParserType.ECPCellCrossList;
 
-    // TODO Eventually we'd like to make this a command-line option, but not all combinations are implemented yet
-    private ChartTraversalType chartTraversalType = ChartTraversalType.LeftRightBottomTopTraversal;
-
-    @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage = "Chart cell processing type")
-    private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
+    // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage = "Chart cell processing type")
+    // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
 
     @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
     private int maxLength = 200;
 
     @Option(name = "-fom", aliases = { "--figure-of-merit", "-FOM" }, metaVar = "fom", usage = "Figure of Merit")
-    private EdgeFOMType edgeFOMType = EdgeFOMType.Inside;
+    private EdgeSelectorType edgeFOMType = EdgeSelectorType.Inside;
 
     @Option(name = "-fomTrain", usage = "Train the specified FOM model")
     private boolean fomTrain = false;
-
-    @Option(name = "-fudge", metaVar = "fudge", usage = "Fudge factor for FOM calculations")
-    public static float fudgeFactor = (float) 1.0;
 
     @Option(name = "-fomModel", metaVar = "file", usage = "FOM model file")
     private String fomModelFileName = null;
     private BufferedReader fomModelStream = null;
 
-    private BaseGrammar grammar;
+    @Option(name = "-cellTrain", usage = "Train the specified Cell Selection model")
+    private boolean cellTrain = false;
+
+    @Option(name = "-cellSelect", metaVar = "TYPE", usage = "Method for cell selection")
+    private CellSelectorType cellSelectorType = CellSelectorType.LeftRightBottomTop;
+
+    @Option(name = "-cellModel", metaVar = "file", usage = "Model for span selection")
+    private String cellModelFileName = null;
+    public BufferedReader cellModelStream = null;
+
+    @Option(name = "-cslutCellScores", metaVar = "file", usage = "CSLUT cell scores used for perceptron training and decoding")
+    private String cslutScoresFileName = null;
+    private BufferedReader cslutScoresStream = null;
+
+    @Option(name = "-x1", usage = "Tuning param #1")
+    public static float param1 = -1;
+
+    @Option(name = "-x2", usage = "Tuning param #2")
+    public static float param2 = -1;
+
     private BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
+    private BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
     public static void main(final String[] args) throws Exception {
         run(args);
     }
 
     @Override
-    public void setup(final CmdLineParser cmdlineParser) throws CmdLineException, IOException {
+    public void setup(final CmdLineParser cmdlineParser) throws Exception {
         // setup() is run once for multiple threads
 
-        // Add appropriate grammar file suffixes if the command-line specified a prefix
-        File pcfgFile = new File(pcfgFilenameOrPrefix);
-        File lexiconFile;
-
-        if (pcfgFile.exists()) {
-            lexiconFile = new File(lexFileName);
-        } else {
-            pcfgFile = new File(pcfgFilenameOrPrefix + ".pcfg");
-            lexiconFile = new File(pcfgFilenameOrPrefix + ".lex");
+        // TODO: this is hacky. Should have different params: -grammar XXX | -pcfg XXX -lex YYY
+        if (lexFileName == null) {
+            final String grammarFileNamePrefix = pcfgFileName;
+            pcfgFileName = grammarFileNamePrefix + ".pcfg";
+            lexFileName = grammarFileNamePrefix + ".lex";
         }
 
-        // Open the grammar file whether it's gzipped or not
-        Reader pcfgReader;
-        Reader lexiconReader;
-
-        if (pcfgFile.exists()) {
-            pcfgReader = new FileReader(pcfgFile);
-            lexiconReader = new FileReader(lexiconFile);
-        } else {
-            pcfgReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(pcfgFile.getAbsolutePath() + ".gz")));
-            lexiconReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(lexiconFile.getAbsolutePath() + ".gz")));
+        if (fomModelFileName != null) {
+            fomModelStream = new BufferedReader(new FileReader(fomModelFileName));
         }
 
-        try {
-            switch (parserType) {
-            case ExhaustiveChartParser:
-                switch (chartCellProcessingType) {
-                case CellCrossList:
-                    grammar = new GrammarByLeftNonTermList(pcfgReader, lexiconReader, grammarFormat);
-                    break;
-                case CellCrossHash:
-                    grammar = new GrammarByLeftNonTermHash(pcfgReader, lexiconReader, grammarFormat);
-                    break;
-                case CellCrossMatrix:
-                    grammar = new GrammarByChildMatrix(pcfgReader, lexiconReader, grammarFormat);
-                    break;
-                case GrammarLoop:
-                case GrammarLoopBerkeleyFilter:
-                    grammar = new ArrayGrammar(pcfgReader, lexiconReader, grammarFormat);
-                }
-                break;
-
-            case JsaSparseMatrixVector:
-                grammar = new JsaSparseMatrixGrammar(pcfgReader, lexiconReader, grammarFormat);
-                break;
-
-            // Both agenda parsers use GrammarByLeftNonTermList
-            case AgendaParser:
-            case CellAgendaParser:
-            case AgendaParserWithGhostEdges:
-                grammar = new GrammarByLeftNonTermList(pcfgReader, lexiconReader, grammarFormat);
-                break;
-            default:
-                throw new CmdLineException(cmdlineParser, "Unsupported parser type: " + parserType);
-            }
-
-            if (fomModelFileName != null) {
-                fomModelStream = new BufferedReader(new FileReader(fomModelFileName));
-            }
-
-            if (edgeFOMType == EdgeFOMType.BoundaryInOut && fomTrain == false && fomModelFileName == null) {
-                throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomTrain or -fomModel param set");
-            }
-
-        } catch (final IOException e) {
-            throw new CmdLineException(cmdlineParser, e);
+        if (cellModelFileName != null) {
+            cellModelStream = new BufferedReader(new FileReader(cellModelFileName));
         }
 
-        final String prefix = "OPTS:";
+        if (cslutScoresFileName != null) {
+            cslutScoresStream = new BufferedReader(new FileReader(cslutScoresFileName));
+        }
+
+        // param validation checks
+        if (edgeFOMType == EdgeSelectorType.BoundaryInOut && fomTrain == false && fomModelFileName == null) {
+            throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomTrain or -fomModel param set");
+        }
+
+        if (cellSelectorType == CellSelectorType.CSLUT && cellModelStream == null) {
+            throw new CmdLineException(cmdlineParser, "CSLUT span selection must also have -spanModel");
+        }
+
+        if (cellSelectorType == CellSelectorType.Perceptron && cslutScoresStream == null) {
+            throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
+        }
+    }
+
+    public String optionsToString() {
+        final String prefix = "OPTS: ";
         String s = "";
         s += prefix + "ParserType=" + parserType + "\n";
-        s += prefix + "Traversal=" + chartTraversalType + "\n";
-        s += prefix + "CellProcess=" + chartCellProcessingType + "\n";
-        s += prefix + "FOM=" + edgeFOMType + "";
-        Log.info(0, s);
+        s += prefix + "CellSelector=" + cellSelectorType + "\n";
+        // s += prefix + "CellProcess=" + chartCellProcessingType + "\n";
+        s += prefix + "FOM=" + edgeFOMType + "\n";
+        s += prefix + "x1=" + param1 + "\n";
+        s += prefix + "x2=" + param2;
+        // Log.info(0, s);
+
+        return s;
     }
 
-    @Override
-    public void run() throws Exception {
-        ParseTree inputTree = null, bestParseTree = null;
-        int sentNum = 0;
-        long sentStartTimeMS;
-        double sentParseTimeSeconds, totalParseTimeSeconds = 0.0;
-        String insideProbStr;
-
-        final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        if (fomTrain == true) {
-            final EdgeFOM fom = EdgeFOM.create(edgeFOMType, fomModelStream, (ArrayGrammar) grammar);
-            fom.train(br);
-            fom.writeModel(outputStream);
-            System.exit(0);
-        }
-
-        final Parser parser = createParser();
-
-        for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
-            if (ParseTree.isBracketFormat(sentence)) {
-                inputTree = ParseTree.readBracketFormat(sentence);
-                sentence = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
-            }
-            final String[] tokens = ParserUtil.tokenize(sentence);
-            if (tokens.length <= maxLength) {
-                sentStartTimeMS = System.currentTimeMillis();
-
-                bestParseTree = parser.findBestParse(sentence.trim());
-
-                sentParseTimeSeconds = (System.currentTimeMillis() - sentStartTimeMS) / 1000.0;
-                totalParseTimeSeconds += sentParseTimeSeconds;
-
-                if (bestParseTree == null) {
-                    outputStream.write("No parse found.\n");
-                    insideProbStr = "-inf";
-                } else {
-                    if (printUnkLabels == false) {
-                        bestParseTree.replaceLeafNodes(tokens);
-                    }
-                    outputStream.write(bestParseTree.toString(printInsideProbs) + "\n");
-                    // System.out.println("STAT: sentNum="+sentNum+" inside="+bestParseTree.chartEdge.insideProb);
-                    insideProbStr = Float.toString(bestParseTree.chartEdge.insideProb);
-                }
-                // if (inputTree != null) { outputStream.write("GOLD: " + inputTree.toString() + "\n"); }
-
-                final String stats = " sentNum=" + sentNum + " sentLen=" + tokens.length + " md5=" + StringToMD5.computeMD5(sentence) + " seconds=" + sentParseTimeSeconds
-                        + " inside=" + insideProbStr + " " + parser.getStats();
-                outputStream.write("STAT:" + stats + "\n");
-                outputStream.flush();
-                sentNum++;
-            } else {
-                Log.info(1, "INFO: Skipping sentence. Length of " + tokens.length + " is greater than maxLength (" + maxLength + ")");
-            }
-
-        }
-
-        // TODO: allow gold trees as input and report F-score
-        // TODO: need to port python tree transforms / de-transforms to Java
-        // and either write our own eval or make external call to EVALB
-        Log.info(1, "INFO: numSentences=" + sentNum + " totalSeconds=" + totalParseTimeSeconds + " avgSecondsPerSent=" + (totalParseTimeSeconds / sentNum));
-    }
-
-    private Parser createParser() throws Exception {
-        Parser parser = null;
-        EdgeFOM edgeFOM = null;
-
+    public static Grammar createGrammar(final ParserType parserType, final GrammarFormatType grammarFormat, final String pcfgFileName, final String lexFileName) throws Exception {
         switch (parserType) {
-        case ExhaustiveChartParser:
-            switch (chartCellProcessingType) {
-            case CellCrossList:
-                parser = new ECPCellCrossList((GrammarByLeftNonTermList) grammar, chartTraversalType);
-                break;
-            case CellCrossHash:
-                parser = new ECPCellCrossHash((GrammarByLeftNonTermHash) grammar, chartTraversalType);
-                break;
-            case CellCrossMatrix:
-                parser = new ECPCellCrossMatrix((GrammarByChildMatrix) grammar, chartTraversalType);
-                break;
-            case GrammarLoop:
-                parser = new ECPGramLoop((ArrayGrammar) grammar, chartTraversalType);
-                break;
-            case GrammarLoopBerkeleyFilter:
-                parser = new ECPGramLoopBerkFilter((ArrayGrammar) grammar, chartTraversalType);
-            }
-            break;
+        case ECPCellCrossList:
+            return new LeftListGrammar(pcfgFileName, lexFileName, grammarFormat);
+        case ECPCellCrossHash:
+            return new LeftHashGrammar(pcfgFileName, lexFileName, grammarFormat);
+        case ECPCellCrossMatrix:
+            return new ChildMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
+        case ECPGrammarLoop:
+        case ECPGrammarLoopBerkeleyFilter:
+            return new Grammar(pcfgFileName, lexFileName, grammarFormat);
+
+        case AgendaChartParser:
+        case ACPWithMemory:
+        case ACPGhostEdges:
+            return new LeftRightListsGrammar(pcfgFileName, lexFileName, grammarFormat);
+
+        case LocalBestFirst:
+        case LBFPruneViterbi:
+        case LBFOnlineBeam:
+        case LBFSmallAgenda:
+        case LBFExpDecay:
+        case LBFPerceptronCell:
+        case CoarseCellAgenda:
+        case CoarseCellAgendaCSLUT:
+            return new LeftHashGrammar(pcfgFileName, lexFileName, grammarFormat);
 
         case JsaSparseMatrixVector:
-            parser = new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar, chartTraversalType);
-            break;
+            return new JsaSparseMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
+        case CsrSparseMatrixVector:
+        case OpenClSparseMatrixVector:
+            return new CsrSparseMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
 
-        case AgendaParser:
-            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, (ArrayGrammar) grammar);
-            // TODO: this whole FOM setup is pretty ugly. It needs to be changed
-            // TODO: the program should know which FOM to use given the model file
-            // parser = new AgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOM);
-            parser = new AgendaChartParserWithMemory((GrammarByLeftNonTermList) grammar, edgeFOM);
-            break;
+        default:
+            throw new Exception("Unsupported parser type: " + parserType);
+        }
+    }
 
-        case CellAgendaParser:
-            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, (ArrayGrammar) grammar);
-            parser = new CellAgendaChartParser((GrammarByLeftNonTermList) grammar, edgeFOM, chartTraversalType);
-            break;
+    public static Parser createParser(final ParserType parserType, final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) throws Exception {
 
-        case AgendaParserWithGhostEdges:
-            edgeFOM = EdgeFOM.create(edgeFOMType, fomModelStream, (ArrayGrammar) grammar);
-            parser = new AgendaChartParserGhostEdges((GrammarByLeftNonTermList) grammar, edgeFOM);
-            break;
+        switch (parserType) {
+        case ECPCellCrossList:
+            return new ECPCellCrossList((LeftListGrammar) grammar, cellSelector);
+        case ECPCellCrossHash:
+            return new ECPCellCrossHash((LeftHashGrammar) grammar, cellSelector);
+        case ECPCellCrossMatrix:
+            return new ECPCellCrossMatrix((ChildMatrixGrammar) grammar, cellSelector);
+        case ECPGrammarLoop:
+            return new ECPGrammarLoop(grammar, cellSelector);
+        case ECPGrammarLoopBerkeleyFilter:
+            return new ECPGrammarLoopBerkFilter(grammar, cellSelector);
+
+        case AgendaChartParser:
+            return new AgendaChartParser(grammar, edgeSelector);
+        case ACPWithMemory:
+            return new ACPWithMemory(grammar, edgeSelector);
+        case ACPGhostEdges:
+            return new ACPGhostEdges(grammar, edgeSelector);
+
+        case LocalBestFirst:
+            return new LocalBestFirstChartParser(grammar, edgeSelector, cellSelector);
+        case LBFPruneViterbi:
+            return new LBFPruneViterbi(grammar, edgeSelector, cellSelector);
+        case LBFOnlineBeam:
+            return new LBFWeakThresh(grammar, edgeSelector, cellSelector);
+        case LBFSmallAgenda:
+            return new LBFSmallAgenda(grammar, edgeSelector, cellSelector);
+        case LBFExpDecay:
+            return new LBFExpDecay(grammar, edgeSelector, cellSelector);
+        case LBFPerceptronCell:
+            return new LBFSkipBaseCells(grammar, edgeSelector, cellSelector);
+
+        case CoarseCellAgenda:
+            return new CoarseCellAgendaParser(grammar, edgeSelector);
+        case CoarseCellAgendaCSLUT:
+            return new CoarseCellAgendaParserWithCSLUT(grammar, edgeSelector, (CSLUTBlockedCells) cellSelector);
+
+        case JsaSparseMatrixVector:
+            return new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar, cellSelector);
+        case CsrSparseMatrixVector:
+            return new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, cellSelector);
+        case OpenClSparseMatrixVector:
+            return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, cellSelector);
 
         default:
             throw new IllegalArgumentException("Unsupported parser type");
         }
-
-        return parser;
     }
 
-    // TODO: Parameterize with parser and grammar classes
-    static public enum ParserType {
-        ExhaustiveChartParser("exhaustive"), AgendaParser("agenda"), AgendaParserWithGhostEdges("age"), CellAgendaParser("cellagenda"), JsaSparseMatrixVector("jsa", "spmv-jsa");
+    @Override
+    public void run() throws Exception {
 
-        private ParserType(final String... aliases) {
-            EnumAliasMap.singleton().addAliases(this, aliases);
+        Log.info(0, optionsToString());
+        final Grammar grammar = createGrammar(parserType, grammarFormat, pcfgFileName, lexFileName);
+
+        // TODO: this whole FOM setup is pretty ugly. It needs to be changed
+        // TODO: the program should know which FOM to use given the model file
+        final EdgeSelector edgeSelector = EdgeSelector.create(edgeFOMType, fomModelStream, grammar);
+        final CellSelector cellSelector = CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
+
+        if (fomTrain == true) {
+            edgeSelector.train(inputStream);
+            edgeSelector.writeModel(outputStream);
+        } else if (cellTrain == true) {
+            // TODO: need to follow a similar train/writeModel method like edgeSelector
+            final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) cellSelector;
+            final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer(grammar, edgeSelector, perceptronCellSelector);
+            perceptronCellSelector.train(inputStream, parser);
+        } else {
+            // run parser
+            final Parser parser = createParser(parserType, grammar, edgeSelector, cellSelector);
+            parser.parseStream(inputStream, outputStream, maxLength, printUnkLabels, printInsideProbs);
         }
     }
 
-    static public enum ChartCellProcessingType {
-        CellCrossList("ccl"), CellCrossHash("cch"), CellCrossMatrix("ccm"), GrammarLoop("gl"), GrammarLoopBerkeleyFilter("glbf");
+    static public enum ParserType {
+        ECPCellCrossList("ecpccl"), ECPCellCrossHash("ecpcch"), ECPCellCrossMatrix("ecpccm"), ECPGrammarLoop("ecpgl"), ECPGrammarLoopBerkeleyFilter("ecpglbf"), AgendaChartParser(
+                "acpall"), ACPWithMemory("acpwm"), ACPGhostEdges("acpge"), LocalBestFirst("lbf"), LBFPruneViterbi("lbfpv"), LBFOnlineBeam("lbfob"), LBFSmallAgenda("lbfsa"), LBFExpDecay(
+                "lbfed"), LBFPerceptronCell("lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector("jsa"), OpenClSparseMatrixVector("opencl"), CsrSparseMatrixVector(
+                "csr");
 
-        private ChartCellProcessingType(final String... aliases) {
+        private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
         }
     }

@@ -1,15 +1,18 @@
 package edu.ohsu.cslu.parser;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 import edu.ohsu.cslu.grammar.BaseSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.BaseGrammar.Production;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.Tokenizer.Token;
-import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
-import edu.ohsu.cslu.parser.util.ParseTree;
+import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public abstract class SparseMatrixVectorParser extends ChartParserByTraversal implements MaximumLikelihoodParser {
+public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
 
+    // protected Chart<DenseVectorChartCell> chart;
     private final BaseSparseMatrixGrammar sparseMatrixGrammar;
     private float[] crossProductProbabilities;
     private short[] crossProductMidpoints;
@@ -17,8 +20,8 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
     public long totalCrossProductTime = 0;
     public long totalSpMVTime = 0;
 
-    public SparseMatrixVectorParser(final BaseSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
-        super(grammar, traversalType);
+    public SparseMatrixVectorParser(final BaseSparseMatrixGrammar grammar, final CellSelector cellSelector) {
+        super(grammar, cellSelector);
 
         this.sparseMatrixGrammar = grammar;
     }
@@ -40,16 +43,8 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
 
     @Override
     protected void initParser(final int sentLength) {
-        chartSize = sentLength;
-        chart = new BaseChartCell[chartSize][chartSize + 1];
-
-        // The chart is (chartSize+1)*chartSize/2
-        for (int start = 0; start < chartSize; start++) {
-            for (int end = start + 1; end < chartSize + 1; end++) {
-                chart[start][end] = new DenseVectorChartCell(chart, start, end, (BaseSparseMatrixGrammar) grammar);
-            }
-        }
-        rootChartCell = chart[0][chartSize];
+        // super.initParser(sentLength);
+        chart = new Chart<DenseVectorChartCell>(sentLength, DenseVectorChartCell.class, grammar);
 
         totalSpMVTime = 0;
         totalCrossProductTime = 0;
@@ -57,11 +52,12 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
 
     // TODO Do this with a matrix multiply?
     @Override
-    protected void addLexicalProductions(final Token[] sent) throws Exception {
+    protected List<ChartEdge> addLexicalProductions(final Token[] sent) throws Exception {
         super.addLexicalProductions(sent);
-        for (int start = 0; start < chartSize; start++) {
-            ((DenseVectorChartCell) chart[start][start + 1]).finalizeCell();
+        for (int start = 0; start < chart.size(); start++) {
+            ((DenseVectorChartCell) chart.getCell(start, start + 1)).finalizeCell();
         }
+        return null;
     }
 
     /**
@@ -84,8 +80,8 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         // Iterate over all possible midpoints, unioning together the cross-product of discovered
         // non-terminals in each left/right child pair
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
-            final DenseVectorChartCell leftCell = (DenseVectorChartCell) chart[start][midpoint];
-            final DenseVectorChartCell rightCell = (DenseVectorChartCell) chart[midpoint][end];
+            final DenseVectorChartCell leftCell = (DenseVectorChartCell) chart.getCell(start, midpoint);
+            final DenseVectorChartCell rightCell = (DenseVectorChartCell) chart.getCell(midpoint, end);
 
             final int[] leftChildren = leftCell.validLeftChildren;
             final float[] leftChildrenProbabilities = leftCell.validLeftChildrenProbabilities;
@@ -119,19 +115,14 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
     }
 
     @Override
-    public ParseTree findMLParse(final String sentence) throws Exception {
-        return findBestParse(sentence);
-    }
-
-    @Override
     public String getStats() {
         return super.getStats() + String.format(" Cross-product time=%d ms; SpMV time=%d ms", totalCrossProductTime, totalSpMVTime);
     }
 
-    protected static class DenseVectorChartCell extends BaseChartCell {
+    public static class DenseVectorChartCell extends ChartCell {
 
         protected final BaseSparseMatrixGrammar sparseMatrixGrammar;
-        protected final BaseChartCell[][] chart;
+        // protected final BaseChartCell[][] chart;
 
         /** Indexed by parent non-terminal */
         protected final float[] probabilities;
@@ -147,12 +138,12 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         public short[] validRightChildren;
         public float[] validRightChildrenProbabilities;
 
-        protected DenseVectorChartCell(final BaseChartCell[][] chart, final int start, final int end, final BaseSparseMatrixGrammar grammar) {
-            super(start, end, grammar);
-            this.chart = chart;
-            this.sparseMatrixGrammar = grammar;
+        public DenseVectorChartCell(final int start, final int end, final Chart chart) {
+            super(start, end, chart);
+            // this.chart = chart;
+            this.sparseMatrixGrammar = (BaseSparseMatrixGrammar) chart.grammar;
 
-            final int arraySize = grammar.numNonTerms();
+            final int arraySize = sparseMatrixGrammar.numNonTerms();
             this.probabilities = new float[arraySize];
             Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
             this.midpoints = new short[arraySize];
@@ -187,11 +178,11 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
 
         @Override
         public boolean addEdge(final ChartEdge edge) {
-            return addEdge(edge.p, edge.insideProb, edge.leftCell, edge.rightCell);
+            return addEdge(edge.prod, edge.leftCell, edge.rightCell, edge.inside);
         }
 
         @Override
-        public boolean addEdge(final Production p, final float insideProb, final ChartCell leftCell, final ChartCell rightCell) {
+        public boolean addEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
             final int parent = p.parent;
             numEdgesConsidered++;
 
@@ -230,16 +221,20 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
             final int midpoint = midpoints[nonTermIndex];
             final float probability = probabilities[nonTermIndex];
 
-            final DenseVectorChartCell leftChildCell = (DenseVectorChartCell) chart[start][midpoint];
-            final DenseVectorChartCell rightChildCell = midpoint < chart.length ? (DenseVectorChartCell) chart[midpoint][end] : null;
+            final DenseVectorChartCell leftChildCell = (DenseVectorChartCell) chart.getCell(start(), midpoint);
+            final DenseVectorChartCell rightChildCell = midpoint < chart.size() ? (DenseVectorChartCell) chart.getCell(midpoint, end()) : null;
 
             if (rightChild == Production.LEXICAL_PRODUCTION) {
-                // Lexical production
-                final Production p = grammar.new Production(nonTermIndex, leftChild, probability, true);
-                return new ChartEdge(p, leftChildCell, rightChildCell, probability);
+                try {
+                    // Lexical production
+                    final Production p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, probability, true);
+                    return new ChartEdge(p, leftChildCell, rightChildCell, probability);
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                }
             }
 
-            final Production p = grammar.new Production(nonTermIndex, leftChild, rightChild, probability);
+            final Production p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, rightChild, probability);
             return new ChartEdge(p, leftChildCell, rightChildCell, probability);
         }
 
@@ -247,7 +242,7 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
         public String toString() {
             final StringBuilder sb = new StringBuilder(256);
 
-            sb.append("SparseChartCell[" + start + "][" + end + "] with " + getNumEdgeEntries() + " (of " + grammar.numNonTerms() + ") edges\n");
+            sb.append("SparseChartCell[" + start() + "][" + end() + "] with " + getNumEdgeEntries() + " (of " + sparseMatrixGrammar.numNonTerms() + ") edges\n");
 
             for (int nonterminal = 0; nonterminal < sparseMatrixGrammar.numNonTerms(); nonterminal++) {
                 if (probabilities[nonterminal] != Float.NEGATIVE_INFINITY) {
@@ -284,6 +279,30 @@ public abstract class SparseMatrixVectorParser extends ChartParserByTraversal im
                 }
             }
             return entries;
+        }
+
+        @Override
+        public Collection<ChartEdge> getEdges() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public LinkedList<Integer> getPosEntries() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public boolean hasEdge(final ChartEdge edge) throws Exception {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public boolean hasEdge(final int nonTermIndex) {
+            // TODO Auto-generated method stub
+            return false;
         }
     }
 

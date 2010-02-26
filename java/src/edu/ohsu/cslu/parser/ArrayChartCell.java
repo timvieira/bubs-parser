@@ -1,22 +1,29 @@
 package edu.ohsu.cslu.parser;
 
+import java.util.Collection;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.grammar.ArrayGrammar;
-import edu.ohsu.cslu.grammar.BaseGrammar.Production;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 
-public final class ArrayChartCell extends BaseChartCell {
+public final class ArrayChartCell extends ChartCell {
 
-    public ChartEdge[] bestEdge;
+    private ChartEdge[] bestEdge;
     private LinkedList<ChartEdge> bestLeftEdges, bestRightEdges;
-    boolean bestEdgesHaveChanged = true;
-    private final ArrayGrammar arrayGrammar;
+    private boolean bestEdgesHaveChanged = true;
+    private LinkedList<Integer> posEntries;
+    private boolean isLexCell;
 
-    public ArrayChartCell(final int start, final int end, final ArrayGrammar grammar) {
-        super(start, end, grammar);
-        this.arrayGrammar = grammar;
+    public ArrayChartCell(final int start, final int end, final Chart<ArrayChartCell> chart) {
+        super(start, end, chart);
 
-        bestEdge = new ChartEdge[grammar.numNonTerms()];
+        bestEdge = new ChartEdge[chart.grammar.numNonTerms()];
+        posEntries = new LinkedList<Integer>();
+
+        if (end - start == 1) {
+            isLexCell = true;
+        } else {
+            isLexCell = false;
+        }
     }
 
     @Override
@@ -24,6 +31,37 @@ public final class ArrayChartCell extends BaseChartCell {
         return bestEdge[nonTermIndex];
     }
 
+    @Override
+    public Collection<ChartEdge> getEdges() {
+        final LinkedList<ChartEdge> edgeList = new LinkedList<ChartEdge>();
+        for (final ChartEdge edge : bestEdge) {
+            if (edge != null) {
+                edgeList.add(edge);
+            }
+        }
+        return edgeList;
+    }
+
+    @Override
+    public boolean hasEdge(final ChartEdge edge) throws Exception {
+        final ChartEdge curEdge = bestEdge[edge.prod.parent];
+        if (curEdge == null)
+            return false;
+        if (!curEdge.prod.equals(edge.prod))
+            return false;
+        // make sure midpoints are the same if it's a binary production/edge
+        if (edge.prod.isBinaryProd() && (edge.midpt() != curEdge.midpt()))
+            return false;
+
+        return true;
+    }
+
+    @Override
+    public boolean hasEdge(final int nonTermIndex) {
+        return bestEdge[nonTermIndex] != null;
+    }
+
+    @Override
     public LinkedList<ChartEdge> getBestLeftEdges() {
         if (bestEdgesHaveChanged) {
             buildLeftRightEdgeLists();
@@ -31,6 +69,7 @@ public final class ArrayChartCell extends BaseChartCell {
         return bestLeftEdges;
     }
 
+    @Override
     public LinkedList<ChartEdge> getBestRightEdges() {
         if (bestEdgesHaveChanged) {
             buildLeftRightEdgeLists();
@@ -44,10 +83,10 @@ public final class ArrayChartCell extends BaseChartCell {
         for (int i = 0; i < bestEdge.length; i++) {
             final ChartEdge tmpEdge = bestEdge[i];
             if (tmpEdge != null) {
-                final int parent = tmpEdge.p.parent;
-                if (arrayGrammar.isLeftChild(parent))
+                final int parent = tmpEdge.prod.parent;
+                if (chart.grammar.isLeftChild(parent))
                     bestLeftEdges.add(tmpEdge);
-                if (arrayGrammar.isRightChild(parent))
+                if (chart.grammar.isRightChild(parent))
                     bestRightEdges.add(tmpEdge);
             }
         }
@@ -55,18 +94,48 @@ public final class ArrayChartCell extends BaseChartCell {
     }
 
     @Override
+    public LinkedList<Integer> getPosEntries() {
+        return posEntries;
+    }
+
+    private boolean insertNewEdge(final ChartEdge edge) {
+        // assuming bestEdge[parent] == null
+        final int parent = edge.prod.parent;
+        numEdgesAdded++;
+        bestEdgesHaveChanged = true;
+        bestEdge[parent] = edge;
+        if (isLexCell && chart.grammar.posSet.hasSymbol(parent)) {
+            posEntries.addLast(parent);
+        }
+        return true;
+    }
+
+    @Override
     public boolean addEdge(final ChartEdge edge) {
-        final int parent = edge.p.parent;
-        numEdgesConsidered += 1;
-        // System.out.println("Considering: "+edge);
+        final int parent = edge.prod.parent;
         final ChartEdge prevBestEdge = bestEdge[parent];
-        if (prevBestEdge == null || edge.insideProb > prevBestEdge.insideProb) {
+        numEdgesConsidered++;
+
+        if (prevBestEdge == null) {
+            return insertNewEdge(edge);
+        } else if (edge.inside > prevBestEdge.inside) {
             bestEdge[parent] = edge;
-            bestEdgesHaveChanged = true;
-            numEdgesAdded++;
             return true;
         }
 
+        return false;
+    }
+
+    @Override
+    public boolean addEdgeForceOverwrite(final ChartEdge edge) {
+        final int parent = edge.prod.parent;
+        final ChartEdge prevBestEdge = bestEdge[parent];
+        numEdgesConsidered++;
+
+        if (prevBestEdge == null) {
+            return insertNewEdge(edge);
+        }
+        bestEdge[parent] = edge;
         return false;
     }
 
@@ -81,23 +150,21 @@ public final class ArrayChartCell extends BaseChartCell {
      * @return True if the edge was added, false if another edge with greater probability was already present.
      */
     @Override
-    public boolean addEdge(final Production p, final float insideProb, final ChartCell leftCell, final ChartCell rightCell) {
-        numEdgesConsidered += 1;
-        // System.out.println("Considering: " + new ChartEdge(p, leftCell, rightCell, insideProb));
+    public boolean addEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
+        final int parent = p.parent;
+        final ChartEdge prevBestEdge = bestEdge[parent];
+        numEdgesConsidered++;
 
-        final ChartEdge prevBestEdge = bestEdge[p.parent];
+        // System.out.println("Considering: " + new ChartEdge(p, leftCell, rightCell, insideProb));
         if (prevBestEdge == null) {
-            bestEdge[p.parent] = new ChartEdge(p, leftCell, rightCell, insideProb);
-            bestEdgesHaveChanged = true;
-            numEdgesAdded += 1;
-            return true;
-        } else if (prevBestEdge.insideProb < insideProb) {
-            prevBestEdge.p = p;
-            prevBestEdge.insideProb = insideProb;
+            return insertNewEdge(new ChartEdge(p, leftCell, rightCell, insideProb));
+        } else if (prevBestEdge.inside < insideProb) {
+            prevBestEdge.prod = p;
+            prevBestEdge.inside = insideProb;
             prevBestEdge.leftCell = leftCell;
             prevBestEdge.rightCell = rightCell;
             // bestLeftEdgesHasChanged = true; // pointer to old edge will still be correct
-            // numEdgesAdded += 1; // we are replacing an edge, so the same number are in the chart
+            // numEdgesAdded++; // we are replacing an edge, so the same number are in the chart
             return true;
         }
 
@@ -116,7 +183,6 @@ public final class ArrayChartCell extends BaseChartCell {
 
     @Override
     public String toString() {
-        return "ChartCell[" + start + "][" + end + "] with " + getNumEdgeEntries() + " (of " + grammar.numNonTerms() + ") edges";
+        return "ChartCell[" + start() + "][" + end() + "] with " + getNumEdgeEntries() + " (of " + chart.grammar.numNonTerms() + ") edges";
     }
-
 }

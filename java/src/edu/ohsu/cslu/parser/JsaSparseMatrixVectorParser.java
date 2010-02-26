@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
+import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 /**
  * SparseMatrixVectorParser implementation which uses a grammar stored in Java Sparse Array (JSA) format. Stores cell populations and cross-product densely, for efficient array
@@ -16,8 +16,8 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
     private final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
 
-    public JsaSparseMatrixVectorParser(final JsaSparseMatrixGrammar grammar, final ChartTraversalType traversalType) {
-        super(grammar, traversalType);
+    public JsaSparseMatrixVectorParser(final JsaSparseMatrixGrammar grammar, final CellSelector cellSelector) {
+        super(grammar, cellSelector);
         this.jsaSparseMatrixGrammar = grammar;
     }
 
