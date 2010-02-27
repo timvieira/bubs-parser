@@ -37,20 +37,20 @@ public class TestOpenClSparseMatrixVectorParser extends SparseMatrixVectorParser
         internalProfileSentences11Through20();
     }
 
-    @Override
-    public void testSentence1() throws Exception {
-        fail("Skipping");
-    }
+    // @Override
+    // public void testSentence1() throws Exception {
+    // fail("Skipping");
+    // }
 
     @Override
     public void testSentence10() throws Exception {
         fail("Skipping");
     }
 
-    @Override
-    public void testSentence2() throws Exception {
-        fail("Skipping");
-    }
+    // @Override
+    // public void testSentence2() throws Exception {
+    // fail("Skipping");
+    // }
 
     @Override
     public void testSentence3() throws Exception {
