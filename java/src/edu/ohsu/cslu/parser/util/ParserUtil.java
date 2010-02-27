@@ -2,6 +2,8 @@ package edu.ohsu.cslu.parser.util;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.StringTokenizer;
 
 public class ParserUtil {
@@ -70,5 +72,29 @@ public class ParserUtil {
             return a + Math.log(Math.pow(Math.E, b - a) + 1);
         }
         return b + Math.log(Math.pow(Math.E, a - b) + 1);
+    }
+
+    public static List<Boolean> binValue(final float value, final int min, final int max, final int numBins) {
+        final List<Boolean> bins = new LinkedList<Boolean>();
+        final float step = (float) (max - min) / (float) (numBins - 1);
+
+        for (float thresh = min; thresh <= max; thresh += step) {
+            if (value >= thresh) {
+                bins.add(true);
+            } else {
+                bins.add(false);
+            }
+        }
+
+        // System.out.println("binValue() value=" + value + " min=" + min + " max=" + max + " numBins=" + numBins + " step=" + step + " bin=" + boolListToString(bins));
+
+        return bins;
+    }
+
+    public static int boolToInt(final boolean value) {
+        if (value == true) {
+            return 1;
+        }
+        return 0;
     }
 }
