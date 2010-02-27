@@ -8,8 +8,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Interface for n-ary tree structures. This interface is defined recursively (children of an {@link NaryTree}
- * are also {@link NaryTree}s, rather than defining an explicit Node class)
+ * Interface for n-ary tree structures. This interface is defined recursively (children of an {@link NaryTree} are also {@link NaryTree}s, rather than defining an explicit Node
+ * class)
  * 
  * TODO: Do we need methods to add children or subtrees in positions other than the rightmost?
  * 
@@ -51,7 +51,7 @@ public interface NaryTree<E extends Object> {
 
     public List<E> childLabels();
 
-    public List<NaryTree<E>> children();
+    public List<? extends NaryTree<E>> children();
 
     /**
      * @return the parent of this tree (or null if this tree is the root)
@@ -59,16 +59,13 @@ public interface NaryTree<E extends Object> {
     public NaryTree<E> parent();
 
     /**
-     * @param childLabel
-     *            Label of a child
-     * @return the subtree rooted at the leftmost child labeled with the specified label or null if no such
-     *         child exists.
+     * @param childLabel Label of a child
+     * @return the subtree rooted at the leftmost child labeled with the specified label or null if no such child exists.
      */
     public NaryTree<E> subtree(E childLabel);
 
     /**
-     * @return the depth of this subtree within the entire tree of which it is a part (0 if this tree is the
-     *         root)
+     * @return the depth of this subtree within the entire tree of which it is a part (0 if this tree is the root)
      */
     public int depthFromRoot();
 
@@ -83,38 +80,32 @@ public interface NaryTree<E extends Object> {
     public int leaves();
 
     /**
-     * @return an Iterator over all nodes in this tree. Iteration order will be leftmost-child, head, other
-     *         children (in left-to-right order).
+     * @return an Iterator over all nodes in this tree. Iteration order will be leftmost-child, head, other children (in left-to-right order).
      */
-    public Iterator<NaryTree<E>> inOrderIterator();
+    public Iterator<? extends NaryTree<E>> inOrderIterator();
 
     /**
-     * @return an Iterator over all nodes in this tree. Iteration order will be head, followed by children (in
-     *         left-to-right order).
+     * @return an Iterator over all nodes in this tree. Iteration order will be head, followed by children (in left-to-right order).
      */
-    public Iterator<NaryTree<E>> preOrderIterator();
+    public Iterator<? extends NaryTree<E>> preOrderIterator();
 
     /**
-     * @return an Iterator over all nodes in this tree. Iteration order will be children (in left-to-right
-     *         order), followed by head.
+     * @return an Iterator over all nodes in this tree. Iteration order will be children (in left-to-right order), followed by head.
      */
-    public Iterator<NaryTree<E>> postOrderIterator();
+    public Iterator<? extends NaryTree<E>> postOrderIterator();
 
     /**
-     * @return an Iterator over all labels in this tree. Iteration order will be leftmost-child, head, other
-     *         children (in left-to-right order).
+     * @return an Iterator over all labels in this tree. Iteration order will be leftmost-child, head, other children (in left-to-right order).
      */
     public Iterator<E> inOrderLabelIterator();
 
     /**
-     * @return an Iterator over all nodes in this tree. Iteration order will be head, followed by children (in
-     *         left-to-right order).
+     * @return an Iterator over all nodes in this tree. Iteration order will be head, followed by children (in left-to-right order).
      */
     public Iterator<E> preOrderLabelIterator();
 
     /**
-     * @return an Iterator over all labels in this tree. Iteration order will be children (in left-to-right
-     *         order), followed by head.
+     * @return an Iterator over all labels in this tree. Iteration order will be children (in left-to-right order), followed by head.
      */
     public Iterator<E> postOrderLabelIterator();
 
@@ -123,20 +114,16 @@ public interface NaryTree<E extends Object> {
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param outputStream
-     *            The {@link OutputStream} to write to
-     * @throws IOException
-     *             if the write fails
+     * @param outputStream The {@link OutputStream} to write to
+     * @throws IOException if the write fails
      */
     public void write(OutputStream outputStream) throws IOException;
 
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param writer
-     *            The {@link Writer} to write to
-     * @throws IOException
-     *             if the write fails
+     * @param writer The {@link Writer} to write to
+     * @throws IOException if the write fails
      */
     public void write(Writer writer) throws IOException;
 }

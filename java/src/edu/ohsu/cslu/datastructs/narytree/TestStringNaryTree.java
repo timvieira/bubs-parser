@@ -34,12 +34,9 @@ public class TestStringNaryTree {
     private StringNaryTree sampleTree;
     private String stringSampleTree;
 
-    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "a", "b", "c", "d", "e", "f", "g",
-            "h", "i", "j", "k" };
-    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] { "f", "d", "b", "a", "c", "e", "g",
-            "i", "h", "k", "j" };
-    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "a", "c", "b", "e", "d", "g", "h",
-            "j", "k", "i", "f" };
+    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k" };
+    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] { "f", "d", "b", "a", "c", "e", "g", "i", "h", "k", "j" };
+    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "a", "c", "b", "e", "d", "g", "h", "j", "k", "i", "f" };
 
     @Before
     public void setUp() {
@@ -84,7 +81,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testAddChild() throws Exception {
-        StringNaryTree tree = new StringNaryTree("a");
+        final StringNaryTree tree = new StringNaryTree("a");
         assertEquals(1, tree.size());
         tree.addChild("b");
         assertEquals(2, tree.size());
@@ -94,7 +91,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testAddChildren() throws Exception {
-        StringNaryTree tree = new StringNaryTree("a");
+        final StringNaryTree tree = new StringNaryTree("a");
         assertEquals(1, tree.size());
         tree.addChildren(new String[] { "b", "c" });
         assertEquals(3, tree.size());
@@ -105,8 +102,8 @@ public class TestStringNaryTree {
 
     @Test
     public void testAddSubtree() throws Exception {
-        StringNaryTree tree = new StringNaryTree("a");
-        StringNaryTree tmp = new StringNaryTree("b");
+        final StringNaryTree tree = new StringNaryTree("a");
+        final StringNaryTree tmp = new StringNaryTree("b");
         tmp.addChildren(new String[] { "c", "d" });
         tree.addSubtree(tmp);
         assertEquals(4, tree.size());
@@ -165,7 +162,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testSubtree() throws Exception {
-        StringNaryTree subtree = sampleTree.subtree("d");
+        final StringNaryTree subtree = sampleTree.subtree("d");
         assertEquals(5, subtree.size());
         assertNotNull(subtree.subtree("b"));
         assertNotNull(subtree.subtree("e"));
@@ -217,7 +214,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testInOrderIterator() throws Exception {
-        Iterator<NaryTree<String>> iter = sampleTree.inOrderIterator();
+        final Iterator<NaryTree<String>> iter = sampleTree.inOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next().stringLabel());
         }
@@ -225,7 +222,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testInOrderLabelIterator() throws Exception {
-        Iterator<String> iter = sampleTree.inOrderLabelIterator();
+        final Iterator<String> iter = sampleTree.inOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next());
         }
@@ -233,7 +230,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testPreOrderIterator() throws Exception {
-        Iterator<NaryTree<String>> iter = sampleTree.preOrderIterator();
+        final Iterator<? extends NaryTree<String>> iter = sampleTree.preOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next().stringLabel());
         }
@@ -241,7 +238,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testPreOrderLabelIterator() throws Exception {
-        Iterator<String> iter = sampleTree.preOrderLabelIterator();
+        final Iterator<String> iter = sampleTree.preOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next());
         }
@@ -249,7 +246,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testPostOrderIterator() throws Exception {
-        Iterator<NaryTree<String>> iter = sampleTree.postOrderIterator();
+        final Iterator<? extends NaryTree<String>> iter = sampleTree.postOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next().stringLabel());
         }
@@ -257,7 +254,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testPostOrderLabelIterator() throws Exception {
-        Iterator<String> iter = sampleTree.postOrderLabelIterator();
+        final Iterator<String> iter = sampleTree.postOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next());
         }
@@ -265,7 +262,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testSetStringLabel() throws Exception {
-        StringNaryTree simpleTree = StringNaryTree.read(new StringReader("(a (b c) d)"));
+        final StringNaryTree simpleTree = StringNaryTree.read(new StringReader("(a (b c) d)"));
         ((StringNaryTree) simpleTree.children().get(0)).setStringLabel("e");
         assertEquals("(a (e c) d)", simpleTree.toString());
     }
@@ -273,8 +270,8 @@ public class TestStringNaryTree {
     @Test
     public void testReadFromReader() throws Exception {
 
-        String stringSimpleTree = "(a (b c) d)";
-        StringNaryTree simpleTree = StringNaryTree.read(new StringReader(stringSimpleTree));
+        final String stringSimpleTree = "(a (b c) d)";
+        final StringNaryTree simpleTree = StringNaryTree.read(new StringReader(stringSimpleTree));
         assertEquals(4, simpleTree.size());
         assertEquals(2, simpleTree.subtree("b").size());
 
@@ -283,8 +280,8 @@ public class TestStringNaryTree {
         assertEquals("c", simpleTree.subtree("b").subtree("c").label());
         assertEquals("d", simpleTree.subtree("d").label());
 
-        String stringTestTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
-        StringNaryTree testTree = StringNaryTree.read(new StringReader(stringTestTree));
+        final String stringTestTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
+        final StringNaryTree testTree = StringNaryTree.read(new StringReader(stringTestTree));
         assertEquals(12, testTree.size());
         assertEquals(8, testTree.subtree("b").subtree("c").size());
 
@@ -301,7 +298,7 @@ public class TestStringNaryTree {
         assertEquals("k", testTree.subtree("b").subtree("k").label());
         assertEquals("l", testTree.subtree("b").subtree("k").subtree("l").label());
 
-        StringNaryTree tree = StringNaryTree.read(new StringReader(stringSampleTree));
+        final StringNaryTree tree = StringNaryTree.read(new StringReader(stringSampleTree));
         assertEquals(sampleTree, tree);
     }
 
@@ -311,8 +308,8 @@ public class TestStringNaryTree {
         sampleTree.write(writer);
         assertEquals(stringSampleTree, writer.toString());
 
-        String stringSimpleTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
-        StringNaryTree tree = new StringNaryTree("a");
+        final String stringSimpleTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
+        final StringNaryTree tree = new StringNaryTree("a");
         tree.addChild("b").addChild("c").addChild("d").addChild("e").addChild("f");
         tree.subtree("b").subtree("c").subtree("d").addChild("g").addChild("h");
         tree.subtree("b").subtree("c").addChild("i").addChild("j");
@@ -333,13 +330,13 @@ public class TestStringNaryTree {
 
     @Test
     public void testEquals() throws Exception {
-        StringNaryTree tree1 = new StringNaryTree("a");
+        final StringNaryTree tree1 = new StringNaryTree("a");
         tree1.addChildren(new String[] { "b", "c" });
 
-        StringNaryTree tree2 = new StringNaryTree("a");
+        final StringNaryTree tree2 = new StringNaryTree("a");
         tree2.addChildren(new String[] { "b", "c" });
 
-        StringNaryTree tree3 = new StringNaryTree("a");
+        final StringNaryTree tree3 = new StringNaryTree("a");
         tree3.addChildren(new String[] { "b", "d" });
 
         assertTrue(tree1.equals(tree2));
@@ -352,18 +349,17 @@ public class TestStringNaryTree {
     /**
      * Tests Java serialization and deserialization of trees
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     public void testSerialize() throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final ObjectOutputStream oos = new ObjectOutputStream(bos);
 
         oos.writeObject(sampleTree);
 
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
-        StringNaryTree t = (StringNaryTree) ois.readObject();
+        final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        final StringNaryTree t = (StringNaryTree) ois.readObject();
         assertTrue(sampleTree.equals(t));
     }
 }

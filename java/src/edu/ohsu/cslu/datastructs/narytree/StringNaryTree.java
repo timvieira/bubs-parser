@@ -17,9 +17,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * A simple string-only n-ary tree implementation. Does not implement pq-gram or other distance metrics.
- * Useful for reading and writing sentences without regard to the grammar they're represented in (if the
- * grammar is known, see {@link ParseTree} instead.
+ * A simple string-only n-ary tree implementation. Does not implement pq-gram or other distance metrics. Useful for reading and writing sentences without regard to the grammar
+ * they're represented in (if the grammar is known, see {@link ParseTree} instead.
  * 
  * @author Aaron Dunlop
  * @since Sep 29, 2008
@@ -35,6 +34,8 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
 
     /** Parent node (if any) */
     protected StringNaryTree parent;
+
+    private boolean visited;
 
     /**
      * All the children of this tree
@@ -69,38 +70,37 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     /**
      * Adds a child to the tree
      * 
-     * @param childLabel
-     *            label of the child
+     * @param childLabel label of the child
      * @return The newly added subtree
      */
     public StringNaryTree addChild(final String childLabel) {
         try {
-            StringNaryTree child = new StringNaryTree(childLabel, this);
+            final StringNaryTree child = new StringNaryTree(childLabel, this);
             updateSize(1, isLeaf() ? 0 : 1);
             childList.add(child);
 
             return child;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void addChildren(String[] childLabels) {
-        for (String child : childLabels) {
+    public void addChildren(final String[] childLabels) {
+        for (final String child : childLabels) {
             addChild(child);
         }
     }
 
     @Override
-    public void addChildren(Collection<String> childLabels) {
-        for (String child : childLabels) {
+    public void addChildren(final Collection<String> childLabels) {
+        for (final String child : childLabels) {
             addChild(child);
         }
     }
 
     public void addSubtree(final NaryTree<String> subtree) {
-        StringNaryTree typedSubtree = (StringNaryTree) subtree;
+        final StringNaryTree typedSubtree = (StringNaryTree) subtree;
         final int leavesAdded = typedSubtree.leaves - (isLeaf() ? 1 : 0);
         childList.add(typedSubtree);
         typedSubtree.parent = this;
@@ -109,15 +109,15 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
 
     public boolean removeChild(final String childLabel) {
         int i = 0;
-        for (Iterator<StringNaryTree> iter = childList.iterator(); iter.hasNext();) {
-            StringNaryTree child = iter.next();
+        for (final Iterator<StringNaryTree> iter = childList.iterator(); iter.hasNext();) {
+            final StringNaryTree child = iter.next();
             if (child.label.equals(childLabel)) {
                 final int leavesRemoved = (childList.size() == 1 || !child.isLeaf()) ? 0 : 1;
 
                 iter.remove();
                 child.parent = null;
                 childList.addAll(i, child.childList);
-                for (StringNaryTree t : child.childList) {
+                for (final StringNaryTree t : child.childList) {
                     t.parent = this;
                 }
                 updateSize(-1, -leavesRemoved);
@@ -129,22 +129,22 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     }
 
     @Override
-    public void removeChildren(Collection<String> childLabels) {
-        for (String childLabel : childLabels) {
+    public void removeChildren(final Collection<String> childLabels) {
+        for (final String childLabel : childLabels) {
             removeChild(childLabel);
         }
     }
 
     @Override
-    public void removeChildren(String[] childLabels) {
-        for (String childLabel : childLabels) {
+    public void removeChildren(final String[] childLabels) {
+        for (final String childLabel : childLabels) {
             removeChild(childLabel);
         }
     }
 
     public boolean removeSubtree(final String childLabel) {
-        for (Iterator<StringNaryTree> i = childList.iterator(); i.hasNext();) {
-            StringNaryTree child = i.next();
+        for (final Iterator<StringNaryTree> i = childList.iterator(); i.hasNext();) {
+            final StringNaryTree child = i.next();
             if (child.label.equals(childLabel)) {
                 final int leavesRemoved = child.leaves - (isLeaf() ? 1 : 0);
                 i.remove();
@@ -156,16 +156,16 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     }
 
     public String[] childArray() {
-        String[] childArray = new String[childList.size()];
+        final String[] childArray = new String[childList.size()];
         int i = 0;
-        for (StringNaryTree child : childList) {
+        for (final StringNaryTree child : childList) {
             childArray[i++] = child.label;
         }
         return childArray;
     }
 
-    public List<NaryTree<String>> children() {
-        return new LinkedList<NaryTree<String>>(childList);
+    public List<StringNaryTree> children() {
+        return new LinkedList<StringNaryTree>(childList);
     }
 
     public boolean isLeaf() {
@@ -193,8 +193,8 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
         return parent;
     }
 
-    public StringNaryTree subtree(String childLabel) {
-        for (StringNaryTree child : childList) {
+    public StringNaryTree subtree(final String childLabel) {
+        for (final StringNaryTree child : childList) {
             if (child.label.equals(childLabel)) {
                 return child;
             }
@@ -211,19 +211,17 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     }
 
     /**
-     * Returns the 'head' descendant of this tree, using a head-percolation rule-set of the standard
-     * Charniak/Magerman form.
+     * Returns the 'head' descendant of this tree, using a head-percolation rule-set of the standard Charniak/Magerman form.
      * 
-     * @param ruleset
-     *            head-percolation ruleset
+     * @param ruleset head-percolation ruleset
      * @return head descendant
      */
-    public StringNaryTree headDescendant(HeadPercolationRuleset ruleset) {
+    public StringNaryTree headDescendant(final HeadPercolationRuleset ruleset) {
         if (isLeaf()) {
             return this;
         }
 
-        String[] childArray = childArray();
+        final String[] childArray = childArray();
 
         // Special-case for unary productions
         if (childArray.length == 1) {
@@ -232,29 +230,27 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
 
         // TODO: This is terribly inefficient - it requires mapping each child (O(n) and iterating
         // through childList (O(n)) for each node. A total of O(n^2)...)
-        int index = ruleset.headChild(label(), childArray);
+        final int index = ruleset.headChild(label(), childArray);
         return childList.get(index).headDescendant(ruleset);
     }
 
     /**
      * TODO: This probably isn't the best way to model head percolation
      * 
-     * @param ruleset
-     *            head-percolation ruleset
+     * @param ruleset head-percolation ruleset
      * @return true if this tree is the head of the tree it is rooted in
      */
-    public boolean isHeadOfTreeRoot(HeadPercolationRuleset ruleset) {
+    public boolean isHeadOfTreeRoot(final HeadPercolationRuleset ruleset) {
         return headLevel(ruleset) == 0;
     }
 
     /**
      * TODO: This probably isn't the best way to model head percolation
      * 
-     * @param ruleset
-     *            head-percolation ruleset
+     * @param ruleset head-percolation ruleset
      * @return the depth in the tree for which this node is the head (possibly its own depth)
      */
-    public int headLevel(HeadPercolationRuleset ruleset) {
+    public int headLevel(final HeadPercolationRuleset ruleset) {
         if (!isLeaf()) {
             return -1;
         }
@@ -273,8 +269,8 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
         return inOrderList(this, new ArrayList<NaryTree<String>>(size)).iterator();
     }
 
-    private List<NaryTree<String>> inOrderList(StringNaryTree tree, List<NaryTree<String>> list) {
-        Iterator<StringNaryTree> i = tree.childList.iterator();
+    private List<NaryTree<String>> inOrderList(final StringNaryTree tree, final List<NaryTree<String>> list) {
+        final Iterator<StringNaryTree> i = tree.childList.iterator();
         if (i.hasNext()) {
             inOrderList(i.next(), list);
         }
@@ -295,14 +291,14 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     }
 
     @Override
-    public Iterator<NaryTree<String>> preOrderIterator() {
+    public Iterator<StringNaryTree> preOrderIterator() {
         // A simple and stupid implementation, but we can tune for performance if needed
-        return preOrderList(this, new ArrayList<NaryTree<String>>(size)).iterator();
+        return preOrderList(this, new ArrayList<StringNaryTree>(size)).iterator();
     }
 
-    private List<NaryTree<String>> preOrderList(final StringNaryTree tree, final List<NaryTree<String>> list) {
+    private List<StringNaryTree> preOrderList(final StringNaryTree tree, final List<StringNaryTree> list) {
         list.add(tree);
-        for (StringNaryTree child : tree.childList) {
+        for (final StringNaryTree child : tree.childList) {
             preOrderList(child, list);
         }
 
@@ -316,13 +312,13 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     }
 
     @Override
-    public Iterator<NaryTree<String>> postOrderIterator() {
+    public Iterator<StringNaryTree> postOrderIterator() {
         // A simple and stupid implementation, but we can tune for performance if needed
-        return postOrderList(this, new ArrayList<NaryTree<String>>(size)).iterator();
+        return postOrderList(this, new ArrayList<StringNaryTree>(size)).iterator();
     }
 
-    private List<NaryTree<String>> postOrderList(final StringNaryTree tree, final List<NaryTree<String>> list) {
-        for (StringNaryTree child : tree.childList) {
+    private List<StringNaryTree> postOrderList(final StringNaryTree tree, final List<StringNaryTree> list) {
+        for (final StringNaryTree child : tree.childList) {
             postOrderList(child, list);
         }
         list.add(tree);
@@ -338,15 +334,15 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
 
     @Override
     public List<String> childLabels() {
-        ArrayList<String> list = new ArrayList<String>(childList.size());
-        for (StringNaryTree child : childList) {
+        final ArrayList<String> list = new ArrayList<String>(childList.size());
+        for (final StringNaryTree child : childList) {
             list.add(child.label);
         }
         return list;
     }
 
-    private List<String> inOrderLabelList(StringNaryTree tree, List<String> list) {
-        Iterator<StringNaryTree> i = tree.childList.iterator();
+    private List<String> inOrderLabelList(final StringNaryTree tree, final List<String> list) {
+        final Iterator<StringNaryTree> i = tree.childList.iterator();
         if (i.hasNext()) {
             inOrderLabelList(i.next(), list);
         }
@@ -364,9 +360,9 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
         return toStringArray(inOrderLabelIterator());
     }
 
-    private List<String> preOrderLabelList(StringNaryTree tree, List<String> list) {
+    private List<String> preOrderLabelList(final StringNaryTree tree, final List<String> list) {
         list.add(tree.label);
-        for (StringNaryTree child : tree.childList) {
+        for (final StringNaryTree child : tree.childList) {
             preOrderLabelList(child, list);
         }
 
@@ -377,8 +373,8 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
         return toStringArray(preOrderLabelIterator());
     }
 
-    private List<String> postOrderLabelList(StringNaryTree tree, List<String> list) {
-        for (StringNaryTree child : tree.childList) {
+    private List<String> postOrderLabelList(final StringNaryTree tree, final List<String> list) {
+        for (final StringNaryTree child : tree.childList) {
             postOrderLabelList(child, list);
         }
         list.add(tree.label);
@@ -390,42 +386,62 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
         return toStringArray(postOrderLabelIterator());
     }
 
-    private String[] toStringArray(Iterator<String> iter) {
-        String[] array = new String[size];
+    private String[] toStringArray(final Iterator<String> iter) {
+        final String[] array = new String[size];
         for (int i = 0; i < size; i++) {
             array[i] = iter.next();
         }
         return array;
     }
 
-    public void setStringLabel(String label) {
+    public void setStringLabel(final String label) {
         this.label = label;
+    }
+
+    public boolean isVisited() {
+        return visited;
+    }
+
+    public void setVisited(final boolean visited) {
+        this.visited = visited;
+    }
+
+    /**
+     * Returns true if this tree contains the specified label
+     * 
+     * @param l
+     * @return true if this tree contains the specified label
+     */
+    public boolean containsLabel(final String l) {
+        for (final Iterator<String> i = inOrderLabelIterator(); i.hasNext();) {
+            if (i.next().equals(l)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Reads in an n-ary tree from a standard parenthesis-bracketed representation
      * 
-     * @param inputStream
-     *            The stream to read from
+     * @param inputStream The stream to read from
      * @return the tree
-     * @throws IOException
-     *             if the read fails
+     * @throws IOException if the read fails
      */
-    public static StringNaryTree read(InputStream inputStream) throws IOException {
+    public static StringNaryTree read(final InputStream inputStream) throws IOException {
         return read(new InputStreamReader(inputStream));
     }
 
     /**
      * Reads in an n-ary tree from a standard parenthesis-bracketed representation
      * 
-     * @param string
-     *            String representation of the tree
+     * @param string String representation of the tree
      * @return the tree
      */
-    public static StringNaryTree read(String string) {
+    public static StringNaryTree read(final String string) {
         try {
             return read(new StringReader(string));
-        } catch (IOException e) {
+        } catch (final IOException e) {
             // A StringReader shouldn't ever throw an IOException
             throw new RuntimeException(e);
         }
@@ -434,13 +450,11 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     /**
      * Reads in an n-ary tree from a standard parenthesis-bracketed representation
      * 
-     * @param reader
-     *            The reader to read from
+     * @param reader The reader to read from
      * @return the tree
-     * @throws IOException
-     *             if the read fails
+     * @throws IOException if the read fails
      */
-    public static StringNaryTree read(Reader reader) throws IOException {
+    public static StringNaryTree read(final Reader reader) throws IOException {
         char c;
 
         // Discard any spaces or end-of-line characters
@@ -458,25 +472,22 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     /**
      * Recursively reads a subtree from a Reader
      * 
-     * @param reader
-     *            source
-     * @param parent
-     *            parent tree (if any)
+     * @param reader source
+     * @param parent parent tree (if any)
      * @return subtree
-     * @throws IOException
-     *             if the read fails
+     * @throws IOException if the read fails
      */
-    private static StringNaryTree readSubtree(Reader reader, StringNaryTree parent) throws IOException {
+    private static StringNaryTree readSubtree(final Reader reader, final StringNaryTree parent) throws IOException {
         try {
             // Recursively read a tree from the reader.
             // TODO: This could probably be simplified and perhaps optimized
-            StringBuilder rootToken = new StringBuilder();
+            final StringBuilder rootToken = new StringBuilder();
 
             // Read the root token
             for (char c = (char) reader.read(); c != ' ' && c != ')'; c = (char) reader.read()) {
                 rootToken.append(c);
             }
-            StringNaryTree tree = new StringNaryTree(rootToken.toString());
+            final StringNaryTree tree = new StringNaryTree(rootToken.toString());
 
             StringBuilder childToken = new StringBuilder();
 
@@ -503,7 +514,7 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
 
             tree.parent = parent;
             return tree;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -511,32 +522,28 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param outputStream
-     *            The {@link OutputStream} to write to
-     * @throws IOException
-     *             if the write fails
+     * @param outputStream The {@link OutputStream} to write to
+     * @throws IOException if the write fails
      */
-    public void write(OutputStream outputStream) throws IOException {
+    public void write(final OutputStream outputStream) throws IOException {
         write(new OutputStreamWriter(outputStream));
     }
 
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param writer
-     *            The {@link Writer} to write to
-     * @throws IOException
-     *             if the write fails
+     * @param writer The {@link Writer} to write to
+     * @throws IOException if the write fails
      */
-    public void write(Writer writer) throws IOException {
+    public void write(final Writer writer) throws IOException {
         writeSubtree(writer, this);
     }
 
-    protected void writeSubtree(Writer writer, StringNaryTree tree) throws IOException {
+    protected void writeSubtree(final Writer writer, final StringNaryTree tree) throws IOException {
         if (tree.size > 1) {
             writer.write('(');
             writer.write(tree.stringLabel());
-            for (Iterator<StringNaryTree> i = tree.childList.iterator(); i.hasNext();) {
+            for (final Iterator<StringNaryTree> i = tree.childList.iterator(); i.hasNext();) {
                 writer.write(' ');
                 writeSubtree(writer, i.next());
             }
@@ -547,12 +554,12 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (!(o instanceof StringNaryTree)) {
             return false;
         }
 
-        StringNaryTree other = (StringNaryTree) o;
+        final StringNaryTree other = (StringNaryTree) o;
 
         if ((!other.label.equals(label)) || (other.childList.size() != childList.size())) {
             return false;
@@ -572,10 +579,10 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     @Override
     public String toString() {
         try {
-            Writer writer = new StringWriter();
+            final Writer writer = new StringWriter();
             write(writer);
             return writer.toString();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             return "Exception in toString(): " + e.getMessage();
         }
     }
@@ -584,7 +591,7 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
 
         protected Iterator<Integer> intIterator;
 
-        public BaseIterator(Iterator<Integer> intIterator) {
+        public BaseIterator(final Iterator<Integer> intIterator) {
             this.intIterator = intIterator;
         }
 
