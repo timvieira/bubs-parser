@@ -1,9 +1,14 @@
 package edu.ohsu.cslu.parser.util;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.ArrayChartCell;
+import edu.ohsu.cslu.parser.Chart;
 import edu.ohsu.cslu.parser.ChartEdge;
 
 public class ParseTree {
@@ -31,7 +36,7 @@ public class ParseTree {
     // for each subtree in the chart, but we also want this class not to be reliant
     // on the parser structure.
     public ParseTree(final ChartEdge edge) {
-        this(edge.p.parentToString());
+        this(edge.prod.parentToString());
         this.chartEdge = edge;
     }
 
@@ -83,6 +88,10 @@ public class ParseTree {
         ParseTree child;
         final Pattern WORD = Pattern.compile("\\s*([^\\s\\(\\)]*)\\s*");
         Matcher match;
+
+        if (isBracketFormat(str) == false) {
+            throw new Exception("ERROR: Expecting tree in bracket format as input, got: " + str);
+        }
 
         final LinkedList<ParseTree> stack = new LinkedList<ParseTree>();
         int index = 0;
@@ -228,7 +237,7 @@ public class ParseTree {
 
         String s = "(" + contents;
         if (printInsideProb == true && chartEdge != null) {
-            s += " " + Double.toString(chartEdge.insideProb);
+            s += " " + Double.toString(chartEdge.inside);
         }
 
         for (final ParseTree child : children) {
@@ -280,5 +289,112 @@ public class ParseTree {
             return true;
         }
         return false;
+    }
+
+    // public boolean hasNodeAtSpan(ParseTree toFind, int start, int end) {
+    // // instead of searching the entire tree, we should be able to find a node
+    // // in O(1) by looking up [start][end] incidies
+    //        
+    // if (indexedBySpan == false) {
+    // indexBySpan();
+    // }
+    //        
+    // if (nodesBySpan[start][end] == null) return false;
+    // for (ParseTree node : nodesBySpan[start][end]) {
+    // if (toFind.contents != node.contents) return false;
+    // if (toFind.children.size() != node.children.size()) return false;
+    // for (int i=0; i<toFind.children.size(); i++) {
+    // if (toFind.children.get(i).contents != node.children.get(i).contents) return false;
+    // }
+    // }
+    //        
+    // return true;
+    // }
+
+    public Chart<ArrayChartCell> convertToChart(final Grammar grammar) throws Exception {
+
+        // create a len+1 by len+1 chart, build ChartEdges from tree nodes and insert
+        // them into this chart so they can be accessed in O(1) by [start][end]
+        assert this.isBinaryTree() == true;
+        assert this.parent == null; // must be root so start/end indicies make sense
+
+        final List<ParseTree> leafNodes = this.getLeafNodes();
+        int start, end, numChildren;
+        final int sentLen = leafNodes.size();
+        boolean newProd;
+
+        final Chart<ArrayChartCell> chart = new Chart<ArrayChartCell>(sentLen, ArrayChartCell.class, grammar);
+        Production prod = null;
+        ChartEdge edge;
+
+        for (final ParseTree node : preOrderTraversal()) {
+            // TODO: could make this O(1) instead of O(n) ...
+            start = leafNodes.indexOf(node.leftMostLeaf());
+            end = leafNodes.indexOf(node.rightMostLeaf()) + 1;
+            numChildren = node.children.size();
+            newProd = false;
+            // System.out.println("convertToChart: node=" + node.contents + " start=" + start + " end=" + end + " numChildren=" + numChildren);
+
+            if (numChildren > 0) {
+                final String A = node.contents;
+                if (numChildren == 2) {
+                    final String B = node.children.get(0).contents;
+                    final String C = node.children.get(1).contents;
+                    prod = grammar.getProduction(A, B, C);
+                    // if (prod == null && grammar.nonTermSet.hasSymbol(A) && grammar.nonTermSet.hasSymbol(B) && grammar.nonTermSet.hasSymbol(C)) {
+                    // newProd = true;
+                    // prod = grammar.new Production(A, B, C, Float.NEGATIVE_INFINITY);
+                    // }
+                    final int midpt = leafNodes.indexOf(node.children.get(0).rightMostLeaf()) + 1;
+                    edge = new ChartEdge(prod, chart.getCell(start, midpt), chart.getCell(midpt, end), Float.NEGATIVE_INFINITY);
+                } else if (numChildren == 1) {
+                    final String B = node.children.get(0).contents;
+                    if (node.isPOS()) {
+                        prod = grammar.getLexProduction(A, B);
+                        // if (prod == null && grammar.nonTermSet.hasSymbol(A) && grammar.nonTermSet.hasSymbol(B)) {
+                        // newProd = true;
+                        // prod = grammar.new Production(A, B, Float.NEGATIVE_INFINITY, true);
+                        // }
+                    } else {
+                        prod = grammar.getProduction(A, B);
+                        // if (prod == null && grammar.nonTermSet.hasSymbol(A) && grammar.lexSet.hasSymbol(B)) {
+                        // newProd = true;
+                        // prod = grammar.new Production(A, B, Float.NEGATIVE_INFINITY, false);
+                        // }
+                    }
+                    edge = new ChartEdge(prod, chart.getCell(start, end), null, Float.NEGATIVE_INFINITY);
+                } else {
+                    throw new Exception("ERROR: Number of node children is " + node.children.size() + ".  Expecting <= 2.");
+                }
+
+                if (prod == null) {
+                    Log.info(0, "WARNING: production does not exist is grammar for node: " + A + " -> " + node.childrenToString());
+                    return null;
+                } else if (newProd == true) {
+                    Log.info(0, "WARNING: Production " + prod.toString() + " not found in grammar.  Adding...");
+                }
+
+                chart.getCell(start, end).addEdge(edge);
+            }
+        }
+
+        return chart;
+    }
+
+    public String childrenToString() {
+        String str = "";
+        for (final ParseTree node : children) {
+            str += node.contents + " ";
+        }
+        return str.trim();
+    }
+
+    public void tokenizeLeaves(final Grammar grammar) throws Exception {
+        for (final ParseTree leaf : getLeafNodes()) {
+            if (grammar.lexSet.hasSymbol(leaf.contents) == false) {
+                leaf.contents = grammar.lexSet.getSymbol(grammar.tokenize(leaf.contents)[0].index);
+            }
+        }
+
     }
 }
