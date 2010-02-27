@@ -2,6 +2,17 @@
  * OpenCL kernels for OpenClSparseMatrixVectorParser
  */
 
+__kernel void fillFloat(__global float* buffer,
+		uint size,
+        float value) {
+
+    uint threadId = get_global_id(0);
+
+    if (threadId < size) {
+    	buffer[threadId] = value;
+    }
+}
+
 __kernel void crossProduct(const __global int* validLeftChildren,
         const __global float* validLeftChildrenProbabilities,
         uint numValidLeftChildren,
@@ -14,14 +25,16 @@ __kernel void crossProduct(const __global int* validLeftChildren,
 
     uint threadId = get_global_id(0);
 
-    // Launch one thread for each combination (numValidLeftChildren * numValidRightChildren)
-    int leftChildIndex = threadId / numValidRightChildren;
-    int rightChildIndex = threadId % numValidRightChildren;
-     
-    float jointProbability = validLeftChildrenProbabilities[leftChildIndex] + validRightChildrenProbabilities[rightChildIndex];
-    int child = ((validLeftChildren[leftChildIndex] << LEFT_CHILD_SHIFT) | (validRightChildren[rightChildIndex] & MASK));
-    crossProductProbabilities[child] = jointProbability;
-    crossProductMidpoints[child] = midpoint;
+	// Launch one thread for each combination (numValidLeftChildren * numValidRightChildren)
+    if (threadId < (numValidLeftChildren * numValidRightChildren)) {
+		int leftChildIndex = threadId / numValidRightChildren;
+		int rightChildIndex = threadId % numValidRightChildren;
+		 
+		float jointProbability = validLeftChildrenProbabilities[leftChildIndex] + validRightChildrenProbabilities[rightChildIndex];
+		int child = ((validLeftChildren[leftChildIndex] << LEFT_CHILD_SHIFT) | (validRightChildren[rightChildIndex] & MASK));
+		crossProductProbabilities[child] = jointProbability;
+		crossProductMidpoints[child] = midpoint;
+    }
 }
 
 /*
@@ -37,13 +50,15 @@ __kernel void crossProductUnion(__global float* crossProductProbabilities0,
 
     uint threadId = get_global_id(0);
 
-	float probability0 = crossProductProbabilities0[threadId];
-	float probability1 = crossProductProbabilities1[threadId];
-	
-	if (probability1 > probability0) {
-		crossProductProbabilities0[threadId] = probability1;
-		crossProductMidpoints0[threadId] = crossProductMidpoints1[threadId];
-	}
+    if (threadId < size) {
+        float probability0 = crossProductProbabilities0[threadId];
+        float probability1 = crossProductProbabilities1[threadId];
+        
+        if (probability1 > probability0) {
+            crossProductProbabilities0[threadId] = probability1;
+            crossProductMidpoints0[threadId] = crossProductMidpoints1[threadId];
+        }
+    }
 }
 
 __kernel void binarySpmvMultiply(const __global int* binaryRuleMatrixRowIndices,
@@ -59,30 +74,32 @@ __kernel void binarySpmvMultiply(const __global int* binaryRuleMatrixRowIndices,
 	uint threadId = get_global_id(0);
 	uint parent = threadId;
 
-	// Production winningProduction = null;
-	float winningProbability = -INFINITY;
-	int winningChildren = 0;
-	short winningMidpoint = 0;
+	if (parent < n) {
+		// Production winningProduction = null;
+		float winningProbability = -INFINITY;
+		int winningChildren = 0;
+		short winningMidpoint = 0;
 
-	// Iterate over possible children of the parent (columns with non-zero entries)
-	for (int i = binaryRuleMatrixRowIndices[parent]; i < binaryRuleMatrixRowIndices[parent + 1]; i++) {
-		int grammarChildren = binaryRuleMatrixColumnIndices[i];
-		float grammarProbability = binaryRuleMatrixProbabilities[i];
+		// Iterate over possible children of the parent (columns with non-zero entries)
+		for (int i = binaryRuleMatrixRowIndices[parent]; i < binaryRuleMatrixRowIndices[parent + 1]; i++) {
+			int grammarChildren = binaryRuleMatrixColumnIndices[i];
+			float grammarProbability = binaryRuleMatrixProbabilities[i];
 
-		float crossProductProbability = crossProductProbabilities[grammarChildren];
-		float jointProbability = grammarProbability + crossProductProbability;
+			float crossProductProbability = crossProductProbabilities[grammarChildren];
+			float jointProbability = grammarProbability + crossProductProbability;
 
-		if (jointProbability > winningProbability) {
-			winningProbability = jointProbability;
-			winningChildren = grammarChildren;
-			winningMidpoint = crossProductMidpoints[grammarChildren];
+			if (jointProbability > winningProbability) {
+				winningProbability = jointProbability;
+				winningChildren = grammarChildren;
+				winningMidpoint = crossProductMidpoints[grammarChildren];
+			}
 		}
-	}
 
-	chartCellProbabilities[parent] = winningProbability;
-	if (winningProbability != -INFINITY) {
-		chartCellChildren[parent] = winningChildren;
-		chartCellMidpoints[parent] = winningMidpoint;
+		chartCellProbabilities[parent] = winningProbability;
+		if (winningProbability != -INFINITY) {
+			chartCellChildren[parent] = winningChildren;
+			chartCellMidpoints[parent] = winningMidpoint;
+		}
 	}
 }
 
@@ -98,38 +115,40 @@ __kernel void unarySpmvMultiply(const __global int* unaryRuleMatrixRowIndices,
     uint threadId = get_global_id(0);
     uint parent = threadId;
 
-	float winningProbability = chartCellProbabilities[parent];
-	int winningChildren = INT_MIN;
-	short winningMidpoint = 0;
+    if (parent < n) {
+        float winningProbability = chartCellProbabilities[parent];
+        int winningChildren = INT_MIN;
+        short winningMidpoint = 0;
 
-	// Iterate over possible children of the parent (columns with non-zero entries)
-	for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
-		int grammarChildren = unaryRuleMatrixColumnIndices[i];
-		int child = (grammarChildren >> LEFT_CHILD_SHIFT);
-		float grammarProbability = unaryRuleMatrixProbabilities[i];
+        // Iterate over possible children of the parent (columns with non-zero entries)
+        for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
+            int grammarChildren = unaryRuleMatrixColumnIndices[i];
+            int child = (grammarChildren >> LEFT_CHILD_SHIFT);
+            float grammarProbability = unaryRuleMatrixProbabilities[i];
 
-		float jointProbability = grammarProbability + chartCellProbabilities[child];
+            float jointProbability = grammarProbability + chartCellProbabilities[child];
 
-		if (jointProbability > winningProbability) {
-			winningProbability = jointProbability;
-			winningChildren = grammarChildren;
-			winningMidpoint = chartCellEnd;
-		}
-	}
+            if (jointProbability > winningProbability) {
+                winningProbability = jointProbability;
+                winningChildren = grammarChildren;
+                winningMidpoint = chartCellEnd;
+            }
+        }
 
-	if (winningChildren != INT_MIN) {
-		chartCellChildren[parent] = winningChildren;
-		chartCellProbabilities[parent] = winningProbability;
-		chartCellMidpoints[parent] = winningMidpoint;
+        if (winningChildren != INT_MIN) {
+            chartCellChildren[parent] = winningChildren;
+            chartCellProbabilities[parent] = winningProbability;
+            chartCellMidpoints[parent] = winningMidpoint;
 
 // TODO: Count valid left and right children (in shared memory?)
-//        if (currentProbability == -INFINITY) {
-//            if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
-//                chartCell.numValidLeftChildren++;
+//            if (currentProbability == -INFINITY) {
+//                if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
+//                    chartCell.numValidLeftChildren++;
+//                }
+//                if (csrSparseMatrixGrammar.isValidRightChild(parent)) {
+//                    chartCell.numValidRightChildren++;
+//                }
 //            }
-//            if (csrSparseMatrixGrammar.isValidRightChild(parent)) {
-//                chartCell.numValidRightChildren++;
-//            }
-//        }
+        }
     }
 }
