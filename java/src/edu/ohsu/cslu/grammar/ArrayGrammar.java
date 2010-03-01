@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.Reader;
 
 import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
@@ -16,7 +15,7 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class ArrayGrammar extends BaseGrammar {
+public class ArrayGrammar extends Grammar {
 
     /** Unary productions, stored in the order read in from the grammar file */
     public Production[] unaryProds;
@@ -27,7 +26,7 @@ public class ArrayGrammar extends BaseGrammar {
     private PackedBitVector possibleLeftChild;
     private PackedBitVector possibleRightChild;
 
-    public ArrayGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    public ArrayGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
 
         unaryProds = unaryProductions.toArray(new Production[unaryProductions.size()]);
@@ -36,7 +35,7 @@ public class ArrayGrammar extends BaseGrammar {
         markLeftRightChildren();
     }
 
-    public ArrayGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws IOException {
+    public ArrayGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
@@ -49,13 +48,5 @@ public class ArrayGrammar extends BaseGrammar {
             possibleLeftChild.set(p.leftChild, true);
             possibleRightChild.set(p.rightChild, true);
         }
-    }
-
-    public final boolean isLeftChild(final int nonTerm) {
-        return possibleLeftChild.getBoolean(nonTerm);
-    }
-
-    public final boolean isRightChild(final int nonTerm) {
-        return possibleRightChild.getBoolean(nonTerm);
     }
 }
