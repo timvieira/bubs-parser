@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -16,11 +14,13 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
-import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
+import edu.ohsu.cslu.parser.cellselector.CellSelector;
+import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a trivial sentence using a very simple grammar and the first 10 sentences of WSJ
@@ -53,16 +53,16 @@ public abstract class ExhaustiveChartParserTestCase {
     protected static ArrayList<String[]> sentences = new ArrayList<String[]>();
 
     /** The parser under test */
-    protected MaximumLikelihoodParser parser;
+    protected Parser parser;
 
     /**
      * Creates the appropriate parser for each test class.
      * 
      * @param grammar The grammar to use when parsing
-     * @param chartTraversalType The chart traversal order
+     * @param cellSelector Selector controlling chart traversal
      * @return Parser instance
      */
-    protected abstract MaximumLikelihoodParser createParser(Grammar grammar, ChartTraversalType chartTraversalType);
+    protected abstract Parser createParser(Grammar grammar, CellSelector cellSelector);
 
     /**
      * @return the grammar class appropriate for the parser under test
@@ -113,7 +113,7 @@ public abstract class ExhaustiveChartParserTestCase {
         }
 
         // TODO Parameterize ChartTraversalType (this will require a custom Runner implementation)
-        parser = createParser(f2_21_grammar, ChartTraversalType.LeftRightBottomTopTraversal);
+        parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop));
     }
 
     public static Grammar createSimpleGrammar2(final Class<? extends Grammar> grammarClass) throws Exception {
@@ -155,9 +155,9 @@ public abstract class ExhaustiveChartParserTestCase {
     public void testSimpleGrammar1() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        final MaximumLikelihoodParser p = createParser(simpleGrammar1, ChartTraversalType.LeftRightBottomTopTraversal);
+        final Parser p = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
-        final ParseTree bestParseTree = p.findMLParse(sentence);
+        final ParseTree bestParseTree = p.findBestParse(sentence);
         assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree.toString());
     }
 
@@ -170,9 +170,9 @@ public abstract class ExhaustiveChartParserTestCase {
     public void testSimpleGrammar2() throws Exception {
         final String sentence = "The fish market stands last";
 
-        final MaximumLikelihoodParser p = createParser(simpleGrammar2, ChartTraversalType.LeftRightBottomTopTraversal);
+        final Parser p = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
-        final ParseTree bestParseTree = p.findMLParse(sentence);
+        final ParseTree bestParseTree = p.findBestParse(sentence);
         assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree.toString());
     }
 
@@ -243,7 +243,7 @@ public abstract class ExhaustiveChartParserTestCase {
     }
 
     protected void parseTreebankSentence(final int index) throws Exception {
-        final ParseTree bestParseTree = parser.findMLParse(sentences.get(index)[0]);
+        final ParseTree bestParseTree = parser.findBestParse(sentences.get(index)[0]);
         assertEquals(sentences.get(index)[1], bestParseTree.toString());
 
         if (parser instanceof JsaSparseMatrixVectorParser) {

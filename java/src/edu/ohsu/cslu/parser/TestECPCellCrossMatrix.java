@@ -2,10 +2,9 @@ package edu.ohsu.cslu.parser;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.GrammarByChildMatrix;
-import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
+import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -19,13 +18,13 @@ import edu.ohsu.cslu.tests.PerformanceTest;
 public class TestECPCellCrossMatrix extends ExhaustiveChartParserTestCase {
 
     @Override
-    protected Class<? extends ArrayGrammar> grammarClass() {
-        return GrammarByChildMatrix.class;
+    protected Class<? extends Grammar> grammarClass() {
+        return ChildMatrixGrammar.class;
     }
 
     @Override
-    protected MaximumLikelihoodParser createParser(final Grammar grammar, final ChartTraversalType chartTraversalType) {
-        return new ECPCellCrossMatrix((GrammarByChildMatrix) grammar, chartTraversalType);
+    protected Parser createParser(final Grammar grammar, final CellSelector cellSelector) {
+        return new ECPCellCrossMatrix((ChildMatrixGrammar) grammar, cellSelector);
     }
 
     @Override

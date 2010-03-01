@@ -2,10 +2,9 @@ package edu.ohsu.cslu.parser;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.BaseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.traversal.ChartTraversal.ChartTraversalType;
+import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -19,13 +18,13 @@ import edu.ohsu.cslu.tests.PerformanceTest;
 public class TestCsrSparseMatrixVectorParser extends SparseMatrixVectorParserTestCase {
 
     @Override
-    protected Class<? extends BaseGrammar> grammarClass() {
+    protected Class<? extends Grammar> grammarClass() {
         return CsrSparseMatrixGrammar.class;
     }
 
     @Override
-    protected MaximumLikelihoodParser createParser(final Grammar grammar, final ChartTraversalType chartTraversalType) {
-        return new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, chartTraversalType);
+    protected Parser createParser(final Grammar grammar, final CellSelector cellSelector) {
+        return new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, cellSelector);
     }
 
     @Override
