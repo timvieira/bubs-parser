@@ -20,22 +20,20 @@ public class SymbolSet<E> implements Iterable<E> {
 
     // get integer index of label string. If it does not exist then
     // add it to the internal structures
-    public int getIndex(final E label) throws Exception {
+    public int getIndex(final E label) {
         int index = symbolHash.getInt(label);
         if (index != -1) {
             return index;
         }
 
-        if (finalized == false) {
-            index = symbolVector.size();
-            symbolHash.put(label, index);
-            symbolVector.add(label);
-
-        } else {
-            throw new Exception("ERROR: SymbolSet is finalized but trying to add symbol: " + label);
-            // Log.info(0, "ERROR: SymbolSet is finalized but trying to add symbol: " + label);
-            // System.exit(1);
+        if (finalized) {
+            throw new RuntimeException("ERROR: SymbolSet is finalized but trying to add symbol: " + label);
         }
+
+        index = symbolVector.size();
+        symbolHash.put(label, index);
+        symbolVector.add(label);
+
         return index;
     }
 
