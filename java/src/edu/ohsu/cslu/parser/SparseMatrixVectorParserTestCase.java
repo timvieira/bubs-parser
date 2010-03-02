@@ -28,49 +28,51 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         p.initParser(4);
         final Chart<DenseVectorChartCell> chart = (Chart<DenseVectorChartCell>) p.chart;
 
-        // Cell 0,1 contains 1 (-2)
-        // Cell 1,4 contains 1 (-3), 2 (-4)
-        // So: 0,1 X 1,4 cross-product = 1/1 (-5,1), 1/2 (-6,1)
+        final int nn = g.mapNonterminal("NN");
+        final int np = g.mapNonterminal("NP");
+        // Cell 0,1 contains NN (-2)
+        // Cell 1,4 contains NN (-3), NP (-4)
+        // So: 0,1 X 1,4 cross-product = NN/NN (-5,1), NN/NP (-6,1)
         final SparseMatrixVectorParser.DenseVectorChartCell cell_0_1 = chart.getCell(0, 1);
-        cell_0_1.addEdge(g.new Production(1, 1, -2, false), chart.getCell(0, 1), null, -2f);
+        cell_0_1.addEdge(g.new Production("NN", "NN", -2, false), chart.getCell(0, 1), null, -2f);
         cell_0_1.finalizeCell();
 
         final SparseMatrixVectorParser.DenseVectorChartCell cell_1_4 = chart.getCell(1, 4);
-        cell_1_4.addEdge(g.new Production(1, 1, -3f, false), chart.getCell(1, 3), null, -3f);
-        cell_1_4.addEdge(g.new Production(2, 2, -4f, false), chart.getCell(1, 3), null, -4f);
+        cell_1_4.addEdge(g.new Production("NN", "NN", -3f, false), chart.getCell(1, 3), null, -3f);
+        cell_1_4.addEdge(g.new Production("NP", "NP", -4f, false), chart.getCell(1, 3), null, -4f);
         cell_1_4.finalizeCell();
 
-        // Cell 0,2 contains 1 (-2), 2 (-3)
-        // Cell 2,4 contains 1 (-4), 2 (-4)
-        // So: 0,2 X 2,4 cross-product = 1/1 (-6,2), 1/2 (-6,2), 2/1 (-7,2), 2/2 (-7,2)
+        // Cell 0,2 contains NN (-2), NP (-3)
+        // Cell 2,4 contains NN (-4), NP (-4)
+        // So: 0,2 X 2,4 cross-product = NN/NN (-6,2), NN/NP (-6,2), NP/NN (-7,2), NP/NP (-7,2)
         final SparseMatrixVectorParser.DenseVectorChartCell cell_0_2 = chart.getCell(0, 2);
-        cell_0_2.addEdge(g.new Production(1, 1, -2f, false), chart.getCell(0, 1), null, -2f);
-        cell_0_2.addEdge(g.new Production(2, 2, -3f, false), chart.getCell(0, 1), null, -3f);
+        cell_0_2.addEdge(g.new Production("NN", "NN", -2f, false), chart.getCell(0, 1), null, -2f);
+        cell_0_2.addEdge(g.new Production("NP", "NP", -3f, false), chart.getCell(0, 1), null, -3f);
         cell_0_2.finalizeCell();
 
         final SparseMatrixVectorParser.DenseVectorChartCell cell_2_4 = chart.getCell(2, 4);
-        cell_2_4.addEdge(g.new Production(1, 1, -4f, false), chart.getCell(2, 3), null, -4f);
-        cell_2_4.addEdge(g.new Production(2, 2, -4f, false), chart.getCell(2, 3), null, -4f);
+        cell_2_4.addEdge(g.new Production("NN", "NN", -4f, false), chart.getCell(2, 3), null, -4f);
+        cell_2_4.addEdge(g.new Production("NP", "NP", -4f, false), chart.getCell(2, 3), null, -4f);
         cell_2_4.finalizeCell();
 
-        // Cell 0,3 contains 2 (-2)
-        // Cell 3,4 contains 2 (-2)
-        // So: 0,3 X 3,4 cross-product = 2/2 (-4,3)
+        // Cell 0,3 contains NP (-2)
+        // Cell 3,4 contains NP (-2)
+        // So: 0,3 X 3,4 cross-product = NP/NP (-4,3)
         final SparseMatrixVectorParser.DenseVectorChartCell cell_0_3 = chart.getCell(0, 3);
-        cell_0_3.addEdge(g.new Production(2, 2, -2, false), chart.getCell(0, 2), null, -2f);
+        cell_0_3.addEdge(g.new Production("NP", "NP", -2, false), chart.getCell(0, 2), null, -2f);
         cell_0_3.finalizeCell();
 
         final SparseMatrixVectorParser.DenseVectorChartCell cell_3_4 = chart.getCell(3, 4);
-        cell_3_4.addEdge(g.new Production(2, 2, -2f, false), chart.getCell(3, 4), null, -2f);
+        cell_3_4.addEdge(g.new Production("NP", "NP", -2f, false), chart.getCell(3, 4), null, -2f);
         cell_3_4.finalizeCell();
 
-        // So: 0,1 X 1,4 cross-product = 1/1 (-5,1), 1/2 (-6,1)
-        // So: 0,2 X 2,4 cross-product = 1/1 (-6,2), 1/2 (-6,2), 2/1 (-7,2), 2/2 (-7,2)
-        // So: 0,3 X 3,4 cross-product = 2/2 (-4,3)
+        // So: 0,1 X 1,4 cross-product = NN/NN (-5,1), NN/2 (-6,1)
+        // So: 0,2 X 2,4 cross-product = NN/NN (-6,2), NN/2 (-6,2), NP/NN (-7,2), NP/NP (-7,2)
+        // So: 0,3 X 3,4 cross-product = NP/NP (-4,3)
 
-        // Cross-product union should be 1/1 (-5,1), 1/2 (-6,1), 2/1 (-7,2), 2/2 (-4,3)
+        // Cross-product union should be NN/NN (-5,1), NN/NP (-6,1), NP/NN (-7,2), NP/NP (-4,3)
         final SparseMatrixVectorParser.CrossProductVector crossProductVector = p.crossProductUnion(0, 4);
-        final int[] expectedChildren = new int[] { pack(g, 1, 1), pack(g, 1, 2), pack(g, 2, 1), pack(g, 2, 2) };
+        final int[] expectedChildren = new int[] { pack(g, nn, nn), pack(g, nn, np), pack(g, np, nn), pack(g, np, np) };
         final float[] expectedProbabilities = new float[] { -5f, -6f, -7f, -4f };
         final int[] expectedMidpoints = new int[] { 1, 1, 2, 3 };
 
@@ -138,9 +140,10 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         p.initParser(4);
 
         final DenseVectorChartCell topCell = (DenseVectorChartCell) p.chart.getCell(0, 4);
-        topCell.children[2] = 17;
-        topCell.midpoints[2] = 3;
-        topCell.probabilities[2] = -3.101f;
+        final int parent = g.mapNonterminal("NP");
+        topCell.children[parent] = g.pack(g.mapNonterminal("NP"), (short) g.mapNonterminal("NN"));
+        topCell.midpoints[parent] = 3;
+        topCell.probabilities[parent] = -3.101f;
 
         p.unarySpmvMultiply(topCell);
         assertEquals(2, topCell.getNumEdgeEntries());
