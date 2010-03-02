@@ -17,8 +17,9 @@ public class Grammar {
     protected Collection<Production> binaryProductions;
     protected Collection<Production> unaryProductions;
     public int startSymbol = -1;
-    public static int nullSymbol = -1;
-    public static String nullSymbolStr = "<null>";
+    public int nullSymbol = -1;
+
+    public final static String nullSymbolStr = "<null>";
     public static Production nullProduction;
 
     // private LinkedList<LexicalProduction>[] lexicalProds = new LinkedList<UnaryProduction>[5];
