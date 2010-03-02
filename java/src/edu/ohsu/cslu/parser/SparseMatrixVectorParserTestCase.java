@@ -190,38 +190,38 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         // Row of span 2
         final SparseMatrixVectorParser.DenseVectorChartCell cell_0_2 = chart.getCell(0, 2);
         cell_0_2.addEdge(g.new Production("NP", "DT", "NN", -1.38629f), chart.getCell(0, 1), chart.getCell(1, 2), -1.38629f);
-        cell_0_2.addEdge(g.new Production("VP-VB", "NP", -1.38629f, false), chart.getCell(0, 2), null, -1.38629f);
+        cell_0_2.addEdge(g.new Production("VP|VB", "NP", -1.38629f, false), chart.getCell(0, 2), null, -1.38629f);
 
         final SparseMatrixVectorParser.DenseVectorChartCell cell_1_3 = chart.getCell(1, 3);
-        cell_1_3.addEdge(g.new Production("NP-NN", "NN", "NN", -.40547f), chart.getCell(1, 2), chart.getCell(2, 3), -.40547f);
+        cell_1_3.addEdge(g.new Production("NP|NN", "NN", "NN", -.40547f), chart.getCell(1, 2), chart.getCell(2, 3), -.40547f);
         cell_1_3.addEdge(g.new Production("NP", "NN", "NN", -2.19722f), chart.getCell(1, 2), chart.getCell(2, 3), -2.19722f);
-        cell_1_3.addEdge(g.new Production("VP-VB", "NP", -2.19722f, false), chart.getCell(1, 3), null, -2.19722f);
+        cell_1_3.addEdge(g.new Production("VP|VB", "NP", -2.19722f, false), chart.getCell(1, 3), null, -2.19722f);
 
         final SparseMatrixVectorParser.DenseVectorChartCell cell_2_4 = chart.getCell(2, 4);
-        cell_2_4.addEdge(g.new Production("NP-NN", "NN", "NN", -1.09861f), chart.getCell(2, 3), chart.getCell(3, 4), -1.09861f);
+        cell_2_4.addEdge(g.new Production("NP|NN", "NN", "NN", -1.09861f), chart.getCell(2, 3), chart.getCell(3, 4), -1.09861f);
         cell_2_4.addEdge(g.new Production("NP", "NN", "NN", -2.89037f), chart.getCell(2, 3), chart.getCell(3, 4), -2.89037f);
-        cell_2_4.addEdge(g.new Production("VP-VB", "NP", -2.89037f, false), chart.getCell(2, 4), null, -2.89037f);
+        cell_2_4.addEdge(g.new Production("VP|VB", "NP", -2.89037f, false), chart.getCell(2, 4), null, -2.89037f);
 
         final SparseMatrixVectorParser.DenseVectorChartCell cell_3_5 = chart.getCell(3, 5);
         cell_3_5.addEdge(g.new Production("VP", "VB", "RB", -1.79176f), chart.getCell(3, 4), chart.getCell(4, 5), -1.79176f);
         cell_3_5.addEdge(g.new Production("NP", "NN", "RB", -2.89037f), chart.getCell(3, 4), chart.getCell(4, 5), -2.89037f);
-        cell_3_5.addEdge(g.new Production("VP-VB", "NP", -2.89037f, false), chart.getCell(3, 5), null, -2.89037f);
+        cell_3_5.addEdge(g.new Production("VP|VB", "NP", -2.89037f, false), chart.getCell(3, 5), null, -2.89037f);
 
         // Row of span 3
         final SparseMatrixVectorParser.DenseVectorChartCell cell_0_3 = chart.getCell(0, 3);
         cell_0_3.addEdge(g.new Production("NP", "DT", "NP", -3.58352f), chart.getCell(0, 1), chart.getCell(1, 3), -3.58352f);
         cell_0_3.addEdge(g.new Production("S", "NP", "VP", -3.87120f), chart.getCell(0, 2), chart.getCell(2, 3), -3.87120f);
-        cell_0_3.addEdge(g.new Production("VP-VB", "NP", -3.58352f, false), chart.getCell(0, 3), null, -3.58352f);
+        cell_0_3.addEdge(g.new Production("VP|VB", "NP", -3.58352f, false), chart.getCell(0, 3), null, -3.58352f);
         cell_0_3.addEdge(g.new Production("TOP", "S", -3.87120f, false), chart.getCell(0, 3), null, -3.87120f);
 
         final SparseMatrixVectorParser.DenseVectorChartCell cell_1_4 = chart.getCell(1, 4);
-        cell_1_4.addEdge(g.new Production("NP", "NN", "NP-NN", -2.89037f), chart.getCell(1, 2), chart.getCell(2, 4), -2.89037f);
+        cell_1_4.addEdge(g.new Production("NP", "NN", "NP|NN", -2.89037f), chart.getCell(1, 2), chart.getCell(2, 4), -2.89037f);
         cell_1_4.addEdge(g.new Production("S", "NP", "VP", -4.27667f), chart.getCell(1, 3), chart.getCell(3, 4), -4.27667f);
-        cell_1_4.addEdge(g.new Production("VP-VB", "NP", -2.89037f, false), chart.getCell(1, 4), null, -2.89037f);
+        cell_1_4.addEdge(g.new Production("VP|VB", "NP", -2.89037f, false), chart.getCell(1, 4), null, -2.89037f);
         cell_1_4.addEdge(g.new Production("TOP", "S", -4.27667f, false), chart.getCell(1, 4), null, -4.27667f);
 
         final SparseMatrixVectorParser.DenseVectorChartCell cell_2_5 = chart.getCell(2, 5);
-        cell_2_5.addEdge(g.new Production("VP", "VB", "VP-VB", -5.37528f), chart.getCell(2, 3), chart.getCell(3, 5), -5.37528f);
+        cell_2_5.addEdge(g.new Production("VP", "VB", "VP|VB", -5.37528f), chart.getCell(2, 3), chart.getCell(3, 5), -5.37528f);
         cell_2_5.addEdge(g.new Production("S", "NP", "VP", -5.37528f), chart.getCell(2, 4), chart.getCell(4, 5), -5.37528f);
         cell_2_5.addEdge(g.new Production("TOP", "S", -5.37528f, false), chart.getCell(2, 5), null, -5.37528f);
 
@@ -229,7 +229,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final SparseMatrixVectorParser.DenseVectorChartCell cell_0_4 = chart.getCell(0, 4);
         cell_0_4.addEdge(g.new Production("NP", "DT", "NP", -4.27667f), chart.getCell(0, 1), chart.getCell(1, 4), -4.27667f);
         cell_0_4.addEdge(g.new Production("S", "NP", "VP", -5.66296f), chart.getCell(0, 3), chart.getCell(3, 4), -5.66296f);
-        cell_0_4.addEdge(g.new Production("VP-VB", "NP", -4.27667f, false), chart.getCell(0, 4), null, -4.27667f);
+        cell_0_4.addEdge(g.new Production("VP|VB", "NP", -4.27667f, false), chart.getCell(0, 4), null, -4.27667f);
         cell_0_4.addEdge(g.new Production("TOP", "S", -5.66296f, false), chart.getCell(0, 4), null, -5.66296f);
 
         final SparseMatrixVectorParser.DenseVectorChartCell cell_1_5 = chart.getCell(1, 5);
@@ -253,18 +253,18 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         assertEquals(8, crossProductVector.size());
 
         // Midpoint 1
-        assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP-VB"))), .001f);
-        assertEquals(1, crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP-VB"))));
+        assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))), .001f);
+        assertEquals(1, crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))));
 
         assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))), .001f);
         assertEquals(1, crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))));
 
         // Midpoint 2
-        assertEquals(-2.485f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP-NN"))), .001f);
-        assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP-NN"))));
+        assertEquals(-2.485f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))), .001f);
+        assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))));
 
-        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP-VB"))), .001f);
-        assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP-VB"))));
+        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))), .001f);
+        assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
 
         assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))), .001f);
         assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))));
@@ -287,8 +287,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         assertEquals(-5.37528f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))));
 
-        assertEquals(-6.474f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP-VB"))), .001f);
-        assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP-VB"))));
+        assertEquals(-6.474f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))), .001f);
+        assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
 
         assertEquals(-6.474f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))));
@@ -325,8 +325,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))] = -5.37528f;
         midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))] = 3;
 
-        probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP-VB"))] = -6.474f;
-        midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP-VB"))] = 3;
+        probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))] = -6.474f;
+        midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))] = 3;
 
         probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))] = -6.474f;
         midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))] = 3;
@@ -354,18 +354,18 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         // Construct cross-product union for cell 0,4
 
         // Midpoint 1
-        probabilities[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP-VB"))] = -2.890f;
-        midpoints[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP-VB"))] = 1;
+        probabilities[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))] = -2.890f;
+        midpoints[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))] = 1;
 
         probabilities[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))] = -2.890f;
         midpoints[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))] = 1;
 
         // Midpoint 2
-        probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP-NN"))] = -2.485f;
-        midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP-NN"))] = 2;
+        probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))] = -2.485f;
+        midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))] = 2;
 
-        probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP-VB"))] = -4.277f;
-        midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP-VB"))] = 2;
+        probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))] = -4.277f;
+        midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))] = 2;
 
         probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))] = -4.277f;
         midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))] = 2;
@@ -433,7 +433,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         p.unarySpmvMultiply(cell);
 
-        // We expect two entries to have been added for 'TOP -> S' and 'VP-VB -> NP'
+        // We expect two entries to have been added for 'TOP -> S' and 'VP|VB -> NP'
         assertEquals(4, cell.getNumEdgeEntries());
 
         top = cell.getBestEdge(g.mapNonterminal("TOP"));
@@ -441,7 +441,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         assertEquals(cell, top.leftCell);
         assertEquals(null, top.rightCell);
 
-        final ChartEdge vpVb = cell.getBestEdge(g.mapNonterminal("VP-VB"));
+        final ChartEdge vpVb = cell.getBestEdge(g.mapNonterminal("VP|VB"));
         assertEquals(-4.27667f, vpVb.inside, .01f);
         assertEquals(cell, vpVb.leftCell);
         assertEquals(null, vpVb.rightCell);

@@ -1,13 +1,12 @@
 package edu.ohsu.cslu.grammar;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.Reader;
 import java.io.StringReader;
 
 import org.junit.Test;
 
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import static org.junit.Assert.assertEquals;
 
 public abstract class GrammarTestCase {
 
@@ -36,6 +35,8 @@ public abstract class GrammarTestCase {
         grammarSb.append("NP => NP NN -1.203972\n");
         grammarSb.append("NP => NN NP -2.302585\n");
         grammarSb.append("NP => NP NP -2.302585\n");
+        // Add a fake factored category just to keep Grammar happy
+        grammarSb.append("NP => NP NP|NN -Infinity\n");
 
         return createGrammar(grammarClass, new StringReader(grammarSb.toString()), new StringReader(lexiconSb.toString()));
     }
