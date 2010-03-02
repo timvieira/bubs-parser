@@ -23,10 +23,8 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a trivial sentence using a very simple grammar and the first 10 sentences of WSJ
- * section 24 using a reasonable PCFG. Profiles sentences 11-20 to aid in performance tuning and prevent performance regressions.
- * 
- * TODO More documentation
+ * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial sentences using very simple grammars and the first 10 sentences of
+ * WSJ section 24 using a slightly more reasonable PCFG. Profiles sentences 11-20 to aid in performance tuning and prevent performance regressions.
  * 
  * @author Aaron Dunlop
  * @since Dec 23, 2009
@@ -135,13 +133,13 @@ public abstract class ExhaustiveChartParserTestCase {
         grammarSb.append("NP => DT NP -1.386294361\n");
         grammarSb.append("NP => DT NN -1.386294361\n");
         grammarSb.append("NP => NN NN -1.791759469\n");
-        grammarSb.append("NP => NN NP-NN -1.791759469\n");
+        grammarSb.append("NP => NN NP|NN -1.791759469\n");
         grammarSb.append("NP => NN RB -1.791759469\n");
-        grammarSb.append("NP-NN => NN NN 0\n");
+        grammarSb.append("NP|NN => NN NN 0\n");
         grammarSb.append("VP => VB RB -0.693147181\n");
-        grammarSb.append("VP => VB VP-VB -1.386294361\n");
+        grammarSb.append("VP => VB VP|VB -1.386294361\n");
         grammarSb.append("VP => VB -1.386294361\n");
-        grammarSb.append("VP-VB => NP 0\n");
+        grammarSb.append("VP|VB => NP 0\n");
 
         return GrammarTestCase.createGrammar(grammarClass, new StringReader(grammarSb.toString()), new StringReader(lexiconSb.toString()));
     }

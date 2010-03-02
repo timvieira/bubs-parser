@@ -18,12 +18,12 @@ import static org.junit.Assert.assertEquals;
  */
 public abstract class ChartCellTestCase<C extends ChartCell, G extends Grammar> {
 
-    private ChartCell createChartCell(final int start, final int end, final G grammar) throws Exception {
+    private ChartCell createChartCell(final int start, final int end, final Chart<C> chart) throws Exception {
 
         @SuppressWarnings("unchecked")
         final Class<C> c = (Class<C>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
-        return c.getConstructor(new Class[] { int.class, int.class, grammar.getClass() }).newInstance(new Object[] { start, end, grammar });
+        return c.getConstructor(new Class[] { int.class, int.class, chart.getClass() }).newInstance(new Object[] { start, end, chart });
     }
 
     @SuppressWarnings("unchecked")
@@ -32,17 +32,17 @@ public abstract class ChartCellTestCase<C extends ChartCell, G extends Grammar> 
     }
 
     /**
-     * Tests the {@link BaseChartCell#addEdge(ChartEdge)} and {@link BaseChartCell#addEdge(edu.ohsu.cslu.grammar.BaseGrammar.Production, float, BaseChartCell, BaseChartCell)}
-     * methods.
+     * Tests the {@link ChartCell#addEdge(ChartEdge)} and {@link ChartCell#addEdge(edu.ohsu.cslu.grammar.Grammar.Production, ChartCell, ChartCell, float)} methods.
      * 
      * @throws Exception if something bad happens
      */
     @Test
     public void testAddEdge() throws Exception {
         final G simpleGrammar = (G) GrammarTestCase.createSimpleGrammar(grammarClass());
-        final ChartCell parent = createChartCell(0, 1, simpleGrammar);
-        final ChartCell leftChild = createChartCell(0, 0, simpleGrammar);
-        final ChartCell rightChild = createChartCell(1, 1, simpleGrammar);
+        final Chart<ArrayChartCell> chart = new Chart<ArrayChartCell>(2, ArrayChartCell.class, simpleGrammar);
+        final ChartCell parent = chart.getCell(0, 2);
+        final ChartCell leftChild = chart.getCell(0, 1);
+        final ChartCell rightChild = chart.getCell(1, 2);
 
         parent.addEdge(new ChartEdge(simpleGrammar.new Production("NP", "NN", "NN", -0.5f), leftChild, rightChild, -0.5f));
         parent.addEdge(simpleGrammar.new Production("NN", "NN", "NN", -0.6f), leftChild, rightChild, -0.6f);
@@ -65,9 +65,10 @@ public abstract class ChartCellTestCase<C extends ChartCell, G extends Grammar> 
     @Test
     public void testGetBestEdge() throws Exception {
         final G simpleGrammar = (G) GrammarTestCase.createSimpleGrammar(grammarClass());
-        final ChartCell parent = createChartCell(0, 1, simpleGrammar);
-        final ChartCell leftChild = createChartCell(0, 0, simpleGrammar);
-        final ChartCell rightChild = createChartCell(1, 1, simpleGrammar);
+        final Chart<ArrayChartCell> chart = new Chart<ArrayChartCell>(2, ArrayChartCell.class, simpleGrammar);
+        final ChartCell parent = chart.getCell(0, 2);
+        final ChartCell leftChild = chart.getCell(0, 1);
+        final ChartCell rightChild = chart.getCell(1, 2);
 
         // Add one edge to the parent cell and replace it with one of higher probability
         parent.addEdge(new ChartEdge(simpleGrammar.new Production("NP", "NN", "NP", -1.5f), leftChild, rightChild, -1.5f));

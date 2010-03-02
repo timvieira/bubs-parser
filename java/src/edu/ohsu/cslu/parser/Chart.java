@@ -5,7 +5,7 @@ import java.lang.reflect.Constructor;
 
 import edu.ohsu.cslu.grammar.Grammar;
 
-public class Chart<T extends ChartCell> {
+public final class Chart<T extends ChartCell> {
 
     private T chart[][];
     private int size;
@@ -54,7 +54,7 @@ public class Chart<T extends ChartCell> {
     // }
     // }
 
-    public T getCell(final int start, final int end) {
+    public final T getCell(final int start, final int end) {
         return chart[start][end];
     }
 
