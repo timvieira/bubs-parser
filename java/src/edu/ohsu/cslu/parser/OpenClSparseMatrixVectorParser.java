@@ -1,5 +1,10 @@
 package edu.ohsu.cslu.parser;
 
+import static com.nativelibs4java.opencl.JavaCL.createBestContext;
+import static com.nativelibs4java.util.NIOUtils.directFloats;
+import static com.nativelibs4java.util.NIOUtils.directInts;
+import static com.nativelibs4java.util.NIOUtils.directShorts;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -19,10 +24,6 @@ import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import static com.nativelibs4java.opencl.JavaCL.createBestContext;
-import static com.nativelibs4java.util.NIOUtils.directFloats;
-import static com.nativelibs4java.util.NIOUtils.directInts;
-import static com.nativelibs4java.util.NIOUtils.directShorts;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication using
@@ -79,7 +80,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
         chart = new Chart<OpenClChartCell>(sentLength, OpenClChartCell.class, csrSparseMatrixGrammar);
 
         totalSpMVTime = 0;
-        totalCrossProductTime = 0;
+        totalCartesianProductTime = 0;
 
         // TODO Move this to constructor after debugging
 
@@ -134,8 +135,6 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
         final short end = (short) cell.end();
 
         final long t0 = System.currentTimeMillis();
-        long t1 = t0;
-        long crossProductTime = 0;
 
         long t2;
         long binarySpmvTime = 0;
@@ -144,8 +143,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
             // final CrossProductVector crossProductVector = crossProductUnion(start, end);
             internalCrossProductUnion(start, end);
 
-            t1 = System.currentTimeMillis();
-            crossProductTime = t1 - t0;
+            final long t1 = System.currentTimeMillis();
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
@@ -182,7 +180,6 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
         // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n", start, end, t3
         // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime, edges, spmvTime, edges / spmvTime);
-        totalCrossProductTime += crossProductTime;
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
@@ -220,6 +217,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
     private void internalCrossProductUnion(final int start, final int end) {
 
+        long t0 = System.currentTimeMillis();
+
         // Fill the buffer with negative infinity
         fillFloatKernel.setArgs(clCrossProductProbabilities0, csrSparseMatrixGrammar.packedArraySize(), Float.NEGATIVE_INFINITY);
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(csrSparseMatrixGrammar.packedArraySize(), LOCAL_WORK_SIZE);
@@ -236,7 +235,9 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
         // Compute the cross-product of the first midpoint separately
         internalCrossProduct((DenseVectorChartCell) chart.getCell(start, midpoint), (DenseVectorChartCell) chart.getCell(midpoint, end), clCrossProductProbabilities0,
                 clCrossProductMidpoints0);
-        // printCrossProduct(copyFromDevice(clCrossProductProbabilities0, csrSparseMatrixGrammar.packedArraySize()));
+
+        long t1 = System.currentTimeMillis();
+        totalCartesianProductTime += (t1 - t0);
 
         // Iterate over all other midpoints, unioning together the cross-product of discovered
         // non-terminals in each left/right child pair
@@ -245,12 +246,17 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
             final DenseVectorChartCell leftCell = (DenseVectorChartCell) chart.getCell(start, midpoint);
             final DenseVectorChartCell rightCell = (DenseVectorChartCell) chart.getCell(midpoint, end);
 
-            fillFloatKernel.setArgs(clCrossProductProbabilities1, csrSparseMatrixGrammar.packedArraySize(), Float.NEGATIVE_INFINITY);
-            fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
-            clQueue.finish();
-
             if (leftCell.validLeftChildren.length > 0 && rightCell.validRightChildren.length > 0) {
+                t0 = System.currentTimeMillis();
+
+                fillFloatKernel.setArgs(clCrossProductProbabilities1, csrSparseMatrixGrammar.packedArraySize(), Float.NEGATIVE_INFINITY);
+                fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
+                clQueue.finish();
+
                 internalCrossProduct(leftCell, rightCell, clCrossProductProbabilities1, clCrossProductMidpoints1);
+
+                t1 = System.currentTimeMillis();
+                totalCartesianProductTime += (t1 - t0);
 
                 // printCrossProduct(copyFromDevice(clCrossProductProbabilities1, csrSparseMatrixGrammar.packedArraySize()));
 
@@ -259,7 +265,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
                         csrSparseMatrixGrammar.packedArraySize());
                 crossProductUnionKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
                 clQueue.finish();
-                // printCrossProduct(copyFromDevice(clCrossProductProbabilities0, csrSparseMatrixGrammar.packedArraySize()));
+
+                totalCartesianProductUnionTime += (System.currentTimeMillis() - t1);
             }
         }
     }
@@ -429,7 +436,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
         mappedClBuffer.get(array);
     }
 
-    public class OpenClChartCell extends DenseVectorChartCell {
+    public static class OpenClChartCell extends DenseVectorChartCell {
 
         public OpenClChartCell(final int start, final int end, final Chart<OpenClChartCell> chart) {
             super(start, end, chart);

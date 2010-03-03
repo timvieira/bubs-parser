@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Arrays;
 
 import org.junit.Test;
@@ -10,8 +12,15 @@ import edu.ohsu.cslu.parser.SparseMatrixVectorParser.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.util.ParseTree;
-import static org.junit.Assert.assertEquals;
 
+/**
+ * Base test class for all sparse-matrix-vector parsers
+ * 
+ * @author Aaron Dunlop
+ * @since Mar 2, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartParserTestCase {
 
     /**
@@ -19,6 +28,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
      * 
      * @throws Exception if something bad happens
      */
+    @SuppressWarnings("unchecked")
     @Test
     public void testCrossProductVectorExample() throws Exception {
 
@@ -26,7 +36,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
-        final Chart<DenseVectorChartCell> chart = (Chart<DenseVectorChartCell>) p.chart;
+        final Chart<? extends DenseVectorChartCell> chart = (Chart<? extends DenseVectorChartCell>) p.chart;
 
         final int nn = g.mapNonterminal("NN");
         final int np = g.mapNonterminal("NP");
@@ -87,6 +97,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
      * 
      * @throws Exception if something bad happens
      */
+    @SuppressWarnings("unchecked")
     @Test
     public void testBinarySpMVMultiplyExample() throws Exception {
 
@@ -94,7 +105,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
-        final Chart<DenseVectorChartCell> chart = (Chart<DenseVectorChartCell>) p.chart;
+        final Chart<? extends DenseVectorChartCell> chart = (Chart<? extends DenseVectorChartCell>) p.chart;
         final DenseVectorChartCell topCell = (DenseVectorChartCell) p.chart.getCell(0, 4);
 
         final int nn = g.mapNonterminal("NN");
@@ -159,6 +170,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
      * 
      * @throws Exception if something bad happens
      */
+    @SuppressWarnings("unchecked")
     @Test
     public void testCrossProductVectorSimpleGrammar2() throws Exception {
 
@@ -166,7 +178,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
-        final Chart<DenseVectorChartCell> chart = (Chart<DenseVectorChartCell>) p.chart;
+        final Chart<? extends DenseVectorChartCell> chart = (Chart<? extends DenseVectorChartCell>) p.chart;
 
         // Row of span 1
         final SparseMatrixVectorParser.DenseVectorChartCell cell_0_1 = chart.getCell(0, 1);
@@ -316,7 +328,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
-        final Chart chart = p.chart;
+        final Chart<? extends ChartCell> chart = p.chart;
 
         final float[] probabilities = new float[g.packedArraySize()];
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
@@ -457,40 +469,30 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     @Override
     @Test
     public void testSimpleGrammar1() throws Exception {
-        final long startTime = System.currentTimeMillis();
         super.testSimpleGrammar1();
-        System.out.format("%6.3f,%5d,%5d\n", (System.currentTimeMillis() - startTime) / 1000f, ((SparseMatrixVectorParser) parser).totalCrossProductTime,
-                ((SparseMatrixVectorParser) parser).totalSpMVTime);
+        System.out.println(parser.getStats());
     }
 
     @Override
     @Test
     public void testSimpleGrammar2() throws Exception {
-        final long startTime = System.currentTimeMillis();
         super.testSimpleGrammar2();
-        System.out.format("%6.3f,%5d,%5d\n", (System.currentTimeMillis() - startTime) / 1000f, ((SparseMatrixVectorParser) parser).totalCrossProductTime,
-                ((SparseMatrixVectorParser) parser).totalSpMVTime);
+        System.out.println(parser.getStats());
     }
 
     @Test
     public void testPartialSentence2() throws Exception {
-        final long startTime = System.currentTimeMillis();
-        // final String sentence = "The most troublesome report may be due out tomorrow .";
         final String sentence = "The report is due out tomorrow .";
         final ParseTree bestParseTree = parser.findBestParse(sentence);
         assertEquals("(TOP (S^<TOP> (S|<NP-VP>^<TOP> (NP^<S> (DT The) (NN report)) (VP^<S> (AUX is) (ADJP^<VP> (JJ due) (PP^<ADJP> (IN out) (NP^<PP> (NN tomorrow)))))) (. .)))",
                 bestParseTree.toString());
-        System.out.format("%6.3f,%5d,%5d\n", (System.currentTimeMillis() - startTime) / 1000f, ((SparseMatrixVectorParser) parser).totalCrossProductTime,
-                ((SparseMatrixVectorParser) parser).totalSpMVTime);
+        System.out.println(parser.getStats());
     }
 
     @Override
     protected void parseTreebankSentence(final int index) throws Exception {
-        final long startTime = System.currentTimeMillis();
         final ParseTree bestParseTree = parser.findBestParse(sentences.get(index)[0]);
         assertEquals(sentences.get(index)[1], bestParseTree.toString());
-
-        System.out.format("%6.3f,%5d,%5d\n", (System.currentTimeMillis() - startTime) / 1000f, ((SparseMatrixVectorParser) parser).totalCrossProductTime,
-                ((SparseMatrixVectorParser) parser).totalSpMVTime);
+        System.out.println(parser.getStats());
     }
 }

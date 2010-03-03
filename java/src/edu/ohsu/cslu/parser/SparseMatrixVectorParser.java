@@ -17,7 +17,8 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
     private float[] crossProductProbabilities;
     private short[] crossProductMidpoints;
 
-    public long totalCrossProductTime = 0;
+    public long totalCartesianProductTime = 0;
+    public long totalCartesianProductUnionTime = 0;
     public long totalSpMVTime = 0;
 
     public SparseMatrixVectorParser(final BaseSparseMatrixGrammar grammar, final CellSelector cellSelector) {
@@ -47,7 +48,8 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
         chart = new Chart<DenseVectorChartCell>(sentLength, DenseVectorChartCell.class, grammar);
 
         totalSpMVTime = 0;
-        totalCrossProductTime = 0;
+        totalCartesianProductTime = 0;
+        totalCartesianProductUnionTime = 0;
     }
 
     // TODO Do this with a matrix multiply?
@@ -116,13 +118,12 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
 
     @Override
     public String getStats() {
-        return super.getStats() + String.format(" Cross-product time=%d ms; SpMV time=%d ms", totalCrossProductTime, totalSpMVTime);
+        return String.format("%.3f, %d, %d, %d", totalTime / 1000f, totalCartesianProductTime, totalCartesianProductUnionTime, totalSpMVTime);
     }
 
     public static class DenseVectorChartCell extends ChartCell {
 
         protected final BaseSparseMatrixGrammar sparseMatrixGrammar;
-        // protected final BaseChartCell[][] chart;
 
         /** Indexed by parent non-terminal */
         protected final float[] probabilities;
@@ -138,9 +139,8 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
         public short[] validRightChildren;
         public float[] validRightChildrenProbabilities;
 
-        public DenseVectorChartCell(final int start, final int end, final Chart chart) {
+        public DenseVectorChartCell(final int start, final int end, final Chart<? extends DenseVectorChartCell> chart) {
             super(start, end, chart);
-            // this.chart = chart;
             this.sparseMatrixGrammar = (BaseSparseMatrixGrammar) chart.grammar;
 
             final int arraySize = sparseMatrixGrammar.numNonTerms();
