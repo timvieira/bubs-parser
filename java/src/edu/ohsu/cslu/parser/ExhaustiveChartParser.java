@@ -8,6 +8,7 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 public abstract class ExhaustiveChartParser extends ChartParser {
 
     protected CellSelector cellSelector;
+    protected long totalTime;
 
     public ExhaustiveChartParser(final Grammar grammar, final CellSelector cellSelector) {
         super(grammar);
@@ -17,8 +18,11 @@ public abstract class ExhaustiveChartParser extends ChartParser {
     // overwrite this method for the inner-loop implementation
     protected abstract void visitCell(ChartCell cell);
 
+    @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
-        ChartCell cell;
+
+        final long startTime = System.currentTimeMillis();
+
         final Token sent[] = grammar.tokenize(sentence);
         currentSentence = sentence;
 
@@ -26,11 +30,12 @@ public abstract class ExhaustiveChartParser extends ChartParser {
         addLexicalProductions(sent);
         cellSelector.init(this);
 
-        final boolean parseFound = false;
-        while (!parseFound && cellSelector.hasNext()) {
-            cell = cellSelector.next();
+        while (cellSelector.hasNext()) {
+            final ChartCell cell = cellSelector.next();
             visitCell(cell);
         }
+
+        totalTime = System.currentTimeMillis() - startTime;
 
         return extractBestParse();
     }

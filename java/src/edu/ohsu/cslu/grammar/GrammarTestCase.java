@@ -1,12 +1,13 @@
 package edu.ohsu.cslu.grammar;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.Reader;
 import java.io.StringReader;
 
 import org.junit.Test;
 
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
-import static org.junit.Assert.assertEquals;
 
 public abstract class GrammarTestCase {
 

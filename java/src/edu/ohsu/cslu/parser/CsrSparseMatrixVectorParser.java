@@ -61,7 +61,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser {
 
         // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n", start, end, t3
         // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime, edges, spmvTime, edges / spmvTime);
-        totalCrossProductTime += crossProductTime;
+        totalCartesianProductTime += crossProductTime;
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
