@@ -92,14 +92,14 @@ public class BoundaryInOut extends EdgeSelector {
         float[] curScores;
 
         LinkedList<Integer> prevFwdPOSList = new LinkedList<Integer>();
-        prevFwdPOSList.add(Grammar.nullSymbol);
+        prevFwdPOSList.add(grammar.nullSymbol);
         float[] prevFwdScores = new float[posSize];
-        prevFwdScores[Grammar.nullSymbol] = (float) 0.0;
+        prevFwdScores[grammar.nullSymbol] = (float) 0.0;
 
         LinkedList<Integer> prevBkwPOSList = new LinkedList<Integer>();
-        prevBkwPOSList.add(Grammar.nullSymbol);
+        prevBkwPOSList.add(grammar.nullSymbol);
         float[] prevBkwScores = new float[posSize];
-        prevBkwScores[Grammar.nullSymbol] = (float) 0.0;
+        prevBkwScores[grammar.nullSymbol] = (float) 0.0;
 
         for (int fwdIndex = 0; fwdIndex < fbSize; fwdIndex++) {
             final int fwdChartIndex = fwdIndex - 1; // minus 1 because the fbChart is one off from the parser chart
@@ -170,7 +170,7 @@ public class BoundaryInOut extends EdgeSelector {
         final int endIndex = startIndex + 1;
         if (startIndex < 0 || endIndex > parser.chart.size()) {
             final LinkedList<Integer> posList = new LinkedList<Integer>();
-            posList.addLast(Grammar.nullSymbol);
+            posList.addLast(grammar.nullSymbol);
             return posList;
         }
         return parser.chart.getCell(startIndex, endIndex).getPosEntries();
@@ -190,7 +190,7 @@ public class BoundaryInOut extends EdgeSelector {
 
     public float posEmissionLogProb(final ChartParser parser, final int start, final Integer pos) {
         final int end = start + 1;
-        if (pos == Grammar.nullSymbol && (start < 0 || end > parser.chart.size())) {
+        if (pos == grammar.nullSymbol && (start < 0 || end > parser.chart.size())) {
             return 0; // log(1.0)
         }
         return parser.chart.getCell(start, end).getBestEdge(pos).inside;
