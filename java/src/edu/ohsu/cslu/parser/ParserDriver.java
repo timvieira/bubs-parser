@@ -161,7 +161,7 @@ public class ParserDriver extends BaseCommandlineTool {
         case LocalBestFirst:
         case LBFPruneViterbi:
         case LBFOnlineBeam:
-        case LBFSmallAgenda:
+        case LBFBoundedHeap:
         case LBFExpDecay:
         case LBFPerceptronCell:
         case CoarseCellAgenda:
@@ -206,8 +206,8 @@ public class ParserDriver extends BaseCommandlineTool {
             return new LBFPruneViterbi(grammar, edgeSelector, cellSelector);
         case LBFOnlineBeam:
             return new LBFWeakThresh(grammar, edgeSelector, cellSelector);
-        case LBFSmallAgenda:
-            return new LBFSmallAgenda(grammar, edgeSelector, cellSelector);
+        case LBFBoundedHeap:
+            return new LBFBoundedHeap(grammar, edgeSelector, cellSelector);
         case LBFExpDecay:
             return new LBFExpDecay(grammar, edgeSelector, cellSelector);
         case LBFPerceptronCell:
@@ -258,7 +258,7 @@ public class ParserDriver extends BaseCommandlineTool {
 
     static public enum ParserType {
         ECPCellCrossList("ecpccl"), ECPCellCrossHash("ecpcch"), ECPCellCrossMatrix("ecpccm"), ECPGrammarLoop("ecpgl"), ECPGrammarLoopBerkeleyFilter("ecpglbf"), AgendaChartParser(
-                "acpall"), ACPWithMemory("acpwm"), ACPGhostEdges("acpge"), LocalBestFirst("lbf"), LBFPruneViterbi("lbfpv"), LBFOnlineBeam("lbfob"), LBFSmallAgenda("lbfsa"), LBFExpDecay(
+                "acpall"), ACPWithMemory("acpwm"), ACPGhostEdges("acpge"), LocalBestFirst("lbf"), LBFPruneViterbi("lbfpv"), LBFOnlineBeam("lbfob"), LBFBoundedHeap("lbfbh"), LBFExpDecay(
                 "lbfed"), LBFPerceptronCell("lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector("jsa"), OpenClSparseMatrixVector("opencl"), CsrSparseMatrixVector(
                 "csr");
 
