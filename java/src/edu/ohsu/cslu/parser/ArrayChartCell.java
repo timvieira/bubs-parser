@@ -104,7 +104,7 @@ public final class ArrayChartCell extends ChartCell {
         numEdgesAdded++;
         bestEdgesHaveChanged = true;
         bestEdge[parent] = edge;
-        if (isLexCell && chart.grammar.posSet.hasSymbol(parent)) {
+        if (isLexCell && chart.grammar.isPOS(parent)) {
             posEntries.addLast(parent);
         }
         return true;

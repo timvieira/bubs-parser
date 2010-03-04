@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
@@ -23,8 +24,19 @@ public class BoundaryInOut extends EdgeSelector {
     private float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
     private float outsideLeft[][], outsideRight[][];
 
+    private HashSet<Integer> posSet = new HashSet<Integer>();
+    private HashSet<Integer> clauseNonTermSet = new HashSet<Integer>();
+
     public BoundaryInOut(final Grammar grammar, final BufferedReader fomModelStream) throws Exception {
         this.grammar = grammar;
+        for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
+            if (grammar.isPOS(ntIndex)) {
+                posSet.add(ntIndex);
+            } else {
+                clauseNonTermSet.add(ntIndex);
+            }
+        }
+
         // no input model stream when estimating the model
         if (fomModelStream != null) {
             readModel(fomModelStream);
@@ -266,10 +278,10 @@ public class BoundaryInOut extends EdgeSelector {
         final SymbolSet<String> nonTermSet = grammar.nonTermSet;
 
         // left boundary = P(NT | POS-1)
-        for (final int leftPOSIndex : grammar.posSet) {
+        for (final int leftPOSIndex : posSet) {
             final String posStr = nonTermSet.getSymbol(leftPOSIndex);
             // for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
-            for (final int ntIndex : grammar.clauseNonTermSet) {
+            for (final int ntIndex : clauseNonTermSet) {
                 final String ntStr = nonTermSet.getSymbol(ntIndex);
                 final float logProb = leftBoundaryLogProb[ntIndex][leftPOSIndex];
                 if (logProb > Float.NEGATIVE_INFINITY) {
@@ -280,9 +292,9 @@ public class BoundaryInOut extends EdgeSelector {
 
         // right boundary = P(POS+1 | NT)
         // for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
-        for (final int ntIndex : grammar.clauseNonTermSet) {
+        for (final int ntIndex : clauseNonTermSet) {
             final String ntStr = nonTermSet.getSymbol(ntIndex);
-            for (final int rightPOSIndex : grammar.posSet) {
+            for (final int rightPOSIndex : posSet) {
                 final String posStr = nonTermSet.getSymbol(rightPOSIndex);
                 final float logProb = rightBoundaryLogProb[rightPOSIndex][ntIndex];
                 if (logProb > Float.NEGATIVE_INFINITY) {
@@ -292,9 +304,9 @@ public class BoundaryInOut extends EdgeSelector {
         }
 
         // pos n-gram = P(POS | POS-1)
-        for (final int histPos : grammar.posSet) {
+        for (final int histPos : posSet) {
             final String histPosStr = nonTermSet.getSymbol(histPos);
-            for (final int pos : grammar.posSet) {
+            for (final int pos : posSet) {
                 final String posStr = nonTermSet.getSymbol(pos);
                 final float logProb = posTransitionLogProb[pos][histPos];
                 if (logProb > Float.NEGATIVE_INFINITY) {
@@ -363,7 +375,7 @@ public class BoundaryInOut extends EdgeSelector {
 
         final int numNT = grammar.numNonTerms();
         final int maxPOSIndex = grammar.maxPOSIndex();
-        final int numPOS = grammar.posSet.size();
+        final int numPOS = posSet.size();
 
         // System.out.println("numNT=" + numNT + " maxPOSIndex=" + maxPOSIndex + " numPOS=" + numPOS);
 
@@ -379,7 +391,7 @@ public class BoundaryInOut extends EdgeSelector {
         posTransitionLogProb = new float[maxPOSIndex + 1][maxPOSIndex + 1];
 
         // left boundary = P(NT | POS-1)
-        for (final int leftPOSIndex : grammar.posSet) {
+        for (final int leftPOSIndex : posSet) {
             final String posStr = nonTermSet.getSymbol(leftPOSIndex);
             for (int ntIndex = 0; ntIndex < numNT; ntIndex++) {
                 final String ntStr = nonTermSet.getSymbol(ntIndex);
@@ -390,16 +402,16 @@ public class BoundaryInOut extends EdgeSelector {
         // right boundary = P(POS+1 | NT)
         for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
             final String ntStr = nonTermSet.getSymbol(ntIndex);
-            for (final int rightPOSIndex : grammar.posSet) {
+            for (final int rightPOSIndex : posSet) {
                 final String posStr = nonTermSet.getSymbol(rightPOSIndex);
                 rightBoundaryLogProb[rightPOSIndex][ntIndex] = (float) Math.log(rightBoundaryCount.getProb(posStr, ntStr));
             }
         }
 
         // pos n-gram = P(POS | POS-1)
-        for (final int histPos : grammar.posSet) {
+        for (final int histPos : posSet) {
             final String histPosStr = nonTermSet.getSymbol(histPos);
-            for (final int pos : grammar.posSet) {
+            for (final int pos : posSet) {
                 final String posStr = nonTermSet.getSymbol(pos);
                 posTransitionLogProb[pos][histPos] = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
             }
