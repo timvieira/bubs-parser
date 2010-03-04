@@ -18,27 +18,29 @@ public class SymbolSet<E> implements Iterable<E> {
         finalized = false;
     }
 
+    // return index of symbol. If it does not exist, return -1
+    public int getIndex(final E symbol) {
+        return symbolHash.getInt(symbol);
+    }
+
     // get integer index of label string. If it does not exist then
     // add it to the internal structures
-    public int getIndex(final E label) {
-        int index = symbolHash.getInt(label);
+    public int addSymbol(final E symbol) {
+        // return this.getIndex(symbol);
+        int index = symbolHash.getInt(symbol);
         if (index != -1) {
             return index;
         }
 
         if (finalized) {
-            throw new RuntimeException("ERROR: SymbolSet is finalized but trying to add symbol: " + label);
+            throw new RuntimeException("ERROR: SymbolSet is finalized but trying to add symbol: " + symbol);
         }
 
         index = symbolVector.size();
-        symbolHash.put(label, index);
-        symbolVector.add(label);
+        symbolHash.put(symbol, index);
+        symbolVector.add(symbol);
 
         return index;
-    }
-
-    public int addSymbol(final E symbol) {
-        return this.getIndex(symbol);
     }
 
     public boolean hasSymbol(final E label) {

@@ -136,7 +136,7 @@ public abstract class BaseSortedGrammar extends Grammar {
             }
 
             if (nonTerminal.ntClass == NonTerminalClass.POS) {
-                posSet.addSymbol(index);
+                posSet.add(index);
             }
         }
 
