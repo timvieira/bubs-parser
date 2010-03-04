@@ -14,25 +14,26 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class LocalBestFirstChartParser extends ChartParser {
 
-    // LeftHashGrammar leftHashGrammar;
     EdgeSelector edgeSelector;
     CellSelector cellSelector;
     int nAgendaPush;
     float fomInitSeconds;
     PriorityQueue<ChartEdge> agenda;
 
-    int maxEdgesToAdd = (int) ParserDriver.param1;
-    // float logBeamDeltaThresh = ParserDriver.param2;
-    float logBeamDeltaThresh = 9999;
+    int maxEdgesToAdd;
+    float logBeamDeltaThresh;
 
     public LocalBestFirstChartParser(final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
         super(grammar);
-        // this.leftHashGrammar = grammar;
         this.edgeSelector = edgeSelector;
         this.cellSelector = cellSelector;
 
+        maxEdgesToAdd = (int) ParserDriver.param1;
         if (maxEdgesToAdd < 0)
             maxEdgesToAdd = 10;
+
+        // logBeamDeltaThresh = ParserDriver.param2;
+        logBeamDeltaThresh = 9999;
         if (logBeamDeltaThresh < 0)
             logBeamDeltaThresh = 30;
     }
