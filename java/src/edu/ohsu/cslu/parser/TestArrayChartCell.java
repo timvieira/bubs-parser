@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.ArrayGrammar;
+import edu.ohsu.cslu.grammar.Grammar;
 
 /**
  * Unit tests for {@link ArrayChartCell}.
@@ -10,5 +10,5 @@ import edu.ohsu.cslu.grammar.ArrayGrammar;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestArrayChartCell extends ChartCellTestCase<ArrayChartCell, ArrayGrammar> {
+public class TestArrayChartCell extends ChartCellTestCase<ArrayChartCell, Grammar> {
 }
