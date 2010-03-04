@@ -6,41 +6,49 @@ package edu.ohsu.cslu.classifier;
 
 public class Perceptron {
 
-    private double learningRate, weights[];
+    private float learningRate, weights[];
     private int numFeatures, numClasses;
 
     public Perceptron(final int numFeatures) {
         // add option for different kernels?
         assert numFeatures >= 1;
         // assert numClasses >= 2; // assuming 2 classes
+        this.numClasses = 2;
 
         this.numFeatures = numFeatures;
-        // this.numClasses = numClasses;
-        this.weights = new double[numFeatures];
-        this.learningRate = 1.0;
+        this.weights = new float[numFeatures];
+        this.learningRate = 1;
 
         for (int i = 0; i < numFeatures; i++) {
             weights[i] = 0;
         }
     }
 
-    public double[] getWeights() {
+    public float[] getWeights() {
         return weights;
     }
 
-    public static double kernelDotProduct(final double[] a, final double[] b) {
+    public void decreaseLearningRate(final float percentage) {
+        this.learningRate = this.learningRate * percentage;
+    }
+
+    public void decreaseLearningRate() {
+        decreaseLearningRate((float) 0.95);
+    }
+
+    public static float kernelDotProduct(final float[] a, final float[] b) {
         assert a.length == b.length;
 
-        double result = 0.0;
+        float result = 0;
         for (int i = 0; i < a.length; i++) {
             result += a[i] * b[i];
         }
         return result;
     }
 
-    public int classify(final double[] inputFeatures) {
+    public int classify(final float[] inputFeatures) {
         int bestClass = -1;
-        double score, bestScore = Double.NEGATIVE_INFINITY;
+        float score, bestScore = Float.NEGATIVE_INFINITY;
         for (int i = 0; i < numClasses; i++) {
             score = kernelDotProduct(inputFeatures, weights);
             if (score > bestScore) {
@@ -51,21 +59,38 @@ public class Perceptron {
         return bestClass;
     }
 
-    public void learnOnline(final double[] inputFeatures, final int correctClass) {
+    public float score(final float[] inputFeatures) {
+        return kernelDotProduct(inputFeatures, weights);
+    }
+
+    public void learnOnline(final float[] inputFeatures, final int correctClass) {
         final int guessClass = classify(inputFeatures);
         if (guessClass != correctClass) {
             for (int i = 0; i < numFeatures; i++) {
-                weights[i] += inputFeatures[i] * learningRate;
+                // weights[i] += inputFeatures[i] * learningRate;
                 weights[i] -= inputFeatures[i] * learningRate;
             }
         }
     }
 
+    public void learnOnline(final float[] gradient) {
+        for (int i = 0; i < numFeatures; i++) {
+            weights[i] -= gradient[i] * learningRate;
+        }
+    }
+
+    public int numFeatures() {
+        return numFeatures;
+    }
+
     @Override
     public String toString() {
         String s = "";
-        for (int i = 0; i < numClasses; i++) {
-            s += "weights[" + i + "] = " + weights[i] + "\n";
+        // for (int i = 0; i < numClasses; i++) {
+        // s += "weights[" + i + "] = " + weights[i] + "\n";
+        // }
+        for (int i = 0; i < numFeatures; i++) {
+            s += weights[i] + " ";
         }
         return s;
     }
