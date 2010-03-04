@@ -1,12 +1,13 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
-import static org.junit.Assert.fail;
 
 /**
  * Tests for {@link OpenClSparseMatrixVectorParser}.
@@ -30,7 +31,7 @@ public class TestOpenClSparseMatrixVectorParser extends SparseMatrixVectorParser
 
     @Override
     @Test
-    @PerformanceTest( { "mbp", "88146", "d820", "200000" })
+    @PerformanceTest( { "mbp", "2907244" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
