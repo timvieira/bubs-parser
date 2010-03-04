@@ -490,7 +490,7 @@ public class Grammar {
         public final float prob;
 
         // Binary production
-        public Production(final int parent, final int leftChild, final int rightChild, final float prob) throws Exception {
+        public Production(final int parent, final int leftChild, final int rightChild, final float prob) {
             this.parent = parent;
             this.leftChild = leftChild;
             this.rightChild = rightChild;

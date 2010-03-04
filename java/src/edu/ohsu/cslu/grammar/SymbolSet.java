@@ -37,7 +37,7 @@ public class SymbolSet<E> implements Iterable<E> {
         return index;
     }
 
-    public int addSymbol(final E symbol) throws Exception {
+    public int addSymbol(final E symbol) {
         return this.getIndex(symbol);
     }
 
