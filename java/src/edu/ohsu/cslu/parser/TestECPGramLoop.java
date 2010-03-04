@@ -2,7 +2,6 @@ package edu.ohsu.cslu.parser;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.ArrayGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
@@ -18,8 +17,8 @@ import edu.ohsu.cslu.tests.PerformanceTest;
 public class TestECPGramLoop extends ExhaustiveChartParserTestCase {
 
     @Override
-    protected Class<? extends ArrayGrammar> grammarClass() {
-        return ArrayGrammar.class;
+    protected Class<? extends Grammar> grammarClass() {
+        return Grammar.class;
     }
 
     @Override
