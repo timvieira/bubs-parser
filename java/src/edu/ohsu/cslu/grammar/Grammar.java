@@ -16,28 +16,32 @@ import edu.ohsu.cslu.parser.util.Log;
 public class Grammar {
     protected Collection<Production> binaryProductions;
     protected Collection<Production> unaryProductions;
-    public int startSymbol = -1;
-    public int nullSymbol = -1;
+    private List<Production>[] unaryProdsByChild;
+    protected List<Production>[] lexicalProds;
 
     public final static String nullSymbolStr = "<null>";
     public static Production nullProduction;
 
-    // private LinkedList<LexicalProduction>[] lexicalProds = new LinkedList<UnaryProduction>[5];
-    // note: java doesn't allow generic array creation, so must do it like this:
-    protected List<Production>[] lexicalProds;
-    private List<Production>[] unaryProdsByChild;
+    public int nullSymbol = -1;
+    public int startSymbol = -1;
     public int numLexProds;
+    protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
+    private boolean isLeftFactored;
+
+    // TODO: should wrap a lot of this up into a nonTerm or symbol class. Could
+    // include: isPOS, isFact, isClause, isLeftChild, isRightChild
+    // Although, we would still need to maintain a list of posSet, factNTSet, and clauseNTSet
+    // so that we can iterate through them at will
     public final SymbolSet<String> nonTermSet;
     public final SymbolSet<Integer> posSet; // index into nonTermSet of POS non terms
     private final SymbolSet<Integer> factoredNonTermSet; // index into nonTermSet of factored non terms
     public final SymbolSet<Integer> clauseNonTermSet; // index into the nonTermSet of constituents that are clause level (not POS)
     public final SymbolSet<String> lexSet;
-    protected Tokenizer tokenizer;
-    protected int maxPOSIndex = -1; // TODO: should sort nonterms so ordered by POS then NTs
-    private boolean isLeftFactored;
 
     private PackedBitVector possibleLeftChild;
     private PackedBitVector possibleRightChild;
+
+    protected Tokenizer tokenizer;
 
     protected Grammar() {
         nonTermSet = new SymbolSet<String>();
@@ -68,22 +72,6 @@ public class Grammar {
         readGrammarAndLexicon(grammarFile, lexiconFile, grammarFormat);
     }
 
-    public void finalizeAllLabelSets() {
-        nonTermSet.finalize();
-        posSet.finalize();
-        factoredNonTermSet.finalize();
-        clauseNonTermSet.finalize();
-        lexSet.finalize();
-    }
-
-    public void unfinalizeAllLabelSets() {
-        nonTermSet.unfinalize();
-        posSet.unfinalize();
-        factoredNonTermSet.unfinalize();
-        clauseNonTermSet.unfinalize();
-        lexSet.unfinalize();
-    }
-
     public void readGrammarAndLexicon(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         // the nullSymbol is used for start/end of sentence markers and dummy non-terminals
         nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
@@ -98,16 +86,18 @@ public class Grammar {
 
         Log.info(1, "INFO: Reading grammar ...");
         readGrammar(grammarFile, grammarFormat);
+
         if (startSymbol == -1) {
             throw new IllegalArgumentException("No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
         }
 
-        // add the indices of clause-level non-terminals to their own set
-        for (int i = 0; i < nonTermSet.size(); i++) {
-            if (posSet.hasSymbol(i) == false) {
-                clauseNonTermSet.addSymbol(i);
-            }
-        }
+        // NATE: now done during Production creation
+        // // add the indices of clause-level non-terminals to their own set
+        // for (int i = 0; i < nonTermSet.size(); i++) {
+        // if (posSet.hasSymbol(i) == false) {
+        // clauseNonTermSet.addSymbol(i);
+        // }
+        // }
 
         finalizeAllLabelSets();
         markLeftRightChildren();
@@ -336,6 +326,18 @@ public class Grammar {
         return results;
     }
 
+    public Collection<Production> getUnaryProductions() {
+        return unaryProductions;
+    }
+
+    public Collection<Production> getUnaryProductionsWithChild(final int child) {
+        final List<Production> prods = unaryProdsByChild[child];
+        if (prods == null) {
+            return new LinkedList<Production>();
+        }
+        return prods;
+    }
+
     public final List<Production> getLexProdsByToken(final Token token) {
         return lexicalProds[token.index];
     }
@@ -353,7 +355,6 @@ public class Grammar {
         if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
             final int a = nonTermSet.getIndex(A), b = nonTermSet.getIndex(B), c = nonTermSet.getIndex(C);
             for (final Production p : binaryProductions) {
-                // if (p.equals(toFind)) {
                 if (p.parent == a && p.leftChild == b && p.rightChild == c) {
                     return p;
                 }
@@ -363,12 +364,10 @@ public class Grammar {
     }
 
     public Production getProduction(final String A, final String B) throws Exception {
-        // final Production toFind = new Production(A, B, Float.NEGATIVE_INFINITY, false);
         assert unaryProductions != null && unaryProductions.size() > 0;
         if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B)) {
             final int a = nonTermSet.getIndex(A), b = nonTermSet.getIndex(B);
             for (final Production p : unaryProductions) {
-                // if (p.equals(toFind)) {
                 if (p.parent == a && p.leftChild == b) {
                     return p;
                 }
@@ -388,34 +387,16 @@ public class Grammar {
         return null;
     }
 
-    public Collection<Production> getUnaryProductions() {
-        return unaryProductions;
-    }
-
-    public Collection<Production> getUnaryProductionsWithChild(final int child) {
-        final List<Production> prods = unaryProdsByChild[child];
-        if (prods == null) {
-            return new LinkedList<Production>();
-        }
-        return prods;
-    }
-
     /**
      * Terribly inefficient; should be overridden by child classes
      * 
      * @throws Exception
      */
     public float logProbability(final String parent, final String leftChild, final String rightChild) throws Exception {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        final int leftChildIndex = nonTermSet.getIndex(leftChild);
-        final int rightChildIndex = nonTermSet.getIndex(rightChild);
-
-        for (final Production p : binaryProductions) {
-            if (p.parent == parentIndex && p.leftChild == leftChildIndex && p.rightChild == rightChildIndex) {
-                return p.prob;
-            }
+        final Production p = getProduction(parent, leftChild, rightChild);
+        if (p != null) {
+            return p.prob;
         }
-
         return Float.NEGATIVE_INFINITY;
     }
 
@@ -425,15 +406,10 @@ public class Grammar {
      * @throws Exception
      */
     public float logProbability(final String parent, final String child) throws Exception {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        final int leftChildIndex = nonTermSet.getIndex(child);
-
-        for (final Production p : unaryProductions) {
-            if (p.parent == parentIndex && p.leftChild == leftChildIndex) {
-                return p.prob;
-            }
+        final Production p = getProduction(parent, child);
+        if (p != null) {
+            return p.prob;
         }
-
         return Float.NEGATIVE_INFINITY;
     }
 
@@ -443,17 +419,27 @@ public class Grammar {
      * @throws Exception
      */
     public float lexicalLogProbability(final String parent, final String child) throws Exception {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        if (!lexSet.hasSymbol(child)) {
-            return Float.NEGATIVE_INFINITY;
-        }
-
-        for (final Production p : lexicalProds[lexSet.getIndex(child)]) {
-            if (p.parent == parentIndex) {
-                return p.prob;
-            }
+        final Production p = getLexProduction(parent, child);
+        if (p != null) {
+            return p.prob;
         }
         return Float.NEGATIVE_INFINITY;
+    }
+
+    protected void finalizeAllLabelSets() {
+        nonTermSet.finalize();
+        posSet.finalize();
+        factoredNonTermSet.finalize();
+        clauseNonTermSet.finalize();
+        lexSet.finalize();
+    }
+
+    protected void unfinalizeAllLabelSets() {
+        nonTermSet.unfinalize();
+        posSet.unfinalize();
+        factoredNonTermSet.unfinalize();
+        clauseNonTermSet.unfinalize();
+        lexSet.unfinalize();
     }
 
     public String getStats() {
@@ -473,10 +459,13 @@ public class Grammar {
         return s;
     }
 
+    // TODO: we could put this in with Production creation except we don't know
+    // how many nonTerms there are to create the array. This is why it should
+    // really be an attribute of a NonTerm object
     private void markLeftRightChildren() {
         // default value is 'false'
-        possibleLeftChild = new PackedBitVector(this.numNonTerms());
-        possibleRightChild = new PackedBitVector(this.numNonTerms());
+        possibleLeftChild = new PackedBitVector(nonTermSet.size());
+        possibleRightChild = new PackedBitVector(nonTermSet.size());
         for (final Production p : binaryProductions) {
             possibleLeftChild.set(p.leftChild, true);
             possibleRightChild.set(p.rightChild, true);
@@ -501,11 +490,13 @@ public class Grammar {
         public final float prob;
 
         // Binary production
-        public Production(final int parent, final int leftChild, final int rightChild, final float prob) {
+        public Production(final int parent, final int leftChild, final int rightChild, final float prob) throws Exception {
             this.parent = parent;
             this.leftChild = leftChild;
             this.rightChild = rightChild;
             this.prob = prob;
+
+            clauseNonTermSet.addSymbol(parent);
         }
 
         // Binary production
@@ -516,16 +507,16 @@ public class Grammar {
         // Unary production
         public Production(final int parent, final int child, final float prob, final boolean isLex) throws Exception {
             this.parent = parent;
+            this.leftChild = child;
             if (!isLex) {
-                this.leftChild = child;
                 this.rightChild = UNARY_PRODUCTION;
+                clauseNonTermSet.addSymbol(parent);
             } else {
-                this.leftChild = child;
-                posSet.addSymbol(this.parent);
-                if (this.parent > maxPOSIndex) {
-                    maxPOSIndex = this.parent;
-                }
                 this.rightChild = LEXICAL_PRODUCTION;
+                posSet.addSymbol(parent);
+                if (parent > maxPOSIndex) {
+                    maxPOSIndex = parent;
+                }
             }
             this.prob = prob;
         }
@@ -534,7 +525,7 @@ public class Grammar {
             this(nonTermSet.getIndex(parent), isLex ? lexSet.getIndex(child) : nonTermSet.getIndex(child), prob, isLex);
         }
 
-        public final Production copy() {
+        public final Production copy() throws Exception {
             return new Production(parent, leftChild, rightChild, prob);
         }
 
