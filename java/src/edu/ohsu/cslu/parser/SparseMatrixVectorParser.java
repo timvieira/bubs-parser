@@ -5,15 +5,14 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.ohsu.cslu.grammar.BaseSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
 
     // protected Chart<DenseVectorChartCell> chart;
-    private final BaseSparseMatrixGrammar sparseMatrixGrammar;
+    private final SparseMatrixGrammar sparseMatrixGrammar;
     private float[] crossProductProbabilities;
     private short[] crossProductMidpoints;
 
@@ -21,7 +20,7 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
     public long totalCartesianProductUnionTime = 0;
     public long totalSpMVTime = 0;
 
-    public SparseMatrixVectorParser(final BaseSparseMatrixGrammar grammar, final CellSelector cellSelector) {
+    public SparseMatrixVectorParser(final SparseMatrixGrammar grammar, final CellSelector cellSelector) {
         super(grammar, cellSelector);
 
         this.sparseMatrixGrammar = grammar;
@@ -54,7 +53,7 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
 
     // TODO Do this with a matrix multiply?
     @Override
-    protected List<ChartEdge> addLexicalProductions(final Token[] sent) throws Exception {
+    protected List<ChartEdge> addLexicalProductions(final int[] sent) throws Exception {
         super.addLexicalProductions(sent);
         for (int start = 0; start < chart.size(); start++) {
             ((DenseVectorChartCell) chart.getCell(start, start + 1)).finalizeCell();
@@ -123,7 +122,7 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
 
     public static class DenseVectorChartCell extends ChartCell {
 
-        protected final BaseSparseMatrixGrammar sparseMatrixGrammar;
+        protected final SparseMatrixGrammar sparseMatrixGrammar;
 
         /** Indexed by parent non-terminal */
         protected final float[] probabilities;
@@ -141,7 +140,7 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
 
         public DenseVectorChartCell(final int start, final int end, final Chart<? extends DenseVectorChartCell> chart) {
             super(start, end, chart);
-            this.sparseMatrixGrammar = (BaseSparseMatrixGrammar) chart.grammar;
+            this.sparseMatrixGrammar = (SparseMatrixGrammar) chart.grammar;
 
             final int arraySize = sparseMatrixGrammar.numNonTerms();
             this.probabilities = new float[arraySize];
@@ -224,17 +223,14 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
             final DenseVectorChartCell leftChildCell = (DenseVectorChartCell) chart.getCell(start(), midpoint);
             final DenseVectorChartCell rightChildCell = midpoint < chart.size() ? (DenseVectorChartCell) chart.getCell(midpoint, end()) : null;
 
+            Production p;
             if (rightChild == Production.LEXICAL_PRODUCTION) {
-                try {
-                    // Lexical production
-                    final Production p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, probability, true);
-                    return new ChartEdge(p, leftChildCell, rightChildCell, probability);
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                }
+                p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, probability, true);
+            } else if (rightChild == Production.UNARY_PRODUCTION) {
+                p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, probability, false);
+            } else {
+                p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, rightChild, probability);
             }
-
-            final Production p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, rightChild, probability);
             return new ChartEdge(p, leftChildCell, rightChildCell, probability);
         }
 
@@ -308,12 +304,12 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
 
     public final static class CrossProductVector {
 
-        private final BaseSparseMatrixGrammar grammar;
+        private final SparseMatrixGrammar grammar;
         final float[] probabilities;
         final short[] midpoints;
         private int size = 0;
 
-        public CrossProductVector(final BaseSparseMatrixGrammar grammar, final float[] probabilities, final short[] midpoints, final int size) {
+        public CrossProductVector(final SparseMatrixGrammar grammar, final float[] probabilities, final short[] midpoints, final int size) {
             this.grammar = grammar;
             this.probabilities = probabilities;
             this.midpoints = midpoints;
