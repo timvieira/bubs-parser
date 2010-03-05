@@ -3,29 +3,24 @@ package edu.ohsu.cslu.grammar;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Vector;
 
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 import edu.ohsu.cslu.parser.util.Log;
 
 public class Grammar {
     protected Collection<Production> binaryProductions;
     protected Collection<Production> unaryProductions;
-    private List<Production>[] unaryProdsByChild;
-    protected List<Production>[] lexicalProds;
+    protected Collection<Production> lexicalProductions;
 
     public final static String nullSymbolStr = "<null>";
     public static Production nullProduction;
 
     public int nullSymbol = -1;
     public int startSymbol = -1;
-    public int numLexProds;
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
     private boolean isLeftFactored;
 
@@ -35,7 +30,7 @@ public class Grammar {
     private final Vector<NonTerminal> nonTermInfo = new Vector<NonTerminal>();
     protected HashSet<Integer> posSet = new HashSet<Integer>();
 
-    protected Tokenizer tokenizer;
+    public Tokenizer tokenizer;
 
     protected Grammar() {
         tokenizer = new Tokenizer(lexSet);
@@ -56,9 +51,8 @@ public class Grammar {
 
     public void readGrammarAndLexicon(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         // the nullSymbol is used for start/end of sentence markers and dummy non-terminals
-        // nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
         nullSymbol = addNonTerm(nullSymbolStr);
-        nonTermInfo.get(nullSymbol).isPOS = true;
+        getNonterminal(nullSymbol).isPOS = true;
         nullProduction = new Production(nullSymbol, nullSymbol, nullSymbol, Float.NEGATIVE_INFINITY);
 
         // read lexical productions first so that POS tags will all be concentrated
@@ -79,12 +73,12 @@ public class Grammar {
         Log.info(1, "INFO: " + getStats());
     }
 
-    @SuppressWarnings("unchecked")
     private void readLexProds(final Reader lexFile) throws NumberFormatException, Exception {
         String line;
         String[] tokens;
         Production lexProd;
-        final List<Production> tmpProdList = new LinkedList<Production>();
+
+        lexicalProductions = new LinkedList<Production>();
 
         final BufferedReader br = new BufferedReader(lexFile);
         while ((line = br.readLine()) != null) {
@@ -92,32 +86,14 @@ public class Grammar {
             if (tokens.length == 4) {
                 // expecting: A -> B prob
                 lexProd = new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), true);
-                tmpProdList.add(lexProd);
+                lexicalProductions.add(lexProd);
             } else {
                 throw new IllegalArgumentException("Unexpected line in lexical file\n\t" + line);
             }
         }
-
-        // store lexical prods indexed by the word
-        final ArrayList<List<Production>> tmpLexicalProds = new ArrayList<List<Production>>(lexSet.numSymbols());
-        for (int i = 0; i < lexSet.numSymbols(); i++) {
-            tmpLexicalProds.add(null);
-        }
-
-        for (final Production p : tmpProdList) {
-            if (tmpLexicalProds.get(p.leftChild) == null) {
-                tmpLexicalProds.set(p.leftChild, new LinkedList<Production>());
-            }
-            tmpLexicalProds.get(p.leftChild).add(p);
-            numLexProds++;
-        }
-        lexicalProds = tmpLexicalProds.toArray(new LinkedList[tmpLexicalProds.size()]);
     }
 
-    @SuppressWarnings( { "cast", "unchecked" })
     private void readGrammar(final Reader gramFile, final GrammarFormatType grammarFormat) throws Exception {
-        final BufferedReader br = new BufferedReader(gramFile);
-
         String line;
         String[] tokens;
         Production prod;
@@ -129,6 +105,7 @@ public class Grammar {
             startSymbol = addNonTerm("TOP");
         }
 
+        final BufferedReader br = new BufferedReader(gramFile);
         while ((line = br.readLine()) != null) {
             tokens = line.split("\\s");
             if (tokens.length == 1) {
@@ -161,17 +138,17 @@ public class Grammar {
             }
 
             if (isFactoredNonTerm(nt, grammarFormat)) {
-                nonTermInfo.get(ntIndex).isFactored = true;
+                getNonterminal(ntIndex).isFactored = true;
             }
         }
 
         // figure out which way the grammar is factored
         int numLeftFactored = 0, numRightFactored = 0;
         for (final Production p : binaryProductions) {
-            if (nonTermInfo.get(p.leftChild).isFactored) {
+            if (getNonterminal(p.leftChild).isFactored) {
                 numLeftFactored++;
             }
-            if (nonTermInfo.get(p.rightChild).isFactored) {
+            if (getNonterminal(p.rightChild).isFactored) {
                 numRightFactored++;
             }
         }
@@ -185,24 +162,11 @@ public class Grammar {
                     + " right-factored children.  Expecting one to be zero and the other nonzero.");
             System.exit(1);
         }
-
-        // store unary prods by child
-        unaryProdsByChild = (List<Production>[]) new List[nonTermSet.size()];
-        for (int i = 0; i < nonTermSet.size(); i++) {
-            unaryProdsByChild[i] = null;
-        }
-
-        for (final Production p : unaryProductions) {
-            if (unaryProdsByChild[p.leftChild] == null) {
-                unaryProdsByChild[p.leftChild] = new LinkedList<Production>();
-            }
-            unaryProdsByChild[p.leftChild].add(p);
-        }
     }
 
-    public final Token[] tokenize(final String sentence) throws Exception {
-        return tokenizer.tokenize(sentence);
-    }
+    // public final Token[] tokenize(final String sentence) throws Exception {
+    // return tokenizer.tokenize(sentence);
+    // }
 
     public final int numNonTerms() {
         return nonTermSet.numSymbols();
@@ -216,6 +180,14 @@ public class Grammar {
         return posSet.size();
     }
 
+    public int numUnaryProds() {
+        return unaryProductions.size();
+    }
+
+    public int numLexProds() {
+        return lexicalProductions.size();
+    }
+
     public final String startSymbol() {
         return nonTermSet.getSymbol(startSymbol);
     }
@@ -224,7 +196,27 @@ public class Grammar {
         return lexSet.hasSymbol(s);
     }
 
+    private int addNonTerm(final String nonTerm) {
+        if (nonTermSet.hasSymbol(nonTerm)) {
+            return nonTermSet.getIndex(nonTerm);
+        }
+        return nonTermSet.addSymbol(nonTerm);
+    }
+
+    // TODO: I don't like that we have getNonterminal() and mapNonterminal()
+    // methods. Should mapNonterminal return a NonTerminal instead of a string?
     public final NonTerminal getNonterminal(final int index) {
+        if (nonTermInfo.size() > index && nonTermInfo.get(index) != null) {
+            return nonTermInfo.get(index);
+        }
+
+        // bump up the size of nonTermInfo if necessary
+        for (int i = nonTermInfo.size() - 1; i < index; i++) {
+            nonTermInfo.add(null);
+        }
+
+        final NonTerminal newNonTerm = new NonTerminal(nonTermSet.getSymbol(index));
+        nonTermInfo.set(index, newNonTerm);
         return nonTermInfo.get(index);
     }
 
@@ -289,33 +281,36 @@ public class Grammar {
     }
 
     public Collection<Production> getBinaryProductionsWithLeftChild(final int leftChild) {
-        final Collection<Production> results = new LinkedList<Production>();
-        for (final Production p : binaryProductions) {
-            if (p.leftChild == leftChild) {
-                results.add(p);
-            }
-        }
-        return results;
+        // final Collection<Production> results = new LinkedList<Production>();
+        // for (final Production p : binaryProductions) {
+        // if (p.leftChild == leftChild) {
+        // results.add(p);
+        // }
+        // }
+        // return results;
+        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
     }
 
     public Collection<Production> getBinaryProductionsWithRightChild(final int rightChild) {
-        final Collection<Production> results = new LinkedList<Production>();
-        for (final Production p : binaryProductions) {
-            if (p.rightChild == rightChild) {
-                results.add(p);
-            }
-        }
-        return results;
+        // final Collection<Production> results = new LinkedList<Production>();
+        // for (final Production p : binaryProductions) {
+        // if (p.rightChild == rightChild) {
+        // results.add(p);
+        // }
+        // }
+        // return results;
+        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
     }
 
     public Collection<Production> getBinaryProductionsWithChildren(final int leftChild, final int rightChild) {
-        final Collection<Production> results = new LinkedList<Production>();
-        for (final Production p : binaryProductions) {
-            if (p.leftChild == leftChild && p.rightChild == rightChild) {
-                results.add(p);
-            }
-        }
-        return results;
+        // final Collection<Production> results = new LinkedList<Production>();
+        // for (final Production p : binaryProductions) {
+        // if (p.leftChild == leftChild && p.rightChild == rightChild) {
+        // results.add(p);
+        // }
+        // }
+        // return results;
+        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
     }
 
     public Collection<Production> getUnaryProductions() {
@@ -323,26 +318,22 @@ public class Grammar {
     }
 
     public Collection<Production> getUnaryProductionsWithChild(final int child) {
-        final List<Production> prods = unaryProdsByChild[child];
-        if (prods == null) {
-            return new LinkedList<Production>();
-        }
-        return prods;
+        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
     }
 
-    public final List<Production> getLexProdsByToken(final Token token) {
-        return lexicalProds[token.index];
+    public Collection<Production> getLexicalProductions() {
+        return lexicalProductions;
     }
 
-    public final List<Production> getLexProdsByToken(final String lex) throws Exception {
-        if (lexSet.hasSymbol(lex) == false) {
-            return null;
-        }
-        return lexicalProds[lexSet.getIndex(lex)];
+    public Collection<Production> getLexicalProductionsWithChild(final int child) {
+        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
     }
+
+    // public Collection<Production> getLexicalProductionsWithChild(final String childStr) {
+    // throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
+    // }
 
     public Production getProduction(final String A, final String B, final String C) throws Exception {
-        // final Production toFind = new Production(A, B, C, Float.NEGATIVE_INFINITY);
         assert binaryProductions != null && binaryProductions.size() > 0;
         if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
             final int a = nonTermSet.getIndex(A), b = nonTermSet.getIndex(B), c = nonTermSet.getIndex(C);
@@ -360,7 +351,7 @@ public class Grammar {
         if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B)) {
             final int a = nonTermSet.getIndex(A), b = nonTermSet.getIndex(B);
             for (final Production p : unaryProductions) {
-                if (p.parent == a && p.leftChild == b) {
+                if (p.parent == a && p.child() == b) {
                     return p;
                 }
             }
@@ -369,14 +360,25 @@ public class Grammar {
     }
 
     public Production getLexProduction(final String A, final String lex) throws Exception {
-        if (lexSet.hasSymbol(lex)) {
-            for (final Production p : getLexProdsByToken(lex)) {
-                if (p.parent == nonTermSet.getIndex(A)) {
+        assert lexicalProductions != null && lexicalProductions.size() > 0;
+        if (nonTermSet.hasSymbol(A) && lexSet.hasSymbol(lex)) {
+            final int a = nonTermSet.getIndex(A), b = lexSet.getIndex(lex);
+            for (final Production p : lexicalProductions) {
+                if (p.parent == a && p.child() == b) {
                     return p;
                 }
             }
         }
         return null;
+
+        // if (lexSet.hasSymbol(lex)) {
+        // for (final Production p : getLexProdsByToken(lex)) {
+        // if (p.parent == nonTermSet.getIndex(A)) {
+        // return p;
+        // }
+        // }
+        // }
+        // return null;
     }
 
     /**
@@ -432,9 +434,9 @@ public class Grammar {
         String s = "";
         s += "numBinaryProds=" + binaryProductions.size();
         s += " numUnaryProds=" + unaryProductions.size();
-        s += " numLexicalProds=" + numLexProds;
+        s += " numLexicalProds=" + lexicalProductions.size();
         s += " numNonTerms=" + nonTermSet.size();
-        // s += " numPosSymbols=" + posSet.size();
+        s += " numPosSymbols=" + numPosSymbols();
         // s += " numFactoredSymbols=" + factoredNonTermSet.size();
         s += " numLexSymbols=" + lexSet.size();
         s += " startSymbol=" + nonTermSet.getSymbol(startSymbol);
@@ -443,21 +445,6 @@ public class Grammar {
         s += " factorization=" + (isLeftFactored() ? "left" : "right");
 
         return s;
-    }
-
-    private int addNonTerm(final String nonTerm) {
-        if (nonTermSet.hasSymbol(nonTerm)) {
-            return nonTermSet.getIndex(nonTerm);
-        }
-
-        // set nonTermInfo[index] = NonTerminal. May possibly need to increase the size of the vector
-        final int index = nonTermSet.addSymbol(nonTerm);
-        for (int i = nonTermInfo.size() - 1; i < index; i++) {
-            nonTermInfo.add(null);
-        }
-        nonTermInfo.set(index, new NonTerminal(nonTerm));
-
-        return index;
     }
 
     public final class Production {
@@ -471,29 +458,31 @@ public class Grammar {
 
         // Binary production
         public Production(final int parent, final int leftChild, final int rightChild, final float prob) {
+            assert parent != -1 && leftChild != -1 && rightChild != -1;
             this.parent = parent;
             this.leftChild = leftChild;
             this.rightChild = rightChild;
             this.prob = prob;
 
-            nonTermInfo.get(leftChild).isLeftChild = true;
-            nonTermInfo.get(rightChild).isRightChild = true;
+            getNonterminal(leftChild).isLeftChild = true;
+            getNonterminal(rightChild).isRightChild = true;
         }
 
         // Binary production
-        public Production(final String parent, final String leftChild, final String rightChild, final float prob) throws Exception {
+        public Production(final String parent, final String leftChild, final String rightChild, final float prob) {
             this(addNonTerm(parent), addNonTerm(leftChild), addNonTerm(rightChild), prob);
         }
 
         // Unary production
-        public Production(final int parent, final int child, final float prob, final boolean isLex) throws Exception {
+        public Production(final int parent, final int child, final float prob, final boolean isLex) {
+            assert parent != -1 && child != -1;
             this.parent = parent;
             this.leftChild = child;
             if (!isLex) {
                 this.rightChild = UNARY_PRODUCTION;
             } else {
                 this.rightChild = LEXICAL_PRODUCTION;
-                nonTermInfo.get(parent).isPOS = true;
+                getNonterminal(parent).isPOS = true;
                 if (parent > maxPOSIndex) {
                     maxPOSIndex = parent;
                 }
