@@ -21,7 +21,7 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  * @version $Revision$ $Date$ $Author$
  */
 
-public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
+public abstract class SparseMatrixGrammar extends SortedGrammar {
 
     // Shift lengths and mask for packing and unpacking non-terminals into an int
     public final int leftChildShift;
@@ -29,7 +29,7 @@ public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
     public final int mask;
     protected final int validProductionPairs;
 
-    public BaseSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public SparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
 
         // Add 1 bit to leave empty for sign
@@ -49,7 +49,7 @@ public abstract class BaseSparseMatrixGrammar extends BaseSortedGrammar {
         validProductionPairs = productionPairs.size();
     }
 
-    public BaseSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public SparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 

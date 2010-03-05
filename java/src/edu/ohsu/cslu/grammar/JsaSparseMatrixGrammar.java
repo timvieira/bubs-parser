@@ -20,7 +20,7 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public final class JsaSparseMatrixGrammar extends BaseSparseMatrixGrammar {
+public final class JsaSparseMatrixGrammar extends SparseMatrixGrammar {
 
     /** Binary rules */
     private int[][] jsaBinaryRules;

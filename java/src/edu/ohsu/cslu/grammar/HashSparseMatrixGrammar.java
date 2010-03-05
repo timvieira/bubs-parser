@@ -21,7 +21,7 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public final class HashSparseMatrixGrammar extends Grammar {
+public final class HashSparseMatrixGrammar extends GrammarByChild {
 
     /** Binary productions, stored as a matrix */
     private Long2FloatOpenHashMap[] binaryRuleMatrix;

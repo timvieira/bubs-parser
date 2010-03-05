@@ -5,7 +5,7 @@ import java.util.LinkedList;
 
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 
-public class LeftListGrammar extends Grammar {
+public class LeftListGrammar extends GrammarByChild {
 
     protected LinkedList<Production>[] binaryProdsByLeftNonTerm;
 
