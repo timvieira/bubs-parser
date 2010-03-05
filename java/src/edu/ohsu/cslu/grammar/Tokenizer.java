@@ -10,80 +10,39 @@ public class Tokenizer {
         this.lexSet = lexSet;
     }
 
-    public class Token {
-
-        public String word;
-        public int index;
-        private boolean isUnk;
-
-        public Token(final String word) throws Exception {
-            this.word = word;
-            setIndexAndUnk();
+    public String[] tokenize(final String sentence) {
+        final String tokens[] = ParserUtil.tokenize(sentence);
+        for (int i = 0; i < tokens.length; i++) {
+            tokens[i] = mapToLexSetEntry(tokens[i]);
         }
+        return tokens;
+    }
 
-        @Override
-        public String toString() {
-            return this.toString(false);
+    public int[] tokenizeToIndex(final String sentence) {
+        final String tokens[] = ParserUtil.tokenize(sentence);
+        final int tokenIndices[] = new int[tokens.length];
+        for (int i = 0; i < tokens.length; i++) {
+            tokenIndices[i] = lexSet.getIndex(mapToLexSetEntry(tokens[i]));
         }
+        return tokenIndices;
+    }
 
-        public boolean isUnk() {
-            return this.isUnk;
-        }
-
-        public String toString(final boolean appendUnkStr) {
-            if (appendUnkStr == true && isUnk() == true) {
-                return word + "::" + lexSet.getSymbol(index);
-            }
+    public String mapToLexSetEntry(final String word) {
+        if (lexSet.hasSymbol(word)) {
             return word;
         }
 
-        // public String getToken(String wordStr) {
-        // if (lexSet.hasSymbol(word)) {
-        // return wordStr;
-        // }
-        // wordStr = wordToUnkString(wordStr);
-        // // remove last feature from unk string until we find a matching entry in the lexicon
-        // while (!lexSet.hasSymbol(wordStr) && wordStr.contains("-")) {
-        // wordStr = wordStr.substring(0, wordStr.lastIndexOf('-'));
-        // }
-        //
-        // if (lexSet.hasSymbol(wordStr) == false) {
-        // throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
-        // }
-        // return wordStr;
-        // }
-
-        private void setIndexAndUnk() throws Exception {
-            assert this.word != null;
-            String unkStr;
-
-            if (lexSet.hasSymbol(word)) {
-                this.index = lexSet.getIndex(word);
-                this.isUnk = false;
-            } else {
-                this.isUnk = true;
-                unkStr = wordToUnkString(word);
-                // remove last feature from unk string until we find a matching entry in the lexicon
-                while (!lexSet.hasSymbol(unkStr) && unkStr.contains("-")) {
-                    unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
-                }
-
-                if (lexSet.hasSymbol(unkStr) == false) {
-                    throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
-                }
-                this.index = lexSet.getIndex(unkStr);
-            }
+        String unkStr = wordToUnkString(word);
+        // remove last feature from unk string until we find a matching entry in the lexicon
+        while (!lexSet.hasSymbol(unkStr) && unkStr.contains("-")) {
+            unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
         }
-    }
 
-    public Token[] tokenize(final String sentence) throws Exception {
-        final String tokens[] = ParserUtil.tokenize(sentence);
-        final Token[] sentTokens = new Token[tokens.length];
-
-        for (int i = 0; i < tokens.length; i++) {
-            sentTokens[i] = new Token(tokens[i]);
+        if (lexSet.hasSymbol(unkStr) == false) {
+            throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
         }
-        return sentTokens;
+
+        return unkStr;
     }
 
     // taken from Berkeley Parser (getSignature)
@@ -130,4 +89,82 @@ public class Tokenizer {
 
         return unkStr;
     }
+
+    // public Token[] tokenize(final String sentence) throws Exception {
+    // final String tokens[] = ParserUtil.tokenize(sentence);
+    // final Token[] sentTokens = new Token[tokens.length];
+    //
+    // for (int i = 0; i < tokens.length; i++) {
+    // sentTokens[i] = new Token(tokens[i]);
+    // }
+    // return sentTokens;
+    // }
+
+    // public class Token {
+    //
+    // public String word, origWord;
+    // public int index;
+    // private boolean isUnk;
+    //
+    // public Token(final String word) throws Exception {
+    // this.origWord = word;
+    // setIndexAndUnk();
+    // }
+    //
+    // @Override
+    // public String toString() {
+    // return this.toString(false);
+    // }
+    //
+    // public boolean isUnk() {
+    // return this.isUnk;
+    // }
+    //
+    // public String toString(final boolean appendUnkStr) {
+    // if (appendUnkStr == true && isUnk() == true) {
+    // return origWord + "::" + word;
+    // }
+    // return origWord;
+    // }
+    //
+    // // public String getToken(String wordStr) {
+    // // if (lexSet.hasSymbol(word)) {
+    // // return wordStr;
+    // // }
+    // // wordStr = wordToUnkString(wordStr);
+    // // // remove last feature from unk string until we find a matching entry in the lexicon
+    // // while (!lexSet.hasSymbol(wordStr) && wordStr.contains("-")) {
+    // // wordStr = wordStr.substring(0, wordStr.lastIndexOf('-'));
+    // // }
+    // //
+    // // if (lexSet.hasSymbol(wordStr) == false) {
+    // // throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
+    // // }
+    // // return wordStr;
+    // // }
+    //
+    // private void setIndexAndUnk() throws Exception {
+    // assert this.origWord != null;
+    // String unkStr;
+    //
+    // if (lexSet.hasSymbol(origWord)) {
+    // this.index = lexSet.getIndex(origWord);
+    // this.isUnk = false;
+    // } else {
+    // this.isUnk = true;
+    // unkStr = wordToUnkString(origWord);
+    // // remove last feature from unk string until we find a matching entry in the lexicon
+    // while (!lexSet.hasSymbol(unkStr) && unkStr.contains("-")) {
+    // unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
+    // }
+    //
+    // if (lexSet.hasSymbol(unkStr) == false) {
+    // throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
+    // }
+    //
+    // this.word = unkStr;
+    // this.index = lexSet.getIndex(unkStr);
+    // }
+    // }
+    // }
 }
