@@ -8,7 +8,6 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.Log;
@@ -74,7 +73,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
 
                 if (goldChart != null) {
 
-                    final Token sent[] = grammar.tokenize(sentence);
+                    final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
                     initParser(sent.length);
                     addLexicalProductions(sent);
                     addUnaryExtensionsToLexProds(goldChart);
@@ -188,7 +187,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
 
                 if (goldChart != null) {
 
-                    final Token sent[] = grammar.tokenize(sentence);
+                    final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
                     initParser(sent.length);
                     addLexicalProductions(sent);
                     // addUnaryExtensionsToLexProds();

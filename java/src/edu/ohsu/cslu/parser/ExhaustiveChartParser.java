@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
@@ -23,7 +22,7 @@ public abstract class ExhaustiveChartParser extends ChartParser {
 
         final long startTime = System.currentTimeMillis();
 
-        final Token sent[] = grammar.tokenize(sentence);
+        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
         currentSentence = sentence;
 
         initParser(sent.length);

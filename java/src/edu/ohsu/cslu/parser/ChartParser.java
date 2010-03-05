@@ -4,7 +4,6 @@ import java.util.List;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class ChartParser extends Parser {
@@ -19,11 +18,11 @@ public abstract class ChartParser extends Parser {
         chart = new Chart<ArrayChartCell>(sentLength, ArrayChartCell.class, grammar);
     }
 
-    protected List<ChartEdge> addLexicalProductions(final Token sent[]) throws Exception {
+    protected List<ChartEdge> addLexicalProductions(final int sent[]) throws Exception {
         ChartCell cell;
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
-            for (final Production lexProd : grammar.getLexProdsByToken(sent[i])) {
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 cell = chart.getCell(i, i + 1);
                 cell.addEdge(new ChartEdge(lexProd, cell, lexProd.prob));
             }

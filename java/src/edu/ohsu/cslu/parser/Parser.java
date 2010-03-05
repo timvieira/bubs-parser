@@ -38,7 +38,7 @@ public abstract class Parser {
         // final long sentStartMem;
         double sentParseTimeSeconds;
         final double totalParseMemMB = 0.0;
-        double totalParseTimeSeconds = 0.0;
+        double totalParseTimeSeconds = 0.0, totalInsideScore = 0.0;
         String insideProbStr;
 
         for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
@@ -73,6 +73,7 @@ public abstract class Parser {
                     }
                     outputStream.write(bestParseTree.toString(printInsideProbs) + "\n");
                     insideProbStr = Float.toString(bestParseTree.chartEdge.inside);
+                    totalInsideScore += bestParseTree.chartEdge.inside;
                     // printTreeEdgeStats(findChartEdgesForTree(inputTree, (ChartParser)parser), parser);
                     // printTreeEdgeStats(bestParseTree, parser);
                 }
@@ -91,7 +92,8 @@ public abstract class Parser {
         // TODO: allow gold trees as input and report F-score
         // TODO: need to port python tree transforms / de-transforms to Java
         // and either write our own eval or make external call to EVALB
-        Log.info(1, "INFO: numSentences=" + sentNum + " totalSeconds=" + totalParseTimeSeconds + " avgSecondsPerSent=" + (totalParseTimeSeconds / sentNum));
+        Log.info(1, "INFO: numSentences=" + sentNum + " totalSeconds=" + totalParseTimeSeconds + " avgSecondsPerSent=" + (totalParseTimeSeconds / sentNum) + " totalInsideScore="
+                + totalInsideScore);
     }
 
     public void printTreeEdgeStats(final ParseTree tree, final Parser parser) {

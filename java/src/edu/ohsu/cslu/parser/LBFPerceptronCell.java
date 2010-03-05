@@ -10,7 +10,6 @@ import java.util.Vector;
 import edu.ohsu.cslu.classifier.Perceptron;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -64,7 +63,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
 
                 if (goldChart != null) {
 
-                    final Token sent[] = grammar.tokenize(sentence);
+                    final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
                     initParser(sent.length);
                     addLexicalProductions(sent);
                     addUnaryExtensionsToLexProds();

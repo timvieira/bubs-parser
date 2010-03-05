@@ -7,7 +7,6 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -43,7 +42,7 @@ public class AgendaChartParser extends ChartParser {
         ChartEdge edge;
         ChartCell parentCell;
         boolean edgeAdded;
-        final Token sent[] = grammar.tokenize(sentence);
+        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
 
         initParser(sent.length);
         final List<ChartEdge> edgesToExpand = addLexicalProductions(sent);
@@ -87,7 +86,7 @@ public class AgendaChartParser extends ChartParser {
     }
 
     @Override
-    protected List<ChartEdge> addLexicalProductions(final Token sent[]) throws Exception {
+    protected List<ChartEdge> addLexicalProductions(final int sent[]) throws Exception {
         ChartEdge newEdge;
         ChartCell cell;
         final List<ChartEdge> edgesToExpand = new LinkedList<ChartEdge>();
@@ -95,7 +94,7 @@ public class AgendaChartParser extends ChartParser {
         // add lexical productions and unary productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
             cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : grammar.getLexProdsByToken(sent[i])) {
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 newEdge = new ChartEdge(lexProd, cell, lexProd.prob, edgeSelector);
                 // Add lexical prods directly to the chart instead of to the agenda because
                 // the boundary FOM (and possibly others use the surrounding POS tags to calculate

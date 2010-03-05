@@ -6,7 +6,6 @@ import java.util.List;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 public class ECPGrammarLoopBerkFilter extends ExhaustiveChartParser {
@@ -49,14 +48,14 @@ public class ECPGrammarLoopBerkFilter extends ExhaustiveChartParser {
     }
 
     @Override
-    protected List<ChartEdge> addLexicalProductions(final Token sent[]) throws Exception {
+    protected List<ChartEdge> addLexicalProductions(final int sent[]) throws Exception {
         Collection<Production> validProductions;
         ChartCell cell;
         float edgeLogProb;
 
         // add lexical productions and unary productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
-            for (final Production lexProd : grammar.getLexProdsByToken(sent[i])) {
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 cell = chart.getCell(i, i + 1);
                 cell.addEdge(new ChartEdge(lexProd, cell, lexProd.prob));
                 updateRuleConstraints(lexProd.parent, i, i + 1);
@@ -128,7 +127,7 @@ public class ECPGrammarLoopBerkFilter extends ExhaustiveChartParser {
     @Override
     protected void visitCell(final ChartCell cell) {
         ChartCell leftCell, rightCell;
-        ChartEdge leftEdge, rightEdge, parentEdge, oldBestEdge;
+        ChartEdge leftEdge, rightEdge, oldBestEdge;
         float prob;
         final int start = cell.start(), end = cell.end();
         boolean foundBetter, edgeWasAdded;
@@ -164,11 +163,9 @@ public class ECPGrammarLoopBerkFilter extends ExhaustiveChartParser {
             }
         }
 
-        for (final Production p : grammar.getUnaryProductions()) {
-            parentEdge = cell.getBestEdge(p.leftChild);
-            if ((parentEdge != null) && (parentEdge.prod.isUnaryProd() == false)) {
-                prob = p.prob + parentEdge.inside;
-                // the child cell is also the parent cell for unary productions
+        for (final ChartEdge childEdge : cell.getEdges()) {
+            for (final Production p : grammar.getUnaryProductionsWithChild(childEdge.prod.parent)) {
+                prob = p.prob + childEdge.inside;
                 edgeWasAdded = cell.addEdge(new ChartEdge(p, cell, prob));
                 if (edgeWasAdded) {
                     updateRuleConstraints(p.parent, start, end);
