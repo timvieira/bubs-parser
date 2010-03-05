@@ -3,6 +3,7 @@ package edu.ohsu.cslu.parser;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 
 public final class ArrayChartCell extends ChartCell {
@@ -83,11 +84,16 @@ public final class ArrayChartCell extends ChartCell {
         for (int i = 0; i < bestEdge.length; i++) {
             final ChartEdge tmpEdge = bestEdge[i];
             if (tmpEdge != null) {
-                final int parent = tmpEdge.prod.parent;
-                if (chart.grammar.isLeftChild(parent))
+                // final int parent = tmpEdge.prod.parent;
+                final NonTerminal nt = chart.grammar.getNonterminal(tmpEdge.prod.parent);
+                // if (chart.grammar.isLeftChild(parent))
+                if (nt.isLeftChild()) {
                     bestLeftEdges.add(tmpEdge);
-                if (chart.grammar.isRightChild(parent))
+                }
+                // if (chart.grammar.isRightChild(parent))
+                if (nt.isRightChild()) {
                     bestRightEdges.add(tmpEdge);
+                }
             }
         }
         bestEdgesHaveChanged = false;
@@ -104,7 +110,7 @@ public final class ArrayChartCell extends ChartCell {
         numEdgesAdded++;
         bestEdgesHaveChanged = true;
         bestEdge[parent] = edge;
-        if (isLexCell && chart.grammar.isPOS(parent)) {
+        if (isLexCell && chart.grammar.getNonterminal(parent).isPOS()) {
             posEntries.addLast(parent);
         }
         return true;

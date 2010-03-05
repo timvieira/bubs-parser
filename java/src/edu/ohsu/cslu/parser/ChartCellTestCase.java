@@ -75,7 +75,7 @@ public abstract class ChartCellTestCase<C extends ChartCell, G extends Grammar> 
         final ChartEdge top = new ChartEdge(simpleGrammar.new Production("TOP", "NP", -0.2f, false), leftChild, null, -0.2f);
         parent.addEdge(top);
 
-        assertEquals(bestNp, parent.getBestEdge(simpleGrammar.getNonTermIndex("NP")));
-        assertEquals(top, parent.getBestEdge(simpleGrammar.getNonTermIndex("TOP")));
+        assertEquals(bestNp, parent.getBestEdge(simpleGrammar.mapNonterminal("NP")));
+        assertEquals(top, parent.getBestEdge(simpleGrammar.mapNonterminal("TOP")));
     }
 }

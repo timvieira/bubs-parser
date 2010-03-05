@@ -30,7 +30,7 @@ public class BoundaryInOut extends EdgeSelector {
     public BoundaryInOut(final Grammar grammar, final BufferedReader fomModelStream) throws Exception {
         this.grammar = grammar;
         for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
-            if (grammar.isPOS(ntIndex)) {
+            if (grammar.getNonterminal(ntIndex).isPOS()) {
                 posSet.add(ntIndex);
             } else {
                 clauseNonTermSet.add(ntIndex);

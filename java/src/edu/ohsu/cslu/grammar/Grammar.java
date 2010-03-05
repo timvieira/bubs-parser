@@ -31,6 +31,7 @@ public class Grammar {
 
     public final SymbolSet<String> nonTermSet = new SymbolSet<String>();
     public final SymbolSet<String> lexSet = new SymbolSet<String>();
+
     private final Vector<NonTerminal> nonTermInfo = new Vector<NonTerminal>();
     protected HashSet<Integer> posSet = new HashSet<Integer>();
 
@@ -155,7 +156,7 @@ public class Grammar {
         // add the indices of factored non-terminals to their own set
         for (final String nt : nonTermSet) {
             final int ntIndex = nonTermSet.getIndex(nt);
-            if (isPOS(ntIndex)) {
+            if (getNonterminal(ntIndex).isPOS()) {
                 posSet.add(ntIndex);
             }
 
@@ -223,29 +224,46 @@ public class Grammar {
         return lexSet.hasSymbol(s);
     }
 
-    public final int getNonTermIndex(final String token) throws Exception {
-        return nonTermSet.getIndex(token);
+    public final NonTerminal getNonterminal(final int index) {
+        return nonTermInfo.get(index);
     }
 
+    // public final int getNonTermIndex(final String token) throws Exception {
+    // return nonTermSet.getIndex(token);
+    // }
+
+    public final String mapNonterminal(final int nonterminal) {
+        return nonTermSet.getSymbol(nonterminal);
+    }
+
+    public final int mapNonterminal(final String nonterminal) {
+        return nonTermSet.getIndex(nonterminal);
+    }
+
+    public final String mapLexicalEntry(final int lexicalEntry) {
+        return lexSet.getSymbol(lexicalEntry);
+    }
+
+    // TODO: can probably get rid of this and just derive it where necessary
     public final int maxPOSIndex() {
         return maxPOSIndex;
     }
 
-    public boolean isPOS(final int nonTermIndex) {
-        return nonTermInfo.get(nonTermIndex).isPOS();
-    }
-
-    public final boolean isLeftChild(final int nonTerm) {
-        return nonTermInfo.get(nonTerm).isLeftChild();
-    }
-
-    public final boolean isRightChild(final int nonTerm) {
-        return nonTermInfo.get(nonTerm).isRightChild();
-    }
-
-    public boolean isFactoredNonTerm(final int nonTermIndex) {
-        return nonTermInfo.get(nonTermIndex).isFactored();
-    }
+    // public boolean isPOS(final int nonTermIndex) {
+    // return nonTermInfo.get(nonTermIndex).isPOS();
+    // }
+    //
+    // public final boolean isLeftChild(final int nonTerm) {
+    // return nonTermInfo.get(nonTerm).isLeftChild();
+    // }
+    //
+    // public final boolean isRightChild(final int nonTerm) {
+    // return nonTermInfo.get(nonTerm).isRightChild();
+    // }
+    //
+    // public boolean isFactoredNonTerm(final int nonTermIndex) {
+    // return nonTermInfo.get(nonTermIndex).isFactored();
+    // }
 
     private boolean isFactoredNonTerm(final String nonTerm, final GrammarFormatType grammarType) {
         if (grammarType == GrammarFormatType.CSLU) {
@@ -264,18 +282,6 @@ public class Grammar {
 
     public boolean isRightFactored() {
         return isLeftFactored == false;
-    }
-
-    public final String mapNonterminal(final int nonterminal) {
-        return nonTermSet.getSymbol(nonterminal);
-    }
-
-    public final int mapNonterminal(final String nonterminal) {
-        return nonTermSet.getIndex(nonterminal);
-    }
-
-    public final String mapLexicalEntry(final int lexicalEntry) {
-        return lexSet.getSymbol(lexicalEntry);
     }
 
     public Collection<Production> getBinaryProductions() {

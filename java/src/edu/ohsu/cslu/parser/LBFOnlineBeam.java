@@ -51,7 +51,7 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser {
                         possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
                         if (possibleProds != null) {
                             for (final Production p : possibleProds) {
-                                if (!onlyFactored || grammar.isFactoredNonTerm(p.parent)) {
+                                if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
                                     final float prob = p.prob + leftEdge.inside + rightEdge.inside;
                                     edge = new ChartEdge(p, leftCell, rightCell, prob, edgeSelector);
                                     processEdge(edge, cell);
