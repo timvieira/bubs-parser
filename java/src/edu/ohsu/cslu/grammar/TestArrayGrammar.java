@@ -14,7 +14,7 @@ public class TestArrayGrammar {
                 GrammarFormatType.CSLU);
         assertEquals(11793, g.binaryProductions.size());
         assertEquals(242, g.unaryProductions.size());
-        assertEquals(52000, g.numLexProds);
+        assertEquals(52000, g.numLexProds());
         assertEquals(2657, g.numNonTerms());
         assertEquals(46, g.numPosSymbols());
         assertEquals(44484, g.numLexSymbols());

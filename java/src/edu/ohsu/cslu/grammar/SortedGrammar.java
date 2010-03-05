@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -15,7 +14,7 @@ import java.util.TreeSet;
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 import edu.ohsu.cslu.parser.util.Log;
 
-public abstract class BaseSortedGrammar extends Grammar {
+public abstract class SortedGrammar extends GrammarByChild {
     public String startSymbolStr = null;
 
     public int rightChildOnlyStart;
@@ -25,8 +24,12 @@ public abstract class BaseSortedGrammar extends Grammar {
     public int leftChildOnlyStart;
     public int unaryChildOnlyStart;
 
+    protected SortedGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    }
+
     @SuppressWarnings("unchecked")
-    protected BaseSortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    protected SortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         rightChildOnlyStart = 0;
         eitherChildStart = leftChildOnlyStart = unaryChildOnlyStart = posStart = -1;
 
@@ -111,7 +114,7 @@ public abstract class BaseSortedGrammar extends Grammar {
         // Store the indices of the NT class boundaries
         NonTerminalClass ntClass = null;
         for (final NonTerminal nonTerminal : sortedNonTerminals) {
-            final int index = nonTermSet.getIndex(nonTerminal.label);
+            final int index = nonTermSet.addSymbol(nonTerminal.label);
 
             // Record class transitions
             if (nonTerminal.ntClass != ntClass) {
@@ -152,52 +155,62 @@ public abstract class BaseSortedGrammar extends Grammar {
 
         maxPOSIndex = posStart + posSet.size() - 1;
 
-        startSymbol = nonTermSet.getIndex(startSymbolStr);
-        nullSymbol = nonTermSet.getIndex(nullSymbolStr);
+        startSymbol = nonTermSet.addSymbol(startSymbolStr);
+        nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
 
         // Now that all NTs are mapped, we can create Production instances for all rules
 
         // Lexical rules first
-        final List<Production> tmpProdList = new LinkedList<Production>();
+        // final List<Production> tmpProdList = new LinkedList<Production>();
+        // for (final StringRule lexicalRule : lexicalRules) {
+        // tmpProdList.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexSet.getIndex(lexicalRule.leftChild), lexicalRule.probability, true));
+        // }
+        //
+        // // store lexical prods indexed by the word
+        // final ArrayList<LinkedList<Production>> tmpLexicalProds = new ArrayList<LinkedList<Production>>(lexSet.numSymbols());
+        // for (int i = 0; i < lexSet.numSymbols(); i++) {
+        // tmpLexicalProds.add(null);
+        // }
+        // // numLexProds = lexicalRules.size();
+        //
+        // for (final Production p : tmpProdList) {
+        // LinkedList<Production> list = tmpLexicalProds.get(p.leftChild);
+        //
+        // if (list == null) {
+        // list = new LinkedList<Production>();
+        // tmpLexicalProds.set(p.leftChild, list);
+        // }
+        // list.add(p);
+        // }
+        //
+        // lexicalProdsByChild = tmpLexicalProds.toArray(new LinkedList[tmpLexicalProds.size()]);
+
+        lexicalProductions = new LinkedList<Production>();
         for (final StringRule lexicalRule : lexicalRules) {
-            tmpProdList.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexSet.getIndex(lexicalRule.leftChild), lexicalRule.probability, true));
+            final int lexIndex = lexSet.addSymbol(lexicalRule.leftChild); // we don't care about the sorted order of the lexSet
+            lexicalProductions.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexIndex, lexicalRule.probability, true));
         }
-
-        // store lexical prods indexed by the word
-        final ArrayList<LinkedList<Production>> tmpLexicalProds = new ArrayList<LinkedList<Production>>(lexSet.numSymbols());
-        for (int i = 0; i < lexSet.numSymbols(); i++) {
-            tmpLexicalProds.add(null);
-        }
-        numLexProds = lexicalRules.size();
-
-        for (final Production p : tmpProdList) {
-            LinkedList<Production> list = tmpLexicalProds.get(p.leftChild);
-
-            if (list == null) {
-                list = new LinkedList<Production>();
-                tmpLexicalProds.set(p.leftChild, list);
-            }
-            list.add(p);
-        }
-
-        lexicalProds = tmpLexicalProds.toArray(new LinkedList[tmpLexicalProds.size()]);
 
         // And unary and binary rules
         unaryProductions = new LinkedList<Production>();
         binaryProductions = new LinkedList<Production>();
 
         for (final StringRule grammarRule : grammarRules) {
-
             if (grammarRule instanceof BinaryStringRule) {
                 binaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild, ((BinaryStringRule) grammarRule).rightChild, grammarRule.probability));
             } else {
                 unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild, grammarRule.probability, false));
             }
         }
-    }
 
-    protected BaseSortedGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+        numUnaryProds = unaryProductions.size();
+        unaryProdsByChild = storeProductionByChild(unaryProductions);
+        // unaryProductions = null; // remove from memory since we now store by child
+
+        numLexProds = lexicalProductions.size();
+        lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
+        lexicalProductions = null; // remove from memory since we now store by child
+
     }
 
     private List<StringRule> readLexProds(final Reader lexFile) throws IOException {
@@ -334,7 +347,7 @@ public abstract class BaseSortedGrammar extends Grammar {
         final StringBuilder sb = new StringBuilder(256);
         sb.append("Binary rules: " + binaryProductions.size() + '\n');
         sb.append("Unary rules: " + unaryProductions.size() + '\n');
-        sb.append("Lexical rules: " + numLexProds + '\n');
+        sb.append("Lexical rules: " + numLexProds() + '\n');
 
         sb.append("Non Terminals: " + nonTermSet.size() + '\n');
         sb.append("Lexical symbols: " + lexSet.size() + '\n');

@@ -19,7 +19,7 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class CsrSparseMatrixGrammar extends BaseSparseMatrixGrammar {
+public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
     /**
      * Offsets into {@link #csrBinaryRowIndices} for the start of each row, indexed by row index (non-terminals), with one extra entry appended to prevent loops from falling off

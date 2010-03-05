@@ -8,7 +8,7 @@ import java.util.LinkedList;
 
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 
-public class LeftHashGrammar extends Grammar {
+public class LeftHashGrammar extends GrammarByChild {
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 

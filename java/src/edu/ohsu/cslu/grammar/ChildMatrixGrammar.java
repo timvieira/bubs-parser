@@ -5,7 +5,7 @@ import java.util.LinkedList;
 
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 
-public class ChildMatrixGrammar extends Grammar {
+public class ChildMatrixGrammar extends GrammarByChild {
 
     public LinkedList<Production>[][] binaryProdMatrix;
 
