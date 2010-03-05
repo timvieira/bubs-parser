@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.BaseSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CrossProductVector;
 import edu.ohsu.cslu.parser.SparseMatrixVectorParser.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
@@ -33,7 +33,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     public void testCrossProductVectorExample() throws Exception {
 
         // Create the parser
-        final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar1;
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
         final Chart<? extends DenseVectorChartCell> chart = (Chart<? extends DenseVectorChartCell>) p.chart;
@@ -102,7 +102,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     public void testBinarySpMVMultiplyExample() throws Exception {
 
         // Create the parser
-        final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar1;
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
         final Chart<? extends DenseVectorChartCell> chart = (Chart<? extends DenseVectorChartCell>) p.chart;
@@ -146,7 +146,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     public void testUnarySpMVMultiplyExample() throws Exception {
 
         // Create the parser
-        final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar1;
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
 
@@ -175,7 +175,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     public void testCrossProductVectorSimpleGrammar2() throws Exception {
 
         // Create the parser
-        final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar2;
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
         final Chart<? extends DenseVectorChartCell> chart = (Chart<? extends DenseVectorChartCell>) p.chart;
@@ -325,7 +325,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     public void testBinarySpMVMultiplySimpleGrammar2() throws Exception {
 
         // Create the parser
-        final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar2;
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
         final Chart<? extends ChartCell> chart = p.chart;
@@ -423,7 +423,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     public void testUnarySpMVMultiplySimpleGrammar2() throws Exception {
 
         // Create the parser
-        final BaseSparseMatrixGrammar g = (BaseSparseMatrixGrammar) simpleGrammar2;
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
 
@@ -462,7 +462,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         assertEquals(null, vpVb.rightCell);
     }
 
-    private int pack(final BaseSparseMatrixGrammar grammar, final int leftChild, final int rightChild) {
+    private int pack(final SparseMatrixGrammar grammar, final int leftChild, final int rightChild) {
         return grammar.pack(leftChild, (short) rightChild);
     }
 

@@ -5,7 +5,6 @@ import java.util.List;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -22,7 +21,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
     @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
         ChartCell cell;
-        final Token sent[] = grammar.tokenize(sentence);
+        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
         currentSentence = sentence;
 
         initParser(sent.length);

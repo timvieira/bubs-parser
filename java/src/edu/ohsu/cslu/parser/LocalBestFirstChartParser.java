@@ -6,7 +6,6 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.grammar.Tokenizer.Token;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -41,7 +40,7 @@ public class LocalBestFirstChartParser extends ChartParser {
     @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
         ChartCell cell;
-        final Token sent[] = grammar.tokenize(sentence);
+        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
         currentSentence = sentence;
 
         initParser(sent.length);
@@ -63,13 +62,13 @@ public class LocalBestFirstChartParser extends ChartParser {
     }
 
     @Override
-    protected List<ChartEdge> addLexicalProductions(final Token sent[]) throws Exception {
+    protected List<ChartEdge> addLexicalProductions(final int sent[]) throws Exception {
         ChartCell cell;
 
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
             cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : grammar.getLexProdsByToken(sent[i])) {
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 cell.addEdge(new ChartEdge(lexProd, cell, lexProd.prob));
             }
         }

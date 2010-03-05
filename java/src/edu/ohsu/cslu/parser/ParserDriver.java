@@ -15,6 +15,7 @@ import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
@@ -151,7 +152,7 @@ public class ParserDriver extends BaseCommandlineTool {
             return new ChildMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
         case ECPGrammarLoop:
         case ECPGrammarLoopBerkeleyFilter:
-            return new Grammar(pcfgFileName, lexFileName, grammarFormat);
+            return new GrammarByChild(pcfgFileName, lexFileName, grammarFormat);
 
         case AgendaChartParser:
         case ACPWithMemory:
