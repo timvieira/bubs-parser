@@ -24,11 +24,10 @@ public class Grammar {
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
     private boolean isLeftFactored;
 
-    public final SymbolSet<String> nonTermSet = new SymbolSet<String>();
-    public final SymbolSet<String> lexSet = new SymbolSet<String>();
-
-    private final Vector<NonTerminal> nonTermInfo = new Vector<NonTerminal>();
-    protected HashSet<Integer> posSet = new HashSet<Integer>();
+    protected final SymbolSet<String> nonTermSet = new SymbolSet<String>();
+    protected final SymbolSet<String> lexSet = new SymbolSet<String>();
+    protected final Vector<NonTerminal> nonTermInfo = new Vector<NonTerminal>();
+    protected final HashSet<Integer> posSet = new HashSet<Integer>();
 
     public Tokenizer tokenizer;
 
@@ -68,7 +67,8 @@ public class Grammar {
             throw new IllegalArgumentException("No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
         }
 
-        finalizeAllLabelSets();
+        nonTermSet.finalize();
+        lexSet.finalize();
 
         Log.info(1, "INFO: " + getStats());
     }
@@ -174,6 +174,10 @@ public class Grammar {
 
     public final int numPosSymbols() {
         return posSet.size();
+    }
+
+    public int numBinaryProds() {
+        return binaryProductions.size();
     }
 
     public int numUnaryProds() {
@@ -360,16 +364,6 @@ public class Grammar {
             return p.prob;
         }
         return Float.NEGATIVE_INFINITY;
-    }
-
-    protected void finalizeAllLabelSets() {
-        nonTermSet.finalize();
-        lexSet.finalize();
-    }
-
-    protected void unfinalizeAllLabelSets() {
-        nonTermSet.unfinalize();
-        lexSet.unfinalize();
     }
 
     public String getStats() {
