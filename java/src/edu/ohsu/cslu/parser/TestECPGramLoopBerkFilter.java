@@ -24,7 +24,7 @@ public class TestECPGramLoopBerkFilter extends ExhaustiveChartParserTestCase {
 
     @Override
     protected Parser createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new ECPGrammarLoopBerkFilter(grammar, cellSelector);
+        return new ECPGrammarLoopBerkFilter((GrammarByChild) grammar, cellSelector);
     }
 
     @Override
