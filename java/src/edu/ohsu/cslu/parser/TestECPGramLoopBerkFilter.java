@@ -3,6 +3,7 @@ package edu.ohsu.cslu.parser;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
@@ -18,7 +19,7 @@ public class TestECPGramLoopBerkFilter extends ExhaustiveChartParserTestCase {
 
     @Override
     protected Class<? extends Grammar> grammarClass() {
-        return Grammar.class;
+        return GrammarByChild.class;
     }
 
     @Override

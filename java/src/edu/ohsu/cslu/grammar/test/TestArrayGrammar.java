@@ -1,12 +1,11 @@
 package edu.ohsu.cslu.grammar.test;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+import static org.junit.Assert.assertEquals;
 
 public class TestArrayGrammar {
     @Test
@@ -15,7 +14,7 @@ public class TestArrayGrammar {
                 GrammarFormatType.CSLU);
         assertEquals(11793, g.getBinaryProductions().size());
         assertEquals(242, g.getUnaryProductions().size());
-        assertEquals(52000, g.numLexProds);
+        assertEquals(52000, g.numLexProds());
         assertEquals(2657, g.numNonTerms());
         assertEquals(46, g.numPosSymbols());
         assertEquals(44484, g.numLexSymbols());
