@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -205,6 +204,8 @@ public abstract class SortedGrammar extends GrammarByChild {
 
         numUnaryProds = unaryProductions.size();
         unaryProdsByChild = storeProductionByChild(unaryProductions);
+        // TODO: unaryProductions is used in inherited classes. We should change that so
+        // we can delete this reference.
         // unaryProductions = null; // remove from memory since we now store by child
 
         numLexProds = lexicalProductions.size();
@@ -289,57 +290,6 @@ public abstract class SortedGrammar extends GrammarByChild {
 
     public final boolean isValidLeftChild(final int child) {
         return (child >= posStart && child < unaryChildOnlyStart && child != nullSymbol);
-    }
-
-    // TODO: not efficient. Should index by child
-    @Override
-    public Collection<Production> getUnaryProductionsWithChild(final int child) {
-        final List<Production> matchingProds = new LinkedList<Production>();
-        for (final Production p : unaryProductions) {
-            if (p.leftChild == child)
-                matchingProds.add(p);
-        }
-
-        return matchingProds;
-    }
-
-    /**
-     * Terribly inefficient; should be overridden by child classes
-     * 
-     * @throws Exception
-     */
-    @Override
-    public float logProbability(final String parent, final String leftChild, final String rightChild) throws Exception {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        final int leftChildIndex = nonTermSet.getIndex(leftChild);
-        final int rightChildIndex = nonTermSet.getIndex(rightChild);
-
-        for (final Production p : binaryProductions) {
-            if (p.parent == parentIndex && p.leftChild == leftChildIndex && p.rightChild == rightChildIndex) {
-                return p.prob;
-            }
-        }
-
-        return Float.NEGATIVE_INFINITY;
-    }
-
-    /**
-     * Terribly inefficient; should be overridden by child classes
-     * 
-     * @throws Exception
-     */
-    @Override
-    public float logProbability(final String parent, final String child) throws Exception {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        final int leftChildIndex = nonTermSet.getIndex(child);
-
-        for (final Production p : unaryProductions) {
-            if (p.parent == parentIndex && p.leftChild == leftChildIndex) {
-                return p.prob;
-            }
-        }
-
-        return Float.NEGATIVE_INFINITY;
     }
 
     @Override

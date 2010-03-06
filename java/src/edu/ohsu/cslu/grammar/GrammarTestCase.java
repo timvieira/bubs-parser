@@ -60,11 +60,11 @@ public abstract class GrammarTestCase {
         assertEquals(0f, simpleGrammar.lexicalLogProbability("NN", "chef"), .01f);
         assertEquals(Float.NEGATIVE_INFINITY, simpleGrammar.lexicalLogProbability("NP", "foo"), .01f);
 
-        assertEquals(-0.693147f, simpleGrammar.logProbability("NP", "NN", "NN"), .01f);
-        assertEquals(-1.203972f, simpleGrammar.logProbability("NP", "NP", "NN"), .01f);
-        assertEquals(-2.302585f, simpleGrammar.logProbability("NP", "NN", "NP"), .01f);
-        assertEquals(-2.302585f, simpleGrammar.logProbability("NP", "NP", "NP"), .01f);
-        assertEquals(Float.NEGATIVE_INFINITY, simpleGrammar.logProbability("TOP", "NP", "NP"), .01f);
-        assertEquals(0f, simpleGrammar.logProbability("TOP", "NP"), .01f);
+        assertEquals(-0.693147f, simpleGrammar.binaryLogProbability("NP", "NN", "NN"), .01f);
+        assertEquals(-1.203972f, simpleGrammar.binaryLogProbability("NP", "NP", "NN"), .01f);
+        assertEquals(-2.302585f, simpleGrammar.binaryLogProbability("NP", "NN", "NP"), .01f);
+        assertEquals(-2.302585f, simpleGrammar.binaryLogProbability("NP", "NP", "NP"), .01f);
+        assertEquals(Float.NEGATIVE_INFINITY, simpleGrammar.binaryLogProbability("TOP", "NP", "NP"), .01f);
+        assertEquals(0f, simpleGrammar.unaryLogProbability("TOP", "NP"), .01f);
     }
 }

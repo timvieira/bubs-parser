@@ -190,34 +190,34 @@ public class ParserDriver extends BaseCommandlineTool {
         case ECPCellCrossMatrix:
             return new ECPCellCrossMatrix((ChildMatrixGrammar) grammar, cellSelector);
         case ECPGrammarLoop:
-            return new ECPGrammarLoop(grammar, cellSelector);
+            return new ECPGrammarLoop((GrammarByChild) grammar, cellSelector);
         case ECPGrammarLoopBerkeleyFilter:
-            return new ECPGrammarLoopBerkFilter(grammar, cellSelector);
+            return new ECPGrammarLoopBerkFilter((GrammarByChild) grammar, cellSelector);
 
         case AgendaChartParser:
-            return new AgendaChartParser(grammar, edgeSelector);
+            return new AgendaChartParser((LeftRightListsGrammar) grammar, edgeSelector);
         case ACPWithMemory:
-            return new ACPWithMemory(grammar, edgeSelector);
+            return new ACPWithMemory((LeftRightListsGrammar) grammar, edgeSelector);
         case ACPGhostEdges:
-            return new ACPGhostEdges(grammar, edgeSelector);
+            return new ACPGhostEdges((LeftRightListsGrammar) grammar, edgeSelector);
 
         case LocalBestFirst:
-            return new LocalBestFirstChartParser(grammar, edgeSelector, cellSelector);
+            return new LocalBestFirstChartParser((LeftHashGrammar) grammar, edgeSelector, cellSelector);
         case LBFPruneViterbi:
-            return new LBFPruneViterbi(grammar, edgeSelector, cellSelector);
+            return new LBFPruneViterbi((LeftHashGrammar) grammar, edgeSelector, cellSelector);
         case LBFOnlineBeam:
-            return new LBFWeakThresh(grammar, edgeSelector, cellSelector);
+            return new LBFWeakThresh((LeftHashGrammar) grammar, edgeSelector, cellSelector);
         case LBFBoundedHeap:
-            return new LBFBoundedHeap(grammar, edgeSelector, cellSelector);
+            return new LBFBoundedHeap((LeftHashGrammar) grammar, edgeSelector, cellSelector);
         case LBFExpDecay:
-            return new LBFExpDecay(grammar, edgeSelector, cellSelector);
+            return new LBFExpDecay((LeftHashGrammar) grammar, edgeSelector, cellSelector);
         case LBFPerceptronCell:
-            return new LBFSkipBaseCells(grammar, edgeSelector, cellSelector);
+            return new LBFSkipBaseCells((LeftHashGrammar) grammar, edgeSelector, cellSelector);
 
         case CoarseCellAgenda:
-            return new CoarseCellAgendaParser(grammar, edgeSelector);
+            return new CoarseCellAgendaParser((LeftHashGrammar) grammar, edgeSelector);
         case CoarseCellAgendaCSLUT:
-            return new CoarseCellAgendaParserWithCSLUT(grammar, edgeSelector, (CSLUTBlockedCells) cellSelector);
+            return new CoarseCellAgendaParserWithCSLUT((LeftHashGrammar) grammar, edgeSelector, (CSLUTBlockedCells) cellSelector);
 
         case JsaSparseMatrixVector:
             return new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar, cellSelector);
@@ -248,7 +248,7 @@ public class ParserDriver extends BaseCommandlineTool {
         } else if (cellTrain == true) {
             // TODO: need to follow a similar train/writeModel method like edgeSelector
             final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) cellSelector;
-            final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer(grammar, edgeSelector, perceptronCellSelector);
+            final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer((LeftHashGrammar) grammar, edgeSelector, perceptronCellSelector);
             perceptronCellSelector.train(inputStream, parser);
         } else {
             // run parser

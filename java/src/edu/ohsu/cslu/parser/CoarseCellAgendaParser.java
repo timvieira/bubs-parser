@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -14,10 +14,12 @@ public class CoarseCellAgendaParser extends ChartParser {
     EdgeSelector edgeSelector;
     float[][] maxEdgeFOM;
     PriorityQueue<ChartCell> spanAgenda;
+    protected LeftHashGrammar leftHashGrammar;
 
-    public CoarseCellAgendaParser(final Grammar grammar, final EdgeSelector edgeFOM) {
+    public CoarseCellAgendaParser(final LeftHashGrammar grammar, final EdgeSelector edgeFOM) {
         super(grammar);
         this.edgeSelector = edgeFOM;
+        leftHashGrammar = grammar;
     }
 
     @Override
@@ -72,7 +74,7 @@ public class CoarseCellAgendaParser extends ChartParser {
             final ChartCell rightCell = chart.getCell(mid, end);
             for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
                 for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                    possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+                    possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
                             final float prob = p.prob + leftEdge.inside + rightEdge.inside;
@@ -211,7 +213,7 @@ public class CoarseCellAgendaParser extends ChartParser {
         if (rightEdgeList.size() > 0 && leftEdgeList.size() > 0) {
             for (final ChartEdge leftEdge : leftEdgeList) {
                 for (final ChartEdge rightEdge : rightEdgeList) {
-                    possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+                    possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
                             final float prob = p.prob + leftEdge.inside + rightEdge.inside;

@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -12,7 +12,7 @@ public class LBFPruneViterbi extends LocalBestFirstChartParser {
     ChartEdge[] bestEdges;
     float bestFOM;
 
-    public LBFPruneViterbi(final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector spanSelector) {
+    public LBFPruneViterbi(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector spanSelector) {
         super(grammar, edgeSelector, spanSelector);
     }
 

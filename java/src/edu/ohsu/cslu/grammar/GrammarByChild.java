@@ -60,7 +60,6 @@ public class GrammarByChild extends Grammar {
         return storeProductionByChild(prods, maxChildIndex);
     }
 
-    @Override
     public Collection<Production> getUnaryProductionsWithChild(final int child) {
         if (child > unaryProdsByChild.length - 1 || unaryProdsByChild[child] == null) {
             return new LinkedList<Production>();
@@ -68,7 +67,6 @@ public class GrammarByChild extends Grammar {
         return unaryProdsByChild[child];
     }
 
-    @Override
     public final Collection<Production> getLexicalProductionsWithChild(final int child) {
         if (child > lexicalProdsByChild.length - 1 || lexicalProdsByChild[child] == null) {
             return new LinkedList<Production>();
@@ -84,5 +82,25 @@ public class GrammarByChild extends Grammar {
     @Override
     public int numLexProds() {
         return numLexProds;
+    }
+
+    @Override
+    public Production getUnaryProduction(final int parent, final int child) {
+        for (final Production p : getUnaryProductionsWithChild(child)) {
+            if (p.parent == parent) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Production getLexicalProduction(final int parent, final int lex) {
+        for (final Production p : getLexicalProductionsWithChild(lex)) {
+            if (p.parent == parent) {
+                return p;
+            }
+        }
+        return null;
     }
 }

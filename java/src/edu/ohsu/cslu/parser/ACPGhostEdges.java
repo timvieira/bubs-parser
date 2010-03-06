@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
@@ -11,9 +11,11 @@ public class ACPGhostEdges extends AgendaChartParser {
 
     protected LinkedList<ChartEdge>[][] needLeftGhostEdges, needRightGhostEdges;
     int nGhostEdges;
+    private LeftRightListsGrammar leftRightListsGrammar;
 
-    public ACPGhostEdges(final Grammar grammar, final EdgeSelector edgeSelector) {
+    public ACPGhostEdges(final LeftRightListsGrammar grammar, final EdgeSelector edgeSelector) {
         super(grammar, edgeSelector);
+        leftRightListsGrammar = grammar;
     }
 
     @Override
@@ -48,7 +50,7 @@ public class ACPGhostEdges extends AgendaChartParser {
         // unary edges are always possible in any cell, although we don't allow
         // unary chains
         if (newEdge.prod.isUnaryProd() == false || newEdge.prod.isLexProd() == true) {
-            for (final Production p : grammar.getUnaryProductionsWithChild(newEdge.prod.parent)) {
+            for (final Production p : leftRightListsGrammar.getUnaryProductionsWithChild(newEdge.prod.parent)) {
                 prob = p.prob + newEdge.inside;
                 addEdgeToFrontier(new ChartEdge(p, cell, prob, edgeSelector));
             }
@@ -91,7 +93,7 @@ public class ACPGhostEdges extends AgendaChartParser {
             // create left ghost edges. Can't go left if we are on the very left
             // side of the chart
             if (cell.start() > 0) {
-                possibleRules = grammar.getBinaryProductionsWithRightChild(nonTerm);
+                possibleRules = leftRightListsGrammar.getBinaryProductionsWithRightChild(nonTerm);
                 if (possibleRules != null) {
                     for (final Production p : possibleRules) {
                         if (needLeftGhostEdges[p.leftChild][cell.start()] == null) {
@@ -107,7 +109,7 @@ public class ACPGhostEdges extends AgendaChartParser {
             // create right ghost edges. Can't go right if we are on the very
             // right side of the chart
             if (cell.end() < chart.size() - 1) {
-                possibleRules = grammar.getBinaryProductionsWithLeftChild(nonTerm);
+                possibleRules = leftRightListsGrammar.getBinaryProductionsWithLeftChild(nonTerm);
                 if (possibleRules != null) {
                     for (final Production p : possibleRules) {
                         if (needRightGhostEdges[p.rightChild][cell.end()] == null) {

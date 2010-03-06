@@ -47,7 +47,6 @@ public class LeftHashGrammar extends GrammarByChild {
         this.binaryProductions = null;
     }
 
-    @Override
     public Collection<Production> getBinaryProductionsWithChildren(final int leftChild, final int rightChild) {
         final HashMap<Integer, LinkedList<Production>> leftChildHash = binaryProdHash.get(leftChild);
         if (leftChildHash == null) {

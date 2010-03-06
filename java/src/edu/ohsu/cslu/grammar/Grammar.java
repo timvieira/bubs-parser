@@ -164,10 +164,6 @@ public class Grammar {
         }
     }
 
-    // public final Token[] tokenize(final String sentence) throws Exception {
-    // return tokenizer.tokenize(sentence);
-    // }
-
     public final int numNonTerms() {
         return nonTermSet.numSymbols();
     }
@@ -220,10 +216,6 @@ public class Grammar {
         return nonTermInfo.get(index);
     }
 
-    // public final int getNonTermIndex(final String token) throws Exception {
-    // return nonTermSet.getIndex(token);
-    // }
-
     public final String mapNonterminal(final int nonterminal) {
         return nonTermSet.getSymbol(nonterminal);
     }
@@ -240,22 +232,6 @@ public class Grammar {
     public final int maxPOSIndex() {
         return maxPOSIndex;
     }
-
-    // public boolean isPOS(final int nonTermIndex) {
-    // return nonTermInfo.get(nonTermIndex).isPOS();
-    // }
-    //
-    // public final boolean isLeftChild(final int nonTerm) {
-    // return nonTermInfo.get(nonTerm).isLeftChild();
-    // }
-    //
-    // public final boolean isRightChild(final int nonTerm) {
-    // return nonTermInfo.get(nonTerm).isRightChild();
-    // }
-    //
-    // public boolean isFactoredNonTerm(final int nonTermIndex) {
-    // return nonTermInfo.get(nonTermIndex).isFactored();
-    // }
 
     private boolean isFactoredNonTerm(final String nonTerm, final GrammarFormatType grammarType) {
         if (grammarType == GrammarFormatType.CSLU) {
@@ -276,144 +252,110 @@ public class Grammar {
         return isLeftFactored == false;
     }
 
+    /*
+     * Binary Productions
+     */
     public Collection<Production> getBinaryProductions() {
         return binaryProductions;
     }
 
-    public Collection<Production> getBinaryProductionsWithLeftChild(final int leftChild) {
-        // final Collection<Production> results = new LinkedList<Production>();
-        // for (final Production p : binaryProductions) {
-        // if (p.leftChild == leftChild) {
-        // results.add(p);
-        // }
-        // }
-        // return results;
-        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
+    public Production getBinaryProduction(final int parent, final int leftChild, final int rightChild) {
+        for (final Production p : binaryProductions) {
+            if (p.parent == parent && p.leftChild == leftChild && p.rightChild == rightChild) {
+                return p;
+            }
+        }
+        return null;
     }
 
-    public Collection<Production> getBinaryProductionsWithRightChild(final int rightChild) {
-        // final Collection<Production> results = new LinkedList<Production>();
-        // for (final Production p : binaryProductions) {
-        // if (p.rightChild == rightChild) {
-        // results.add(p);
-        // }
-        // }
-        // return results;
-        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
+    // TODO: do we really need a String interface for getBinaryProduction *and* binaryLogProb?
+    public Production getBinaryProduction(final String A, final String B, final String C) {
+        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
+            return getBinaryProduction(nonTermSet.getIndex(A), nonTermSet.getIndex(B), nonTermSet.getIndex(C));
+        }
+        return null;
     }
 
-    public Collection<Production> getBinaryProductionsWithChildren(final int leftChild, final int rightChild) {
-        // final Collection<Production> results = new LinkedList<Production>();
-        // for (final Production p : binaryProductions) {
-        // if (p.leftChild == leftChild && p.rightChild == rightChild) {
-        // results.add(p);
-        // }
-        // }
-        // return results;
-        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
+    public float binaryLogProbability(final int parent, final int leftChild, final int rightChild) {
+        return getProductionProb(getBinaryProduction(parent, leftChild, rightChild));
     }
 
+    public float binaryLogProbability(final String A, final String B, final String C) {
+        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
+            return binaryLogProbability(nonTermSet.getIndex(A), nonTermSet.getIndex(B), nonTermSet.getIndex(C));
+        }
+        return Float.NEGATIVE_INFINITY;
+    }
+
+    /*
+     * Unary Productions
+     */
     public Collection<Production> getUnaryProductions() {
         return unaryProductions;
     }
 
-    public Collection<Production> getUnaryProductionsWithChild(final int child) {
-        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
+    public Production getUnaryProduction(final int parent, final int child) {
+        for (final Production p : unaryProductions) {
+            if (p.parent == parent && p.child() == child) {
+                return p;
+            }
+        }
+        return null;
     }
 
+    public Production getUnaryProduction(final String A, final String B) {
+        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B)) {
+            return getUnaryProduction(nonTermSet.getIndex(A), nonTermSet.getIndex(B));
+        }
+        return null;
+    }
+
+    public float unaryLogProbability(final int parent, final int child) {
+        return getProductionProb(getUnaryProduction(parent, child));
+    }
+
+    public float unaryLogProbability(final String A, final String B) {
+        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B)) {
+            return unaryLogProbability(nonTermSet.getIndex(A), nonTermSet.getIndex(B));
+        }
+        return Float.NEGATIVE_INFINITY;
+    }
+
+    /*
+     * Lexical Productions
+     */
     public Collection<Production> getLexicalProductions() {
         return lexicalProductions;
     }
 
-    public Collection<Production> getLexicalProductionsWithChild(final int child) {
-        throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
-    }
-
-    // public Collection<Production> getLexicalProductionsWithChild(final String childStr) {
-    // throw new RuntimeException("ERROR: Unable to compute efficiently.  Please use a different grammar.");
-    // }
-
-    public Production getProduction(final String A, final String B, final String C) throws Exception {
-        assert binaryProductions != null && binaryProductions.size() > 0;
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
-            final int a = nonTermSet.getIndex(A), b = nonTermSet.getIndex(B), c = nonTermSet.getIndex(C);
-            for (final Production p : binaryProductions) {
-                if (p.parent == a && p.leftChild == b && p.rightChild == c) {
-                    return p;
-                }
+    public Production getLexicalProduction(final int parent, final int lex) {
+        for (final Production p : lexicalProductions) {
+            if (p.parent == parent && p.child() == lex) {
+                return p;
             }
         }
         return null;
     }
 
-    public Production getProduction(final String A, final String B) throws Exception {
-        assert unaryProductions != null && unaryProductions.size() > 0;
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B)) {
-            final int a = nonTermSet.getIndex(A), b = nonTermSet.getIndex(B);
-            for (final Production p : unaryProductions) {
-                if (p.parent == a && p.child() == b) {
-                    return p;
-                }
-            }
-        }
-        return null;
-    }
-
-    public Production getLexProduction(final String A, final String lex) throws Exception {
-        assert lexicalProductions != null && lexicalProductions.size() > 0;
+    public Production getLexicalProduction(final String A, final String lex) {
         if (nonTermSet.hasSymbol(A) && lexSet.hasSymbol(lex)) {
-            final int a = nonTermSet.getIndex(A), b = lexSet.getIndex(lex);
-            for (final Production p : lexicalProductions) {
-                if (p.parent == a && p.child() == b) {
-                    return p;
-                }
-            }
+            return getLexicalProduction(nonTermSet.getIndex(A), lexSet.getIndex(lex));
         }
         return null;
-
-        // if (lexSet.hasSymbol(lex)) {
-        // for (final Production p : getLexProdsByToken(lex)) {
-        // if (p.parent == nonTermSet.getIndex(A)) {
-        // return p;
-        // }
-        // }
-        // }
-        // return null;
     }
 
-    /**
-     * Terribly inefficient; should be overridden by child classes
-     * 
-     * @throws Exception
-     */
-    public float logProbability(final String parent, final String leftChild, final String rightChild) throws Exception {
-        final Production p = getProduction(parent, leftChild, rightChild);
-        if (p != null) {
-            return p.prob;
+    public float lexicalLogProbability(final int parent, final int child) {
+        return getProductionProb(getLexicalProduction(parent, child));
+    }
+
+    public float lexicalLogProbability(final String A, final String lex) {
+        if (nonTermSet.hasSymbol(A) && lexSet.hasSymbol(lex)) {
+            return lexicalLogProbability(nonTermSet.getIndex(A), lexSet.getIndex(lex));
         }
         return Float.NEGATIVE_INFINITY;
     }
 
-    /**
-     * Terribly inefficient; should be overridden by child classes
-     * 
-     * @throws Exception
-     */
-    public float logProbability(final String parent, final String child) throws Exception {
-        final Production p = getProduction(parent, child);
-        if (p != null) {
-            return p.prob;
-        }
-        return Float.NEGATIVE_INFINITY;
-    }
-
-    /**
-     * Terribly inefficient; should be overridden by child classes
-     * 
-     * @throws Exception
-     */
-    public float lexicalLogProbability(final String parent, final String child) throws Exception {
-        final Production p = getLexProduction(parent, child);
+    protected float getProductionProb(final Production p) {
         if (p != null) {
             return p.prob;
         }
@@ -435,7 +377,7 @@ public class Grammar {
         s += "numBinaryProds=" + binaryProductions.size();
         s += " numUnaryProds=" + unaryProductions.size();
         s += " numLexicalProds=" + lexicalProductions.size();
-        s += " numNonTerms=" + nonTermSet.size();
+        s += " numNonTerms=" + numNonTerms();
         s += " numPosSymbols=" + numPosSymbols();
         // s += " numFactoredSymbols=" + factoredNonTermSet.size();
         s += " numLexSymbols=" + lexSet.size();

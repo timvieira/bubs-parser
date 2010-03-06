@@ -77,20 +77,7 @@ public class PackedSparseMatrixGrammar extends GrammarByChild {
     }
 
     @Override
-    public final float lexicalLogProbability(final String parent, final String child) throws Exception {
-        return super.lexicalLogProbability(parent, child);
-    }
-
-    @Override
-    public final float logProbability(final String parent, final String leftChild, final String rightChild) throws Exception {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        final int leftChildIndex = nonTermSet.getIndex(leftChild);
-        final int rightChildIndex = nonTermSet.getIndex(rightChild);
-
-        return logProbability(parentIndex, leftChildIndex, rightChildIndex);
-    }
-
-    public final float logProbability(final int parent, final int leftChild, final int rightChild) {
+    public final float binaryLogProbability(final int parent, final int leftChild, final int rightChild) {
         return logProbability(parent, pack(leftChild, rightChild));
     }
 
@@ -106,11 +93,6 @@ public class PackedSparseMatrixGrammar extends GrammarByChild {
             }
         }
         return Float.NEGATIVE_INFINITY;
-    }
-
-    @Override
-    public final float logProbability(final String parent, final String child) throws Exception {
-        return super.logProbability(parent, child);
     }
 
     public long[] entries(final int parent) {

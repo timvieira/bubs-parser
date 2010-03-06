@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -18,7 +18,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
 
     PerceptronCellSelector perceptronCellSelector;
 
-    public LBFPerceptronCellTrainer(final Grammar grammar, final EdgeSelector edgeSelector, final PerceptronCellSelector cellSelector) {
+    public LBFPerceptronCellTrainer(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final PerceptronCellSelector cellSelector) {
         super(grammar, edgeSelector, cellSelector);
         perceptronCellSelector = cellSelector;
     }
@@ -417,7 +417,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
             final ChartCell rightCell = chart.getCell(mid, end);
             for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
                 for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                    possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+                    possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
                             final float prob = p.prob + leftEdge.inside + rightEdge.inside;

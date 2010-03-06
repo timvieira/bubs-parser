@@ -74,30 +74,11 @@ public final class HashSparseMatrixGrammar extends GrammarByChild {
     }
 
     @Override
-    public final float lexicalLogProbability(final String parent, final String child) throws Exception {
-        return super.lexicalLogProbability(parent, child);
-    }
-
-    @Override
-    public final float logProbability(final String parent, final String leftChild, final String rightChild) throws Exception {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        final int leftChildIndex = nonTermSet.getIndex(leftChild);
-        final int rightChildIndex = nonTermSet.getIndex(rightChild);
-
-        return logProbability(parentIndex, leftChildIndex, rightChildIndex);
-    }
-
-    public final float logProbability(final int parent, final int leftChild, final int rightChild) {
+    public final float binaryLogProbability(final int parent, final int leftChild, final int rightChild) {
         return binaryRuleMatrix[parent].get(key(leftChild, rightChild));
     }
 
     public final float logProbability(final int parent, final long children) {
         return binaryRuleMatrix[parent].get(children);
     }
-
-    @Override
-    public final float logProbability(final String parent, final String child) throws Exception {
-        return super.logProbability(parent, child);
-    }
-
 }

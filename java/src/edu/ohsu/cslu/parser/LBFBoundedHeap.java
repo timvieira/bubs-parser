@@ -1,13 +1,13 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
 public class LBFBoundedHeap extends LBFPruneViterbi {
 
-    public LBFBoundedHeap(final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
+    public LBFBoundedHeap(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
         super(grammar, edgeSelector, cellSelector);
     }
 

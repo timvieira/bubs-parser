@@ -135,7 +135,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
                 final ChartCell rightCell = chart.getCell(mid, end);
                 for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
                     for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                        possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+                        possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
                         if (possibleProds != null) {
                             for (final Production p : possibleProds) {
                                 final float prob = p.prob + leftEdge.inside + rightEdge.inside;
