@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import edu.ohsu.cslu.counters.SimpleCounter;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ChartEdge;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.util.Log;
@@ -78,8 +77,8 @@ public class BoundaryInOut extends EdgeSelector {
         s += " p=" + edge.prod.toString();
         s += " i=" + edge.inside;
         s += " o=" + outside;
-        s += " oL[" + (edge.start() - 1 + 1) + "][" + grammar.nonTermSet.getSymbol(edge.prod.parent) + "]=" + outsideLeft[edge.start() - 1 + 1][edge.prod.parent];
-        s += " oR[" + (edge.end() + 1) + "][" + grammar.nonTermSet.getSymbol(edge.prod.parent) + "]=" + outsideRight[edge.end() + 1][edge.prod.parent];
+        s += " oL[" + (edge.start() - 1 + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]=" + outsideLeft[edge.start() - 1 + 1][edge.prod.parent];
+        s += " oR[" + (edge.end() + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]=" + outsideRight[edge.end() + 1][edge.prod.parent];
         s += " fom=" + fom;
 
         return s;
@@ -254,9 +253,9 @@ public class BoundaryInOut extends EdgeSelector {
                 }
 
                 numStr = ParserUtil.join(numerator, " ");
-                numIndex = grammar.nonTermSet.getIndex(numStr);
+                numIndex = grammar.mapNonterminal(numStr);
                 denomStr = ParserUtil.join(denom, " ");
-                denomIndex = grammar.nonTermSet.getIndex(denomStr);
+                denomIndex = grammar.mapNonterminal(denomStr);
                 prob = Float.parseFloat(tokens[tokens.length - 1]);
 
                 if (tokens[0].equals("LB")) {
@@ -275,14 +274,13 @@ public class BoundaryInOut extends EdgeSelector {
 
     @Override
     public void writeModel(final BufferedWriter outStream) throws IOException {
-        final SymbolSet<String> nonTermSet = grammar.nonTermSet;
 
         // left boundary = P(NT | POS-1)
         for (final int leftPOSIndex : posSet) {
-            final String posStr = nonTermSet.getSymbol(leftPOSIndex);
+            final String posStr = grammar.mapNonterminal(leftPOSIndex);
             // for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
             for (final int ntIndex : clauseNonTermSet) {
-                final String ntStr = nonTermSet.getSymbol(ntIndex);
+                final String ntStr = grammar.mapNonterminal(ntIndex);
                 final float logProb = leftBoundaryLogProb[ntIndex][leftPOSIndex];
                 if (logProb > Float.NEGATIVE_INFINITY) {
                     outStream.write("LB " + ntStr + " | " + posStr + " " + logProb + "\n");
@@ -293,9 +291,9 @@ public class BoundaryInOut extends EdgeSelector {
         // right boundary = P(POS+1 | NT)
         // for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
         for (final int ntIndex : clauseNonTermSet) {
-            final String ntStr = nonTermSet.getSymbol(ntIndex);
+            final String ntStr = grammar.mapNonterminal(ntIndex);
             for (final int rightPOSIndex : posSet) {
-                final String posStr = nonTermSet.getSymbol(rightPOSIndex);
+                final String posStr = grammar.mapNonterminal(rightPOSIndex);
                 final float logProb = rightBoundaryLogProb[rightPOSIndex][ntIndex];
                 if (logProb > Float.NEGATIVE_INFINITY) {
                     outStream.write("RB " + posStr + " | " + ntStr + " " + logProb + "\n");
@@ -305,9 +303,9 @@ public class BoundaryInOut extends EdgeSelector {
 
         // pos n-gram = P(POS | POS-1)
         for (final int histPos : posSet) {
-            final String histPosStr = nonTermSet.getSymbol(histPos);
+            final String histPosStr = grammar.mapNonterminal(histPos);
             for (final int pos : posSet) {
-                final String posStr = nonTermSet.getSymbol(pos);
+                final String posStr = grammar.mapNonterminal(pos);
                 final float logProb = posTransitionLogProb[pos][histPos];
                 if (logProb > Float.NEGATIVE_INFINITY) {
                     outStream.write("PN " + posStr + " | " + histPosStr + " " + logProb + "\n");
@@ -385,34 +383,33 @@ public class BoundaryInOut extends EdgeSelector {
         posTransitionCount.smoothAddConst(0.5, numPOS);
 
         // turn counts into probs
-        final SymbolSet<String> nonTermSet = grammar.nonTermSet;
         leftBoundaryLogProb = new float[numNT][maxPOSIndex + 1];
         rightBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
         posTransitionLogProb = new float[maxPOSIndex + 1][maxPOSIndex + 1];
 
         // left boundary = P(NT | POS-1)
         for (final int leftPOSIndex : posSet) {
-            final String posStr = nonTermSet.getSymbol(leftPOSIndex);
+            final String posStr = grammar.mapNonterminal(leftPOSIndex);
             for (int ntIndex = 0; ntIndex < numNT; ntIndex++) {
-                final String ntStr = nonTermSet.getSymbol(ntIndex);
+                final String ntStr = grammar.mapNonterminal(ntIndex);
                 leftBoundaryLogProb[ntIndex][leftPOSIndex] = (float) Math.log(leftBoundaryCount.getProb(ntStr, posStr));
             }
         }
 
         // right boundary = P(POS+1 | NT)
         for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
-            final String ntStr = nonTermSet.getSymbol(ntIndex);
+            final String ntStr = grammar.mapNonterminal(ntIndex);
             for (final int rightPOSIndex : posSet) {
-                final String posStr = nonTermSet.getSymbol(rightPOSIndex);
+                final String posStr = grammar.mapNonterminal(rightPOSIndex);
                 rightBoundaryLogProb[rightPOSIndex][ntIndex] = (float) Math.log(rightBoundaryCount.getProb(posStr, ntStr));
             }
         }
 
         // pos n-gram = P(POS | POS-1)
         for (final int histPos : posSet) {
-            final String histPosStr = nonTermSet.getSymbol(histPos);
+            final String histPosStr = grammar.mapNonterminal(histPos);
             for (final int pos : posSet) {
-                final String posStr = nonTermSet.getSymbol(pos);
+                final String posStr = grammar.mapNonterminal(pos);
                 posTransitionLogProb[pos][histPos] = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
             }
         }
