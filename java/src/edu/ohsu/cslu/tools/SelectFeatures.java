@@ -1,12 +1,5 @@
 package edu.ohsu.cslu.tools;
 
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_AFTER_HEAD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_BEFORE_HEAD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HEAD_VERB;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_POS;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,10 +18,11 @@ import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.*;
 
 /**
- * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse trees,
- * parenthesis-bracketed flat structures, and Stanford's slash-delimited tagged representation).
+ * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse trees, parenthesis-bracketed flat structures, and Stanford's slash-delimited
+ * tagged representation).
  * 
  * Outputs flat structures in bracketed or Stanford formats.
  * 
@@ -39,8 +33,7 @@ import edu.ohsu.cslu.util.Strings;
  * <li>before_head / head_verb / after_head</li>
  * </ul>
  * 
- * From flat bracketed input, arbitrary features can be selected in any order (e.g. features 1, 6, and 3
- * output in that order).
+ * From flat bracketed input, arbitrary features can be selected in any order (e.g. features 1, 6, and 3 output in that order).
  * 
  * @author Aaron Dunlop
  * @since Nov 17, 2008
@@ -113,8 +106,26 @@ public class SelectFeatures extends LinewiseCommandlineTool {
     @Option(name = "-ending", aliases = { "--ends-with-ing" }, usage = "Include ends-with-ing feature")
     private boolean endsWithIng;
 
-    @Option(name = "-ended", aliases = { "--ends-with-ed" }, usage = "Include ends-with-ing feature")
+    @Option(name = "-ended", aliases = { "--ends-with-ed" }, usage = "Include ends-with-ed feature")
     private boolean endsWithEd;
+
+    @Option(name = "-ender", aliases = { "--ends-with-er" }, usage = "Include ends-with-er feature")
+    private boolean endsWithEr;
+
+    @Option(name = "-endest", aliases = { "--ends-with-est" }, usage = "Include ends-with-est feature")
+    private boolean endsWithEst;
+
+    @Option(name = "-endble", aliases = { "--ends-with-ble" }, usage = "Include ends-with-ble feature")
+    private boolean endsWithBle;
+
+    @Option(name = "-endive", aliases = { "--ends-with-ive" }, usage = "Include ends-with-ive feature")
+    private boolean endsWithIve;
+
+    @Option(name = "-endic", aliases = { "--ends-with-ic" }, usage = "Include ends-with-ic feature")
+    private boolean endsWithIc;
+
+    @Option(name = "-endal", aliases = { "--ends-with-al" }, usage = "Include ends-with-al feature")
+    private boolean endsWithAl;
 
     @Option(name = "-length", aliases = { "--word-length" }, usage = "Include length features")
     private boolean length;
@@ -141,6 +152,7 @@ public class SelectFeatures extends LinewiseCommandlineTool {
     private String endBracket;
     private String featureDelimiter;
 
+    /** Ignored for tree and pos-tagged formats */
     @Option(name = "-wi", aliases = { "--word-index" }, metaVar = "index", usage = "Feature index (in bracketed input) of token to treat as the word (starting with 1) Default = 1")
     private int wordIndex = 1;
 
@@ -167,10 +179,38 @@ public class SelectFeatures extends LinewiseCommandlineTool {
 
     @Override
     public void setup(final CmdLineParser parser) throws CmdLineException {
-        // If input is not in tree format, we cannot extract certain features
-        if (inputFormat != FileFormat.BracketedTree && inputFormat != FileFormat.SquareBracketedTree) {
-            if (pos || headVerb || beforeHead || afterHead || previousPos != 0 || previousWords != 0) {
-                throw new CmdLineException(parser, "Option not supported for flat input");
+        // Some input formats do not support all features
+        if (pos || previousPos != 0 || subsequentPos != 0) {
+            switch (inputFormat) {
+                case BracketedTree:
+                case SquareBracketedTree:
+                case PosTagged:
+                case SquarePosTagged:
+                    break;
+                default:
+                    throw new CmdLineException(parser, "POS features not supported for un-formatted flat input");
+            }
+        }
+
+        if (includeWord || previousWords != 0 || subsequentWords != 0) {
+            switch (inputFormat) {
+                case BracketedTree:
+                case SquareBracketedTree:
+                case PosTagged:
+                case SquarePosTagged:
+                    break;
+                default:
+                    throw new CmdLineException(parser, "Word features not supported for un-formatted flat input");
+            }
+        }
+
+        if (headVerb || beforeHead || afterHead) {
+            switch (inputFormat) {
+                case BracketedTree:
+                case SquareBracketedTree:
+                    break;
+                default:
+                    throw new CmdLineException(parser, "Head verb features not supported for flat input");
             }
         }
 
@@ -179,31 +219,28 @@ public class SelectFeatures extends LinewiseCommandlineTool {
         }
 
         // And 'f' option when selecting from a flat format
-        if (inputFormat != FileFormat.Bracketed && inputFormat != FileFormat.SquareBracketed
-                && inputFormat != FileFormat.Stanford) {
-            if (selectedFeatures != null && selectedFeatures.length > 0) {
-                throw new CmdLineException(parser, "Field selection is only supported for flat input formats");
-            }
+        if (selectedFeatures != null && selectedFeatures.length > 0 && !inputFormat.isFlatFormat()) {
+            throw new CmdLineException(parser, "Field selection is only supported for flat input formats");
         }
 
         switch (outputFormat) {
-        case Bracketed:
-            beginBracket = "(";
-            endBracket = ")";
-            featureDelimiter = " ";
-            break;
-        case SquareBracketed:
-            beginBracket = "[";
-            endBracket = "]";
-            featureDelimiter = " ";
-            break;
-        case Stanford:
-            beginBracket = "";
-            endBracket = "";
-            featureDelimiter = "/";
-            break;
-        default:
-            throw new CmdLineException(parser, "Unsuppported output format: " + outputFormat);
+            case Bracketed:
+                beginBracket = "(";
+                endBracket = ")";
+                featureDelimiter = " ";
+                break;
+            case SquareBracketed:
+                beginBracket = "[";
+                endBracket = "]";
+                featureDelimiter = " ";
+                break;
+            case Stanford:
+                beginBracket = "";
+                endBracket = "";
+                featureDelimiter = "/";
+                break;
+            default:
+                throw new CmdLineException(parser, "Unsuppported output format: " + outputFormat);
         }
 
         if (selectedFeatures != null) {
@@ -244,67 +281,53 @@ public class SelectFeatures extends LinewiseCommandlineTool {
                 sb.append(beginBracket);
 
                 final String label = node.stringLabel();
+
                 appendWord(sb, label);
-
-                if (pos) {
-                    sb.append(FeatureClass.PREFIX_POS);
-                    sb.append(posLabel);
-                    sb.append(featureDelimiter);
-                }
-
-                if (plainPos) {
-                    sb.append(node.parent().stringLabel());
-                    sb.append(featureDelimiter);
-                }
-
+                appendPos(sb, posLabel);
                 appendWordFeatures(sb, label);
 
                 // Previous words
                 for (int j = 1; ((j <= previousWords) && (i - j >= 0)); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.PREFIX_PREVIOUS_WORD, j, wordList.get(i
-                            - j), featureDelimiter));
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousWord, j, wordList.get(i - j), featureDelimiter));
                 }
 
                 // Subsequent words
                 for (int j = 1; ((j <= subsequentWords) && (i + j < wordList.size())); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.PREFIX_SUBSEQUENT_WORD, j, wordList
-                        .get(i + j), featureDelimiter));
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentWord, j, wordList.get(i + j), featureDelimiter));
                 }
 
                 // Previous POS
                 for (int j = 1; ((j <= previousPos) && (i - j >= 0)); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.PREFIX_PREVIOUS_POS, j, posList.get(i
-                            - j), featureDelimiter));
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousPos, j, posList.get(i - j), featureDelimiter));
                 }
 
                 // Subsequent POS
                 for (int j = 1; ((j <= subsequentPos) && (i + j < posList.size())); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.PREFIX_SUBSEQUENT_POS, j, posList.get(i
-                            + j), featureDelimiter));
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentPos, j, posList.get(i + j), featureDelimiter));
                 }
 
                 if (node.isHeadOfTreeRoot(ruleset)) {
                     if (headVerb) {
-                        sb.append(FeatureClass.FEATURE_HEAD_VERB);
+                        sb.append(FeatureClass.HeadVerb);
                         sb.append(featureDelimiter);
                     }
                     // Switch feature tag to after_head
                     headPosition = 1;
                 } else if (beforeHead && headPosition == 0) {
-                    sb.append(FeatureClass.FEATURE_BEFORE_HEAD);
+                    sb.append(FeatureClass.BeforeHead);
                     sb.append(featureDelimiter);
                 } else if (afterHead && headPosition == 1) {
-                    sb.append(FeatureClass.FEATURE_AFTER_HEAD);
+                    sb.append(FeatureClass.AfterHead);
                     sb.append(featureDelimiter);
                 }
 
                 if (firstVerbPos != null) {
                     if (posLabel != null && !foundFirstVerb && firstVerbPos.contains(posLabel)) {
                         foundFirstVerb = true;
-                        sb.append(FeatureClass.FEATURE_FIRST_VERB);
+                        sb.append(FeatureClass.FirstVerb);
                         sb.append(featureDelimiter);
                     } else if (labelIndicatorNegations) {
-                        sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_FIRST_VERB);
+                        sb.append(FeatureClass.NEGATION + FeatureClass.FirstVerb);
                         sb.append(featureDelimiter);
                     }
                 }
@@ -325,15 +348,14 @@ public class SelectFeatures extends LinewiseCommandlineTool {
         return sb.toString();
     }
 
-    private void appendIndicatorFeature(final StringBuilder sb, final boolean enabled, final boolean fired,
-            final String featureLabel) {
+    private void appendIndicatorFeature(final StringBuilder sb, final boolean enabled, final boolean fired, final FeatureClass featureClass) {
         if (enabled) {
 
             if (fired) {
-                sb.append(featureLabel);
+                sb.append(featureClass.toString());
                 sb.append(featureDelimiter);
             } else if (labelIndicatorNegations) {
-                sb.append(FeatureClass.NEGATION + featureLabel);
+                sb.append(FeatureClass.NEGATION + featureClass.toString());
                 sb.append(featureDelimiter);
             }
         }
@@ -342,74 +364,77 @@ public class SelectFeatures extends LinewiseCommandlineTool {
     private void appendWordFeatures(final StringBuilder sb, final String label) {
         final char initialChar = label.charAt(0);
 
-        appendIndicatorFeature(sb, capitalized, Character.isUpperCase(initialChar),
-            FeatureClass.FEATURE_CAPITALIZED);
-        appendIndicatorFeature(sb, allcaps, Character.isUpperCase(initialChar)
-                && label.equals(label.toUpperCase()), FeatureClass.FEATURE_ALL_CAPS);
-        appendIndicatorFeature(sb, hyphenated, label.indexOf('-') >= 0, FeatureClass.FEATURE_HYPHENATED);
-        appendIndicatorFeature(sb, initialNumeric, Character.isDigit(initialChar),
-            FeatureClass.FEATURE_INITIAL_NUMERIC);
+        appendIndicatorFeature(sb, capitalized, Character.isUpperCase(initialChar), FeatureClass.Capitalized);
+        appendIndicatorFeature(sb, allcaps, Character.isUpperCase(initialChar) && label.equals(label.toUpperCase()), FeatureClass.AllCaps);
+        appendIndicatorFeature(sb, hyphenated, label.indexOf('-') >= 0, FeatureClass.Hyphenated);
+        appendIndicatorFeature(sb, initialNumeric, Character.isDigit(initialChar), FeatureClass.InitialNumeric);
 
         if (numeric) {
             if (Character.isDigit(initialChar)) {
                 try {
                     Integer.parseInt(label);
-                    sb.append(FeatureClass.FEATURE_NUMERIC);
+                    sb.append(FeatureClass.Numeric);
                     sb.append(featureDelimiter);
                 } catch (final NumberFormatException ignore) {
                     if (labelIndicatorNegations) {
-                        sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_NUMERIC);
+                        sb.append(FeatureClass.NEGATION + FeatureClass.Numeric);
                         sb.append(featureDelimiter);
                     }
                 }
             } else if (labelIndicatorNegations) {
-                sb.append(FeatureClass.NEGATION + FeatureClass.FEATURE_NUMERIC);
+                sb.append(FeatureClass.NEGATION + FeatureClass.Numeric);
                 sb.append(featureDelimiter);
             }
         }
 
-        appendIndicatorFeature(sb, endsWithLy, label.endsWith("ly"), FeatureClass.FEATURE_ENDSWITH_LY);
-        appendIndicatorFeature(sb, endsWithIng, label.endsWith("ing"), FeatureClass.FEATURE_ENDSWITH_ING);
-        appendIndicatorFeature(sb, endsWithEd, label.endsWith("ed"), FeatureClass.FEATURE_ENDSWITH_ED);
+        appendIndicatorFeature(sb, endsWithLy, label.endsWith("ly"), FeatureClass.EndsWithLy);
+        appendIndicatorFeature(sb, endsWithIng, label.endsWith("ing"), FeatureClass.EndsWithIng);
+        appendIndicatorFeature(sb, endsWithEd, label.endsWith("ed"), FeatureClass.EndsWithEd);
+        appendIndicatorFeature(sb, endsWithEr, label.endsWith("er"), FeatureClass.EndsWithEr);
+        appendIndicatorFeature(sb, endsWithEst, label.endsWith("est"), FeatureClass.EndsWithEst);
+        appendIndicatorFeature(sb, endsWithBle, label.endsWith("ble"), FeatureClass.EndsWithBle);
+        appendIndicatorFeature(sb, endsWithIve, label.endsWith("ive"), FeatureClass.EndsWithIve);
+        appendIndicatorFeature(sb, endsWithIc, label.endsWith("ic"), FeatureClass.EndsWithIc);
+        appendIndicatorFeature(sb, endsWithAl, label.endsWith("al"), FeatureClass.EndsWithAl);
 
         if (length) {
             switch (label.length()) {
-            case 1:
-                sb.append(FeatureClass.FEATURE_LENGTH_1);
-                break;
-            case 2:
-                sb.append(FeatureClass.FEATURE_LENGTH_2);
-                break;
-            case 3:
-                sb.append(FeatureClass.FEATURE_LENGTH_3);
-                break;
-            case 4:
-                sb.append(FeatureClass.FEATURE_LENGTH_4);
-                break;
-            case 5:
-            case 6:
-                sb.append(FeatureClass.FEATURE_LENGTH_5_TO_6);
-                break;
-            case 7:
-            case 8:
-                sb.append(FeatureClass.FEATURE_LENGTH_7_TO_8);
-                break;
-            case 9:
-            case 10:
-            case 11:
-            case 12:
-                sb.append(FeatureClass.FEATURE_LENGTH_9_TO_12);
-                break;
-            case 13:
-            case 14:
-            case 15:
-            case 16:
-            case 17:
-            case 18:
-                sb.append(FeatureClass.FEATURE_LENGTH_13_TO_18);
-                break;
-            default:
-                sb.append(FeatureClass.FEATURE_LENGTH_GREATER_THAN_18);
+                case 1:
+                    sb.append(FeatureClass.Length1);
+                    break;
+                case 2:
+                    sb.append(FeatureClass.Length2);
+                    break;
+                case 3:
+                    sb.append(FeatureClass.Length3);
+                    break;
+                case 4:
+                    sb.append(FeatureClass.Length4);
+                    break;
+                case 5:
+                case 6:
+                    sb.append(FeatureClass.Length5to6);
+                    break;
+                case 7:
+                case 8:
+                    sb.append(FeatureClass.Length7to8);
+                    break;
+                case 9:
+                case 10:
+                case 11:
+                case 12:
+                    sb.append(FeatureClass.Length9to12);
+                    break;
+                case 13:
+                case 14:
+                case 15:
+                case 16:
+                case 17:
+                case 18:
+                    sb.append(FeatureClass.Length13to18);
+                    break;
+                default:
+                    sb.append(FeatureClass.LengthGreaterThan18);
 
             }
             sb.append(featureDelimiter);
@@ -428,10 +453,23 @@ public class SelectFeatures extends LinewiseCommandlineTool {
         }
 
         if (includeStem) {
-            sb.append(FeatureClass.PREFIX_STEM);
+            sb.append(FeatureClass.Stem);
             // TODO Make porterStemmer an instance variable, after making PorterStemmer thread-safe
             final PorterStemmer porterStemmer = new PorterStemmer();
             sb.append(porterStemmer.stemWord(label.toLowerCase()));
+            sb.append(featureDelimiter);
+        }
+    }
+
+    private void appendPos(final StringBuilder sb, final String posLabel) {
+        if (pos) {
+            sb.append(FeatureClass.Pos);
+            sb.append(posLabel);
+            sb.append(featureDelimiter);
+        }
+
+        if (plainPos) {
+            sb.append(posLabel);
             sb.append(featureDelimiter);
         }
     }
@@ -446,78 +484,90 @@ public class SelectFeatures extends LinewiseCommandlineTool {
         final StringBuilder sb = new StringBuilder(line.length());
         String[][] features;
 
+        int posIndex = -1;
         switch (inputFormat) {
-        case Bracketed:
-            features = Strings.bracketedTags(line);
-            break;
-        case SquareBracketed:
-            features = Strings.squareBracketedTags(line);
-            break;
-        case Stanford:
-            // Remove leading and trailing whitespace and split by spaces
-            final String[] split = line.trim().split(" +");
+            case Bracketed:
+                features = Strings.bracketedTags(line);
+                break;
+            case SquareBracketed:
+                features = Strings.squareBracketedTags(line);
+                break;
+            case PosTagged:
+                features = Strings.bracketedTags(line);
+                wordIndex = 2;
+                posIndex = 1;
+                break;
+            case SquarePosTagged:
+                features = Strings.squareBracketedTags(line);
+                wordIndex = 2;
+                posIndex = 1;
+                break;
+            case Stanford:
+                // Remove leading and trailing whitespace and split by spaces
+                final String[] split = line.trim().split(" +");
 
-            features = new String[split.length][];
-            for (int i = 0; i < split.length; i++) {
-                features[i] = split[i].split("/");
-            }
-            break;
-        default:
-            throw new RuntimeException("Unexpected inputFormat: " + inputFormat);
+                features = new String[split.length][];
+                for (int i = 0; i < split.length; i++) {
+                    features[i] = split[i].split("/");
+                }
+                break;
+            default:
+                throw new RuntimeException("Unexpected inputFormat: " + inputFormat);
         }
 
-        if (selectedFeatures != null) {
-            for (int i = 0; i < features.length; i++) {
-                sb.append(beginBracket);
+        for (int i = 0; i < features.length; i++) {
+            // Selecting by the specified 'word'
+            final String word = features[i][wordIndex - 1];
+            final String posLabel = posIndex > 0 ? features[i][posIndex - 1] : null;
+
+            sb.append(beginBracket);
+            appendWord(sb, word);
+            appendPos(sb, posLabel);
+            appendWordFeatures(sb, word);
+
+            if (startWord && i == 0) {
+                sb.append(String.format("%s%s", FeatureClass.StartWord, featureDelimiter));
+            }
+
+            if (endWord && i == features.length - 1) {
+                sb.append(String.format("%s%s", FeatureClass.EndWord, featureDelimiter));
+            }
+
+            // Previous words
+            for (int j = 1; ((j <= previousWords) && (i - j >= 0)); j++) {
+                sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousWord, j, features[i - j][wordIndex - 1], featureDelimiter));
+            }
+
+            // Subsequent words
+            for (int j = 1; ((j <= subsequentWords) && (i + j < features.length)); j++) {
+                sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentWord, j, features[i + j][wordIndex - 1], featureDelimiter));
+            }
+
+            // Previous POS
+            for (int j = 1; ((j <= previousPos) && (i - j >= 0)); j++) {
+                sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousPos, j, features[i - j][posIndex - 1], featureDelimiter));
+            }
+
+            // Subsequent POS
+            for (int j = 1; ((j <= subsequentPos) && (i + j < features.length)); j++) {
+                sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentPos, j, features[i + j][posIndex - 1], featureDelimiter));
+            }
+
+            if (selectedFeatures != null) {
                 for (int j = 0; j < selectedFeatures.length; j++) {
                     sb.append(features[i][selectedFeatures[j]]);
                     sb.append(featureDelimiter);
                 }
-
-                // Remove the final (extra) delimiter
-                sb.delete(sb.length() - featureDelimiter.length(), sb.length());
-
-                // End the bracket and token
-                sb.append(endBracket);
-                sb.append(' ');
             }
-        } else {
-            for (int i = 0; i < features.length; i++) {
-                // Selecting by the specified 'word'
-                final String word = features[i][wordIndex - 1];
 
-                sb.append(beginBracket);
-                appendWord(sb, word);
-                appendWordFeatures(sb, word);
+            // Remove the final (extra) delimiter
+            sb.delete(sb.length() - featureDelimiter.length(), sb.length());
 
-                if (startWord && i == 0) {
-                    sb.append(String.format("%s%s", FeatureClass.FEATURE_START_WORD, featureDelimiter));
-                }
-
-                if (endWord && i == features.length - 1) {
-                    sb.append(String.format("%s%s", FeatureClass.FEATURE_END_WORD, featureDelimiter));
-                }
-
-                // Previous words
-                for (int j = 1; ((j <= previousWords) && (i - j >= 0)); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.PREFIX_PREVIOUS_WORD, j,
-                        features[i - j][wordIndex - 1], featureDelimiter));
-                }
-
-                // Subsequent words
-                for (int j = 1; ((j <= subsequentWords) && (i + j < features.length)); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.PREFIX_SUBSEQUENT_WORD, j, features[i
-                            + j][wordIndex - 1], featureDelimiter));
-                }
-
-                // Remove the final (extra) delimiter
-                sb.delete(sb.length() - featureDelimiter.length(), sb.length());
-
-                // End the bracket and token
-                sb.append(endBracket);
-                sb.append(' ');
-            }
+            // End the bracket and token
+            sb.append(endBracket);
+            sb.append(' ');
         }
+
         // Delete the final trailing space
         sb.deleteCharAt(sb.length() - 1);
 
