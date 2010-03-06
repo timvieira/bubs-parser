@@ -123,8 +123,9 @@ public abstract class Parser {
             }
 
             if ((end - start >= 1) && node.isNonTerminal()) {
-                if (parser.grammar.nonTermSet.hasSymbol(node.contents)) {
-                    final int parentNonTermIndex = parser.grammar.mapNonterminal(node.contents);
+                // if (parser.grammar.nonTermSet.hasSymbol(node.contents)) {
+                final int parentNonTermIndex = parser.grammar.mapNonterminal(node.contents);
+                if (parentNonTermIndex != -1) {
                     final ChartEdge edge = parser.chart.getRootCell().getBestEdge(parentNonTermIndex);
                     if (edge == null) {
                         // System.out.println("WARNING: edge[" + start + "][" + end + "][" + node.contents + "] not in chart!");

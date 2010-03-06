@@ -379,8 +379,8 @@ public class ParseTree {
 
     public void tokenizeLeaves(final Grammar grammar) throws Exception {
         for (final ParseTree leaf : getLeafNodes()) {
-            if (grammar.lexSet.hasSymbol(leaf.contents) == false) {
-                leaf.contents = grammar.lexSet.getSymbol(grammar.tokenizer.tokenizeToIndex(leaf.contents)[0]);
+            if (grammar.hasWord(leaf.contents) == false) {
+                leaf.contents = grammar.mapLexicalEntry(grammar.tokenizer.tokenizeToIndex(leaf.contents)[0]);
             }
         }
 
