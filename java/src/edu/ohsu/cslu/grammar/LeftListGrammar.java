@@ -34,7 +34,6 @@ public class LeftListGrammar extends GrammarByChild {
         this.binaryProductions = null;
     }
 
-    @Override
     public LinkedList<Production> getBinaryProductionsWithLeftChild(final int leftChild) {
         final LinkedList<Production> prodList = binaryProdsByLeftNonTerm[leftChild];
         if (prodList != null) {
@@ -42,5 +41,15 @@ public class LeftListGrammar extends GrammarByChild {
         }
         // return an empty list instead of 'null' so we can still iterate over it
         return new LinkedList<Production>();
+    }
+
+    @Override
+    public Production getBinaryProduction(final int parent, final int leftChild, final int rightChild) {
+        for (final Production p : getBinaryProductionsWithLeftChild(leftChild)) {
+            if (p.parent == parent && p.rightChild == rightChild) {
+                return p;
+            }
+        }
+        return null;
     }
 }

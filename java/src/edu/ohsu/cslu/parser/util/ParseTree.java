@@ -340,27 +340,15 @@ public class ParseTree {
                 if (numChildren == 2) {
                     final String B = node.children.get(0).contents;
                     final String C = node.children.get(1).contents;
-                    prod = grammar.getProduction(A, B, C);
-                    // if (prod == null && grammar.nonTermSet.hasSymbol(A) && grammar.nonTermSet.hasSymbol(B) && grammar.nonTermSet.hasSymbol(C)) {
-                    // newProd = true;
-                    // prod = grammar.new Production(A, B, C, Float.NEGATIVE_INFINITY);
-                    // }
+                    prod = grammar.getBinaryProduction(A, B, C);
                     final int midpt = leafNodes.indexOf(node.children.get(0).rightMostLeaf()) + 1;
                     edge = new ChartEdge(prod, chart.getCell(start, midpt), chart.getCell(midpt, end), Float.NEGATIVE_INFINITY);
                 } else if (numChildren == 1) {
                     final String B = node.children.get(0).contents;
                     if (node.isPOS()) {
-                        prod = grammar.getLexProduction(A, B);
-                        // if (prod == null && grammar.nonTermSet.hasSymbol(A) && grammar.nonTermSet.hasSymbol(B)) {
-                        // newProd = true;
-                        // prod = grammar.new Production(A, B, Float.NEGATIVE_INFINITY, true);
-                        // }
+                        prod = grammar.getLexicalProduction(A, B);
                     } else {
-                        prod = grammar.getProduction(A, B);
-                        // if (prod == null && grammar.nonTermSet.hasSymbol(A) && grammar.lexSet.hasSymbol(B)) {
-                        // newProd = true;
-                        // prod = grammar.new Production(A, B, Float.NEGATIVE_INFINITY, false);
-                        // }
+                        prod = grammar.getUnaryProduction(A, B);
                     }
                     edge = new ChartEdge(prod, chart.getCell(start, end), null, Float.NEGATIVE_INFINITY);
                 } else {

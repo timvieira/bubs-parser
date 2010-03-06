@@ -62,6 +62,11 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
      */
     public abstract float binaryLogProbability(final int parent, final int children);
 
+    @Override
+    public final float binaryLogProbability(final int parent, final int leftChild, final int rightChild) {
+        return binaryLogProbability(parent, pack(leftChild, (short) rightChild));
+    }
+
     /**
      * Returns the log probability of the specified parent / child production
      * 
@@ -69,6 +74,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
      * @param child Child index
      * @return Log probability
      */
+    @Override
     public abstract float unaryLogProbability(final int parent, final int child);
 
     /**
@@ -88,24 +94,6 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             maps[p.parent].put(pack(p.leftChild, (short) p.rightChild), p.prob);
         }
         return maps;
-    }
-
-    @Override
-    public final float logProbability(final String parent, final String leftChild, final String rightChild) throws Exception {
-        final int parentIndex = nonTermSet.getIndex(parent);
-        final int leftChildIndex = nonTermSet.getIndex(leftChild);
-        final int rightChildIndex = nonTermSet.getIndex(rightChild);
-
-        return logProbability(parentIndex, leftChildIndex, rightChildIndex);
-    }
-
-    public final float logProbability(final int parent, final int leftChild, final int rightChild) {
-        return binaryLogProbability(parent, pack(leftChild, (short) rightChild));
-    }
-
-    @Override
-    public final float logProbability(final String parent, final String child) throws Exception {
-        return unaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(child));
     }
 
     public final int packedArraySize() {

@@ -2,14 +2,14 @@ package edu.ohsu.cslu.parser;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
 public class LBFWeakThresh extends LBFPruneViterbi {
 
-    public LBFWeakThresh(final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
+    public LBFWeakThresh(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
         super(grammar, edgeSelector, cellSelector);
     }
 

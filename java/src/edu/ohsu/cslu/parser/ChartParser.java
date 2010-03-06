@@ -2,15 +2,16 @@ package edu.ohsu.cslu.parser;
 
 import java.util.List;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class ChartParser extends Parser {
 
     public Chart<? extends ChartCell> chart;
+    protected GrammarByChild grammar;
 
-    public ChartParser(final Grammar grammar) {
+    public ChartParser(final GrammarByChild grammar) {
         this.grammar = grammar;
     }
 

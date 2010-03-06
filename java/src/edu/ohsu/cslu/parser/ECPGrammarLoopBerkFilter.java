@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
@@ -24,7 +24,7 @@ public class ECPGrammarLoopBerkFilter extends ExhaustiveChartParser {
 
     private int tmpNL, tmpNR, tmpWR;
 
-    public ECPGrammarLoopBerkFilter(final Grammar grammar, final CellSelector cellSelector) {
+    public ECPGrammarLoopBerkFilter(final GrammarByChild grammar, final CellSelector cellSelector) {
         super(grammar, cellSelector);
     }
 

@@ -4,14 +4,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
 public class LBFSkipBaseCells extends LocalBestFirstChartParser {
 
-    public LBFSkipBaseCells(final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
+    public LBFSkipBaseCells(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
         super(grammar, edgeSelector, cellSelector);
     }
 
@@ -52,7 +52,7 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser {
             final ChartCell rightCell = chart.getCell(mid, end);
             for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
                 for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                    possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+                    possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
                             final float prob = p.prob + leftEdge.inside + rightEdge.inside;

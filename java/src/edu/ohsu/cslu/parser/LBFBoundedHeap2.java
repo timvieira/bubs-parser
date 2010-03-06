@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -12,7 +12,7 @@ public class LBFBoundedHeap2 extends LocalBestFirstChartParser {
     ChartEdge worstEdge;
     ChartEdge[] edgesInAgenda;
 
-    public LBFBoundedHeap2(final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
+    public LBFBoundedHeap2(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
         super(grammar, edgeSelector, cellSelector);
     }
 
@@ -23,7 +23,7 @@ public class LBFBoundedHeap2 extends LocalBestFirstChartParser {
         edgesInAgenda = new ChartEdge[grammar.numNonTerms()];
     }
 
-    // v2: keep a heap of only size k by removing the worst edge when adding a better one  
+    // v2: keep a heap of only size k by removing the worst edge when adding a better one
     @Override
     protected void addEdgeToCollection(final ChartEdge edge) {
 

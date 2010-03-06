@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
@@ -18,14 +18,16 @@ public class LocalBestFirstChartParser extends ChartParser {
     int nAgendaPush;
     float fomInitSeconds;
     PriorityQueue<ChartEdge> agenda;
+    protected LeftHashGrammar leftHashGrammar;
 
     int maxEdgesToAdd;
     float logBeamDeltaThresh;
 
-    public LocalBestFirstChartParser(final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
+    public LocalBestFirstChartParser(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
         super(grammar);
         this.edgeSelector = edgeSelector;
         this.cellSelector = cellSelector;
+        leftHashGrammar = grammar;
 
         maxEdgesToAdd = (int) ParserDriver.param1;
         if (maxEdgesToAdd < 0)
@@ -102,7 +104,7 @@ public class LocalBestFirstChartParser extends ChartParser {
                 final ChartCell rightCell = chart.getCell(mid, end);
                 for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
                     for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                        possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+                        possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
                         if (possibleProds != null) {
                             for (final Production p : possibleProds) {
                                 if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {

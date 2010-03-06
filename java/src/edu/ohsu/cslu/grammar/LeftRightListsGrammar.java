@@ -41,7 +41,6 @@ public class LeftRightListsGrammar extends LeftListGrammar {
         this.binaryProductions = null;
     }
 
-    @Override
     public LinkedList<Production> getBinaryProductionsWithRightChild(final int rightChild) {
         final LinkedList<Production> prodList = binaryProdsByRightNonTerm[rightChild];
         if (prodList != null) {

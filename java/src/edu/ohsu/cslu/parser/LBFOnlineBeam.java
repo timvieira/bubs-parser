@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import java.util.Collection;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
@@ -13,7 +13,7 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser {
     float bestFOM, onlineBeam;
     int numEdgesAdded;
 
-    public LBFOnlineBeam(final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
+    public LBFOnlineBeam(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
         super(grammar, edgeSelector, cellSelector);
         // TODO Auto-generated constructor stub
     }
@@ -48,7 +48,7 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser {
                 final ChartCell rightCell = chart.getCell(mid, end);
                 for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
                     for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                        possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+                        possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
                         if (possibleProds != null) {
                             for (final Production p : possibleProds) {
                                 if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {

@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
@@ -9,7 +9,7 @@ public abstract class ExhaustiveChartParser extends ChartParser {
     protected CellSelector cellSelector;
     protected long totalTime;
 
-    public ExhaustiveChartParser(final Grammar grammar, final CellSelector cellSelector) {
+    public ExhaustiveChartParser(final GrammarByChild grammar, final CellSelector cellSelector) {
         super(grammar);
         this.cellSelector = cellSelector;
     }

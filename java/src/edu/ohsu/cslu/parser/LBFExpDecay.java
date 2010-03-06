@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -13,7 +13,7 @@ public class LBFExpDecay extends LBFPruneViterbi {
     boolean resultRun = false;
     Chart resultChart;
 
-    public LBFExpDecay(final Grammar grammar, final EdgeSelector edgeFOM, final CellSelector cellSelector) {
+    public LBFExpDecay(final LeftHashGrammar grammar, final EdgeSelector edgeFOM, final CellSelector cellSelector) {
         super(grammar, edgeFOM, cellSelector);
     }
 
