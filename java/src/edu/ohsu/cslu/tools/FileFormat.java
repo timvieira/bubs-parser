@@ -4,6 +4,8 @@
  */
 package edu.ohsu.cslu.tools;
 
+import org.kohsuke.args4j.EnumAliasMap;
+
 /**
  * Enumeration of text input and output formats.
  * 
@@ -13,47 +15,37 @@ package edu.ohsu.cslu.tools;
  * @version $Revision$ $Date$ $Author$
  */
 public enum FileFormat {
-    /** Penn Treebank parenthesis-bracketed format */
-    BracketedTree,
-    /** Square-bracketed tree format */
-    SquareBracketedTree,
-    /** Parenthesis-bracketed flat format */
-    Bracketed,
-    /** Square-bracketed flat format */
-    SquareBracketed,
-    /** Slash-delimited flat format */
-    Stanford;
+
+    /** Penn Treebank format parenthesis-bracketed hierarchical tree */
+    BracketedTree("tree", "bracketed-tree"),
+
+    /** Square-bracketed tree format (same as {@link #BracketedTree} but using square brackets) */
+    SquareBracketedTree("square-bracketed-tree"),
+
+    /** Parenthesis-bracketed flat format: (feature1 feature2 feature3...) (feature1 feature2 feature3...)... */
+    Bracketed("bracketed"),
+
+    /** Square-bracketed flat format (same as {@link #Bracketed} but using square brackets) */
+    SquareBracketed("square-bracketed"),
+
+    /** Parenthesis-bracketed flat format: (POS word feature3 ...) (POS word feature3 ...) ... */
+    PosTagged("pos-tagged"),
+
+    /** Parenthesis-bracketed flat format: (same as {@link #PosTagged} but using square brackets) */
+    SquarePosTagged("square-pos-tagged"),
+
+    /** Slash-delimited flat format: feature1/feature2/feature3 feature1/feature2/feature3 ... */
+    Stanford("stanford");
+
+    private FileFormat(final String... aliases) {
+        EnumAliasMap.singleton().addAliases(this, aliases);
+    }
 
     public boolean isTreeFormat() {
         return this == BracketedTree || this == SquareBracketedTree;
     }
 
-    public static FileFormat forString(String s) {
-        if ("bracketed-tree".equalsIgnoreCase(s) || "tree".equalsIgnoreCase(s)) {
-            return BracketedTree;
-        }
-        if ("square-bracketed-tree".equalsIgnoreCase(s)) {
-            return SquareBracketedTree;
-        } else if ("bracketed".equalsIgnoreCase(s)) {
-            return Bracketed;
-        } else if ("square-bracketed".equalsIgnoreCase(s)) {
-            return SquareBracketed;
-        } else if ("stanford".equalsIgnoreCase(s)) {
-            return Stanford;
-        } else {
-            throw new IllegalArgumentException("Unknown input format: " + s);
-        }
-    }
-
-    public static FileFormat outputFormat(String s) {
-        if ("bracketed".equalsIgnoreCase(s)) {
-            return Bracketed;
-        } else if ("square-bracketed".equalsIgnoreCase(s)) {
-            return SquareBracketed;
-        } else if ("stanford".equalsIgnoreCase(s)) {
-            return Stanford;
-        } else {
-            throw new IllegalArgumentException("Unknown or illegal output format: " + s);
-        }
+    public boolean isFlatFormat() {
+        return this == Bracketed || this == SquareBracketed || this == PosTagged || this == SquarePosTagged || this == Stanford;
     }
 }
