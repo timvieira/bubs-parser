@@ -1,5 +1,12 @@
 package edu.ohsu.cslu.tools;
 
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_AFTER_HEAD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_BEFORE_HEAD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HEAD_VERB;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_POS;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,7 +25,6 @@ import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.*;
 
 /**
  * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse trees, parenthesis-bracketed flat structures, and Stanford's slash-delimited
@@ -192,7 +198,7 @@ public class SelectFeatures extends LinewiseCommandlineTool {
             }
         }
 
-        if (includeWord || previousWords != 0 || subsequentWords != 0) {
+        if ((includeWord || previousWords != 0 || subsequentWords != 0) && wordIndex <= 0) {
             switch (inputFormat) {
                 case BracketedTree:
                 case SquareBracketedTree:
