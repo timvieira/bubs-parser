@@ -96,7 +96,7 @@ public class PerceptronCellSelector extends CellSelector {
     }
 
     @Override
-    public ChartCell next() {
+    public short[] next() {
         rescoreAgendaSpans();
         final ChartCell bestSpan = pollBestSpan();
 
@@ -116,7 +116,7 @@ public class PerceptronCellSelector extends CellSelector {
             expandFrontier(bestSpan);
         }
 
-        return bestSpan;
+        return new short[] { (short) bestSpan.start(), (short) bestSpan.end() };
     }
 
     private ChartCell pollBestSpan() {

@@ -3,6 +3,7 @@ package edu.ohsu.cslu.parser.cellselector;
 import java.util.LinkedList;
 
 import edu.ohsu.cslu.parser.ArrayChartCell;
+import edu.ohsu.cslu.parser.ChartCell;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.util.Log;
 
@@ -26,8 +27,9 @@ public class LeftCornerTraversal extends CellSelector {
     }
 
     @Override
-    public ArrayChartCell next() {
-        return cellList.pollFirst();
+    public short[] next() {
+        final ChartCell cell = cellList.poll();
+        return new short[] { (short) cell.start(), (short) cell.end() };
     }
 
     @Override

@@ -4,7 +4,7 @@ import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public class ECPGrammarLoop extends ExhaustiveChartParser {
+public class ECPGrammarLoop extends CellwiseExhaustiveChartParser {
 
     public ECPGrammarLoop(final GrammarByChild grammar, final CellSelector spanSelector) {
         super(grammar, spanSelector);

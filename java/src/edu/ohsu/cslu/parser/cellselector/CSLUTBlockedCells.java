@@ -130,8 +130,9 @@ public class CSLUTBlockedCells extends CellSelector {
     // }
 
     @Override
-    public ChartCell next() {
-        return cellList.poll();
+    public short[] next() {
+        final ChartCell cell = cellList.poll();
+        return new short[] { (short) cell.start(), (short) cell.end() };
     }
 
     @Override

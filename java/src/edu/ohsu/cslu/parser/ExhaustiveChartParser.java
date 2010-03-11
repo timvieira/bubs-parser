@@ -14,8 +14,13 @@ public abstract class ExhaustiveChartParser extends ChartParser {
         this.cellSelector = cellSelector;
     }
 
-    // overwrite this method for the inner-loop implementation
-    protected abstract void visitCell(ChartCell cell);
+    /**
+     * Each subclass will implement this method to perform the inner-loop grammar intersection.
+     * 
+     * @param start
+     * @param end
+     */
+    protected abstract void visitCell(short start, short end);
 
     @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
@@ -30,8 +35,8 @@ public abstract class ExhaustiveChartParser extends ChartParser {
         cellSelector.init(this);
 
         while (cellSelector.hasNext()) {
-            final ChartCell cell = cellSelector.next();
-            visitCell(cell);
+            final short[] startAndEnd = cellSelector.next();
+            visitCell(startAndEnd[0], startAndEnd[1]);
         }
 
         totalTime = System.currentTimeMillis() - startTime;
