@@ -5,24 +5,24 @@ import java.lang.reflect.Constructor;
 
 import edu.ohsu.cslu.grammar.Grammar;
 
-public final class Chart<T extends ChartCell> {
+public class Chart {
 
-    private T chart[][];
+    private ChartCell chart[][];
     private int size;
     public Grammar grammar;
 
     // TODO: this class shouldn't have to know anything about the grammar. We need
     // to separate the two
     @SuppressWarnings("unchecked")
-    public Chart(final int size, final Class<T> chartCellClass, final Grammar grammar) {
+    public Chart(final int size, final Class<? extends ChartCell> chartCellClass, final Grammar grammar) {
         this.size = size;
         this.grammar = grammar;
 
         try {
             // final Class<T> chartCellClass = (Class<T>) ((ParameterizedType) getClass()).getActualTypeArguments()[0];
-            final Constructor<T> chartCellConstructor = chartCellClass.getConstructor(int.class, int.class, Chart.class);
+            final Constructor<? extends ChartCell> chartCellConstructor = chartCellClass.getConstructor(int.class, int.class, Chart.class);
 
-            chart = (T[][]) Array.newInstance(chartCellClass, size, size + 1);// new T[size][size + 1];
+            chart = (ChartCell[][]) Array.newInstance(chartCellClass, size, size + 1);// new T[size][size + 1];
 
             // The chart is (chartSize+1)*chartSize/2
             for (int start = 0; start < size; start++) {
@@ -54,7 +54,7 @@ public final class Chart<T extends ChartCell> {
     // }
     // }
 
-    public final T getCell(final int start, final int end) {
+    public final ChartCell getCell(final int start, final int end) {
         return chart[start][end];
     }
 
@@ -62,7 +62,7 @@ public final class Chart<T extends ChartCell> {
         return size;
     }
 
-    public T getRootCell() {
+    public ChartCell getRootCell() {
         return chart[0][size];
     }
 }

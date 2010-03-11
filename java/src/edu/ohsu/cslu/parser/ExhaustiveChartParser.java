@@ -4,12 +4,12 @@ import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public abstract class ExhaustiveChartParser extends ChartParser {
+public abstract class ExhaustiveChartParser<G extends GrammarByChild, C extends Chart> extends ChartParser<G, C> {
 
     protected CellSelector cellSelector;
     protected long totalTime;
 
-    public ExhaustiveChartParser(final GrammarByChild grammar, final CellSelector cellSelector) {
+    public ExhaustiveChartParser(final G grammar, final CellSelector cellSelector) {
         super(grammar);
         this.cellSelector = cellSelector;
     }

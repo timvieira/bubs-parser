@@ -11,9 +11,9 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 import edu.ohsu.cslu.parser.util.StringToMD5;
 
-public abstract class Parser {
+public abstract class Parser<G extends Grammar> {
 
-    public Grammar grammar;
+    public G grammar;
     public static ChartEdge nullEdge = new ChartEdge(Grammar.nullProduction, null, null, Float.NEGATIVE_INFINITY);
     public String currentSentence;
     public ParserOptions opts = null; // TODO: fix this

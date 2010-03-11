@@ -14,7 +14,7 @@ public final class ArrayChartCell extends ChartCell {
     private LinkedList<Integer> posEntries;
     private boolean isLexCell;
 
-    public ArrayChartCell(final int start, final int end, final Chart<ArrayChartCell> chart) {
+    public ArrayChartCell(final int start, final int end, final Chart chart) {
         super(start, end, chart);
 
         bestEdge = new ChartEdge[chart.grammar.numNonTerms()];

@@ -4,13 +4,10 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public class ECPCellCrossHash extends CellwiseExhaustiveChartParser {
-
-    LeftHashGrammar leftHashGrammar;
+public class ECPCellCrossHash extends CellwiseExhaustiveChartParser<LeftHashGrammar, Chart> {
 
     public ECPCellCrossHash(final LeftHashGrammar grammar, final CellSelector cellSelector) {
         super(grammar, cellSelector);
-        leftHashGrammar = grammar;
     }
 
     @Override
@@ -22,7 +19,7 @@ public class ECPCellCrossHash extends CellwiseExhaustiveChartParser {
             final ChartCell rightCell = chart.getCell(mid, end);
             for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
                 for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                    for (final Production p : leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent)) {
+                    for (final Production p : grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent)) {
                         final float prob = p.prob + leftEdge.inside + rightEdge.inside;
                         cell.addEdge(p, leftCell, rightCell, prob);
                     }

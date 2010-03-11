@@ -3,9 +3,9 @@ package edu.ohsu.cslu.parser;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public abstract class CellwiseExhaustiveChartParser extends ExhaustiveChartParser {
+public abstract class CellwiseExhaustiveChartParser<G extends GrammarByChild, C extends Chart> extends ExhaustiveChartParser<G, C> {
 
-    public CellwiseExhaustiveChartParser(final GrammarByChild grammar, final CellSelector cellSelector) {
+    public CellwiseExhaustiveChartParser(final G grammar, final CellSelector cellSelector) {
         super(grammar, cellSelector);
     }
 

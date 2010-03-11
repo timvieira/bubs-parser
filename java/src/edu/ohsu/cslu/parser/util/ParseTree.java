@@ -311,7 +311,7 @@ public class ParseTree {
     // return true;
     // }
 
-    public Chart<ArrayChartCell> convertToChart(final Grammar grammar) throws Exception {
+    public Chart convertToChart(final Grammar grammar) throws Exception {
 
         // create a len+1 by len+1 chart, build ChartEdges from tree nodes and insert
         // them into this chart so they can be accessed in O(1) by [start][end]
@@ -323,7 +323,7 @@ public class ParseTree {
         final int sentLen = leafNodes.size();
         boolean newProd;
 
-        final Chart<ArrayChartCell> chart = new Chart<ArrayChartCell>(sentLen, ArrayChartCell.class, grammar);
+        final Chart chart = new Chart(sentLen, ArrayChartCell.class, grammar);
         Production prod = null;
         ChartEdge edge;
 

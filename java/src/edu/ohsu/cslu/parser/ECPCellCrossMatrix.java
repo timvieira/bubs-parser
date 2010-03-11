@@ -7,13 +7,10 @@ import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public class ECPCellCrossMatrix extends CellwiseExhaustiveChartParser {
-
-    final ChildMatrixGrammar childMatrixGrammar;
+public class ECPCellCrossMatrix extends CellwiseExhaustiveChartParser<ChildMatrixGrammar, Chart> {
 
     public ECPCellCrossMatrix(final ChildMatrixGrammar grammar, final CellSelector spanSelector) {
         super(grammar, spanSelector);
-        childMatrixGrammar = grammar;
     }
 
     @Override
@@ -25,7 +22,7 @@ public class ECPCellCrossMatrix extends CellwiseExhaustiveChartParser {
             final ChartCell rightCell = chart.getCell(mid, end);
             for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
                 // gramByLeft = grammarByChildMatrix.binaryProdMatrix.get(leftEdge.p.parent);
-                final LinkedList<Production>[] gramByLeft = childMatrixGrammar.binaryProdMatrix[leftEdge.prod.parent];
+                final LinkedList<Production>[] gramByLeft = grammar.binaryProdMatrix[leftEdge.prod.parent];
                 for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
                     // validProductions = gramByLeft.get(rightEdge.p.parent);
                     final List<Production> validProductions = gramByLeft[rightEdge.prod.parent];

@@ -1,18 +1,47 @@
 /**
  * OpenCL kernels for OpenClSparseMatrixVectorParser
+ *
+ * Note: All kernels start with something like 'if threadId < n' so that we can start 
+ *       thread blocks of an even multiple the warp size even if the data set is 
+ *       not an even multiple (the last few threads will just exit)
  */
 
-__kernel void fillFloat(__global float* buffer,
-		uint size,
-        float value) {
+/*
+Store p, m for each V_r in OpenCL local memory (CUDA shared memory).
 
-    uint threadId = get_global_id(0);
+Create a thread-group for each left non-terminal. (O(V_l) thread groups of 32 threads each (1 warp). 
+  Total ~35k threads for Berkeley grammar, 85k for R2, and 190k for R2-p1). 
+  Note: We could combine these by iterating within the thread if we need to reduce thread count.
+  
+  --Iterate through midpoints (left child cells)
+    Synchronize threads on each loop?
 
-    if (threadId < size) {
-    	buffer[threadId] = value;
-    }
-}
+    --If NT found in left child cell: (1 global read)
+      We need to somehow pass in references to _all_ child cells. 
+      Pre-allocate a single huge array for all cell contents? 2D array?
+      
+      --Iterate through observed right cell non-terminals (O(V_r) global reads)
+        --Store midpoint, and probability in shared memory (choosing most probable if already present).
+          This requires an if (x > v[i]) ..., which will cause thread divergence. sync threads after if?
+        
+          We only need to store p and m, indexed by V_r, so space is 6 * V_r bytes 
+          (~6k for Berkeley grammar, ~.5k for R2 and ~1.7k for R2-p1). 
 
+          We have 16 KB of shared memory in each multiprocessor, so we should be able to 
+          hold the entire array in shared memory (2 thread blocks per SM for Berkeley grammar).
+          
+      --Write all NT pairs from shared memory to global RAM (O(V_r) global writes; should coalesce nicely)
+
+Total: O(V_l * V_r) global memory writes (1 time through the V^2 vector)
+*/
+
+
+/**
+ * Computes the cartesian product of validLeftChildren x validRightChildren
+ * Stores the populated child pairs in crossProductProbabilities and crossProductMidpoints
+ *   (indexed by child pair)
+ *  
+ */
 __kernel void crossProduct(const __global int* validLeftChildren,
         const __global float* validLeftChildrenProbabilities,
         uint numValidLeftChildren,
@@ -141,6 +170,8 @@ __kernel void unarySpmvMultiply(const __global int* unaryRuleMatrixRowIndices,
             chartCellMidpoints[parent] = winningMidpoint;
 
 // TODO: Count valid left and right children (in shared memory?)
+//       See http://www.khronos.org/message_boards/viewtopic.php?f=37&t=2207
+//
 //            if (currentProbability == -INFINITY) {
 //                if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
 //                    chartCell.numValidLeftChildren++;
@@ -150,5 +181,18 @@ __kernel void unarySpmvMultiply(const __global int* unaryRuleMatrixRowIndices,
 //                }
 //            }
         }
+    }
+}
+
+// TODO: It seems like there should be a built-in function to do this.
+//       Maybe vector operations would be better?
+__kernel void fillFloat(__global float* buffer,
+        uint size,
+        float value) {
+
+    uint threadId = get_global_id(0);
+
+    if (threadId < size) {
+        buffer[threadId] = value;
     }
 }
