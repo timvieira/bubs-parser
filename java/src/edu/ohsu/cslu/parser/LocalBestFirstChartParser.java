@@ -56,7 +56,8 @@ public class LocalBestFirstChartParser extends ChartParser {
 
         nAgendaPush = 0;
         while (cellSelector.hasNext() && !hasCompleteParse()) {
-            cell = cellSelector.next();
+            final short[] startAndEnd = cellSelector.next();
+            cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
             visitCell(cell);
         }
 

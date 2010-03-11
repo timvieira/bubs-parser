@@ -4,7 +4,7 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public class ECPCellCrossHash extends ExhaustiveChartParser {
+public class ECPCellCrossHash extends CellwiseExhaustiveChartParser {
 
     LeftHashGrammar leftHashGrammar;
 

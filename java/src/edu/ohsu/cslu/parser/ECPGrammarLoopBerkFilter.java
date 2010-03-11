@@ -8,7 +8,7 @@ import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public class ECPGrammarLoopBerkFilter extends ExhaustiveChartParser {
+public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser {
 
     // tracks the spans of nonTerms in the chart so we don't have to consider them
     // in the inner loop of fillChart()

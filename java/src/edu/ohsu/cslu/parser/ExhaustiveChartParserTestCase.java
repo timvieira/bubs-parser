@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -17,10 +19,10 @@ import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.util.ParseTree;
+import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial sentences using very simple grammars and the first 10 sentences of
@@ -175,6 +177,7 @@ public abstract class ExhaustiveChartParserTestCase {
     }
 
     @Test
+    @DetailedTest
     public void testSentence1() throws Exception {
         parseTreebankSentence(0);
     }
@@ -185,21 +188,25 @@ public abstract class ExhaustiveChartParserTestCase {
     }
 
     @Test
+    @DetailedTest
     public void testSentence3() throws Exception {
         parseTreebankSentence(2);
     }
 
     @Test
+    @DetailedTest
     public void testSentence4() throws Exception {
         parseTreebankSentence(3);
     }
 
     @Test
+    @DetailedTest
     public void testSentence5() throws Exception {
         parseTreebankSentence(4);
     }
 
     @Test
+    @DetailedTest
     public void testSentence6() throws Exception {
         parseTreebankSentence(5);
     }
@@ -210,16 +217,19 @@ public abstract class ExhaustiveChartParserTestCase {
     }
 
     @Test
+    @DetailedTest
     public void testSentence8() throws Exception {
         parseTreebankSentence(7);
     }
 
     @Test
+    @DetailedTest
     public void testSentence9() throws Exception {
         parseTreebankSentence(8);
     }
 
     @Test
+    @DetailedTest
     public void testSentence10() throws Exception {
         parseTreebankSentence(9);
     }

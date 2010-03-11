@@ -4,11 +4,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.util.Iterator;
 
-import edu.ohsu.cslu.parser.ChartCell;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.util.Log;
 
-public abstract class CellSelector implements Iterator<ChartCell> {
+public abstract class CellSelector implements Iterator<short[]> {
 
     public CellSelectorType type;
 
@@ -18,7 +17,7 @@ public abstract class CellSelector implements Iterator<ChartCell> {
 
     public abstract boolean hasNext();
 
-    public abstract ChartCell next();
+    public abstract short[] next();
 
     public void init(final ChartParser parser) throws Exception {
         // default is to do nothing
@@ -36,22 +35,22 @@ public abstract class CellSelector implements Iterator<ChartCell> {
     public static CellSelector create(final CellSelectorType type, final BufferedReader modelStream, final BufferedReader cslutScoresStream) throws Exception {
         CellSelector spanSelection;
         switch (type) {
-        case LeftRightBottomTop:
-            spanSelection = new LeftRightBottomTopTraversal();
-            break;
-        case LeftCorner:
-            spanSelection = new LeftCornerTraversal();
-            break;
-        case CSLUT:
-            spanSelection = new CSLUTBlockedCells(modelStream);
-            break;
-        case Perceptron:
-            spanSelection = new PerceptronCellSelector(modelStream, cslutScoresStream);
-            break;
-        default:
-            Log.info(0, "ERROR: CellSelectorType " + type + " not supported.");
-            System.exit(1);
-            return null;
+            case LeftRightBottomTop:
+                spanSelection = new LeftRightBottomTopTraversal();
+                break;
+            case LeftCorner:
+                spanSelection = new LeftCornerTraversal();
+                break;
+            case CSLUT:
+                spanSelection = new CSLUTBlockedCells(modelStream);
+                break;
+            case Perceptron:
+                spanSelection = new PerceptronCellSelector(modelStream, cslutScoresStream);
+                break;
+            default:
+                Log.info(0, "ERROR: CellSelectorType " + type + " not supported.");
+                System.exit(1);
+                return null;
         }
         spanSelection.type = type;
         return spanSelection;

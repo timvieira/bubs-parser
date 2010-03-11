@@ -76,7 +76,8 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
                     }
 
                     while (cellSelector.hasNext() && !hasCompleteParse()) {
-                        cell = cellSelector.next();
+                        final short[] startAndEnd = cellSelector.next();
+                        cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
                         goldEdgeList = new LinkedList<ChartEdge>();
                         for (final ChartEdge goldEdge : goldChart.getCell(cell.start(), cell.end()).getEdges()) {
                             if (goldEdge.prod.isLexProd() == false) {

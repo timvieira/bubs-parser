@@ -2,7 +2,6 @@ package edu.ohsu.cslu.parser;
 
 import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 import static com.nativelibs4java.util.NIOUtils.directFloats;
-import static com.nativelibs4java.util.NIOUtils.directInts;
 import static com.nativelibs4java.util.NIOUtils.directShorts;
 
 import java.io.BufferedReader;
@@ -128,11 +127,9 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
     }
 
     @Override
-    protected void visitCell(final ChartCell cell) {
+    protected void visitCell(final short start, final short end) {
 
-        final DenseVectorChartCell spvChartCell = (DenseVectorChartCell) cell;
-        final short start = (short) cell.start();
-        final short end = (short) cell.end();
+        final DenseVectorChartCell spvChartCell = (DenseVectorChartCell) chart.getCell(start, end);
 
         final long t0 = System.currentTimeMillis();
 
@@ -407,9 +404,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
     }
 
     private void copyFromDevice(final CLFloatBuffer clFloatBuffer, final float[] array) {
-        final FloatBuffer mappedClBuffer = directFloats(array.length, context.getByteOrder());
-        clFloatBuffer.read(clQueue, mappedClBuffer, true);
-        mappedClBuffer.get(array);
+        final FloatBuffer buf = clFloatBuffer.read(clQueue, 0, array.length);
+        buf.get(array);
     }
 
     private int[] copyFromDevice(final CLIntBuffer clIntBuffer, final int size) {
@@ -419,9 +415,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
     }
 
     private void copyFromDevice(final CLIntBuffer clIntBuffer, final int[] array) {
-        final IntBuffer mappedClBuffer = directInts(array.length, context.getByteOrder());
-        clIntBuffer.read(clQueue, mappedClBuffer, true);
-        mappedClBuffer.get(array);
+        final IntBuffer buf = clIntBuffer.read(clQueue, 0, array.length);
+        buf.get(array);
     }
 
     private short[] copyFromDevice(final CLShortBuffer clShortBuffer, final int size) {
@@ -431,9 +426,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser {
     }
 
     private void copyFromDevice(final CLShortBuffer clShortBuffer, final short[] array) {
-        final ShortBuffer mappedClBuffer = directShorts(array.length, context.getByteOrder());
-        clShortBuffer.read(clQueue, mappedClBuffer, true);
-        mappedClBuffer.get(array);
+        final ShortBuffer buf = clShortBuffer.read(clQueue, 0, array.length);
+        buf.get(array);
     }
 
     public static class OpenClChartCell extends DenseVectorChartCell {

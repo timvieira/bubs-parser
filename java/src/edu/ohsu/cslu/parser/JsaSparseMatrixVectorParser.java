@@ -22,12 +22,9 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
     }
 
     @Override
-    protected void visitCell(final ChartCell cell) {
+    protected void visitCell(final short start, final short end) {
 
-        final DenseVectorChartCell spvChartCell = (DenseVectorChartCell) cell;
-        // TODO Change ChartCell.start() and end() to return shorts (since we shouldn't have to handle sentences longer than 32767)
-        final short start = (short) cell.start();
-        final short end = (short) cell.end();
+        final DenseVectorChartCell spvChartCell = (DenseVectorChartCell) chart.getCell(start, end);
 
         final long t0 = System.currentTimeMillis();
         long t1 = t0;

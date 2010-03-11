@@ -7,7 +7,7 @@ import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public class ECPCellCrossMatrix extends ExhaustiveChartParser {
+public class ECPCellCrossMatrix extends CellwiseExhaustiveChartParser {
 
     final ChildMatrixGrammar childMatrixGrammar;
 
