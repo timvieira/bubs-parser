@@ -9,10 +9,9 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
+public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends Chart> extends ExhaustiveChartParser<G, C> {
 
     // protected Chart<DenseVectorChartCell> chart;
-    private final SparseMatrixGrammar sparseMatrixGrammar;
     private float[] crossProductProbabilities;
     private short[] crossProductMidpoints;
 
@@ -20,10 +19,8 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
     public long totalCartesianProductUnionTime = 0;
     public long totalSpMVTime = 0;
 
-    public SparseMatrixVectorParser(final SparseMatrixGrammar grammar, final CellSelector cellSelector) {
+    public SparseMatrixVectorParser(final G grammar, final CellSelector cellSelector) {
         super(grammar, cellSelector);
-
-        this.sparseMatrixGrammar = grammar;
     }
 
     /**
@@ -44,7 +41,7 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
     @Override
     protected void initParser(final int sentLength) {
         // super.initParser(sentLength);
-        chart = new Chart<DenseVectorChartCell>(sentLength, DenseVectorChartCell.class, grammar);
+        chart = (C) new Chart(sentLength, DenseVectorChartCell.class, grammar);
 
         totalSpMVTime = 0;
         totalCartesianProductTime = 0;
@@ -71,8 +68,8 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
     protected CrossProductVector crossProductUnion(final int start, final int end) {
 
         if (crossProductProbabilities == null) {
-            crossProductProbabilities = new float[sparseMatrixGrammar.packedArraySize()];
-            crossProductMidpoints = new short[sparseMatrixGrammar.packedArraySize()];
+            crossProductProbabilities = new float[grammar.packedArraySize()];
+            crossProductMidpoints = new short[grammar.packedArraySize()];
         }
 
         Arrays.fill(crossProductProbabilities, Float.NEGATIVE_INFINITY);
@@ -97,7 +94,7 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
                 for (int j = 0; j < rightChildren.length; j++) {
 
                     final float jointProbability = leftProbability + rightChildrenProbabilities[j];
-                    final int child = sparseMatrixGrammar.pack(leftChild, rightChildren[j]);
+                    final int child = grammar.pack(leftChild, rightChildren[j]);
                     final float currentProbability = crossProductProbabilities[child];
 
                     if (jointProbability > currentProbability) {
@@ -112,7 +109,7 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
             }
         }
 
-        return new CrossProductVector(sparseMatrixGrammar, crossProductProbabilities, crossProductMidpoints, size);
+        return new CrossProductVector(grammar, crossProductProbabilities, crossProductMidpoints, size);
     }
 
     @Override
@@ -138,7 +135,7 @@ public abstract class SparseMatrixVectorParser extends ExhaustiveChartParser {
         public short[] validRightChildren;
         public float[] validRightChildrenProbabilities;
 
-        public DenseVectorChartCell(final int start, final int end, final Chart<? extends DenseVectorChartCell> chart) {
+        public DenseVectorChartCell(final int start, final int end, final Chart chart) {
             super(start, end, chart);
             this.sparseMatrixGrammar = (SparseMatrixGrammar) chart.grammar;
 

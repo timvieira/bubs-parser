@@ -12,7 +12,7 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser {
+public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSparseMatrixGrammar, Chart> {
 
     private final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
 

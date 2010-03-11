@@ -33,7 +33,7 @@ public abstract class ChartCellTestCase<C extends ChartCell, G extends Grammar> 
     @Test
     public void testAddEdge() throws Exception {
         final G simpleGrammar = (G) GrammarTestCase.createSimpleGrammar(grammarClass());
-        final Chart<ArrayChartCell> chart = new Chart<ArrayChartCell>(2, ArrayChartCell.class, simpleGrammar);
+        final Chart chart = new Chart(2, ArrayChartCell.class, simpleGrammar);
         final ChartCell parent = chart.getCell(0, 2);
         final ChartCell leftChild = chart.getCell(0, 1);
         final ChartCell rightChild = chart.getCell(1, 2);
@@ -58,7 +58,7 @@ public abstract class ChartCellTestCase<C extends ChartCell, G extends Grammar> 
     @Test
     public void testGetBestEdge() throws Exception {
         final G simpleGrammar = (G) GrammarTestCase.createSimpleGrammar(grammarClass());
-        final Chart<ArrayChartCell> chart = new Chart<ArrayChartCell>(2, ArrayChartCell.class, simpleGrammar);
+        final Chart chart = new Chart(2, ArrayChartCell.class, simpleGrammar);
         final ChartCell parent = chart.getCell(0, 2);
         final ChartCell leftChild = chart.getCell(0, 1);
         final ChartCell rightChild = chart.getCell(1, 2);

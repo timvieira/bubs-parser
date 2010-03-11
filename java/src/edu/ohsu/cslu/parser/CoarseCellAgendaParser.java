@@ -9,7 +9,7 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public class CoarseCellAgendaParser extends ChartParser {
+public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, Chart> {
 
     EdgeSelector edgeSelector;
     float[][] maxEdgeFOM;

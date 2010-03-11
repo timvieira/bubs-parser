@@ -6,17 +6,17 @@ import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public abstract class ChartParser extends Parser {
+public abstract class ChartParser<G extends GrammarByChild, C extends Chart> extends Parser<G> {
 
-    public Chart<? extends ChartCell> chart;
-    protected GrammarByChild grammar;
+    public C chart;
 
-    public ChartParser(final GrammarByChild grammar) {
+    public ChartParser(final G grammar) {
         this.grammar = grammar;
     }
 
+    @SuppressWarnings("unchecked")
     protected void initParser(final int sentLength) {
-        chart = new Chart<ArrayChartCell>(sentLength, ArrayChartCell.class, grammar);
+        chart = (C) new Chart(sentLength, ArrayChartCell.class, grammar);
     }
 
     protected List<ChartEdge> addLexicalProductions(final int sent[]) throws Exception {
