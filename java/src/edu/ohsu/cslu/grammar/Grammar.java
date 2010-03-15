@@ -446,7 +446,6 @@ public class Grammar {
         }
 
         public int child() {
-            assert isUnaryProd() == true;
             return leftChild;
         }
 
