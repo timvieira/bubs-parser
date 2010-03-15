@@ -5,6 +5,8 @@ import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
 public class ACPGhostEdges extends AgendaChartParser {
@@ -40,21 +42,18 @@ public class ACPGhostEdges extends AgendaChartParser {
     }
 
     @Override
-    protected void expandFrontier(final ChartEdge newEdge, final ChartCell cell) {
+    protected void expandFrontier(final int nt, final ChartCell cell) {
         LinkedList<ChartEdge> possibleEdges;
         Collection<Production> possibleRules;
         ChartEdge curBestEdge;
-        float prob, partialProb;
-        final int nonTerm = newEdge.prod.parent;
 
         // unary edges are always possible in any cell, although we don't allow
         // unary chains
-        if (newEdge.prod.isUnaryProd() == false || newEdge.prod.isLexProd() == true) {
-            for (final Production p : leftRightListsGrammar.getUnaryProductionsWithChild(newEdge.prod.parent)) {
-                prob = p.prob + newEdge.inside;
-                addEdgeToFrontier(new ChartEdge(p, cell, prob, edgeSelector));
-            }
+        // if (newEdge.prod.isUnaryProd() == false || newEdge.prod.isLexProd() == true) {
+        for (final Production p : leftRightListsGrammar.getUnaryProductionsWithChild(nt)) {
+            addEdgeToFrontier(chart.new ChartEdge(p, cell));
         }
+        // }
 
         if (cell == chart.getRootCell()) {
             // no ghost edges possible from here ... only add the root productions
@@ -65,27 +64,25 @@ public class ACPGhostEdges extends AgendaChartParser {
              */
         } else {
             // connect ghost edges that need left side
-            possibleEdges = needLeftGhostEdges[nonTerm][cell.end()];
+            possibleEdges = needLeftGhostEdges[nt][cell.end()];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
                     curBestEdge = chart.getCell(cell.start(), ghostEdge.end()).getBestEdge(ghostEdge.prod.parent);
                     if (curBestEdge == null) {
                         // ghost edge inside prob = grammar rule prob + ONE
                         // CHILD inside prob
-                        prob = newEdge.inside + ghostEdge.inside;
-                        addEdgeToFrontier(new ChartEdge(ghostEdge.prod, cell, ghostEdge.rightCell, prob, edgeSelector));
+                        addEdgeToFrontier(chart.new ChartEdge(ghostEdge.prod, cell, ghostEdge.rightCell));
                     }
                 }
             }
 
             // connect ghost edges that need right side
-            possibleEdges = needRightGhostEdges[nonTerm][cell.start()];
+            possibleEdges = needRightGhostEdges[nt][cell.start()];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
                     curBestEdge = chart.getCell(ghostEdge.start(), cell.end()).getBestEdge(ghostEdge.prod.parent);
                     if (curBestEdge == null) {
-                        prob = newEdge.inside + ghostEdge.inside;
-                        addEdgeToFrontier(new ChartEdge(ghostEdge.prod, ghostEdge.leftCell, cell, prob, edgeSelector));
+                        addEdgeToFrontier(chart.new ChartEdge(ghostEdge.prod, ghostEdge.leftCell, cell));
                     }
                 }
             }
@@ -93,14 +90,13 @@ public class ACPGhostEdges extends AgendaChartParser {
             // create left ghost edges. Can't go left if we are on the very left
             // side of the chart
             if (cell.start() > 0) {
-                possibleRules = leftRightListsGrammar.getBinaryProductionsWithRightChild(nonTerm);
+                possibleRules = leftRightListsGrammar.getBinaryProductionsWithRightChild(nt);
                 if (possibleRules != null) {
                     for (final Production p : possibleRules) {
                         if (needLeftGhostEdges[p.leftChild][cell.start()] == null) {
                             needLeftGhostEdges[p.leftChild][cell.start()] = new LinkedList<ChartEdge>();
                         }
-                        partialProb = p.prob + newEdge.inside;
-                        needLeftGhostEdges[p.leftChild][cell.start()].add(new ChartEdge(p, null, cell, partialProb));
+                        needLeftGhostEdges[p.leftChild][cell.start()].add(chart.new ChartEdge(p, null, cell));
                         nGhostEdges += 1;
                     }
                 }
@@ -109,14 +105,13 @@ public class ACPGhostEdges extends AgendaChartParser {
             // create right ghost edges. Can't go right if we are on the very
             // right side of the chart
             if (cell.end() < chart.size() - 1) {
-                possibleRules = leftRightListsGrammar.getBinaryProductionsWithLeftChild(nonTerm);
+                possibleRules = leftRightListsGrammar.getBinaryProductionsWithLeftChild(nt);
                 if (possibleRules != null) {
                     for (final Production p : possibleRules) {
                         if (needRightGhostEdges[p.rightChild][cell.end()] == null) {
                             needRightGhostEdges[p.rightChild][cell.end()] = new LinkedList<ChartEdge>();
                         }
-                        partialProb = p.prob + newEdge.inside;
-                        needRightGhostEdges[p.rightChild][cell.end()].add(new ChartEdge(p, cell, null, partialProb));
+                        needRightGhostEdges[p.rightChild][cell.end()].add(chart.new ChartEdge(p, cell, null));
                         nGhostEdges += 1;
                     }
                 }

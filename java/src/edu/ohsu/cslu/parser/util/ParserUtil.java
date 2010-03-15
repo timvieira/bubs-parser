@@ -68,10 +68,20 @@ public class ParserUtil {
     }
 
     public static double logSum(final double a, final double b) {
-        if (a > b) {
-            return a + Math.log(Math.pow(Math.E, b - a) + 1);
+        // NOTE: these conditions were necessary when multiplying multiple values
+        // of Float.NEGATIVE_INFINITY for the result of a or b because logSum was
+        // returning NaN
+        if (a <= Double.NEGATIVE_INFINITY) {
+            return b;
         }
-        return b + Math.log(Math.pow(Math.E, a - b) + 1);
+        if (b <= Double.NEGATIVE_INFINITY) {
+            return a;
+        }
+
+        if (a > b) {
+            return a + Math.log(Math.exp(b - a) + 1);
+        }
+        return b + Math.log(Math.exp(a - b) + 1);
     }
 
     public static List<Boolean> binValue(final float value, final int min, final int max, final int numBins) {

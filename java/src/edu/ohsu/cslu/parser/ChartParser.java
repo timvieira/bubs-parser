@@ -1,12 +1,12 @@
 package edu.ohsu.cslu.parser;
 
-import java.util.List;
-
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public abstract class ChartParser<G extends GrammarByChild, C extends Chart> extends Parser<G> {
+public abstract class ChartParser<G extends GrammarByChild, C extends CellChart> extends Parser<G> {
 
     public C chart;
 
@@ -16,20 +16,17 @@ public abstract class ChartParser<G extends GrammarByChild, C extends Chart> ext
 
     @SuppressWarnings("unchecked")
     protected void initParser(final int sentLength) {
-        chart = (C) new Chart(sentLength, ArrayChartCell.class, grammar);
+        chart = (C) new CellChart(sentLength, grammar);
     }
 
-    protected List<ChartEdge> addLexicalProductions(final int sent[]) throws Exception {
-        ChartCell cell;
+    protected void addLexicalProductions(final int sent[]) throws Exception {
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
+            final ChartCell cell = chart.getCell(i, i + 1);
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
-                cell = chart.getCell(i, i + 1);
-                cell.addEdge(new ChartEdge(lexProd, cell, lexProd.prob));
+                cell.updateInside(lexProd, cell, null, lexProd.prob);
             }
         }
-
-        return null;
     }
 
     public boolean hasCompleteParse() {
@@ -47,7 +44,8 @@ public abstract class ChartParser<G extends GrammarByChild, C extends Chart> ext
         if (cell != null) {
             bestEdge = cell.getBestEdge(nonTermIndex);
             if (bestEdge != null) {
-                curNode = new ParseTree(bestEdge);
+                // curNode = new ParseTree(bestEdge);
+                curNode = new ParseTree(bestEdge.prod.parentToString());
                 if (bestEdge.prod.isUnaryProd()) {
                     curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
                 } else if (bestEdge.prod.isLexProd()) {

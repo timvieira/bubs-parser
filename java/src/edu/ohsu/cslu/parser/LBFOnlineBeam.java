@@ -4,11 +4,13 @@ import java.util.Collection;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
-public class LBFOnlineBeam extends LocalBestFirstChartParser {
+public class LBFOnlineBeam extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
 
     float bestFOM, onlineBeam;
     int numEdgesAdded;
@@ -35,10 +37,9 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser {
         numEdgesAdded = 0;
 
         if (spanWidth == 1) {
-            for (final int pos : cell.getPosEntries()) {
+            for (final int pos : cell.getPosNTs()) {
                 for (final Production p : grammar.getUnaryProductionsWithChild(pos)) {
-                    final float prob = p.prob + cell.getBestEdge(pos).inside;
-                    edge = new ChartEdge(p, cell, prob, edgeSelector);
+                    edge = chart.new ChartEdge(p, cell);
                     processEdge(edge, cell);
                 }
             }
@@ -46,14 +47,13 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser {
             for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
                 final ChartCell leftCell = chart.getCell(start, mid);
                 final ChartCell rightCell = chart.getCell(mid, end);
-                for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
-                    for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                        possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+                for (final int leftNT : leftCell.getLeftChildNTs()) {
+                    for (final int rightNT : rightCell.getRightChildNTs()) {
+                        possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                         if (possibleProds != null) {
                             for (final Production p : possibleProds) {
                                 if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
-                                    final float prob = p.prob + leftEdge.inside + rightEdge.inside;
-                                    edge = new ChartEdge(p, leftCell, rightCell, prob, edgeSelector);
+                                    edge = chart.new ChartEdge(p, leftCell, rightCell);
                                     processEdge(edge, cell);
                                 }
                             }
@@ -69,21 +69,22 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser {
         if (addedEdge) {
             // Add unary productions to agenda so they can compete with binary productions
             for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                final float prob = p.prob + edge.inside;
-                final ChartEdge unaryEdge = new ChartEdge(p, cell, prob, edgeSelector);
+                final ChartEdge unaryEdge = chart.new ChartEdge(p, cell);
                 addEdgeToChart(unaryEdge, cell);
             }
         }
     }
 
     protected boolean addEdgeToChart(final ChartEdge edge, final ChartCell cell) {
-        // if (edge.figureOfMerit < bestFOM - onlineBeam) {
         if (edge.fom < bestFOM - logBeamDeltaThresh) {
             return false;
         }
-        if (cell.addEdge(edge) == false) {
+        // if (cell.addEdge(edge) == false) {
+        if (edge.inside() <= cell.getInside(edge.prod.parent)) {
             return false;
         }
+        cell.updateInside(edge);
+
         if (edge.fom > bestFOM) {
             bestFOM = edge.fom;
         }

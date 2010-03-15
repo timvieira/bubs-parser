@@ -1,39 +1,39 @@
 package edu.ohsu.cslu.parser;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
-public class LBFSkipBaseCells extends LocalBestFirstChartParser {
+public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
 
     public LBFSkipBaseCells(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
         super(grammar, edgeSelector, cellSelector);
     }
 
     @Override
-    protected List<ChartEdge> addLexicalProductions(final int sent[]) throws Exception {
+    protected void addLexicalProductions(final int sent[]) throws Exception {
         ChartCell cell;
 
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
             cell = chart.getCell(i, i + 1);
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
-                cell.addEdge(new ChartEdge(lexProd, cell, lexProd.prob));
+                cell.updateInside(chart.new ChartEdge(lexProd, cell));
 
                 // NOTE: also adding unary prods here...should probably change the name of this
                 // function and also create our own init()
                 for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
                     // NOTE: not using an FOM for these edges ... just adding them all
-                    cell.addEdge(unaryProd, cell, null, lexProd.prob + unaryProd.prob);
+                    cell.updateInside(chart.new ChartEdge(unaryProd, cell));
                 }
             }
         }
-        return null;
     }
 
     @Override
@@ -50,13 +50,12 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser {
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final ChartCell leftCell = chart.getCell(start, mid);
             final ChartCell rightCell = chart.getCell(mid, end);
-            for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
-                for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                    possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+            for (final int leftNT : leftCell.getLeftChildNTs()) {
+                for (final int rightNT : rightCell.getRightChildNTs()) {
+                    possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
-                            final float prob = p.prob + leftEdge.inside + rightEdge.inside;
-                            edge = new ChartEdge(p, leftCell, rightCell, prob, edgeSelector);
+                            edge = chart.new ChartEdge(p, leftCell, rightCell);
                             addEdgeToArray(edge, bestEdges);
                         }
                     }
@@ -82,7 +81,6 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser {
 
     private void addBestEdgesToChart(final ChartCell cell, final ChartEdge[] bestEdges) {
         ChartEdge edge, unaryEdge;
-        boolean addedEdge;
         int numAdded = 0;
 
         agenda = new PriorityQueue<ChartEdge>();
@@ -94,14 +92,12 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser {
 
         while (agenda.isEmpty() == false && numAdded <= maxEdgesToAdd) {
             edge = agenda.poll();
-            addedEdge = cell.addEdge(edge);
-            if (addedEdge) {
-                // System.out.println(" addingEdge:" + edge);
+            if (edge.inside() > cell.getInside(edge.prod.parent)) {
+                cell.updateInside(edge);
                 numAdded++;
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                    final float prob = p.prob + edge.inside;
-                    unaryEdge = new ChartEdge(p, cell, prob, edgeSelector);
+                    unaryEdge = chart.new ChartEdge(p, cell);
                     addEdgeToAgenda(unaryEdge);
                 }
             }

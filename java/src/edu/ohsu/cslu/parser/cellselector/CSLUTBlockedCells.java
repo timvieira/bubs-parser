@@ -8,9 +8,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
-import edu.ohsu.cslu.parser.ChartCell;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 

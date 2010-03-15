@@ -22,6 +22,8 @@ import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 /**
@@ -33,7 +35,7 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, Chart> {
+public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar> {
 
     private final static int LOCAL_WORK_SIZE = 64;
 
@@ -74,7 +76,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
     @Override
     protected void initParser(final int sentLength) {
-        chart = new Chart(sentLength, OpenClChartCell.class, grammar);
+        chart = new DenseVectorChart(sentLength, grammar);
 
         totalSpMVTime = 0;
         totalCartesianProductTime = 0;
@@ -428,29 +430,37 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         buf.get(array);
     }
 
-    public static class OpenClChartCell extends DenseVectorChartCell {
+    public class OpenClChart extends DenseVectorChart {
 
-        public OpenClChartCell(final int start, final int end, final Chart chart) {
-            super(start, end, chart);
+        public OpenClChart(final int size, final Grammar grammar) {
+            super(size, grammar);
         }
 
-        @Override
-        public void finalizeCell() {
-            // Count valid left and right children
-            numValidLeftChildren = numValidRightChildren = 0;
-            for (int nonterminal = 0; nonterminal < sparseMatrixGrammar.numNonTerms(); nonterminal++) {
+        public class OpenClChartCell extends DenseVectorChartCell {
 
-                if (probabilities[nonterminal] != Float.NEGATIVE_INFINITY) {
-                    if (sparseMatrixGrammar.isValidLeftChild(nonterminal)) {
-                        numValidLeftChildren++;
-                    }
-                    if (sparseMatrixGrammar.isValidRightChild(nonterminal)) {
-                        numValidRightChildren++;
-                    }
-                }
+            public OpenClChartCell(final int start, final int end) {
+                super(start, end);
             }
 
-            super.finalizeCell();
+            @Override
+            public void finalizeCell() {
+                // Count valid left and right children
+                numValidLeftChildren = numValidRightChildren = 0;
+                for (int nonterminal = 0; nonterminal < sparseMatrixGrammar.numNonTerms(); nonterminal++) {
+
+                    if (probabilities[nonterminal] != Float.NEGATIVE_INFINITY) {
+                        if (sparseMatrixGrammar.isValidLeftChild(nonterminal)) {
+                            numValidLeftChildren++;
+                        }
+                        if (sparseMatrixGrammar.isValidRightChild(nonterminal)) {
+                            numValidRightChildren++;
+                        }
+                    }
+                }
+
+                super.finalizeCell();
+            }
         }
+
     }
 }

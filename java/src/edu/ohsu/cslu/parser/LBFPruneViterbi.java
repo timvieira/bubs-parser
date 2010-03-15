@@ -4,10 +4,12 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
-public class LBFPruneViterbi extends LocalBestFirstChartParser {
+public class LBFPruneViterbi extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
 
     ChartEdge[] bestEdges;
     float bestFOM;
@@ -25,7 +27,7 @@ public class LBFPruneViterbi extends LocalBestFirstChartParser {
     @Override
     protected void addEdgeToCollection(final ChartEdge edge) {
         final int parent = edge.prod.parent;
-        if (bestEdges[parent] == null || bestEdges[parent].fom < edge.fom) {
+        if (bestEdges[parent] == null || edge.fom > bestEdges[parent].fom) {
             bestEdges[parent] = edge;
 
             if (edge.fom > bestFOM) {
@@ -37,14 +39,13 @@ public class LBFPruneViterbi extends LocalBestFirstChartParser {
     @Override
     protected void addEdgeCollectionToChart(final ChartCell cell) {
         ChartEdge edge, unaryEdge;
-        boolean addedEdge;
         boolean edgeBelowThresh = false;
         int numAdded = 0;
 
         agenda = new PriorityQueue<ChartEdge>();
-        for (int i = 0; i < grammar.numNonTerms(); i++) {
-            if (bestEdges[i] != null && bestEdges[i].fom > bestFOM - logBeamDeltaThresh) {
-                agenda.add(bestEdges[i]);
+        for (final ChartEdge viterbiEdge : bestEdges) {
+            if (viterbiEdge != null && viterbiEdge.fom > bestFOM - logBeamDeltaThresh) {
+                agenda.add(viterbiEdge);
                 nAgendaPush++;
             }
         }
@@ -53,19 +54,17 @@ public class LBFPruneViterbi extends LocalBestFirstChartParser {
             edge = agenda.poll();
             if (edge.fom < bestFOM - logBeamDeltaThresh) {
                 edgeBelowThresh = true;
-            } else {
-                addedEdge = cell.addEdge(edge);
-                if (addedEdge) {
-                    numAdded++;
+            } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
+                cell.updateInside(edge);
+                numAdded++;
 
-                    // Add unary productions to agenda so they can compete with binary productions
-                    for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                        final float prob = p.prob + edge.inside;
-                        unaryEdge = new ChartEdge(p, cell, prob, edgeSelector);
-                        if ((bestEdges[p.parent] == null || bestEdges[p.parent].fom < unaryEdge.fom) && unaryEdge.fom > bestFOM - logBeamDeltaThresh) {
-                            agenda.add(unaryEdge);
-                            nAgendaPush++;
-                        }
+                // Add unary productions to agenda so they can compete with binary productions
+                for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
+                    unaryEdge = chart.new ChartEdge(p, cell);
+                    final int nt = p.parent;
+                    if ((bestEdges[nt] == null || unaryEdge.fom > bestEdges[nt].fom) && (unaryEdge.fom > bestFOM - logBeamDeltaThresh)) {
+                        // if (unaryEdge.fom > bestFOM - logBeamDeltaThresh) {
+                        agenda.add(unaryEdge);
                     }
                 }
             }

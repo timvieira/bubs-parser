@@ -4,6 +4,8 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -20,9 +22,8 @@ public class LBFExpDecay extends LBFPruneViterbi {
     @Override
     protected void addEdgeCollectionToChart(final ChartCell cell) {
         ChartEdge edge, unaryEdge;
-        boolean addedEdge;
         boolean edgeBelowThresh = false;
-        int numAdded = 0;
+        final int numAdded = 0;
 
         final float maxPops = ParserDriver.param1;
         final int minPops = 3;
@@ -72,29 +73,15 @@ public class LBFExpDecay extends LBFPruneViterbi {
             edge = agenda.poll();
             if (edge.fom < bestFOM - logBeamDeltaThresh) {
                 edgeBelowThresh = true;
-            } else {
-                addedEdge = cell.addEdge(edge);
-                if (addedEdge) {
-                    numAdded++;
+            } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
+                cell.updateInside(edge);
 
-                    // if (resultRun == true) {
-                    // try {
-                    // if (resultChart.getChartCell(cell.start(), cell.end()).hasEdge(edge)) {
-                    // System.out.println("train: " + numAdded + " " + chartSize + " " + cell.width() + " " + (cell.width() / (float) chartSize));
-                    // }
-                    // } catch (final Exception e) {
-                    // e.printStackTrace();
-                    // }
-                    // }
-
-                    // Add unary productions to agenda so they can compete with binary productions
-                    for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                        final float prob = p.prob + edge.inside;
-                        unaryEdge = new ChartEdge(p, cell, prob, edgeSelector);
-                        if ((bestEdges[p.parent] == null || bestEdges[p.parent].fom < unaryEdge.fom) && unaryEdge.fom > bestFOM - logBeamDeltaThresh) {
-                            agenda.add(unaryEdge);
-                            nAgendaPush++;
-                        }
+                // Add unary productions to agenda so they can compete with binary productions
+                for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
+                    unaryEdge = chart.new ChartEdge(p, cell);
+                    if ((bestEdges[p.parent] == null || bestEdges[p.parent].fom < unaryEdge.fom) && unaryEdge.fom > bestFOM - logBeamDeltaThresh) {
+                        agenda.add(unaryEdge);
+                        nAgendaPush++;
                     }
                 }
             }

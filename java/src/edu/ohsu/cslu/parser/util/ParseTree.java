@@ -7,9 +7,8 @@ import java.util.regex.Pattern;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.ArrayChartCell;
-import edu.ohsu.cslu.parser.Chart;
-import edu.ohsu.cslu.parser.ChartEdge;
+import edu.ohsu.cslu.parser.CellChart;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 
 public class ParseTree {
 
@@ -18,9 +17,9 @@ public class ParseTree {
     public ParseTree parent = null;
     public ParseTree leftNeighbor = null, rightNeighbor = null; // used to connect lexical and POS leaf entries
 
-    // public static ParseTree nullNode = new ParseTree("null");
+    // public ChartEdge chartEdge; // for convenience, but should probably change this later
 
-    public ChartEdge chartEdge; // for convenience, but should probably change this later
+    // public static ParseTree nullNode = new ParseTree("null");
 
     public ParseTree(final String contents) {
         this(contents, null);
@@ -35,10 +34,10 @@ public class ParseTree {
     // TODO: this needs to be re-worked. We want to be able to print out the scores
     // for each subtree in the chart, but we also want this class not to be reliant
     // on the parser structure.
-    public ParseTree(final ChartEdge edge) {
-        this(edge.prod.parentToString());
-        this.chartEdge = edge;
-    }
+    // public ParseTree(final ChartEdge edge) {
+    // this(edge.prod.parentToString());
+    // this.chartEdge = edge;
+    // }
 
     public void addChild(final String child) {
         children.add(new ParseTree(child));
@@ -236,9 +235,9 @@ public class ParseTree {
         }
 
         String s = "(" + contents;
-        if (printInsideProb == true && chartEdge != null) {
-            s += " " + Double.toString(chartEdge.inside);
-        }
+        // if (printInsideProb == true && chartEdge != null) {
+        // s += " " + Double.toString(chartEdge.inside);
+        // }
 
         for (final ParseTree child : children) {
             s += " " + child.toString(printInsideProb);
@@ -311,7 +310,7 @@ public class ParseTree {
     // return true;
     // }
 
-    public Chart convertToChart(final Grammar grammar) throws Exception {
+    public CellChart convertToChart(final Grammar grammar) throws Exception {
 
         // create a len+1 by len+1 chart, build ChartEdges from tree nodes and insert
         // them into this chart so they can be accessed in O(1) by [start][end]
@@ -323,7 +322,8 @@ public class ParseTree {
         final int sentLen = leafNodes.size();
         boolean newProd;
 
-        final Chart chart = new Chart(sentLen, ArrayChartCell.class, grammar);
+        // final Chart chart = new Chart(sentLen, ArrayChartCell.class, grammar);
+        final CellChart chart = new CellChart(sentLen, grammar);
         Production prod = null;
         ChartEdge edge;
 
@@ -342,7 +342,7 @@ public class ParseTree {
                     final String C = node.children.get(1).contents;
                     prod = grammar.getBinaryProduction(A, B, C);
                     final int midpt = leafNodes.indexOf(node.children.get(0).rightMostLeaf()) + 1;
-                    edge = new ChartEdge(prod, chart.getCell(start, midpt), chart.getCell(midpt, end), Float.NEGATIVE_INFINITY);
+                    edge = chart.new ChartEdge(prod, chart.getCell(start, midpt), chart.getCell(midpt, end));
                 } else if (numChildren == 1) {
                     final String B = node.children.get(0).contents;
                     if (node.isPOS()) {
@@ -350,7 +350,7 @@ public class ParseTree {
                     } else {
                         prod = grammar.getUnaryProduction(A, B);
                     }
-                    edge = new ChartEdge(prod, chart.getCell(start, end), null, Float.NEGATIVE_INFINITY);
+                    edge = chart.new ChartEdge(prod, chart.getCell(start, end), null);
                 } else {
                     throw new Exception("ERROR: Number of node children is " + node.children.size() + ".  Expecting <= 2.");
                 }
@@ -362,7 +362,7 @@ public class ParseTree {
                     Log.info(0, "WARNING: Production " + prod.toString() + " not found in grammar.  Adding...");
                 }
 
-                chart.getCell(start, end).addEdge(edge);
+                chart.getCell(start, end).updateInside(edge);
             }
         }
 
