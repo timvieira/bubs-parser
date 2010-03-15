@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.parser.ChartCell;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
 
 public class LeftRightBottomTopTraversal extends CellSelector {
 

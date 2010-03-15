@@ -8,13 +8,15 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.EdgeCellChart.ChartCell;
 import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
-public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
+public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser<LeftHashGrammar, EdgeCellChart> {
 
     PerceptronCellSelector perceptronCellSelector;
 
@@ -23,12 +25,12 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
         perceptronCellSelector = cellSelector;
     }
 
-    public void addUnaryExtensionsToLexProds(final Chart goldChart) {
+    public void addUnaryExtensionsToLexProds(final EdgeCellChart goldChart) {
         ChartCell cell;
 
         for (int i = 0; i < chart.size(); i++) {
-            cell = chart.getCell(i, i + 1);
-            for (final int pos : cell.getPosEntries()) {
+            cell = (ChartCell) chart.getCell(i, i + 1);
+            for (final int pos : cell.getPosNTs()) {
                 for (final Production unaryProd : grammar.getUnaryProductionsWithChild(pos)) {
                     cell.addEdge(unaryProd, cell, null, cell.getBestEdge(pos).inside + unaryProd.prob);
                 }
@@ -69,7 +71,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
                 System.out.println("SENT: " + sentence);
                 this.currentSentence = sentence;
                 tree.tokenizeLeaves(grammar);
-                final Chart goldChart = tree.convertToChart(grammar);
+                final EdgeCellChart goldChart = (EdgeCellChart) tree.convertToChart(grammar);
 
                 if (goldChart != null) {
 
@@ -93,7 +95,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
                         // is guess span in gold span frontier?
                         boolean guessSpanInGoldSpanFrontier = false;
                         for (final ChartEdge goldEdge : goldEdgeList) {
-                            goldSpan = chart.getCell(goldEdge.start(), goldEdge.end());
+                            goldSpan = (ChartCell) chart.getCell(goldEdge.start(), goldEdge.end());
                             if (goldSpan == guessSpan) {
                                 guessSpanInGoldSpanFrontier = true;
                                 // for (final ChartEdge cellGoldEdge : goldChart.getChartCell(goldEdge.start(), goldEdge.end()).getEdges()) {
@@ -183,7 +185,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
                 this.currentSentence = sentence;
                 final boolean canBuildGoldEdge = true;
                 tree.tokenizeLeaves(grammar);
-                final Chart goldChart = tree.convertToChart(grammar);
+                final EdgeCellChart goldChart = tree.convertToChart(grammar);
 
                 if (goldChart != null) {
 
@@ -296,7 +298,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
 
     // TODO: there must be a better way to extract the buildable gold edges. Something
     // at least in O(n^2) if not O(numTreeNodes)
-    private LinkedList<ChartEdge> getGoldBinaryEdgeList(final Chart goldChart) throws Exception {
+    private LinkedList<ChartEdge> getGoldBinaryEdgeList(final EdgeCellChart goldChart) throws Exception {
         ChartCell leftChartCell, rightChartCell;
         ChartEdge leftGoldEdge, rightGoldEdge;
         final LinkedList<ChartEdge> edgeCollection = new LinkedList<ChartEdge>();
@@ -326,7 +328,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
 
     // TODO: there must be a better way to extract the buildable gold edges. Something
     // at least in O(n^2) if not O(numTreeNodes)
-    private LinkedList<ChartEdge> getGoldEdgeList(final Chart goldChart) throws Exception {
+    private LinkedList<ChartEdge> getGoldEdgeList(final EdgeCellChart goldChart) throws Exception {
         ChartCell leftChartCell, rightChartCell;
         ChartEdge leftGoldEdge, rightGoldEdge;
         final LinkedList<ChartEdge> edgeCollection = new LinkedList<ChartEdge>();
@@ -362,7 +364,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
     }
 
     // private ChartCell getGoldSpan(final Chart goldChart) throws Exception {
-    private ChartEdge getGoldEdge(final Chart goldChart) throws Exception {
+    private ChartEdge getGoldEdge(final EdgeCellChart goldChart) throws Exception {
         // Pick largest span where a gold edge can be (and has not yet been) built.
         // Other ideas:
         // * Of qualifying spans, pick span we could be "most sure" of
@@ -404,7 +406,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
         for (final ChartEdge possUnaryChild : chart.getCell(start, end).getEdges()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(possUnaryChild.prod.parent)) {
                 final float prob = p.prob + possUnaryChild.inside;
-                edge = new ChartEdge(p, cell, prob, edgeSelector);
+                edge = chart.new ChartEdge(p, cell, prob, edgeSelector);
                 addEdgeToArray(edge, bestEdges);
                 // addEdgeToAgenda(edge, agenda);
                 // addEdgeToAgenda(edge, agenda, goldEdges);
@@ -415,13 +417,13 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final ChartCell leftCell = chart.getCell(start, mid);
             final ChartCell rightCell = chart.getCell(mid, end);
-            for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
-                for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                    possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+            for (final int leftNT : leftCell.getLeftChildNTs()) {
+                for (final int rightNT : rightCell.getRightChildNTs()) {
+                    possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
-                            final float prob = p.prob + leftEdge.inside + rightEdge.inside;
-                            edge = new ChartEdge(p, leftCell, rightCell, prob, edgeSelector);
+                            final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                            edge = chart.new ChartEdge(p, leftCell, rightCell, prob, edgeSelector);
                             addEdgeToArray(edge, bestEdges);
                             // addEdgeToAgenda(edge, agenda);
                             // addEdgeToAgenda(edge, agenda, goldEdges);
@@ -482,12 +484,12 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
         while (agenda.isEmpty() == false && numAdded <= maxEdgesToAdd) {
             // while (addedGoldEdge == false) {
             edge = agenda.poll();
-            addedEdge = cell.addEdge(edge);
+            addedEdge = cell.addEdge(edge, edge.inside);
             if (addedEdge) {
                 numAdded++;
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                    unaryEdge = new ChartEdge(p, cell, p.prob + edge.inside, edgeSelector);
+                    unaryEdge = chart.new ChartEdge(p, cell, p.prob + edge.inside, edgeSelector);
                     addEdgeToAgenda(unaryEdge, agenda);
                 }
             }
@@ -555,7 +557,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
     // return numAdded;
     // }
 
-    private int addBestEdgesToChart(final ArrayChartCell cell, final PriorityQueue<ChartEdge> agenda, final LinkedList<ChartEdge> goldEdges) {
+    private int addBestEdgesToChart(final ChartCell cell, final PriorityQueue<ChartEdge> agenda, final LinkedList<ChartEdge> goldEdges) {
         ChartEdge edge, unaryEdge;
         boolean addedEdge;
         int numAdded = 0;
@@ -568,12 +570,12 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser {
         // (2) the gold edge contains a production not in our grammar
         while (numAdded < maxEdgesToAdd && !agenda.isEmpty()) {
             edge = agenda.poll();
-            addedEdge = cell.addEdge(edge);
+            addedEdge = cell.addEdge(edge, edge.inside);
             if (addedEdge) {
                 numAdded++;
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                    unaryEdge = new ChartEdge(p, cell, p.prob + edge.inside, edgeSelector);
+                    unaryEdge = chart.new ChartEdge(p, cell, p.prob + edge.inside, edgeSelector);
                     addEdgeToAgenda(unaryEdge, agenda);
                 }
             }

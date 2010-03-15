@@ -10,6 +10,8 @@ import java.util.Vector;
 import edu.ohsu.cslu.classifier.Perceptron;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -17,7 +19,7 @@ import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
-public class LBFPerceptronCell extends LocalBestFirstChartParser {
+public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
 
     private CSLUTBlockedCells cslutScores;
     private Vector<Float> cslutStartScore, cslutEndScore;
@@ -59,7 +61,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
                 cslutEndScore = cslutScores.allEndScore.get(sentence);
 
                 tree.tokenizeLeaves(grammar);
-                final Chart goldChart = tree.convertToChart(grammar);
+                final CellChart goldChart = tree.convertToChart(grammar);
 
                 if (goldChart != null) {
 
@@ -79,7 +81,10 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
                         final short[] startAndEnd = cellSelector.next();
                         cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
                         goldEdgeList = new LinkedList<ChartEdge>();
-                        for (final ChartEdge goldEdge : goldChart.getCell(cell.start(), cell.end()).getEdges()) {
+                        final ChartCell goldCell = goldChart.getCell(cell.start(), cell.end());
+                        for (final int nt : goldCell.getNTs()) {
+                            final ChartEdge goldEdge = goldCell.getBestEdge(nt);
+                            // for (final ChartEdge goldEdge : goldChart.getCell(cell.start(), cell.end()).getEdges()) {
                             if (goldEdge.prod.isLexProd() == false) {
                                 goldEdgeList.add(goldEdge);
                             }
@@ -99,9 +104,9 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
     public void addUnaryExtensionsToLexProds() {
         for (int i = 0; i < chart.size(); i++) {
             final ChartCell cell = chart.getCell(i, i + 1);
-            for (final int pos : cell.getPosEntries()) {
+            for (final int pos : cell.getPosNTs()) {
                 for (final Production unaryProd : grammar.getUnaryProductionsWithChild(pos)) {
-                    cell.addEdge(unaryProd, cell, null, cell.getBestEdge(pos).inside + unaryProd.prob);
+                    cell.updateInside(unaryProd, cell.getInside(pos) + unaryProd.prob);
                 }
             }
         }
@@ -122,10 +127,10 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
         // }
 
         if (spanLength == 1) {
-            for (final int pos : ChartCell.getPosEntries()) {
+            for (final int pos : ChartCell.getPosNTs()) {
                 for (final Production p : grammar.getUnaryProductionsWithChild(pos)) {
-                    final float prob = p.prob + ChartCell.getBestEdge(pos).inside;
-                    edge = new ChartEdge(p, ChartCell, prob, edgeSelector);
+                    // final float prob = p.prob + ChartCell.getBestEdge(pos).inside;
+                    edge = chart.new ChartEdge(p, ChartCell);
                     addEdgeToArray(edge, bestEdges);
                 }
             }
@@ -134,13 +139,13 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
             for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
                 final ChartCell leftCell = chart.getCell(start, mid);
                 final ChartCell rightCell = chart.getCell(mid, end);
-                for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
-                    for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                        possibleProds = grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+                for (final int leftNT : leftCell.getLeftChildNTs()) {
+                    for (final int rightNT : rightCell.getRightChildNTs()) {
+                        possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                         if (possibleProds != null) {
                             for (final Production p : possibleProds) {
-                                final float prob = p.prob + leftEdge.inside + rightEdge.inside;
-                                edge = new ChartEdge(p, leftCell, rightCell, prob, edgeSelector);
+                                // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                                edge = chart.new ChartEdge(p, leftCell, rightCell);
                                 addEdgeToArray(edge, bestEdges);
                             }
                         }
@@ -167,7 +172,8 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
     private void addBestEdgesToChart(final ChartCell cell, final ChartEdge[] bestEdges, final LinkedList<ChartEdge> goldEdges) {
         ChartEdge edge, unaryEdge;
         int numEdgesAdded = 0, maxEdgesAdded;
-        boolean addedEdge, addedGoldEdges = false;
+        final boolean addedEdge;
+        boolean addedGoldEdges = false;
 
         final PriorityQueue<ChartEdge> agenda = new PriorityQueue<ChartEdge>();
         for (int i = 0; i < bestEdges.length; i++) {
@@ -204,13 +210,15 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser {
             // if (goldEdges.contains(edge)) {
             // goldEdges.remove(edge);
             // }
-            addedEdge = cell.addEdge(edge);
+            // addedEdge = cell.addEdge(edge);
             // goldNumPops++;
-            if (addedEdge) {
+            // if (addedEdge) {
+            final float insideProb = edge.inside();
+            if (insideProb > cell.getInside(edge.prod.parent)) {
                 numEdgesAdded++;
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                    unaryEdge = new ChartEdge(p, cell, p.prob + edge.inside, edgeSelector);
+                    unaryEdge = chart.new ChartEdge(p, cell);
                     addEdgeToAgenda(unaryEdge, agenda);
                 }
             }

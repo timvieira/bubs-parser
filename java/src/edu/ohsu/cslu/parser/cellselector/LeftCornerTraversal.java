@@ -2,14 +2,13 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.parser.ArrayChartCell;
-import edu.ohsu.cslu.parser.ChartCell;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 
 public class LeftCornerTraversal extends CellSelector {
 
-    private LinkedList<ArrayChartCell> cellList;
+    private LinkedList<ChartCell> cellList;
 
     public LeftCornerTraversal() {
     }

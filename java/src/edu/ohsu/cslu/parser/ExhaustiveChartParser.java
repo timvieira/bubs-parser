@@ -4,7 +4,7 @@ import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public abstract class ExhaustiveChartParser<G extends GrammarByChild, C extends Chart> extends ChartParser<G, C> {
+public abstract class ExhaustiveChartParser<G extends GrammarByChild, C extends CellChart> extends ChartParser<G, C> {
 
     protected CellSelector cellSelector;
     protected long totalTime;

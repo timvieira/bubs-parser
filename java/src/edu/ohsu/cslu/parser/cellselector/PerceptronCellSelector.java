@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Vector;
 
-import edu.ohsu.cslu.parser.ChartCell;
-import edu.ohsu.cslu.parser.ChartEdge;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.LBFPerceptronCellTrainer;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
@@ -206,7 +206,7 @@ public class PerceptronCellSelector extends CellSelector {
 
         if (DEBUG) {
             for (final ChartCell span : spanAgenda) {
-                System.out.println("guessSpanFont: " + span + "  fom=" + span.figureOfMerit);
+                System.out.println("guessSpanFont: " + span + "  fom=" + span.fom);
             }
         }
 
@@ -228,7 +228,7 @@ public class PerceptronCellSelector extends CellSelector {
         final ChartCell guessSpan = pollBestSpan();
 
         if (DEBUG)
-            System.out.println("guessSpan: " + guessSpan + "  fom=" + guessSpan.figureOfMerit);
+            System.out.println("guessSpan: " + guessSpan + "  fom=" + guessSpan.fom);
 
         numTotal++;
 
@@ -246,7 +246,7 @@ public class PerceptronCellSelector extends CellSelector {
                     System.out.print("    ");
             }
             if (DEBUG)
-                System.out.println("gold=" + edge + " fom=" + goldSpan.figureOfMerit);
+                System.out.println("gold=" + edge + " fom=" + goldSpan.fom);
             goldSpanList.add(goldSpan);
         }
 
@@ -306,8 +306,8 @@ public class PerceptronCellSelector extends CellSelector {
     public float calcFOM(final ChartCell span) {
         final Boolean[] spanFeats = extractFeatures(span, parser);
         // System.out.println(" spanFeats=" + spanFeats.length + " weights=" + weights.length);
-        span.figureOfMerit = dotProductKernel(spanFeats, weights);
-        return span.figureOfMerit;
+        span.fom = dotProductKernel(spanFeats, weights);
+        return span.fom;
     }
 
     private void addSpanToAgenda(final ChartCell span) {
@@ -317,7 +317,7 @@ public class PerceptronCellSelector extends CellSelector {
             isInAgenda[span.start()][span.end()] = true;
 
             if (DEBUG) {
-                System.out.println("  adding: " + span + " fom=" + span.figureOfMerit);
+                System.out.println("  adding: " + span + " fom=" + span.fom);
             }
         }
     }

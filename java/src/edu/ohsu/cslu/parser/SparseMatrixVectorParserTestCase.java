@@ -7,8 +7,9 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CrossProductVector;
-import edu.ohsu.cslu.parser.SparseMatrixVectorParser.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -36,18 +37,18 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
-        final Chart chart = p.chart;
+        final DenseVectorChart chart = (DenseVectorChart) p.chart;
 
         final int nn = g.mapNonterminal("NN");
         final int np = g.mapNonterminal("NP");
         // Cell 0,1 contains NN (-2)
         // Cell 1,4 contains NN (-3), NP (-4)
         // So: 0,1 X 1,4 cross-product = NN/NN (-5,1), NN/NP (-6,1)
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_0_1 = (DenseVectorChartCell) chart.getCell(0, 1);
+        final DenseVectorChartCell cell_0_1 = (DenseVectorChartCell) chart.getCell(0, 1);
         cell_0_1.addEdge(g.new Production("NN", "NN", -2, false), chart.getCell(0, 1), null, -2f);
         cell_0_1.finalizeCell();
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_1_4 = (DenseVectorChartCell) chart.getCell(1, 4);
+        final DenseVectorChartCell cell_1_4 = (DenseVectorChartCell) chart.getCell(1, 4);
         cell_1_4.addEdge(g.new Production("NN", "NN", -3f, false), chart.getCell(1, 3), null, -3f);
         cell_1_4.addEdge(g.new Production("NP", "NP", -4f, false), chart.getCell(1, 3), null, -4f);
         cell_1_4.finalizeCell();
@@ -55,12 +56,12 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         // Cell 0,2 contains NN (-2), NP (-3)
         // Cell 2,4 contains NN (-4), NP (-4)
         // So: 0,2 X 2,4 cross-product = NN/NN (-6,2), NN/NP (-6,2), NP/NN (-7,2), NP/NP (-7,2)
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_0_2 = (DenseVectorChartCell) chart.getCell(0, 2);
+        final DenseVectorChartCell cell_0_2 = (DenseVectorChartCell) chart.getCell(0, 2);
         cell_0_2.addEdge(g.new Production("NN", "NN", -2f, false), chart.getCell(0, 1), null, -2f);
         cell_0_2.addEdge(g.new Production("NP", "NP", -3f, false), chart.getCell(0, 1), null, -3f);
         cell_0_2.finalizeCell();
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_2_4 = (DenseVectorChartCell) chart.getCell(2, 4);
+        final DenseVectorChartCell cell_2_4 = (DenseVectorChartCell) chart.getCell(2, 4);
         cell_2_4.addEdge(g.new Production("NN", "NN", -4f, false), chart.getCell(2, 3), null, -4f);
         cell_2_4.addEdge(g.new Production("NP", "NP", -4f, false), chart.getCell(2, 3), null, -4f);
         cell_2_4.finalizeCell();
@@ -68,11 +69,11 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         // Cell 0,3 contains NP (-2)
         // Cell 3,4 contains NP (-2)
         // So: 0,3 X 3,4 cross-product = NP/NP (-4,3)
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_0_3 = (DenseVectorChartCell) chart.getCell(0, 3);
+        final DenseVectorChartCell cell_0_3 = (DenseVectorChartCell) chart.getCell(0, 3);
         cell_0_3.addEdge(g.new Production("NP", "NP", -2, false), chart.getCell(0, 2), null, -2f);
         cell_0_3.finalizeCell();
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_3_4 = (DenseVectorChartCell) chart.getCell(3, 4);
+        final DenseVectorChartCell cell_3_4 = (DenseVectorChartCell) chart.getCell(3, 4);
         cell_3_4.addEdge(g.new Production("NP", "NP", -2f, false), chart.getCell(3, 4), null, -2f);
         cell_3_4.finalizeCell();
 
@@ -105,7 +106,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
-        final Chart chart = p.chart;
+        final DenseVectorChart chart = (DenseVectorChart) p.chart;
         final DenseVectorChartCell topCell = (DenseVectorChartCell) p.chart.getCell(0, 4);
 
         final int nn = g.mapNonterminal("NN");
@@ -129,7 +130,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         final CrossProductVector cpv = new CrossProductVector(g, probabilities, midpoints, 3);
         p.binarySpmvMultiply(cpv, topCell);
-        assertEquals(1, topCell.getNumEdgeEntries());
+        assertEquals(1, topCell.getNumNTs());
 
         final ChartEdge edge = topCell.getBestEdge(np);
         assertEquals(-3.101f, edge.inside, .01f);
@@ -157,7 +158,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         topCell.probabilities[parent] = -3.101f;
 
         p.unarySpmvMultiply(topCell);
-        assertEquals(2, topCell.getNumEdgeEntries());
+        assertEquals(2, topCell.getNumNTs());
 
         final ChartEdge topEdge = topCell.getBestEdge(g.mapNonterminal("TOP"));
         assertEquals(-3.101f, topEdge.inside, .01f);
@@ -178,81 +179,81 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
-        final Chart chart = p.chart;
+        final DenseVectorChart chart = (DenseVectorChart) p.chart;
 
         // Row of span 1
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_0_1 = (DenseVectorChartCell) chart.getCell(0, 1);
+        final DenseVectorChartCell cell_0_1 = (DenseVectorChartCell) chart.getCell(0, 1);
         cell_0_1.addEdge(g.new Production("DT", "The", 0, true), chart.getCell(0, 1), null, 0f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_1_2 = (DenseVectorChartCell) chart.getCell(1, 2);
+        final DenseVectorChartCell cell_1_2 = (DenseVectorChartCell) chart.getCell(1, 2);
         cell_1_2.addEdge(g.new Production("NN", "fish", 0, true), chart.getCell(1, 2), null, 0f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_2_3 = (DenseVectorChartCell) chart.getCell(2, 3);
+        final DenseVectorChartCell cell_2_3 = (DenseVectorChartCell) chart.getCell(2, 3);
         cell_2_3.addEdge(g.new Production("VP", "VB", -2.48491f, false), chart.getCell(2, 3), null, -2.48491f);
         cell_2_3.addEdge(g.new Production("NN", "market", -4.0547f, true), chart.getCell(2, 3), null, -.40547f);
         cell_2_3.addEdge(g.new Production("VB", "market", -1.09861f, true), chart.getCell(2, 3), null, -1.09861f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_3_4 = (DenseVectorChartCell) chart.getCell(3, 4);
+        final DenseVectorChartCell cell_3_4 = (DenseVectorChartCell) chart.getCell(3, 4);
         cell_3_4.addEdge(g.new Production("VP", "VB", -2.07944f, false), chart.getCell(3, 4), null, -2.07944f);
         cell_3_4.addEdge(g.new Production("NN", "stands", -.69315f, true), chart.getCell(3, 4), null, -.69315f);
         cell_3_4.addEdge(g.new Production("VB", "stands", -.69315f, true), chart.getCell(3, 4), null, -.69315f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_4_5 = (DenseVectorChartCell) chart.getCell(4, 5);
+        final DenseVectorChartCell cell_4_5 = (DenseVectorChartCell) chart.getCell(4, 5);
         cell_4_5.addEdge(g.new Production("VP", "VB", -2.48491f, false), chart.getCell(4, 5), null, -2.48491f);
         cell_4_5.addEdge(g.new Production("RB", "last", -.40547f, true), chart.getCell(4, 5), null, -.40547f);
         cell_4_5.addEdge(g.new Production("VB", "last", -1.09861f, true), chart.getCell(4, 5), null, -1.09861f);
 
         // Row of span 2
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_0_2 = (DenseVectorChartCell) chart.getCell(0, 2);
+        final DenseVectorChartCell cell_0_2 = (DenseVectorChartCell) chart.getCell(0, 2);
         cell_0_2.addEdge(g.new Production("NP", "DT", "NN", -1.38629f), chart.getCell(0, 1), chart.getCell(1, 2), -1.38629f);
         cell_0_2.addEdge(g.new Production("VP|VB", "NP", -1.38629f, false), chart.getCell(0, 2), null, -1.38629f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_1_3 = (DenseVectorChartCell) chart.getCell(1, 3);
+        final DenseVectorChartCell cell_1_3 = (DenseVectorChartCell) chart.getCell(1, 3);
         cell_1_3.addEdge(g.new Production("NP|NN", "NN", "NN", -.40547f), chart.getCell(1, 2), chart.getCell(2, 3), -.40547f);
         cell_1_3.addEdge(g.new Production("NP", "NN", "NN", -2.19722f), chart.getCell(1, 2), chart.getCell(2, 3), -2.19722f);
         cell_1_3.addEdge(g.new Production("VP|VB", "NP", -2.19722f, false), chart.getCell(1, 3), null, -2.19722f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_2_4 = (DenseVectorChartCell) chart.getCell(2, 4);
+        final DenseVectorChartCell cell_2_4 = (DenseVectorChartCell) chart.getCell(2, 4);
         cell_2_4.addEdge(g.new Production("NP|NN", "NN", "NN", -1.09861f), chart.getCell(2, 3), chart.getCell(3, 4), -1.09861f);
         cell_2_4.addEdge(g.new Production("NP", "NN", "NN", -2.89037f), chart.getCell(2, 3), chart.getCell(3, 4), -2.89037f);
         cell_2_4.addEdge(g.new Production("VP|VB", "NP", -2.89037f, false), chart.getCell(2, 4), null, -2.89037f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_3_5 = (DenseVectorChartCell) chart.getCell(3, 5);
+        final DenseVectorChartCell cell_3_5 = (DenseVectorChartCell) chart.getCell(3, 5);
         cell_3_5.addEdge(g.new Production("VP", "VB", "RB", -1.79176f), chart.getCell(3, 4), chart.getCell(4, 5), -1.79176f);
         cell_3_5.addEdge(g.new Production("NP", "NN", "RB", -2.89037f), chart.getCell(3, 4), chart.getCell(4, 5), -2.89037f);
         cell_3_5.addEdge(g.new Production("VP|VB", "NP", -2.89037f, false), chart.getCell(3, 5), null, -2.89037f);
 
         // Row of span 3
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_0_3 = (DenseVectorChartCell) chart.getCell(0, 3);
+        final DenseVectorChartCell cell_0_3 = (DenseVectorChartCell) chart.getCell(0, 3);
         cell_0_3.addEdge(g.new Production("NP", "DT", "NP", -3.58352f), chart.getCell(0, 1), chart.getCell(1, 3), -3.58352f);
         cell_0_3.addEdge(g.new Production("S", "NP", "VP", -3.87120f), chart.getCell(0, 2), chart.getCell(2, 3), -3.87120f);
         cell_0_3.addEdge(g.new Production("VP|VB", "NP", -3.58352f, false), chart.getCell(0, 3), null, -3.58352f);
         cell_0_3.addEdge(g.new Production("TOP", "S", -3.87120f, false), chart.getCell(0, 3), null, -3.87120f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_1_4 = (DenseVectorChartCell) chart.getCell(1, 4);
+        final DenseVectorChartCell cell_1_4 = (DenseVectorChartCell) chart.getCell(1, 4);
         cell_1_4.addEdge(g.new Production("NP", "NN", "NP|NN", -2.89037f), chart.getCell(1, 2), chart.getCell(2, 4), -2.89037f);
         cell_1_4.addEdge(g.new Production("S", "NP", "VP", -4.27667f), chart.getCell(1, 3), chart.getCell(3, 4), -4.27667f);
         cell_1_4.addEdge(g.new Production("VP|VB", "NP", -2.89037f, false), chart.getCell(1, 4), null, -2.89037f);
         cell_1_4.addEdge(g.new Production("TOP", "S", -4.27667f, false), chart.getCell(1, 4), null, -4.27667f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_2_5 = (DenseVectorChartCell) chart.getCell(2, 5);
+        final DenseVectorChartCell cell_2_5 = (DenseVectorChartCell) chart.getCell(2, 5);
         cell_2_5.addEdge(g.new Production("VP", "VB", "VP|VB", -5.37528f), chart.getCell(2, 3), chart.getCell(3, 5), -5.37528f);
         cell_2_5.addEdge(g.new Production("S", "NP", "VP", -5.37528f), chart.getCell(2, 4), chart.getCell(4, 5), -5.37528f);
         cell_2_5.addEdge(g.new Production("TOP", "S", -5.37528f, false), chart.getCell(2, 5), null, -5.37528f);
 
         // Row of span 4
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_0_4 = (DenseVectorChartCell) chart.getCell(0, 4);
+        final DenseVectorChartCell cell_0_4 = (DenseVectorChartCell) chart.getCell(0, 4);
         cell_0_4.addEdge(g.new Production("NP", "DT", "NP", -4.27667f), chart.getCell(0, 1), chart.getCell(1, 4), -4.27667f);
         cell_0_4.addEdge(g.new Production("S", "NP", "VP", -5.66296f), chart.getCell(0, 3), chart.getCell(3, 4), -5.66296f);
         cell_0_4.addEdge(g.new Production("VP|VB", "NP", -4.27667f, false), chart.getCell(0, 4), null, -4.27667f);
         cell_0_4.addEdge(g.new Production("TOP", "S", -5.66296f, false), chart.getCell(0, 4), null, -5.66296f);
 
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_1_5 = (DenseVectorChartCell) chart.getCell(1, 5);
+        final DenseVectorChartCell cell_1_5 = (DenseVectorChartCell) chart.getCell(1, 5);
         cell_1_5.addEdge(g.new Production("S", "NP", "VP", -3.98898f), chart.getCell(1, 3), chart.getCell(3, 5), -3.98898f);
         cell_1_5.addEdge(g.new Production("TOP", "S", -3.98898f, false), chart.getCell(1, 5), null, -3.98898f);
 
         // Row of span 5
-        final SparseMatrixVectorParser.DenseVectorChartCell cell_0_5 = (DenseVectorChartCell) chart.getCell(0, 5);
+        final DenseVectorChartCell cell_0_5 = (DenseVectorChartCell) chart.getCell(0, 5);
         cell_0_5.addEdge(g.new Production("S", "NP", "VP", -5.37528f), chart.getCell(0, 3), chart.getCell(3, 5), -5.37528f);
         cell_0_5.addEdge(g.new Production("TOP", "S", -5.37528f, false), chart.getCell(0, 5), null, -5.37528f);
 
@@ -328,7 +329,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
-        final Chart chart = p.chart;
+        final DenseVectorChart chart = (DenseVectorChart) p.chart;
 
         final float[] probabilities = new float[g.packedArraySize()];
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
@@ -359,7 +360,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         DenseVectorChartCell cell = (DenseVectorChartCell) p.chart.getCell(0, 5);
         p.binarySpmvMultiply(crossProductVector, cell);
 
-        assertEquals(1, cell.getNumEdgeEntries());
+        assertEquals(1, cell.getNumNTs());
 
         ChartEdge s = cell.getBestEdge(g.mapNonterminal("S"));
         assertEquals(-5.37528f, s.inside, .001f);
@@ -401,7 +402,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         cell = (DenseVectorChartCell) p.chart.getCell(0, 4);
         p.binarySpmvMultiply(crossProductVector, cell);
 
-        assertEquals(2, cell.getNumEdgeEntries());
+        assertEquals(2, cell.getNumNTs());
 
         final ChartEdge np = cell.getBestEdge(g.mapNonterminal("NP"));
         assertEquals(-4.27667, np.inside, .001f);
@@ -434,7 +435,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         p.unarySpmvMultiply(cell);
 
         // We expect a single entry to have been added for 'TOP -> S'
-        assertEquals(2, cell.getNumEdgeEntries());
+        assertEquals(2, cell.getNumNTs());
 
         ChartEdge top = cell.getBestEdge(g.mapNonterminal("TOP"));
         assertEquals(-5.37528f, top.inside, .01f);
@@ -449,7 +450,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         p.unarySpmvMultiply(cell);
 
         // We expect two entries to have been added for 'TOP -> S' and 'VP|VB -> NP'
-        assertEquals(4, cell.getNumEdgeEntries());
+        assertEquals(4, cell.getNumNTs());
 
         top = cell.getBestEdge(g.mapNonterminal("TOP"));
         assertEquals(-5.66296f, top.inside, .01f);

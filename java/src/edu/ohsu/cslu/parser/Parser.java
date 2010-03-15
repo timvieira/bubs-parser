@@ -14,7 +14,7 @@ import edu.ohsu.cslu.parser.util.StringToMD5;
 public abstract class Parser<G extends Grammar> {
 
     public G grammar;
-    public static ChartEdge nullEdge = new ChartEdge(Grammar.nullProduction, null, null, Float.NEGATIVE_INFINITY);
+    // public static ChartEdge nullEdge = new ChartEdge(Grammar.nullProduction, null, null, Float.NEGATIVE_INFINITY);
     public String currentSentence;
     public ParserOptions opts = null; // TODO: fix this
 
@@ -72,8 +72,10 @@ public abstract class Parser<G extends Grammar> {
                         bestParseTree.replaceLeafNodes(tokens);
                     }
                     outputStream.write(bestParseTree.toString(printInsideProbs) + "\n");
-                    insideProbStr = Float.toString(bestParseTree.chartEdge.inside);
-                    totalInsideScore += bestParseTree.chartEdge.inside;
+                    // float insideScore = bestParseTree.chartEdge.inside;
+                    final float insideScore = ((ChartParser) this).chart.getRootCell().getInside(grammar.startSymbol);
+                    insideProbStr = Float.toString(insideScore);
+                    totalInsideScore += insideScore;
                     // printTreeEdgeStats(findChartEdgesForTree(inputTree, (ChartParser)parser), parser);
                     // printTreeEdgeStats(bestParseTree, parser);
                 }
@@ -103,7 +105,8 @@ public abstract class Parser<G extends Grammar> {
 
         for (final ParseTree node : tree.preOrderTraversal()) {
             if (node.isNonTerminal()) {
-                System.out.println("FINAL: " + ((BoundaryInOut) ((AgendaChartParser) parser).edgeSelector).calcFOMToString(node.chartEdge));
+                // System.out.println("FINAL: " + ((BoundaryInOut) ((AgendaChartParser) parser).edgeSelector).calcFOMToString(node.chartEdge));
+                throw new RuntimeException("Doesn't work right now");
             }
         }
     }
@@ -122,22 +125,23 @@ public abstract class Parser<G extends Grammar> {
                 i += 1;
             }
 
-            if ((end - start >= 1) && node.isNonTerminal()) {
-                // if (parser.grammar.nonTermSet.hasSymbol(node.contents)) {
-                final int parentNonTermIndex = parser.grammar.mapNonterminal(node.contents);
-                if (parentNonTermIndex != -1) {
-                    final ChartEdge edge = parser.chart.getRootCell().getBestEdge(parentNonTermIndex);
-                    if (edge == null) {
-                        // System.out.println("WARNING: edge[" + start + "][" + end + "][" + node.contents + "] not in chart!");
-                        node.chartEdge = ChartParser.nullEdge.copy();
-                        // TODO: I think this will die when it tries to compute the FOM on a null left/right cell
-                    } else {
-                        node.chartEdge = edge;
-                    }
-                } else {
-                    Log.info(0, "WARNING: '" + node.contents + "' not in nonTermSet!");
-                }
-            }
+            throw new RuntimeException("Doesn't work right now");
+
+            // if ((end - start >= 1) && node.isNonTerminal()) {
+            // final int parentNonTermIndex = parser.grammar.mapNonterminal(node.contents);
+            // if (parentNonTermIndex != -1) {
+            // final ChartEdge edge = parser.chart.getRootCell().getBestEdge(parentNonTermIndex);
+            // if (edge == null) {
+            // // System.out.println("WARNING: edge[" + start + "][" + end + "][" + node.contents + "] not in chart!");
+            // node.chartEdge = ChartParser.nullEdge.copy();
+            // // TODO: I think this will die when it tries to compute the FOM on a null left/right cell
+            // } else {
+            // node.chartEdge = edge;
+            // }
+            // } else {
+            // Log.info(0, "WARNING: '" + node.contents + "' not in nonTermSet!");
+            // }
+            // }
         }
         return tree;
     }

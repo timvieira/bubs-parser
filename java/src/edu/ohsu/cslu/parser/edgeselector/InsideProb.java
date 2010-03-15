@@ -1,11 +1,11 @@
 package edu.ohsu.cslu.parser.edgeselector;
 
-import edu.ohsu.cslu.parser.ChartEdge;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 
 public class InsideProb extends EdgeSelector {
 
     @Override
     public float calcFOM(final ChartEdge edge) {
-        return edge.inside;
+        return edge.inside();
     }
 }

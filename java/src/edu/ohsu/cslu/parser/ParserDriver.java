@@ -27,6 +27,7 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.parser.util.Log;
+import edu.ohsu.cslu.parser2.ECPInsideOutside;
 
 public class ParserDriver extends BaseCommandlineTool {
 
@@ -144,90 +145,93 @@ public class ParserDriver extends BaseCommandlineTool {
 
     public static Grammar createGrammar(final ParserType parserType, final GrammarFormatType grammarFormat, final String pcfgFileName, final String lexFileName) throws Exception {
         switch (parserType) {
-        case ECPCellCrossList:
-            return new LeftListGrammar(pcfgFileName, lexFileName, grammarFormat);
-        case ECPCellCrossHash:
-            return new LeftHashGrammar(pcfgFileName, lexFileName, grammarFormat);
-        case ECPCellCrossMatrix:
-            return new ChildMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
-        case ECPGrammarLoop:
-        case ECPGrammarLoopBerkeleyFilter:
-            return new GrammarByChild(pcfgFileName, lexFileName, grammarFormat);
+            case ECPInsideOutside:
+            case ECPCellCrossList:
+                return new LeftListGrammar(pcfgFileName, lexFileName, grammarFormat);
+            case ECPCellCrossHash:
+                return new LeftHashGrammar(pcfgFileName, lexFileName, grammarFormat);
+            case ECPCellCrossMatrix:
+                return new ChildMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
+            case ECPGrammarLoop:
+            case ECPGrammarLoopBerkeleyFilter:
+                return new GrammarByChild(pcfgFileName, lexFileName, grammarFormat);
 
-        case AgendaChartParser:
-        case ACPWithMemory:
-        case ACPGhostEdges:
-            return new LeftRightListsGrammar(pcfgFileName, lexFileName, grammarFormat);
+            case AgendaChartParser:
+            case ACPWithMemory:
+            case ACPGhostEdges:
+                return new LeftRightListsGrammar(pcfgFileName, lexFileName, grammarFormat);
 
-        case LocalBestFirst:
-        case LBFPruneViterbi:
-        case LBFOnlineBeam:
-        case LBFBoundedHeap:
-        case LBFExpDecay:
-        case LBFPerceptronCell:
-        case CoarseCellAgenda:
-        case CoarseCellAgendaCSLUT:
-            return new LeftHashGrammar(pcfgFileName, lexFileName, grammarFormat);
+            case LocalBestFirst:
+            case LBFPruneViterbi:
+            case LBFOnlineBeam:
+            case LBFBoundedHeap:
+            case LBFExpDecay:
+            case LBFPerceptronCell:
+            case CoarseCellAgenda:
+            case CoarseCellAgendaCSLUT:
+                return new LeftHashGrammar(pcfgFileName, lexFileName, grammarFormat);
 
-        case JsaSparseMatrixVector:
-            return new JsaSparseMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
-        case CsrSparseMatrixVector:
-        case OpenClSparseMatrixVector:
-            return new CsrSparseMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
+            case JsaSparseMatrixVector:
+                return new JsaSparseMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
+            case CsrSparseMatrixVector:
+            case OpenClSparseMatrixVector:
+                return new CsrSparseMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
 
-        default:
-            throw new Exception("Unsupported parser type: " + parserType);
+            default:
+                throw new Exception("Unsupported parser type: " + parserType);
         }
     }
 
     public static Parser createParser(final ParserType parserType, final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) throws Exception {
 
         switch (parserType) {
-        case ECPCellCrossList:
-            return new ECPCellCrossList((LeftListGrammar) grammar, cellSelector);
-        case ECPCellCrossHash:
-            return new ECPCellCrossHash((LeftHashGrammar) grammar, cellSelector);
-        case ECPCellCrossMatrix:
-            return new ECPCellCrossMatrix((ChildMatrixGrammar) grammar, cellSelector);
-        case ECPGrammarLoop:
-            return new ECPGrammarLoop((GrammarByChild) grammar, cellSelector);
-        case ECPGrammarLoopBerkeleyFilter:
-            return new ECPGrammarLoopBerkFilter((GrammarByChild) grammar, cellSelector);
+            case ECPCellCrossList:
+                return new ECPCellCrossList((LeftListGrammar) grammar, cellSelector);
+            case ECPCellCrossHash:
+                return new ECPCellCrossHash((LeftHashGrammar) grammar, cellSelector);
+            case ECPCellCrossMatrix:
+                return new ECPCellCrossMatrix((ChildMatrixGrammar) grammar, cellSelector);
+            case ECPGrammarLoop:
+                return new ECPGrammarLoop((GrammarByChild) grammar, cellSelector);
+            case ECPGrammarLoopBerkeleyFilter:
+                return new ECPGrammarLoopBerkFilter((GrammarByChild) grammar, cellSelector);
+            case ECPInsideOutside:
+                return new ECPInsideOutside((LeftListGrammar) grammar, cellSelector);
 
-        case AgendaChartParser:
-            return new AgendaChartParser((LeftRightListsGrammar) grammar, edgeSelector);
-        case ACPWithMemory:
-            return new ACPWithMemory((LeftRightListsGrammar) grammar, edgeSelector);
-        case ACPGhostEdges:
-            return new ACPGhostEdges((LeftRightListsGrammar) grammar, edgeSelector);
+            case AgendaChartParser:
+                return new AgendaChartParser((LeftRightListsGrammar) grammar, edgeSelector);
+            case ACPWithMemory:
+                return new ACPWithMemory((LeftRightListsGrammar) grammar, edgeSelector);
+            case ACPGhostEdges:
+                return new ACPGhostEdges((LeftRightListsGrammar) grammar, edgeSelector);
 
-        case LocalBestFirst:
-            return new LocalBestFirstChartParser((LeftHashGrammar) grammar, edgeSelector, cellSelector);
-        case LBFPruneViterbi:
-            return new LBFPruneViterbi((LeftHashGrammar) grammar, edgeSelector, cellSelector);
-        case LBFOnlineBeam:
-            return new LBFWeakThresh((LeftHashGrammar) grammar, edgeSelector, cellSelector);
-        case LBFBoundedHeap:
-            return new LBFBoundedHeap((LeftHashGrammar) grammar, edgeSelector, cellSelector);
-        case LBFExpDecay:
-            return new LBFExpDecay((LeftHashGrammar) grammar, edgeSelector, cellSelector);
-        case LBFPerceptronCell:
-            return new LBFSkipBaseCells((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+            case LocalBestFirst:
+                return new LocalBestFirstChartParser((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+            case LBFPruneViterbi:
+                return new LBFPruneViterbi((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+            case LBFOnlineBeam:
+                return new LBFWeakThresh((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+            case LBFBoundedHeap:
+                return new LBFBoundedHeap((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+            case LBFExpDecay:
+                return new LBFExpDecay((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+            case LBFPerceptronCell:
+                return new LBFSkipBaseCells((LeftHashGrammar) grammar, edgeSelector, cellSelector);
 
-        case CoarseCellAgenda:
-            return new CoarseCellAgendaParser((LeftHashGrammar) grammar, edgeSelector);
-        case CoarseCellAgendaCSLUT:
-            return new CoarseCellAgendaParserWithCSLUT((LeftHashGrammar) grammar, edgeSelector, (CSLUTBlockedCells) cellSelector);
+            case CoarseCellAgenda:
+                return new CoarseCellAgendaParser((LeftHashGrammar) grammar, edgeSelector);
+            case CoarseCellAgendaCSLUT:
+                return new CoarseCellAgendaParserWithCSLUT((LeftHashGrammar) grammar, edgeSelector, (CSLUTBlockedCells) cellSelector);
 
-        case JsaSparseMatrixVector:
-            return new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar, cellSelector);
-        case CsrSparseMatrixVector:
-            return new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, cellSelector);
-        case OpenClSparseMatrixVector:
-            return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, cellSelector);
+            case JsaSparseMatrixVector:
+                return new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar, cellSelector);
+            case CsrSparseMatrixVector:
+                return new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, cellSelector);
+            case OpenClSparseMatrixVector:
+                return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, cellSelector);
 
-        default:
-            throw new IllegalArgumentException("Unsupported parser type");
+            default:
+                throw new IllegalArgumentException("Unsupported parser type");
         }
     }
 
@@ -258,10 +262,10 @@ public class ParserDriver extends BaseCommandlineTool {
     }
 
     static public enum ParserType {
-        ECPCellCrossList("ecpccl"), ECPCellCrossHash("ecpcch"), ECPCellCrossMatrix("ecpccm"), ECPGrammarLoop("ecpgl"), ECPGrammarLoopBerkeleyFilter("ecpglbf"), AgendaChartParser(
-                "acpall"), ACPWithMemory("acpwm"), ACPGhostEdges("acpge"), LocalBestFirst("lbf"), LBFPruneViterbi("lbfpv"), LBFOnlineBeam("lbfob"), LBFBoundedHeap("lbfbh"), LBFExpDecay(
-                "lbfed"), LBFPerceptronCell("lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector("jsa"), OpenClSparseMatrixVector("opencl"), CsrSparseMatrixVector(
-                "csr");
+        ECPCellCrossList("ecpccl"), ECPCellCrossHash("ecpcch"), ECPCellCrossMatrix("ecpccm"), ECPGrammarLoop("ecpgl"), ECPGrammarLoopBerkeleyFilter("ecpglbf"), ECPInsideOutside(
+                "ecpio"), AgendaChartParser("acpall"), ACPWithMemory("acpwm"), ACPGhostEdges("acpge"), LocalBestFirst("lbf"), LBFPruneViterbi("lbfpv"), LBFOnlineBeam("lbfob"), LBFBoundedHeap(
+                "lbfbh"), LBFExpDecay("lbfed"), LBFPerceptronCell("lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector("jsa"), OpenClSparseMatrixVector(
+                "opencl"), CsrSparseMatrixVector("csr");
 
         private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

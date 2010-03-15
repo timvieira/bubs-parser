@@ -2,13 +2,16 @@ package edu.ohsu.cslu.parser;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
+
+import com.aliasi.util.Collections;
 
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<GrammarByChild, Chart> {
+public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<GrammarByChild, CellChart> {
 
     // tracks the spans of nonTerms in the chart so we don't have to consider them
     // in the inner loop of fillChart()
@@ -48,29 +51,26 @@ public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<Gram
     }
 
     @Override
-    protected List<ChartEdge> addLexicalProductions(final int sent[]) throws Exception {
+    protected void addLexicalProductions(final int sent[]) throws Exception {
         Collection<Production> validProductions;
         ChartCell cell;
-        float edgeLogProb;
 
         // add lexical productions and unary productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 cell = chart.getCell(i, i + 1);
-                cell.addEdge(new ChartEdge(lexProd, cell, lexProd.prob));
+                cell.updateInside(chart.new ChartEdge(lexProd, cell));
                 updateRuleConstraints(lexProd.parent, i, i + 1);
 
                 validProductions = grammar.getUnaryProductionsWithChild(lexProd.parent);
                 if (validProductions != null) {
                     for (final Production unaryProd : validProductions) {
-                        edgeLogProb = unaryProd.prob + lexProd.prob;
-                        cell.addEdge(new ChartEdge(unaryProd, cell, edgeLogProb));
+                        cell.updateInside(chart.new ChartEdge(unaryProd, cell));
                         updateRuleConstraints(unaryProd.parent, i, i + 1);
                     }
                 }
             }
         }
-        return null;
     }
 
     // given production A -> B C, check if this rule can fit into the chart given
@@ -127,10 +127,10 @@ public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<Gram
     @Override
     protected void visitCell(final ChartCell cell) {
         ChartCell leftCell, rightCell;
-        ChartEdge leftEdge, rightEdge, oldBestEdge;
-        float prob;
+        ChartEdge oldBestEdge;
+        float prob, leftInside, rightInside;
         final int start = cell.start(), end = cell.end();
-        boolean foundBetter, edgeWasAdded;
+        boolean foundBetter;
 
         for (final Production p : grammar.getBinaryProductions()) {
             if (possibleRuleMidpoints(p, start, end)) {
@@ -141,18 +141,18 @@ public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<Gram
                 // calling possibleRuleMidpoints() since we can't return two ints easily
                 for (int mid = possibleMidpointMin; mid <= possibleMidpointMax; mid++) {
                     leftCell = chart.getCell(start, mid);
-                    leftEdge = leftCell.getBestEdge(p.leftChild);
-                    if (leftEdge == null)
+                    leftInside = leftCell.getInside(p.leftChild);
+                    if (leftInside <= Float.NEGATIVE_INFINITY)
                         continue;
 
                     rightCell = chart.getCell(mid, end);
-                    rightEdge = rightCell.getBestEdge(p.rightChild);
-                    if (rightEdge == null)
+                    rightInside = rightCell.getInside(p.rightChild);
+                    if (rightInside <= Float.NEGATIVE_INFINITY)
                         continue;
 
-                    prob = p.prob + leftEdge.inside + rightEdge.inside;
-                    edgeWasAdded = cell.addEdge(p, leftCell, rightCell, prob);
-                    if (edgeWasAdded) {
+                    prob = p.prob + leftInside + rightInside;
+                    if (prob > cell.getInside(p.parent)) {
+                        cell.updateInside(p, leftCell, rightCell, prob);
                         foundBetter = true;
                     }
                 }
@@ -163,11 +163,11 @@ public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<Gram
             }
         }
 
-        for (final ChartEdge childEdge : cell.getEdges()) {
-            for (final Production p : grammar.getUnaryProductionsWithChild(childEdge.prod.parent)) {
-                prob = p.prob + childEdge.inside;
-                edgeWasAdded = cell.addEdge(new ChartEdge(p, cell, prob));
-                if (edgeWasAdded) {
+        for (final int childNT : Collections.toIntArray(cell.getNTs())) {
+            for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
+                prob = p.prob + cell.getInside(childNT);
+                if (prob > cell.getInside(p.parent)) {
+                    cell.updateInside(chart.new ChartEdge(p, cell));
                     updateRuleConstraints(p.parent, start, end);
                 }
             }

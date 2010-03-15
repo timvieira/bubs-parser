@@ -1,6 +1,7 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
+import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 /**
@@ -12,7 +13,7 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSparseMatrixGrammar, Chart> {
+public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSparseMatrixGrammar> {
 
     private final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
 
@@ -71,7 +72,7 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
         final short[] crossProductMidpoints = crossProductVector.midpoints;
 
         final int[] chartCellChildren = chartCell.children;
-        final float[] chartCellProbabilities = chartCell.probabilities;
+        final float[] chartCellProbabilities = chartCell.inside;
         final short[] chartCellMidpoints = chartCell.midpoints;
 
         int numValidLeftChildren = 0, numValidRightChildren = 0;
@@ -125,7 +126,7 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
         final float[][] grammarProbabilities = jsaSparseMatrixGrammar.unaryProbabilities();
 
         final int[] chartCellChildren = chartCell.children;
-        final float[] chartCellProbabilities = chartCell.probabilities;
+        final float[] chartCellProbabilities = chartCell.inside;
         final short[] chartCellMidpoints = chartCell.midpoints;
         final short chartCellEnd = (short) chartCell.end();
 

@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 import edu.ohsu.cslu.counters.SimpleCounter;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.ChartEdge;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -46,7 +46,7 @@ public class BoundaryInOut extends EdgeSelector {
     public float calcFOM(final ChartEdge edge) {
 
         if (edge.prod.isLexProd()) {
-            return edge.inside;
+            return edge.inside();
         }
 
         // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
@@ -55,7 +55,7 @@ public class BoundaryInOut extends EdgeSelector {
         // final int spanLength = edge.end() - edge.start();
         final float outside = outsideLeft[edge.start() - 1 + 1][edge.prod.parent] + outsideRight[edge.end() + 1][edge.prod.parent];
         // final float fom = edge.insideProb + outside + spanLength * ParserDriver.fudgeFactor;
-        final float fom = edge.inside + outside;
+        final float fom = edge.inside() + outside;
 
         // System.out.println(calcFOMToString(edge));
 
@@ -66,7 +66,7 @@ public class BoundaryInOut extends EdgeSelector {
         final int spanLength = edge.end() - edge.start();
         final float outside = outsideLeft[edge.start() - 1 + 1][edge.prod.parent] + outsideRight[edge.end() + 1][edge.prod.parent];
         // final float fom = edge.insideProb + outside + spanLength * ParserDriver.fudgeFactor;
-        final float fom = edge.inside + outside;
+        final float fom = edge.inside() + outside;
 
         // String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]" + " n=" + spanLength + " p=" + edge.p.toString() + " i=" + edge.insideProb + " o=" + outside
         // + " oL[" + (edge.start() - 1 + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" + outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " oR["
@@ -75,7 +75,7 @@ public class BoundaryInOut extends EdgeSelector {
         String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]";
         s += " n=" + spanLength;
         s += " p=" + edge.prod.toString();
-        s += " i=" + edge.inside;
+        s += " i=" + edge.inside();
         s += " o=" + outside;
         s += " oL[" + (edge.start() - 1 + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]=" + outsideLeft[edge.start() - 1 + 1][edge.prod.parent];
         s += " oR[" + (edge.end() + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]=" + outsideRight[edge.end() + 1][edge.prod.parent];
@@ -99,15 +99,15 @@ public class BoundaryInOut extends EdgeSelector {
             Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
         }
 
-        LinkedList<Integer> curPOSList;
+        HashSet<Integer> curPOSList;
         float[] curScores;
 
-        LinkedList<Integer> prevFwdPOSList = new LinkedList<Integer>();
+        HashSet<Integer> prevFwdPOSList = new HashSet<Integer>();
         prevFwdPOSList.add(grammar.nullSymbol);
         float[] prevFwdScores = new float[posSize];
         prevFwdScores[grammar.nullSymbol] = (float) 0.0;
 
-        LinkedList<Integer> prevBkwPOSList = new LinkedList<Integer>();
+        HashSet<Integer> prevBkwPOSList = new HashSet<Integer>();
         prevBkwPOSList.add(grammar.nullSymbol);
         float[] prevBkwScores = new float[posSize];
         prevBkwScores[grammar.nullSymbol] = (float) 0.0;
@@ -177,14 +177,14 @@ public class BoundaryInOut extends EdgeSelector {
         }
     }
 
-    private LinkedList<Integer> getPOSListFromChart(final ChartParser parser, final int startIndex) {
+    private HashSet<Integer> getPOSListFromChart(final ChartParser parser, final int startIndex) {
         final int endIndex = startIndex + 1;
         if (startIndex < 0 || endIndex > parser.chart.size()) {
-            final LinkedList<Integer> posList = new LinkedList<Integer>();
-            posList.addLast(grammar.nullSymbol);
-            return posList;
+            final HashSet<Integer> tmpPosSet = new HashSet<Integer>();
+            tmpPosSet.add(grammar.nullSymbol);
+            return tmpPosSet;
         }
-        return parser.chart.getCell(startIndex, endIndex).getPosEntries();
+        return parser.chart.getCell(startIndex, endIndex).getPosNTs();
     }
 
     public float leftBoundaryLogProb(final int nonTerm, final int pos) {
@@ -204,7 +204,8 @@ public class BoundaryInOut extends EdgeSelector {
         if (pos == grammar.nullSymbol && (start < 0 || end > parser.chart.size())) {
             return 0; // log(1.0)
         }
-        return parser.chart.getCell(start, end).getBestEdge(pos).inside;
+        // return parser.chart.getCell(start, end).getBestEdge(pos).inside;
+        return parser.chart.getInside(start, end, pos);
     }
 
     @Override

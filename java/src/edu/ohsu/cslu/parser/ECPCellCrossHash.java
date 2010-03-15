@@ -1,10 +1,13 @@
 package edu.ohsu.cslu.parser;
 
+import com.aliasi.util.Collections;
+
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
-public class ECPCellCrossHash extends CellwiseExhaustiveChartParser<LeftHashGrammar, Chart> {
+public class ECPCellCrossHash extends CellwiseExhaustiveChartParser<LeftHashGrammar, CellChart> {
 
     public ECPCellCrossHash(final LeftHashGrammar grammar, final CellSelector cellSelector) {
         super(grammar, cellSelector);
@@ -13,24 +16,24 @@ public class ECPCellCrossHash extends CellwiseExhaustiveChartParser<LeftHashGram
     @Override
     protected void visitCell(final ChartCell cell) {
         final int start = cell.start(), end = cell.end();
+        float insideProb;
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final ChartCell leftCell = chart.getCell(start, mid);
             final ChartCell rightCell = chart.getCell(mid, end);
-            for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
-                for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                    for (final Production p : grammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent)) {
-                        final float prob = p.prob + leftEdge.inside + rightEdge.inside;
-                        cell.addEdge(p, leftCell, rightCell, prob);
+            for (final int leftNT : leftCell.getLeftChildNTs()) {
+                for (final int rightNT : rightCell.getRightChildNTs()) {
+                    for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
+                        insideProb = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                        cell.updateInside(p, leftCell, rightCell, insideProb);
                     }
                 }
             }
         }
 
-        for (final ChartEdge childEdge : cell.getEdges()) {
-            for (final Production p : grammar.getUnaryProductionsWithChild(childEdge.prod.parent)) {
-                final float prob = p.prob + childEdge.inside;
-                cell.addEdge(new ChartEdge(p, cell, prob));
+        for (final int childNT : Collections.toIntArray(cell.getNTs())) {
+            for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
+                cell.updateInside(p, p.prob + cell.getInside(childNT));
             }
         }
     }

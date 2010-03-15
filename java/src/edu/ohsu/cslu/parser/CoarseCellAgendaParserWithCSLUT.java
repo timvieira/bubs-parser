@@ -1,10 +1,11 @@
 package edu.ohsu.cslu.parser;
 
 import java.util.Collection;
-import java.util.List;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -58,14 +59,14 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final ChartCell leftCell = chart.getCell(start, mid);
             final ChartCell rightCell = chart.getCell(mid, end);
-            for (final ChartEdge leftEdge : leftCell.getBestLeftEdges()) {
-                for (final ChartEdge rightEdge : rightCell.getBestRightEdges()) {
-                    possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
+            for (final int leftNT : leftCell.getLeftChildNTs()) {
+                for (final int rightNT : rightCell.getRightChildNTs()) {
+                    possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
                             if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
-                                final float prob = p.prob + leftEdge.inside + rightEdge.inside;
-                                edge = new ChartEdge(p, leftCell, rightCell, prob, edgeSelector);
+                                // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                                edge = chart.new ChartEdge(p, leftCell, rightCell);
                                 addEdgeToArray(edge, bestEdges);
                             }
                         }
@@ -86,21 +87,17 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         // System.out.println(" setSpanMax: " + leftCell + " && " + rightCell);
 
         if (cslutScores.isCellOpen(start, end)) {
-            final List<ChartEdge> leftEdgeList = leftCell.getBestLeftEdges();
-            final List<ChartEdge> rightEdgeList = rightCell.getBestRightEdges();
             Collection<Production> possibleProds;
-            if (rightEdgeList.size() > 0 && leftEdgeList.size() > 0) {
-                for (final ChartEdge leftEdge : leftEdgeList) {
-                    for (final ChartEdge rightEdge : rightEdgeList) {
-                        possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftEdge.prod.parent, rightEdge.prod.parent);
-                        if (possibleProds != null) {
-                            for (final Production p : possibleProds) {
-                                final float prob = p.prob + leftEdge.inside + rightEdge.inside;
-                                edge = new ChartEdge(p, leftCell, rightCell, prob, edgeSelector);
-                                // System.out.println(" considering: " + edge);
-                                if (edge.fom > bestFOM) {
-                                    bestFOM = edge.fom;
-                                }
+            for (final int leftNT : leftCell.getLeftChildNTs()) {
+                for (final int rightNT : rightCell.getRightChildNTs()) {
+                    possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftNT, rightNT);
+                    if (possibleProds != null) {
+                        for (final Production p : possibleProds) {
+                            // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                            edge = chart.new ChartEdge(p, leftCell, rightCell);
+                            // System.out.println(" considering: " + edge);
+                            if (edge.fom > bestFOM) {
+                                bestFOM = edge.fom;
                             }
                         }
                     }
@@ -114,7 +111,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
                 spanAgenda.remove(parentCell);
             }
             maxEdgeFOM[start][end] = bestFOM;
-            parentCell.figureOfMerit = bestFOM;
+            parentCell.fom = bestFOM;
             spanAgenda.add(parentCell);
             // System.out.println(" addingSpan: " + parentCell);
         }
