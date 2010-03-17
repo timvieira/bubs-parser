@@ -9,8 +9,8 @@ import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.LBFPerceptronCellTrainer;
-import edu.ohsu.cslu.parser.CellChart.ChartCell;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 

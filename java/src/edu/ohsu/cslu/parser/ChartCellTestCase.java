@@ -8,8 +8,9 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
-import edu.ohsu.cslu.parser.CellChart.ChartCell;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 /**
  * Base test class for testing {@link ChartCell} implementations.

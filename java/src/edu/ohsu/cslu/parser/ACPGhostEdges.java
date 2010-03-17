@@ -5,8 +5,8 @@ import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.CellChart.ChartCell;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class ACPGhostEdges extends AgendaChartParser {
 

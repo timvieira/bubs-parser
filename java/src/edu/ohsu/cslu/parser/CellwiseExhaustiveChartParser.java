@@ -1,7 +1,8 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.GrammarByChild;
-import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
 
 public abstract class CellwiseExhaustiveChartParser<G extends GrammarByChild, C extends CellChart> extends ExhaustiveChartParser<G, C> {
 

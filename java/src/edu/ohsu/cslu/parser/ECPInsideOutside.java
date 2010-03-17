@@ -6,8 +6,9 @@ import com.aliasi.util.Collections;
 
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.InOutCellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.InOutCellChart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGrammar, InOutCellChart> {
@@ -47,7 +48,7 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
     }
 
     @Override
-    protected void visitCell(final edu.ohsu.cslu.parser.CellChart.ChartCell cell) {
+    protected void visitCell(final edu.ohsu.cslu.parser.chart.CellChart.ChartCell cell) {
         computeInsideProbsInCell((ChartCell) cell);
     }
 
@@ -62,7 +63,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
                 for (final Production p : grammar.getBinaryProductionsWithLeftChild(leftNT)) {
                     if (rightCell.hasNT(p.rightChild)) {
                         insideProb = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(p.rightChild);
-                        cell.updateInside(p, leftCell, rightCell, insideProb);
+                        // cell.updateInside(p, leftCell, rightCell, insideProb);
+                        cell.updateInside(p.parent, insideProb);
                     }
                 }
             }
@@ -70,7 +72,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
 
         for (final int childNT : Collections.toIntArray(cell.getNTs())) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
-                cell.updateInside(p, p.prob + cell.getInside(childNT));
+                // cell.updateInside(p, p.prob + cell.getInside(childNT));
+                cell.updateInside(p.parent, p.prob + cell.getInside(childNT));
             }
         }
     }

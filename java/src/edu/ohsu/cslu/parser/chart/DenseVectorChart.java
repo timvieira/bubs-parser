@@ -1,7 +1,8 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.chart;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.Parser;
 
 public class DenseVectorChart extends CellChart {
 
@@ -20,12 +21,12 @@ public class DenseVectorChart extends CellChart {
 
     public class DenseVectorChartCell extends ChartCell {
 
-        protected final SparseMatrixGrammar sparseMatrixGrammar;
+        public final SparseMatrixGrammar sparseMatrixGrammar;
 
         /** Indexed by parent non-terminal */
         // protected final float[] inside;
-        protected final short[] midpoints;
-        protected final int[] children;
+        public final short[] midpoints;
+        public final int[] children;
 
         /** Stores packed children and their inside */
         public int numValidLeftChildren;

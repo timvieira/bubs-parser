@@ -8,10 +8,10 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.EdgeCellChart.ChartCell;
 import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
+import edu.ohsu.cslu.parser.chart.EdgeCellChart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.EdgeCellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -20,9 +20,9 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser<LeftHash
 
     PerceptronCellSelector perceptronCellSelector;
 
-    public LBFPerceptronCellTrainer(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final PerceptronCellSelector cellSelector) {
-        super(grammar, edgeSelector, cellSelector);
-        perceptronCellSelector = cellSelector;
+    public LBFPerceptronCellTrainer(final ParserOptions opts, final LeftHashGrammar grammar) {
+        super(opts, grammar);
+        perceptronCellSelector = (PerceptronCellSelector) cellSelector;
     }
 
     public void addUnaryExtensionsToLexProds(final EdgeCellChart goldChart) {
@@ -57,7 +57,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser<LeftHash
         }
 
         // read in gold tree
-        for (int ittr = 0; ittr < ParserDriver.param2; ittr++) {
+        for (int ittr = 0; ittr < ParserOptions.param2; ittr++) {
             int totalCells = 0, correctCells = 0;
             System.out.println(" == ittr " + ittr + " ==");
             for (final String bracketString : inputData) {
@@ -167,7 +167,7 @@ public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser<LeftHash
 
         // read in gold tree
         // while ((line = inStream.readLine()) != null) {
-        for (int ittr = 0; ittr < ParserDriver.param2; ittr++) {
+        for (int ittr = 0; ittr < ParserOptions.param2; ittr++) {
             int totalCells = 0, correctCells = 0;
             System.out.println(" == ittr " + ittr + " ==");
             for (final String bracketString : inputData) {

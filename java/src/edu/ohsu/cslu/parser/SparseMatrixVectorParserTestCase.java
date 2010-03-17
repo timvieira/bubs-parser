@@ -7,11 +7,12 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CrossProductVector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 /**

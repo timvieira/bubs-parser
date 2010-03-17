@@ -22,7 +22,8 @@ import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication using
