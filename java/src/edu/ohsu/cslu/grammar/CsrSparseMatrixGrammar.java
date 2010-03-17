@@ -7,7 +7,7 @@ import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collection;
 
-import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 /**
  * Stores a sparse-matrix grammar in standard compressed-sparse-row (CSR) format

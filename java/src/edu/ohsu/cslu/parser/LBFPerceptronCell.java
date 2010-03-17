@@ -13,8 +13,6 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -25,8 +23,8 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
     private Vector<Float> cslutStartScore, cslutEndScore;
     Perceptron perceptron = null;
 
-    public LBFPerceptronCell(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector, final CSLUTBlockedCells cslutScores) {
-        super(grammar, edgeSelector, cellSelector);
+    public LBFPerceptronCell(final ParserOptions opts, final LeftHashGrammar grammar, final CSLUTBlockedCells cslutScores) {
+        super(opts, grammar);
         this.cslutScores = cslutScores;
     }
 
@@ -43,7 +41,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
         }
 
         // read in gold tree
-        for (int ittr = 0; ittr < ParserDriver.param2; ittr++) {
+        for (int ittr = 0; ittr < opts.param2; ittr++) {
             System.out.println(" == ittr " + ittr + " ==");
             for (final String bracketString : inputData) {
                 tree = ParseTree.readBracketFormat(bracketString);
@@ -187,7 +185,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
         // guessNumPops = 10;
         int popsToGold = 0;
         if (goldEdges.size() == 0) {
-            maxEdgesAdded = (int) ParserDriver.param1;
+            maxEdgesAdded = (int) opts.param1;
         } else {
             maxEdgesAdded = 99999;
         }

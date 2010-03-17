@@ -7,17 +7,15 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
     protected CSLUTBlockedCells cslutScores;
 
-    public CoarseCellAgendaParserWithCSLUT(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CSLUTBlockedCells cslutScores) {
-        super(grammar, edgeSelector);
+    public CoarseCellAgendaParserWithCSLUT(final ParserOptions opts, final LeftHashGrammar grammar, final CSLUTBlockedCells cslutScores) {
+        super(opts, grammar);
         this.cslutScores = cslutScores;
-        leftHashGrammar = grammar;
     }
 
     @Override
@@ -53,7 +51,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         ChartEdge edge;
         final ChartEdge[] bestEdges = new ChartEdge[grammar.numNonTerms()]; // inits to null
 
-        final int maxEdgesToAdd = (int) ParserDriver.param2;
+        final int maxEdgesToAdd = (int) ParserOptions.param2;
         final boolean onlyFactored = cslutScores.isCellOpenOnlyToFactored(start, end);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
@@ -61,7 +59,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
             final ChartCell rightCell = chart.getCell(mid, end);
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {
-                    possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftNT, rightNT);
+                    possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
                             if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
@@ -90,7 +88,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
             Collection<Production> possibleProds;
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {
-                    possibleProds = leftHashGrammar.getBinaryProductionsWithChildren(leftNT, rightNT);
+                    possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
                             // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);

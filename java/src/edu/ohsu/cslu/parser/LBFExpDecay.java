@@ -6,8 +6,6 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class LBFExpDecay extends LBFPruneViterbi {
@@ -15,8 +13,8 @@ public class LBFExpDecay extends LBFPruneViterbi {
     boolean resultRun = false;
     Chart resultChart;
 
-    public LBFExpDecay(final LeftHashGrammar grammar, final EdgeSelector edgeFOM, final CellSelector cellSelector) {
-        super(grammar, edgeFOM, cellSelector);
+    public LBFExpDecay(final ParserOptions opts, final LeftHashGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override
@@ -25,7 +23,7 @@ public class LBFExpDecay extends LBFPruneViterbi {
         boolean edgeBelowThresh = false;
         final int numAdded = 0;
 
-        final float maxPops = ParserDriver.param1;
+        final float maxPops = ParserOptions.param1;
         final int minPops = 3;
 
         // min/max

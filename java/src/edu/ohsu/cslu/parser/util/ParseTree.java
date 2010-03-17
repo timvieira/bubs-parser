@@ -323,7 +323,12 @@ public class ParseTree {
         boolean newProd;
 
         // final Chart chart = new Chart(sentLen, ArrayChartCell.class, grammar);
-        final CellChart chart = new CellChart(sentLen, grammar);
+        if (true) {
+            throw new RuntimeException(
+                    "convetToChart() does not work anymore due to changes in Chart.  Either need to create containing Parser instance, or use something other than Chart to store the edges");
+        }
+
+        final CellChart chart = new CellChart(sentLen, true, null);
         Production prod = null;
         ChartEdge edge;
 

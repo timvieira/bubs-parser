@@ -1,19 +1,20 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.Grammar;
 
 public abstract class Chart {
 
     protected int size;
-    public Grammar grammar;
+    protected boolean viterbiMax;
+    protected Parser parser;
 
     protected Chart() {
 
     }
 
-    public Chart(final int size, final Grammar grammar) {
+    public Chart(final int size, final boolean viterbiMax, final Parser parser) {
         this.size = size;
-        this.grammar = grammar;
+        this.viterbiMax = viterbiMax;
+        this.parser = parser;
     }
 
     public int size() {

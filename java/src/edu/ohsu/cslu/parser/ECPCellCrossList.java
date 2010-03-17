@@ -5,12 +5,11 @@ import com.aliasi.util.Collections;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 public class ECPCellCrossList extends CellwiseExhaustiveChartParser<LeftListGrammar, CellChart> {
 
-    public ECPCellCrossList(final LeftListGrammar grammar, final CellSelector spanSelection) {
-        super(grammar, spanSelection);
+    public ECPCellCrossList(final ParserOptions opts, final LeftListGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override

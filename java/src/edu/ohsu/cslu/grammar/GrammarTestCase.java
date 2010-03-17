@@ -7,7 +7,7 @@ import java.io.StringReader;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 public abstract class GrammarTestCase {
 

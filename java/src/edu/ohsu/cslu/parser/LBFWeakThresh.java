@@ -6,13 +6,11 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
 public class LBFWeakThresh extends LBFPruneViterbi {
 
-    public LBFWeakThresh(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
-        super(grammar, edgeSelector, cellSelector);
+    public LBFWeakThresh(final ParserOptions opts, final LeftHashGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override

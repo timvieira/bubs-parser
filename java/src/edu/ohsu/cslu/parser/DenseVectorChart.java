@@ -1,15 +1,14 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 
 public class DenseVectorChart extends CellChart {
 
-    public DenseVectorChart(final int size, final Grammar grammar) {
+    public DenseVectorChart(final int size, final boolean viterbiMax, final Parser parser) {
         this.size = size;
-        this.grammar = grammar;
         this.viterbiMax = true;
+        this.parser = parser;
 
         chart = new ChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
@@ -39,7 +38,7 @@ public class DenseVectorChart extends CellChart {
 
         public DenseVectorChartCell(final int start, final int end) {
             super(start, end);
-            this.sparseMatrixGrammar = (SparseMatrixGrammar) grammar;
+            this.sparseMatrixGrammar = (SparseMatrixGrammar) parser.grammar;
 
             final int arraySize = sparseMatrixGrammar.numNonTerms();
             // this.inside = new float[arraySize];

@@ -5,7 +5,6 @@ import java.util.Arrays;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> extends ExhaustiveChartParser<G, DenseVectorChart> {
 
@@ -17,8 +16,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> ex
     public long totalCartesianProductUnionTime = 0;
     public long totalSpMVTime = 0;
 
-    public SparseMatrixVectorParser(final G grammar, final CellSelector cellSelector) {
-        super(grammar, cellSelector);
+    public SparseMatrixVectorParser(final ParserOptions opts, final G grammar) {
+        super(opts, grammar);
     }
 
     /**
@@ -39,7 +38,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> ex
     @Override
     protected void initParser(final int sentLength) {
         // super.initParser(sentLength);
-        chart = new DenseVectorChart(sentLength, grammar);
+        chart = new DenseVectorChart(sentLength, opts.viterbiMax, this);
 
         totalSpMVTime = 0;
         totalCartesianProductTime = 0;
@@ -119,7 +118,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> ex
 
     @Override
     public String getStats() {
-        return String.format("%.3f, %d, %d, %d", totalTime / 1000f, totalCartesianProductTime, totalCartesianProductUnionTime, totalSpMVTime);
+        // return String.format("%.3f, %d, %d, %d", totalTime / 1000f, totalCartesianProductTime, totalCartesianProductUnionTime, totalSpMVTime);
+        return String.format("%d, %d, %d", totalCartesianProductTime, totalCartesianProductUnionTime, totalSpMVTime);
     }
 
     public final static class CrossProductVector {

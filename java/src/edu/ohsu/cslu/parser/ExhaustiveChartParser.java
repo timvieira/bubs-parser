@@ -1,17 +1,12 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.GrammarByChild;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class ExhaustiveChartParser<G extends GrammarByChild, C extends CellChart> extends ChartParser<G, C> {
 
-    protected CellSelector cellSelector;
-    protected long totalTime;
-
-    public ExhaustiveChartParser(final G grammar, final CellSelector cellSelector) {
-        super(grammar);
-        this.cellSelector = cellSelector;
+    public ExhaustiveChartParser(final ParserOptions opts, final G grammar) {
+        super(opts, grammar);
     }
 
     /**
@@ -25,10 +20,7 @@ public abstract class ExhaustiveChartParser<G extends GrammarByChild, C extends 
     @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
 
-        final long startTime = System.currentTimeMillis();
-
         final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
-        currentSentence = sentence;
 
         initParser(sent.length);
         addLexicalProductions(sent);
@@ -38,8 +30,6 @@ public abstract class ExhaustiveChartParser<G extends GrammarByChild, C extends 
             final short[] startAndEnd = cellSelector.next();
             visitCell(startAndEnd[0], startAndEnd[1]);
         }
-
-        totalTime = System.currentTimeMillis() - startTime;
 
         return extractBestParse();
     }

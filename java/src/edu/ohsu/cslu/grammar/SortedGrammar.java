@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.util.Log;
 
 public abstract class SortedGrammar extends GrammarByChild {
@@ -118,21 +118,21 @@ public abstract class SortedGrammar extends GrammarByChild {
             // Record class transitions
             if (nonTerminal.ntClass != ntClass) {
                 switch (nonTerminal.ntClass) {
-                case RIGHT_CHILD_ONLY:
-                    rightChildOnlyStart = index;
-                    break;
-                case EITHER_CHILD:
-                    eitherChildStart = index;
-                    break;
-                case LEFT_CHILD_ONLY:
-                    leftChildOnlyStart = index;
-                    break;
-                case POS:
-                    posStart = index;
-                    break;
-                case UNARY_CHILD_ONLY:
-                    unaryChildOnlyStart = index;
-                    break;
+                    case RIGHT_CHILD_ONLY:
+                        rightChildOnlyStart = index;
+                        break;
+                    case EITHER_CHILD:
+                        eitherChildStart = index;
+                        break;
+                    case LEFT_CHILD_ONLY:
+                        leftChildOnlyStart = index;
+                        break;
+                    case POS:
+                        posStart = index;
+                        break;
+                    case UNARY_CHILD_ONLY:
+                        unaryChildOnlyStart = index;
+                        break;
                 }
                 ntClass = nonTerminal.ntClass;
             }

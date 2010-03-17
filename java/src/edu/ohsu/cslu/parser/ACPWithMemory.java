@@ -2,14 +2,13 @@ package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
 public class ACPWithMemory extends AgendaChartParser {
 
     private ChartEdge agendaMemory[][][];
 
-    public ACPWithMemory(final LeftRightListsGrammar grammar, final EdgeSelector edgeSelector) {
-        super(grammar, edgeSelector);
+    public ACPWithMemory(final ParserOptions opts, final LeftRightListsGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override

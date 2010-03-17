@@ -7,17 +7,14 @@ import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
 public class ACPGhostEdges extends AgendaChartParser {
 
     protected LinkedList<ChartEdge>[][] needLeftGhostEdges, needRightGhostEdges;
     int nGhostEdges;
-    private LeftRightListsGrammar leftRightListsGrammar;
 
-    public ACPGhostEdges(final LeftRightListsGrammar grammar, final EdgeSelector edgeSelector) {
-        super(grammar, edgeSelector);
-        leftRightListsGrammar = grammar;
+    public ACPGhostEdges(final ParserOptions opts, final LeftRightListsGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override
@@ -50,7 +47,7 @@ public class ACPGhostEdges extends AgendaChartParser {
         // unary edges are always possible in any cell, although we don't allow
         // unary chains
         // if (newEdge.prod.isUnaryProd() == false || newEdge.prod.isLexProd() == true) {
-        for (final Production p : leftRightListsGrammar.getUnaryProductionsWithChild(nt)) {
+        for (final Production p : grammar.getUnaryProductionsWithChild(nt)) {
             addEdgeToFrontier(chart.new ChartEdge(p, cell));
         }
         // }
@@ -90,7 +87,7 @@ public class ACPGhostEdges extends AgendaChartParser {
             // create left ghost edges. Can't go left if we are on the very left
             // side of the chart
             if (cell.start() > 0) {
-                possibleRules = leftRightListsGrammar.getBinaryProductionsWithRightChild(nt);
+                possibleRules = grammar.getBinaryProductionsWithRightChild(nt);
                 if (possibleRules != null) {
                     for (final Production p : possibleRules) {
                         if (needLeftGhostEdges[p.leftChild][cell.start()] == null) {
@@ -105,7 +102,7 @@ public class ACPGhostEdges extends AgendaChartParser {
             // create right ghost edges. Can't go right if we are on the very
             // right side of the chart
             if (cell.end() < chart.size() - 1) {
-                possibleRules = leftRightListsGrammar.getBinaryProductionsWithLeftChild(nt);
+                possibleRules = grammar.getBinaryProductionsWithLeftChild(nt);
                 if (possibleRules != null) {
                     for (final Production p : possibleRules) {
                         if (needRightGhostEdges[p.rightChild][cell.end()] == null) {

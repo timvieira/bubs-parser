@@ -2,7 +2,6 @@ package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
@@ -16,11 +15,10 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
  */
 public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar> {
 
-    private final CsrSparseMatrixGrammar csrSparseMatrixGrammar;
+    // private final CsrSparseMatrixGrammar csrSparseMatrixGrammar;
 
-    public CsrSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar, final CellSelector cellSelector) {
-        super(grammar, cellSelector);
-        this.csrSparseMatrixGrammar = grammar;
+    public CsrSparseMatrixVectorParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override
@@ -66,9 +64,9 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
     @Override
     public void binarySpmvMultiply(final CrossProductVector crossProductVector, final DenseVectorChartCell chartCell) {
 
-        final int[] binaryRuleMatrixRowIndices = csrSparseMatrixGrammar.binaryRuleMatrixRowIndices();
-        final int[] binaryRuleMatrixColumnIndices = csrSparseMatrixGrammar.binaryRuleMatrixColumnIndices();
-        final float[] binaryRuleMatrixProbabilities = csrSparseMatrixGrammar.binaryRuleMatrixProbabilities();
+        final int[] binaryRuleMatrixRowIndices = grammar.binaryRuleMatrixRowIndices();
+        final int[] binaryRuleMatrixColumnIndices = grammar.binaryRuleMatrixColumnIndices();
+        final float[] binaryRuleMatrixProbabilities = grammar.binaryRuleMatrixProbabilities();
 
         final float[] crossProductProbabilities = crossProductVector.probabilities;
         final short[] crossProductMidpoints = crossProductVector.midpoints;
@@ -107,10 +105,10 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
                 chartCellProbabilities[parent] = winningProbability;
                 chartCellMidpoints[parent] = winningMidpoint;
 
-                if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
+                if (grammar.isValidLeftChild(parent)) {
                     numValidLeftChildren++;
                 }
-                if (csrSparseMatrixGrammar.isValidRightChild(parent)) {
+                if (grammar.isValidRightChild(parent)) {
                     numValidRightChildren++;
                 }
             }
@@ -122,9 +120,9 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
     @Override
     public void unarySpmvMultiply(final DenseVectorChartCell chartCell) {
 
-        final int[] unaryRuleMatrixRowIndices = csrSparseMatrixGrammar.unaryRuleMatrixRowIndices();
-        final int[] unaryRuleMatrixColumnIndices = csrSparseMatrixGrammar.unaryRuleMatrixColumnIndices();
-        final float[] unaryRuleMatrixProbabilities = csrSparseMatrixGrammar.unaryRuleMatrixProbabilities();
+        final int[] unaryRuleMatrixRowIndices = grammar.unaryRuleMatrixRowIndices();
+        final int[] unaryRuleMatrixColumnIndices = grammar.unaryRuleMatrixColumnIndices();
+        final float[] unaryRuleMatrixProbabilities = grammar.unaryRuleMatrixProbabilities();
 
         final int[] chartCellChildren = chartCell.children;
         final float[] chartCellProbabilities = chartCell.inside;
@@ -143,7 +141,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
             for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
 
                 final int grammarChildren = unaryRuleMatrixColumnIndices[i];
-                final int child = csrSparseMatrixGrammar.unpackLeftChild(grammarChildren);
+                final int child = grammar.unpackLeftChild(grammarChildren);
                 final float grammarProbability = unaryRuleMatrixProbabilities[i];
 
                 final float jointProbability = grammarProbability + chartCellProbabilities[child];
@@ -161,10 +159,10 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
                 chartCellMidpoints[parent] = winningMidpoint;
 
                 if (currentProbability == Float.NEGATIVE_INFINITY) {
-                    if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
+                    if (grammar.isValidLeftChild(parent)) {
                         chartCell.numValidLeftChildren++;
                     }
-                    if (csrSparseMatrixGrammar.isValidRightChild(parent)) {
+                    if (grammar.isValidRightChild(parent)) {
                         chartCell.numValidRightChildren++;
                     }
                 }

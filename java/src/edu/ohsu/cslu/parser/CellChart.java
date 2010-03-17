@@ -3,29 +3,20 @@ package edu.ohsu.cslu.parser;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class CellChart extends Chart {
 
     protected ChartCell chart[][];
-    protected EdgeSelector edgeSelector;
-    protected CellSelector cellSelector;
-    protected boolean viterbiMax;
 
     protected CellChart() {
 
     }
 
-    public CellChart(final int size, final Grammar grammar, final CellSelector cellSelector, final EdgeSelector edgeSelector) {
-        super(size, grammar);
-        this.cellSelector = cellSelector;
-        this.edgeSelector = edgeSelector;
-        this.viterbiMax = true;
+    public CellChart(final int size, final boolean viterbiMax, final Parser parser) {
+        super(size, viterbiMax, parser);
 
         chart = new ChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
@@ -35,16 +26,12 @@ public class CellChart extends Chart {
         }
     }
 
-    public CellChart(final int size, final Grammar grammar) {
-        this(size, grammar, null, null);
-    }
-
     public ChartCell getCell(final int start, final int end) {
         return chart[start][end];
     }
 
     public ChartCell getRootCell() {
-        return chart[0][size];
+        return getCell(0, size);
     }
 
     @Override
@@ -82,8 +69,8 @@ public class CellChart extends Chart {
                 isLexCell = false;
             }
 
-            bestEdge = new ChartEdge[grammar.numNonTerms()];
-            inside = new float[grammar.numNonTerms()];
+            bestEdge = new ChartEdge[parser.grammar.numNonTerms()];
+            inside = new float[parser.grammar.numNonTerms()];
             Arrays.fill(inside, Float.NEGATIVE_INFINITY);
         }
 
@@ -137,26 +124,17 @@ public class CellChart extends Chart {
             updateInside(nt, insideProb);
         }
 
-        public float getOutside(final int nt) {
-            throw new RuntimeException("ChartCell.getOutside(int) not implemented yet.");
-        }
-
-        public void updateOutside(final int nt, final float outsideProb) {
-            throw new RuntimeException("ChartCell.getOutside(int) not implemented yet.");
-        }
-
         public ChartEdge getBestEdge(final int nt) {
             return bestEdge[nt];
         }
 
         public boolean hasNT(final int nt) {
-            // return bestEdge[nt] != null;
             return inside[nt] > Float.NEGATIVE_INFINITY;
         }
 
         protected void addToHashSets(final int ntIndex) {
             childNTs.add(ntIndex);
-            final NonTerminal nt = grammar.getNonterminal(ntIndex);
+            final NonTerminal nt = parser.grammar.getNonterminal(ntIndex);
             if (nt.isLeftChild) {
                 leftChildNTs.add(ntIndex);
             }
@@ -169,9 +147,6 @@ public class CellChart extends Chart {
         }
 
         public HashSet<Integer> getNTs() {
-            // if (bestEdgesHaveChanged) {
-            // buildNTLists();
-            // }
             return childNTs;
         }
 
@@ -180,37 +155,12 @@ public class CellChart extends Chart {
         }
 
         public HashSet<Integer> getLeftChildNTs() {
-            // if (bestEdgesHaveChanged) {
-            // buildNTLists();
-            // }
             return leftChildNTs;
         }
 
         public HashSet<Integer> getRightChildNTs() {
-            // if (bestEdgesHaveChanged) {
-            // buildNTLists();
-            // }
             return rightChildNTs;
         }
-
-        // private void buildNTLists() {
-        // childNTs = new LinkedList<Integer>();
-        // leftChildNTs = new LinkedList<Integer>();
-        // rightChildNTs = new LinkedList<Integer>();
-        // for (int ntIndex = 0; ntIndex < bestEdge.length; ntIndex++) {
-        // if (bestEdge[ntIndex] != null) {
-        // childNTs.add(ntIndex);
-        // final NonTerminal nt = grammar.getNonterminal(ntIndex);
-        // if (nt.isLeftChild()) {
-        // leftChildNTs.add(ntIndex);
-        // }
-        // if (nt.isRightChild()) {
-        // rightChildNTs.add(ntIndex);
-        // }
-        // }
-        // }
-        // bestEdgesHaveChanged = false;
-        // }
 
         public final int start() {
             return start;
@@ -240,7 +190,7 @@ public class CellChart extends Chart {
 
         @Override
         public String toString() {
-            return getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " (of " + grammar.numNonTerms() + ") edges";
+            return getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " (of " + parser.grammar.numNonTerms() + ") edges";
         }
 
         @Override
@@ -258,8 +208,11 @@ public class CellChart extends Chart {
     public class ChartEdge implements Comparable<ChartEdge> {
         public Production prod;
         public float fom = 0; // figure of merit
-        // TODO: should we create a getLeftCell() and getRightCell(). We'd need to keep a chart pointer...
         public ChartCell leftCell, rightCell;
+
+        // TODO: other options to keeping leftCell and rightCell:
+        // 1) keep int start,midpt,end
+        // 2) keep ChartCell ptr and midpt
 
         // binary production
         public ChartEdge(final Production prod, final ChartCell leftCell, final ChartCell rightCell) {
@@ -267,22 +220,20 @@ public class CellChart extends Chart {
             assert leftCell.start() < rightCell.end();
 
             this.prod = prod;
-            // this.inside = inside;
             this.leftCell = leftCell;
             this.rightCell = rightCell;
-            if (edgeSelector != null) {
-                this.fom = edgeSelector.calcFOM(this);
+            if (parser.edgeSelector != null) {
+                this.fom = parser.edgeSelector.calcFOM(this);
             }
         }
 
         // unary production
         public ChartEdge(final Production prod, final ChartCell childCell) {
             this.prod = prod;
-            // this.inside = inside;
             this.leftCell = childCell;
             this.rightCell = null;
-            if (edgeSelector != null) {
-                this.fom = edgeSelector.calcFOM(this);
+            if (parser.edgeSelector != null) {
+                this.fom = parser.edgeSelector.calcFOM(this);
             }
 
         }

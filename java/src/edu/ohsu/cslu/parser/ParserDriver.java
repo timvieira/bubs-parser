@@ -8,7 +8,6 @@ import java.io.OutputStreamWriter;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.EnumAliasMap;
 import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
@@ -20,6 +19,8 @@ import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.ParserType;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
@@ -27,7 +28,6 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.parser.util.Log;
-import edu.ohsu.cslu.parser2.ECPInsideOutside;
 
 public class ParserDriver extends BaseCommandlineTool {
 
@@ -79,11 +79,14 @@ public class ParserDriver extends BaseCommandlineTool {
     private String cslutScoresFileName = null;
     private BufferedReader cslutScoresStream = null;
 
+    @Option(name = "-inOutSum", usage = "Use sum instead of max for inside and outside calculations")
+    public boolean inOutSum = false;
+
     @Option(name = "-x1", usage = "Tuning param #1")
-    public static float param1 = -1;
+    public float param1 = -1;
 
     @Option(name = "-x2", usage = "Tuning param #2")
-    public static float param2 = -1;
+    public float param2 = -1;
 
     private BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
     private BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
@@ -129,18 +132,39 @@ public class ParserDriver extends BaseCommandlineTool {
         }
     }
 
-    public String optionsToString() {
-        final String prefix = "OPTS: ";
-        String s = "";
-        s += prefix + "ParserType=" + parserType + "\n";
-        s += prefix + "CellSelector=" + cellSelectorType + "\n";
-        // s += prefix + "CellProcess=" + chartCellProcessingType + "\n";
-        s += prefix + "FOM=" + edgeFOMType + "\n";
-        s += prefix + "x1=" + param1 + "\n";
-        s += prefix + "x2=" + param2;
-        // Log.info(0, s);
+    public ParserOptions createOptions() {
+        final ParserOptions opts = new ParserOptions();
 
-        return s;
+        opts.parserType = parserType;
+        opts.edgeFOMType = edgeFOMType;
+        opts.cellSelectorType = cellSelectorType;
+
+        opts.fomTrain = fomTrain;
+        opts.fomModelFileName = fomModelFileName;
+        opts.fomModelStream = fomModelStream;
+
+        opts.cellTrain = cellTrain;
+        opts.cellModelFileName = cellModelFileName;
+        opts.cellModelStream = cellModelStream;
+
+        opts.cslutScoresFileName = cslutScoresFileName;
+        opts.cslutScoresStream = cslutScoresStream;
+
+        opts.pcfgFileName = pcfgFileName;
+        opts.lexFileName = lexFileName;
+        opts.grammarFormat = grammarFormat;
+
+        opts.maxLength = maxLength;
+        opts.printInsideProbs = printInsideProbs;
+        opts.printUnkLabels = printUnkLabels;
+        opts.viterbiMax = !inOutSum;
+        ParserOptions.param1 = param1;
+        ParserOptions.param2 = param2;
+
+        opts.outputStream = outputStream;
+        opts.inputStream = inputStream;
+
+        return opts;
     }
 
     public static Grammar createGrammar(final ParserType parserType, final GrammarFormatType grammarFormat, final String pcfgFileName, final String lexFileName) throws Exception {
@@ -182,53 +206,55 @@ public class ParserDriver extends BaseCommandlineTool {
         }
     }
 
-    public static Parser createParser(final ParserType parserType, final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) throws Exception {
+    // public static Parser createParser(final ParserType parserType, final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) throws Exception {
+    public static Parser createParser(final ParserOptions opts, final Grammar grammar) throws Exception {
 
-        switch (parserType) {
+        switch (opts.parserType) {
             case ECPCellCrossList:
-                return new ECPCellCrossList((LeftListGrammar) grammar, cellSelector);
+                return new ECPCellCrossList(opts, (LeftListGrammar) grammar);
             case ECPCellCrossHash:
-                return new ECPCellCrossHash((LeftHashGrammar) grammar, cellSelector);
+                return new ECPCellCrossHash(opts, (LeftHashGrammar) grammar);
             case ECPCellCrossMatrix:
-                return new ECPCellCrossMatrix((ChildMatrixGrammar) grammar, cellSelector);
+                return new ECPCellCrossMatrix(opts, (ChildMatrixGrammar) grammar);
             case ECPGrammarLoop:
-                return new ECPGrammarLoop((GrammarByChild) grammar, cellSelector);
+                return new ECPGrammarLoop(opts, (GrammarByChild) grammar);
             case ECPGrammarLoopBerkeleyFilter:
-                return new ECPGrammarLoopBerkFilter((GrammarByChild) grammar, cellSelector);
+                return new ECPGrammarLoopBerkFilter(opts, (GrammarByChild) grammar);
             case ECPInsideOutside:
-                return new ECPInsideOutside((LeftListGrammar) grammar, cellSelector);
+                return new ECPInsideOutside(opts, (LeftListGrammar) grammar);
 
             case AgendaChartParser:
-                return new AgendaChartParser((LeftRightListsGrammar) grammar, edgeSelector);
+                return new AgendaChartParser(opts, (LeftRightListsGrammar) grammar);
             case ACPWithMemory:
-                return new ACPWithMemory((LeftRightListsGrammar) grammar, edgeSelector);
+                return new ACPWithMemory(opts, (LeftRightListsGrammar) grammar);
             case ACPGhostEdges:
-                return new ACPGhostEdges((LeftRightListsGrammar) grammar, edgeSelector);
+                return new ACPGhostEdges(opts, (LeftRightListsGrammar) grammar);
 
             case LocalBestFirst:
-                return new LocalBestFirstChartParser((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+                return new LocalBestFirstChartParser(opts, (LeftHashGrammar) grammar);
             case LBFPruneViterbi:
-                return new LBFPruneViterbi((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+                return new LBFPruneViterbi(opts, (LeftHashGrammar) grammar);
             case LBFOnlineBeam:
-                return new LBFWeakThresh((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+                return new LBFWeakThresh(opts, (LeftHashGrammar) grammar);
             case LBFBoundedHeap:
-                return new LBFBoundedHeap((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+                return new LBFBoundedHeap(opts, (LeftHashGrammar) grammar);
             case LBFExpDecay:
-                return new LBFExpDecay((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+                return new LBFExpDecay(opts, (LeftHashGrammar) grammar);
             case LBFPerceptronCell:
-                return new LBFSkipBaseCells((LeftHashGrammar) grammar, edgeSelector, cellSelector);
+                return new LBFSkipBaseCells(opts, (LeftHashGrammar) grammar);
 
             case CoarseCellAgenda:
-                return new CoarseCellAgendaParser((LeftHashGrammar) grammar, edgeSelector);
+                return new CoarseCellAgendaParser(opts, (LeftHashGrammar) grammar);
             case CoarseCellAgendaCSLUT:
-                return new CoarseCellAgendaParserWithCSLUT((LeftHashGrammar) grammar, edgeSelector, (CSLUTBlockedCells) cellSelector);
+                final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+                return new CoarseCellAgendaParserWithCSLUT(opts, (LeftHashGrammar) grammar, cslutScores);
 
             case JsaSparseMatrixVector:
-                return new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar, cellSelector);
+                return new JsaSparseMatrixVectorParser(opts, (JsaSparseMatrixGrammar) grammar);
             case CsrSparseMatrixVector:
-                return new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, cellSelector);
+                return new CsrSparseMatrixVectorParser(opts, (CsrSparseMatrixGrammar) grammar);
             case OpenClSparseMatrixVector:
-                return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar, cellSelector);
+                return new OpenClSparseMatrixVectorParser(opts, (CsrSparseMatrixGrammar) grammar);
 
             default:
                 throw new IllegalArgumentException("Unsupported parser type");
@@ -237,42 +263,33 @@ public class ParserDriver extends BaseCommandlineTool {
 
     @Override
     public void run() throws Exception {
+        runParser(createOptions());
+    }
 
-        Log.info(0, optionsToString());
-        final Grammar grammar = createGrammar(parserType, grammarFormat, pcfgFileName, lexFileName);
+    public static void runParser(final ParserOptions opts) throws Exception {
+        Log.info(0, opts.toString());
+        final Grammar grammar = createGrammar(opts.parserType, opts.grammarFormat, opts.pcfgFileName, opts.lexFileName);
 
         // TODO: this whole FOM setup is pretty ugly. It needs to be changed
         // TODO: the program should know which FOM to use given the model file
-        final EdgeSelector edgeSelector = EdgeSelector.create(edgeFOMType, fomModelStream, grammar);
-        final CellSelector cellSelector = CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
+        // final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream, grammar);
+        // final CellSelector cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
 
-        if (fomTrain == true) {
-            edgeSelector.train(inputStream);
-            edgeSelector.writeModel(outputStream);
-        } else if (cellTrain == true) {
+        if (opts.fomTrain == true) {
+            final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream, grammar);
+            edgeSelector.train(opts.inputStream);
+            edgeSelector.writeModel(opts.outputStream);
+        } else if (opts.cellTrain == true) {
             // TODO: need to follow a similar train/writeModel method like edgeSelector
-            final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) cellSelector;
+            final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+            final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream, grammar);
             final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer((LeftHashGrammar) grammar, edgeSelector, perceptronCellSelector);
-            perceptronCellSelector.train(inputStream, parser);
+            perceptronCellSelector.train(opts.inputStream, parser);
         } else {
             // run parser
-            final Parser parser = createParser(parserType, grammar, edgeSelector, cellSelector);
-            parser.parseStream(inputStream, outputStream, maxLength, printUnkLabels, printInsideProbs);
+            final Parser parser = createParser(opts, grammar);
+            // parser.parseStream(opts.inputStream, opts.outputStream, opts.maxLength, printUnkLabels, printInsideProbs);
+            parser.parseStream(opts.inputStream, opts.outputStream);
         }
-    }
-
-    static public enum ParserType {
-        ECPCellCrossList("ecpccl"), ECPCellCrossHash("ecpcch"), ECPCellCrossMatrix("ecpccm"), ECPGrammarLoop("ecpgl"), ECPGrammarLoopBerkeleyFilter("ecpglbf"), ECPInsideOutside(
-                "ecpio"), AgendaChartParser("acpall"), ACPWithMemory("acpwm"), ACPGhostEdges("acpge"), LocalBestFirst("lbf"), LBFPruneViterbi("lbfpv"), LBFOnlineBeam("lbfob"), LBFBoundedHeap(
-                "lbfbh"), LBFExpDecay("lbfed"), LBFPerceptronCell("lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector("jsa"), OpenClSparseMatrixVector(
-                "opencl"), CsrSparseMatrixVector("csr");
-
-        private ParserType(final String... aliases) {
-            EnumAliasMap.singleton().addAliases(this, aliases);
-        }
-    }
-
-    static public enum GrammarFormatType {
-        CSLU, Roark, Berkeley;
     }
 }

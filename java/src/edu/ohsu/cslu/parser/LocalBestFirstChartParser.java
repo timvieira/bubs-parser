@@ -8,13 +8,10 @@ import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends CellChart> extends ChartParser<LeftHashGrammar, CellChart> {
 
-    EdgeSelector edgeSelector;
-    CellSelector cellSelector;
     int nAgendaPush;
     float fomInitSeconds;
     PriorityQueue<ChartEdge> agenda;
@@ -22,12 +19,10 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
     int maxEdgesToAdd;
     float logBeamDeltaThresh;
 
-    public LocalBestFirstChartParser(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
-        super(grammar);
-        this.edgeSelector = edgeSelector;
-        this.cellSelector = cellSelector;
+    public LocalBestFirstChartParser(final ParserOptions opts, final LeftHashGrammar grammar) {
+        super(opts, grammar);
 
-        maxEdgesToAdd = (int) ParserDriver.param1;
+        maxEdgesToAdd = (int) ParserOptions.param1;
         if (maxEdgesToAdd < 0)
             maxEdgesToAdd = 10;
 
@@ -39,7 +34,7 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
 
     @Override
     protected void initParser(final int sentLength) {
-        chart = new CellChart(sentLength, grammar, cellSelector, edgeSelector);
+        chart = new CellChart(sentLength, opts.viterbiMax, this);
     }
 
     @Override

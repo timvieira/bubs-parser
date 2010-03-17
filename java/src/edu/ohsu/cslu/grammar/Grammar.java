@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.util.Log;
 
 public class Grammar {
