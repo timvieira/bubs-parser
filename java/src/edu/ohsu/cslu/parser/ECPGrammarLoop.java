@@ -5,12 +5,11 @@ import com.aliasi.util.Collections;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 public class ECPGrammarLoop extends CellwiseExhaustiveChartParser<GrammarByChild, CellChart> {
 
-    public ECPGrammarLoop(final GrammarByChild grammar, final CellSelector spanSelector) {
-        super(grammar, spanSelector);
+    public ECPGrammarLoop(final ParserOptions opts, final GrammarByChild grammar) {
+        super(opts, grammar);
     }
 
     @Override

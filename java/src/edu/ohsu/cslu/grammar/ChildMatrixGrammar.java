@@ -3,7 +3,7 @@ package edu.ohsu.cslu.grammar;
 import java.io.Reader;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 public class ChildMatrixGrammar extends GrammarByChild {
 

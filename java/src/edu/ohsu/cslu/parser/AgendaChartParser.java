@@ -6,7 +6,6 @@ import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
@@ -14,19 +13,15 @@ public class AgendaChartParser extends ChartParser<LeftRightListsGrammar, CellCh
 
     protected PriorityQueue<ChartEdge> agenda;
     protected int nAgendaPush, nAgendaPop, nChartEdges;
-    protected EdgeSelector edgeSelector;
-    private LeftRightListsGrammar leftRightListsGrammar;
 
-    public AgendaChartParser(final LeftRightListsGrammar grammar, final EdgeSelector edgeSelector) {
-        super(grammar);
-        this.edgeSelector = edgeSelector;
-        leftRightListsGrammar = grammar;
+    public AgendaChartParser(final ParserOptions opts, final LeftRightListsGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override
     protected void initParser(final int sentLength) {
         // super.initParser(sentLength);
-        chart = new CellChart(sentLength, grammar, null, edgeSelector);
+        chart = new CellChart(sentLength, opts.viterbiMax, this);
 
         agenda = new PriorityQueue<ChartEdge>();
         nAgendaPush = nAgendaPop = nChartEdges = 0;
@@ -99,7 +94,7 @@ public class AgendaChartParser extends ChartParser<LeftRightListsGrammar, CellCh
         // add lexical productions and unary productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
             cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : leftRightListsGrammar.getLexicalProductionsWithChild(sent[i])) {
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 // Add lexical prods directly to the chart instead of to the agenda because
                 // the boundary FOM (and possibly others use the surrounding POS tags to calculate
                 // the fit of a new edge. If the POS tags don't exist yet (are still in the agenda)
@@ -117,14 +112,14 @@ public class AgendaChartParser extends ChartParser<LeftRightListsGrammar, CellCh
 
         // unary edges are always possible in any cell, although we don't allow unary chains
         // NATE: update: unary chains should be fine. They will just compete on the agenda
-        for (final Production p : leftRightListsGrammar.getUnaryProductionsWithChild(nt)) {
+        for (final Production p : grammar.getUnaryProductionsWithChild(nt)) {
             addEdgeToFrontier(chart.new ChartEdge(p, cell));
         }
 
         // connect edge as possible right non-term
         for (int beg = 0; beg < cell.start(); beg++) {
             leftCell = chart.getCell(beg, cell.start());
-            for (final Production p : leftRightListsGrammar.getBinaryProductionsWithRightChild(nt)) {
+            for (final Production p : grammar.getBinaryProductionsWithRightChild(nt)) {
                 leftEdge = leftCell.getBestEdge(p.leftChild);
                 if (leftEdge != null && chart.getCell(beg, cell.end()).getBestEdge(p.parent) == null) {
                     // prob = p.prob + newEdge.inside + leftEdge.inside;
@@ -137,7 +132,7 @@ public class AgendaChartParser extends ChartParser<LeftRightListsGrammar, CellCh
         // connect edge as possible left non-term
         for (int end = cell.end() + 1; end <= chart.size(); end++) {
             rightCell = chart.getCell(cell.end(), end);
-            for (final Production p : leftRightListsGrammar.getBinaryProductionsWithLeftChild(nt)) {
+            for (final Production p : grammar.getBinaryProductionsWithLeftChild(nt)) {
                 rightEdge = rightCell.getBestEdge(p.rightChild);
                 if (rightEdge != null && chart.getCell(cell.start(), end).getBestEdge(p.parent) == null) {
                     // prob = p.prob + rightEdge.inside + newEdge.inside;

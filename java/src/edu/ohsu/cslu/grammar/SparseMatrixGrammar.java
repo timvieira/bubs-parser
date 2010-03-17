@@ -7,7 +7,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.util.Collection;
 
-import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 /**
  * Stores a grammar as a sparse matrix of probabilities.

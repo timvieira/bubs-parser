@@ -2,7 +2,6 @@ package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 /**
  * SparseMatrixVectorParser implementation which uses a grammar stored in Java Sparse Array (JSA) format. Stores cell populations and cross-product densely, for efficient array
@@ -15,11 +14,10 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
  */
 public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSparseMatrixGrammar> {
 
-    private final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
+    // private final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
 
-    public JsaSparseMatrixVectorParser(final JsaSparseMatrixGrammar grammar, final CellSelector cellSelector) {
-        super(grammar, cellSelector);
-        this.jsaSparseMatrixGrammar = grammar;
+    public JsaSparseMatrixVectorParser(final ParserOptions opts, final JsaSparseMatrixGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override
@@ -65,8 +63,8 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
     @Override
     public void binarySpmvMultiply(final CrossProductVector crossProductVector, final DenseVectorChartCell chartCell) {
 
-        final int[][] grammarRuleMatrix = jsaSparseMatrixGrammar.binaryRuleMatrix();
-        final float[][] grammarProbabilities = jsaSparseMatrixGrammar.binaryProbabilities();
+        final int[][] grammarRuleMatrix = grammar.binaryRuleMatrix();
+        final float[][] grammarProbabilities = grammar.binaryProbabilities();
 
         final float[] crossProductProbabilities = crossProductVector.probabilities;
         final short[] crossProductMidpoints = crossProductVector.midpoints;
@@ -78,7 +76,7 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
         int numValidLeftChildren = 0, numValidRightChildren = 0;
 
         // Iterate over possible parents
-        for (int parent = 0; parent < jsaSparseMatrixGrammar.numNonTerms(); parent++) {
+        for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
 
             final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
             final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
@@ -107,10 +105,10 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
                 chartCellProbabilities[parent] = winningProbability;
                 chartCellMidpoints[parent] = winningMidpoint;
 
-                if (jsaSparseMatrixGrammar.isValidLeftChild(parent)) {
+                if (grammar.isValidLeftChild(parent)) {
                     numValidLeftChildren++;
                 }
-                if (jsaSparseMatrixGrammar.isValidRightChild(parent)) {
+                if (grammar.isValidRightChild(parent)) {
                     numValidRightChildren++;
                 }
             }
@@ -122,8 +120,8 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
     @Override
     public void unarySpmvMultiply(final DenseVectorChartCell chartCell) {
 
-        final int[][] grammarRuleMatrix = jsaSparseMatrixGrammar.unaryRuleMatrix();
-        final float[][] grammarProbabilities = jsaSparseMatrixGrammar.unaryProbabilities();
+        final int[][] grammarRuleMatrix = grammar.unaryRuleMatrix();
+        final float[][] grammarProbabilities = grammar.unaryProbabilities();
 
         final int[] chartCellChildren = chartCell.children;
         final float[] chartCellProbabilities = chartCell.inside;
@@ -131,7 +129,7 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
         final short chartCellEnd = (short) chartCell.end();
 
         // Iterate over possible parents
-        for (int parent = 0; parent < jsaSparseMatrixGrammar.numNonTerms(); parent++) {
+        for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
             final int[] grammarChildrenForParent = grammarRuleMatrix[parent];
             final float[] grammarProbabilitiesForParent = grammarProbabilities[parent];
 
@@ -142,7 +140,7 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
 
             for (int i = 0; i < grammarChildrenForParent.length; i++) {
                 final int packedChildren = grammarChildrenForParent[i];
-                final int child = jsaSparseMatrixGrammar.unpackLeftChild(packedChildren);
+                final int child = grammar.unpackLeftChild(packedChildren);
 
                 final float grammarProbability = grammarProbabilitiesForParent[i];
                 final float crossProductProbability = chartCellProbabilities[child];
@@ -161,10 +159,10 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
                 chartCellMidpoints[parent] = winningMidpoint;
 
                 if (currentProbability == Float.NEGATIVE_INFINITY) {
-                    if (jsaSparseMatrixGrammar.isValidLeftChild(parent)) {
+                    if (grammar.isValidLeftChild(parent)) {
                         chartCell.numValidLeftChildren++;
                     }
-                    if (jsaSparseMatrixGrammar.isValidRightChild(parent)) {
+                    if (grammar.isValidRightChild(parent)) {
                         chartCell.numValidRightChildren++;
                     }
                 }

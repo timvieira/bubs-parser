@@ -9,7 +9,6 @@ import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<GrammarByChild, CellChart> {
 
@@ -27,8 +26,8 @@ public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<Gram
 
     private int tmpNL, tmpNR, tmpWR;
 
-    public ECPGrammarLoopBerkFilter(final GrammarByChild grammar, final CellSelector cellSelector) {
-        super(grammar, cellSelector);
+    public ECPGrammarLoopBerkFilter(final ParserOptions opts, final GrammarByChild grammar) {
+        super(opts, grammar);
     }
 
     @Override

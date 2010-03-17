@@ -12,7 +12,7 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
-import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 public class SummarizeGrammar extends BaseCommandlineTool {
 

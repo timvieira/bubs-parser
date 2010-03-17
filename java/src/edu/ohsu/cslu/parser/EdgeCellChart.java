@@ -5,8 +5,6 @@ import java.util.List;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
 public class EdgeCellChart extends CellChart {
 
@@ -14,13 +12,11 @@ public class EdgeCellChart extends CellChart {
 
     }
 
-    public EdgeCellChart(final int size, final Grammar grammar, final CellSelector cellSelector, final EdgeSelector edgeSelector) {
-        // super(size, grammar);
-        this.viterbiMax = true;
+    public EdgeCellChart(final int size, final boolean viterbiMax, final Parser<Grammar> parser) {
+        // super(size, viterbiMax, parser);
         this.size = size;
-        this.grammar = grammar;
-        this.cellSelector = cellSelector;
-        this.edgeSelector = edgeSelector;
+        this.viterbiMax = true;
+        this.parser = parser;
 
         chart = new ChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
@@ -86,7 +82,7 @@ public class EdgeCellChart extends CellChart {
             numEdgesAdded++;
             bestEdgesHaveChanged = true;
             bestEdge[parent] = edge;
-            if (isLexCell && grammar.getNonterminal(parent).isPOS()) {
+            if (isLexCell && parser.grammar.getNonterminal(parent).isPOS()) {
                 // posNTs.addLast(parent);
                 posNTs.add(parent);
             }

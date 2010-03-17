@@ -32,7 +32,7 @@ public abstract class CellSelector implements Iterator<short[]> {
         return create(type, null, null);
     }
 
-    public static CellSelector create(final CellSelectorType type, final BufferedReader modelStream, final BufferedReader cslutScoresStream) throws Exception {
+    public static CellSelector create(final CellSelectorType type, final BufferedReader modelStream, final BufferedReader cslutScoresStream) {
         CellSelector spanSelection;
         switch (type) {
             case LeftRightBottomTop:

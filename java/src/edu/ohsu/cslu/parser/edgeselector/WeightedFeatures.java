@@ -5,14 +5,7 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.classifier.Perceptron;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.LeftListGrammar;
-import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ECPCellCrossList;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.util.Log;
-import edu.ohsu.cslu.parser.util.ParseTree;
-import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class WeightedFeatures extends EdgeSelector {
 
@@ -42,26 +35,26 @@ public class WeightedFeatures extends EdgeSelector {
 
     @Override
     public void train(final BufferedReader inStream) throws Exception {
-        ParseTree goldTree;
-        String line;
-        final ChartParser parser = new ECPCellCrossList((LeftListGrammar) grammar, CellSelector.create(CellSelector.CellSelectorType.LeftRightBottomTop));
-
-        while ((line = inStream.readLine()) != null) {
-            goldTree = ParseTree.readBracketFormat(line);
-            if (goldTree.isBinaryTree() == false) {
-                Log.info(0, "ERROR: Training trees must be binarized exactly as used in decoding");
-                System.exit(1);
-            }
-
-            // fill chart
-            parser.findBestParse(ParserUtil.join(goldTree.getLeafNodesContent(), " "));
-
-            // goldTree.linkLeavesLeftRight();
-            for (final ParseTree node : goldTree.preOrderTraversal()) {
-
-            }
-
-        }
+        // ParseTree goldTree;
+        // String line;
+        // final ChartParser parser = new ECPCellCrossList((LeftListGrammar) grammar, CellSelector.create(CellSelector.CellSelectorType.LeftRightBottomTop));
+        //
+        // while ((line = inStream.readLine()) != null) {
+        // goldTree = ParseTree.readBracketFormat(line);
+        // if (goldTree.isBinaryTree() == false) {
+        // Log.info(0, "ERROR: Training trees must be binarized exactly as used in decoding");
+        // System.exit(1);
+        // }
+        //
+        // // fill chart
+        // parser.findBestParse(ParserUtil.join(goldTree.getLeafNodesContent(), " "));
+        //
+        // // goldTree.linkLeavesLeftRight();
+        // for (final ParseTree node : goldTree.preOrderTraversal()) {
+        //
+        // }
+        //
+        // }
     }
 
 }

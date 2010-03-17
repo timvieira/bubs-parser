@@ -5,7 +5,7 @@ import java.io.Reader;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 public class GrammarByChild extends Grammar {
 

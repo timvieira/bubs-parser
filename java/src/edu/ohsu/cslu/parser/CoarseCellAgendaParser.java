@@ -7,20 +7,15 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellChart> {
 
-    EdgeSelector edgeSelector;
     float[][] maxEdgeFOM;
     PriorityQueue<ChartCell> spanAgenda;
-    protected LeftHashGrammar leftHashGrammar;
 
-    public CoarseCellAgendaParser(final LeftHashGrammar grammar, final EdgeSelector edgeFOM) {
-        super(grammar);
-        this.edgeSelector = edgeFOM;
-        leftHashGrammar = grammar;
+    public CoarseCellAgendaParser(final ParserOptions opts, final LeftHashGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override
@@ -68,7 +63,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
         ChartEdge edge;
         final ChartEdge[] bestEdges = new ChartEdge[grammar.numNonTerms()]; // inits to null
 
-        final int maxEdgesToAdd = (int) ParserDriver.param2;
+        final int maxEdgesToAdd = (int) ParserOptions.param2;
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final ChartCell leftCell = chart.getCell(start, mid);

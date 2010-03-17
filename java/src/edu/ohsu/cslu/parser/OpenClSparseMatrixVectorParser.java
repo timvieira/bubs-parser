@@ -22,9 +22,7 @@ import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication using
@@ -67,8 +65,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
     private CLFloatBuffer clCrossProductProbabilities1;
     private CLShortBuffer clCrossProductMidpoints1;
 
-    public OpenClSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar, final CellSelector cellSelector) {
-        super(grammar, cellSelector);
+    public OpenClSparseMatrixVectorParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
+        super(opts, grammar);
 
         context = createBestContext();
         clQueue = context.createDefaultQueue();
@@ -76,7 +74,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
     @Override
     protected void initParser(final int sentLength) {
-        chart = new DenseVectorChart(sentLength, grammar);
+        chart = new DenseVectorChart(sentLength, opts.viterbiMax, this);
 
         totalSpMVTime = 0;
         totalCartesianProductTime = 0;
@@ -158,7 +156,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         } else {
             t2 = System.currentTimeMillis();
             copyToDevice(clChartCellChildren, spvChartCell.children);
-            copyToDevice(clChartCellProbabilities, spvChartCell.probabilities);
+            copyToDevice(clChartCellProbabilities, spvChartCell.inside);
             copyToDevice(clChartCellMidpoints, spvChartCell.midpoints);
         }
 
@@ -167,7 +165,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         // work, although it's a big-time hack.
         internalUnarySpmvMultiply(end);
         copyFromDevice(clChartCellChildren, spvChartCell.children);
-        copyFromDevice(clChartCellProbabilities, spvChartCell.probabilities);
+        copyFromDevice(clChartCellProbabilities, spvChartCell.inside);
         copyFromDevice(clChartCellMidpoints, spvChartCell.midpoints);
 
         final long t3 = System.currentTimeMillis();
@@ -314,7 +312,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         internalBinarySpmvMultiply();
 
         copyFromDevice(clChartCellChildren, chartCell.children);
-        copyFromDevice(clChartCellProbabilities, chartCell.probabilities);
+        copyFromDevice(clChartCellProbabilities, chartCell.inside);
         copyFromDevice(clChartCellMidpoints, chartCell.midpoints);
     }
 
@@ -339,13 +337,13 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
         // Copy current chart cell entries to OpenCL memory
         copyToDevice(clChartCellChildren, chartCell.children);
-        copyToDevice(clChartCellProbabilities, chartCell.probabilities);
+        copyToDevice(clChartCellProbabilities, chartCell.inside);
         copyToDevice(clChartCellMidpoints, chartCell.midpoints);
 
         internalUnarySpmvMultiply((short) chartCell.end());
 
         copyFromDevice(clChartCellChildren, chartCell.children);
-        copyFromDevice(clChartCellProbabilities, chartCell.probabilities);
+        copyFromDevice(clChartCellProbabilities, chartCell.inside);
         copyFromDevice(clChartCellMidpoints, chartCell.midpoints);
     }
 
@@ -432,8 +430,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
     public class OpenClChart extends DenseVectorChart {
 
-        public OpenClChart(final int size, final Grammar grammar) {
-            super(size, grammar);
+        public OpenClChart(final int size, final boolean viterbiMax, final Parser parser) {
+            super(size, viterbiMax, parser);
         }
 
         public class OpenClChartCell extends DenseVectorChartCell {
@@ -448,7 +446,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
                 numValidLeftChildren = numValidRightChildren = 0;
                 for (int nonterminal = 0; nonterminal < sparseMatrixGrammar.numNonTerms(); nonterminal++) {
 
-                    if (probabilities[nonterminal] != Float.NEGATIVE_INFINITY) {
+                    if (inside[nonterminal] != Float.NEGATIVE_INFINITY) {
                         if (sparseMatrixGrammar.isValidLeftChild(nonterminal)) {
                             numValidLeftChildren++;
                         }

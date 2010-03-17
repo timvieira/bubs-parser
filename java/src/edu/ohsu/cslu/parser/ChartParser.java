@@ -10,13 +10,23 @@ public abstract class ChartParser<G extends GrammarByChild, C extends CellChart>
 
     public C chart;
 
-    public ChartParser(final G grammar) {
-        this.grammar = grammar;
+    public ChartParser(final ParserOptions opts, final G grammar) {
+        super(opts, grammar);
+    }
+
+    @Override
+    public float getInside(final int start, final int end, final int nt) {
+        return chart.getInside(start, end, nt);
+    }
+
+    @Override
+    public float getOutside(final int start, final int end, final int nt) {
+        return chart.getInside(start, end, nt);
     }
 
     @SuppressWarnings("unchecked")
     protected void initParser(final int sentLength) {
-        chart = (C) new CellChart(sentLength, grammar);
+        chart = (C) new CellChart(sentLength, opts.viterbiMax, this);
     }
 
     protected void addLexicalProductions(final int sent[]) throws Exception {

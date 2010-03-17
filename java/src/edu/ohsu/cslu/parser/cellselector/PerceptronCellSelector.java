@@ -9,7 +9,6 @@ import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.LBFPerceptronCellTrainer;
-import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.Log;
@@ -17,7 +16,7 @@ import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class PerceptronCellSelector extends CellSelector {
 
-    public static final boolean DEBUG = (ParserDriver.param1 == -1);
+    public static boolean DEBUG;
 
     private float weights[];
     private int numFeats = -1;
@@ -39,20 +38,25 @@ public class PerceptronCellSelector extends CellSelector {
     // of our FOM function and really speed things up
     // public PerceptronSpanSelection(final BaseGrammar grammar, final CSLUTBlockedCellsTraversal cslutScores) {
     // public PerceptronSpanSelection(final CSLUTBlockedCellsTraversal cslutScores) {
-    public PerceptronCellSelector(final BufferedReader modelStream, final BufferedReader cslutScoresStream) throws Exception {
+    public PerceptronCellSelector(final BufferedReader modelStream, final BufferedReader cslutScoresStream) {
         cslutScores = new CSLUTBlockedCells(cslutScoresStream);
         if (modelStream != null) {
             trainingMode = false;
-            readModel(modelStream);
+            try {
+                readModel(modelStream);
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
         } else {
             trainingMode = true;
         }
     }
 
     @Override
-    public void init(final ChartParser chartParser) throws Exception {
+    public void init(final ChartParser parser) throws Exception {
         // run at the beginning of each sentence
-        this.parser = chartParser;
+        this.parser = parser;
+        this.DEBUG = (parser.opts.param1 == -1);
 
         // cslutScores.init(parser, parser.currentSentence);
         assert cslutScores.allStartScore.containsKey(parser.currentSentence);

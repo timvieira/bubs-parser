@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
 import java.io.FileReader;
 import java.io.Reader;
 
-import edu.ohsu.cslu.parser.ParserDriver.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 /**
  * Stores a grammar as a sparse matrix of probabilities.

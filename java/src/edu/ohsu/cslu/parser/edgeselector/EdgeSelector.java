@@ -16,7 +16,7 @@ public abstract class EdgeSelector {
 
     public abstract float calcFOM(ChartEdge edge);
 
-    public static EdgeSelector create(final EdgeSelectorType type, final BufferedReader fomModelStream, final Grammar grammar) throws Exception {
+    public static EdgeSelector create(final EdgeSelectorType type, final BufferedReader fomModelStream, final Grammar grammar) {
         switch (type) {
             case Inside:
                 return new InsideProb();

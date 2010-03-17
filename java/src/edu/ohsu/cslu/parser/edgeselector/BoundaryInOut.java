@@ -26,7 +26,7 @@ public class BoundaryInOut extends EdgeSelector {
     private HashSet<Integer> posSet = new HashSet<Integer>();
     private HashSet<Integer> clauseNonTermSet = new HashSet<Integer>();
 
-    public BoundaryInOut(final Grammar grammar, final BufferedReader fomModelStream) throws Exception {
+    public BoundaryInOut(final Grammar grammar, final BufferedReader fomModelStream) {
         this.grammar = grammar;
         for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
             if (grammar.getNonterminal(ntIndex).isPOS()) {
@@ -38,7 +38,11 @@ public class BoundaryInOut extends EdgeSelector {
 
         // no input model stream when estimating the model
         if (fomModelStream != null) {
-            readModel(fomModelStream);
+            try {
+                readModel(fomModelStream);
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

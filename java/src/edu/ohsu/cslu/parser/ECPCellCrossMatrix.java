@@ -8,12 +8,11 @@ import com.aliasi.util.Collections;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 
 public class ECPCellCrossMatrix extends CellwiseExhaustiveChartParser<ChildMatrixGrammar, CellChart> {
 
-    public ECPCellCrossMatrix(final ChildMatrixGrammar grammar, final CellSelector spanSelector) {
-        super(grammar, spanSelector);
+    public ECPCellCrossMatrix(final ParserOptions opts, final ChildMatrixGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override

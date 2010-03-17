@@ -8,16 +8,14 @@ import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
 public class LBFOnlineBeam extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
 
     float bestFOM, onlineBeam;
     int numEdgesAdded;
 
-    public LBFOnlineBeam(final LeftHashGrammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) {
-        super(grammar, edgeSelector, cellSelector);
-        // TODO Auto-generated constructor stub
+    public LBFOnlineBeam(final ParserOptions opts, final LeftHashGrammar grammar) {
+        super(opts, grammar);
     }
 
     @Override

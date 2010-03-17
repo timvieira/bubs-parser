@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.CellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -23,8 +22,14 @@ public class CSLUTBlockedCells extends CellSelector {
     private boolean[][] isOpen;
     private boolean[][] onlyFactored;
 
-    public CSLUTBlockedCells(final BufferedReader modelStream) throws NumberFormatException, IOException {
-        readModel(modelStream);
+    public CSLUTBlockedCells(final BufferedReader modelStream) {
+        try {
+            readModel(modelStream);
+        } catch (final NumberFormatException e) {
+            e.printStackTrace();
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -70,8 +75,8 @@ public class CSLUTBlockedCells extends CellSelector {
         onlyFactored = new boolean[chartSize][chartSize + 1];
         cellList = new LinkedList<ChartCell>();
 
-        final float startThresh = getThresh(curStartScore, ParserDriver.param2);
-        final float endThresh = getThresh(curEndScore, ParserDriver.param2);
+        final float startThresh = getThresh(curStartScore, parser.opts.param2);
+        final float endThresh = getThresh(curEndScore, parser.opts.param2);
 
         for (int span = 1; span <= chartSize; span++) {
             for (int beg = 0; beg < chartSize - span + 1; beg++) { // beginning
