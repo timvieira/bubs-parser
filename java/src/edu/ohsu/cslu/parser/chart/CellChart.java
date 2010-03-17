@@ -1,10 +1,11 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 import java.util.HashSet;
 
 import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class CellChart extends Chart {
@@ -52,12 +53,11 @@ public class CellChart extends Chart {
         protected boolean isLexCell;
 
         protected ChartEdge[] bestEdge;
-        protected float[] inside;
+        public float[] inside;
         protected HashSet<Integer> childNTs = new HashSet<Integer>();
         protected HashSet<Integer> leftChildNTs = new HashSet<Integer>();
         protected HashSet<Integer> rightChildNTs = new HashSet<Integer>();
         protected HashSet<Integer> posNTs = new HashSet<Integer>();
-        protected boolean bestEdgesHaveChanged = true;
 
         public ChartCell(final int start, final int end) {
             this.start = start;
@@ -175,12 +175,7 @@ public class CellChart extends Chart {
         }
 
         public int getNumNTs() {
-            int numEntries = 0;
-            for (int i = 0; i < bestEdge.length; i++) {
-                if (bestEdge[i] != null)
-                    numEntries++;
-            }
-            return numEntries;
+            return childNTs.size();
         }
 
         @Override

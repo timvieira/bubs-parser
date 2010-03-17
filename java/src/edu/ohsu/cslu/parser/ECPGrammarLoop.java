@@ -4,7 +4,8 @@ import com.aliasi.util.Collections;
 
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
 
 public class ECPGrammarLoop extends CellwiseExhaustiveChartParser<GrammarByChild, CellChart> {
 

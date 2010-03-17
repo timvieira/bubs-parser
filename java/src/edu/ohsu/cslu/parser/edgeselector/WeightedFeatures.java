@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.classifier.Perceptron;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class WeightedFeatures extends EdgeSelector {
 

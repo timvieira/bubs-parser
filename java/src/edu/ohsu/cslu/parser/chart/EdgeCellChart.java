@@ -1,10 +1,11 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.chart;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.Parser;
 
 public class EdgeCellChart extends CellChart {
 
@@ -80,7 +81,6 @@ public class EdgeCellChart extends CellChart {
             // assuming bestEdge[parent] == null
             final int parent = edge.prod.parent;
             numEdgesAdded++;
-            bestEdgesHaveChanged = true;
             bestEdge[parent] = edge;
             if (isLexCell && parser.grammar.getNonterminal(parent).isPOS()) {
                 // posNTs.addLast(parent);

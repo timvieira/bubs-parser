@@ -4,7 +4,8 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> extends ExhaustiveChartParser<G, DenseVectorChart> {
 

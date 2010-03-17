@@ -282,8 +282,7 @@ public class ParserDriver extends BaseCommandlineTool {
         } else if (opts.cellTrain == true) {
             // TODO: need to follow a similar train/writeModel method like edgeSelector
             final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
-            final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream, grammar);
-            final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer((LeftHashGrammar) grammar, edgeSelector, perceptronCellSelector);
+            final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer(opts, (LeftHashGrammar) grammar);
             perceptronCellSelector.train(opts.inputStream, parser);
         } else {
             // run parser

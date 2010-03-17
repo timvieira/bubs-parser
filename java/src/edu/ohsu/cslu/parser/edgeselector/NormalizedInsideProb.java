@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.parser.edgeselector;
 
 import edu.ohsu.cslu.parser.ParserOptions;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class NormalizedInsideProb extends EdgeSelector {
 

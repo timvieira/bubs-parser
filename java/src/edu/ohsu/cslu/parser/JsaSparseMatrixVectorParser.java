@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.DenseVectorChart.DenseVectorChartCell;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
  * SparseMatrixVectorParser implementation which uses a grammar stored in Java Sparse Array (JSA) format. Stores cell populations and cross-product densely, for efficient array

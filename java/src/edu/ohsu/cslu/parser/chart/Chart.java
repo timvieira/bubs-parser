@@ -1,5 +1,6 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.chart;
 
+import edu.ohsu.cslu.parser.Parser;
 
 public abstract class Chart {
 

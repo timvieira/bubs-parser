@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class ACPWithMemory extends AgendaChartParser {
 

@@ -5,7 +5,7 @@ import java.io.BufferedWriter;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.Log;
 
 public abstract class EdgeSelector {

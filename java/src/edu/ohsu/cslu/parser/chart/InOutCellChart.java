@@ -1,7 +1,8 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class InOutCellChart extends CellChart {
@@ -22,7 +23,7 @@ public class InOutCellChart extends CellChart {
         return (ChartCell) chart[start][end];
     }
 
-    public class ChartCell extends edu.ohsu.cslu.parser.CellChart.ChartCell {
+    public class ChartCell extends edu.ohsu.cslu.parser.chart.CellChart.ChartCell {
 
         float outside[];
 
