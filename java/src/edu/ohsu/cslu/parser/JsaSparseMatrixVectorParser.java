@@ -16,8 +16,8 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
 
     // private final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
 
-    public JsaSparseMatrixVectorParser(final ParserOptions opts, final JsaSparseMatrixGrammar grammar) {
-        super(opts, grammar);
+    public JsaSparseMatrixVectorParser(final JsaSparseMatrixGrammar grammar) {
+        super(grammar);
     }
 
     @Override

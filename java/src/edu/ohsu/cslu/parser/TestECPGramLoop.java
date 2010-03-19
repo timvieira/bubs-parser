@@ -24,7 +24,7 @@ public class TestECPGramLoop extends ExhaustiveChartParserTestCase {
 
     @Override
     protected Parser createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new ECPGrammarLoop((GrammarByChild) grammar, cellSelector);
+        return new ECPGrammarLoop(new ParserOptions(), (GrammarByChild) grammar);
     }
 
     @Override

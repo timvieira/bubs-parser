@@ -24,7 +24,7 @@ public class TestECPCellCrossList extends ExhaustiveChartParserTestCase {
 
     @Override
     protected Parser createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new ECPCellCrossList((LeftListGrammar) grammar, cellSelector);
+        return new ECPCellCrossList(new ParserOptions(), (LeftListGrammar) grammar);
     }
 
     @Override

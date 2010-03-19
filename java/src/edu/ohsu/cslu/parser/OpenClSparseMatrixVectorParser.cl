@@ -168,19 +168,47 @@ __kernel void unarySpmvMultiply(const __global int* unaryRuleMatrixRowIndices,
             chartCellChildren[parent] = winningChildren;
             chartCellProbabilities[parent] = winningProbability;
             chartCellMidpoints[parent] = winningMidpoint;
-
-// TODO: Count valid left and right children (in shared memory?)
-//       See http://www.khronos.org/message_boards/viewtopic.php?f=37&t=2207
-//
-//            if (currentProbability == -INFINITY) {
-//                if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
-//                    chartCell.numValidLeftChildren++;
-//                }
-//                if (csrSparseMatrixGrammar.isValidRightChild(parent)) {
-//                    chartCell.numValidRightChildren++;
-//                }
-//            }
         }
+
+
+/*
+ TODO: Count valid left and right children (in shared memory?) and collapse down to just observed non-terminals
+
+   --Write a flag array as well as our probability array
+   --Perform prefix sum (scan) operation (producing s, below)
+
+     i 0   1   2   3   4   5   6   7   8   9   10 
+     p -  .5   -   -  .7   -  .9   2   -   1   -
+  flag 0   1   0   0   1   0   1   1   0   1   0
+     s 0   1   1   1   2   2   3   4   4   5   5
+
+   Allocate an array the size of s[|V|] (5)
+       
+
+   Populate with a variant of the following kernel (from NVIDIA Marching Cubes example). 
+
+ compact voxel array
+__global__ void
+compactVoxels(uint *compactedVoxelArray, uint *voxelOccupied, uint *voxelOccupiedScan, uint numVoxels)
+{
+    uint blockId = __mul24(blockIdx.y, gridDim.x) + blockIdx.x;
+    uint i = __mul24(blockId, blockDim.x) + threadIdx.x;
+
+    if (voxelOccupied[i] && (i < numVoxels)) {
+        compactedVoxelArray[ voxelOccupiedScan[i] ] = i;
+    }
+}
+
+            if (currentProbability == -INFINITY) {
+                if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
+                    chartCell.numValidLeftChildren++;
+                }
+                if (csrSparseMatrixGrammar.isValidRightChild(parent)) {
+                    chartCell.numValidRightChildren++;
+                }
+            }
+ */
+
     }
 }
 

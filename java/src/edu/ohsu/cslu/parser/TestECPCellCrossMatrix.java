@@ -24,7 +24,7 @@ public class TestECPCellCrossMatrix extends ExhaustiveChartParserTestCase {
 
     @Override
     protected Parser createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new ECPCellCrossMatrix((ChildMatrixGrammar) grammar, cellSelector);
+        return new ECPCellCrossMatrix(new ParserOptions(), (ChildMatrixGrammar) grammar);
     }
 
     @Override

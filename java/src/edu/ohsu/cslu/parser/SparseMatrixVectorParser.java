@@ -9,7 +9,6 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> extends ExhaustiveChartParser<G, DenseVectorChart> {
 
-    // protected Chart<DenseVectorChartCell> chart;
     private float[] crossProductProbabilities;
     private short[] crossProductMidpoints;
 
@@ -19,6 +18,10 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> ex
 
     public SparseMatrixVectorParser(final ParserOptions opts, final G grammar) {
         super(opts, grammar);
+    }
+
+    public SparseMatrixVectorParser(final G grammar) {
+        super(grammar);
     }
 
     /**

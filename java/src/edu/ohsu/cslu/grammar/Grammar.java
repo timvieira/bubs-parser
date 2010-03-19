@@ -426,7 +426,7 @@ public class Grammar {
             this.prob = prob;
         }
 
-        public Production(final String parent, final String child, final float prob, final boolean isLex) throws Exception {
+        public Production(final String parent, final String child, final float prob, final boolean isLex) {
             this(addNonTerm(parent), isLex ? lexSet.addSymbol(child) : addNonTerm(child), prob, isLex);
         }
 
