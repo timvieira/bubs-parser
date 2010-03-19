@@ -250,11 +250,11 @@ public class ParserDriver extends BaseCommandlineTool {
                 return new CoarseCellAgendaParserWithCSLUT(opts, (LeftHashGrammar) grammar, cslutScores);
 
             case JsaSparseMatrixVector:
-                return new JsaSparseMatrixVectorParser(opts, (JsaSparseMatrixGrammar) grammar);
+                return new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar);
             case CsrSparseMatrixVector:
-                return new CsrSparseMatrixVectorParser(opts, (CsrSparseMatrixGrammar) grammar);
+                return new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
             case OpenClSparseMatrixVector:
-                return new OpenClSparseMatrixVectorParser(opts, (CsrSparseMatrixGrammar) grammar);
+                return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
 
             default:
                 throw new IllegalArgumentException("Unsupported parser type");

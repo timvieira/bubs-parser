@@ -17,8 +17,8 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
 
     // private final CsrSparseMatrixGrammar csrSparseMatrixGrammar;
 
-    public CsrSparseMatrixVectorParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
-        super(opts, grammar);
+    public CsrSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar) {
+        super(grammar);
     }
 
     @Override

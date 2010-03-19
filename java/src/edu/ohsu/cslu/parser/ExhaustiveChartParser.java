@@ -10,6 +10,10 @@ public abstract class ExhaustiveChartParser<G extends GrammarByChild, C extends 
         super(opts, grammar);
     }
 
+    protected ExhaustiveChartParser(final G grammar) {
+        super(new ParserOptions(), grammar);
+    }
+
     /**
      * Each subclass will implement this method to perform the inner-loop grammar intersection.
      * 

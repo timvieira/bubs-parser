@@ -22,6 +22,7 @@ import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.parser.OpenClSparseMatrixVectorParser.OpenClChart.OpenClChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
@@ -66,8 +67,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
     private CLFloatBuffer clCrossProductProbabilities1;
     private CLShortBuffer clCrossProductMidpoints1;
 
-    public OpenClSparseMatrixVectorParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
-        super(opts, grammar);
+    public OpenClSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar) {
+        super(grammar);
 
         context = createBestContext();
         clQueue = context.createDefaultQueue();
@@ -75,7 +76,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
     @Override
     protected void initParser(final int sentLength) {
-        chart = new DenseVectorChart(sentLength, opts.viterbiMax, this);
+        chart = new OpenClChart(sentLength, opts.viterbiMax, this);
 
         totalSpMVTime = 0;
         totalCartesianProductTime = 0;
@@ -128,7 +129,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
     @Override
     protected void visitCell(final short start, final short end) {
 
-        final DenseVectorChartCell spvChartCell = (DenseVectorChartCell) chart.getCell(start, end);
+        final OpenClChartCell spvChartCell = (OpenClChartCell) chart.getCell(start, end);
 
         final long t0 = System.currentTimeMillis();
 
@@ -223,13 +224,12 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
         short midpoint = (short) (start + 1);
 
-        while (((DenseVectorChartCell) chart.getCell(start, midpoint)).validLeftChildren.length == 0
-                || ((DenseVectorChartCell) chart.getCell(midpoint, end)).validRightChildren.length == 0) {
+        while (((OpenClChartCell) chart.getCell(start, midpoint)).validLeftChildren.length == 0 || ((OpenClChartCell) chart.getCell(midpoint, end)).validRightChildren.length == 0) {
             midpoint++;
         }
 
         // Compute the cross-product of the first midpoint separately
-        internalCrossProduct((DenseVectorChartCell) chart.getCell(start, midpoint), (DenseVectorChartCell) chart.getCell(midpoint, end), clCrossProductProbabilities0,
+        internalCrossProduct((OpenClChartCell) chart.getCell(start, midpoint), (OpenClChartCell) chart.getCell(midpoint, end), clCrossProductProbabilities0,
                 clCrossProductMidpoints0);
 
         long t1 = System.currentTimeMillis();
@@ -239,8 +239,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         // non-terminals in each left/right child pair
         for (; midpoint <= end - 1; midpoint++) {
 
-            final DenseVectorChartCell leftCell = (DenseVectorChartCell) chart.getCell(start, midpoint);
-            final DenseVectorChartCell rightCell = (DenseVectorChartCell) chart.getCell(midpoint, end);
+            final OpenClChartCell leftCell = (OpenClChartCell) chart.getCell(start, midpoint);
+            final OpenClChartCell rightCell = (OpenClChartCell) chart.getCell(midpoint, end);
 
             if (leftCell.validLeftChildren.length > 0 && rightCell.validRightChildren.length > 0) {
                 t0 = System.currentTimeMillis();
@@ -267,7 +267,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         }
     }
 
-    private void internalCrossProduct(final DenseVectorChartCell leftCell, final DenseVectorChartCell rightCell, final CLFloatBuffer tmpClCrossProductProbabilities,
+    private void internalCrossProduct(final OpenClChartCell leftCell, final DenseVectorChartCell rightCell, final CLFloatBuffer tmpClCrossProductProbabilities,
             final CLShortBuffer tmpClCrossProductMidpoints) {
 
         final CLIntBuffer clValidLeftChildren = copyToDevice(leftCell.validLeftChildren, CLMem.Usage.Input);
@@ -432,7 +432,13 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
     public class OpenClChart extends DenseVectorChart {
 
         public OpenClChart(final int size, final boolean viterbiMax, final Parser parser) {
-            super(size, viterbiMax, parser);
+            super(new OpenClChartCell[size][size + 1], viterbiMax, parser);
+
+            for (int start = 0; start < size; start++) {
+                for (int end = start + 1; end < size + 1; end++) {
+                    chart[start][end] = new OpenClChartCell(start, end);
+                }
+            }
         }
 
         public class OpenClChartCell extends DenseVectorChartCell {

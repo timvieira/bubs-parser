@@ -6,6 +6,13 @@ import edu.ohsu.cslu.parser.Parser;
 
 public class DenseVectorChart extends CellChart {
 
+    protected DenseVectorChart(final DenseVectorChartCell[][] chart, final boolean viterbiMax, final Parser parser) {
+        this.size = chart.length;
+        this.viterbiMax = true;
+        this.parser = parser;
+        this.chart = chart;
+    }
+
     public DenseVectorChart(final int size, final boolean viterbiMax, final Parser parser) {
         this.size = size;
         this.viterbiMax = true;
@@ -122,17 +129,21 @@ public class DenseVectorChart extends CellChart {
             final short rightChild = sparseMatrixGrammar.unpackRightChild(children[nonTermIndex]);
 
             final int midpoint = midpoints[nonTermIndex];
-            final float probability = inside[nonTermIndex];
 
             final DenseVectorChartCell leftChildCell = (DenseVectorChartCell) getCell(start(), midpoint);
             final DenseVectorChartCell rightChildCell = midpoint < size() ? (DenseVectorChartCell) getCell(midpoint, end()) : null;
 
             Production p;
             if (rightChild == Production.LEXICAL_PRODUCTION) {
+                final float probability = sparseMatrixGrammar.lexicalLogProbability(nonTermIndex, leftChild);
                 p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, probability, true);
+
             } else if (rightChild == Production.UNARY_PRODUCTION) {
+                final float probability = sparseMatrixGrammar.unaryLogProbability(nonTermIndex, leftChild);
                 p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, probability, false);
+
             } else {
+                final float probability = sparseMatrixGrammar.binaryLogProbability(nonTermIndex, children[nonTermIndex]);
                 p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, rightChild, probability);
             }
             // return new ChartEdge(p, leftChildCell, rightChildCell, probability);
