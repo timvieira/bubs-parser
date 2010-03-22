@@ -52,7 +52,7 @@ public class CellChart extends Chart {
         public int numEdgesConsidered = 0, numEdgesAdded = 0, numSpanVisits = 0;
         protected boolean isLexCell;
 
-        protected ChartEdge[] bestEdge;
+        public ChartEdge[] bestEdge;
         public float[] inside;
         protected HashSet<Integer> childNTs = new HashSet<Integer>();
         protected HashSet<Integer> leftChildNTs = new HashSet<Integer>();

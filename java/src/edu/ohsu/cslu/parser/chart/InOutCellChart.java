@@ -47,6 +47,8 @@ public class InOutCellChart extends CellChart {
                     outside[nt] = outsideProb;
                 }
             } else {
+                // System.out.println("Adding: " + start + "," + end + "," + parser.grammar.mapNonterminal(nt) + " : " + outside[nt] + " + " + outsideProb + " = "+
+                // ParserUtil.logSum(outside[nt], outsideProb));
                 outside[nt] = (float) ParserUtil.logSum(outside[nt], outsideProb);
             }
         }

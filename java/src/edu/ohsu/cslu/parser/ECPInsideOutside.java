@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.parser;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import com.aliasi.util.Collections;
@@ -7,7 +8,6 @@ import com.aliasi.util.Collections;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
@@ -35,7 +35,6 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
         while (cellSelector.hasNext()) {
             final short[] startEnd = cellSelector.next();
             final ChartCell cell = chart.getCell(startEnd[0], startEnd[1]);
-            topDownTraversal.addFirst(cell);
             visitCell(cell);
             topDownTraversal.addFirst(cell);
         }
@@ -44,7 +43,53 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
             computeOutsideProbsInCell(cell);
         }
 
+        goodmanMaximizeLabelRecall();
+
         return extractBestParse();
+    }
+
+    // See: Joshua Goodman, Parsing Algorithms and Metrics, Section 3
+    protected void goodmanMaximizeLabelRecall() {
+
+        final int n = chart.size();
+        final float maxc[][] = new float[n][n + 1];
+        final int bestNT[][] = new int[n][n + 1];
+        for (int i = 0; i < n; i++) {
+            Arrays.fill(maxc[i], Float.NEGATIVE_INFINITY);
+        }
+
+        // TODO: what about unaries?
+        // TODO: map Berkeley NTs down to Treebank NTs (make sure they do this in the Berkeley parser)
+
+        for (int span = 1; span < n; span++) {
+            for (int start = 1; start < n - span + 1; start++) {
+                final int end = start + span;
+                final ChartCell cell = chart.getCell(start, end);
+
+                float maxInOut = Float.NEGATIVE_INFINITY;
+                for (final int nt : cell.getNTs()) {
+                    final float inOut = cell.getInside(nt) + cell.getOutside(nt);
+                    if (inOut > maxInOut) {
+                        maxInOut = inOut;
+                        bestNT[start][end] = nt;
+                    }
+                }
+
+                float maxSplit = Float.NEGATIVE_INFINITY;
+                int maxSplitMid = -1;
+                for (int mid = start + 1; mid < end; mid++) {
+                    final float split = maxc[start][mid] + maxc[mid][end];
+                    if (split > maxSplit) {
+                        maxSplit = split;
+                        maxSplitMid = mid;
+                    }
+                }
+
+                maxc[start][end] = maxInOut + maxSplit;
+                final Production p = grammar.new Production(bestNT[start][end], bestNT[start][maxSplitMid], bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
+                cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid), chart.getCell(maxSplitMid, end));
+            }
+        }
     }
 
     @Override
@@ -78,8 +123,6 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
         }
     }
 
-    // Is it a problem that we are only keeping the viterbi 1-best? This allows only
-    // the ML tree to get any outside prob ...
     private void computeOutsideProbsInCell(final ChartCell cell) {
         float parentOutside, leftInside, rightInside;
         final int start = cell.start(), end = cell.end();
@@ -87,7 +130,7 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
         // TODO: this doesn't work correctly for unary chains > 1 since the value depends
         // on the order the unary edges are traversed. What we really need to do is visit
         // the highest unary entry first, and then work our way down.
-        System.out.println("== cell [" + start + "," + end + "] ==");
+        // System.out.println("== cell [" + start + "," + end + "] ==");
         for (final int nt : cell.getNTs()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(nt)) {
                 if (p.isUnaryProd() && cell.hasNT(p.parent)) {
@@ -96,8 +139,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
                 }
             }
 
-            System.out
-                    .println("  " + grammar.mapNonterminal(nt) + " = " + (cell.getInside(nt) + cell.getOutside(nt)) + " in=" + cell.getInside(nt) + " out=" + cell.getOutside(nt));
+            // System.out.println("  " + grammar.mapNonterminal(nt) + " = " + (cell.getInside(nt) + cell.getOutside(nt)) + " in=" + cell.getInside(nt) + " out=" +
+            // cell.getOutside(nt));
         }
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
@@ -105,16 +148,18 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
             final ChartCell rightCell = chart.getCell(mid, end);
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final Production p : grammar.getBinaryProductionsWithLeftChild(leftNT)) {
-                    final ChartEdge rightEdge = rightCell.getBestEdge(p.rightChild);
-                    if (rightEdge != null) {
+                    if (rightCell.hasNT(p.rightChild)) {
                         parentOutside = cell.getOutside(p.parent);
-                        leftInside = leftCell.getInside(p.leftChild);
-                        rightInside = rightCell.getInside(p.rightChild);
-
-                        leftCell.updateOutside(p.leftChild, rightInside + parentOutside + p.prob);
-                        // don't want to double-count entries with X -> A A
-                        if (p.leftChild != p.rightChild) {
-                            rightCell.updateOutside(p.rightChild, leftInside + parentOutside + p.prob);
+                        if (parentOutside > Float.NEGATIVE_INFINITY) {
+                            rightInside = rightCell.getInside(p.rightChild);
+                            if (rightInside > Float.NEGATIVE_INFINITY) {
+                                leftCell.updateOutside(p.leftChild, p.prob + parentOutside + rightInside);
+                            }
+                            // don't want to double-count entries with X -> A A
+                            leftInside = leftCell.getInside(p.leftChild);
+                            if (leftInside > Float.NEGATIVE_INFINITY && p.leftChild != p.rightChild) {
+                                rightCell.updateOutside(p.rightChild, leftInside + parentOutside + p.prob);
+                            }
                         }
                     }
                 }

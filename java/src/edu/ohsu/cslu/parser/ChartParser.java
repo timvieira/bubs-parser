@@ -55,7 +55,6 @@ public abstract class ChartParser<G extends GrammarByChild, C extends CellChart>
         if (cell != null) {
             bestEdge = cell.getBestEdge(nonTermIndex);
             if (bestEdge != null) {
-                // curNode = new ParseTree(bestEdge);
                 curNode = new ParseTree(bestEdge.prod.parentToString());
                 if (bestEdge.prod.isUnaryProd()) {
                     curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
