@@ -477,7 +477,8 @@ public class PerceptronCellSelector extends CellSelector {
     public void train(final BufferedReader inStream, final LBFPerceptronCellTrainer parserToTrain) throws Exception {
         learningRate = (float) 1.0;
         initWeights();
-        parserToTrain.train(inStream);
+        // parserToTrain.train(inStream);
+        throw new RuntimeException("ERROR: PerceptronCellSelector.train() doesn't work anymore");
     }
 
     @Override
