@@ -31,11 +31,10 @@ public class DenseVectorChart extends CellChart {
         public final SparseMatrixGrammar sparseMatrixGrammar;
 
         /** Indexed by parent non-terminal */
-        // protected final float[] inside;
         public final short[] midpoints;
         public final int[] children;
 
-        /** Stores packed children and their inside */
+        /** Stores packed children and their inside probabilities */
         public int numValidLeftChildren;
         public int[] validLeftChildren;
         public float[] validLeftChildrenProbabilities;
@@ -49,8 +48,6 @@ public class DenseVectorChart extends CellChart {
             this.sparseMatrixGrammar = (SparseMatrixGrammar) parser.grammar;
 
             final int arraySize = sparseMatrixGrammar.numNonTerms();
-            // this.inside = new float[arraySize];
-            // Arrays.fill(inside, Float.NEGATIVE_INFINITY);
             this.midpoints = new short[arraySize];
             this.children = new int[arraySize];
         }
@@ -82,16 +79,12 @@ public class DenseVectorChart extends CellChart {
         }
 
         @Override
-        // public boolean addEdge(final ChartEdge edge) {
         public void updateInside(final ChartEdge edge) {
-            // return addEdge(edge.prod, edge.leftCell, edge.rightCell, edge.inside);
             updateInside(edge.prod, edge.leftCell, edge.rightCell, edge.inside());
-            // return addEdge(edge.prod, edge.leftCell, edge.rightCell);
         }
 
         @Override
-        // public boolean addEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
-        public void updateInside(final Production p, final HashSetChartCell leftCell, final HashSetChartCell rightCell, final float insideProb) {
+        public void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
             final int parent = p.parent;
             numEdgesConsidered++;
 
@@ -113,10 +106,7 @@ public class DenseVectorChart extends CellChart {
                 children[parent] = sparseMatrixGrammar.pack(p.leftChild, (short) p.rightChild);
 
                 numEdgesAdded++;
-                // return true;
             }
-
-            // return false;
         }
 
         @Override
@@ -146,7 +136,6 @@ public class DenseVectorChart extends CellChart {
                 final float probability = sparseMatrixGrammar.binaryLogProbability(nonTermIndex, children[nonTermIndex]);
                 p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, rightChild, probability);
             }
-            // return new ChartEdge(p, leftChildCell, rightChildCell, probability);
             return new ChartEdge(p, leftChildCell, rightChildCell);
         }
 
@@ -159,7 +148,7 @@ public class DenseVectorChart extends CellChart {
             for (int nonterminal = 0; nonterminal < sparseMatrixGrammar.numNonTerms(); nonterminal++) {
                 if (inside[nonterminal] != Float.NEGATIVE_INFINITY) {
                     final int childProductions = children[nonterminal];
-                    final float probability = inside[nonterminal];
+                    final float insideProbability = inside[nonterminal];
                     final int midpoint = midpoints[nonterminal];
 
                     final int leftChild = sparseMatrixGrammar.unpackLeftChild(childProductions);
@@ -168,14 +157,14 @@ public class DenseVectorChart extends CellChart {
                     if (rightChild == Production.UNARY_PRODUCTION) {
                         // Unary Production
                         sb.append(String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar.mapNonterminal(leftChild),
-                                probability, midpoint));
+                                insideProbability, midpoint));
                     } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                         // Lexical Production
                         sb.append(String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar.mapLexicalEntry(leftChild),
-                                probability, midpoint));
+                                insideProbability, midpoint));
                     } else {
                         sb.append(String.format("%s -> %s %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar.mapNonterminal(leftChild),
-                                sparseMatrixGrammar.mapNonterminal(rightChild), probability, midpoint));
+                                sparseMatrixGrammar.mapNonterminal(rightChild), insideProbability, midpoint));
                     }
                 }
             }
@@ -193,5 +182,4 @@ public class DenseVectorChart extends CellChart {
             return entries;
         }
     }
-
 }

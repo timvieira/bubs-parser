@@ -27,6 +27,7 @@ public class CellChart extends Chart {
         }
     }
 
+    @Override
     public HashSetChartCell getCell(final int start, final int end) {
         return chart[start][end];
     }
@@ -107,7 +108,7 @@ public class CellChart extends Chart {
         }
 
         // binary edges
-        public void updateInside(final Production p, final HashSetChartCell leftCell, final HashSetChartCell rightCell, final float insideProb) {
+        public void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
             final int nt = p.parent;
             if (viterbiMax && insideProb > getInside(nt)) {
                 if (bestEdge[nt] == null) {
@@ -193,23 +194,13 @@ public class CellChart extends Chart {
         }
     }
 
-    public class ChartEdge implements Comparable<ChartEdge> {
-        public Production prod;
+    public class ChartEdge extends Chart.ChartEdge implements Comparable<ChartEdge> {
         public float fom = 0; // figure of merit
-        public HashSetChartCell leftCell, rightCell;
-
-        // TODO: other options to keeping leftCell and rightCell:
-        // 1) keep int start,midpt,end
-        // 2) keep ChartCell ptr and midpt
 
         // binary production
-        public ChartEdge(final Production prod, final HashSetChartCell leftCell, final HashSetChartCell rightCell) {
-            assert leftCell.end() == rightCell.start();
-            assert leftCell.start() < rightCell.end();
+        public ChartEdge(final Production prod, final ChartCell leftCell, final ChartCell rightCell) {
+            super(prod, leftCell, rightCell);
 
-            this.prod = prod;
-            this.leftCell = leftCell;
-            this.rightCell = rightCell;
             if (parser.edgeSelector != null) {
                 this.fom = parser.edgeSelector.calcFOM(this);
             }
@@ -217,13 +208,11 @@ public class CellChart extends Chart {
 
         // unary production
         public ChartEdge(final Production prod, final HashSetChartCell childCell) {
-            this.prod = prod;
-            this.leftCell = childCell;
-            this.rightCell = null;
+            super(prod, childCell);
+
             if (parser.edgeSelector != null) {
                 this.fom = parser.edgeSelector.calcFOM(this);
             }
-
         }
 
         public final int start() {

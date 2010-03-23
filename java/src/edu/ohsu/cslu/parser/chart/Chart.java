@@ -1,7 +1,8 @@
 package edu.ohsu.cslu.parser.chart;
 
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
 public abstract class Chart {
 
@@ -23,9 +24,34 @@ public abstract class Chart {
         return size;
     }
 
-    public abstract void updateInside(int start, int end, int nt, float insideProb);
+    /**
+     * Returns the specified cell.
+     * 
+     * @param start
+     * @param end
+     * @return the specified cell.
+     */
+    public abstract ChartCell getCell(final int start, final int end);
 
-    public abstract float getInside(int start, int end, int nt);
+    /**
+     * Updates the inside probability of the specified non-terminal in the a cell.
+     * 
+     * @param start
+     * @param end
+     * @param nonTerminal Non-terminal index
+     * @param insideProbability New inside probability
+     */
+    public abstract void updateInside(int start, int end, int nonTerminal, float insideProbability);
+
+    /**
+     * Returns the inside probability of the specified non-terminal in the a cell.
+     * 
+     * @param start
+     * @param end
+     * @param nonTerminal Non-terminal index
+     * @return the inside probability of the specified non-terminal in the a cell.
+     */
+    public abstract float getInside(int start, int end, int nonTerminal);
 
     public static abstract class ChartCell {
         protected final int start, end;
@@ -87,6 +113,32 @@ public abstract class Chart {
         @Override
         public String toString() {
             return getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " edges";
+        }
+    }
+
+    public static class ChartEdge {
+        public Production prod;
+        public ChartCell leftCell, rightCell;
+
+        // TODO: other options to keeping leftCell and rightCell:
+        // 1) keep int start,midpt,end
+        // 2) keep ChartCell ptr and midpt
+
+        // binary production
+        public ChartEdge(final Production prod, final ChartCell leftCell, final ChartCell rightCell) {
+            assert leftCell.end() == rightCell.start();
+            assert leftCell.start() < rightCell.end();
+
+            this.prod = prod;
+            this.leftCell = leftCell;
+            this.rightCell = rightCell;
+        }
+
+        // unary production
+        public ChartEdge(final Production prod, final HashSetChartCell childCell) {
+            this.prod = prod;
+            this.leftCell = childCell;
+            this.rightCell = null;
         }
     }
 }
