@@ -16,7 +16,7 @@ public class CellChart extends Chart {
 
     }
 
-    public CellChart(final int size, final boolean viterbiMax, final Parser parser) {
+    public CellChart(final int size, final boolean viterbiMax, final Parser<?> parser) {
         super(size, viterbiMax, parser);
 
         chart = new HashSetChartCell[size][size + 1];

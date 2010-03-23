@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -23,6 +21,7 @@ import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial sentences using very simple grammars and the first 10 sentences of
@@ -53,7 +52,7 @@ public abstract class ExhaustiveChartParserTestCase {
     protected static ArrayList<String[]> sentences = new ArrayList<String[]>();
 
     /** The parser under test */
-    protected Parser parser;
+    protected Parser<?> parser;
 
     /**
      * Creates the appropriate parser for each test class.
@@ -62,7 +61,7 @@ public abstract class ExhaustiveChartParserTestCase {
      * @param cellSelector Selector controlling chart traversal
      * @return Parser instance
      */
-    protected abstract Parser createParser(Grammar grammar, CellSelector cellSelector);
+    protected abstract Parser<?> createParser(Grammar grammar, CellSelector cellSelector);
 
     /**
      * @return the grammar class appropriate for the parser under test

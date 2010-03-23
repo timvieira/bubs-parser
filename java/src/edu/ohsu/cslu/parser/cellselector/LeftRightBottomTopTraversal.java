@@ -13,7 +13,7 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     }
 
     @Override
-    public void init(final ChartParser parser) {
+    public void init(final ChartParser<?, ?> parser) {
         cellList = new LinkedList<HashSetChartCell>();
         // for (int span = 2; span <= parser.chartSize; span++) {
         for (int span = 1; span <= parser.chart.size(); span++) {

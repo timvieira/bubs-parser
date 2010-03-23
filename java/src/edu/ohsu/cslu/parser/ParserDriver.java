@@ -207,7 +207,7 @@ public class ParserDriver extends BaseCommandlineTool {
     }
 
     // public static Parser createParser(final ParserType parserType, final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) throws Exception {
-    public static Parser createParser(final ParserOptions opts, final Grammar grammar) throws Exception {
+    public static Parser<?> createParser(final ParserOptions opts, final Grammar grammar) throws Exception {
 
         switch (opts.parserType) {
             case ECPCellCrossList:
@@ -286,7 +286,7 @@ public class ParserDriver extends BaseCommandlineTool {
             perceptronCellSelector.train(opts.inputStream, parser);
         } else {
             // run parser
-            final Parser parser = createParser(opts, grammar);
+            final Parser<?> parser = createParser(opts, grammar);
             // parser.parseStream(opts.inputStream, opts.outputStream, opts.maxLength, printUnkLabels, printInsideProbs);
             parser.parseStream(opts.inputStream, opts.outputStream);
         }

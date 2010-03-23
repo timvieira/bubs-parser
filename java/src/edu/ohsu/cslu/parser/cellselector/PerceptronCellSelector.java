@@ -9,8 +9,8 @@ import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.LBFPerceptronCellTrainer;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
@@ -25,7 +25,7 @@ public class PerceptronCellSelector extends CellSelector {
     // private BaseGrammar grammar;
     private CSLUTBlockedCells cslutScores;
     private Vector<Float> cslutStartScore, cslutEndScore;
-    private ChartParser parser;
+    private ChartParser<?, ?> parser;
     private PriorityQueue<HashSetChartCell> spanAgenda;
     private boolean[][] hasBeenPopped;
     private boolean[][] isInAgenda;
@@ -53,7 +53,7 @@ public class PerceptronCellSelector extends CellSelector {
     }
 
     @Override
-    public void init(final ChartParser parser) throws Exception {
+    public void init(final ChartParser<?, ?> parser) throws Exception {
         // run at the beginning of each sentence
         this.parser = parser;
         this.DEBUG = (parser.opts.param1 == -1);
