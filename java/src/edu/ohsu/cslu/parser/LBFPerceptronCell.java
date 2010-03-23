@@ -12,7 +12,7 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -33,7 +33,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
         LinkedList<ChartEdge> goldEdgeList;
         String line, sentence;
         ParseTree tree;
-        ChartCell cell;
+        HashSetChartCell cell;
 
         // save input data so we can iterate over it multiple times
         final List<String> inputData = new LinkedList<String>();
@@ -80,7 +80,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
                         final short[] startAndEnd = cellSelector.next();
                         cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
                         goldEdgeList = new LinkedList<ChartEdge>();
-                        final ChartCell goldCell = goldChart.getCell(cell.start(), cell.end());
+                        final HashSetChartCell goldCell = goldChart.getCell(cell.start(), cell.end());
                         for (final int nt : goldCell.getNTs()) {
                             final ChartEdge goldEdge = goldCell.getBestEdge(nt);
                             // for (final ChartEdge goldEdge : goldChart.getCell(cell.start(), cell.end()).getEdges()) {
@@ -102,7 +102,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
 
     public void addUnaryExtensionsToLexProds() {
         for (int i = 0; i < chart.size(); i++) {
-            final ChartCell cell = chart.getCell(i, i + 1);
+            final HashSetChartCell cell = chart.getCell(i, i + 1);
             for (final int pos : cell.getPosNTs()) {
                 for (final Production unaryProd : grammar.getUnaryProductionsWithChild(pos)) {
                     cell.updateInside(unaryProd, cell.getInside(pos) + unaryProd.prob);
@@ -111,8 +111,8 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
         }
     }
 
-    private void trainVisitCell(final ChartCell cell, final LinkedList<ChartEdge> goldEdges) {
-        final ChartCell ChartCell = cell;
+    private void trainVisitCell(final HashSetChartCell cell, final LinkedList<ChartEdge> goldEdges) {
+        final HashSetChartCell ChartCell = cell;
         final int start = ChartCell.start();
         final int end = ChartCell.end();
         final int spanLength = end - start;
@@ -136,8 +136,8 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
         } else {
             // add binary edges
             for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
-                final ChartCell leftCell = chart.getCell(start, mid);
-                final ChartCell rightCell = chart.getCell(mid, end);
+                final HashSetChartCell leftCell = chart.getCell(start, mid);
+                final HashSetChartCell rightCell = chart.getCell(mid, end);
                 for (final int leftNT : leftCell.getLeftChildNTs()) {
                     for (final int rightNT : rightCell.getRightChildNTs()) {
                         possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
@@ -168,7 +168,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
         nAgendaPush++;
     }
 
-    private void addBestEdgesToChart(final ChartCell cell, final ChartEdge[] bestEdges, final LinkedList<ChartEdge> goldEdges) {
+    private void addBestEdgesToChart(final HashSetChartCell cell, final ChartEdge[] bestEdges, final LinkedList<ChartEdge> goldEdges) {
         ChartEdge edge, unaryEdge;
         int numEdgesAdded = 0, maxEdgesAdded;
         final boolean addedEdge;
@@ -265,7 +265,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
         return s;
     }
 
-    private float[] extractFeatures(final ChartCell span, final PriorityQueue<ChartEdge> agenda) {
+    private float[] extractFeatures(final HashSetChartCell span, final PriorityQueue<ChartEdge> agenda) {
         // final LinkedList<Boolean> featList = new LinkedList<Boolean>();
 
         // // bias

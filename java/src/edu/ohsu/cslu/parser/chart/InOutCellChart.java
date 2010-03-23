@@ -23,7 +23,7 @@ public class InOutCellChart extends CellChart {
         return (ChartCell) chart[start][end];
     }
 
-    public class ChartCell extends edu.ohsu.cslu.parser.chart.CellChart.ChartCell {
+    public class ChartCell extends edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell {
 
         float outside[];
 

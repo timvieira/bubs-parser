@@ -10,7 +10,7 @@ import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class CellChart extends Chart {
 
-    protected ChartCell chart[][];
+    protected HashSetChartCell chart[][];
 
     protected CellChart() {
 
@@ -19,19 +19,19 @@ public class CellChart extends Chart {
     public CellChart(final int size, final boolean viterbiMax, final Parser parser) {
         super(size, viterbiMax, parser);
 
-        chart = new ChartCell[size][size + 1];
+        chart = new HashSetChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
             for (int end = start + 1; end < size + 1; end++) {
-                chart[start][end] = new ChartCell(start, end);
+                chart[start][end] = new HashSetChartCell(start, end);
             }
         }
     }
 
-    public ChartCell getCell(final int start, final int end) {
+    public HashSetChartCell getCell(final int start, final int end) {
         return chart[start][end];
     }
 
-    public ChartCell getRootCell() {
+    public HashSetChartCell getRootCell() {
         return getCell(0, size);
     }
 
@@ -46,10 +46,8 @@ public class CellChart extends Chart {
         getCell(start, end).updateInside(nt, insideProb);
     }
 
-    public class ChartCell implements Comparable<ChartCell> {
-        protected final int start, end;
+    public class HashSetChartCell extends ChartCell implements Comparable<HashSetChartCell> {
         public float fom = Float.NEGATIVE_INFINITY;
-        public int numEdgesConsidered = 0, numEdgesAdded = 0, numSpanVisits = 0;
         protected boolean isLexCell;
 
         public ChartEdge[] bestEdge;
@@ -59,9 +57,8 @@ public class CellChart extends Chart {
         protected HashSet<Integer> rightChildNTs = new HashSet<Integer>();
         protected HashSet<Integer> posNTs = new HashSet<Integer>();
 
-        public ChartCell(final int start, final int end) {
-            this.start = start;
-            this.end = end;
+        public HashSetChartCell(final int start, final int end) {
+            super(start, end);
 
             if (end - start == 1) {
                 isLexCell = true;
@@ -74,6 +71,7 @@ public class CellChart extends Chart {
             Arrays.fill(inside, Float.NEGATIVE_INFINITY);
         }
 
+        @Override
         public float getInside(final int nt) {
             return inside[nt];
         }
@@ -109,7 +107,7 @@ public class CellChart extends Chart {
         }
 
         // binary edges
-        public void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
+        public void updateInside(final Production p, final HashSetChartCell leftCell, final HashSetChartCell rightCell, final float insideProb) {
             final int nt = p.parent;
             if (viterbiMax && insideProb > getInside(nt)) {
                 if (bestEdge[nt] == null) {
@@ -124,6 +122,7 @@ public class CellChart extends Chart {
             updateInside(nt, insideProb);
         }
 
+        @Override
         public ChartEdge getBestEdge(final int nt) {
             return bestEdge[nt];
         }
@@ -162,18 +161,12 @@ public class CellChart extends Chart {
             return rightChildNTs;
         }
 
-        public final int start() {
-            return start;
-        }
-
-        public final int end() {
-            return end;
-        }
-
+        @Override
         public int width() {
             return end() - start();
         }
 
+        @Override
         public int getNumNTs() {
             return childNTs.size();
         }
@@ -189,7 +182,7 @@ public class CellChart extends Chart {
         }
 
         @Override
-        public int compareTo(final ChartCell otherCell) {
+        public int compareTo(final HashSetChartCell otherCell) {
             if (this.fom == otherCell.fom) {
                 return 0;
             } else if (fom > otherCell.fom) {
@@ -203,14 +196,14 @@ public class CellChart extends Chart {
     public class ChartEdge implements Comparable<ChartEdge> {
         public Production prod;
         public float fom = 0; // figure of merit
-        public ChartCell leftCell, rightCell;
+        public HashSetChartCell leftCell, rightCell;
 
         // TODO: other options to keeping leftCell and rightCell:
         // 1) keep int start,midpt,end
         // 2) keep ChartCell ptr and midpt
 
         // binary production
-        public ChartEdge(final Production prod, final ChartCell leftCell, final ChartCell rightCell) {
+        public ChartEdge(final Production prod, final HashSetChartCell leftCell, final HashSetChartCell rightCell) {
             assert leftCell.end() == rightCell.start();
             assert leftCell.start() < rightCell.end();
 
@@ -223,7 +216,7 @@ public class CellChart extends Chart {
         }
 
         // unary production
-        public ChartEdge(final Production prod, final ChartCell childCell) {
+        public ChartEdge(final Production prod, final HashSetChartCell childCell) {
             this.prod = prod;
             this.leftCell = childCell;
             this.rightCell = null;

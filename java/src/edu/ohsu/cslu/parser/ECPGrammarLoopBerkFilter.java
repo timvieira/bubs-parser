@@ -8,7 +8,7 @@ import com.aliasi.util.Collections;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<GrammarByChild, CellChart> {
@@ -53,7 +53,7 @@ public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<Gram
     @Override
     protected void addLexicalProductions(final int sent[]) throws Exception {
         Collection<Production> validProductions;
-        ChartCell cell;
+        HashSetChartCell cell;
 
         // add lexical productions and unary productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
@@ -125,8 +125,8 @@ public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<Gram
     }
 
     @Override
-    protected void visitCell(final ChartCell cell) {
-        ChartCell leftCell, rightCell;
+    protected void visitCell(final HashSetChartCell cell) {
+        HashSetChartCell leftCell, rightCell;
         ChartEdge oldBestEdge;
         float prob, leftInside, rightInside;
         final int start = cell.start(), end = cell.end();

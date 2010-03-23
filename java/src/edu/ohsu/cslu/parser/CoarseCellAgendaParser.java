@@ -6,14 +6,14 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellChart> {
 
     float[][] maxEdgeFOM;
-    PriorityQueue<ChartCell> spanAgenda;
+    PriorityQueue<HashSetChartCell> spanAgenda;
 
     public CoarseCellAgendaParser(final ParserOptions opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
@@ -23,7 +23,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
     protected void initParser(final int n) {
         super.initParser(n);
         this.maxEdgeFOM = new float[chart.size()][chart.size() + 1];
-        this.spanAgenda = new PriorityQueue<ChartCell>();
+        this.spanAgenda = new PriorityQueue<HashSetChartCell>();
 
         // The chart is (chart.size()+1)*chart.size()/2
         for (int start = 0; start < chart.size(); start++) {
@@ -35,7 +35,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
 
     @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
-        ChartCell cell;
+        HashSetChartCell cell;
         final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
         currentSentence = sentence;
 
@@ -58,7 +58,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
         return extractBestParse();
     }
 
-    protected void visitCell(final ChartCell cell) {
+    protected void visitCell(final HashSetChartCell cell) {
         final int start = cell.start(), end = cell.end();
         Collection<Production> possibleProds;
         ChartEdge edge;
@@ -67,8 +67,8 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
         final int maxEdgesToAdd = (int) ParserOptions.param2;
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
-            final ChartCell leftCell = chart.getCell(start, mid);
-            final ChartCell rightCell = chart.getCell(mid, end);
+            final HashSetChartCell leftCell = chart.getCell(start, mid);
+            final HashSetChartCell rightCell = chart.getCell(mid, end);
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {
                     possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
@@ -96,7 +96,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
         agenda.add(edge);
     }
 
-    protected void addBestEdgesToChart(final ChartCell cell, final ChartEdge[] bestEdges, final int maxEdgesToAdd) {
+    protected void addBestEdgesToChart(final HashSetChartCell cell, final ChartEdge[] bestEdges, final int maxEdgesToAdd) {
         ChartEdge edge, unaryEdge;
         int numAdded = 0;
 
@@ -138,9 +138,9 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
         return true;
     }
 
-    protected ChartCell next() {
+    protected HashSetChartCell next() {
         // return spanAgenda.poll();
-        ChartCell bestSpan = null;
+        HashSetChartCell bestSpan = null;
         float bestScore = Float.NEGATIVE_INFINITY;
         for (int span = 1; span <= chart.size(); span++) {
             for (int beg = 0; beg < chart.size() - span + 1; beg++) { // beginning
@@ -156,7 +156,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
     @Override
     protected void addLexicalProductions(final int sent[]) throws Exception {
         // ChartEdge newEdge;
-        ChartCell cell;
+        HashSetChartCell cell;
         for (int i = 0; i < chart.size(); i++) {
             cell = chart.getCell(i, i + 1);
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
@@ -169,7 +169,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
 
     public void addUnaryExtensionsToLexProds() {
         for (int i = 0; i < chart.size(); i++) {
-            final ChartCell cell = chart.getCell(i, i + 1);
+            final HashSetChartCell cell = chart.getCell(i, i + 1);
             for (final int pos : cell.getPosNTs()) {
                 for (final Production unaryProd : grammar.getUnaryProductionsWithChild(pos)) {
                     // cell.addEdge(unaryProd, cell, null, cell.getBestEdge(pos).inside + unaryProd.prob);
@@ -187,7 +187,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
     // spanAgenda.add(span);
     // }
 
-    protected void expandFrontier(final ChartCell cell) {
+    protected void expandFrontier(final HashSetChartCell cell) {
 
         // connect edge as possible right non-term
         for (int start = 0; start < cell.start(); start++) {
@@ -200,7 +200,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
         }
     }
 
-    protected void setSpanMaxEdgeFOM(final ChartCell leftCell, final ChartCell rightCell) {
+    protected void setSpanMaxEdgeFOM(final HashSetChartCell leftCell, final HashSetChartCell rightCell) {
         ChartEdge edge;
         final int start = leftCell.start(), end = rightCell.end();
         float bestFOM = maxEdgeFOM[start][end];
@@ -225,7 +225,7 @@ public class CoarseCellAgendaParser extends ChartParser<LeftHashGrammar, CellCha
         }
 
         if (bestFOM > maxEdgeFOM[start][end]) {
-            final ChartCell parentCell = chart.getCell(start, end);
+            final HashSetChartCell parentCell = chart.getCell(start, end);
             // if (maxEdgeFOM[start][end] > Float.NEGATIVE_INFINITY) {
             // spanAgenda.remove(parentCell);
             // }

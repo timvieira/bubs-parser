@@ -93,7 +93,7 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
     }
 
     @Override
-    protected void visitCell(final edu.ohsu.cslu.parser.chart.CellChart.ChartCell cell) {
+    protected void visitCell(final edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell cell) {
         computeInsideProbsInCell((ChartCell) cell);
     }
 

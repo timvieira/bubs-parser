@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class CSLUTBlockedCells extends CellSelector {
 
-    private LinkedList<ChartCell> cellList;
+    private LinkedList<HashSetChartCell> cellList;
     public HashMap<String, Vector<Float>> allStartScore, allEndScore;
     public Vector<Float> curStartScore, curEndScore;
 
@@ -73,7 +73,7 @@ public class CSLUTBlockedCells extends CellSelector {
 
         isOpen = new boolean[chartSize][chartSize + 1];
         onlyFactored = new boolean[chartSize][chartSize + 1];
-        cellList = new LinkedList<ChartCell>();
+        cellList = new LinkedList<HashSetChartCell>();
 
         final float startThresh = getThresh(curStartScore, parser.opts.param2);
         final float endThresh = getThresh(curEndScore, parser.opts.param2);
@@ -136,7 +136,7 @@ public class CSLUTBlockedCells extends CellSelector {
 
     @Override
     public short[] next() {
-        final ChartCell cell = cellList.poll();
+        final HashSetChartCell cell = cellList.poll();
         return new short[] { (short) cell.start(), (short) cell.end() };
     }
 

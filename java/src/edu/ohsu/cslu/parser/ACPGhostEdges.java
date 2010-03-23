@@ -5,7 +5,7 @@ import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class ACPGhostEdges extends AgendaChartParser {
@@ -39,7 +39,7 @@ public class ACPGhostEdges extends AgendaChartParser {
     }
 
     @Override
-    protected void expandFrontier(final int nt, final ChartCell cell) {
+    protected void expandFrontier(final int nt, final HashSetChartCell cell) {
         LinkedList<ChartEdge> possibleEdges;
         Collection<Production> possibleRules;
         ChartEdge curBestEdge;

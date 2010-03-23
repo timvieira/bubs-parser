@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -20,7 +20,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
     @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
-        ChartCell cell;
+        HashSetChartCell cell;
         final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
         currentSentence = sentence;
 
@@ -45,7 +45,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
     }
 
     @Override
-    protected void visitCell(final ChartCell cell) {
+    protected void visitCell(final HashSetChartCell cell) {
         final int start = cell.start(), end = cell.end();
         Collection<Production> possibleProds;
         ChartEdge edge;
@@ -55,8 +55,8 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         final boolean onlyFactored = cslutScores.isCellOpenOnlyToFactored(start, end);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
-            final ChartCell leftCell = chart.getCell(start, mid);
-            final ChartCell rightCell = chart.getCell(mid, end);
+            final HashSetChartCell leftCell = chart.getCell(start, mid);
+            final HashSetChartCell rightCell = chart.getCell(mid, end);
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {
                     possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
@@ -77,7 +77,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
     }
 
     @Override
-    protected void setSpanMaxEdgeFOM(final ChartCell leftCell, final ChartCell rightCell) {
+    protected void setSpanMaxEdgeFOM(final HashSetChartCell leftCell, final HashSetChartCell rightCell) {
         ChartEdge edge;
         final int start = leftCell.start(), end = rightCell.end();
         float bestFOM = maxEdgeFOM[start][end];
@@ -104,7 +104,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         }
 
         if (bestFOM > maxEdgeFOM[start][end]) {
-            final ChartCell parentCell = chart.getCell(start, end);
+            final HashSetChartCell parentCell = chart.getCell(start, end);
             if (maxEdgeFOM[start][end] > Float.NEGATIVE_INFINITY) {
                 spanAgenda.remove(parentCell);
             }

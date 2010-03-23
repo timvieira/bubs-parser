@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class LBFBoundedHeap extends LBFPruneViterbi {
@@ -12,7 +12,7 @@ public class LBFBoundedHeap extends LBFPruneViterbi {
     }
 
     @Override
-    protected void addEdgeCollectionToChart(final ChartCell cell) {
+    protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
         ChartEdge edge;
         ChartEdge unaryEdge;
         boolean edgeBelowThresh = false;

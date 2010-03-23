@@ -7,7 +7,7 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
@@ -40,7 +40,7 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
 
     @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
-        ChartCell cell;
+        HashSetChartCell cell;
         final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
         currentSentence = sentence;
 
@@ -64,7 +64,7 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
 
     @Override
     protected void addLexicalProductions(final int sent[]) throws Exception {
-        ChartCell cell;
+        HashSetChartCell cell;
 
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
@@ -75,7 +75,7 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
         }
     }
 
-    protected void visitCell(final ChartCell cell) {
+    protected void visitCell(final HashSetChartCell cell) {
         final int start = cell.start(), end = cell.end();
         ChartEdge edge;
 
@@ -96,8 +96,8 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
             }
         } else {
             for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
-                final ChartCell leftCell = chart.getCell(start, mid);
-                final ChartCell rightCell = chart.getCell(mid, end);
+                final HashSetChartCell leftCell = chart.getCell(start, mid);
+                final HashSetChartCell rightCell = chart.getCell(mid, end);
                 for (final int leftNT : leftCell.getLeftChildNTs()) {
                     for (final int rightNT : rightCell.getRightChildNTs()) {
                         for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
@@ -124,7 +124,7 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
         nAgendaPush++;
     }
 
-    protected void addEdgeCollectionToChart(final ChartCell cell) {
+    protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
         ChartEdge edge, unaryEdge;
         boolean edgeBelowThresh = false;
         int numAdded = 0;
