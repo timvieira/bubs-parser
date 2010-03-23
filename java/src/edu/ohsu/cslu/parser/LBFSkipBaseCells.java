@@ -6,7 +6,7 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
@@ -17,7 +17,7 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar,
 
     @Override
     protected void addLexicalProductions(final int sent[]) throws Exception {
-        ChartCell cell;
+        HashSetChartCell cell;
 
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
@@ -36,7 +36,7 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar,
     }
 
     @Override
-    protected void visitCell(final ChartCell cell) {
+    protected void visitCell(final HashSetChartCell cell) {
         final int start = cell.start(), end = cell.end();
         Collection<Production> possibleProds;
         ChartEdge edge;
@@ -47,8 +47,8 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar,
 
         assert (end - start >= 2);
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
-            final ChartCell leftCell = chart.getCell(start, mid);
-            final ChartCell rightCell = chart.getCell(mid, end);
+            final HashSetChartCell leftCell = chart.getCell(start, mid);
+            final HashSetChartCell rightCell = chart.getCell(mid, end);
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {
                     possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
@@ -78,7 +78,7 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar,
         nAgendaPush++;
     }
 
-    private void addBestEdgesToChart(final ChartCell cell, final ChartEdge[] bestEdges) {
+    private void addBestEdgesToChart(final HashSetChartCell cell, final ChartEdge[] bestEdges) {
         ChartEdge edge, unaryEdge;
         int numAdded = 0;
 
@@ -111,7 +111,7 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar,
         for (int span = 2; span < chart.size(); span++) {
             for (int start = 0; start < chart.size() - span + 1; start++) {
                 cells++;
-                final ChartCell cell = chart.getCell(start, start + span);
+                final HashSetChartCell cell = chart.getCell(start, start + span);
                 if (cell.numSpanVisits > 0) {
                     cellsVisited++;
                     cellVisits += cell.numSpanVisits;

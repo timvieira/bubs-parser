@@ -5,7 +5,7 @@ import com.aliasi.util.Collections;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
 public class ECPGrammarLoop extends CellwiseExhaustiveChartParser<GrammarByChild, CellChart> {
 
@@ -14,13 +14,13 @@ public class ECPGrammarLoop extends CellwiseExhaustiveChartParser<GrammarByChild
     }
 
     @Override
-    protected void visitCell(final ChartCell cell) {
+    protected void visitCell(final HashSetChartCell cell) {
         final int start = cell.start(), end = cell.end();
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             // naive traversal through all grammar rules
-            final ChartCell leftCell = chart.getCell(start, mid);
-            final ChartCell rightCell = chart.getCell(mid, end);
+            final HashSetChartCell leftCell = chart.getCell(start, mid);
+            final HashSetChartCell rightCell = chart.getCell(mid, end);
             for (final Production p : grammar.getBinaryProductions()) {
                 final float leftInside = leftCell.getInside(p.leftChild);
                 final float rightInside = rightCell.getInside(p.rightChild);

@@ -5,7 +5,7 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -35,7 +35,7 @@ public class AgendaChartParser extends ChartParser<LeftRightListsGrammar, CellCh
     @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
         ChartEdge edge;
-        ChartCell cell;
+        HashSetChartCell cell;
         final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
 
         initParser(sent.length);
@@ -90,7 +90,7 @@ public class AgendaChartParser extends ChartParser<LeftRightListsGrammar, CellCh
 
     @Override
     protected void addLexicalProductions(final int sent[]) throws Exception {
-        ChartCell cell;
+        HashSetChartCell cell;
 
         // add lexical productions and unary productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
@@ -107,9 +107,9 @@ public class AgendaChartParser extends ChartParser<LeftRightListsGrammar, CellCh
     }
 
     // protected void expandFrontier(final ChartEdge newEdge, final ChartCell cell) {
-    protected void expandFrontier(final int nt, final ChartCell cell) {
+    protected void expandFrontier(final int nt, final HashSetChartCell cell) {
         ChartEdge leftEdge, rightEdge;
-        ChartCell rightCell, leftCell;
+        HashSetChartCell rightCell, leftCell;
 
         // unary edges are always possible in any cell, although we don't allow unary chains
         // NATE: update: unary chains should be fine. They will just compete on the agenda

@@ -48,7 +48,7 @@ public class EdgeCellChart extends CellChart {
         getCell(start, end).updateInside(nt, insideProb);
     }
 
-    public class ChartCell extends CellChart.ChartCell {
+    public class ChartCell extends CellChart.HashSetChartCell {
 
         public ChartCell(final int start, final int end) {
             super(start, end);

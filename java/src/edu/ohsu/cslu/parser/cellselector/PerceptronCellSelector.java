@@ -9,7 +9,7 @@ import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.LBFPerceptronCellTrainer;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -26,7 +26,7 @@ public class PerceptronCellSelector extends CellSelector {
     private CSLUTBlockedCells cslutScores;
     private Vector<Float> cslutStartScore, cslutEndScore;
     private ChartParser parser;
-    private PriorityQueue<ChartCell> spanAgenda;
+    private PriorityQueue<HashSetChartCell> spanAgenda;
     private boolean[][] hasBeenPopped;
     private boolean[][] isInAgenda;
     private boolean trainingMode;
@@ -68,7 +68,7 @@ public class PerceptronCellSelector extends CellSelector {
         hasBeenPopped = new boolean[chartSize][chartSize + 1];
         isInAgenda = new boolean[chartSize][chartSize + 1];
 
-        spanAgenda = new PriorityQueue<ChartCell>();
+        spanAgenda = new PriorityQueue<HashSetChartCell>();
         // // all span=1 && span=2 cells are fare game from the beginning since we've
         // // put the POS tags in the chart already
         for (int spanLength = 1; spanLength <= 2; spanLength++) {
@@ -102,7 +102,7 @@ public class PerceptronCellSelector extends CellSelector {
     @Override
     public short[] next() {
         rescoreAgendaSpans();
-        final ChartCell bestSpan = pollBestSpan();
+        final HashSetChartCell bestSpan = pollBestSpan();
 
         if (DEBUG) {
             System.out.println(" pop: " + bestSpan);
@@ -123,8 +123,8 @@ public class PerceptronCellSelector extends CellSelector {
         return new short[] { (short) bestSpan.start(), (short) bestSpan.end() };
     }
 
-    private ChartCell pollBestSpan() {
-        final ChartCell bestSpan = spanAgenda.poll();
+    private HashSetChartCell pollBestSpan() {
+        final HashSetChartCell bestSpan = spanAgenda.poll();
         isInAgenda[bestSpan.start()][bestSpan.end()] = false;
         return bestSpan;
     }
@@ -191,8 +191,8 @@ public class PerceptronCellSelector extends CellSelector {
     // }
 
     private void rescoreAgendaSpans() {
-        final PriorityQueue<ChartCell> tmpAgenda = new PriorityQueue<ChartCell>();
-        for (final ChartCell span : spanAgenda) {
+        final PriorityQueue<HashSetChartCell> tmpAgenda = new PriorityQueue<HashSetChartCell>();
+        for (final HashSetChartCell span : spanAgenda) {
             calcFOM(span);
             tmpAgenda.add(span);
 
@@ -200,8 +200,8 @@ public class PerceptronCellSelector extends CellSelector {
         spanAgenda = tmpAgenda;
     }
 
-    public ChartCell nextWithGoldCorrection(final List<ChartEdge> goldEdgeList) {
-        ChartCell goldSpan;
+    public HashSetChartCell nextWithGoldCorrection(final List<ChartEdge> goldEdgeList) {
+        HashSetChartCell goldSpan;
 
         // re-score all edges. I've found out that we will keep picking bad edges even
         // though the weights for them are good because the cells inside the agenda don't change score
@@ -209,7 +209,7 @@ public class PerceptronCellSelector extends CellSelector {
         rescoreAgendaSpans();
 
         if (DEBUG) {
-            for (final ChartCell span : spanAgenda) {
+            for (final HashSetChartCell span : spanAgenda) {
                 System.out.println("guessSpanFont: " + span + "  fom=" + span.fom);
             }
         }
@@ -218,7 +218,7 @@ public class PerceptronCellSelector extends CellSelector {
         for (final ChartEdge goldEdge : goldEdgeList) {
             goldSpan = parser.chart.getCell(goldEdge.start(), goldEdge.end());
             boolean frontHasGold = false;
-            for (final ChartCell frontSpan : spanAgenda) {
+            for (final HashSetChartCell frontSpan : spanAgenda) {
                 if (frontSpan == goldSpan) {
                     frontHasGold = true;
                 }
@@ -229,7 +229,7 @@ public class PerceptronCellSelector extends CellSelector {
             }
         }
 
-        final ChartCell guessSpan = pollBestSpan();
+        final HashSetChartCell guessSpan = pollBestSpan();
 
         if (DEBUG)
             System.out.println("guessSpan: " + guessSpan + "  fom=" + guessSpan.fom);
@@ -237,7 +237,7 @@ public class PerceptronCellSelector extends CellSelector {
         numTotal++;
 
         boolean isGuessSpanCorrect = false;
-        final List<ChartCell> goldSpanList = new LinkedList<ChartCell>();
+        final List<HashSetChartCell> goldSpanList = new LinkedList<HashSetChartCell>();
         for (final ChartEdge edge : goldEdgeList) {
             goldSpan = parser.chart.getCell(edge.start(), edge.end());
             if (guessSpan == goldSpan) {
@@ -257,7 +257,7 @@ public class PerceptronCellSelector extends CellSelector {
         if (isGuessSpanCorrect == false) {
             // reward all gold spans
             updateWeights(guessSpan, -1 * goldSpanList.size());
-            for (final ChartCell span : goldSpanList) {
+            for (final HashSetChartCell span : goldSpanList) {
                 updateWeights(span, 1);
             }
         }
@@ -287,7 +287,7 @@ public class PerceptronCellSelector extends CellSelector {
     // return guessSpan;
     // }
 
-    public void expandFrontier(final ChartCell span) {
+    public void expandFrontier(final HashSetChartCell span) {
 
         hasBeenPopped[span.start()][span.end()] = true;
         // add the current span back to the agenda so we can re-visit it again in the future if we need to
@@ -307,14 +307,14 @@ public class PerceptronCellSelector extends CellSelector {
         }
     }
 
-    public float calcFOM(final ChartCell span) {
+    public float calcFOM(final HashSetChartCell span) {
         final Boolean[] spanFeats = extractFeatures(span, parser);
         // System.out.println(" spanFeats=" + spanFeats.length + " weights=" + weights.length);
         span.fom = dotProductKernel(spanFeats, weights);
         return span.fom;
     }
 
-    private void addSpanToAgenda(final ChartCell span) {
+    private void addSpanToAgenda(final HashSetChartCell span) {
         if (isInAgenda[span.start()][span.end()] == false) {
             calcFOM(span);
             spanAgenda.add(span);
@@ -344,7 +344,7 @@ public class PerceptronCellSelector extends CellSelector {
         return total;
     }
 
-    public void updateWeights(final ChartCell span, final int featWeight) {
+    public void updateWeights(final HashSetChartCell span, final int featWeight) {
         // final int correct = boolToInt(isCorrect) * 2 - 1; // correct == -1 (false) or 1 (true)
         final Boolean[] feats = extractFeatures(span, parser);
         for (int i = 0; i < numFeats; i++) {
@@ -353,7 +353,7 @@ public class PerceptronCellSelector extends CellSelector {
         }
     }
 
-    public void updateWeights(final ChartCell guessSpan, final ChartCell goldSpan) {
+    public void updateWeights(final HashSetChartCell guessSpan, final HashSetChartCell goldSpan) {
         if (guessSpan != goldSpan) {
             final Boolean[] guessFeats = extractFeatures(guessSpan, parser);
             final Boolean[] goldFeats = extractFeatures(goldSpan, parser);
@@ -391,7 +391,7 @@ public class PerceptronCellSelector extends CellSelector {
     }
 
     // TODO: we should only need access to Chart (not ChartParser)
-    private Boolean[] extractFeatures(final ChartCell span, final ChartParser parser) {
+    private Boolean[] extractFeatures(final HashSetChartCell span, final ChartParser parser) {
         final List<Boolean> featList = new LinkedList<Boolean>();
         // BitSet feats = new BitSet();
 

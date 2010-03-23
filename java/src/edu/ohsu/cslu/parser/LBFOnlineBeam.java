@@ -7,7 +7,7 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class LBFOnlineBeam extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
@@ -20,7 +20,7 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser<LeftHashGrammar, Ce
     }
 
     @Override
-    protected void visitCell(final ChartCell cell) {
+    protected void visitCell(final HashSetChartCell cell) {
         final int start = cell.start(), end = cell.end();
         final int spanWidth = end - start;
         Collection<Production> possibleProds;
@@ -44,8 +44,8 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser<LeftHashGrammar, Ce
             }
         } else {
             for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
-                final ChartCell leftCell = chart.getCell(start, mid);
-                final ChartCell rightCell = chart.getCell(mid, end);
+                final HashSetChartCell leftCell = chart.getCell(start, mid);
+                final HashSetChartCell rightCell = chart.getCell(mid, end);
                 for (final int leftNT : leftCell.getLeftChildNTs()) {
                     for (final int rightNT : rightCell.getRightChildNTs()) {
                         possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
@@ -63,7 +63,7 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser<LeftHashGrammar, Ce
         }
     }
 
-    protected void processEdge(final ChartEdge edge, final ChartCell cell) {
+    protected void processEdge(final ChartEdge edge, final HashSetChartCell cell) {
         final boolean addedEdge = addEdgeToChart(edge, cell);
         if (addedEdge) {
             // Add unary productions to agenda so they can compete with binary productions
@@ -74,7 +74,7 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser<LeftHashGrammar, Ce
         }
     }
 
-    protected boolean addEdgeToChart(final ChartEdge edge, final ChartCell cell) {
+    protected boolean addEdgeToChart(final ChartEdge edge, final HashSetChartCell cell) {
         if (edge.fom < bestFOM - logBeamDeltaThresh) {
             return false;
         }

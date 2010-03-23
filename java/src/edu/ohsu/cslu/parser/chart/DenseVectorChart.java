@@ -18,7 +18,7 @@ public class DenseVectorChart extends CellChart {
         this.viterbiMax = true;
         this.parser = parser;
 
-        chart = new ChartCell[size][size + 1];
+        chart = new HashSetChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
             for (int end = start + 1; end < size + 1; end++) {
                 chart[start][end] = new DenseVectorChartCell(start, end);
@@ -26,7 +26,7 @@ public class DenseVectorChart extends CellChart {
         }
     }
 
-    public class DenseVectorChartCell extends ChartCell {
+    public class DenseVectorChartCell extends HashSetChartCell {
 
         public final SparseMatrixGrammar sparseMatrixGrammar;
 
@@ -91,7 +91,7 @@ public class DenseVectorChart extends CellChart {
 
         @Override
         // public boolean addEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
-        public void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
+        public void updateInside(final Production p, final HashSetChartCell leftCell, final HashSetChartCell rightCell, final float insideProb) {
             final int parent = p.parent;
             numEdgesConsidered++;
 

@@ -4,22 +4,22 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class LBFExpDecay extends LBFPruneViterbi {
 
     boolean resultRun = false;
-    Chart resultChart;
+    CellChart resultChart;
 
     public LBFExpDecay(final ParserOptions opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
     }
 
     @Override
-    protected void addEdgeCollectionToChart(final ChartCell cell) {
+    protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
         ChartEdge edge, unaryEdge;
         boolean edgeBelowThresh = false;
         final int numAdded = 0;

@@ -4,7 +4,7 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartCell;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class LBFWeakThresh extends LBFPruneViterbi {
@@ -14,7 +14,7 @@ public class LBFWeakThresh extends LBFPruneViterbi {
     }
 
     @Override
-    protected void addEdgeCollectionToChart(final ChartCell cell) {
+    protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
         ChartEdge edge, unaryEdge;
         boolean edgeBelowThresh = false;
         int numAdded = 0;
