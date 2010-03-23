@@ -13,7 +13,7 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
  * Stores a sparse-matrix grammar in Java-Sparse-Array format (similar to standard compressed-sparse-row (CSR) format with the exception that row lengths can vary, since Java
  * stores 2-d arrays as arrays of arrays)
  * 
- * Assumes fewer than 2^30 total non-terminals combinations (see {@link BaseSparseMatrixGrammar} documentation for details).
+ * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for details).
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010

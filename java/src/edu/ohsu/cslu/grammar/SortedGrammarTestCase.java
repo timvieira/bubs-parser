@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.grammar;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
 
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
@@ -62,7 +62,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(2, simpleGrammar.numPosSymbols());
         assertEquals(5, simpleGrammar.numLexSymbols());
         assertEquals("TOP", simpleGrammar.startSymbol());
-        assertEquals("<null>", simpleGrammar.nullSymbolStr);
+        assertEquals("<null>", Grammar.nullSymbolStr);
 
         assertEquals(0, simpleGrammar.rightChildOnlyStart);
         assertEquals(0, simpleGrammar.posStart);
@@ -90,7 +90,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(46, g.numPosSymbols());
         assertEquals(44484, g.numLexSymbols());
         assertEquals("TOP", g.startSymbol());
-        assertEquals("<null>", g.nullSymbolStr);
+        assertEquals("<null>", Grammar.nullSymbolStr);
 
         assertEquals("Ranger", g.mapLexicalEntry(40000));
         assertEquals(-12.116870f, g.lexicalLogProbability("NNP", "Ranger"), 0.01f);
@@ -115,7 +115,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(46, g.numPosSymbols());
         assertEquals(44484, g.numLexSymbols());
         assertEquals("TOP", g.startSymbol());
-        assertEquals("<null>", g.nullSymbolStr);
+        assertEquals("<null>", Grammar.nullSymbolStr);
 
         assertEquals("3,200", g.mapLexicalEntry(40000));
 

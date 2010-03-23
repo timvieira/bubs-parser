@@ -12,7 +12,7 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 /**
  * Stores a sparse-matrix grammar in standard compressed-sparse-row (CSR) format
  * 
- * Assumes fewer than 2^30 total non-terminals combinations (see {@link BaseSparseMatrixGrammar} documentation for details).
+ * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for details).
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
