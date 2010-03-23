@@ -23,7 +23,7 @@ public class TestOpenClSparseMatrixVectorParser extends SparseMatrixVectorParser
     }
 
     @Override
-    protected Parser createParser(final Grammar grammar, final CellSelector cellSelector) {
+    protected Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
         return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
     }
 

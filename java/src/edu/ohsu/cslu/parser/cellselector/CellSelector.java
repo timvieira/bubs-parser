@@ -19,7 +19,7 @@ public abstract class CellSelector implements Iterator<short[]> {
 
     public abstract short[] next();
 
-    public void init(final ChartParser parser) throws Exception {
+    public void init(final ChartParser<?, ?> parser) throws Exception {
         // default is to do nothing
     }
 

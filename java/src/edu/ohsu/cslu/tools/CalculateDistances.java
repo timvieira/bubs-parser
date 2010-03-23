@@ -61,18 +61,17 @@ public class CalculateDistances extends BaseCommandlineTool {
         final String input = sb.toString();
 
         switch (calculationMethod) {
-        case Levenshtein:
-            calculator = new LevenshteinDistanceCalculator();
-            break;
+            case Levenshtein:
+                calculator = new LevenshteinDistanceCalculator();
+                break;
 
-        case Pqgram:
-            final Vocabulary vocabulary = SimpleVocabulary
-                .induce(new BufferedReader(new StringReader(input)));
-            calculator = new PqgramDistanceCalculator(parameters, vocabulary, maxThreads);
-            break;
+            case Pqgram:
+                final Vocabulary vocabulary = SimpleVocabulary.induce(new BufferedReader(new StringReader(input)));
+                calculator = new PqgramDistanceCalculator(parameters, vocabulary, maxThreads);
+                break;
 
-        default:
-            throw new IllegalArgumentException("Unknown calculation method");
+            default:
+                throw new IllegalArgumentException("Unknown calculation method");
         }
 
         // Read in all lines
@@ -89,8 +88,7 @@ public class CalculateDistances extends BaseCommandlineTool {
     @Override
     public void setup(final CmdLineParser parser) throws Exception {
         if (calculationMethod == CalculationMethod.Pqgram && parameters == null) {
-            throw new CmdLineException(parser,
-                "P and Q parameters are required for pqgram distance calculation");
+            throw new CmdLineException(parser, "P and Q parameters are required for pqgram distance calculation");
         }
     }
 
@@ -115,6 +113,7 @@ public class CalculateDistances extends BaseCommandlineTool {
             enumeration.put("levenshtein", Levenshtein);
         }
 
+        @SuppressWarnings("unused")
         public static CalculationMethod forString(final String element) {
             CalculationMethod m = enumeration.get(element);
             if (m == null) {
@@ -135,8 +134,7 @@ public class CalculateDistances extends BaseCommandlineTool {
         private BaseNaryTree.PqgramProfile[] profiles;
         private final int maxThreads;
 
-        public PqgramDistanceCalculator(final String parameters, final Vocabulary vocabulary,
-                final int maxThreads) {
+        public PqgramDistanceCalculator(final String parameters, final Vocabulary vocabulary, final int maxThreads) {
             final String[] s = parameters.split(",");
             this.p = Integer.parseInt(s[0]);
             this.q = Integer.parseInt(s[1]);
@@ -183,13 +181,11 @@ public class CalculateDistances extends BaseCommandlineTool {
             }
 
             /**
-             * Splits distance calculation by rows, executing each row sequentially. This is a pretty
-             * simplistic work-splitting algorithm, since the rows aren't of equal length. A better splitting
-             * algorithm would divide the work more equally.
+             * Splits distance calculation by rows, executing each row sequentially. This is a pretty simplistic work-splitting algorithm, since the rows aren't of equal length. A
+             * better splitting algorithm would divide the work more equally.
              * 
-             * But as long as the number of matrix rows is much larger than the number of CPU cores, this
-             * works pretty well. And it seems likely that it'll be some time before that assumption breaks
-             * down for any problem of meaningful size.
+             * But as long as the number of matrix rows is much larger than the number of CPU cores, this works pretty well. And it seems likely that it'll be some time before that
+             * assumption breaks down for any problem of meaningful size.
              */
             @Override
             protected void compute() {
@@ -203,8 +199,7 @@ public class CalculateDistances extends BaseCommandlineTool {
                 }
 
                 final RowDistanceCalculator rdc1 = new RowDistanceCalculator(begin, begin + (end - begin) / 2);
-                final RowDistanceCalculator rdc2 = new RowDistanceCalculator(begin + (end - begin) / 2 + 1,
-                    end);
+                final RowDistanceCalculator rdc2 = new RowDistanceCalculator(begin + (end - begin) / 2 + 1, end);
                 forkJoin(rdc1, rdc2);
             }
         }

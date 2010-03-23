@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.chart;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
-public abstract class Chart<T extends Chart.ChartCell> {
+public abstract class Chart {
 
     protected int size;
     protected boolean viterbiMax;
@@ -27,9 +27,6 @@ public abstract class Chart<T extends Chart.ChartCell> {
 
     public abstract float getInside(int start, int end, int nt);
 
-    // public abstract void updateOutside(int start, int end, int nt, float insideProb);
-    // public abstract float getOutside(int start, int end, int nt);
-
     public static abstract class ChartCell {
         protected final int start, end;
         public int numEdgesConsidered = 0, numEdgesAdded = 0, numSpanVisits = 0;
@@ -39,11 +36,22 @@ public abstract class Chart<T extends Chart.ChartCell> {
             this.end = end;
         }
 
-        public abstract float getInside(final int nt);
+        /**
+         * Returns the log probability of the specified non-terminal
+         * 
+         * @param nonTerminal
+         * @return log probability of the specified non-terminal
+         */
+        public abstract float getInside(final int nonTerminal);
 
-        public abstract ChartEdge getBestEdge(final int nt);
-
-        // public abstract boolean hasNT(final int nt);
+        /**
+         * Returns the most probable edge producing the specified non-terminal. Most {@link ChartCell} implementations will only maintain one edge per non-terminal, but some
+         * implementations may maintain multiple edges (e.g., for k-best parsing).
+         * 
+         * @param nonTerminal
+         * @return the most probable populated edge producing the specified non-terminal
+         */
+        public abstract ChartEdge getBestEdge(final int nonTerminal);
 
         /**
          * @return the word index of the first word covered by this cell
@@ -66,6 +74,9 @@ public abstract class Chart<T extends Chart.ChartCell> {
             return end() - start();
         }
 
+        /**
+         * @return the number of populated non-terminals in this cell
+         */
         public abstract int getNumNTs();
 
         @Override

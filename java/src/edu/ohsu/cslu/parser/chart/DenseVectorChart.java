@@ -6,14 +6,14 @@ import edu.ohsu.cslu.parser.Parser;
 
 public class DenseVectorChart extends CellChart {
 
-    protected DenseVectorChart(final DenseVectorChartCell[][] chart, final boolean viterbiMax, final Parser parser) {
+    protected DenseVectorChart(final DenseVectorChartCell[][] chart, final boolean viterbiMax, final Parser<?> parser) {
         this.size = chart.length;
         this.viterbiMax = true;
         this.parser = parser;
         this.chart = chart;
     }
 
-    public DenseVectorChart(final int size, final boolean viterbiMax, final Parser parser) {
+    public DenseVectorChart(final int size, final boolean viterbiMax, final Parser<?> parser) {
         this.size = size;
         this.viterbiMax = true;
         this.parser = parser;

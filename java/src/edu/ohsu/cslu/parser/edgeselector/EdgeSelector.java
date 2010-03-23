@@ -33,7 +33,7 @@ public abstract class EdgeSelector {
         }
     }
 
-    public void init(final ChartParser parser) {
+    public void init(final ChartParser<?, ?> parser) {
         // default is to do nothing
     }
 

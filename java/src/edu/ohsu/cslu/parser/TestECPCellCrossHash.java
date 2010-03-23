@@ -23,7 +23,7 @@ public class TestECPCellCrossHash extends ExhaustiveChartParserTestCase {
     }
 
     @Override
-    protected Parser createParser(final Grammar grammar, final CellSelector cellSelector) {
+    protected Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
         return new ECPCellCrossHash(new ParserOptions(), (LeftHashGrammar) grammar);
     }
 

@@ -33,7 +33,7 @@ public class CSLUTBlockedCells extends CellSelector {
     }
 
     @Override
-    public void init(final ChartParser parser) throws Exception {
+    public void init(final ChartParser<?, ?> parser) throws Exception {
         // throw new Exception("should use init(parser, sentLen, pctBlock) instead.");
         init(parser, parser.currentSentence);
     }
@@ -64,7 +64,7 @@ public class CSLUTBlockedCells extends CellSelector {
         return tmpSet.get(threshIndex);
     }
 
-    public void init(final ChartParser parser, final String sentence) {
+    public void init(final ChartParser<?, ?> parser, final String sentence) {
         curStartScore = allStartScore.get(sentence);
         curEndScore = allEndScore.get(sentence);
         float spanStartScore, spanEndScore;

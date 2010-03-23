@@ -7,7 +7,7 @@ import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class InOutCellChart extends CellChart {
 
-    public InOutCellChart(final int size, final boolean viterbiMax, final Parser parser) {
+    public InOutCellChart(final int size, final boolean viterbiMax, final Parser<?> parser) {
         super(size, viterbiMax, parser);
 
         chart = new ChartCell[size][size + 1];

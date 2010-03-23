@@ -111,7 +111,7 @@ public abstract class Parser<G extends Grammar> {
                 + " totalInsideScore=" + totalInsideScore);
     }
 
-    public void printTreeEdgeStats(final ParseTree tree, final Parser parser) {
+    public void printTreeEdgeStats(final ParseTree tree, final Parser<?> parser) {
 
         assert this instanceof ACPWithMemory;
         assert ((ACPWithMemory) this).edgeSelector instanceof BoundaryInOut;
@@ -124,7 +124,7 @@ public abstract class Parser<G extends Grammar> {
         }
     }
 
-    public ParseTree findChartEdgesForTree(final ParseTree tree, final ChartParser parser) throws Exception {
+    public ParseTree findChartEdgesForTree(final ParseTree tree, final ChartParser<?,?> parser) throws Exception {
         final LinkedList<ParseTree> leafNodes = tree.getLeafNodes();
         for (final ParseTree node : tree.postOrderTraversal()) {
             final ParseTree leftLeaf = node.leftMostLeaf();

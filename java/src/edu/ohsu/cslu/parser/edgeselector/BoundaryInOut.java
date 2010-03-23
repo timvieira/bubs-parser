@@ -89,7 +89,7 @@ public class BoundaryInOut extends EdgeSelector {
     }
 
     @Override
-    public void init(final ChartParser parser) {
+    public void init(final ChartParser<?, ?> parser) {
         // Computes forward-backward and left/right boundary probs across ambiguous
         // POS tags. Assumes all POS tags have already been placed in the chart and the
         // inside prob of the tag is the emission probability.
@@ -181,7 +181,7 @@ public class BoundaryInOut extends EdgeSelector {
         }
     }
 
-    private HashSet<Integer> getPOSListFromChart(final ChartParser parser, final int startIndex) {
+    private HashSet<Integer> getPOSListFromChart(final ChartParser<?, ?> parser, final int startIndex) {
         final int endIndex = startIndex + 1;
         if (startIndex < 0 || endIndex > parser.chart.size()) {
             final HashSet<Integer> tmpPosSet = new HashSet<Integer>();
@@ -203,7 +203,7 @@ public class BoundaryInOut extends EdgeSelector {
         return posTransitionLogProb[pos][histPos];
     }
 
-    public float posEmissionLogProb(final ChartParser parser, final int start, final Integer pos) {
+    public float posEmissionLogProb(final ChartParser<?, ?> parser, final int start, final Integer pos) {
         final int end = start + 1;
         if (pos == grammar.nullSymbol && (start < 0 || end > parser.chart.size())) {
             return 0; // log(1.0)
