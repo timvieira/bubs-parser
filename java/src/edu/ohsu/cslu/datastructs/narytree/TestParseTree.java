@@ -1,11 +1,5 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -23,6 +17,8 @@ import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.tests.FilteredRunner;
 
+import static junit.framework.Assert.*;
+
 /**
  * Unit tests for {@link ParseTree}
  * 
@@ -37,17 +33,13 @@ import edu.ohsu.cslu.tests.FilteredRunner;
 public class TestParseTree {
 
     private static Vocabulary vocabulary;
-    private final static String TREEBANK_DATA = "parsing/f2-21.topos.txt.gz";
 
     private ParseTree sampleTree;
     private String stringSampleTree;
 
-    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "Wdt", "DT", "NP", "Wnnp", "NNP",
-            "Wnn", "NN", "S", "Wvbd", "VBD", "W.", ".", "TOP" };
-    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] { "TOP", "S", "NP", "DT", "Wdt",
-            "NNP", "Wnnp", "NN", "Wnn", "VBD", "Wvbd", ".", "W." };
-    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "Wdt", "DT", "Wnnp", "NNP", "Wnn",
-            "NN", "NP", "Wvbd", "VBD", "W.", ".", "S", "TOP" };
+    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "Wdt", "DT", "NP", "Wnnp", "NNP", "Wnn", "NN", "S", "Wvbd", "VBD", "W.", ".", "TOP" };
+    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] { "TOP", "S", "NP", "DT", "Wdt", "NNP", "Wnnp", "NN", "Wnn", "VBD", "Wvbd", ".", "W." };
+    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "Wdt", "DT", "Wnnp", "NNP", "Wnn", "NN", "NP", "Wvbd", "VBD", "W.", ".", "S", "TOP" };
 
     @BeforeClass
     public static void suiteSetUp() {
@@ -340,8 +332,7 @@ public class TestParseTree {
     /**
      * Tests Java serialization and deserialization of trees
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     @SuppressWarnings("unchecked")
@@ -359,8 +350,7 @@ public class TestParseTree {
     /**
      * Tests the pq-gram tree-edit-distance approximation between two trees
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     public void testPqGramSimilarity() throws Exception {
@@ -382,10 +372,8 @@ public class TestParseTree {
         assertEquals(.31, t1.pqgramDistance(t2, 2, 3), .01f);
 
         t1 = ParseTree.read("(TOP (S (NP (DT Wdt) (NNP Wnnp) (NN Wnn)) (VBD Wvbd) (. W.)))", vocabulary);
-        t2 = ParseTree.read("(TOP (S (NP (DT Wdt) (NNP Wnnp)) (VBD  (NN Wnn) (VBD Wvbd)) (. W.)))",
-            vocabulary);
-        final ParseTree t3 = ParseTree.read("(TOP (S (DT Wdt) (NNP Wnnp) (NN Wnn) (VBD Wvbd) (. W.)))",
-            vocabulary);
+        t2 = ParseTree.read("(TOP (S (NP (DT Wdt) (NNP Wnnp)) (VBD  (NN Wnn) (VBD Wvbd)) (. W.)))", vocabulary);
+        final ParseTree t3 = ParseTree.read("(TOP (S (DT Wdt) (NNP Wnnp) (NN Wnn) (VBD Wvbd) (. W.)))", vocabulary);
 
         assertEquals(0f, t1.pqgramDistance(t1, 3, 3), .01f);
         assertEquals(.36f, t1.pqgramDistance(t2, 3, 3), .01f);
@@ -394,11 +382,9 @@ public class TestParseTree {
     }
 
     /**
-     * Tests Charniak / Magerman style head-percolation (headDescendant(), headLevel(), and isHeadOfTreeRoot()
-     * methods)
+     * Tests Charniak / Magerman style head-percolation (headDescendant(), headLevel(), and isHeadOfTreeRoot() methods)
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     public void testHeadPercolation() throws Exception {
@@ -408,66 +394,57 @@ public class TestParseTree {
         final String sentence1 = "(TOP (S (NP (DT The) (JJ industrial) (NN average)) (VP (VBD closed)"
                 + " (ADVP (RB down) (NP (CD 18.65))) (, ,) (PP (TO to) (NP (CD 2638.73)))) (. .)))";
         final String sentence2 = "(TOP (S (NP (NN nobody)) (VP (VBD moved) (CC or) (VBD gestured))) (. .))";
-        final String sentence3 = "(TOP (S (NP (NP (QP (IN About) ($ $) (CD 518) (CD million)))"
-                + " (PP (IN of) (NP (NN debt)))) (VP (AUX is) (VP (VBN affected))) (. .)))";
+        final String sentence3 = "(TOP (S (NP (NP (QP (IN About) ($ $) (CD 518) (CD million)))" + " (PP (IN of) (NP (NN debt)))) (VP (AUX is) (VP (VBN affected))) (. .)))";
         final String sentence4 = "(TOP (S (NP (NNP SHORT) (NNP SKIRTS)) (ADJP (RB not) (JJ welcome)) (PP (IN in) (NP (NNP Texas) (NN court))) (: :)))";
         final String sentence5 = "(TOP (S (NP (NP (PRP$ Their) (NN ridicule)) (PP (IN of) (TO to) (NP (PRP him))))"
                 + " (VP (AUX is) (NP (NP (DT no) (NN substitute)) (PP (IN for) (NP (NN argument))))) (. .)))";
 
-        final SimpleVocabulary vocabulary = SimpleVocabulary.induce(sentence1 + '\n' + sentence2 + '\n'
-                + sentence3 + '\n' + sentence4 + '\n' + sentence5);
-        final ParseTree parseTree1 = ParseTree.read(sentence1, vocabulary);
+        final SimpleVocabulary v = SimpleVocabulary.induce(sentence1 + '\n' + sentence2 + '\n' + sentence3 + '\n' + sentence4 + '\n' + sentence5);
+        final ParseTree parseTree1 = ParseTree.read(sentence1, v);
 
         assertEquals("closed", parseTree1.headDescendant(charniakRuleset).label());
         final ParseTree s = parseTree1.subtree("S");
         assertEquals("closed", s.headDescendant(charniakRuleset).label());
         assertEquals("average", s.subtree("NP").headDescendant(charniakRuleset).label());
         assertEquals("industrial", s.subtree("NP").subtree("JJ").headDescendant(charniakRuleset).label());
-        assertEquals("industrial", s.subtree("NP").subtree("JJ").subtree("industrial").headDescendant(
-            charniakRuleset).label());
+        assertEquals("industrial", s.subtree("NP").subtree("JJ").subtree("industrial").headDescendant(charniakRuleset).label());
         assertEquals("closed", s.subtree("VP").headDescendant(charniakRuleset).label());
         assertEquals("closed", s.subtree("VP").subtree("VBD").headDescendant(charniakRuleset).label());
         assertEquals("down", s.subtree("VP").subtree("ADVP").headDescendant(charniakRuleset).label());
-        assertEquals("18.65", s.subtree("VP").subtree("ADVP").subtree("NP").headDescendant(charniakRuleset)
-            .label());
+        assertEquals("18.65", s.subtree("VP").subtree("ADVP").subtree("NP").headDescendant(charniakRuleset).label());
         assertEquals("to", s.subtree("VP").subtree("PP").headDescendant(charniakRuleset).label());
-        assertEquals("2638.73", s.subtree("VP").subtree("PP").subtree("NP").headDescendant(charniakRuleset)
-            .label());
+        assertEquals("2638.73", s.subtree("VP").subtree("PP").subtree("NP").headDescendant(charniakRuleset).label());
 
         assertEquals(-1, s.subtree("VP").headLevel(charniakRuleset));
         assertEquals(0, s.subtree("VP").subtree("VBD").subtree("closed").headLevel(charniakRuleset));
         assertTrue(s.subtree("VP").subtree("VBD").subtree("closed").isHeadOfTreeRoot(charniakRuleset));
         assertEquals(2, s.subtree("NP").subtree("NN").subtree("average").headLevel(charniakRuleset));
         assertFalse(s.subtree("NP").subtree("NN").subtree("average").isHeadOfTreeRoot(charniakRuleset));
-        assertEquals(3, s.subtree("VP").subtree("ADVP").subtree("RB").subtree("down").headLevel(
-            charniakRuleset));
+        assertEquals(3, s.subtree("VP").subtree("ADVP").subtree("RB").subtree("down").headLevel(charniakRuleset));
         assertFalse(s.subtree("NP").subtree("NN").subtree("average").isHeadOfTreeRoot(charniakRuleset));
 
         // The VP has two 'VBD' children - we want to be sure the rightmost one is selected
-        final ParseTree parseTree2 = ParseTree.read(sentence2, vocabulary);
-        assertEquals("gestured", parseTree2.subtree("S").subtree("VP").headDescendant(charniakRuleset)
-            .headDescendant(charniakRuleset).label());
+        final ParseTree parseTree2 = ParseTree.read(sentence2, v);
+        assertEquals("gestured", parseTree2.subtree("S").subtree("VP").headDescendant(charniakRuleset).headDescendant(charniakRuleset).label());
 
         // Test secondary-preference behavior - a QP that doesn't contain another QP, but does
         // contain a '$'
-        final ParseTree parseTree3 = ParseTree.read(sentence3, vocabulary);
-        assertEquals("$", parseTree3.subtree("S").subtree("NP").subtree("NP").subtree("QP").headDescendant(
-            charniakRuleset).label());
+        final ParseTree parseTree3 = ParseTree.read(sentence3, v);
+        assertEquals("$", parseTree3.subtree("S").subtree("NP").subtree("NP").subtree("QP").headDescendant(charniakRuleset).label());
         // Test alternate head-percolation rules, preferring embedded VP to AUX as head of a VP
         assertEquals("is", parseTree3.headDescendant(charniakRuleset).label());
         assertEquals("affected", parseTree3.headDescendant(msaRuleset).label());
 
         // Test 'default' behavior - an S that doesn't contain any of its preferred children (no
         // verb phrase)
-        final ParseTree parseTree4 = ParseTree.read(sentence4, vocabulary);
+        final ParseTree parseTree4 = ParseTree.read(sentence4, v);
         assertEquals("welcome", parseTree4.subtree("S").headDescendant(charniakRuleset).label());
 
         // Test selection of _leftmost_ preferred child of a PP. This sentence is arbitrarily
         // constructed (ungrammatically) such that the PP has both IN and TO children.
         // (A quick glance didn't turn up any real sentences in the WSJ corpus that exercised this
         // rule properly)
-        final ParseTree parseTree5 = ParseTree.read(sentence5, vocabulary);
-        assertEquals("of", parseTree5.subtree("S").subtree("NP").subtree("PP")
-            .headDescendant(charniakRuleset).label());
+        final ParseTree parseTree5 = ParseTree.read(sentence5, v);
+        assertEquals("of", parseTree5.subtree("S").subtree("NP").subtree("PP").headDescendant(charniakRuleset).label());
     }
 }

@@ -53,16 +53,16 @@ public class PerceptronCellSelector extends CellSelector {
     }
 
     @Override
-    public void init(final ChartParser<?, ?> parser) throws Exception {
+    public void init(final ChartParser<?, ?> p) throws Exception {
         // run at the beginning of each sentence
-        this.parser = parser;
-        this.DEBUG = (parser.opts.param1 == -1);
+        this.parser = p;
+        DEBUG = (p.opts.param1 == -1);
 
         // cslutScores.init(parser, parser.currentSentence);
-        assert cslutScores.allStartScore.containsKey(parser.currentSentence);
-        cslutStartScore = cslutScores.allStartScore.get(parser.currentSentence);
-        cslutEndScore = cslutScores.allEndScore.get(parser.currentSentence);
-        final int chartSize = parser.chart.size();
+        assert cslutScores.allStartScore.containsKey(p.currentSentence);
+        cslutStartScore = cslutScores.allStartScore.get(p.currentSentence);
+        cslutEndScore = cslutScores.allEndScore.get(p.currentSentence);
+        final int chartSize = p.chart.size();
 
         // inits all to false
         hasBeenPopped = new boolean[chartSize][chartSize + 1];
@@ -76,7 +76,7 @@ public class PerceptronCellSelector extends CellSelector {
                 if (spanLength == 1) {
                     hasBeenPopped[start][start + spanLength] = true;
                 } else {
-                    addSpanToAgenda(parser.chart.getCell(start, start + spanLength));
+                    addSpanToAgenda(p.chart.getCell(start, start + spanLength));
                 }
 
                 // addSpanToAgenda(parser.chart[start][start + spanLength]);
@@ -391,7 +391,7 @@ public class PerceptronCellSelector extends CellSelector {
     }
 
     // TODO: we should only need access to Chart (not ChartParser)
-    private Boolean[] extractFeatures(final HashSetChartCell span, final ChartParser parser) {
+    private Boolean[] extractFeatures(final HashSetChartCell span, final ChartParser<?, ?> p) {
         final List<Boolean> featList = new LinkedList<Boolean>();
         // BitSet feats = new BitSet();
 
@@ -406,13 +406,13 @@ public class PerceptronCellSelector extends CellSelector {
         // }
 
         // top cell
-        featList.add(span == parser.chart.getRootCell());
+        featList.add(span == p.chart.getRootCell());
 
         // span width
         featList.addAll(binValue(span.width(), 1, 25, 25));
 
         // pct span width
-        final float pctSpanOfWidth = span.width() / (float) parser.chart.size();
+        final float pctSpanOfWidth = span.width() / (float) p.chart.size();
         featList.addAll(binValue(pctSpanOfWidth, 0, 1, 21));
 
         // number span pops

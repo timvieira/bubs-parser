@@ -1,9 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static com.nativelibs4java.opencl.JavaCL.createBestContext;
-import static com.nativelibs4java.util.NIOUtils.directFloats;
-import static com.nativelibs4java.util.NIOUtils.directShorts;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -25,6 +21,9 @@ import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.OpenClSparseMatrixVectorParser.OpenClChart.OpenClChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
+import static com.nativelibs4java.opencl.JavaCL.createBestContext;
+import static com.nativelibs4java.util.NIOUtils.directFloats;
+import static com.nativelibs4java.util.NIOUtils.directShorts;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication using
@@ -131,7 +130,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
         final OpenClChartCell spvChartCell = (OpenClChartCell) chart.getCell(start, end);
 
-        final long t0 = System.currentTimeMillis();
+        // final long t0 = System.currentTimeMillis();
 
         long t2;
         long binarySpmvTime = 0;
@@ -290,14 +289,14 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         clValidRightChildrenProbabilities.release();
     }
 
-    private void printCrossProduct(final float[] cp) {
-        for (int i = 0; i < cp.length; i++) {
-            if (cp[i] != Float.NEGATIVE_INFINITY) {
-                System.out.format("%d : %.2f\n", i, cp[i]);
-            }
-        }
-        System.out.println();
-    }
+    // private void printCrossProduct(final float[] cp) {
+    // for (int i = 0; i < cp.length; i++) {
+    // if (cp[i] != Float.NEGATIVE_INFINITY) {
+    // System.out.format("%d : %.2f\n", i, cp[i]);
+    // }
+    // }
+    // System.out.println();
+    // }
 
     /**
      * This version copies the cross-product to device memory and the resulting chart cell back into main memory. Useful for testing, but we can do better if we avoid the repeated

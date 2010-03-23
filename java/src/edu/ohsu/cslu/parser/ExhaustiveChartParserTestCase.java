@@ -154,7 +154,7 @@ public abstract class ExhaustiveChartParserTestCase {
     public void testSimpleGrammar1() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        final Parser p = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final Parser<?> p = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
         final ParseTree bestParseTree = p.findBestParse(sentence);
         assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree.toString());
@@ -169,7 +169,7 @@ public abstract class ExhaustiveChartParserTestCase {
     public void testSimpleGrammar2() throws Exception {
         final String sentence = "The fish market stands last";
 
-        final Parser p = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final Parser<?> p = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
         final ParseTree bestParseTree = p.findBestParse(sentence);
         assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree.toString());
@@ -254,7 +254,7 @@ public abstract class ExhaustiveChartParserTestCase {
         assertEquals(sentences.get(index)[1], bestParseTree.toString());
 
         if (parser instanceof JsaSparseMatrixVectorParser) {
-            System.out.format("Total cross-product time: %d\n", ((SparseMatrixVectorParser) parser).totalCartesianProductTime);
+            System.out.format("Total cross-product time: %d\n", ((SparseMatrixVectorParser<?>) parser).totalCartesianProductTime);
         }
     }
 
