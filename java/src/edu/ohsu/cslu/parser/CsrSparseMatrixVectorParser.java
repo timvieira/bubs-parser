@@ -17,8 +17,6 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
  */
 public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, DenseVectorChart> {
 
-    // private final CsrSparseMatrixGrammar csrSparseMatrixGrammar;
-
     public CsrSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar) {
         super(grammar);
     }
