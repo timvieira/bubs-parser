@@ -11,7 +11,6 @@ public abstract class Chart {
     protected Parser<?> parser;
 
     protected Chart() {
-
     }
 
     public Chart(final int size, final boolean viterbiMax, final Parser<?> parser) {
@@ -32,6 +31,15 @@ public abstract class Chart {
      * @return the specified cell.
      */
     public abstract ChartCell getCell(final int start, final int end);
+
+    /**
+     * Returns the root cell
+     * 
+     * @return the root cell
+     */
+    public ChartCell getRootCell() {
+        return getCell(0, size);
+    }
 
     /**
      * Updates the inside probability of the specified non-terminal in the a cell.
@@ -79,6 +87,10 @@ public abstract class Chart {
          */
         public abstract ChartEdge getBestEdge(final int nonTerminal);
 
+        public abstract void updateInside(final ChartEdge edge);
+
+        public abstract void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb);
+
         /**
          * @return the word index of the first word covered by this cell
          */
@@ -114,6 +126,9 @@ public abstract class Chart {
         public String toString() {
             return getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " edges";
         }
+
+        public void finalizeCell() {
+        }
     }
 
     public static class ChartEdge {
@@ -139,6 +154,15 @@ public abstract class Chart {
             this.prod = prod;
             this.leftCell = childCell;
             this.rightCell = null;
+        }
+
+        public float inside() {
+            if (prod.isBinaryProd()) {
+                return prod.prob + leftCell.getInside(prod.leftChild) + rightCell.getInside(prod.rightChild);
+            } else if (prod.isUnaryProd()) {
+                return prod.prob + leftCell.getInside(prod.child());
+            }
+            return prod.prob;
         }
     }
 }

@@ -3,12 +3,12 @@ package edu.ohsu.cslu.parser;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public abstract class ChartParser<G extends GrammarByChild, C extends CellChart> extends Parser<G> {
+public abstract class ChartParser<G extends GrammarByChild, C extends Chart> extends Parser<G> {
 
     public C chart;
 
@@ -34,7 +34,7 @@ public abstract class ChartParser<G extends GrammarByChild, C extends CellChart>
     protected void addLexicalProductions(final int sent[]) throws Exception {
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
-            final HashSetChartCell cell = chart.getCell(i, i + 1);
+            final ChartCell cell = chart.getCell(i, i + 1);
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
             }

@@ -13,6 +13,7 @@ import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -188,7 +189,7 @@ public class BoundaryInOut extends EdgeSelector {
             tmpPosSet.add(grammar.nullSymbol);
             return tmpPosSet;
         }
-        return parser.chart.getCell(startIndex, endIndex).getPosNTs();
+        return ((HashSetChartCell) parser.chart.getCell(startIndex, endIndex)).getPosNTs();
     }
 
     public float leftBoundaryLogProb(final int nonTerm, final int pos) {

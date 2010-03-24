@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -21,7 +23,6 @@ import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial sentences using very simple grammars and the first 10 sentences of
@@ -254,7 +255,7 @@ public abstract class ExhaustiveChartParserTestCase {
         assertEquals(sentences.get(index)[1], bestParseTree.toString());
 
         if (parser instanceof JsaSparseMatrixVectorParser) {
-            System.out.format("Total cross-product time: %d\n", ((SparseMatrixVectorParser<?>) parser).totalCartesianProductTime);
+            System.out.format("Total cross-product time: %d\n", ((SparseMatrixVectorParser<?, ?>) parser).totalCartesianProductTime);
         }
     }
 

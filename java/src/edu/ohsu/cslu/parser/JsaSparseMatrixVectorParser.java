@@ -1,6 +1,8 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
@@ -12,12 +14,18 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSparseMatrixGrammar> {
+public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSparseMatrixGrammar, DenseVectorChart> {
 
     // private final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
 
     public JsaSparseMatrixVectorParser(final JsaSparseMatrixGrammar grammar) {
         super(grammar);
+    }
+
+    @Override
+    protected void initParser(final int sentLength) {
+        chart = new DenseVectorChart(sentLength, opts.viterbiMax, this);
+        super.initParser(sentLength);
     }
 
     @Override
@@ -61,7 +69,9 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
     }
 
     @Override
-    public void binarySpmvMultiply(final CrossProductVector crossProductVector, final DenseVectorChartCell chartCell) {
+    public void binarySpmvMultiply(final CrossProductVector crossProductVector, final ChartCell chartCell) {
+
+        final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
 
         final int[][] grammarRuleMatrix = grammar.binaryRuleMatrix();
         final float[][] grammarProbabilities = grammar.binaryProbabilities();
@@ -69,9 +79,9 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
         final float[] crossProductProbabilities = crossProductVector.probabilities;
         final short[] crossProductMidpoints = crossProductVector.midpoints;
 
-        final int[] chartCellChildren = chartCell.children;
-        final float[] chartCellProbabilities = chartCell.inside;
-        final short[] chartCellMidpoints = chartCell.midpoints;
+        final int[] chartCellChildren = denseVectorCell.children;
+        final float[] chartCellProbabilities = denseVectorCell.inside;
+        final short[] chartCellMidpoints = denseVectorCell.midpoints;
 
         int numValidLeftChildren = 0, numValidRightChildren = 0;
 
@@ -113,19 +123,21 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
                 }
             }
         }
-        chartCell.numValidLeftChildren = numValidLeftChildren;
-        chartCell.numValidRightChildren = numValidRightChildren;
+        denseVectorCell.numValidLeftChildren = numValidLeftChildren;
+        denseVectorCell.numValidRightChildren = numValidRightChildren;
     }
 
     @Override
-    public void unarySpmvMultiply(final DenseVectorChartCell chartCell) {
+    public void unarySpmvMultiply(final ChartCell chartCell) {
+
+        final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
 
         final int[][] grammarRuleMatrix = grammar.unaryRuleMatrix();
         final float[][] grammarProbabilities = grammar.unaryProbabilities();
 
-        final int[] chartCellChildren = chartCell.children;
-        final float[] chartCellProbabilities = chartCell.inside;
-        final short[] chartCellMidpoints = chartCell.midpoints;
+        final int[] chartCellChildren = denseVectorCell.children;
+        final float[] chartCellProbabilities = denseVectorCell.inside;
+        final short[] chartCellMidpoints = denseVectorCell.midpoints;
         final short chartCellEnd = (short) chartCell.end();
 
         // Iterate over possible parents
@@ -160,10 +172,10 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
 
                 if (currentProbability == Float.NEGATIVE_INFINITY) {
                     if (grammar.isValidLeftChild(parent)) {
-                        chartCell.numValidLeftChildren++;
+                        denseVectorCell.numValidLeftChildren++;
                     }
                     if (grammar.isValidRightChild(parent)) {
-                        chartCell.numValidRightChildren++;
+                        denseVectorCell.numValidRightChildren++;
                     }
                 }
             }

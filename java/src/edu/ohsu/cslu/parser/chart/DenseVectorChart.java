@@ -79,7 +79,7 @@ public class DenseVectorChart extends CellChart {
         }
 
         @Override
-        public void updateInside(final ChartEdge edge) {
+        public void updateInside(final Chart.ChartEdge edge) {
             updateInside(edge.prod, edge.leftCell, edge.rightCell, edge.inside());
         }
 

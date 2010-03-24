@@ -4,10 +4,12 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.DenseVectorChart;
+import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
-public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> extends ExhaustiveChartParser<G, DenseVectorChart> {
+public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends Chart> extends ExhaustiveChartParser<G, C> {
 
     private float[] crossProductProbabilities;
     private short[] crossProductMidpoints;
@@ -30,20 +32,17 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> ex
      * @param crossProductVector
      * @param chartCell
      */
-    public abstract void binarySpmvMultiply(final CrossProductVector crossProductVector, final DenseVectorChartCell chartCell);
+    public abstract void binarySpmvMultiply(final CrossProductVector crossProductVector, final ChartCell chartCell);
 
     /**
      * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and populates this chart cell. Used to populate unary rules.
      * 
      * @param chartCell
      */
-    public abstract void unarySpmvMultiply(final DenseVectorChartCell chartCell);
+    public abstract void unarySpmvMultiply(final ChartCell chartCell);
 
     @Override
     protected void initParser(final int sentLength) {
-        // super.initParser(sentLength);
-        chart = new DenseVectorChart(sentLength, opts.viterbiMax, this);
-
         totalSpMVTime = 0;
         totalCartesianProductTime = 0;
         totalCartesianProductUnionTime = 0;
@@ -57,7 +56,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar> ex
             final DenseVectorChartCell cell = (DenseVectorChartCell) chart.getCell(i, i + 1);
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 // cell.updateInside(lexProd, lexProd.prob);
-                cell.updateInside(chart.new ChartEdge(lexProd, cell));
+                cell.updateInside(new ChartEdge(lexProd, cell));
             }
             cell.finalizeCell();
         }
