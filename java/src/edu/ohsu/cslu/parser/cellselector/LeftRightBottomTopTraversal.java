@@ -18,7 +18,7 @@ public class LeftRightBottomTopTraversal extends CellSelector {
         // for (int span = 2; span <= parser.chartSize; span++) {
         for (int span = 1; span <= parser.chart.size(); span++) {
             for (int beg = 0; beg < parser.chart.size() - span + 1; beg++) { // beginning
-                cellList.add(parser.chart.getCell(beg, beg + span));
+                cellList.add((HashSetChartCell) parser.chart.getCell(beg, beg + span));
             }
         }
     }

@@ -88,7 +88,7 @@ public class CSLUTBlockedCells extends CellSelector {
 
                 // special case for span == 1 since the CSLUT model isn't made for these.
                 if (spanStartScore <= startThresh || span == 1) {
-                    cellList.add(parser.chart.getCell(beg, beg + span));
+                    cellList.add((HashSetChartCell) parser.chart.getCell(beg, beg + span));
                     isOpen[beg][beg + span] = true;
                     if (spanEndScore <= endThresh || span == 1) {
                         openCells++;

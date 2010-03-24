@@ -89,11 +89,12 @@ public class CellChart extends Chart {
             }
         }
 
-        public void updateInside(final ChartEdge edge) {
+        @Override
+        public void updateInside(final Chart.ChartEdge edge) {
             final int nt = edge.prod.parent;
             final float insideProb = edge.inside();
             if (viterbiMax && insideProb > getInside(nt)) {
-                bestEdge[nt] = edge;
+                bestEdge[nt] = (ChartEdge) edge;
             }
             updateInside(nt, insideProb);
         }
@@ -234,15 +235,6 @@ public class CellChart extends Chart {
                 throw new RuntimeException("Do not use midpt() with unary productions.  They do not have midpoints.");
             }
             return leftCell.end();
-        }
-
-        public float inside() {
-            if (prod.isBinaryProd()) {
-                return prod.prob + leftCell.getInside(prod.leftChild) + rightCell.getInside(prod.rightChild);
-            } else if (prod.isUnaryProd()) {
-                return prod.prob + leftCell.getInside(prod.child());
-            }
-            return prod.prob;
         }
 
         public ChartEdge copy() {

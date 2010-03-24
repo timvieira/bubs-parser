@@ -1,5 +1,9 @@
 package edu.ohsu.cslu.parser;
 
+import static com.nativelibs4java.opencl.JavaCL.createBestContext;
+import static com.nativelibs4java.util.NIOUtils.directFloats;
+import static com.nativelibs4java.util.NIOUtils.directShorts;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -20,10 +24,8 @@ import com.nativelibs4java.opencl.CLShortBuffer;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.OpenClSparseMatrixVectorParser.OpenClChart.OpenClChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
-import static com.nativelibs4java.opencl.JavaCL.createBestContext;
-import static com.nativelibs4java.util.NIOUtils.directFloats;
-import static com.nativelibs4java.util.NIOUtils.directShorts;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication using
@@ -34,7 +36,7 @@ import static com.nativelibs4java.util.NIOUtils.directShorts;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar> {
+public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, OpenClSparseMatrixVectorParser.OpenClChart> {
 
     private final static int LOCAL_WORK_SIZE = 64;
 
@@ -303,7 +305,9 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
      * copying.
      */
     @Override
-    public void binarySpmvMultiply(final CrossProductVector crossProductVector, final DenseVectorChartCell chartCell) {
+    public void binarySpmvMultiply(final CrossProductVector crossProductVector, final ChartCell chartCell) {
+
+        final OpenClChartCell openClCell = (OpenClChartCell) chartCell;
 
         // Copy cross-product to OpenCL memory
         copyToDevice(clCrossProductProbabilities0, crossProductVector.probabilities);
@@ -311,9 +315,9 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
         internalBinarySpmvMultiply();
 
-        copyFromDevice(clChartCellChildren, chartCell.children);
-        copyFromDevice(clChartCellProbabilities, chartCell.inside);
-        copyFromDevice(clChartCellMidpoints, chartCell.midpoints);
+        copyFromDevice(clChartCellChildren, openClCell.children);
+        copyFromDevice(clChartCellProbabilities, openClCell.inside);
+        copyFromDevice(clChartCellMidpoints, openClCell.midpoints);
     }
 
     private void internalBinarySpmvMultiply() {
@@ -333,18 +337,20 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
      * copying.
      */
     @Override
-    public void unarySpmvMultiply(final DenseVectorChartCell chartCell) {
+    public void unarySpmvMultiply(final ChartCell chartCell) {
+
+        final OpenClChartCell openClCell = (OpenClChartCell) chartCell;
 
         // Copy current chart cell entries to OpenCL memory
-        copyToDevice(clChartCellChildren, chartCell.children);
-        copyToDevice(clChartCellProbabilities, chartCell.inside);
-        copyToDevice(clChartCellMidpoints, chartCell.midpoints);
+        copyToDevice(clChartCellChildren, openClCell.children);
+        copyToDevice(clChartCellProbabilities, openClCell.inside);
+        copyToDevice(clChartCellMidpoints, openClCell.midpoints);
 
         internalUnarySpmvMultiply((short) chartCell.end());
 
-        copyFromDevice(clChartCellChildren, chartCell.children);
-        copyFromDevice(clChartCellProbabilities, chartCell.inside);
-        copyFromDevice(clChartCellMidpoints, chartCell.midpoints);
+        copyFromDevice(clChartCellChildren, openClCell.children);
+        copyFromDevice(clChartCellProbabilities, openClCell.inside);
+        copyFromDevice(clChartCellMidpoints, openClCell.midpoints);
     }
 
     private void internalUnarySpmvMultiply(final short chartCellEnd) {
@@ -428,7 +434,7 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         buf.get(array);
     }
 
-    public class OpenClChart extends DenseVectorChart {
+    public static class OpenClChart extends DenseVectorChart {
 
         public OpenClChart(final int size, final boolean viterbiMax, final Parser parser) {
             super(new OpenClChartCell[size][size + 1], viterbiMax, parser);

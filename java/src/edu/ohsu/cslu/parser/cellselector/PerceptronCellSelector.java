@@ -76,7 +76,7 @@ public class PerceptronCellSelector extends CellSelector {
                 if (spanLength == 1) {
                     hasBeenPopped[start][start + spanLength] = true;
                 } else {
-                    addSpanToAgenda(p.chart.getCell(start, start + spanLength));
+                    addSpanToAgenda((HashSetChartCell) p.chart.getCell(start, start + spanLength));
                 }
 
                 // addSpanToAgenda(parser.chart[start][start + spanLength]);
@@ -216,7 +216,7 @@ public class PerceptronCellSelector extends CellSelector {
 
         // make sure frontier always has all gold spans. This is just for debugging.
         for (final ChartEdge goldEdge : goldEdgeList) {
-            goldSpan = parser.chart.getCell(goldEdge.start(), goldEdge.end());
+            goldSpan = (HashSetChartCell) parser.chart.getCell(goldEdge.start(), goldEdge.end());
             boolean frontHasGold = false;
             for (final HashSetChartCell frontSpan : spanAgenda) {
                 if (frontSpan == goldSpan) {
@@ -239,7 +239,7 @@ public class PerceptronCellSelector extends CellSelector {
         boolean isGuessSpanCorrect = false;
         final List<HashSetChartCell> goldSpanList = new LinkedList<HashSetChartCell>();
         for (final ChartEdge edge : goldEdgeList) {
-            goldSpan = parser.chart.getCell(edge.start(), edge.end());
+            goldSpan = (HashSetChartCell) parser.chart.getCell(edge.start(), edge.end());
             if (guessSpan == goldSpan) {
                 if (DEBUG)
                     System.out.print("  * ");
@@ -297,12 +297,12 @@ public class PerceptronCellSelector extends CellSelector {
         // expand frontier of reachable spans; score them, and add them to the agenda.
         for (int start = 0; start < span.start(); start++) {
             if (hasBeenPopped[start][span.start()]) {
-                addSpanToAgenda(parser.chart.getCell(start, span.end()));
+                addSpanToAgenda((HashSetChartCell) parser.chart.getCell(start, span.end()));
             }
         }
         for (int end = parser.chart.size(); end > span.end(); end--) {
             if (hasBeenPopped[span.end()][end]) {
-                addSpanToAgenda(parser.chart.getCell(span.start(), end));
+                addSpanToAgenda((HashSetChartCell) parser.chart.getCell(span.start(), end));
             }
         }
     }
