@@ -2,7 +2,6 @@ package edu.ohsu.cslu.parser.chart;
 
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
 public abstract class Chart {
 
@@ -150,7 +149,7 @@ public abstract class Chart {
         }
 
         // unary production
-        public ChartEdge(final Production prod, final HashSetChartCell childCell) {
+        public ChartEdge(final Production prod, final ChartCell childCell) {
             this.prod = prod;
             this.leftCell = childCell;
             this.rightCell = null;

@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Arrays;
 
 import org.junit.Test;
@@ -11,10 +9,10 @@ import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CrossProductVector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test class for all sparse-matrix-vector parsers
@@ -39,7 +37,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
-        final DenseVectorChart chart = (DenseVectorChart) p.chart;
+        final Chart chart = p.chart;
 
         final int nn = g.mapNonterminal("NN");
         final int np = g.mapNonterminal("NP");
@@ -108,7 +106,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
-        final DenseVectorChart chart = (DenseVectorChart) p.chart;
+        final Chart chart = p.chart;
 
         // Cell 0,3 contains NP -> NP NN (3/20)
         final ChartCell cell_0_3 = chart.getCell(0, 3);
@@ -271,7 +269,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         // Create the parser
         final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
-        final DenseVectorChart chart = (DenseVectorChart) p.chart;
+        final Chart chart = p.chart;
 
         populateSimpleGrammar2Rows1_3(chart);
         populateSimpleGrammar2Row4(chart);
@@ -284,7 +282,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         // Finalize all chart cells
         for (int i = 0; i < chart.size(); i++) {
             for (int j = i + 1; j <= chart.size(); j++) {
-                ((ChartCell) chart.getCell(i, j)).finalizeCell();
+                chart.getCell(i, j).finalizeCell();
             }
         }
 

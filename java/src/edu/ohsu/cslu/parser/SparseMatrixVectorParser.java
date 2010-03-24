@@ -11,8 +11,8 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends Chart> extends ExhaustiveChartParser<G, C> {
 
-    private float[] crossProductProbabilities;
-    private short[] crossProductMidpoints;
+    protected float[] crossProductProbabilities;
+    protected short[] crossProductMidpoints;
 
     public long totalCartesianProductTime = 0;
     public long totalCartesianProductUnionTime = 0;
@@ -51,18 +51,13 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     // TODO Do this with a matrix multiply?
     @Override
     protected void addLexicalProductions(final int[] sent) throws Exception {
-        // super.addLexicalProductions(sent);
         for (int i = 0; i < chart.size(); i++) {
-            final DenseVectorChartCell cell = (DenseVectorChartCell) chart.getCell(i, i + 1);
+            final ChartCell cell = chart.getCell(i, i + 1);
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
-                // cell.updateInside(lexProd, lexProd.prob);
                 cell.updateInside(new ChartEdge(lexProd, cell));
             }
             cell.finalizeCell();
         }
-        // for (int start = 0; start < chart.size(); start++) {
-        // ((DenseVectorChartCell) chart.getCell(start, start + 1)).finalizeCell();
-        // }
     }
 
     /**

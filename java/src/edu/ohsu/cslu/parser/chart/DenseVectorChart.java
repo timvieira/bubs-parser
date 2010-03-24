@@ -26,6 +26,14 @@ public class DenseVectorChart extends CellChart {
         }
     }
 
+    /**
+     * Type-strengthen return-type. For the moment, we have to do it by casting, but better here than everywhere.
+     */
+    @Override
+    public DenseVectorChartCell getCell(final int start, final int end) {
+        return (DenseVectorChartCell) chart[start][end];
+    }
+
     public class DenseVectorChartCell extends HashSetChartCell {
 
         public final SparseMatrixGrammar sparseMatrixGrammar;
@@ -52,6 +60,7 @@ public class DenseVectorChart extends CellChart {
             this.children = new int[arraySize];
         }
 
+        @Override
         public void finalizeCell() {
 
             validLeftChildren = new int[numValidLeftChildren];
@@ -120,7 +129,7 @@ public class DenseVectorChart extends CellChart {
 
             final int midpoint = midpoints[nonTermIndex];
 
-            final DenseVectorChartCell leftChildCell = (DenseVectorChartCell) getCell(start(), midpoint);
+            final DenseVectorChartCell leftChildCell = getCell(start(), midpoint);
             final DenseVectorChartCell rightChildCell = midpoint < size() ? (DenseVectorChartCell) getCell(midpoint, end()) : null;
 
             Production p;
