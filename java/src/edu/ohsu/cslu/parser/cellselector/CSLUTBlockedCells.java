@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class CSLUTBlockedCells extends CellSelector {
 
-    private LinkedList<HashSetChartCell> cellList;
+    private LinkedList<ChartCell> cellList;
     public HashMap<String, Vector<Float>> allStartScore, allEndScore;
     public Vector<Float> curStartScore, curEndScore;
 
@@ -73,7 +73,7 @@ public class CSLUTBlockedCells extends CellSelector {
 
         isOpen = new boolean[chartSize][chartSize + 1];
         onlyFactored = new boolean[chartSize][chartSize + 1];
-        cellList = new LinkedList<HashSetChartCell>();
+        cellList = new LinkedList<ChartCell>();
 
         final float startThresh = getThresh(curStartScore, parser.opts.param2);
         final float endThresh = getThresh(curEndScore, parser.opts.param2);
@@ -88,7 +88,7 @@ public class CSLUTBlockedCells extends CellSelector {
 
                 // special case for span == 1 since the CSLUT model isn't made for these.
                 if (spanStartScore <= startThresh || span == 1) {
-                    cellList.add((HashSetChartCell) parser.chart.getCell(beg, beg + span));
+                    cellList.add(parser.chart.getCell(beg, beg + span));
                     isOpen[beg][beg + span] = true;
                     if (spanEndScore <= endThresh || span == 1) {
                         openCells++;
@@ -136,7 +136,7 @@ public class CSLUTBlockedCells extends CellSelector {
 
     @Override
     public short[] next() {
-        final HashSetChartCell cell = cellList.poll();
+        final ChartCell cell = cellList.poll();
         return new short[] { (short) cell.start(), (short) cell.end() };
     }
 
