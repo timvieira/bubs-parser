@@ -194,23 +194,23 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
         internalCrossProductUnion(start, end);
 
-        final float[] crossProductProbabilities = new float[grammar.packedArraySize()];
-        final FloatBuffer mappedClCrossProductProbabilities = directFloats(crossProductProbabilities.length, context.getByteOrder());
+        final float[] tmpCrossProductProbabilities = new float[grammar.packedArraySize()];
+        final FloatBuffer mappedClCrossProductProbabilities = directFloats(tmpCrossProductProbabilities.length, context.getByteOrder());
         clCrossProductProbabilities0.read(clQueue, mappedClCrossProductProbabilities, true);
-        mappedClCrossProductProbabilities.get(crossProductProbabilities);
+        mappedClCrossProductProbabilities.get(tmpCrossProductProbabilities);
 
-        final short[] crossProductMidpoints = new short[grammar.packedArraySize()];
-        final ShortBuffer mappedClCrossProductMidpoints = directShorts(crossProductMidpoints.length, context.getByteOrder());
+        final short[] tmpCrossProductMidpoints = new short[grammar.packedArraySize()];
+        final ShortBuffer mappedClCrossProductMidpoints = directShorts(tmpCrossProductMidpoints.length, context.getByteOrder());
         clCrossProductMidpoints0.read(clQueue, mappedClCrossProductMidpoints, true);
-        mappedClCrossProductMidpoints.get(crossProductMidpoints);
+        mappedClCrossProductMidpoints.get(tmpCrossProductMidpoints);
 
         int size = 0;
-        for (int i = 0; i < crossProductProbabilities.length; i++) {
-            if (crossProductProbabilities[i] != Float.NEGATIVE_INFINITY) {
+        for (int i = 0; i < tmpCrossProductProbabilities.length; i++) {
+            if (tmpCrossProductProbabilities[i] != Float.NEGATIVE_INFINITY) {
                 size++;
             }
         }
-        return new CrossProductVector(grammar, crossProductProbabilities, crossProductMidpoints, size);
+        return new CrossProductVector(grammar, tmpCrossProductProbabilities, tmpCrossProductMidpoints, size);
     }
 
     private void internalCrossProductUnion(final int start, final int end) {

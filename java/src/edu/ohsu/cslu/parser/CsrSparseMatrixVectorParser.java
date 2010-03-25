@@ -30,7 +30,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
     @Override
     protected void visitCell(final short start, final short end) {
 
-        final DenseVectorChartCell spvChartCell = (DenseVectorChartCell) chart.getCell(start, end);
+        final DenseVectorChartCell spvChartCell = chart.getCell(start, end);
 
         final long t0 = System.currentTimeMillis();
         long t1 = t0;
@@ -76,8 +76,8 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
         final int[] binaryRuleMatrixColumnIndices = grammar.binaryRuleMatrixColumnIndices();
         final float[] binaryRuleMatrixProbabilities = grammar.binaryRuleMatrixProbabilities();
 
-        final float[] crossProductProbabilities = crossProductVector.probabilities;
-        final short[] crossProductMidpoints = crossProductVector.midpoints;
+        final float[] tmpCrossProductProbabilities = crossProductVector.probabilities;
+        final short[] tmpCrossProductMidpoints = crossProductVector.midpoints;
 
         final int[] chartCellChildren = denseVectorCell.children;
         final float[] chartCellProbabilities = denseVectorCell.inside;
@@ -98,13 +98,13 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
                 final int grammarChildren = binaryRuleMatrixColumnIndices[i];
                 final float grammarProbability = binaryRuleMatrixProbabilities[i];
 
-                final float crossProductProbability = crossProductProbabilities[grammarChildren];
+                final float crossProductProbability = tmpCrossProductProbabilities[grammarChildren];
                 final float jointProbability = grammarProbability + crossProductProbability;
 
                 if (jointProbability > winningProbability) {
                     winningProbability = jointProbability;
                     winningChildren = grammarChildren;
-                    winningMidpoint = crossProductMidpoints[grammarChildren];
+                    winningMidpoint = tmpCrossProductMidpoints[grammarChildren];
                 }
             }
 
