@@ -6,8 +6,10 @@ import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.util.RadixSorter;
 import edu.ohsu.cslu.util.Scanner;
 import edu.ohsu.cslu.util.SerialCpuScanner;
+import edu.ohsu.cslu.util.Sorter;
 
 /**
  * An implementation of {@link SparseMatrixVectorParser} which stores its chart in packed format ({@link PackedArrayChart}) and performs the cartesian product using sort and scan
@@ -129,7 +131,8 @@ public class SortAndScanCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
         }
 
         // Sort the parallel array by children (keeping probabilities and midpoints aligned with the appropriate children keys)
-        edu.ohsu.cslu.util.Arrays.radixSort(cartesianProductChildren, cartesianProductInsideProbabilities, cartesianProductMidpoints);
+        final Sorter sorter = new RadixSorter();
+        sorter.sort(cartesianProductChildren, cartesianProductInsideProbabilities, cartesianProductMidpoints);
 
         // Flag the last occurrence of each key
         final Scanner scanner = new SerialCpuScanner();
