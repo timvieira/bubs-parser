@@ -6,10 +6,21 @@ import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.util.Scanner;
+import edu.ohsu.cslu.util.SerialCpuScanner;
 
-public class PackedArrayCsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, PackedArrayChart> {
+/**
+ * An implementation of {@link SparseMatrixVectorParser} which stores its chart in packed format ({@link PackedArrayChart}) and performs the cartesian product using sort and scan
+ * operations. This implementation performs the sort and scans serially on the CPU, but in theory, these operations should be implementable efficiently on GPU hardware.
+ * 
+ * @author Aaron Dunlop
+ * @since Mar 26, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
+public class SortAndScanCsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, PackedArrayChart> {
 
-    public PackedArrayCsrSpmvParser(final CsrSparseMatrixGrammar grammar) {
+    public SortAndScanCsrSpmvParser(final CsrSparseMatrixGrammar grammar) {
         super(grammar);
     }
 
@@ -69,45 +80,84 @@ public class PackedArrayCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
     @Override
     protected CrossProductVector crossProductUnion(final int start, final int end) {
 
-        if (crossProductProbabilities == null) {
-            crossProductProbabilities = new float[grammar.packedArraySize()];
-            crossProductMidpoints = new short[grammar.packedArraySize()];
+        // Compute the size of the array we'll need: sum_{m=1}^{M} V_l * V_r (sizes of cartesian product for all midpoints). Store offset into that array for each midpoint.
+        final int[] offsets = new int[end - start - 1];
+        int totalChildPairs = 0;
+        for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
+            final PackedArrayChartCell leftCell = chart.getCell(start, midpoint);
+            final int leftCellLeftChildren = leftCell.maxLeftChildIndex() - leftCell.minLeftChildIndex() + 1;
+
+            final PackedArrayChartCell rightCell = chart.getCell(midpoint, end);
+            final int rightCellRightChildren = rightCell.maxRightChildIndex() - rightCell.offset() + 1;
+
+            totalChildPairs += leftCellLeftChildren * rightCellRightChildren;
+            if (midpoint < (end - 1)) {
+                offsets[midpoint - start] = totalChildPairs;
+            }
         }
 
-        Arrays.fill(crossProductProbabilities, Float.NEGATIVE_INFINITY);
-        int size = 0;
+        // Allocate parallel array for cartesian product (children, probability, midpoint)
+        final int[] cartesianProductChildren = new int[totalChildPairs];
+        final float[] cartesianProductInsideProbabilities = new float[totalChildPairs];
+        final short[] cartesianProductMidpoints = new short[totalChildPairs];
 
-        // Iterate over all possible midpoints, unioning together the cross-product of discovered
-        // non-terminals in each left/right child pair
+        // Perform cartesian product for each midpoint and store in the parallel array
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
             final PackedArrayChartCell leftCell = chart.getCell(start, midpoint);
             final PackedArrayChartCell rightCell = chart.getCell(midpoint, end);
+
+            final int rightCellRightChildren = rightCell.maxRightChildIndex() - rightCell.offset() + 1;
 
             final int[] nonTerminalIndices = chart.nonTerminalIndices;
             final float[] insideProbabilities = chart.insideProbabilities;
 
             for (int i = leftCell.minLeftChildIndex(); i <= leftCell.maxLeftChildIndex(); i++) {
+                final int leftChildrenProcessed = i - leftCell.minLeftChildIndex();
 
-                final int leftChild = nonTerminalIndices[i];
+                final int leftChildIndex = nonTerminalIndices[i];
                 final float leftProbability = insideProbabilities[i];
 
                 for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {
+                    final int rightChildrenProcessed = j - rightCell.offset();
+                    final int cartesianProductIndex = offsets[midpoint - start - 1] + leftChildrenProcessed * rightCellRightChildren + rightChildrenProcessed;
 
-                    final float jointProbability = leftProbability + insideProbabilities[j];
-                    final int child = grammar.pack(leftChild, (short) nonTerminalIndices[j]);
-                    final float currentProbability = crossProductProbabilities[child];
-
-                    if (jointProbability > currentProbability) {
-                        crossProductProbabilities[child] = jointProbability;
-                        crossProductMidpoints[child] = midpoint;
-
-                        if (currentProbability == Float.NEGATIVE_INFINITY) {
-                            size++;
-                        }
-                    }
+                    cartesianProductChildren[cartesianProductIndex] = grammar.pack(leftChildIndex, (short) nonTerminalIndices[j]);
+                    cartesianProductInsideProbabilities[cartesianProductIndex] = leftProbability + insideProbabilities[j];
+                    cartesianProductMidpoints[cartesianProductIndex] = midpoint;
                 }
             }
         }
+
+        // Sort the parallel array by children (keeping probabilities and midpoints aligned with the appropriate children keys)
+        edu.ohsu.cslu.util.Arrays.radixSort(cartesianProductChildren, cartesianProductInsideProbabilities, cartesianProductMidpoints);
+
+        // Flag the last occurrence of each key
+        final Scanner scanner = new SerialCpuScanner();
+        final byte[] segmentFlags = new byte[totalChildPairs];
+        scanner.flagEndOfKeySegments(cartesianProductChildren, segmentFlags);
+
+        // Segmented scan through the probability array, using the last occurrence flags as segment boundaries and keeping the max probability. This custom segmented scan also
+        // 'sums' the midpoint array, so the (already-flagged) last instance of each children key will have the maximum probability and the associated midpoint.
+        scanner.parallelArrayInclusiveSegmentedMax(cartesianProductInsideProbabilities, cartesianProductInsideProbabilities, cartesianProductMidpoints, cartesianProductMidpoints,
+                segmentFlags);
+
+        // Scatter the cartesian product array to a dense representation, writing only the flagged values
+        if (crossProductProbabilities == null) {
+            crossProductProbabilities = new float[grammar.packedArraySize()];
+            crossProductMidpoints = new short[grammar.packedArraySize()];
+        }
+        Arrays.fill(crossProductProbabilities, Float.NEGATIVE_INFINITY);
+        scanner.scatter(cartesianProductInsideProbabilities, crossProductProbabilities, cartesianProductChildren, segmentFlags);
+        scanner.scatter(cartesianProductMidpoints, crossProductMidpoints, cartesianProductChildren, segmentFlags);
+
+        int size = 0;
+        for (int i = 0; i < segmentFlags.length; i++) {
+            if (segmentFlags[i] != 0) {
+                size++;
+            }
+        }
+
+        System.out.format("Total Child Pairs: %d Size: %d, %.1f%%\n", totalChildPairs, size, size * 100f / totalChildPairs);
 
         return new CrossProductVector(grammar, crossProductProbabilities, crossProductMidpoints, size);
     }
