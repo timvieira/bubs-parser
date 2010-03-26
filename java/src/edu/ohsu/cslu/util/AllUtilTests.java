@@ -12,6 +12,6 @@ import org.junit.runners.Suite;
  *        $Id$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses( { TestArrays.class, TestSerialCpuScanner.class, TestStrings.class })
+@Suite.SuiteClasses( { TestSorter.TestRadixSorter.class, TestSerialCpuScanner.class, TestStrings.class })
 public class AllUtilTests {
 }
