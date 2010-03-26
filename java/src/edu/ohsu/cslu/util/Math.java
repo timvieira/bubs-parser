@@ -19,9 +19,13 @@ public class Math {
      * Returns the maximum of the arguments supplied
      * 
      * @param arguments
-     * @return maximum of the arguments supplied
+     * @return maximum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static int max(final int... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
         int max = arguments[0];
         for (int i = 1; i < arguments.length; i++) {
             final int current = arguments[i];
@@ -36,9 +40,13 @@ public class Math {
      * Returns the maximum of the arguments supplied
      * 
      * @param arguments
-     * @return maximum of the arguments supplied
+     * @return maximum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static char max(final char... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
         char max = arguments[0];
         for (int i = 1; i < arguments.length; i++) {
             final char current = arguments[i];
@@ -53,9 +61,13 @@ public class Math {
      * Returns the maximum of the arguments supplied
      * 
      * @param arguments
-     * @return maximum of the arguments supplied
+     * @return maximum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static float max(final float... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
         float max = arguments[0];
         for (int i = 1; i < arguments.length; i++) {
             final float current = arguments[i];
@@ -70,9 +82,13 @@ public class Math {
      * Returns the maximum of the arguments supplied
      * 
      * @param arguments
-     * @return maximum of the arguments supplied
+     * @return maximum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static double max(final double... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
         double max = arguments[0];
         for (int i = 1; i < arguments.length; i++) {
             final double current = arguments[i];
@@ -88,9 +104,13 @@ public class Math {
      * Returns the minimum of the arguments supplied
      * 
      * @param arguments
-     * @return minimum of the arguments supplied
+     * @return minimum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static int min(final int... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
         int min = arguments[0];
         for (int i = 1; i < arguments.length; i++) {
             final int current = arguments[i];
@@ -105,9 +125,13 @@ public class Math {
      * Returns the minimum of the arguments supplied
      * 
      * @param arguments
-     * @return minimum of the arguments supplied
+     * @return minimum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static char min(final char... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
         char min = arguments[0];
         for (int i = 1; i < arguments.length; i++) {
             final char current = arguments[i];
@@ -122,9 +146,13 @@ public class Math {
      * Returns the minimum of the arguments supplied
      * 
      * @param arguments
-     * @return minimum of the arguments supplied
+     * @return minimum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static float min(final float... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
         float min = arguments[0];
         for (int i = 1; i < arguments.length; i++) {
             final float current = arguments[i];
@@ -139,9 +167,13 @@ public class Math {
      * Returns the minimum of the arguments supplied
      * 
      * @param arguments
-     * @return minimum of the arguments supplied
+     * @return minimum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static double min(final double... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
         double min = arguments[0];
         for (int i = 1; i < arguments.length; i++) {
             final double current = arguments[i];

@@ -1,9 +1,11 @@
 package edu.ohsu.cslu.parser;
 
+import java.util.Arrays;
+
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.chart.DenseVectorChart;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
@@ -15,22 +17,22 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, DenseVectorChart> {
+public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, PackedArrayChart> {
 
-    public CsrSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar) {
+    public CsrSpmvParser(final CsrSparseMatrixGrammar grammar) {
         super(grammar);
     }
 
     @Override
     protected void initParser(final int sentLength) {
-        chart = new DenseVectorChart(sentLength, opts.viterbiMax, this);
+        chart = new PackedArrayChart(sentLength, grammar);
         super.initParser(sentLength);
     }
 
     @Override
     protected void visitCell(final short start, final short end) {
 
-        final DenseVectorChartCell spvChartCell = chart.getCell(start, end);
+        final PackedArrayChartCell spvChartCell = chart.getCell(start, end);
 
         final long t0 = System.currentTimeMillis();
         long t1 = t0;
@@ -58,7 +60,7 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
         final long t3 = System.currentTimeMillis();
         final long unarySpmvTime = t3 - t2;
 
-        // TODO We won't need to do this once we're storing directly into the packed array
+        // Pack the temporary cell storage into the main chart array
         spvChartCell.finalizeCell();
 
         // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n", start, end, t3
@@ -67,10 +69,64 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
+    /**
+     * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together, saving the maximum probability child combinations.
+     * 
+     * @param start
+     * @param end
+     * @return Unioned cross-product
+     */
+    @Override
+    protected CrossProductVector crossProductUnion(final int start, final int end) {
+
+        if (crossProductProbabilities == null) {
+            crossProductProbabilities = new float[grammar.packedArraySize()];
+            crossProductMidpoints = new short[grammar.packedArraySize()];
+        }
+
+        Arrays.fill(crossProductProbabilities, Float.NEGATIVE_INFINITY);
+        int size = 0;
+
+        // Iterate over all possible midpoints, unioning together the cross-product of discovered
+        // non-terminals in each left/right child pair
+        for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
+            final PackedArrayChartCell leftCell = chart.getCell(start, midpoint);
+            final PackedArrayChartCell rightCell = chart.getCell(midpoint, end);
+
+            final int[] nonTerminalIndices = chart.nonTerminalIndices;
+            final float[] insideProbabilities = chart.insideProbabilities;
+
+            for (int i = leftCell.minLeftChildIndex(); i <= leftCell.maxLeftChildIndex(); i++) {
+
+                final int leftChild = nonTerminalIndices[i];
+                final float leftProbability = insideProbabilities[i];
+
+                for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {
+
+                    final float jointProbability = leftProbability + insideProbabilities[j];
+                    final int child = grammar.pack(leftChild, (short) nonTerminalIndices[j]);
+                    final float currentProbability = crossProductProbabilities[child];
+
+                    if (jointProbability > currentProbability) {
+                        crossProductProbabilities[child] = jointProbability;
+                        crossProductMidpoints[child] = midpoint;
+
+                        if (currentProbability == Float.NEGATIVE_INFINITY) {
+                            size++;
+                        }
+                    }
+                }
+            }
+        }
+
+        return new CrossProductVector(grammar, crossProductProbabilities, crossProductMidpoints, size);
+    }
+
     @Override
     public void binarySpmvMultiply(final CrossProductVector crossProductVector, final ChartCell chartCell) {
 
-        final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
+        final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
+        packedArrayCell.allocateTemporaryStorage();
 
         final int[] binaryRuleMatrixRowIndices = grammar.binaryRuleMatrixRowIndices();
         final int[] binaryRuleMatrixColumnIndices = grammar.binaryRuleMatrixColumnIndices();
@@ -79,11 +135,9 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
         final float[] tmpCrossProductProbabilities = crossProductVector.probabilities;
         final short[] tmpCrossProductMidpoints = crossProductVector.midpoints;
 
-        final int[] chartCellChildren = denseVectorCell.children;
-        final float[] chartCellProbabilities = denseVectorCell.inside;
-        final short[] chartCellMidpoints = denseVectorCell.midpoints;
-
-        int numValidLeftChildren = 0, numValidRightChildren = 0;
+        final int[] chartCellChildren = packedArrayCell.tmpChildren;
+        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
+        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
 
         // Iterate over possible parents (matrix rows)
         for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
@@ -112,31 +166,23 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
                 chartCellChildren[parent] = winningChildren;
                 chartCellProbabilities[parent] = winningProbability;
                 chartCellMidpoints[parent] = winningMidpoint;
-
-                if (grammar.isValidLeftChild(parent)) {
-                    numValidLeftChildren++;
-                }
-                if (grammar.isValidRightChild(parent)) {
-                    numValidRightChildren++;
-                }
             }
         }
-        denseVectorCell.numValidLeftChildren = numValidLeftChildren;
-        denseVectorCell.numValidRightChildren = numValidRightChildren;
     }
 
     @Override
     public void unarySpmvMultiply(final ChartCell chartCell) {
 
-        final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
+        final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
+        packedArrayCell.allocateTemporaryStorage();
 
         final int[] unaryRuleMatrixRowIndices = grammar.unaryRuleMatrixRowIndices();
         final int[] unaryRuleMatrixColumnIndices = grammar.unaryRuleMatrixColumnIndices();
         final float[] unaryRuleMatrixProbabilities = grammar.unaryRuleMatrixProbabilities();
 
-        final int[] chartCellChildren = denseVectorCell.children;
-        final float[] chartCellProbabilities = denseVectorCell.inside;
-        final short[] chartCellMidpoints = denseVectorCell.midpoints;
+        final int[] chartCellChildren = packedArrayCell.tmpChildren;
+        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
+        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
         final short chartCellEnd = (short) chartCell.end();
 
         // Iterate over possible parents (matrix rows)
@@ -167,15 +213,6 @@ public class CsrSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSpa
                 chartCellChildren[parent] = winningChildren;
                 chartCellProbabilities[parent] = winningProbability;
                 chartCellMidpoints[parent] = winningMidpoint;
-
-                if (currentProbability == Float.NEGATIVE_INFINITY) {
-                    if (grammar.isValidLeftChild(parent)) {
-                        denseVectorCell.numValidLeftChildren++;
-                    }
-                    if (grammar.isValidRightChild(parent)) {
-                        denseVectorCell.numValidRightChildren++;
-                    }
-                }
             }
         }
     }

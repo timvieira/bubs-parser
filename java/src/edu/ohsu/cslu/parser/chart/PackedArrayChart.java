@@ -171,8 +171,8 @@ public class PackedArrayChart extends Chart {
 
             int nonTerminalOffset = offset;
             int tmpMinLeftChildIndex = Integer.MAX_VALUE;
-            int tmpMaxLeftChildIndex = -1;
-            int tmpMaxRightChildIndex = -1;
+            int tmpMaxLeftChildIndex = offset - 1;
+            int tmpMaxRightChildIndex = offset - 1;
 
             for (int nonTerminal = 0; nonTerminal < tmpInsideProbabilities.length; nonTerminal++) {
 

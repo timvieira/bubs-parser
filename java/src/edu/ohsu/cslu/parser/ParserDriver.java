@@ -252,7 +252,7 @@ public class ParserDriver extends BaseCommandlineTool {
             case JsaSparseMatrixVector:
                 return new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar);
             case CsrSparseMatrixVector:
-                return new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
+                return new CsrSpmvParser((CsrSparseMatrixGrammar) grammar);
             case OpenClSparseMatrixVector:
                 return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
 

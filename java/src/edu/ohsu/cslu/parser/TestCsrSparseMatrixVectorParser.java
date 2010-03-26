@@ -8,7 +8,7 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
- * Tests for {@link CsrSparseMatrixVectorParser}.
+ * Tests for {@link CsrSpmvParser}.
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
@@ -24,7 +24,7 @@ public class TestCsrSparseMatrixVectorParser extends SparseMatrixVectorParserTes
 
     @Override
     protected Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new CsrSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
+        return new CsrSpmvParser((CsrSparseMatrixGrammar) grammar);
     }
 
     @Override

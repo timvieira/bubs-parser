@@ -9,6 +9,21 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
+/**
+ * A class of parser which performs the grammar intersection in each cell by:
+ * <ol>
+ * <li>Finding the cartesian product of possible child productions in child cells across all possible midpoints.
+ * <li>Multiplying that cartesian product vector by the grammar matrix (stored in a sparse format).
+ * <ol>
+ * 
+ * Subclasses use a variety of sparse matrix grammar representations, and differ in how they perform the cartesian product. Some implementations perform the vector and matrix
+ * operations on GPU hardware throgh OpenCL.
+ * 
+ * @author Aaron Dunlop
+ * @since Mar 26, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends Chart> extends ExhaustiveChartParser<G, C> {
 
     protected float[] crossProductProbabilities;
