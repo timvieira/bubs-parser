@@ -39,4 +39,7 @@ public abstract class ExhaustiveChartParser<G extends GrammarByChild, C extends 
         return extractBestParse();
     }
 
+    public String getStatHeader() {
+        return "";
+    }
 }

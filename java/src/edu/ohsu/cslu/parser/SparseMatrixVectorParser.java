@@ -29,6 +29,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     protected float[] crossProductProbabilities;
     protected short[] crossProductMidpoints;
 
+    public long startTime = 0;
     public long totalCartesianProductTime = 0;
     public long totalCartesianProductUnionTime = 0;
     public long totalSpMVTime = 0;
@@ -58,6 +59,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
     @Override
     protected void initParser(final int sentLength) {
+        startTime = System.currentTimeMillis();
         totalSpMVTime = 0;
         totalCartesianProductTime = 0;
         totalCartesianProductUnionTime = 0;
@@ -129,10 +131,14 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         return new CrossProductVector(grammar, crossProductProbabilities, crossProductMidpoints, size);
     }
 
+    public String getStatHeader() {
+        return String.format("%8s, %10s, %8s, %8s", "Total", "X-product", "X-union", "SpMV");
+    }
+
     @Override
     public String getStats() {
-        // return String.format("%.3f, %d, %d, %d", totalTime / 1000f, totalCartesianProductTime, totalCartesianProductUnionTime, totalSpMVTime);
-        return String.format("%d, %d, %d", totalCartesianProductTime, totalCartesianProductUnionTime, totalSpMVTime);
+        final long totalTime = System.currentTimeMillis() - startTime;
+        return String.format("%8.1f, %10d, %8d, %8d", totalTime / 1000f, totalCartesianProductTime, totalCartesianProductUnionTime, totalSpMVTime);
     }
 
     public final static class CrossProductVector {

@@ -1,14 +1,14 @@
 package edu.ohsu.cslu.util;
 
 /**
- * Implements {@link Sorter} using the radix sort algorithm. Radix sort runs in asymptotic O(n) time, but requires additional storage, slightly larger than the array being sorted.
+ * Implements {@link Sort} using the radix sort algorithm. Radix sort runs in asymptotic O(n) time, but requires additional storage, slightly larger than the array being sorted.
  * 
  * @author Aaron Dunlop
  * @since Mar 26, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class RadixSorter implements Sorter {
+public class RadixSort extends Sort.BaseSort implements Sort {
 
     @Override
     public void sort(final int[] array) {
@@ -47,14 +47,6 @@ public class RadixSorter implements Sorter {
         // if (input != a) {
         // System.arraycopy(a, 0, input, 0, input.length);
         // }
-    }
-
-    @Override
-    public int[] nonDestructiveSort(final int[] array) {
-        final int[] sorted = new int[array.length];
-        System.arraycopy(array, 0, sorted, 0, array.length);
-        sort(sorted);
-        return sorted;
     }
 
     @Override

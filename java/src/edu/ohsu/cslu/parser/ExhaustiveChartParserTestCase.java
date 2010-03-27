@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -23,6 +21,7 @@ import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial sentences using very simple grammars and the first 10 sentences of
@@ -53,7 +52,10 @@ public abstract class ExhaustiveChartParserTestCase {
     protected static ArrayList<String[]> sentences = new ArrayList<String[]>();
 
     /** The parser under test */
-    protected Parser<?> parser;
+    protected ExhaustiveChartParser<?, ?> parser;
+
+    /** TODO We can eliminate this if we reuse the parser and print the header in suiteSetUp() */
+    private static boolean headerLinePrinted = false;
 
     /**
      * Creates the appropriate parser for each test class.
@@ -113,7 +115,12 @@ public abstract class ExhaustiveChartParserTestCase {
         }
 
         // TODO Parameterize ChartTraversalType (this will require a custom Runner implementation)
-        parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        parser = (ExhaustiveChartParser<?, ?>) createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+
+        if (!headerLinePrinted) {
+            System.out.println(parser.getStatHeader());
+            headerLinePrinted = true;
+        }
     }
 
     public static Grammar createSimpleGrammar2(final Class<? extends Grammar> grammarClass) throws Exception {
@@ -155,9 +162,9 @@ public abstract class ExhaustiveChartParserTestCase {
     public void testSimpleGrammar1() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        final Parser<?> p = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        parser = (ExhaustiveChartParser<?, ?>) createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
-        final ParseTree bestParseTree = p.findBestParse(sentence);
+        final ParseTree bestParseTree = parser.findBestParse(sentence);
         assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree.toString());
     }
 
@@ -170,9 +177,9 @@ public abstract class ExhaustiveChartParserTestCase {
     public void testSimpleGrammar2() throws Exception {
         final String sentence = "The fish market stands last";
 
-        final Parser<?> p = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        parser = (ExhaustiveChartParser<?, ?>) createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
-        final ParseTree bestParseTree = p.findBestParse(sentence);
+        final ParseTree bestParseTree = parser.findBestParse(sentence);
         assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree.toString());
     }
 
