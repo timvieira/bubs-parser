@@ -6,10 +6,10 @@ import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
-import edu.ohsu.cslu.util.RadixSorter;
+import edu.ohsu.cslu.util.MergeSort;
 import edu.ohsu.cslu.util.Scanner;
 import edu.ohsu.cslu.util.SerialCpuScanner;
-import edu.ohsu.cslu.util.Sorter;
+import edu.ohsu.cslu.util.Sort;
 
 /**
  * An implementation of {@link SparseMatrixVectorParser} which stores its chart in packed format ({@link PackedArrayChart}) and performs the cartesian product using sort and scan
@@ -21,6 +21,12 @@ import edu.ohsu.cslu.util.Sorter;
  * @version $Revision$ $Date$ $Author$
  */
 public class SortAndScanCsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, PackedArrayChart> {
+
+    public long totalSortTime = 0;
+    public long totalCountTime = 0;
+    public long totalXProdTime = 0;
+    public long totalScanTime = 0;
+    public long totalScatterTime = 0;
 
     public SortAndScanCsrSpmvParser(final CsrSparseMatrixGrammar grammar) {
         super(grammar);
@@ -82,6 +88,7 @@ public class SortAndScanCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
     @Override
     protected CrossProductVector crossProductUnion(final int start, final int end) {
 
+        final long t0 = System.nanoTime() / 1000000;
         // Compute the size of the array we'll need: sum_{m=1}^{M} V_l * V_r (sizes of cartesian product for all midpoints). Store offset into that array for each midpoint.
         final int[] offsets = new int[end - start - 1];
         int totalChildPairs = 0;
@@ -97,6 +104,9 @@ public class SortAndScanCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
                 offsets[midpoint - start] = totalChildPairs;
             }
         }
+
+        final long t1 = System.nanoTime() / 1000000;
+        totalCountTime += t1 - t0;
 
         // Allocate parallel array for cartesian product (children, probability, midpoint)
         final int[] cartesianProductChildren = new int[totalChildPairs];
@@ -130,9 +140,15 @@ public class SortAndScanCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
             }
         }
 
+        final long t2 = System.nanoTime() / 1000000;
+        totalXProdTime += t2 - t1;
+
         // Sort the parallel array by children (keeping probabilities and midpoints aligned with the appropriate children keys)
-        final Sorter sorter = new RadixSorter();
+        final Sort sorter = new MergeSort();
         sorter.sort(cartesianProductChildren, cartesianProductInsideProbabilities, cartesianProductMidpoints);
+
+        final long t3 = System.nanoTime() / 1000000;
+        totalSortTime += t3 - t2;
 
         // Flag the last occurrence of each key
         final Scanner scanner = new SerialCpuScanner();
@@ -143,6 +159,9 @@ public class SortAndScanCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
         // 'sums' the midpoint array, so the (already-flagged) last instance of each children key will have the maximum probability and the associated midpoint.
         scanner.parallelArrayInclusiveSegmentedMax(cartesianProductInsideProbabilities, cartesianProductInsideProbabilities, cartesianProductMidpoints, cartesianProductMidpoints,
                 segmentFlags);
+
+        final long t4 = System.nanoTime() / 1000000;
+        totalScanTime += t4 - t3;
 
         // Scatter the cartesian product array to a dense representation, writing only the flagged values
         if (crossProductProbabilities == null) {
@@ -160,7 +179,10 @@ public class SortAndScanCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
             }
         }
 
-        System.out.format("Total Child Pairs: %d Size: %d, %.1f%%\n", totalChildPairs, size, size * 100f / totalChildPairs);
+        final long t5 = System.nanoTime() / 1000000;
+        totalScatterTime += t5 - t4;
+
+        // System.out.format("Total Child Pairs: %d Size: %d, %.1f%%\n", totalChildPairs, size, size * 100f / totalChildPairs);
 
         return new CrossProductVector(grammar, crossProductProbabilities, crossProductMidpoints, size);
     }
@@ -258,5 +280,17 @@ public class SortAndScanCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
                 chartCellMidpoints[parent] = winningMidpoint;
             }
         }
+    }
+
+    @Override
+    public String getStatHeader() {
+        return String.format("%8s, %9s, %8s, %6s, %6s, %6s, %6s, %7s, %5s", "Total", "X-product", "X-union", "Count", "X-prod", "Sort", "Scan", "Scatter", "SpMV");
+    }
+
+    @Override
+    public String getStats() {
+        final long totalTime = System.currentTimeMillis() - startTime;
+        return String.format("%8.1f, %9d, %8d, %6d, %6d, %6d, %6d, %7d, %5d", totalTime / 1000f, totalCartesianProductTime, totalCartesianProductUnionTime, totalCountTime,
+                totalXProdTime, totalSortTime, totalScanTime, totalScatterTime, totalSpMVTime);
     }
 }
