@@ -6,15 +6,17 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
- * SparseMatrixVectorParser implementation which uses a grammar stored in Java Sparse Array (JSA) format. Stores cell populations and cross-product densely, for efficient array
- * access and to avoid hashing (even though it's not quite as memory-efficient).
+ * SparseMatrixVectorParser implementation which uses a grammar stored in Java Sparse Array (JSA) format.
+ * Stores cell populations and cross-product densely, for efficient array access and to avoid hashing (even
+ * though it's not quite as memory-efficient).
  * 
  * @author Aaron Dunlop
  * @since Jan 28, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSparseMatrixGrammar, DenseVectorChart> {
+public class JsaSparseMatrixVectorParser extends
+        SparseMatrixVectorParser<JsaSparseMatrixGrammar, DenseVectorChart> {
 
     // private final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
 
@@ -31,7 +33,7 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
     @Override
     protected void visitCell(final short start, final short end) {
 
-        final DenseVectorChartCell spvChartCell = (DenseVectorChartCell) chart.getCell(start, end);
+        final DenseVectorChartCell spvChartCell = chart.getCell(start, end);
 
         final long t0 = System.currentTimeMillis();
         long t1 = t0;
@@ -52,7 +54,8 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
         final long binarySpmvTime = t2 - t1;
 
         // Handle unary productions
-        // TODO: This only goes through unary rules one time, so it can't create unary chains unless such chains are encoded in the grammar. Iterating a few times would probably
+        // TODO: This only goes through unary rules one time, so it can't create unary chains unless such
+        // chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
         unarySpmvMultiply(spvChartCell);
 
@@ -62,8 +65,10 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
         // TODO We won't need to do this once we're storing directly into the packed array
         spvChartCell.finalizeCell();
 
-        // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n", start, end, t3
-        // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime, edges, spmvTime, edges / spmvTime);
+        // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n",
+        // start, end, t3
+        // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime,
+        // edges, spmvTime, edges / spmvTime);
         totalCartesianProductTime += crossProductTime;
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
@@ -76,8 +81,8 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
         final int[][] grammarRuleMatrix = grammar.binaryRuleMatrix();
         final float[][] grammarProbabilities = grammar.binaryProbabilities();
 
-        final float[] crossProductProbabilities = crossProductVector.probabilities;
-        final short[] crossProductMidpoints = crossProductVector.midpoints;
+        final float[] tmpCrossProductProbabilities = crossProductVector.probabilities;
+        final short[] tmpCrossProductMidpoints = crossProductVector.midpoints;
 
         final int[] chartCellChildren = denseVectorCell.children;
         final float[] chartCellProbabilities = denseVectorCell.inside;
@@ -100,13 +105,13 @@ public class JsaSparseMatrixVectorParser extends SparseMatrixVectorParser<JsaSpa
                 final int grammarChildren = grammarChildrenForParent[i];
 
                 final float grammarProbability = grammarProbabilitiesForParent[i];
-                final float crossProductProbability = crossProductProbabilities[grammarChildren];
+                final float crossProductProbability = tmpCrossProductProbabilities[grammarChildren];
                 final float jointProbability = grammarProbability + crossProductProbability;
 
                 if (jointProbability > winningProbability) {
                     winningProbability = jointProbability;
                     winningChildren = grammarChildren;
-                    winningMidpoint = crossProductMidpoints[grammarChildren];
+                    winningMidpoint = tmpCrossProductMidpoints[grammarChildren];
                 }
             }
 
