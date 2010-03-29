@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
 import com.nativelibs4java.opencl.CLContext;
@@ -26,17 +25,19 @@ import edu.ohsu.cslu.parser.OpenClSparseMatrixVectorParser.OpenClChart.OpenClCha
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
+import edu.ohsu.cslu.util.OpenClUtils;
 
 /**
- * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication using
- * OpenCL kernels.
+ * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format (
+ * {@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication using OpenCL kernels.
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, OpenClSparseMatrixVectorParser.OpenClChart> {
+public class OpenClSparseMatrixVectorParser extends
+        SparseMatrixVectorParser<CsrSparseMatrixGrammar, OpenClSparseMatrixVectorParser.OpenClChart> {
 
     private final static int LOCAL_WORK_SIZE = 64;
 
@@ -90,7 +91,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
             sw.write("#define LEFT_CHILD_SHIFT " + grammar.leftChildShift + '\n');
             sw.write("#define MASK " + grammar.mask + '\n');
             final String filename = getClass().getCanonicalName().replace('.', File.separatorChar) + ".cl";
-            final BufferedReader br = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(filename)));
+            final BufferedReader br = new BufferedReader(new InputStreamReader(getClass().getClassLoader()
+                .getResourceAsStream(filename)));
             for (String line = br.readLine(); line != null; line = br.readLine()) {
                 sw.write(line);
                 sw.write('\n');
@@ -106,14 +108,20 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         }
 
         // Allocate OpenCL-hosted memory for binary rules and copy to the device
-        clBinaryRuleMatrixRowIndices = copyToDevice(grammar.binaryRuleMatrixRowIndices(), CLMem.Usage.Input);
-        clBinaryRuleMatrixColumnIndices = copyToDevice(grammar.binaryRuleMatrixColumnIndices(), CLMem.Usage.Input);
-        clBinaryRuleMatrixProbabilities = copyToDevice(grammar.binaryRuleMatrixProbabilities(), CLMem.Usage.Input);
+        clBinaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(context, clQueue, grammar
+            .binaryRuleMatrixRowIndices(), CLMem.Usage.Input);
+        clBinaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(context, clQueue, grammar
+            .binaryRuleMatrixColumnIndices(), CLMem.Usage.Input);
+        clBinaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(context, clQueue, grammar
+            .binaryRuleMatrixProbabilities(), CLMem.Usage.Input);
 
         // Repeat for unary rules
-        clUnaryRuleMatrixRowIndices = copyToDevice(grammar.unaryRuleMatrixRowIndices(), CLMem.Usage.Input);
-        clUnaryRuleMatrixColumnIndices = copyToDevice(grammar.unaryRuleMatrixColumnIndices(), CLMem.Usage.Input);
-        clUnaryRuleMatrixProbabilities = copyToDevice(grammar.unaryRuleMatrixProbabilities(), CLMem.Usage.Input);
+        clUnaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(context, clQueue, grammar
+            .unaryRuleMatrixRowIndices(), CLMem.Usage.Input);
+        clUnaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(context, clQueue, grammar
+            .unaryRuleMatrixColumnIndices(), CLMem.Usage.Input);
+        clUnaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(context, clQueue, grammar
+            .unaryRuleMatrixProbabilities(), CLMem.Usage.Input);
 
         // Allocate OpenCL-hosted memory for temporary chart cell storage
         clChartCellChildren = context.createIntBuffer(CLMem.Usage.InputOutput, grammar.numNonTerms());
@@ -121,10 +129,14 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         clChartCellMidpoints = context.createShortBuffer(CLMem.Usage.InputOutput, grammar.numNonTerms());
 
         // And for cross-product storage
-        clCrossProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar.packedArraySize());
-        clCrossProductMidpoints0 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar.packedArraySize());
-        clCrossProductProbabilities1 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar.packedArraySize());
-        clCrossProductMidpoints1 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar.packedArraySize());
+        clCrossProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
+            .packedArraySize());
+        clCrossProductMidpoints0 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
+            .packedArraySize());
+        clCrossProductProbabilities1 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
+            .packedArraySize());
+        clCrossProductMidpoints1 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
+            .packedArraySize());
     }
 
     @Override
@@ -148,8 +160,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
             // binarySpmvMultiply(crossProductVector, spvChartCell);
 
             // Copy cross-product to OpenCL memory
-            // copyToDevice(clCrossProductProbabilities0, crossProductVector.probabilities);
-            // copyToDevice(clCrossProductMidpoints0, crossProductVector.midpoints);
+            // OpenClUtils.copyToDevice(clCrossProductProbabilities0, crossProductVector.probabilities);
+            // OpenClUtils.copyToDevice(clCrossProductMidpoints0, crossProductVector.midpoints);
 
             internalBinarySpmvMultiply();
 
@@ -158,32 +170,36 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
 
         } else {
             t2 = System.currentTimeMillis();
-            copyToDevice(clChartCellChildren, spvChartCell.children);
-            copyToDevice(clChartCellProbabilities, spvChartCell.inside);
-            copyToDevice(clChartCellMidpoints, spvChartCell.midpoints);
+            OpenClUtils.copyToDevice(clQueue, clChartCellChildren, spvChartCell.children);
+            OpenClUtils.copyToDevice(clQueue, clChartCellProbabilities, spvChartCell.inside);
+            OpenClUtils.copyToDevice(clQueue, clChartCellMidpoints, spvChartCell.midpoints);
         }
 
         // Handle unary productions
-        // TODO: This only goes through unary rules one time, so it can't create unary chains unless such chains are encoded in the grammar. Iterating a few times would probably
+        // TODO: This only goes through unary rules one time, so it can't create unary chains unless such
+        // chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
         internalUnarySpmvMultiply(end);
-        copyFromDevice(clChartCellChildren, spvChartCell.children);
-        copyFromDevice(clChartCellProbabilities, spvChartCell.inside);
-        copyFromDevice(clChartCellMidpoints, spvChartCell.midpoints);
+        OpenClUtils.copyFromDevice(clQueue, clChartCellChildren, spvChartCell.children);
+        OpenClUtils.copyFromDevice(clQueue, clChartCellProbabilities, spvChartCell.inside);
+        OpenClUtils.copyFromDevice(clQueue, clChartCellMidpoints, spvChartCell.midpoints);
 
         final long t3 = System.currentTimeMillis();
         final long unarySpmvTime = t3 - t2;
 
         spvChartCell.finalizeCell();
 
-        // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n", start, end, t3
-        // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime, edges, spmvTime, edges / spmvTime);
+        // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n",
+        // start, end, t3
+        // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime,
+        // edges, spmvTime, edges / spmvTime);
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
     /**
-     * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together, saving the maximum probability child combinations. This version
-     * copies the cross-product back into main memory.
+     * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together,
+     * saving the maximum probability child combinations. This version copies the cross-product back into main
+     * memory.
      * 
      * @param start
      * @param end
@@ -195,12 +211,14 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         internalCrossProductUnion(start, end);
 
         final float[] tmpCrossProductProbabilities = new float[grammar.packedArraySize()];
-        final FloatBuffer mappedClCrossProductProbabilities = directFloats(tmpCrossProductProbabilities.length, context.getByteOrder());
+        final FloatBuffer mappedClCrossProductProbabilities = directFloats(
+            tmpCrossProductProbabilities.length, context.getByteOrder());
         clCrossProductProbabilities0.read(clQueue, mappedClCrossProductProbabilities, true);
         mappedClCrossProductProbabilities.get(tmpCrossProductProbabilities);
 
         final short[] tmpCrossProductMidpoints = new short[grammar.packedArraySize()];
-        final ShortBuffer mappedClCrossProductMidpoints = directShorts(tmpCrossProductMidpoints.length, context.getByteOrder());
+        final ShortBuffer mappedClCrossProductMidpoints = directShorts(tmpCrossProductMidpoints.length,
+            context.getByteOrder());
         clCrossProductMidpoints0.read(clQueue, mappedClCrossProductMidpoints, true);
         mappedClCrossProductMidpoints.get(tmpCrossProductMidpoints);
 
@@ -218,20 +236,23 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         long t0 = System.currentTimeMillis();
 
         // Fill the buffer with negative infinity
-        fillFloatKernel.setArgs(clCrossProductProbabilities0, grammar.packedArraySize(), Float.NEGATIVE_INFINITY);
-        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.packedArraySize(), LOCAL_WORK_SIZE);
+        fillFloatKernel.setArgs(clCrossProductProbabilities0, grammar.packedArraySize(),
+            Float.NEGATIVE_INFINITY);
+        final int globalWorkSize = edu.ohsu.cslu.util.Math
+            .roundUp(grammar.packedArraySize(), LOCAL_WORK_SIZE);
         fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
         clQueue.finish();
 
         short midpoint = (short) (start + 1);
 
-        while (((OpenClChartCell) chart.getCell(start, midpoint)).validLeftChildren.length == 0 || ((OpenClChartCell) chart.getCell(midpoint, end)).validRightChildren.length == 0) {
+        while (((OpenClChartCell) chart.getCell(start, midpoint)).validLeftChildren.length == 0
+                || ((OpenClChartCell) chart.getCell(midpoint, end)).validRightChildren.length == 0) {
             midpoint++;
         }
 
         // Compute the cross-product of the first midpoint separately
-        internalCrossProduct((OpenClChartCell) chart.getCell(start, midpoint), (OpenClChartCell) chart.getCell(midpoint, end), clCrossProductProbabilities0,
-                clCrossProductMidpoints0);
+        internalCrossProduct((OpenClChartCell) chart.getCell(start, midpoint), (OpenClChartCell) chart
+            .getCell(midpoint, end), clCrossProductProbabilities0, clCrossProductMidpoints0);
 
         long t1 = System.currentTimeMillis();
         totalCartesianProductTime += (t1 - t0);
@@ -246,21 +267,26 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
             if (leftCell.validLeftChildren.length > 0 && rightCell.validRightChildren.length > 0) {
                 t0 = System.currentTimeMillis();
 
-                fillFloatKernel.setArgs(clCrossProductProbabilities1, grammar.packedArraySize(), Float.NEGATIVE_INFINITY);
-                fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
+                fillFloatKernel.setArgs(clCrossProductProbabilities1, grammar.packedArraySize(),
+                    Float.NEGATIVE_INFINITY);
+                fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
+                    new int[] { LOCAL_WORK_SIZE });
                 clQueue.finish();
 
-                internalCrossProduct(leftCell, rightCell, clCrossProductProbabilities1, clCrossProductMidpoints1);
+                internalCrossProduct(leftCell, rightCell, clCrossProductProbabilities1,
+                    clCrossProductMidpoints1);
 
                 t1 = System.currentTimeMillis();
                 totalCartesianProductTime += (t1 - t0);
 
-                // printCrossProduct(copyFromDevice(clCrossProductProbabilities1, grammar.packedArraySize()));
+                // printCrossProduct(OpenClUtils.copyFromDevice(clCrossProductProbabilities1,
+                // grammar.packedArraySize()));
 
                 // Union the new cross-product with the existing cross-product
-                crossProductUnionKernel.setArgs(clCrossProductProbabilities0, clCrossProductMidpoints0, clCrossProductProbabilities1, clCrossProductMidpoints1, grammar
-                        .packedArraySize());
-                crossProductUnionKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
+                crossProductUnionKernel.setArgs(clCrossProductProbabilities0, clCrossProductMidpoints0,
+                    clCrossProductProbabilities1, clCrossProductMidpoints1, grammar.packedArraySize());
+                crossProductUnionKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
+                    new int[] { LOCAL_WORK_SIZE });
                 clQueue.finish();
 
                 totalCartesianProductUnionTime += (System.currentTimeMillis() - t1);
@@ -268,21 +294,29 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         }
     }
 
-    private void internalCrossProduct(final OpenClChartCell leftCell, final DenseVectorChartCell rightCell, final CLFloatBuffer tmpClCrossProductProbabilities,
-            final CLShortBuffer tmpClCrossProductMidpoints) {
+    private void internalCrossProduct(final OpenClChartCell leftCell, final DenseVectorChartCell rightCell,
+            final CLFloatBuffer tmpClCrossProductProbabilities, final CLShortBuffer tmpClCrossProductMidpoints) {
 
-        final CLIntBuffer clValidLeftChildren = copyToDevice(leftCell.validLeftChildren, CLMem.Usage.Input);
-        final CLFloatBuffer clValidLeftChildrenProbabilities = copyToDevice(leftCell.validLeftChildrenProbabilities, CLMem.Usage.Input);
-        final CLShortBuffer clValidRightChildren = copyToDevice(rightCell.validRightChildren, CLMem.Usage.Input);
-        final CLFloatBuffer clValidRightChildrenProbabilities = copyToDevice(rightCell.validRightChildrenProbabilities, CLMem.Usage.Input);
+        final CLIntBuffer clValidLeftChildren = OpenClUtils.copyToDevice(context, clQueue,
+            leftCell.validLeftChildren, CLMem.Usage.Input);
+        final CLFloatBuffer clValidLeftChildrenProbabilities = OpenClUtils.copyToDevice(context, clQueue,
+            leftCell.validLeftChildrenProbabilities, CLMem.Usage.Input);
+        final CLShortBuffer clValidRightChildren = OpenClUtils.copyToDevice(context, clQueue,
+            rightCell.validRightChildren, CLMem.Usage.Input);
+        final CLFloatBuffer clValidRightChildrenProbabilities = OpenClUtils.copyToDevice(context, clQueue,
+            rightCell.validRightChildrenProbabilities, CLMem.Usage.Input);
 
         // Bind the arguments of the OpenCL kernel
-        crossProductKernel.setArgs(clValidLeftChildren, clValidLeftChildrenProbabilities, leftCell.validLeftChildren.length, clValidRightChildren,
-                clValidRightChildrenProbabilities, rightCell.validRightChildren.length, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints, (short) rightCell.start());
+        crossProductKernel.setArgs(clValidLeftChildren, clValidLeftChildrenProbabilities,
+            leftCell.validLeftChildren.length, clValidRightChildren, clValidRightChildrenProbabilities,
+            rightCell.validRightChildren.length, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints,
+            (short) rightCell.start());
 
         // Call the kernel and wait for results
-        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(leftCell.validLeftChildren.length * rightCell.validRightChildren.length, LOCAL_WORK_SIZE);
-        crossProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
+        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(leftCell.validLeftChildren.length
+                * rightCell.validRightChildren.length, LOCAL_WORK_SIZE);
+        crossProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
+            new int[] { LOCAL_WORK_SIZE });
 
         clQueue.finish();
         clValidLeftChildren.release();
@@ -301,8 +335,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
     // }
 
     /**
-     * This version copies the cross-product to device memory and the resulting chart cell back into main memory. Useful for testing, but we can do better if we avoid the repeated
-     * copying.
+     * This version copies the cross-product to device memory and the resulting chart cell back into main
+     * memory. Useful for testing, but we can do better if we avoid the repeated copying.
      */
     @Override
     public void binarySpmvMultiply(final CrossProductVector crossProductVector, final ChartCell chartCell) {
@@ -310,21 +344,22 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         final OpenClChartCell openClCell = (OpenClChartCell) chartCell;
 
         // Copy cross-product to OpenCL memory
-        copyToDevice(clCrossProductProbabilities0, crossProductVector.probabilities);
-        copyToDevice(clCrossProductMidpoints0, crossProductVector.midpoints);
+        OpenClUtils.copyToDevice(clQueue, clCrossProductProbabilities0, crossProductVector.probabilities);
+        OpenClUtils.copyToDevice(clQueue, clCrossProductMidpoints0, crossProductVector.midpoints);
 
         internalBinarySpmvMultiply();
 
-        copyFromDevice(clChartCellChildren, openClCell.children);
-        copyFromDevice(clChartCellProbabilities, openClCell.inside);
-        copyFromDevice(clChartCellMidpoints, openClCell.midpoints);
+        OpenClUtils.copyFromDevice(clQueue, clChartCellChildren, openClCell.children);
+        OpenClUtils.copyFromDevice(clQueue, clChartCellProbabilities, openClCell.inside);
+        OpenClUtils.copyFromDevice(clQueue, clChartCellMidpoints, openClCell.midpoints);
     }
 
     private void internalBinarySpmvMultiply() {
 
         // Bind the arguments of the OpenCL kernel
-        binarySpmvKernel.setArgs(clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities, grammar.numNonTerms(),
-                clCrossProductProbabilities0, clCrossProductMidpoints0, clChartCellChildren, clChartCellProbabilities, clChartCellMidpoints);
+        binarySpmvKernel.setArgs(clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices,
+            clBinaryRuleMatrixProbabilities, grammar.numNonTerms(), clCrossProductProbabilities0,
+            clCrossProductMidpoints0, clChartCellChildren, clChartCellProbabilities, clChartCellMidpoints);
 
         // Call the kernel and wait for results
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
@@ -333,8 +368,8 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
     }
 
     /**
-     * This version copies the current cell population to device memory and the results back into main memory. Useful for testing, but we can do better if we avoid the repeated
-     * copying.
+     * This version copies the current cell population to device memory and the results back into main memory.
+     * Useful for testing, but we can do better if we avoid the repeated copying.
      */
     @Override
     public void unarySpmvMultiply(final ChartCell chartCell) {
@@ -342,22 +377,23 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         final OpenClChartCell openClCell = (OpenClChartCell) chartCell;
 
         // Copy current chart cell entries to OpenCL memory
-        copyToDevice(clChartCellChildren, openClCell.children);
-        copyToDevice(clChartCellProbabilities, openClCell.inside);
-        copyToDevice(clChartCellMidpoints, openClCell.midpoints);
+        OpenClUtils.copyToDevice(clQueue, clChartCellChildren, openClCell.children);
+        OpenClUtils.copyToDevice(clQueue, clChartCellProbabilities, openClCell.inside);
+        OpenClUtils.copyToDevice(clQueue, clChartCellMidpoints, openClCell.midpoints);
 
         internalUnarySpmvMultiply((short) chartCell.end());
 
-        copyFromDevice(clChartCellChildren, openClCell.children);
-        copyFromDevice(clChartCellProbabilities, openClCell.inside);
-        copyFromDevice(clChartCellMidpoints, openClCell.midpoints);
+        OpenClUtils.copyFromDevice(clQueue, clChartCellChildren, openClCell.children);
+        OpenClUtils.copyFromDevice(clQueue, clChartCellProbabilities, openClCell.inside);
+        OpenClUtils.copyFromDevice(clQueue, clChartCellMidpoints, openClCell.midpoints);
     }
 
     private void internalUnarySpmvMultiply(final short chartCellEnd) {
 
         // Bind the arguments of the OpenCL kernel
-        unarySpmvKernel.setArgs(clUnaryRuleMatrixRowIndices, clUnaryRuleMatrixColumnIndices, clUnaryRuleMatrixProbabilities, grammar.numNonTerms(), clChartCellChildren,
-                clChartCellProbabilities, clChartCellMidpoints, chartCellEnd);
+        unarySpmvKernel.setArgs(clUnaryRuleMatrixRowIndices, clUnaryRuleMatrixColumnIndices,
+            clUnaryRuleMatrixProbabilities, grammar.numNonTerms(), clChartCellChildren,
+            clChartCellProbabilities, clChartCellMidpoints, chartCellEnd);
 
         // Call the kernel and wait for results
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
@@ -365,78 +401,9 @@ public class OpenClSparseMatrixVectorParser extends SparseMatrixVectorParser<Csr
         clQueue.finish();
     }
 
-    private CLFloatBuffer copyToDevice(final float[] array, final CLMem.Usage usage) {
-        final CLFloatBuffer clFloatBuffer = context.createFloatBuffer(usage, array.length);
-        copyToDevice(clFloatBuffer, array);
-        return clFloatBuffer;
-    }
-
-    private void copyToDevice(final CLFloatBuffer clFloatBuffer, final float[] array) {
-        final FloatBuffer mappedInitialArray = clFloatBuffer.map(clQueue, CLMem.MapFlags.Write);
-        mappedInitialArray.put(array);
-        clFloatBuffer.unmap(clQueue, mappedInitialArray);
-    }
-
-    private CLIntBuffer copyToDevice(final int[] array, final CLMem.Usage usage) {
-        final CLIntBuffer clIntBuffer = context.createIntBuffer(usage, array.length);
-        copyToDevice(clIntBuffer, array);
-        return clIntBuffer;
-    }
-
-    private void copyToDevice(final CLIntBuffer clIntBuffer, final int[] array) {
-        final IntBuffer mappedInitialArray = clIntBuffer.map(clQueue, CLMem.MapFlags.Write);
-        mappedInitialArray.put(array);
-        clIntBuffer.unmap(clQueue, mappedInitialArray);
-    }
-
-    private CLShortBuffer copyToDevice(final short[] array, final CLMem.Usage usage) {
-        final CLShortBuffer clShortBuffer = context.createShortBuffer(usage, array.length);
-        copyToDevice(clShortBuffer, array);
-        return clShortBuffer;
-    }
-
-    private void copyToDevice(final CLShortBuffer clShortBuffer, final short[] array) {
-        final ShortBuffer mappedInitialArray = clShortBuffer.map(clQueue, CLMem.MapFlags.Write);
-        mappedInitialArray.put(array);
-        clShortBuffer.unmap(clQueue, mappedInitialArray);
-    }
-
-    private float[] copyFromDevice(final CLFloatBuffer clFloatBuffer, final int size) {
-        final float[] array = new float[size];
-        copyFromDevice(clFloatBuffer, array);
-        return array;
-    }
-
-    private void copyFromDevice(final CLFloatBuffer clFloatBuffer, final float[] array) {
-        final FloatBuffer buf = clFloatBuffer.read(clQueue, 0, array.length);
-        buf.get(array);
-    }
-
-    private int[] copyFromDevice(final CLIntBuffer clIntBuffer, final int size) {
-        final int[] array = new int[size];
-        copyFromDevice(clIntBuffer, array);
-        return array;
-    }
-
-    private void copyFromDevice(final CLIntBuffer clIntBuffer, final int[] array) {
-        final IntBuffer buf = clIntBuffer.read(clQueue, 0, array.length);
-        buf.get(array);
-    }
-
-    private short[] copyFromDevice(final CLShortBuffer clShortBuffer, final int size) {
-        final short[] array = new short[size];
-        copyFromDevice(clShortBuffer, array);
-        return array;
-    }
-
-    private void copyFromDevice(final CLShortBuffer clShortBuffer, final short[] array) {
-        final ShortBuffer buf = clShortBuffer.read(clQueue, 0, array.length);
-        buf.get(array);
-    }
-
     public static class OpenClChart extends DenseVectorChart {
 
-        public OpenClChart(final int size, final boolean viterbiMax, final Parser parser) {
+        public OpenClChart(final int size, final boolean viterbiMax, final Parser<?> parser) {
             super(new OpenClChartCell[size][size + 1], viterbiMax, parser);
 
             for (int start = 0; start < size; start++) {

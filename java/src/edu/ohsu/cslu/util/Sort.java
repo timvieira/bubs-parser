@@ -1,9 +1,11 @@
 package edu.ohsu.cslu.util;
 
 /**
- * Declares a variety of array sorting methods (mostly somewhat odd ones on specific parallel arrays, used for various NLP tasks).
+ * Declares a variety of array sorting methods (mostly somewhat odd ones on specific parallel arrays, used for
+ * various NLP tasks).
  * 
- * Implementing classes will implement various sort algorithms (bitonic sort, radix sort, etc.), and some may implement said algorithms on GPU hardware.
+ * Implementing classes will implement various sort algorithms (bitonic sort, radix sort, etc.), and some may
+ * implement said algorithms on GPU hardware.
  * 
  * This should allow us to easily plug in and compare various sorting implementations within NLP algorithms.
  * 
@@ -30,33 +32,42 @@ public interface Sort {
     public int[] nonDestructiveSort(final int[] array);
 
     /**
-     * Sorts a parallel array by integer keys, swapping the values from the floating-point array as well as keys.
+     * Sorts a parallel array by integer keys, swapping the values from the floating-point array as well as
+     * keys.
      * 
      * @param keys
-     * @param floatValues Values
+     * @param floatValues
+     *            Values
      */
     public void sort(final int[] keys, final float[] floatValues);
 
     /**
-     * Sorts a parallel array by integer keys, swapping the values from the floating-point and short arrays as well as keys.
+     * Sorts a parallel array by integer keys, swapping the values from the floating-point and short arrays as
+     * well as keys.
      * 
      * @param keys
-     * @param floatValues Values
-     * @param shortValues Values
+     * @param floatValues
+     *            Values
+     * @param shortValues
+     *            Values
      */
     public void sort(final int[] keys, final float[] floatValues, final short[] shortValues);
 
     /**
-     * Sorts a parallel array by integer keys, swapping the values from the floating-point and short arrays as well as keys. Assumes that the keys are already sorted into segments
-     * (e.g. [1, 3, 5, 2, 4, 6, 7, 5, 6, 9 10]; where segments end on indices 2 and 6). The default implementation sorts ignoring segment boundaries; other implementations may use
-     * the pre-sorted segments for more efficient sorting.
+     * Sorts a parallel array by integer keys, swapping the values from the floating-point and short arrays as
+     * well as keys. Assumes that the keys are already sorted into segments (e.g. [1, 3, 5, 2, 4, 6, 7, 5, 6,
+     * 9 10]; where segments begin on indices 0, 3 and 7). The default implementation sorts ignoring segment
+     * boundaries; other implementations may use the pre-sorted segments for more efficient sorting.
      * 
      * @param keys
-     * @param floatValues Values
-     * @param shortValues Values
-     * @parma segmentBoundaries
+     * @param floatValues
+     *            Values
+     * @param shortValues
+     *            Values
+     * @param segmentOffsets
      */
-    public void sort(final int[] keys, final float[] floatValues, final short[] shortValues, final int[] segmentBoundaries);
+    public void sort(final int[] keys, final float[] floatValues, final short[] shortValues,
+            final int[] segmentOffsets);
 
     public abstract static class BaseSort implements Sort {
 
@@ -68,14 +79,16 @@ public interface Sort {
             return sorted;
         }
 
-        public void sort(final int[] keys, final float[] floatValues, final short[] shortValues, final int[] segmentBoundaries) {
+        public void sort(final int[] keys, final float[] floatValues, final short[] shortValues,
+                final int[] segmentOffsets) {
             sort(keys, floatValues, shortValues);
         }
 
         /**
          * Swaps x[a] with x[b].
          */
-        protected final void swap(final int keys[], final float[] floatValues, final short[] shortValues, final int a, final int b) {
+        protected final void swap(final int keys[], final float[] floatValues, final short[] shortValues,
+                final int a, final int b) {
             final int t = keys[a];
             keys[a] = keys[b];
             keys[b] = t;

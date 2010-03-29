@@ -1,13 +1,19 @@
 package edu.ohsu.cslu.util;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.lang.reflect.ParameterizedType;
 import java.util.Random;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
-import static org.junit.Assert.*;
 
 /**
  * Unit tests for various {@link Sort} implementations
@@ -17,6 +23,7 @@ import static org.junit.Assert.*;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public abstract class TestSort<S extends Sort> {
 
     private S sort;
@@ -33,12 +40,13 @@ public abstract class TestSort<S extends Sort> {
     private int[] segmentedIntArray;
     private float[] segmentedFloatArray;
     private short[] segmentedShortArray;
-    private int[] segmentBoundaries;
+    private int[] segmentOffsets;
 
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
-        sort = ((Class<S>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0]).getConstructor().newInstance();
+        sort = ((Class<S>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0])
+            .getConstructor().newInstance();
 
         for (int i = 0; i < intArray.length; i++) {
             floatArray[i] = intArray[i];
@@ -55,7 +63,7 @@ public abstract class TestSort<S extends Sort> {
 
         final int segments = 10;
         final int segmentSize = segmentedIntArray.length / segments;
-        segmentBoundaries = new int[segments - 1];
+        segmentOffsets = new int[segments];
 
         for (int i = 0; i < segments; i++) {
             for (int j = 0; j < segmentSize; j++) {
@@ -64,8 +72,8 @@ public abstract class TestSort<S extends Sort> {
                 segmentedShortArray[i * segmentSize + j] = (short) j;
             }
         }
-        for (int i = 1; i < segments; i++) {
-            segmentBoundaries[i - 1] = segmentSize * i - 1;
+        for (int i = 0; i < segments; i++) {
+            segmentOffsets[i] = segmentSize * i;
         }
     }
 
@@ -142,7 +150,7 @@ public abstract class TestSort<S extends Sort> {
 
     @Test
     public void testSegmentedSort() throws Exception {
-        sort.sort(segmentedIntArray, segmentedFloatArray, segmentedShortArray, segmentBoundaries);
+        sort.sort(segmentedIntArray, segmentedFloatArray, segmentedShortArray, segmentOffsets);
         verifySort(segmentedIntArray, segmentedFloatArray, segmentedShortArray);
     }
 
@@ -161,8 +169,8 @@ public abstract class TestSort<S extends Sort> {
         final long totalTime = System.currentTimeMillis() - startTime;
         verifySort((int[]) o[0], (float[]) o[1], (short[]) o[2]);
 
-        System.out.format("%s sorted %d entries in %d ms (%.0f entries/ms)\n", sort.getClass().toString(), size, totalTime, totalTime == 0 ? Float.POSITIVE_INFINITY : size
-                / totalTime);
+        System.out.format("%s sorted %d entries in %d ms (%.0f entries/ms)\n", sort.getClass().toString(),
+            size, totalTime, totalTime == 0 ? Float.POSITIVE_INFINITY : size / totalTime);
     }
 
     private void verifySort(final int[] keys, final float[] floatValues, final short[] shortValues) {
