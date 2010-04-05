@@ -1,56 +1,121 @@
 package edu.ohsu.cslu.util;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
+import com.nativelibs4java.opencl.CLBuildException;
 import com.nativelibs4java.opencl.CLContext;
 import com.nativelibs4java.opencl.CLFloatBuffer;
 import com.nativelibs4java.opencl.CLIntBuffer;
 import com.nativelibs4java.opencl.CLMem;
+import com.nativelibs4java.opencl.CLProgram;
 import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 public class OpenClUtils {
 
-    public static CLFloatBuffer copyToDevice(final CLContext context, final CLQueue clQueue,
-            final float[] array, final CLMem.Usage usage) {
-        final CLFloatBuffer clFloatBuffer = context.createFloatBuffer(usage, array.length);
-        copyToDevice(clQueue, clFloatBuffer, array);
+    public static CLProgram compileClKernels(final CLContext context, final Class<?> c, final String prefix)
+            throws CLBuildException {
+        try {
+            // Compile OpenCL kernels
+            final StringWriter sw = new StringWriter();
+            sw.write(prefix + '\n');
+            final String filename = c.getCanonicalName().replace('.', File.separatorChar) + ".cl";
+            final BufferedReader br = new BufferedReader(new InputStreamReader(c.getClassLoader()
+                .getResourceAsStream(filename)));
+            for (String line = br.readLine(); line != null; line = br.readLine()) {
+                sw.write(line);
+                sw.write('\n');
+            }
+            return context.createProgram(sw.toString()).build();
+        } catch (final IOException e) {
+            // StringWriter should never IOException
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Float
+    public static CLFloatBuffer copyToDevice(final CLQueue clQueue, final float[] array,
+            final CLMem.Usage usage) {
+        final CLFloatBuffer clFloatBuffer = clQueue.getContext().createFloatBuffer(usage, array.length);
+        copyToDevice(clQueue, clFloatBuffer, array, 0, array.length);
+        return clFloatBuffer;
+    }
+
+    public static CLFloatBuffer copyToDevice(final CLQueue clQueue, final float[] array, final int offset,
+            final int length, final CLMem.Usage usage) {
+        final CLFloatBuffer clFloatBuffer = clQueue.getContext().createFloatBuffer(usage, length - offset);
+        copyToDevice(clQueue, clFloatBuffer, array, offset, length);
         return clFloatBuffer;
     }
 
     public static void copyToDevice(final CLQueue clQueue, final CLFloatBuffer clFloatBuffer,
             final float[] array) {
+        copyToDevice(clQueue, clFloatBuffer, array, 0, array.length);
+    }
+
+    public static void copyToDevice(final CLQueue clQueue, final CLFloatBuffer clFloatBuffer,
+            final float[] array, final int offset, final int length) {
         final FloatBuffer mappedInitialArray = clFloatBuffer.map(clQueue, CLMem.MapFlags.Write);
-        mappedInitialArray.put(array);
+        mappedInitialArray.put(array, offset, length);
         clFloatBuffer.unmap(clQueue, mappedInitialArray);
     }
 
-    public static CLIntBuffer copyToDevice(final CLContext context, final CLQueue clQueue, final int[] array,
-            final CLMem.Usage usage) {
-        final CLIntBuffer clIntBuffer = context.createIntBuffer(usage, array.length);
-        copyToDevice(clQueue, clIntBuffer, array);
+    // Int
+    public static CLIntBuffer copyToDevice(final CLQueue clQueue, final int[] array, final CLMem.Usage usage) {
+        final CLIntBuffer clIntBuffer = clQueue.getContext().createIntBuffer(usage, array.length);
+        copyToDevice(clQueue, clIntBuffer, array, 0, array.length);
         return clIntBuffer;
     }
 
-    public static void copyToDevice(final CLQueue clQueue, final CLIntBuffer clIntBuffer, final int[] array) {
+    public static CLIntBuffer copyToDevice(final CLQueue clQueue, final int[] array, final int offset,
+            final int length, final CLMem.Usage usage) {
+        final CLIntBuffer clIntBuffer = clQueue.getContext().createIntBuffer(usage, length - offset);
+        copyToDevice(clQueue, clIntBuffer, array, offset, length);
+        return clIntBuffer;
+    }
+
+    public static void copyToDevice(final CLQueue clQueue, final CLIntBuffer clFloatBuffer, final int[] array) {
+        copyToDevice(clQueue, clFloatBuffer, array, 0, array.length);
+    }
+
+    public static void copyToDevice(final CLQueue clQueue, final CLIntBuffer clIntBuffer, final int[] array,
+            final int offset, final int length) {
         final IntBuffer mappedInitialArray = clIntBuffer.map(clQueue, CLMem.MapFlags.Write);
-        mappedInitialArray.put(array);
+        mappedInitialArray.put(array, offset, length);
         clIntBuffer.unmap(clQueue, mappedInitialArray);
     }
 
-    public static CLShortBuffer copyToDevice(final CLContext context, final CLQueue clQueue,
-            final short[] array, final CLMem.Usage usage) {
-        final CLShortBuffer clShortBuffer = context.createShortBuffer(usage, array.length);
-        copyToDevice(clQueue, clShortBuffer, array);
+    // Short
+    public static CLShortBuffer copyToDevice(final CLQueue clQueue, final short[] array,
+            final CLMem.Usage usage) {
+        final CLShortBuffer clShortBuffer = clQueue.getContext().createShortBuffer(usage, array.length);
+        copyToDevice(clQueue, clShortBuffer, array, 0, array.length);
         return clShortBuffer;
     }
 
-    public static void copyToDevice(final CLQueue clQueue, final CLShortBuffer clShortBuffer,
+    public static CLShortBuffer copyToDevice(final CLQueue clQueue, final short[] array, final int offset,
+            final int length, final CLMem.Usage usage) {
+        final CLShortBuffer clShortBuffer = clQueue.getContext().createShortBuffer(usage, length - offset);
+        copyToDevice(clQueue, clShortBuffer, array, offset, length);
+        return clShortBuffer;
+    }
+
+    public static void copyToDevice(final CLQueue clQueue, final CLShortBuffer clFloatBuffer,
             final short[] array) {
+        copyToDevice(clQueue, clFloatBuffer, array, 0, array.length);
+    }
+
+    public static void copyToDevice(final CLQueue clQueue, final CLShortBuffer clShortBuffer,
+            final short[] array, final int offset, final int length) {
         final ShortBuffer mappedInitialArray = clShortBuffer.map(clQueue, CLMem.MapFlags.Write);
-        mappedInitialArray.put(array);
+        mappedInitialArray.put(array, offset, length);
         clShortBuffer.unmap(clQueue, mappedInitialArray);
     }
 

@@ -3,8 +3,7 @@ package edu.ohsu.cslu.util;
 import java.util.Arrays;
 
 /**
- * A simple pure-java implementation of the {@link Scanner} interface. All computations are executed serially
- * on te CPU.
+ * A simple pure-java implementation of the {@link Scanner} interface. All computations are executed serially on te CPU.
  * 
  * @author Aaron Dunlop
  * @since Mar 28, 2010
@@ -13,8 +12,7 @@ import java.util.Arrays;
  */
 public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
 
-    public int[] exclusiveScan(final int[] input, final int fromIndex, final int toIndex,
-            final Operator operator) {
+    public int[] exclusiveScan(final int[] input, final int fromIndex, final int toIndex, final Operator operator) {
         final int[] result = new int[input.length];
         exclusiveScan(input, result, fromIndex, toIndex, operator);
 
@@ -40,67 +38,49 @@ public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
         return result;
     }
 
-    public void exclusiveScan(final int[] input, final int[] result, final int fromIndex, final int toIndex,
-            final Operator operator) {
+    public void exclusiveScan(final int[] input, final int[] result, final int fromIndex, final int toIndex, final Operator operator) {
         switch (operator) {
-        case SUM:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i - 1] + result[i - 1];
-            }
-            return;
+            case SUM:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i - 1] + result[i - 1];
+                }
+                return;
 
-        case LOGICAL_AND:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = (input[i - 1] != 0 && result[i - 1] != 0) ? 1 : 0;
-            }
-            return;
+            case LOGICAL_AND:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = (input[i - 1] != 0 && result[i - 1] != 0) ? 1 : 0;
+                }
+                return;
 
-        case LOGICAL_NAND:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = (input[i - 1] != 0 && result[i - 1] != 0) ? 0 : 1;
-            }
-            return;
+            case LOGICAL_NAND:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = (input[i - 1] != 0 && result[i - 1] != 0) ? 0 : 1;
+                }
+                return;
 
-        case MAX:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i - 1] > result[i - 1] ? input[i - 1] : result[i - 1];
-            }
-            return;
+            case MAX:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i - 1] > result[i - 1] ? input[i - 1] : result[i - 1];
+                }
+                return;
 
-        case MIN:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i - 1] < result[i - 1] ? input[i - 1] : result[i - 1];
-            }
-            return;
+            case MIN:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i - 1] < result[i - 1] ? input[i - 1] : result[i - 1];
+                }
+                return;
 
-        case EQUAL:
-            result[fromIndex] = 0;
-            result[fromIndex + 1] = 0;
-            for (int i = 2; i < toIndex; i++) {
-                result[i] = input[i - 1] == input[i - 2] ? 1 : 0;
-            }
-            return;
-
-        case NOT_EQUAL:
-            result[fromIndex] = 0;
-            result[fromIndex + 1] = 1;
-            for (int i = 2; i < toIndex; i++) {
-                result[i] = input[i - 1] == input[i - 2] ? 0 : 1;
-            }
-            return;
-
-        default:
-            throw new RuntimeException("Unsupported operator: " + operator);
+            default:
+                throw new RuntimeException("Unsupported operator: " + operator);
         }
     }
 
-    public float[] exclusiveScan(final float[] input, final int fromIndex, final int toIndex,
-            final Operator operator) {
+    public float[] exclusiveScan(final float[] input, final int fromIndex, final int toIndex, final Operator operator) {
         final float[] result = new float[input.length];
         exclusiveScan(input, result, fromIndex, toIndex, operator);
 
@@ -113,8 +93,7 @@ public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
         return result;
     }
 
-    public float[] exclusiveSegmentedScan(final float[] input, final byte[] segmentFlags,
-            final Operator operator) {
+    public float[] exclusiveSegmentedScan(final float[] input, final byte[] segmentFlags, final Operator operator) {
         final float[] result = new float[input.length];
         int segmentStart = 0;
         for (int i = segmentStart; i < input.length; i++) {
@@ -127,67 +106,49 @@ public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
         return result;
     }
 
-    public void exclusiveScan(final float[] input, final float[] result, final int fromIndex,
-            final int toIndex, final Operator operator) {
+    public void exclusiveScan(final float[] input, final float[] result, final int fromIndex, final int toIndex, final Operator operator) {
         switch (operator) {
-        case SUM:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i - 1] + result[i - 1];
-            }
-            return;
+            case SUM:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i - 1] + result[i - 1];
+                }
+                return;
 
-        case LOGICAL_AND:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = (input[i - 1] != 0 && result[i - 1] != 0) ? 1 : 0;
-            }
-            return;
+            case LOGICAL_AND:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = (input[i - 1] != 0 && result[i - 1] != 0) ? 1 : 0;
+                }
+                return;
 
-        case LOGICAL_NAND:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = (input[i - 1] != 0 && result[i - 1] != 0) ? 0 : 1;
-            }
-            return;
+            case LOGICAL_NAND:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = (input[i - 1] != 0 && result[i - 1] != 0) ? 0 : 1;
+                }
+                return;
 
-        case MAX:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i - 1] > result[i - 1] ? input[i - 1] : result[i - 1];
-            }
-            return;
+            case MAX:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i - 1] > result[i - 1] ? input[i - 1] : result[i - 1];
+                }
+                return;
 
-        case MIN:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i - 1] < result[i - 1] ? input[i - 1] : result[i - 1];
-            }
-            return;
+            case MIN:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i - 1] < result[i - 1] ? input[i - 1] : result[i - 1];
+                }
+                return;
 
-        case EQUAL:
-            result[fromIndex] = 0;
-            result[fromIndex + 1] = 0;
-            for (int i = 2; i < toIndex; i++) {
-                result[i] = input[i - 1] == input[i - 2] ? 1 : 0;
-            }
-            return;
-
-        case NOT_EQUAL:
-            result[fromIndex] = 0;
-            result[fromIndex + 1] = 1;
-            for (int i = 2; i < toIndex; i++) {
-                result[i] = input[i - 1] == input[i - 2] ? 0 : 1;
-            }
-            return;
-
-        default:
-            throw new RuntimeException("Unsupported operator: " + operator);
+            default:
+                throw new RuntimeException("Unsupported operator: " + operator);
         }
     }
 
-    public int[] inclusiveScan(final int[] input, final int fromIndex, final int toIndex,
-            final Operator operator) {
+    public int[] inclusiveScan(final int[] input, final int fromIndex, final int toIndex, final Operator operator) {
         final int[] result = new int[input.length];
         inclusiveScan(input, result, fromIndex, toIndex, operator);
 
@@ -213,65 +174,49 @@ public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
         return result;
     }
 
-    public void inclusiveScan(final int[] input, final int[] result, final int fromIndex, final int toIndex,
-            final Operator operator) {
+    public void inclusiveScan(final int[] input, final int[] result, final int fromIndex, final int toIndex, final Operator operator) {
         switch (operator) {
-        case SUM:
-            result[fromIndex] = input[fromIndex];
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] + result[i - 1];
-            }
-            return;
+            case SUM:
+                result[fromIndex] = input[fromIndex];
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i] + result[i - 1];
+                }
+                return;
 
-        case LOGICAL_AND:
-            result[fromIndex] = 1;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = (input[i] != 0 && result[i - 1] != 0) ? 1 : 0;
-            }
-            return;
+            case LOGICAL_AND:
+                result[fromIndex] = 1;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = (input[i] != 0 && result[i - 1] != 0) ? 1 : 0;
+                }
+                return;
 
-        case LOGICAL_NAND:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = (input[i] != 0 && result[i - 1] != 0) ? 0 : 1;
-            }
-            return;
+            case LOGICAL_NAND:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = (input[i] != 0 && result[i - 1] != 0) ? 0 : 1;
+                }
+                return;
 
-        case MAX:
-            result[fromIndex] = input[fromIndex];
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] > result[i - 1] ? input[i] : result[i - 1];
-            }
-            return;
+            case MAX:
+                result[fromIndex] = input[fromIndex];
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i] > result[i - 1] ? input[i] : result[i - 1];
+                }
+                return;
 
-        case MIN:
-            result[fromIndex] = input[fromIndex];
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] < result[i - 1] ? input[i] : result[i - 1];
-            }
-            return;
+            case MIN:
+                result[fromIndex] = input[fromIndex];
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i] < result[i - 1] ? input[i] : result[i - 1];
+                }
+                return;
 
-        case EQUAL:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] == input[i - 1] ? 1 : 0;
-            }
-            return;
-
-        case NOT_EQUAL:
-            result[fromIndex] = 1;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] == input[i - 1] ? 0 : 1;
-            }
-            return;
-
-        default:
-            throw new RuntimeException("Unsupported operator: " + operator);
+            default:
+                throw new RuntimeException("Unsupported operator: " + operator);
         }
     }
 
-    public float[] inclusiveScan(final float[] input, final int fromIndex, final int toIndex,
-            final Operator operator) {
+    public float[] inclusiveScan(final float[] input, final int fromIndex, final int toIndex, final Operator operator) {
         final float[] result = new float[input.length];
         inclusiveScan(input, result, fromIndex, toIndex, operator);
 
@@ -284,8 +229,7 @@ public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
         return result;
     }
 
-    public float[] inclusiveSegmentedScan(final float[] input, final byte[] segmentFlags,
-            final Operator operator) {
+    public float[] inclusiveSegmentedScan(final float[] input, final byte[] segmentFlags, final Operator operator) {
         final float[] result = new float[input.length];
         int segmentStart = 0;
         for (int i = segmentStart; i < input.length; i++) {
@@ -298,60 +242,45 @@ public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
         return result;
     }
 
-    public void inclusiveScan(final float[] input, final float[] result, final int fromIndex,
-            final int toIndex, final Operator operator) {
+    public void inclusiveScan(final float[] input, final float[] result, final int fromIndex, final int toIndex, final Operator operator) {
         switch (operator) {
-        case SUM:
-            result[fromIndex] = input[fromIndex];
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] + result[i - 1];
-            }
-            return;
+            case SUM:
+                result[fromIndex] = input[fromIndex];
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i] + result[i - 1];
+                }
+                return;
 
-        case LOGICAL_AND:
-            result[fromIndex] = 1;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = (input[i] != 0 && result[i - 1] != 0) ? 1 : 0;
-            }
-            return;
+            case LOGICAL_AND:
+                result[fromIndex] = 1;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = (input[i] != 0 && result[i - 1] != 0) ? 1 : 0;
+                }
+                return;
 
-        case LOGICAL_NAND:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = (input[i] != 0 && result[i - 1] != 0) ? 0 : 1;
-            }
-            return;
+            case LOGICAL_NAND:
+                result[fromIndex] = 0;
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = (input[i] != 0 && result[i - 1] != 0) ? 0 : 1;
+                }
+                return;
 
-        case MAX:
-            result[fromIndex] = input[fromIndex];
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] > result[i - 1] ? input[i] : result[i - 1];
-            }
-            return;
+            case MAX:
+                result[fromIndex] = input[fromIndex];
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i] > result[i - 1] ? input[i] : result[i - 1];
+                }
+                return;
 
-        case MIN:
-            result[fromIndex] = input[fromIndex];
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] < result[i - 1] ? input[i] : result[i - 1];
-            }
-            return;
+            case MIN:
+                result[fromIndex] = input[fromIndex];
+                for (int i = fromIndex + 1; i < toIndex; i++) {
+                    result[i] = input[i] < result[i - 1] ? input[i] : result[i - 1];
+                }
+                return;
 
-        case EQUAL:
-            result[fromIndex] = 0;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] == input[i - 1] ? 1 : 0;
-            }
-            return;
-
-        case NOT_EQUAL:
-            result[fromIndex] = 1;
-            for (int i = fromIndex + 1; i < toIndex; i++) {
-                result[i] = input[i] == input[i - 1] ? 0 : 1;
-            }
-            return;
-
-        default:
-            throw new RuntimeException("Unsupported operator: " + operator);
+            default:
+                throw new RuntimeException("Unsupported operator: " + operator);
         }
     }
 
@@ -368,8 +297,7 @@ public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
         return result;
     }
 
-    public void pack(final int[] input, final int[] result, final byte[] flags, final int fromIndex,
-            final int toIndex) {
+    public void pack(final int[] input, final int[] result, final byte[] flags, final int fromIndex, final int toIndex) {
 
         int resultIndex = 0;
         for (int i = fromIndex; i < toIndex; i++) {
@@ -392,8 +320,7 @@ public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
         return result;
     }
 
-    public void pack(final float[] input, final float[] result, final byte[] flags, final int fromIndex,
-            final int toIndex) {
+    public void pack(final float[] input, final float[] result, final byte[] flags, final int fromIndex, final int toIndex) {
 
         int resultIndex = 0;
         for (int i = fromIndex; i < toIndex; i++) {
@@ -503,8 +430,8 @@ public class SerialCpuScanner extends Scanner.BaseScanner implements Scanner {
     }
 
     @Override
-    public void parallelArrayInclusiveSegmentedMax(final float[] floatInput, final float[] floatResult,
-            final short[] shortInput, final short[] shortResult, final byte[] segmentFlags) {
+    public void parallelArrayInclusiveSegmentedMax(final float[] floatInput, final float[] floatResult, final short[] shortInput, final short[] shortResult,
+            final byte[] segmentFlags) {
         float max = Float.NEGATIVE_INFINITY;
         short s = 0;
         for (int i = 0; i < floatInput.length; i++) {
