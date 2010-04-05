@@ -1,13 +1,12 @@
 package edu.ohsu.cslu.util;
 
-import static org.junit.Assert.assertArrayEquals;
-
 import java.lang.reflect.ParameterizedType;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.util.Scanner.Operator;
+import static org.junit.Assert.assertArrayEquals;
 
 public abstract class TestScanner<S extends Scanner> {
 
@@ -123,28 +122,6 @@ public abstract class TestScanner<S extends Scanner> {
 
         assertArrayEquals(new int[] { 5, 0, 0, 0 }, scanner.inclusiveScan(intArray1, 1, 5, Operator.MIN));
         assertArrayEquals(new float[] { 5, 0, 0, 0 }, scanner.inclusiveScan(floatArray1, 1, 5, Operator.MIN), .01f);
-    }
-
-    @Test
-    public void testScanEqual() throws Exception {
-        // Exclusive
-        assertArrayEquals(new int[] { 0, 0, 0, 0, 0, 0, 1, 0, 0 }, scanner.exclusiveScan(intArray1, Operator.EQUAL));
-        assertArrayEquals(new float[] { 0, 0, 0, 0, 0, 0, 1, 0, 0 }, scanner.exclusiveScan(floatArray1, Operator.EQUAL), .01f);
-
-        // Inclusive
-        assertArrayEquals(new int[] { 0, 0, 0, 0, 0, 1, 0, 0, 0 }, scanner.inclusiveScan(intArray1, Operator.EQUAL));
-        assertArrayEquals(new float[] { 0, 0, 0, 0, 0, 1, 0, 0, 0 }, scanner.inclusiveScan(floatArray1, Operator.EQUAL), .01f);
-    }
-
-    @Test
-    public void testScanNotEquals() throws Exception {
-        // Exclusive
-        assertArrayEquals(new int[] { 0, 1, 1, 1, 1, 1, 0, 1, 1 }, scanner.exclusiveScan(intArray1, Operator.NOT_EQUAL));
-        assertArrayEquals(new float[] { 0, 1, 1, 1, 1, 1, 0, 1, 1 }, scanner.exclusiveScan(floatArray1, Operator.NOT_EQUAL), .01f);
-
-        // Inclusive
-        assertArrayEquals(new int[] { 1, 1, 1, 1, 1, 0, 1, 1, 1 }, scanner.inclusiveScan(intArray1, Operator.NOT_EQUAL));
-        assertArrayEquals(new float[] { 1, 1, 1, 1, 1, 0, 1, 1, 1 }, scanner.inclusiveScan(floatArray1, Operator.NOT_EQUAL), .01f);
     }
 
     @Test
