@@ -4,9 +4,6 @@ import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 import static com.nativelibs4java.util.NIOUtils.directFloats;
 import static com.nativelibs4java.util.NIOUtils.directShorts;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
@@ -86,18 +83,13 @@ public class OpenClSparseMatrixVectorParser extends
         // TODO Move this to constructor after debugging
 
         try {
+
             // Compile OpenCL kernels
-            final StringWriter sw = new StringWriter();
-            sw.write("#define LEFT_CHILD_SHIFT " + grammar.leftChildShift + '\n');
-            sw.write("#define MASK " + grammar.mask + '\n');
-            final String filename = getClass().getCanonicalName().replace('.', File.separatorChar) + ".cl";
-            final BufferedReader br = new BufferedReader(new InputStreamReader(getClass().getClassLoader()
-                .getResourceAsStream(filename)));
-            for (String line = br.readLine(); line != null; line = br.readLine()) {
-                sw.write(line);
-                sw.write('\n');
-            }
-            final CLProgram program = context.createProgram(sw.toString()).build();
+            final StringWriter prefix = new StringWriter();
+            prefix.write("#define LEFT_CHILD_SHIFT " + grammar.leftChildShift + '\n');
+            prefix.write("#define MASK " + grammar.mask + '\n');
+
+            final CLProgram program = OpenClUtils.compileClKernels(context, getClass(), prefix.toString());
             fillFloatKernel = program.createKernel("fillFloat");
             binarySpmvKernel = program.createKernel("binarySpmvMultiply");
             unarySpmvKernel = program.createKernel("unarySpmvMultiply");
@@ -108,19 +100,19 @@ public class OpenClSparseMatrixVectorParser extends
         }
 
         // Allocate OpenCL-hosted memory for binary rules and copy to the device
-        clBinaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(context, clQueue, grammar
-            .binaryRuleMatrixRowIndices(), CLMem.Usage.Input);
-        clBinaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(context, clQueue, grammar
+        clBinaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(clQueue,
+            grammar.binaryRuleMatrixRowIndices(), CLMem.Usage.Input);
+        clBinaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar
             .binaryRuleMatrixColumnIndices(), CLMem.Usage.Input);
-        clBinaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(context, clQueue, grammar
+        clBinaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(clQueue, grammar
             .binaryRuleMatrixProbabilities(), CLMem.Usage.Input);
 
         // Repeat for unary rules
-        clUnaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(context, clQueue, grammar
-            .unaryRuleMatrixRowIndices(), CLMem.Usage.Input);
-        clUnaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(context, clQueue, grammar
+        clUnaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(clQueue, grammar.unaryRuleMatrixRowIndices(),
+            CLMem.Usage.Input);
+        clUnaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar
             .unaryRuleMatrixColumnIndices(), CLMem.Usage.Input);
-        clUnaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(context, clQueue, grammar
+        clUnaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(clQueue, grammar
             .unaryRuleMatrixProbabilities(), CLMem.Usage.Input);
 
         // Allocate OpenCL-hosted memory for temporary chart cell storage
@@ -279,9 +271,6 @@ public class OpenClSparseMatrixVectorParser extends
                 t1 = System.currentTimeMillis();
                 totalCartesianProductTime += (t1 - t0);
 
-                // printCrossProduct(OpenClUtils.copyFromDevice(clCrossProductProbabilities1,
-                // grammar.packedArraySize()));
-
                 // Union the new cross-product with the existing cross-product
                 crossProductUnionKernel.setArgs(clCrossProductProbabilities0, clCrossProductMidpoints0,
                     clCrossProductProbabilities1, clCrossProductMidpoints1, grammar.packedArraySize());
@@ -297,13 +286,13 @@ public class OpenClSparseMatrixVectorParser extends
     private void internalCrossProduct(final OpenClChartCell leftCell, final DenseVectorChartCell rightCell,
             final CLFloatBuffer tmpClCrossProductProbabilities, final CLShortBuffer tmpClCrossProductMidpoints) {
 
-        final CLIntBuffer clValidLeftChildren = OpenClUtils.copyToDevice(context, clQueue,
-            leftCell.validLeftChildren, CLMem.Usage.Input);
-        final CLFloatBuffer clValidLeftChildrenProbabilities = OpenClUtils.copyToDevice(context, clQueue,
+        final CLIntBuffer clValidLeftChildren = OpenClUtils.copyToDevice(clQueue, leftCell.validLeftChildren,
+            CLMem.Usage.Input);
+        final CLFloatBuffer clValidLeftChildrenProbabilities = OpenClUtils.copyToDevice(clQueue,
             leftCell.validLeftChildrenProbabilities, CLMem.Usage.Input);
-        final CLShortBuffer clValidRightChildren = OpenClUtils.copyToDevice(context, clQueue,
+        final CLShortBuffer clValidRightChildren = OpenClUtils.copyToDevice(clQueue,
             rightCell.validRightChildren, CLMem.Usage.Input);
-        final CLFloatBuffer clValidRightChildrenProbabilities = OpenClUtils.copyToDevice(context, clQueue,
+        final CLFloatBuffer clValidRightChildrenProbabilities = OpenClUtils.copyToDevice(clQueue,
             rightCell.validRightChildrenProbabilities, CLMem.Usage.Input);
 
         // Bind the arguments of the OpenCL kernel
