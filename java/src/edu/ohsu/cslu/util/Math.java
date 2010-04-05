@@ -353,6 +353,16 @@ public class Math {
     }
 
     /**
+     * Returns true if n is a power-of-2
+     * 
+     * @param n
+     * @return true if n is a power-of-2
+     */
+    public static boolean isPowerOf2(final int n) {
+        return ((n - 1) & n) == 0;
+    }
+
+    /**
      * Rounds up to the nearest power of 2
      * 
      * @param n Integer to round up to the nearest power of 2
@@ -367,6 +377,19 @@ public class Math {
         n = n | (n >> 16);
         n = n + 1;
         return n;
+    }
+
+    /**
+     * Rounds down to the nearest power of 2
+     * 
+     * @param n Integer to round down to the nearest power of 2
+     * @return The highest power of 2 less than or equal to n
+     */
+    public static int previousPowerOf2(final int n) {
+        if (isPowerOf2(n)) {
+            return n;
+        }
+        return (nextPowerOf2(n) >> 1);
     }
 
     /**
