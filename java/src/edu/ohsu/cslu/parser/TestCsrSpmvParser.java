@@ -15,7 +15,7 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestCsrSparseMatrixVectorParser extends SparseMatrixVectorParserTestCase {
+public class TestCsrSpmvParser extends SparseMatrixVectorParserTestCase {
 
     @Override
     protected Class<? extends Grammar> grammarClass() {
