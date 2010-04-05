@@ -5,7 +5,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses( { TestECPGramLoop.class, TestECPGramLoopBerkFilter.class, TestECPCellCrossHash.class, TestECPCellCrossList.class, TestECPCellCrossMatrix.class,
-        TestJsaSparseMatrixVectorParser.class, TestCsrSparseMatrixVectorParser.class, TestOpenClSparseMatrixVectorParser.class })
+        TestJsaSparseMatrixVectorParser.class, TestCsrSpmvParser.class, TestOpenClSparseMatrixVectorParser.class })
 public class AllParserTests {
 
 }

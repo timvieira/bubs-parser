@@ -8,7 +8,8 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ({@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
+ * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format (
+ * {@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
  * 
  * @see OpenClSparseMatrixVectorParser
  * 
@@ -53,7 +54,8 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         final long binarySpmvTime = t2 - t1;
 
         // Handle unary productions
-        // TODO: This only goes through unary rules one time, so it can't create unary chains unless such chains are encoded in the grammar. Iterating a few times would probably
+        // TODO: This only goes through unary rules one time, so it can't create unary chains unless such
+        // chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
         unarySpmvMultiply(spvChartCell);
 
@@ -63,14 +65,17 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         // Pack the temporary cell storage into the main chart array
         spvChartCell.finalizeCell();
 
-        // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n", start, end, t3
-        // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime, edges, spmvTime, edges / spmvTime);
+        // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n",
+        // start, end, t3
+        // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime,
+        // edges, spmvTime, edges / spmvTime);
         totalCartesianProductTime += crossProductTime;
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
     /**
-     * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together, saving the maximum probability child combinations.
+     * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together,
+     * saving the maximum probability child combinations.
      * 
      * @param start
      * @param end
@@ -103,13 +108,17 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
                 for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {
 
+                    final int children = grammar.pack(leftChild, (short) nonTerminalIndices[j]);
+                    if (!grammar.isValidChildPair(children)) {
+                        continue;
+                    }
+
                     final float jointProbability = leftProbability + insideProbabilities[j];
-                    final int child = grammar.pack(leftChild, (short) nonTerminalIndices[j]);
-                    final float currentProbability = crossProductProbabilities[child];
+                    final float currentProbability = crossProductProbabilities[children];
 
                     if (jointProbability > currentProbability) {
-                        crossProductProbabilities[child] = jointProbability;
-                        crossProductMidpoints[child] = midpoint;
+                        crossProductProbabilities[children] = jointProbability;
+                        crossProductMidpoints[children] = midpoint;
 
                         if (currentProbability == Float.NEGATIVE_INFINITY) {
                             size++;
