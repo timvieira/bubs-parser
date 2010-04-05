@@ -7,12 +7,14 @@ import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collection;
 
+import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 /**
  * Stores a sparse-matrix grammar in standard compressed-sparse-row (CSR) format
  * 
- * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for details).
+ * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for
+ * details).
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
@@ -22,27 +24,37 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
     /**
-     * Offsets into {@link #csrBinaryRowIndices} for the start of each row, indexed by row index (non-terminals), with one extra entry appended to prevent loops from falling off
-     * the end
+     * Offsets into {@link #csrBinaryColumnIndices} for the start of each row, indexed by row index
+     * (non-terminals), with one extra entry appended to prevent loops from falling off the end
      */
     private int[] csrBinaryRowIndices;
 
-    /** Column indices of each matrix entry in {@link #csrBinaryProbabilities}. Indexed by packed children */
+    /**
+     * Column indices of each matrix entry in {@link #csrBinaryProbabilities}. The same size as
+     * {@link #csrBinaryProbabilities}.
+     */
     private int[] csrBinaryColumnIndices;
 
     /** Binary rule probabilities */
     private float[] csrBinaryProbabilities;
 
-    /** Offsets into {@link #csrUnaryRowIndices} for the start of each row, indexed by row index (non-terminals) */
+    /**
+     * Offsets into {@link #csrUnaryColumnIndices} for the start of each row, indexed by row index
+     * (non-terminals)
+     */
     private int[] csrUnaryRowIndices;
 
-    /** Column indices of each matrix entry in {@link #csrUnaryProbabilities}. Indexed by packed children */
+    /**
+     * Column indices of each matrix entry in {@link #csrUnaryProbabilities}. The same size as
+     * {@link #csrUnaryProbabilities}.
+     */
     private int[] csrUnaryColumnIndices;
 
     /** Binary rule probabilities */
     private float[] csrUnaryProbabilities;
 
-    public CsrSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public CsrSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
 
         // Bin all binary rules by parent, mapping packed children -> probability
@@ -50,7 +62,8 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         csrBinaryColumnIndices = new int[numBinaryRules()];
         csrBinaryProbabilities = new float[numBinaryRules()];
 
-        storeRulesAsMatrix(binaryProductions, csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
+        storeRulesAsMatrix(binaryProductions, csrBinaryRowIndices, csrBinaryColumnIndices,
+            csrBinaryProbabilities);
 
         // And all unary rules
         csrUnaryRowIndices = new int[numNonTerms() + 1];
@@ -59,14 +72,21 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
         storeRulesAsMatrix(unaryProductions, csrUnaryRowIndices, csrUnaryColumnIndices, csrUnaryProbabilities);
 
+        validChildPairs = new PackedBitVector(packedArraySize());
+        for (final int children : csrBinaryColumnIndices) {
+            validChildPairs.add(children);
+        }
+
         tokenizer = new Tokenizer(lexSet);
     }
 
-    public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
-    private void storeRulesAsMatrix(final Collection<Production> productions, final int[] csrRowIndices, final int[] csrColumnIndices, final float[] csrProbabilities) {
+    private void storeRulesAsMatrix(final Collection<Production> productions, final int[] csrRowIndices,
+            final int[] csrColumnIndices, final float[] csrProbabilities) {
 
         final Int2FloatOpenHashMap[] maps = mapRules(productions);
 

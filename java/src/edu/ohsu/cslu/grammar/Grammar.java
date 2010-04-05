@@ -12,6 +12,7 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.util.Log;
 
 public class Grammar {
+
     protected Collection<Production> binaryProductions;
     protected Collection<Production> unaryProductions;
     protected Collection<Production> lexicalProductions;
@@ -35,20 +36,24 @@ public class Grammar {
         tokenizer = new Tokenizer(lexSet);
     }
 
-    public Grammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public Grammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat)
+            throws Exception {
         init(grammarFile, lexiconFile, grammarFormat);
         tokenizer = new Tokenizer(lexSet);
     }
 
-    public Grammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public Grammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat)
+            throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    protected void init(final Reader grammarFile, final Reader lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         readGrammarAndLexicon(grammarFile, lexiconFile, grammarFormat);
     }
 
-    public void readGrammarAndLexicon(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public void readGrammarAndLexicon(final Reader grammarFile, final Reader lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         // the nullSymbol is used for start/end of sentence markers and dummy non-terminals
         nullSymbol = addNonTerm(nullSymbolStr);
         getNonterminal(nullSymbol).isPOS = true;
@@ -64,7 +69,8 @@ public class Grammar {
         readGrammar(grammarFile, grammarFormat);
 
         if (startSymbol == -1) {
-            throw new IllegalArgumentException("No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
+            throw new IllegalArgumentException(
+                "No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
         }
 
         nonTermSet.finalize();
@@ -112,7 +118,8 @@ public class Grammar {
 
                 if (startSymbol != -1) {
                     throw new IllegalArgumentException(
-                            "Grammar file must contain a single line with a single string representing the START SYMBOL.\nMore than one entry was found.  Last line: " + line);
+                        "Grammar file must contain a single line with a single string representing the START SYMBOL.\nMore than one entry was found.  Last line: "
+                                + line);
                 }
 
                 startSymbol = addNonTerm(tokens[0]);
@@ -157,10 +164,11 @@ public class Grammar {
             isLeftFactored = true;
         } else if (numRightFactored > 0 && numLeftFactored == 0) {
             isLeftFactored = false;
-        } else {
-            Log.info(0, "ERROR: Factoring of grammar is inconsistent or unknown.  Binary rules have " + numLeftFactored + " left-factored children and " + numRightFactored
-                    + " right-factored children.  Expecting one to be zero and the other nonzero.");
-            System.exit(1);
+            // } else {
+            // Log.info(0, "ERROR: Factoring of grammar is inconsistent or unknown.  Binary rules have " +
+            // numLeftFactored + " left-factored children and " + numRightFactored
+            // + " right-factored children.  Expecting one to be zero and the other nonzero.");
+            // System.exit(1);
         }
     }
 
@@ -286,7 +294,8 @@ public class Grammar {
 
     public float binaryLogProbability(final String A, final String B, final String C) {
         if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
-            return binaryLogProbability(nonTermSet.getIndex(A), nonTermSet.getIndex(B), nonTermSet.getIndex(C));
+            return binaryLogProbability(nonTermSet.getIndex(A), nonTermSet.getIndex(B), nonTermSet
+                .getIndex(C));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -405,7 +414,8 @@ public class Grammar {
         }
 
         // Binary production
-        public Production(final String parent, final String leftChild, final String rightChild, final float prob) {
+        public Production(final String parent, final String leftChild, final String rightChild,
+                final float prob) {
             this(addNonTerm(parent), addNonTerm(leftChild), addNonTerm(rightChild), prob);
         }
 

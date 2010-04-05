@@ -7,13 +7,15 @@ import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collection;
 
+import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 /**
- * Stores a sparse-matrix grammar in Java-Sparse-Array format (similar to standard compressed-sparse-row (CSR) format with the exception that row lengths can vary, since Java
- * stores 2-d arrays as arrays of arrays)
+ * Stores a sparse-matrix grammar in Java-Sparse-Array format (similar to standard compressed-sparse-row (CSR)
+ * format with the exception that row lengths can vary, since Java stores 2-d arrays as arrays of arrays)
  * 
- * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for details).
+ * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for
+ * details).
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
@@ -22,19 +24,20 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
  */
 public final class JsaSparseMatrixGrammar extends SparseMatrixGrammar {
 
-    /** Binary rules */
+    /** Binary rules. An array of int[] indexed by the parent non-terminal. */
     private int[][] jsaBinaryRules;
 
-    /** Binary rule probabilities */
+    /** Binary rule probabilities. An array of float[] indexed by the parent non-terminal. */
     private float[][] jsaBinaryProbabilities;
 
-    /** Binary rules */
+    /** Unary rules. An array of int[] indexed by the parent non-terminal. */
     private int[][] jsaUnaryRules;
 
-    /** Binary rule probabilities */
+    /** Unary rule probabilities. An array of float[] indexed by the parent non-terminal. */
     private float[][] jsaUnaryProbabilities;
 
-    public JsaSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public JsaSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
 
         // Bin all binary rules by parent, mapping packed children -> probability
@@ -47,14 +50,23 @@ public final class JsaSparseMatrixGrammar extends SparseMatrixGrammar {
         jsaUnaryProbabilities = new float[numNonTerms()][];
         storeRulesAsMatrix(unaryProductions, jsaUnaryRules, jsaUnaryProbabilities);
 
+        validChildPairs = new PackedBitVector(packedArraySize());
+        for (final int[] row : jsaBinaryRules) {
+            for (final int children : row) {
+                validChildPairs.add(children);
+            }
+        }
+
         tokenizer = new Tokenizer(lexSet);
     }
 
-    public JsaSparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public JsaSparseMatrixGrammar(final String grammarFile, final String lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
-    private void storeRulesAsMatrix(final Collection<Production> productions, final int[][] productionMatrix, final float[][] probabilityMatrix) {
+    private void storeRulesAsMatrix(final Collection<Production> productions, final int[][] productionMatrix,
+            final float[][] probabilityMatrix) {
 
         final Int2FloatOpenHashMap[] maps = mapRules(productions);
 
