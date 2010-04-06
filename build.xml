@@ -110,7 +110,9 @@
 		<!-- Create the distribution directory if it doesn't already exist -->
 		<mkdir dir="${dir.dist}" />
 
-		<!-- If 'params' is not specified, default it to the empty string -->
+        <!-- Default unspecified parameters -->
+        <property name="additional-libs" value="none" />
+        <property name="additional-root-classes" value="" />
 		<property name="params" value="" />
 
 		<!-- If 'heap-size' is not specified, default it to 128m -->

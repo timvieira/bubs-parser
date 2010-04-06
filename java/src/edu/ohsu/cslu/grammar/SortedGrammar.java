@@ -23,19 +23,37 @@ public abstract class SortedGrammar extends GrammarByChild {
     public int leftChildOnlyStart;
     public int unaryChildOnlyStart;
 
-    protected SortedGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    /** The number of categories which occur as the parent of a binary rule */
+    private final int binaryParents;
+
+    /** The number of categories which occur as the parent of a unary rule */
+    private final int unaryParents;
+
+    /** The number of categories which occur as the parent of both unary and binary rules */
+    private final int unaryAndBinaryParents;
+
+    /** The number of POS categories which also occur as the parent of a binary rule */
+    private final int posAsBinaryParents;
+
+    /** The number of POS categories which also occur as the parent of a unary rule */
+    private final int posAsUnaryParents;
+
+    protected SortedGrammar(final String grammarFile, final String lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     @SuppressWarnings("unchecked")
-    protected SortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    protected SortedGrammar(final Reader grammarFile, final Reader lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         rightChildOnlyStart = 0;
         eitherChildStart = leftChildOnlyStart = unaryChildOnlyStart = posStart = -1;
 
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
-        // Read in the lexical productions first. Label any non-terminals found in the lexicon as POS tags. We assume POS will only occur as parents in span-1 rows and as children
+        // Read in the lexical productions first. Label any non-terminals found in the lexicon as POS tags. We
+        // assume POS will only occur as parents in span-1 rows and as children
         // in span-2 rows
         Log.info(1, "INFO: Reading lexical productions");
         final List<StringRule> lexicalRules = readLexProds(lexiconFile);
@@ -48,10 +66,13 @@ public abstract class SortedGrammar extends GrammarByChild {
         Log.info(1, "INFO: Reading grammar");
         final List<StringRule> grammarRules = readGrammar(grammarFile, grammarFormat);
 
-        // Track which non-terminals occur as left children, which as right children, and which as children only of unary rules
+        // Track which non-terminals occur as left children, which as right children, and which as children
+        // only of unary rules
         final HashSet<String> leftChildren = new HashSet<String>();
         final HashSet<String> rightChildren = new HashSet<String>();
         final HashSet<String> unaryOnly = new HashSet<String>();
+        final HashSet<String> binaryParentSet = new HashSet<String>();
+        final HashSet<String> unaryParentSet = new HashSet<String>();
 
         for (final StringRule grammarRule : grammarRules) {
             nonTerminals.add(grammarRule.parent);
@@ -66,17 +87,20 @@ public abstract class SortedGrammar extends GrammarByChild {
                     rightChildren.add(bsr.rightChild);
                 }
                 nonTerminals.add(bsr.rightChild);
+                binaryParentSet.add(bsr.parent);
             } else {
                 if (!pos.contains(grammarRule.leftChild)) {
                     unaryOnly.add(grammarRule.leftChild);
                 }
+                unaryParentSet.add(grammarRule.parent);
             }
         }
 
         unaryOnly.removeAll(leftChildren);
         unaryOnly.removeAll(rightChildren);
 
-        // Special cases for the start symbol and the null symbol (used for start/end of sentence markers and dummy non-terminals)
+        // Special cases for the start symbol and the null symbol (used for start/end of sentence markers and
+        // dummy non-terminals)
         nonTerminals.add(startSymbolStr);
         unaryOnly.add(startSymbolStr);
 
@@ -86,18 +110,27 @@ public abstract class SortedGrammar extends GrammarByChild {
 
         leftChildren.removeAll(unaryOnly);
 
+        binaryParents = binaryParentSet.size();
+        unaryParents = unaryParentSet.size();
+
+        final HashSet<String> tmp = (HashSet<String>) unaryParentSet.clone();
+        tmp.retainAll(binaryParentSet);
+        unaryAndBinaryParents = tmp.size();
+
+        // Count the number of non-terminals which occur both as parents of pre-terminal rules (POS) and as
+        // the parents of other rules
+        binaryParentSet.retainAll(pos);
+        posAsBinaryParents = binaryParentSet.size();
+
+        unaryParentSet.retainAll(pos);
+        posAsUnaryParents = unaryParentSet.size();
+
         // Intersect the left and right children together to find the set of NTs which occur as either child
         final HashSet<String> bothChildren = (HashSet<String>) leftChildren.clone();
         bothChildren.retainAll(rightChildren);
 
         leftChildren.removeAll(bothChildren);
         rightChildren.removeAll(bothChildren);
-
-        // System.out.format("Right children only: %d\n", rightChildren.size());
-        // System.out.format("Both children: %d\n", bothChildren.size());
-        // System.out.format("Left children only: %d\n", leftChildren.size());
-        // System.out.format("Unary children only: %d\n", unaryOnly.size());
-        // System.out.format("POS: %d\n", pos.size());
 
         // Now, sort the NTs by class (see NonTerminalClass).
         final TreeSet<NonTerminal> sortedNonTerminals = new TreeSet<NonTerminal>();
@@ -142,12 +175,14 @@ public abstract class SortedGrammar extends GrammarByChild {
             }
         }
 
-        // If there are no NTs which occur as right children only, set the index to the beginning of the unary set
+        // If there are no NTs which occur as right children only, set the index to the beginning of the unary
+        // set
         if (leftChildOnlyStart == -1) {
             leftChildOnlyStart = unaryChildOnlyStart;
         }
 
-        // If there are no NTs which occur as either child, set the index to the beginning of the left child only set
+        // If there are no NTs which occur as either child, set the index to the beginning of the left child
+        // only set
         if (eitherChildStart == -1) {
             eitherChildStart = leftChildOnlyStart;
         }
@@ -159,35 +194,12 @@ public abstract class SortedGrammar extends GrammarByChild {
 
         // Now that all NTs are mapped, we can create Production instances for all rules
 
-        // Lexical rules first
-        // final List<Production> tmpProdList = new LinkedList<Production>();
-        // for (final StringRule lexicalRule : lexicalRules) {
-        // tmpProdList.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexSet.getIndex(lexicalRule.leftChild), lexicalRule.probability, true));
-        // }
-        //
-        // // store lexical prods indexed by the word
-        // final ArrayList<LinkedList<Production>> tmpLexicalProds = new ArrayList<LinkedList<Production>>(lexSet.numSymbols());
-        // for (int i = 0; i < lexSet.numSymbols(); i++) {
-        // tmpLexicalProds.add(null);
-        // }
-        // // numLexProds = lexicalRules.size();
-        //
-        // for (final Production p : tmpProdList) {
-        // LinkedList<Production> list = tmpLexicalProds.get(p.leftChild);
-        //
-        // if (list == null) {
-        // list = new LinkedList<Production>();
-        // tmpLexicalProds.set(p.leftChild, list);
-        // }
-        // list.add(p);
-        // }
-        //
-        // lexicalProdsByChild = tmpLexicalProds.toArray(new LinkedList[tmpLexicalProds.size()]);
-
         lexicalProductions = new LinkedList<Production>();
         for (final StringRule lexicalRule : lexicalRules) {
-            final int lexIndex = lexSet.addSymbol(lexicalRule.leftChild); // we don't care about the sorted order of the lexSet
-            lexicalProductions.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexIndex, lexicalRule.probability, true));
+            final int lexIndex = lexSet.addSymbol(lexicalRule.leftChild); // we don't care about the sorted
+            // order of the lexSet
+            lexicalProductions.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexIndex,
+                lexicalRule.probability, true));
         }
 
         // And unary and binary rules
@@ -196,9 +208,11 @@ public abstract class SortedGrammar extends GrammarByChild {
 
         for (final StringRule grammarRule : grammarRules) {
             if (grammarRule instanceof BinaryStringRule) {
-                binaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild, ((BinaryStringRule) grammarRule).rightChild, grammarRule.probability));
+                binaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
+                    ((BinaryStringRule) grammarRule).rightChild, grammarRule.probability));
             } else {
-                unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild, grammarRule.probability, false));
+                unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
+                    grammarRule.probability, false));
             }
         }
 
@@ -211,7 +225,6 @@ public abstract class SortedGrammar extends GrammarByChild {
         numLexProds = lexicalProductions.size();
         lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
         lexicalProductions = null; // remove from memory since we now store by child
-
     }
 
     private List<StringRule> readLexProds(final Reader lexFile) throws IOException {
@@ -231,7 +244,8 @@ public abstract class SortedGrammar extends GrammarByChild {
         return rules;
     }
 
-    private List<StringRule> readGrammar(final Reader gramFile, final GrammarFormatType grammarFormat) throws IOException {
+    private List<StringRule> readGrammar(final Reader gramFile, final GrammarFormatType grammarFormat)
+            throws IOException {
 
         if (grammarFormat == GrammarFormatType.Roark) {
             startSymbolStr = "TOP";
@@ -246,7 +260,8 @@ public abstract class SortedGrammar extends GrammarByChild {
 
                 if (startSymbolStr != null) {
                     throw new IllegalArgumentException(
-                            "Grammar file must contain a single line with a single string representing the START SYMBOL.\nMore than one entry was found.  Last line: " + line);
+                        "Grammar file must contain a single line with a single string representing the START SYMBOL.\nMore than one entry was found.  Last line: "
+                                + line);
                 }
 
                 startSymbolStr = tokens[0];
@@ -266,7 +281,8 @@ public abstract class SortedGrammar extends GrammarByChild {
         }
 
         if (startSymbolStr == null) {
-            throw new IllegalArgumentException("No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
+            throw new IllegalArgumentException(
+                "No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
         }
 
         return rules;
@@ -304,6 +320,12 @@ public abstract class SortedGrammar extends GrammarByChild {
         sb.append("POS symbols: " + posSet.size() + '\n');
         sb.append("Max POS index: " + maxPOSIndex + '\n');
 
+        sb.append("Binary Parents: " + binaryParents + '\n');
+        sb.append("Unary Parents: " + unaryParents + '\n');
+        sb.append("Unary And Binary Parents: " + unaryAndBinaryParents + '\n');
+        sb.append("POS as binary parents: " + posAsBinaryParents + '\n');
+        sb.append("POS as unary parents: " + posAsUnaryParents + '\n');
+
         sb.append("Start symbol: " + nonTermSet.getSymbol(startSymbol) + '\n');
         sb.append("Null symbol: " + nonTermSet.getSymbol(nullSymbol) + '\n');
 
@@ -330,7 +352,8 @@ public abstract class SortedGrammar extends GrammarByChild {
     public final class BinaryStringRule extends StringRule {
         public final String rightChild;
 
-        public BinaryStringRule(final String parent, final String leftChild, final String rightChild, final float probability) {
+        public BinaryStringRule(final String parent, final String leftChild, final String rightChild,
+                final float probability) {
             super(parent, leftChild, probability);
             this.rightChild = rightChild.intern();
         }
@@ -341,7 +364,8 @@ public abstract class SortedGrammar extends GrammarByChild {
         }
     }
 
-    public NonTerminal create(final String label, final Set<String> leftChildrenOnly, final Set<String> rightChildrenOnly, final Set<String> bothChildren,
+    public NonTerminal create(final String label, final Set<String> leftChildrenOnly,
+            final Set<String> rightChildrenOnly, final Set<String> bothChildren,
             final Set<String> unaryChildren, final HashSet<String> pos) {
         final String internLabel = label.intern();
 
@@ -389,11 +413,11 @@ public abstract class SortedGrammar extends GrammarByChild {
     /**
      * 1 - Right child only
      * 
-     * 2 - Either child of binary rules
+     * 2 - POS
      * 
-     * 3 - Left child only of binary rules
+     * 3 - Either child of binary rules
      * 
-     * 4 - POS
+     * 4 - Left child only of binary rules
      * 
      * 5 - Unary children only
      */
