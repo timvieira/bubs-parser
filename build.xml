@@ -92,7 +92,11 @@
        Called by individual targets below
        
        Arguments:
-         * root-class - classname (required)
+         * root-class - Primary root classnam (required)
+         * additional-root-classes - Additional root classnames, comma-delimited 
+             (optional)
+         * additional-libs (optional) List of any additional classes which 
+             should also be considered as root classes
          * tool-name - string (required). The desired script name. The jar name 
              will match, with a .jar suffix, and the SGE script will be named
              by prepending 'grid-'
@@ -111,10 +115,11 @@
 
 		<!-- If 'heap-size' is not specified, default it to 128m -->
 		<property name="heap-size" value="128" />
-
+	    
 		<!-- Package the jar -->
 		<genjar jarfile="${dir.dist}/${tool-name}.jar">
 			<class name="${root-class}" />
+            <classes names="${additional-root-classes}" />
 
 			<classpath>
 				<pathelement location="${dir.build}" />
@@ -238,6 +243,7 @@
     <target name="summarize-grammar" depends="compile-java" description="Package grammar statistics tool">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
+            <param name="additional-root-classes" value="edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar" />
             <param name="tool-name" value="summarize-grammar" />
             <param name="heap-size" value="1024" />
         </antcall>
