@@ -14,10 +14,8 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 /**
  * Stores a grammar as a sparse matrix of probabilities.
  * 
- * Assumes fewer than 2^30 total non-terminals combinations (so that a production pair will fit into a signed
- * 32-bit int). This limit _may_ still allow more than 2^15 total non-terminals, depending on the grammar's
- * factorization. In general, we assume a left-factored grammar with many fewer valid right child productions
- * than left children.
+ * Assumes fewer than 2^30 total non-terminals combinations (so that a production pair will fit into a signed 32-bit int). This limit _may_ still allow more than 2^15 total
+ * non-terminals, depending on the grammar's factorization. In general, we assume a left-factored grammar with many fewer valid right child productions than left children.
  * 
  * @author Aaron Dunlop
  * @since Dec 31, 2009
@@ -33,11 +31,12 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     public final int mask;
     protected final int validProductionPairs;
 
-    /** {@link BitVector} of child pairs found in binary grammar rules. */
+    /**
+     * {@link BitVector} of child pairs found in binary grammar rules. TODO This should really be implemented as a PackedBitMatrix, if we had such a class
+     */
     protected PackedBitVector validChildPairs;
 
-    public SparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
-            final GrammarFormatType grammarFormat) throws Exception {
+    public SparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
 
         // Add 1 bit to leave empty for sign
@@ -57,18 +56,15 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         validProductionPairs = productionPairs.size();
     }
 
-    public SparseMatrixGrammar(final String grammarFile, final String lexiconFile,
-            final GrammarFormatType grammarFormat) throws Exception {
+    public SparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     /**
      * Returns the log probability of the specified parent / child production
      * 
-     * @param parent
-     *            Parent index
-     * @param children
-     *            Packed children
+     * @param parent Parent index
+     * @param children Packed children
      * @return Log probability
      */
     public abstract float binaryLogProbability(final int parent, final int children);
@@ -81,10 +77,8 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     /**
      * Returns the log probability of the specified parent / child production
      * 
-     * @param parent
-     *            Parent index
-     * @param child
-     *            Child index
+     * @param parent Parent index
+     * @param child Child index
      * @return Log probability
      */
     @Override
@@ -93,20 +87,29 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     /**
      * Returns true if the (packed) child pair occurs in a binary grammar rule.
      * 
-     * @param children
-     *            Packed child pair
+     * @param children Packed child pair
      * @return true if the (packed) child pair occurs in a binary grammar rule.
      */
     public final boolean isValidChildPair(final int children) {
         return validChildPairs.contains(children);
     }
 
+    public String recognitionMatrix() {
+        final StringBuilder sb = new StringBuilder(10 * 1024);
+        for (int i = 0; i < validChildPairs.length(); i++) {
+            if (validChildPairs.contains(i)) {
+                final int leftChild = unpackLeftChild(i);
+                final short rightChild = unpackRightChild(i);
+                sb.append(leftChild + "," + rightChild + '\n');
+            }
+        }
+        return sb.toString();
+    }
+
     /**
-     * Returns all rules as an array of maps, indexed by parent, each of which maps the packed children to the
-     * probability.
+     * Returns all rules as an array of maps, indexed by parent, each of which maps the packed children to the probability.
      * 
-     * @param productions
-     *            Rules to be mapped
+     * @param productions Rules to be mapped
      * @return Array of maps from children -> probability
      */
     protected Int2FloatOpenHashMap[] mapRules(final Collection<Production> productions) {
