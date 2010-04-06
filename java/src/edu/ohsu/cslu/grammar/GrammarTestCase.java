@@ -16,9 +16,11 @@ public abstract class GrammarTestCase {
      */
     protected abstract Class<? extends Grammar> grammarClass();
 
-    public static Grammar createGrammar(final Class<? extends Grammar> grammarClass, final Reader grammarReader, final Reader lexiconReader) throws Exception {
-        return grammarClass.getConstructor(new Class[] { Reader.class, Reader.class, GrammarFormatType.class }).newInstance(
-                new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
+    public static <C extends Grammar> C createGrammar(final Class<C> grammarClass,
+            final Reader grammarReader, final Reader lexiconReader) throws Exception {
+        return grammarClass.getConstructor(
+            new Class[] { Reader.class, Reader.class, GrammarFormatType.class }).newInstance(
+            new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
     }
 
     public static Grammar createSimpleGrammar(final Class<? extends Grammar> grammarClass) throws Exception {
@@ -39,7 +41,8 @@ public abstract class GrammarTestCase {
         // Add a fake factored category just to keep Grammar happy
         grammarSb.append("NP => NP NP|NN -Infinity\n");
 
-        return createGrammar(grammarClass, new StringReader(grammarSb.toString()), new StringReader(lexiconSb.toString()));
+        return createGrammar(grammarClass, new StringReader(grammarSb.toString()), new StringReader(lexiconSb
+            .toString()));
     }
 
     /**
