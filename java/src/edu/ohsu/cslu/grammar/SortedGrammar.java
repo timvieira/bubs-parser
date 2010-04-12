@@ -23,20 +23,82 @@ public abstract class SortedGrammar extends GrammarByChild {
     public int leftChildOnlyStart;
     public int unaryChildOnlyStart;
 
-    /** The number of categories which occur as the parent of a binary rule */
+    /** The number of non-terminals which occur as the parent of a binary rule */
     private final int binaryParents;
 
-    /** The number of categories which occur as the parent of a unary rule */
+    /**
+     * The number of normal (non-POS, non-factored) non-terminals.
+     */
+    private final int normalNonTerminals;
+
+    /**
+     * The number of normal (non-POS, non-factored) non-terminals which occur only as left children of binary
+     * productions.
+     */
+    private final int normalLeftChildrenOnly;
+
+    /**
+     * The number of normal (non-POS, non-factored) non-terminals which occur only as right children of binary
+     * productions.
+     */
+    private final int normalRightChildrenOnly;
+
+    /**
+     * The number of normal (non-POS, non-factored) non-terminals which occur as either child of binary
+     * productions.
+     */
+    private final int normalEitherChild;
+
+    /** The number of non-terminals which only combine as the left child with POS. */
+    private final int leftChildrenOnlyWithPos;
+
+    /** The number of non-terminals which only combine as the right child with POS. */
+    private final int rightChildrenOnlyWithPos;
+
+    /** The number of non-terminals which combine as either child with POS. */
+    private final int eitherChildWithPos;
+
+    /** The number of normal non-terminals which only combine as the left child with POS. */
+    private final int normalLeftChildrenOnlyWithPos;
+
+    /** The number of normal non-terminals which only combine as the right child with POS. */
+    private final int normalRightChildrenOnlyWithPos;
+
+    /**
+     * The number of non-factored non-terminals which can combine as the right child with a factored NT as the
+     * left child.
+     */
+    private final int rightChildrenCombinedWithFactored;
+
+    /** Factored non-terminals */
+    private final int factoredNonTerminals;
+
+    /** Factored non-terminals found as left children */
+    private final int factoredLeftChildren;
+
+    /** Factored non-terminals found as right children */
+    private final int factoredRightChildren;
+
+    /**
+     * The number of non-factored non-terminals which can combine as the left child with a factored NT as the
+     * right child.
+     */
+    private final int leftChildrenCombinedWithFactored;
+
+    /** The number of normal non-terminals which only combine as the left child with factored NTs. */
+    private final int normalLeftChildrenOnlyWithFactored;
+
+    /** The number of normal non-terminals which only combine as the right child with factored NTs. */
+    private final int normalRightChildrenOnlyWithFactored;
+
+    /** The number of non-terminals which occur as the parent of a unary rule */
     private final int unaryParents;
 
-    /** The number of categories which occur as the parent of both unary and binary rules */
+    /** The number of non-terminals which only occur as the parent of a unary rule */
+    private final int unaryParentsOnly;
+
+    /** The number of non-terminals which occur as the parent of both unary and binary rules */
     private final int unaryAndBinaryParents;
-
-    /** The number of POS categories which also occur as the parent of a binary rule */
-    private final int posAsBinaryParents;
-
-    /** The number of POS categories which also occur as the parent of a unary rule */
-    private final int posAsUnaryParents;
 
     protected SortedGrammar(final String grammarFile, final String lexiconFile,
             final GrammarFormatType grammarFormat) throws Exception {
@@ -66,76 +128,202 @@ public abstract class SortedGrammar extends GrammarByChild {
         Log.info(1, "INFO: Reading grammar");
         final List<StringRule> grammarRules = readGrammar(grammarFile, grammarFormat);
 
-        // Track which non-terminals occur as left children, which as right children, and which as children
-        // only of unary rules
-        final HashSet<String> leftChildren = new HashSet<String>();
-        final HashSet<String> rightChildren = new HashSet<String>();
-        final HashSet<String> unaryOnly = new HashSet<String>();
+        // All non-terminals
+        final HashSet<String> leftChildrenSet = new HashSet<String>();
+        final HashSet<String> rightChildrenSet = new HashSet<String>();
+
+        // 'Normal' non-terminals (not POS or factored)
+        final HashSet<String> normalNonTerminalSet = new HashSet<String>();
+        final HashSet<String> normalLeftChildrenSet = new HashSet<String>();
+        final HashSet<String> normalRightChildrenSet = new HashSet<String>();
+
+        // Parents
         final HashSet<String> binaryParentSet = new HashSet<String>();
-        final HashSet<String> unaryParentSet = new HashSet<String>();
+        final HashSet<String> unaryParentsSet = new HashSet<String>();
+
+        // Factored non-terminals
+        final HashSet<String> factoredNonTerminalSet = new HashSet<String>();
+        final HashSet<String> factoredLeftChildrenSet = new HashSet<String>();
+        final HashSet<String> factoredRightChildrenSet = new HashSet<String>();
+
+        // Children combined with POS
+        final HashSet<String> leftChildrenCombinedWithPosSet = new HashSet<String>();
+        final HashSet<String> rightChildrenCombinedWithPosSet = new HashSet<String>();
+
+        // Children combined with factored NTs
+        final HashSet<String> rightChildrenCombinedWithFactoredSet = new HashSet<String>();
+        final HashSet<String> leftChildrenCombinedWithFactoredSet = new HashSet<String>();
+
+        // POS
+        // final HashSet<String> posAsLeftChildSet = new HashSet<String>();
+        // final HashSet<String> posAsRightChildSet = new HashSet<String>();
 
         for (final StringRule grammarRule : grammarRules) {
+
             nonTerminals.add(grammarRule.parent);
             nonTerminals.add(grammarRule.leftChild);
 
+            // TODO Handle formats other than Berkeley
+            final boolean parentIsFactored = grammarRule.parent.startsWith("@");
+            final boolean parentIsPos = pos.contains(grammarRule.parent);
+            final boolean leftIsFactored = grammarRule.leftChild.startsWith("@");
+            final boolean leftIsPos = pos.contains(grammarRule.leftChild);
+
+            if (!parentIsFactored && !parentIsPos) {
+                normalNonTerminalSet.add(grammarRule.parent);
+            }
+            if (!leftIsFactored && !leftIsPos) {
+                normalNonTerminalSet.add(grammarRule.leftChild);
+            }
+
+            if (leftIsFactored) {
+                factoredNonTerminalSet.add(grammarRule.leftChild);
+            }
+
             if (grammarRule instanceof BinaryStringRule) {
                 final BinaryStringRule bsr = (BinaryStringRule) grammarRule;
-                if (!pos.contains(bsr.leftChild)) {
-                    leftChildren.add(bsr.leftChild);
-                }
-                if (!pos.contains(bsr.rightChild)) {
-                    rightChildren.add(bsr.rightChild);
-                }
+                // TODO Handle formats other than Berkeley
+                final boolean rightIsFactored = bsr.rightChild.startsWith("@");
+                final boolean rightIsPos = pos.contains(bsr.rightChild);
+
                 nonTerminals.add(bsr.rightChild);
                 binaryParentSet.add(bsr.parent);
-            } else {
-                if (!pos.contains(grammarRule.leftChild)) {
-                    unaryOnly.add(grammarRule.leftChild);
+                leftChildrenSet.add(bsr.leftChild);
+                rightChildrenSet.add(bsr.rightChild);
+
+                if (!leftIsPos && !leftIsFactored) {
+                    normalLeftChildrenSet.add(bsr.leftChild);
                 }
-                unaryParentSet.add(grammarRule.parent);
+
+                if (!rightIsPos && !rightIsFactored) {
+                    normalNonTerminalSet.add(bsr.rightChild);
+                    normalRightChildrenSet.add(bsr.rightChild);
+                }
+
+                if (leftIsPos) {
+                    rightChildrenCombinedWithPosSet.add(bsr.rightChild);
+                }
+                if (rightIsPos) {
+                    leftChildrenCombinedWithPosSet.add(bsr.leftChild);
+                }
+
+                if (leftIsFactored) {
+                    factoredLeftChildrenSet.add(bsr.leftChild);
+                    rightChildrenCombinedWithFactoredSet.add(bsr.rightChild);
+                }
+
+                if (rightIsFactored) {
+                    factoredRightChildrenSet.add(bsr.rightChild);
+                    factoredNonTerminalSet.add(bsr.rightChild);
+                    leftChildrenCombinedWithFactoredSet.add(bsr.leftChild);
+                }
+
+            } else {
+                // Unary Rule
+                unaryParentsSet.add(grammarRule.parent);
             }
         }
-
-        unaryOnly.removeAll(leftChildren);
-        unaryOnly.removeAll(rightChildren);
 
         // Special cases for the start symbol and the null symbol (used for start/end of sentence markers and
         // dummy non-terminals)
         nonTerminals.add(startSymbolStr);
-        unaryOnly.add(startSymbolStr);
-
         nonTerminals.add(nullSymbolStr);
+
         // TODO: What class should the null symbol fall into? POS for the moment.
         pos.add(nullSymbolStr);
 
-        leftChildren.removeAll(unaryOnly);
-
         binaryParents = binaryParentSet.size();
-        unaryParents = unaryParentSet.size();
+        normalNonTerminals = normalNonTerminalSet.size();
 
-        final HashSet<String> tmp = (HashSet<String>) unaryParentSet.clone();
+        // Unary and binary parents
+        HashSet<String> tmp = (HashSet<String>) unaryParentsSet.clone();
         tmp.retainAll(binaryParentSet);
         unaryAndBinaryParents = tmp.size();
+
+        // Unary parents
+        unaryParents = unaryParentsSet.size();
+
+        final HashSet<String> unaryParentsOnlySet = new HashSet<String>(unaryParentsSet);
+        unaryParentsOnlySet.removeAll(binaryParentSet);
+        unaryParentsOnly = unaryParentsOnlySet.size();
+
+        // NTs which combine with on either side
+        tmp = new HashSet<String>(leftChildrenCombinedWithPosSet);
+        tmp.retainAll(rightChildrenCombinedWithPosSet);
+        eitherChildWithPos = tmp.size();
+
+        // NTs which combine with POS only on one side or the other
+        final HashSet<String> leftChildrenOnlyWithPosSet = new HashSet<String>(leftChildrenCombinedWithPosSet);
+        leftChildrenOnlyWithPosSet.removeAll(rightChildrenCombinedWithPosSet);
+        leftChildrenOnlyWithPos = leftChildrenOnlyWithPosSet.size();
+
+        final HashSet<String> rightChildrenOnlyWithPosSet = new HashSet<String>(
+            rightChildrenCombinedWithPosSet);
+        rightChildrenOnlyWithPosSet.removeAll(leftChildrenCombinedWithPosSet);
+        rightChildrenOnlyWithPos = rightChildrenOnlyWithPosSet.size();
+
+        // NTs which combine with factored NTs
+        rightChildrenCombinedWithFactored = rightChildrenCombinedWithFactoredSet.size();
+        leftChildrenCombinedWithFactored = leftChildrenCombinedWithFactoredSet.size();
+
+        // Normal (non-POS, non-factored) left and right children
+        tmp = new HashSet<String>(normalLeftChildrenSet);
+        tmp.retainAll(normalRightChildrenSet);
+        normalEitherChild = tmp.size();
+
+        final HashSet<String> normalLeftChildrenOnlySet = new HashSet<String>(normalLeftChildrenSet);
+        normalLeftChildrenOnlySet.removeAll(normalRightChildrenSet);
+        normalLeftChildrenOnly = normalLeftChildrenOnlySet.size();
+
+        final HashSet<String> normalRightChildrenOnlySet = new HashSet<String>(normalLeftChildrenSet);
+        normalRightChildrenOnlySet.removeAll(normalLeftChildrenSet);
+        normalRightChildrenOnly = normalRightChildrenOnlySet.size();
+
+        // Normal children specifically with POS
+        final HashSet<String> normalLeftChildrenOnlyWithPosSet = new HashSet<String>(normalLeftChildrenSet);
+        normalLeftChildrenOnlyWithPosSet.retainAll(leftChildrenOnlyWithPosSet);
+        normalLeftChildrenOnlyWithPos = normalLeftChildrenOnlyWithPosSet.size();
+
+        final HashSet<String> normalRightChildrenOnlyWithPosSet = new HashSet<String>(normalRightChildrenSet);
+        normalRightChildrenOnlyWithPosSet.retainAll(rightChildrenOnlyWithPosSet);
+        normalRightChildrenOnlyWithPos = normalRightChildrenOnlyWithPosSet.size();
+
+        // Factored NTs
+        factoredNonTerminals = factoredNonTerminalSet.size();
+        factoredLeftChildren = factoredLeftChildrenSet.size();
+        factoredRightChildren = factoredRightChildrenSet.size();
+
+        // Normal children specifically with factored
+        final HashSet<String> normalLeftChildrenOnlyWithFactoredSet = new HashSet<String>(
+            leftChildrenCombinedWithFactoredSet);
+        normalLeftChildrenOnlyWithFactoredSet.retainAll(normalLeftChildrenSet);
+        normalLeftChildrenOnlyWithFactored = normalLeftChildrenOnlyWithFactoredSet.size();
+
+        final HashSet<String> normalRightChildrenOnlyWithFactoredSet = new HashSet<String>(
+            rightChildrenCombinedWithFactoredSet);
+        normalRightChildrenOnlyWithFactoredSet.retainAll(normalRightChildrenSet);
+        normalRightChildrenOnlyWithFactored = normalRightChildrenOnlyWithFactoredSet.size();
 
         // Count the number of non-terminals which occur both as parents of pre-terminal rules (POS) and as
         // the parents of other rules
         binaryParentSet.retainAll(pos);
-        posAsBinaryParents = binaryParentSet.size();
 
-        unaryParentSet.retainAll(pos);
-        posAsUnaryParents = unaryParentSet.size();
+        unaryParentsSet.retainAll(pos);
 
         // Intersect the left and right children together to find the set of NTs which occur as either child
-        final HashSet<String> bothChildren = (HashSet<String>) leftChildren.clone();
-        bothChildren.retainAll(rightChildren);
+        final HashSet<String> bothChildrenSet = new HashSet<String>(leftChildrenSet);
+        bothChildrenSet.addAll(rightChildrenSet);
 
-        leftChildren.removeAll(bothChildren);
-        rightChildren.removeAll(bothChildren);
+        final HashSet<String> leftChildrenOnlySet = new HashSet<String>(leftChildrenSet);
+        leftChildrenOnlySet.removeAll(rightChildrenSet);
+        final HashSet<String> rightChildrenOnlySet = new HashSet<String>(rightChildrenSet);
+        rightChildrenOnlySet.removeAll(leftChildrenSet);
 
         // Now, sort the NTs by class (see NonTerminalClass).
         final TreeSet<NonTerminal> sortedNonTerminals = new TreeSet<NonTerminal>();
         for (final String nt : nonTerminals) {
-            final NonTerminal n = create(nt, leftChildren, rightChildren, bothChildren, unaryOnly, pos);
+            final NonTerminal n = create(nt, leftChildrenOnlySet, rightChildrenOnlySet, bothChildrenSet,
+                unaryParentsOnlySet, pos);
             if (n != null) {
                 sortedNonTerminals.add(n);
             }
@@ -300,12 +488,24 @@ public abstract class SortedGrammar extends GrammarByChild {
         return child >= posStart && child <= maxPOSIndex;
     }
 
-    public final boolean isValidRightChild(final int child) {
-        return (child >= rightChildOnlyStart && child < leftChildOnlyStart && child != nullSymbol);
+    /**
+     * Returns true if the non-terminal occurs as a left child in the grammar.
+     * 
+     * @param nonTerminal
+     * @return true if the non-terminal occurs as a left child in the grammar.
+     */
+    public boolean isValidRightChild(final int nonTerminal) {
+        return (nonTerminal >= rightChildOnlyStart && nonTerminal < leftChildOnlyStart && nonTerminal != nullSymbol);
     }
 
-    public final boolean isValidLeftChild(final int child) {
-        return (child >= posStart && child < unaryChildOnlyStart && child != nullSymbol);
+    /**
+     * Returns true if the non-terminal occurs as a right child in the grammar.
+     * 
+     * @param nonTerminal
+     * @return true if the non-terminal occurs as a right child in the grammar.
+     */
+    public boolean isValidLeftChild(final int nonTerminal) {
+        return (nonTerminal >= posStart && nonTerminal < unaryChildOnlyStart && nonTerminal != nullSymbol);
     }
 
     @Override
@@ -322,9 +522,42 @@ public abstract class SortedGrammar extends GrammarByChild {
 
         sb.append("Binary Parents: " + binaryParents + '\n');
         sb.append("Unary Parents: " + unaryParents + '\n');
+        sb.append("Unary Parents Only: " + unaryParentsOnly + '\n');
         sb.append("Unary And Binary Parents: " + unaryAndBinaryParents + '\n');
-        sb.append("POS as binary parents: " + posAsBinaryParents + '\n');
-        sb.append("POS as unary parents: " + posAsUnaryParents + '\n');
+
+        sb.append("Normal NTs: " + normalNonTerminals + '\n');
+        sb.append("Normal NTs occurring on left side only of binary rule: " + normalLeftChildrenOnly + '\n');
+        sb
+            .append("Normal NTs occurring on right side only of binary rule: " + normalRightChildrenOnly
+                    + '\n');
+        sb.append("Normal NTs occurring on either side of binary rule: " + normalEitherChild + '\n');
+        sb.append('\n');
+
+        sb.append("NTs occurring on left side only with POS: " + leftChildrenOnlyWithPos + '\n');
+        sb.append("NTs occurring on right side only with POS: " + rightChildrenOnlyWithPos + '\n');
+        sb.append("NTs occurring on either side of binary rule with POS: " + eitherChildWithPos + '\n');
+        sb.append('\n');
+
+        sb.append("Normal NTs occurring on left side only with POS: " + normalLeftChildrenOnlyWithPos + '\n');
+        sb.append("Normal NTs occurring on right side only with POS: " + normalRightChildrenOnlyWithPos
+                + '\n');
+        sb.append('\n');
+
+        sb.append("NTs which combine as the right child with a factored NT: "
+                + rightChildrenCombinedWithFactored + '\n');
+        sb.append("NTs which combine as the left child with a factored NT: "
+                + leftChildrenCombinedWithFactored + '\n');
+        sb.append('\n');
+
+        sb.append("Normal NTs occurring on left side only with a factored NT: "
+                + normalLeftChildrenOnlyWithFactored + '\n');
+        sb.append("Normal NTs occurring on right side only with a factired NT: "
+                + normalRightChildrenOnlyWithFactored + '\n');
+        sb.append('\n');
+
+        sb.append("Factored non-terminals:: " + factoredNonTerminals + '\n');
+        sb.append("Factored non-terminals as left children: " + factoredLeftChildren + '\n');
+        sb.append("Factored non-terminals as right children: " + factoredRightChildren + '\n');
 
         sb.append("Start symbol: " + nonTermSet.getSymbol(startSymbol) + '\n');
         sb.append("Null symbol: " + nonTermSet.getSymbol(nullSymbol) + '\n');
