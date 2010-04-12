@@ -7,7 +7,6 @@ import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collection;
 
-import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 /**
@@ -37,8 +36,9 @@ public final class JsaSparseMatrixGrammar extends SparseMatrixGrammar {
     private float[][] jsaUnaryProbabilities;
 
     public JsaSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
-            final GrammarFormatType grammarFormat) throws Exception {
-        super(grammarFile, lexiconFile, grammarFormat);
+            final GrammarFormatType grammarFormat,
+            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws Exception {
+        super(grammarFile, lexiconFile, grammarFormat, cartesianProductFunctionClass);
 
         // Bin all binary rules by parent, mapping packed children -> probability
         jsaBinaryRules = new int[numNonTerms()][];
@@ -50,14 +50,12 @@ public final class JsaSparseMatrixGrammar extends SparseMatrixGrammar {
         jsaUnaryProbabilities = new float[numNonTerms()][];
         storeRulesAsMatrix(unaryProductions, jsaUnaryRules, jsaUnaryProbabilities);
 
-        validChildPairs = new PackedBitVector(packedArraySize());
-        for (final int[] row : jsaBinaryRules) {
-            for (final int children : row) {
-                validChildPairs.add(children);
-            }
-        }
-
         tokenizer = new Tokenizer(lexSet);
+    }
+
+    public JsaSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
+        this(grammarFile, lexiconFile, grammarFormat, null);
     }
 
     public JsaSparseMatrixGrammar(final String grammarFile, final String lexiconFile,
@@ -119,7 +117,7 @@ public final class JsaSparseMatrixGrammar extends SparseMatrixGrammar {
     @Override
     public final float unaryLogProbability(final int parent, final int child) {
         final short rightChildIndex = Production.UNARY_PRODUCTION;
-        final int children = pack(child, rightChildIndex);
+        final int children = cartesianProductFunction.pack(child, rightChildIndex);
 
         final int[] rowIndices = jsaUnaryRules[parent];
         final float[] rowProbabilities = jsaUnaryProbabilities[parent];

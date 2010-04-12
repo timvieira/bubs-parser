@@ -18,6 +18,7 @@ import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
 import edu.ohsu.cslu.parser.OpenClSparseMatrixVectorParser.OpenClChart.OpenClChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
@@ -42,8 +43,8 @@ public class OpenClSparseMatrixVectorParser extends
     private CLKernel fillFloatKernel;
     private CLKernel binarySpmvKernel;
     private CLKernel unarySpmvKernel;
-    private CLKernel crossProductKernel;
-    private CLKernel crossProductUnionKernel;
+    private CLKernel cartesianProductKernel;
+    private CLKernel cartesianProductUnionKernel;
     private CLQueue clQueue;
 
     // TODO Make these final once we move kernel compilation into the constructor
@@ -86,15 +87,17 @@ public class OpenClSparseMatrixVectorParser extends
 
             // Compile OpenCL kernels
             final StringWriter prefix = new StringWriter();
-            prefix.write("#define LEFT_CHILD_SHIFT " + grammar.leftChildShift + '\n');
-            prefix.write("#define MASK " + grammar.mask + '\n');
+            prefix.write("#define LEFT_CHILD_SHIFT "
+                    + ((DefaultFunction) grammar.cartesianProductFunction()).leftChildShift + '\n');
+            prefix
+                .write("#define MASK " + ((DefaultFunction) grammar.cartesianProductFunction()).mask + '\n');
 
             final CLProgram program = OpenClUtils.compileClKernels(context, getClass(), prefix.toString());
             fillFloatKernel = program.createKernel("fillFloat");
             binarySpmvKernel = program.createKernel("binarySpmvMultiply");
             unarySpmvKernel = program.createKernel("unarySpmvMultiply");
-            crossProductKernel = program.createKernel("crossProduct");
-            crossProductUnionKernel = program.createKernel("crossProductUnion");
+            cartesianProductKernel = program.createKernel("cartesianProduct");
+            cartesianProductUnionKernel = program.createKernel("cartesianProductUnion");
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -122,13 +125,13 @@ public class OpenClSparseMatrixVectorParser extends
 
         // And for cross-product storage
         clCrossProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
-            .packedArraySize());
+            .cartesianProductFunction().packedArraySize());
         clCrossProductMidpoints0 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
-            .packedArraySize());
+            .cartesianProductFunction().packedArraySize());
         clCrossProductProbabilities1 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
-            .packedArraySize());
+            .cartesianProductFunction().packedArraySize());
         clCrossProductMidpoints1 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
-            .packedArraySize());
+            .cartesianProductFunction().packedArraySize());
     }
 
     @Override
@@ -142,18 +145,18 @@ public class OpenClSparseMatrixVectorParser extends
         long binarySpmvTime = 0;
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
-            // final CrossProductVector crossProductVector = crossProductUnion(start, end);
+            // final CrossProductVector cartesianProductVector = cartesianProductUnion(start, end);
             internalCrossProductUnion(start, end);
 
             final long t1 = System.currentTimeMillis();
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
-            // binarySpmvMultiply(crossProductVector, spvChartCell);
+            // binarySpmvMultiply(cartesianProductVector, spvChartCell);
 
             // Copy cross-product to OpenCL memory
-            // OpenClUtils.copyToDevice(clCrossProductProbabilities0, crossProductVector.probabilities);
-            // OpenClUtils.copyToDevice(clCrossProductMidpoints0, crossProductVector.midpoints);
+            // OpenClUtils.copyToDevice(clCrossProductProbabilities0, cartesianProductVector.probabilities);
+            // OpenClUtils.copyToDevice(clCrossProductMidpoints0, cartesianProductVector.midpoints);
 
             internalBinarySpmvMultiply();
 
@@ -183,7 +186,8 @@ public class OpenClSparseMatrixVectorParser extends
 
         // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n",
         // start, end, t3
-        // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime,
+        // - t0, cartesianProductSize, totalProducts, cartesianProductTime, cartesianProductSize /
+        // cartesianProductTime,
         // edges, spmvTime, edges / spmvTime);
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
@@ -198,17 +202,19 @@ public class OpenClSparseMatrixVectorParser extends
      * @return Unioned cross-product
      */
     @Override
-    protected CrossProductVector crossProductUnion(final int start, final int end) {
+    protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
         internalCrossProductUnion(start, end);
 
-        final float[] tmpCrossProductProbabilities = new float[grammar.packedArraySize()];
+        final float[] tmpCrossProductProbabilities = new float[grammar.cartesianProductFunction()
+            .packedArraySize()];
         final FloatBuffer mappedClCrossProductProbabilities = directFloats(
             tmpCrossProductProbabilities.length, context.getByteOrder());
         clCrossProductProbabilities0.read(clQueue, mappedClCrossProductProbabilities, true);
         mappedClCrossProductProbabilities.get(tmpCrossProductProbabilities);
 
-        final short[] tmpCrossProductMidpoints = new short[grammar.packedArraySize()];
+        final short[] tmpCrossProductMidpoints = new short[grammar.cartesianProductFunction()
+            .packedArraySize()];
         final ShortBuffer mappedClCrossProductMidpoints = directShorts(tmpCrossProductMidpoints.length,
             context.getByteOrder());
         clCrossProductMidpoints0.read(clQueue, mappedClCrossProductMidpoints, true);
@@ -220,7 +226,8 @@ public class OpenClSparseMatrixVectorParser extends
                 size++;
             }
         }
-        return new CrossProductVector(grammar, tmpCrossProductProbabilities, tmpCrossProductMidpoints, size);
+        return new CartesianProductVector(grammar, tmpCrossProductProbabilities, tmpCrossProductMidpoints,
+            size);
     }
 
     private void internalCrossProductUnion(final int start, final int end) {
@@ -228,10 +235,10 @@ public class OpenClSparseMatrixVectorParser extends
         long t0 = System.currentTimeMillis();
 
         // Fill the buffer with negative infinity
-        fillFloatKernel.setArgs(clCrossProductProbabilities0, grammar.packedArraySize(),
-            Float.NEGATIVE_INFINITY);
-        final int globalWorkSize = edu.ohsu.cslu.util.Math
-            .roundUp(grammar.packedArraySize(), LOCAL_WORK_SIZE);
+        fillFloatKernel.setArgs(clCrossProductProbabilities0, grammar.cartesianProductFunction()
+            .packedArraySize(), Float.NEGATIVE_INFINITY);
+        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.cartesianProductFunction()
+            .packedArraySize(), LOCAL_WORK_SIZE);
         fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
         clQueue.finish();
 
@@ -259,8 +266,8 @@ public class OpenClSparseMatrixVectorParser extends
             if (leftCell.validLeftChildren.length > 0 && rightCell.validRightChildren.length > 0) {
                 t0 = System.currentTimeMillis();
 
-                fillFloatKernel.setArgs(clCrossProductProbabilities1, grammar.packedArraySize(),
-                    Float.NEGATIVE_INFINITY);
+                fillFloatKernel.setArgs(clCrossProductProbabilities1, grammar.cartesianProductFunction()
+                    .packedArraySize(), Float.NEGATIVE_INFINITY);
                 fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
                     new int[] { LOCAL_WORK_SIZE });
                 clQueue.finish();
@@ -272,9 +279,10 @@ public class OpenClSparseMatrixVectorParser extends
                 totalCartesianProductTime += (t1 - t0);
 
                 // Union the new cross-product with the existing cross-product
-                crossProductUnionKernel.setArgs(clCrossProductProbabilities0, clCrossProductMidpoints0,
-                    clCrossProductProbabilities1, clCrossProductMidpoints1, grammar.packedArraySize());
-                crossProductUnionKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
+                cartesianProductUnionKernel.setArgs(clCrossProductProbabilities0, clCrossProductMidpoints0,
+                    clCrossProductProbabilities1, clCrossProductMidpoints1, grammar
+                        .cartesianProductFunction().packedArraySize());
+                cartesianProductUnionKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
                     new int[] { LOCAL_WORK_SIZE });
                 clQueue.finish();
 
@@ -296,7 +304,7 @@ public class OpenClSparseMatrixVectorParser extends
             rightCell.validRightChildrenProbabilities, CLMem.Usage.Input);
 
         // Bind the arguments of the OpenCL kernel
-        crossProductKernel.setArgs(clValidLeftChildren, clValidLeftChildrenProbabilities,
+        cartesianProductKernel.setArgs(clValidLeftChildren, clValidLeftChildrenProbabilities,
             leftCell.validLeftChildren.length, clValidRightChildren, clValidRightChildrenProbabilities,
             rightCell.validRightChildren.length, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints,
             (short) rightCell.start());
@@ -304,7 +312,7 @@ public class OpenClSparseMatrixVectorParser extends
         // Call the kernel and wait for results
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(leftCell.validLeftChildren.length
                 * rightCell.validRightChildren.length, LOCAL_WORK_SIZE);
-        crossProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
+        cartesianProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
             new int[] { LOCAL_WORK_SIZE });
 
         clQueue.finish();
@@ -328,13 +336,14 @@ public class OpenClSparseMatrixVectorParser extends
      * memory. Useful for testing, but we can do better if we avoid the repeated copying.
      */
     @Override
-    public void binarySpmvMultiply(final CrossProductVector crossProductVector, final ChartCell chartCell) {
+    public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+            final ChartCell chartCell) {
 
         final OpenClChartCell openClCell = (OpenClChartCell) chartCell;
 
         // Copy cross-product to OpenCL memory
-        OpenClUtils.copyToDevice(clQueue, clCrossProductProbabilities0, crossProductVector.probabilities);
-        OpenClUtils.copyToDevice(clQueue, clCrossProductMidpoints0, crossProductVector.midpoints);
+        OpenClUtils.copyToDevice(clQueue, clCrossProductProbabilities0, cartesianProductVector.probabilities);
+        OpenClUtils.copyToDevice(clQueue, clCrossProductMidpoints0, cartesianProductVector.midpoints);
 
         internalBinarySpmvMultiply();
 

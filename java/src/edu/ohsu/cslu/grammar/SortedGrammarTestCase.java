@@ -1,53 +1,69 @@
 package edu.ohsu.cslu.grammar;
 
-import org.junit.Test;
-
-import edu.ohsu.cslu.tests.SharedNlpTests;
-
 import static junit.framework.Assert.assertEquals;
 
+import org.junit.Test;
+import org.junit.experimental.theories.DataPoint;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
+import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.tests.SharedNlpTests;
+
+@RunWith(Theories.class)
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
-    @Test
-    public void testPack() throws Exception {
-        final SparseMatrixGrammar g = (SparseMatrixGrammar) createSimpleGrammar(grammarClass());
-        assertEquals(10, g.unpackLeftChild(g.pack(10, (short) 2)));
-        assertEquals(2, g.unpackRightChild(g.pack(10, (short) 2)));
+    @DataPoint
+    public final static Class<? extends CartesianProductFunction> DEFAULT = SparseMatrixGrammar.DefaultFunction.class;
+    @DataPoint
+    public final static Class<? extends CartesianProductFunction> UNFILTERED = SparseMatrixGrammar.UnfilteredFunction.class;
+    @DataPoint
+    public final static Class<? extends CartesianProductFunction> BIT_VECTOR_EXACT = SparseMatrixGrammar.BitVectorExactFilterFunction.class;
 
-        assertEquals(1000, g.unpackLeftChild(g.pack(1000, (short) 2)));
-        assertEquals(2, g.unpackRightChild(g.pack(1000, (short) 2)));
+    // TODO Move this into its own class (SparseMatrixGrammarTestCase?)
+    @Theory
+    public void testPack(final Class<? extends CartesianProductFunction> cartesianProductFunctionClass)
+            throws Exception {
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) createSimpleGrammar(grammarClass(),
+            cartesianProductFunctionClass);
+        final CartesianProductFunction f = g.cartesianProductFunction;
+        assertEquals(4, f.unpackLeftChild(f.pack(4, (short) 2)));
+        assertEquals(2, f.unpackRightChild(f.pack(4, (short) 2)));
 
-        assertEquals(1000, g.unpackLeftChild(g.pack(1000, (short) -1)));
-        assertEquals(-1, g.unpackRightChild(g.pack(1000, (short) -1)));
+        assertEquals(2, f.unpackLeftChild(f.pack(2, (short) 2)));
+        assertEquals(2, f.unpackRightChild(f.pack(2, (short) 2)));
 
-        assertEquals(10, g.unpackLeftChild(g.pack(10, (short) -2)));
-        assertEquals(-2, g.unpackRightChild(g.pack(10, (short) -2)));
+        assertEquals(4, f.unpackLeftChild(f.pack(4, (short) -1)));
+        assertEquals(-1, f.unpackRightChild(f.pack(4, (short) -1)));
 
-        assertEquals(0, g.unpackLeftChild(g.pack(0, (short) -2)));
-        assertEquals(-2, g.unpackRightChild(g.pack(0, (short) -2)));
+        assertEquals(9, f.unpackLeftChild(f.pack(9, (short) -2)));
+        assertEquals(-2, f.unpackRightChild(f.pack(9, (short) -2)));
 
-        assertEquals(0, g.unpackLeftChild(g.pack(0, (short) 0)));
-        assertEquals(0, g.unpackRightChild(g.pack(0, (short) 0)));
+        assertEquals(0, f.unpackLeftChild(f.pack(0, (short) -2)));
+        assertEquals(-2, f.unpackRightChild(f.pack(0, (short) -2)));
 
-        assertEquals(0, g.unpackLeftChild(g.pack(0, (short) 2)));
-        assertEquals(2, g.unpackRightChild(g.pack(0, (short) 2)));
+        assertEquals(0, f.unpackLeftChild(f.pack(0, (short) 0)));
+        assertEquals(0, f.unpackRightChild(f.pack(0, (short) 0)));
 
-        assertEquals(2, g.unpackLeftChild(g.pack(2, (short) 0)));
-        assertEquals(0, g.unpackRightChild(g.pack(2, (short) 0)));
+        assertEquals(0, f.unpackLeftChild(f.pack(0, (short) 2)));
+        assertEquals(2, f.unpackRightChild(f.pack(0, (short) 2)));
+
+        assertEquals(2, f.unpackLeftChild(f.pack(2, (short) 0)));
+        assertEquals(0, f.unpackRightChild(f.pack(2, (short) 0)));
     }
 
     /**
      * Tests a _very_ simple grammar.
      * 
-     * TODO Share grammar creation with GrammarTestCase
-     * 
      * @throws Exception if something bad happens
      */
-    @Override
-    @Test
-    public void testSimpleGrammar() throws Exception {
+    @Theory
+    public void testSimpleGrammar(
+            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws Exception {
 
-        final SortedGrammar simpleGrammar = (SortedGrammar) createSimpleGrammar(grammarClass());
+        final SortedGrammar simpleGrammar = (SortedGrammar) createSimpleGrammar(grammarClass(),
+            cartesianProductFunctionClass);
 
         assertEquals(0f, simpleGrammar.lexicalLogProbability("NN", "systems"), .01f);
         assertEquals(0f, simpleGrammar.lexicalLogProbability("NN", "analyst"), .01f);
@@ -55,21 +71,21 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(0f, simpleGrammar.lexicalLogProbability("NN", "chef"), .01f);
         assertEquals(Float.NEGATIVE_INFINITY, simpleGrammar.lexicalLogProbability("NP", "foo"), .01f);
 
-        assertEquals(4, simpleGrammar.numBinaryRules());
+        assertEquals(5, simpleGrammar.numBinaryRules());
         assertEquals(1, simpleGrammar.numUnaryRules());
         assertEquals(5, simpleGrammar.numLexProds());
-        assertEquals(4, simpleGrammar.numNonTerms());
+        assertEquals(5, simpleGrammar.numNonTerms());
         assertEquals(2, simpleGrammar.numPosSymbols());
         assertEquals(5, simpleGrammar.numLexSymbols());
         assertEquals("TOP", simpleGrammar.startSymbol());
         assertEquals("<null>", Grammar.nullSymbolStr);
 
         assertEquals(0, simpleGrammar.rightChildOnlyStart);
-        assertEquals(0, simpleGrammar.posStart);
-        assertEquals(1, simpleGrammar.maxPOSIndex);
-        assertEquals(2, simpleGrammar.eitherChildStart);
-        assertEquals(3, simpleGrammar.leftChildOnlyStart);
-        assertEquals(3, simpleGrammar.unaryChildOnlyStart);
+        assertEquals(1, simpleGrammar.posStart);
+        assertEquals(2, simpleGrammar.maxPOSIndex);
+        assertEquals(3, simpleGrammar.eitherChildStart);
+        assertEquals(4, simpleGrammar.leftChildOnlyStart);
+        assertEquals(4, simpleGrammar.unaryChildOnlyStart);
 
         assertEquals(-0.693147f, simpleGrammar.binaryLogProbability("NP", "NN", "NN"), .01f);
         assertEquals(-1.203972f, simpleGrammar.binaryLogProbability("NP", "NP", "NN"), .01f);
@@ -79,10 +95,17 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(0f, simpleGrammar.unaryLogProbability("TOP", "NP"), .01f);
     }
 
+    @Override
+    @Test
+    public void testSimpleGrammar() throws Exception {
+        testSimpleGrammar(DEFAULT);
+    }
+
     @Test
     public void testF2_21_R2_unk() throws Exception {
-        final SortedGrammar g = (SortedGrammar) createGrammar(grammarClass(), SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-unk.pcfg.gz"), SharedNlpTests
-                .unitTestDataAsReader("grammars/f2-21-R2-unk.lex.gz"));
+        final SortedGrammar g = (SortedGrammar) createGrammar(grammarClass(), SharedNlpTests
+            .unitTestDataAsReader("grammars/f2-21-R2-unk.pcfg.gz"), SharedNlpTests
+            .unitTestDataAsReader("grammars/f2-21-R2-unk.lex.gz"));
         assertEquals(11793, g.numBinaryRules());
         assertEquals(242, g.numUnaryRules());
         assertEquals(52000, g.numLexProds());
@@ -106,8 +129,9 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
     @Test
     public void testF2_21_R2_p1_unk() throws Exception {
-        final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(grammarClass(), SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"), SharedNlpTests
-                .unitTestDataAsReader("grammars/f2-21-R2-p1-unk.lex.gz"));
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(grammarClass(), SharedNlpTests
+            .unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"), SharedNlpTests
+            .unitTestDataAsReader("grammars/f2-21-R2-p1-unk.lex.gz"));
         assertEquals(22299, g.numBinaryRules());
         assertEquals(745, g.numUnaryRules());
         assertEquals(52000, g.numLexProds());
@@ -126,7 +150,9 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(286, g.leftChildOnlyStart);
         assertEquals(6060, g.unaryChildOnlyStart);
 
-        assertEquals(193, g.unpackLeftChild(g.pack(193, (short) 266)));
-        assertEquals(266, g.unpackRightChild(g.pack(266, (short) 266)));
+        assertEquals(193, g.cartesianProductFunction.unpackLeftChild(g.cartesianProductFunction.pack(193,
+            (short) 266)));
+        assertEquals(266, g.cartesianProductFunction.unpackRightChild(g.cartesianProductFunction.pack(266,
+            (short) 266)));
     }
 }

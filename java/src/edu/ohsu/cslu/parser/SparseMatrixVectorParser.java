@@ -29,8 +29,8 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends Chart> extends
         ExhaustiveChartParser<G, C> {
 
-    protected float[] crossProductProbabilities;
-    protected short[] crossProductMidpoints;
+    protected float[] cartesianProductProbabilities;
+    protected short[] cartesianProductMidpoints;
 
     public long startTime = 0;
     public long totalCartesianProductTime = 0;
@@ -49,10 +49,10 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      * Multiplies the grammar matrix (stored sparsely) by the supplied cross-product vector (stored densely),
      * and populates this chart cell.
      * 
-     * @param crossProductVector
+     * @param cartesianProductVector
      * @param chartCell
      */
-    public abstract void binarySpmvMultiply(final CrossProductVector crossProductVector,
+    public abstract void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
             final ChartCell chartCell);
 
     /**
@@ -91,14 +91,14 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      * @param end
      * @return Unioned cross-product
      */
-    protected CrossProductVector crossProductUnion(final int start, final int end) {
+    protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
-        if (crossProductProbabilities == null) {
-            crossProductProbabilities = new float[grammar.packedArraySize()];
-            crossProductMidpoints = new short[grammar.packedArraySize()];
+        if (cartesianProductProbabilities == null) {
+            cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
+            cartesianProductMidpoints = new short[cartesianProductProbabilities.length];
         }
 
-        Arrays.fill(crossProductProbabilities, Float.NEGATIVE_INFINITY);
+        Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
         int size = 0;
 
         // Iterate over all possible midpoints, unioning together the cross-product of discovered
@@ -120,12 +120,12 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
                 for (int j = 0; j < rightChildren.length; j++) {
 
                     final float jointProbability = leftProbability + rightChildrenProbabilities[j];
-                    final int child = grammar.pack(leftChild, rightChildren[j]);
-                    final float currentProbability = crossProductProbabilities[child];
+                    final int child = grammar.cartesianProductFunction().pack(leftChild, rightChildren[j]);
+                    final float currentProbability = cartesianProductProbabilities[child];
 
                     if (jointProbability > currentProbability) {
-                        crossProductProbabilities[child] = jointProbability;
-                        crossProductMidpoints[child] = midpoint;
+                        cartesianProductProbabilities[child] = jointProbability;
+                        cartesianProductMidpoints[child] = midpoint;
 
                         if (currentProbability == Float.NEGATIVE_INFINITY) {
                             size++;
@@ -135,7 +135,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
             }
         }
 
-        return new CrossProductVector(grammar, crossProductProbabilities, crossProductMidpoints, size);
+        return new CartesianProductVector(grammar, cartesianProductProbabilities, cartesianProductMidpoints,
+            size);
     }
 
     @Override
@@ -150,14 +151,14 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
             totalCartesianProductUnionTime, totalSpMVTime);
     }
 
-    public final static class CrossProductVector {
+    public final static class CartesianProductVector {
 
         private final SparseMatrixGrammar grammar;
         final float[] probabilities;
         final short[] midpoints;
         private int size = 0;
 
-        public CrossProductVector(final SparseMatrixGrammar grammar, final float[] probabilities,
+        public CartesianProductVector(final SparseMatrixGrammar grammar, final float[] probabilities,
                 final short[] midpoints, final int size) {
             this.grammar = grammar;
             this.probabilities = probabilities;
@@ -182,8 +183,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
             final StringBuilder sb = new StringBuilder(256);
             for (int i = 0; i < probabilities.length; i++) {
                 if (probabilities[i] != Float.NEGATIVE_INFINITY) {
-                    final int leftChild = grammar.unpackLeftChild(i);
-                    final short rightChild = grammar.unpackRightChild(i);
+                    final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(i);
+                    final short rightChild = grammar.cartesianProductFunction().unpackRightChild(i);
                     final int midpoint = midpoints[i];
                     final float probability = probabilities[i];
 

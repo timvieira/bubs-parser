@@ -2,12 +2,16 @@ package edu.ohsu.cslu.parser;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.Reader;
 import java.util.Arrays;
 
 import org.junit.Test;
 
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CrossProductVector;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
+import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CartesianProductVector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -25,8 +29,19 @@ import edu.ohsu.cslu.parser.util.ParseTree;
  */
 public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartParserTestCase {
 
+    // TODO: Use JUnit Theories to test all CartesianProductFunction implementations
+
+    @Override
+    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
+        return grammarClass().getConstructor(
+            new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
+            new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
+                    BitVectorExactFilterFunction.class });
+    }
+
     /**
-     * Tests an imagined example cross-product vector (based very loosely on the computation of the top cell in the 'systems analyst arbitration chef' example)
+     * Tests an imagined example cross-product vector (based very loosely on the computation of the top cell
+     * in the 'systems analyst arbitration chef' example)
      * 
      * @throws Exception if something bad happens
      */
@@ -36,7 +51,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector
+            .create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
         final Chart chart = p.chart;
 
@@ -84,19 +100,23 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         // So: 0,3 X 3,4 cross-product = NP/NP (-4,3)
 
         // Cross-product union should be NN/NN (-5,1), NN/NP (-6,1), NP/NN (-7,2), NP/NP (-4,3)
-        final SparseMatrixVectorParser.CrossProductVector crossProductVector = p.crossProductUnion(0, 4);
-        final int[] expectedChildren = new int[] { pack(g, nn, nn), pack(g, nn, np), pack(g, np, nn), pack(g, np, np) };
+        final SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0, 4);
+        final int[] expectedChildren = new int[] { pack(g, nn, nn), pack(g, nn, np), pack(g, np, nn),
+                pack(g, np, np) };
         final float[] expectedProbabilities = new float[] { -5f, -6f, -7f, -4f };
         final int[] expectedMidpoints = new int[] { 1, 1, 2, 3 };
 
         for (int i = 0; i < expectedChildren.length; i++) {
-            assertEquals("Wrong probability #" + i, expectedProbabilities[i], crossProductVector.probability(expectedChildren[i]), .01f);
-            assertEquals("Wrong midpoint #" + i, expectedMidpoints[i], crossProductVector.midpoint(expectedChildren[i]));
+            assertEquals("Wrong probability #" + i, expectedProbabilities[i], crossProductVector
+                .probability(expectedChildren[i]), .01f);
+            assertEquals("Wrong midpoint #" + i, expectedMidpoints[i], crossProductVector
+                .midpoint(expectedChildren[i]));
         }
     }
 
     /**
-     * Tests the binary SpMV multiplication of the cross-product computed in {@link #testCrossProductVectorExample()} with simple grammar 1.
+     * Tests the binary SpMV multiplication of the cross-product computed in
+     * {@link #testCrossProductVectorExample()} with simple grammar 1.
      * 
      * @throws Exception if something bad happens
      */
@@ -106,13 +126,15 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector
+            .create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
         final Chart chart = p.chart;
 
         // Cell 0,3 contains NP -> NP NN (3/20)
         final ChartCell cell_0_3 = chart.getCell(0, 3);
-        cell_0_3.updateInside(g.new Production("NP", "NP", "NN", -1.90f), chart.getCell(0, 2), chart.getCell(2, 3), -1.90f);
+        cell_0_3.updateInside(g.new Production("NP", "NP", "NN", -1.90f), chart.getCell(0, 2), chart.getCell(
+            2, 3), -1.90f);
         cell_0_3.finalizeCell();
 
         // Cell 3,4 contains NN -> chef (1)
@@ -127,23 +149,23 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final int nn = g.mapNonterminal("NN");
         final int np = g.mapNonterminal("NP");
 
-        final float[] probabilities = new float[g.packedArraySize()];
+        final float[] probabilities = new float[g.cartesianProductFunction().packedArraySize()];
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
-        final short[] midpoints = new short[g.packedArraySize()];
+        final short[] midpoints = new short[g.cartesianProductFunction().packedArraySize()];
 
-        final int nnNp = g.pack(nn, (short) np);
+        final int nnNp = g.cartesianProductFunction().pack(nn, (short) np);
         probabilities[nnNp] = -1.897f;
         midpoints[nnNp] = 1;
 
-        final int npNp = g.pack(np, (short) np);
+        final int npNp = g.cartesianProductFunction().pack(np, (short) np);
         probabilities[npNp] = -1.386f;
         midpoints[npNp] = 2;
 
-        final int npNn = g.pack(np, (short) nn);
+        final int npNn = g.cartesianProductFunction().pack(np, (short) nn);
         probabilities[npNn] = -1.897f;
         midpoints[npNn] = 3;
 
-        final CrossProductVector cpv = new CrossProductVector(g, probabilities, midpoints, 3);
+        final CartesianProductVector cpv = new CartesianProductVector(g, probabilities, midpoints, 3);
         final ChartCell cell_0_4 = chart.getCell(0, 4);
         p.binarySpmvMultiply(cpv, cell_0_4);
         assertEquals(1, cell_0_4.getNumNTs());
@@ -155,7 +177,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     /**
-     * Tests the unary SpMV multiplication of the top cell population computed by {@link #testBinarySpMVMultiplyExample()} with simple grammar 1.
+     * Tests the unary SpMV multiplication of the top cell population computed by
+     * {@link #testBinarySpMVMultiplyExample()} with simple grammar 1.
      * 
      * @throws Exception if something bad happens
      */
@@ -164,12 +187,15 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final SparseMatrixVectorParser<?, ?> p = (SparseMatrixVectorParser<?, ?>) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final SparseMatrixVectorParser<?, ?> p = (SparseMatrixVectorParser<?, ?>) createParser(g,
+            CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
 
         final ChartCell topCell = p.chart.getCell(0, 4);
         final int parent = g.mapNonterminal("NP");
-        topCell.updateInside(g.new Production(parent, g.mapNonterminal("NP"), g.mapNonterminal("NN"), -3.101f), p.chart.getCell(0, 3), p.chart.getCell(3, 4), -3.101f);
+        topCell.updateInside(
+            g.new Production(parent, g.mapNonterminal("NP"), g.mapNonterminal("NN"), -3.101f), p.chart
+                .getCell(0, 3), p.chart.getCell(3, 4), -3.101f);
 
         p.unarySpmvMultiply(topCell);
         assertEquals(2, topCell.getNumNTs());
@@ -190,72 +216,109 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         cell_1_2.updateInside(simpleGrammar2.new Production("NN", "fish", 0, true), cell_1_2, null, 0f);
 
         final ChartCell cell_2_3 = chart.getCell(2, 3);
-        cell_2_3.updateInside(simpleGrammar2.new Production("VP", "VB", -2.48491f, false), cell_2_3, null, -2.48491f);
-        cell_2_3.updateInside(simpleGrammar2.new Production("NN", "market", -4.0547f, true), cell_2_3, null, -.40547f);
-        cell_2_3.updateInside(simpleGrammar2.new Production("VB", "market", -1.09861f, true), cell_2_3, null, -1.09861f);
+        cell_2_3.updateInside(simpleGrammar2.new Production("VP", "VB", -2.48491f, false), cell_2_3, null,
+            -2.48491f);
+        cell_2_3.updateInside(simpleGrammar2.new Production("NN", "market", -4.0547f, true), cell_2_3, null,
+            -.40547f);
+        cell_2_3.updateInside(simpleGrammar2.new Production("VB", "market", -1.09861f, true), cell_2_3, null,
+            -1.09861f);
 
         final ChartCell cell_3_4 = chart.getCell(3, 4);
-        cell_3_4.updateInside(simpleGrammar2.new Production("VP", "VB", -2.07944f, false), cell_3_4, null, -2.07944f);
-        cell_3_4.updateInside(simpleGrammar2.new Production("NN", "stands", -.69315f, true), cell_3_4, null, -.69315f);
-        cell_3_4.updateInside(simpleGrammar2.new Production("VB", "stands", -.69315f, true), cell_3_4, null, -.69315f);
+        cell_3_4.updateInside(simpleGrammar2.new Production("VP", "VB", -2.07944f, false), cell_3_4, null,
+            -2.07944f);
+        cell_3_4.updateInside(simpleGrammar2.new Production("NN", "stands", -.69315f, true), cell_3_4, null,
+            -.69315f);
+        cell_3_4.updateInside(simpleGrammar2.new Production("VB", "stands", -.69315f, true), cell_3_4, null,
+            -.69315f);
 
         final ChartCell cell_4_5 = chart.getCell(4, 5);
-        cell_4_5.updateInside(simpleGrammar2.new Production("VP", "VB", -2.48491f, false), cell_4_5, null, -2.48491f);
-        cell_4_5.updateInside(simpleGrammar2.new Production("RB", "last", -.40547f, true), cell_4_5, null, -.40547f);
-        cell_4_5.updateInside(simpleGrammar2.new Production("VB", "last", -1.09861f, true), cell_4_5, null, -1.09861f);
+        cell_4_5.updateInside(simpleGrammar2.new Production("VP", "VB", -2.48491f, false), cell_4_5, null,
+            -2.48491f);
+        cell_4_5.updateInside(simpleGrammar2.new Production("RB", "last", -.40547f, true), cell_4_5, null,
+            -.40547f);
+        cell_4_5.updateInside(simpleGrammar2.new Production("VB", "last", -1.09861f, true), cell_4_5, null,
+            -1.09861f);
 
         // Row of span 2
         final ChartCell cell_0_2 = chart.getCell(0, 2);
-        cell_0_2.updateInside(simpleGrammar2.new Production("NP", "DT", "NN", -1.38629f), cell_0_1, cell_1_2, -1.38629f);
-        cell_0_2.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -1.38629f, false), cell_0_2, null, -1.38629f);
+        cell_0_2.updateInside(simpleGrammar2.new Production("NP", "DT", "NN", -1.38629f), cell_0_1, cell_1_2,
+            -1.38629f);
+        cell_0_2.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -1.38629f, false), cell_0_2, null,
+            -1.38629f);
 
         final ChartCell cell_1_3 = chart.getCell(1, 3);
-        cell_1_3.updateInside(simpleGrammar2.new Production("NP|NN", "NN", "NN", -.40547f), cell_1_2, cell_2_3, -.40547f);
-        cell_1_3.updateInside(simpleGrammar2.new Production("NP", "NN", "NN", -2.19722f), cell_1_2, cell_2_3, -2.19722f);
-        cell_1_3.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -2.19722f, false), cell_1_3, null, -2.19722f);
+        cell_1_3.updateInside(simpleGrammar2.new Production("NP|NN", "NN", "NN", -.40547f), cell_1_2,
+            cell_2_3, -.40547f);
+        cell_1_3.updateInside(simpleGrammar2.new Production("NP", "NN", "NN", -2.19722f), cell_1_2, cell_2_3,
+            -2.19722f);
+        cell_1_3.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -2.19722f, false), cell_1_3, null,
+            -2.19722f);
 
         final ChartCell cell_2_4 = chart.getCell(2, 4);
-        cell_2_4.updateInside(simpleGrammar2.new Production("NP|NN", "NN", "NN", -1.09861f), cell_2_3, cell_3_4, -1.09861f);
-        cell_2_4.updateInside(simpleGrammar2.new Production("NP", "NN", "NN", -2.89037f), cell_2_3, cell_3_4, -2.89037f);
-        cell_2_4.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -2.89037f, false), cell_2_4, null, -2.89037f);
+        cell_2_4.updateInside(simpleGrammar2.new Production("NP|NN", "NN", "NN", -1.09861f), cell_2_3,
+            cell_3_4, -1.09861f);
+        cell_2_4.updateInside(simpleGrammar2.new Production("NP", "NN", "NN", -2.89037f), cell_2_3, cell_3_4,
+            -2.89037f);
+        cell_2_4.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -2.89037f, false), cell_2_4, null,
+            -2.89037f);
 
         final ChartCell cell_3_5 = chart.getCell(3, 5);
-        cell_3_5.updateInside(simpleGrammar2.new Production("VP", "VB", "RB", -1.79176f), cell_3_4, cell_4_5, -1.79176f);
-        cell_3_5.updateInside(simpleGrammar2.new Production("NP", "NN", "RB", -2.89037f), cell_3_4, cell_4_5, -2.89037f);
-        cell_3_5.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -2.89037f, false), cell_3_5, null, -2.89037f);
+        cell_3_5.updateInside(simpleGrammar2.new Production("VP", "VB", "RB", -1.79176f), cell_3_4, cell_4_5,
+            -1.79176f);
+        cell_3_5.updateInside(simpleGrammar2.new Production("NP", "NN", "RB", -2.89037f), cell_3_4, cell_4_5,
+            -2.89037f);
+        cell_3_5.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -2.89037f, false), cell_3_5, null,
+            -2.89037f);
 
         // Row of span 3
         final ChartCell cell_0_3 = chart.getCell(0, 3);
-        cell_0_3.updateInside(simpleGrammar2.new Production("NP", "DT", "NP", -3.58352f), cell_0_1, cell_1_3, -3.58352f);
-        cell_0_3.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -3.87120f), cell_0_2, cell_2_3, -3.87120f);
-        cell_0_3.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -3.58352f, false), cell_0_3, null, -3.58352f);
-        cell_0_3.updateInside(simpleGrammar2.new Production("TOP", "S", -3.87120f, false), cell_0_3, null, -3.87120f);
+        cell_0_3.updateInside(simpleGrammar2.new Production("NP", "DT", "NP", -3.58352f), cell_0_1, cell_1_3,
+            -3.58352f);
+        cell_0_3.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -3.87120f), cell_0_2, cell_2_3,
+            -3.87120f);
+        cell_0_3.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -3.58352f, false), cell_0_3, null,
+            -3.58352f);
+        cell_0_3.updateInside(simpleGrammar2.new Production("TOP", "S", -3.87120f, false), cell_0_3, null,
+            -3.87120f);
         cell_0_3.finalizeCell();
 
         final ChartCell cell_1_4 = chart.getCell(1, 4);
-        cell_1_4.updateInside(simpleGrammar2.new Production("NP", "NN", "NP|NN", -2.89037f), cell_1_2, cell_2_4, -2.89037f);
-        cell_1_4.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -4.27667f), cell_1_3, cell_3_4, -4.27667f);
-        cell_1_4.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -2.89037f, false), cell_1_4, null, -2.89037f);
-        cell_1_4.updateInside(simpleGrammar2.new Production("TOP", "S", -4.27667f, false), cell_1_4, null, -4.27667f);
+        cell_1_4.updateInside(simpleGrammar2.new Production("NP", "NN", "NP|NN", -2.89037f), cell_1_2,
+            cell_2_4, -2.89037f);
+        cell_1_4.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -4.27667f), cell_1_3, cell_3_4,
+            -4.27667f);
+        cell_1_4.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -2.89037f, false), cell_1_4, null,
+            -2.89037f);
+        cell_1_4.updateInside(simpleGrammar2.new Production("TOP", "S", -4.27667f, false), cell_1_4, null,
+            -4.27667f);
 
         final ChartCell cell_2_5 = chart.getCell(2, 5);
-        cell_2_5.updateInside(simpleGrammar2.new Production("VP", "VB", "VP|VB", -5.37528f), cell_2_3, cell_3_5, -5.37528f);
-        cell_2_5.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -5.37528f), cell_2_4, cell_4_5, -5.37528f);
-        cell_2_5.updateInside(simpleGrammar2.new Production("TOP", "S", -5.37528f, false), cell_2_5, null, -5.37528f);
+        cell_2_5.updateInside(simpleGrammar2.new Production("VP", "VB", "VP|VB", -5.37528f), cell_2_3,
+            cell_3_5, -5.37528f);
+        cell_2_5.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -5.37528f), cell_2_4, cell_4_5,
+            -5.37528f);
+        cell_2_5.updateInside(simpleGrammar2.new Production("TOP", "S", -5.37528f, false), cell_2_5, null,
+            -5.37528f);
 
     }
 
     private void populateSimpleGrammar2Row4(final Chart chart) {
         // Row of span 4
         final ChartCell cell_0_4 = chart.getCell(0, 4);
-        cell_0_4.updateInside(simpleGrammar2.new Production("NP", "DT", "NP", -4.27667f), chart.getCell(0, 1), chart.getCell(1, 4), -4.27667f);
-        cell_0_4.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -5.66296f), chart.getCell(0, 3), chart.getCell(3, 4), -5.66296f);
-        cell_0_4.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -4.27667f, false), cell_0_4, null, -4.27667f);
-        cell_0_4.updateInside(simpleGrammar2.new Production("TOP", "S", -5.66296f, false), cell_0_4, null, -5.66296f);
+        cell_0_4.updateInside(simpleGrammar2.new Production("NP", "DT", "NP", -4.27667f),
+            chart.getCell(0, 1), chart.getCell(1, 4), -4.27667f);
+        cell_0_4.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -5.66296f), chart.getCell(0, 3),
+            chart.getCell(3, 4), -5.66296f);
+        cell_0_4.updateInside(simpleGrammar2.new Production("VP|VB", "NP", -4.27667f, false), cell_0_4, null,
+            -4.27667f);
+        cell_0_4.updateInside(simpleGrammar2.new Production("TOP", "S", -5.66296f, false), cell_0_4, null,
+            -5.66296f);
 
         final ChartCell cell_1_5 = chart.getCell(1, 5);
-        cell_1_5.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -3.98898f), chart.getCell(1, 3), chart.getCell(3, 5), -3.98898f);
-        cell_1_5.updateInside(simpleGrammar2.new Production("TOP", "S", -3.98898f, false), cell_1_5, null, -3.98898f);
+        cell_1_5.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -3.98898f), chart.getCell(1, 3),
+            chart.getCell(3, 5), -3.98898f);
+        cell_1_5.updateInside(simpleGrammar2.new Production("TOP", "S", -3.98898f, false), cell_1_5, null,
+            -3.98898f);
     }
 
     /**
@@ -265,12 +328,13 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
      */
     @SuppressWarnings("unchecked")
     @Test
-    public void testCrossProductVectorSimpleGrammar2() throws Exception {
+    public void testUnfilteredCrossProductVectorSimpleGrammar2() throws Exception {
 
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
 
         // Create the parser
-        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector
+            .create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
         final Chart chart = p.chart;
 
@@ -279,8 +343,10 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Row of span 5
         final ChartCell cell_0_5 = chart.getCell(0, 5);
-        cell_0_5.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -5.37528f), chart.getCell(0, 3), chart.getCell(3, 5), -5.37528f);
-        cell_0_5.updateInside(simpleGrammar2.new Production("TOP", "S", -5.37528f, false), cell_0_5, null, -5.37528f);
+        cell_0_5.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -5.37528f), chart.getCell(0, 3),
+            chart.getCell(3, 5), -5.37528f);
+        cell_0_5.updateInside(simpleGrammar2.new Production("TOP", "S", -5.37528f, false), cell_0_5, null,
+            -5.37528f);
 
         // Finalize all chart cells
         for (int i = 0; i < chart.size(); i++) {
@@ -290,60 +356,137 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         }
 
         // Cross-product union for cell 0,4
-        SparseMatrixVectorParser.CrossProductVector crossProductVector = p.crossProductUnion(0, 4);
+        SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0, 4);
         assertEquals(8, crossProductVector.size());
 
         // Midpoint 1
-        assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))), .001f);
-        assertEquals(1, crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))));
+        assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g
+            .mapNonterminal("VP|VB"))), .001f);
+        assertEquals(1, crossProductVector
+            .midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))));
 
-        assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))), .001f);
+        assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g
+            .mapNonterminal("NP"))), .001f);
         assertEquals(1, crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))));
 
         // Midpoint 2
-        assertEquals(-2.485f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))), .001f);
-        assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))));
+        assertEquals(-2.485f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("NP|NN"))), .001f);
+        assertEquals(2, crossProductVector
+            .midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))));
 
-        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))), .001f);
-        assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
+        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("VP|VB"))), .001f);
+        assertEquals(2, crossProductVector
+            .midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
 
-        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))), .001f);
+        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("NP"))), .001f);
         assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))));
 
         // Midpoint 3
-        assertEquals(-5.663f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))), .001f);
+        assertEquals(-5.663f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("VP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))));
 
-        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NN"))), .001f);
+        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("NN"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NN"))));
 
-        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))), .001f);
+        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("VB"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))));
 
         // Cross-product union for cell 0,5
-        crossProductVector = p.crossProductUnion(0, 5);
+        crossProductVector = p.cartesianProductUnion(0, 5);
         assertEquals(5, crossProductVector.size());
 
         // Midpoint 3
-        assertEquals(-5.37528f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))), .001f);
+        assertEquals(-5.37528f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("VP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))));
 
-        assertEquals(-6.474f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))), .001f);
-        assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
+        assertEquals(-6.474f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("VP|VB"))), .001f);
+        assertEquals(3, crossProductVector
+            .midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
 
-        assertEquals(-6.474f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))), .001f);
+        assertEquals(-6.474f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("NP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))));
 
         // Midpoint 4
-        assertEquals(-4.682f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("RB"))), .001f);
+        assertEquals(-4.682f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("RB"))), .001f);
         assertEquals(4, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("RB"))));
 
-        assertEquals(-5.375f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))), .001f);
+        assertEquals(-5.375f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("VB"))), .001f);
         assertEquals(4, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))));
     }
 
     /**
-     * Tests the binary SpMV multiplication of the cross-products computed in {@link #testCrossProductVectorSimpleGrammar2()} with simple grammar 2.
+     * Tests the cross-product vector computed in the top cell of the 'The fish market stands last' example.
+     * 
+     * @throws Exception if something bad happens
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testFilteredCrossProductVectorSimpleGrammar2() throws Exception {
+
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) createSimpleGrammar2(grammarClass(),
+            SparseMatrixGrammar.BitVectorExactFilterFunction.class);
+
+        // Create the parser
+        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g, CellSelector
+            .create(CellSelectorType.LeftRightBottomTop));
+        p.initParser(5);
+        final Chart chart = p.chart;
+
+        populateSimpleGrammar2Rows1_3(chart);
+        populateSimpleGrammar2Row4(chart);
+
+        // Row of span 5
+        final ChartCell cell_0_5 = chart.getCell(0, 5);
+        cell_0_5.updateInside(simpleGrammar2.new Production("S", "NP", "VP", -5.37528f), chart.getCell(0, 3),
+            chart.getCell(3, 5), -5.37528f);
+        cell_0_5.updateInside(simpleGrammar2.new Production("TOP", "S", -5.37528f, false), cell_0_5, null,
+            -5.37528f);
+
+        // Finalize all chart cells
+        for (int i = 0; i < chart.size(); i++) {
+            for (int j = i + 1; j <= chart.size(); j++) {
+                chart.getCell(i, j).finalizeCell();
+            }
+        }
+
+        // Cross-product union for cell 0,4
+        SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0, 4);
+        assertEquals(2, crossProductVector.size());
+
+        // Midpoint 1
+        assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g
+            .mapNonterminal("NP"))), .001f);
+        assertEquals(1, crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))));
+
+        // Midpoint 3
+        assertEquals(-5.663f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("VP"))), .001f);
+        assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))));
+
+        // Cross-product union for cell 0,5
+        crossProductVector = p.cartesianProductUnion(0, 5);
+        assertEquals(1, crossProductVector.size());
+
+        // Midpoint 3
+        assertEquals(-5.37528f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
+            .mapNonterminal("VP"))), .001f);
+        assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))));
+    }
+
+    /**
+     * Tests the binary SpMV multiplication of the cross-products computed in
+     * {@link #testUnfilteredCrossProductVectorSimpleGrammar2()} with simple grammar 2.
      * 
      * @throws Exception if something bad happens
      */
@@ -352,13 +495,14 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = (SparseMatrixVectorParser<?, ?>) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final SparseMatrixVectorParser<?, ?> p = (SparseMatrixVectorParser<?, ?>) createParser(g,
+            CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
         final Chart chart = p.chart;
 
-        final float[] probabilities = new float[g.packedArraySize()];
+        final float[] probabilities = new float[g.cartesianProductFunction().packedArraySize()];
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
-        final short[] midpoints = new short[g.packedArraySize()];
+        final short[] midpoints = new short[g.cartesianProductFunction().packedArraySize()];
 
         populateSimpleGrammar2Rows1_3(chart);
 
@@ -393,7 +537,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))] = -4.277f;
         midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))] = 3;
 
-        CrossProductVector crossProductVector = new CrossProductVector(g, probabilities, midpoints, 8);
+        CartesianProductVector crossProductVector = new CartesianProductVector(g, probabilities, midpoints, 8);
 
         // Check the SpMV multiplication
         final ChartCell cell_0_4 = p.chart.getCell(0, 4);
@@ -436,7 +580,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         probabilities[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))] = -5.375f;
         midpoints[pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))] = 4;
 
-        crossProductVector = new CrossProductVector(g, probabilities, midpoints, 8);
+        crossProductVector = new CartesianProductVector(g, probabilities, midpoints, 8);
 
         // Check the SpMV multiplication
         final ChartCell cell_0_5 = p.chart.getCell(0, 5);
@@ -451,7 +595,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     /**
-     * Tests the unary SpMV multiplication of the top cell population computed by {@link #testBinarySpMVMultiplySimpleGrammar2()} with simple grammar 2.
+     * Tests the unary SpMV multiplication of the top cell population computed by
+     * {@link #testBinarySpMVMultiplySimpleGrammar2()} with simple grammar 2.
      * 
      * @throws Exception if something bad happens
      */
@@ -460,7 +605,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = (SparseMatrixVectorParser<?, ?>) createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final SparseMatrixVectorParser<?, ?> p = (SparseMatrixVectorParser<?, ?>) createParser(g,
+            CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
 
         final Chart chart = p.chart;
@@ -469,7 +615,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Cell 0,5
         ChartCell cell = chart.getCell(0, 5);
-        cell.updateInside(g.new Production("S", "NP", "VP", -5.37528f), chart.getCell(0, 3), chart.getCell(3, 5), -5.37528f);
+        cell.updateInside(g.new Production("S", "NP", "VP", -5.37528f), chart.getCell(0, 3), chart.getCell(3,
+            5), -5.37528f);
 
         p.unarySpmvMultiply(cell);
 
@@ -483,8 +630,10 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Cell 0,4
         cell = p.chart.getCell(0, 4);
-        cell.updateInside(g.new Production("NP", "DT", "NP", -4.27667f), chart.getCell(0, 1), chart.getCell(1, 4), -4.27667f);
-        cell.updateInside(g.new Production("S", "NP", "VP", -5.66296f), chart.getCell(0, 3), chart.getCell(3, 4), -5.66296f);
+        cell.updateInside(g.new Production("NP", "DT", "NP", -4.27667f), chart.getCell(0, 1), chart.getCell(
+            1, 4), -4.27667f);
+        cell.updateInside(g.new Production("S", "NP", "VP", -5.66296f), chart.getCell(0, 3), chart.getCell(3,
+            4), -5.66296f);
 
         p.unarySpmvMultiply(cell);
 
@@ -503,7 +652,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     private int pack(final SparseMatrixGrammar grammar, final int leftChild, final int rightChild) {
-        return grammar.pack(leftChild, (short) rightChild);
+        return grammar.cartesianProductFunction().pack(leftChild, (short) rightChild);
     }
 
     @Override
@@ -524,8 +673,9 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     public void testPartialSentence2() throws Exception {
         final String sentence = "The report is due out tomorrow .";
         final ParseTree bestParseTree = parser.findBestParse(sentence);
-        assertEquals("(TOP (S^<TOP> (S|<NP-VP>^<TOP> (NP^<S> (DT The) (NN report)) (VP^<S> (AUX is) (ADJP^<VP> (JJ due) (PP^<ADJP> (IN out) (NP^<PP> (NN tomorrow)))))) (. .)))",
-                bestParseTree.toString());
+        assertEquals(
+            "(TOP (S^<TOP> (S|<NP-VP>^<TOP> (NP^<S> (DT The) (NN report)) (VP^<S> (AUX is) (ADJP^<VP> (JJ due) (PP^<ADJP> (IN out) (NP^<PP> (NN tomorrow)))))) (. .)))",
+            bestParseTree.toString());
         System.out.println(parser.getStats());
     }
 
