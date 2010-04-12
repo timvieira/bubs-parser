@@ -43,8 +43,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     /**
      * Constructs a {@link PackedBitVector} from a boolean array.
      * 
-     * @param array
-     *            array of populated bits
+     * @param array array of populated bits
      */
     public PackedBitVector(final boolean[] array) {
         super(array.length);
@@ -59,7 +58,8 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     public final boolean getBoolean(final int i) {
         final int index = i >> 5;
         final int shift = i & 0x1f;
-        return ((packedVector[index] >> shift) & 0x01) == 1;
+
+        return index < packedVector.length && ((packedVector[index] >> shift) & 0x01) == 1;
     }
 
     @Override
@@ -184,8 +184,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     /**
      * Set-convention convenience method
      * 
-     * @param toAdd
-     *            element to add to the set
+     * @param toAdd element to add to the set
      */
     public final void add(final int toAdd) {
         set(toAdd, true);
@@ -194,8 +193,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     /**
      * Set-convention convenience method
      * 
-     * @param toAdd
-     *            elements to add to the set
+     * @param toAdd elements to add to the set
      */
     public final void addAll(final int[] toAdd) {
         for (final int i : toAdd) {
@@ -206,8 +204,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     /**
      * Set-convention convenience method
      * 
-     * @param toAdd
-     *            elements to add to the set
+     * @param toAdd elements to add to the set
      */
     public final void addAll(final IntSet toAdd) {
         for (final int i : toAdd) {
@@ -218,8 +215,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     /**
      * Set-convention convenience method
      * 
-     * @param i
-     *            element whose presence in this set is to be tested
+     * @param i element whose presence in this set is to be tested
      * @return True if the specified element is contained in this set
      */
     public final boolean contains(final int i) {
@@ -229,8 +225,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     /**
      * Set-convention convenience method
      * 
-     * @param toRemove
-     *            element to remove from the set
+     * @param toRemove element to remove from the set
      * @return True if the specified element was contained in this set
      */
     public final boolean remove(final int toRemove) {
@@ -246,8 +241,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     /**
      * Set-convention convenience method
      * 
-     * @param toRemove
-     *            elements to remove from the set
+     * @param toRemove elements to remove from the set
      */
     public final void removeAll(final int[] toRemove) {
         for (final int i : toRemove) {
@@ -258,8 +252,7 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     /**
      * Set-convention convenience method
      * 
-     * @param toRemove
-     *            elements to remove from the set
+     * @param toRemove elements to remove from the set
      */
     public final void removeAll(final IntSet toRemove) {
         for (final int i : toRemove) {
