@@ -10,22 +10,43 @@ public class PackedArrayChart extends Chart {
 
     public final SparseMatrixGrammar sparseMatrixGrammar;
 
-    /** Start indices for each cell. Computed from cell start and end indices and stored in the chart for convenience */
+    /**
+     * Start indices for each cell. Computed from cell start and end indices and stored in the chart for
+     * convenience
+     */
     private final int[] cellOffsets;
 
-    /** The number of non-terminals populated in each cell. Indexed by cell index ({@link #cellIndex(int, int)}). */
+    /**
+     * The number of non-terminals populated in each cell. Indexed by cell index ({@link #cellIndex(int, int)}
+     * ).
+     */
     private final int[] numNonTerminals;
 
-    /** The index in the main chart array of the last non-terminal in each cell which is valid as a right child. Indexed by cell index ({@link #cellIndex(int, int)}). */
+    /**
+     * The index in the main chart array of the last non-terminal in each cell which is valid as a right
+     * child. Indexed by cell index ({@link #cellIndex(int, int)}).
+     */
     private final int[] maxRightChildIndex;
 
-    /** The index in the main chart array of the last non-terminal in each cell which is valid as a left child. Indexed by cell index ({@link #cellIndex(int, int)}). */
+    /**
+     * The index in the main chart array of the last non-terminal in each cell which is valid as a left child.
+     * Indexed by cell index ({@link #cellIndex(int, int)}).
+     */
     private final int[] maxLeftChildIndex;
 
-    /** The index in the main chart array of the first non-terminal in each cell which is valid as a left child. Indexed by cell index ({@link #cellIndex(int, int)}). */
+    /**
+     * The index in the main chart array of the first non-terminal in each cell which is valid as a left
+     * child. Indexed by cell index ({@link #cellIndex(int, int)}).
+     */
     private final int[] minLeftChildIndex;
 
-    /** Stores packed non-terminals and their inside probabilities. Entries for each cell begin at indices from {@link #cellOffsets}. */
+    /** The number of cells in this chart */
+    public final int cells;
+
+    /**
+     * Stores packed non-terminals and their inside probabilities. Entries for each cell begin at indices from
+     * {@link #cellOffsets}.
+     */
     public final int[] nonTerminalIndices;
     public final float[] insideProbabilities;
     public final int[] children;
@@ -37,7 +58,7 @@ public class PackedArrayChart extends Chart {
         super(size, true, null);
         this.sparseMatrixGrammar = sparseMatrixGrammar;
 
-        final int cells = cellIndex(0, size) + 1;
+        cells = cellIndex(0, size) + 1;
         numNonTerminals = new int[cells];
         minLeftChildIndex = new int[cells];
         maxLeftChildIndex = new int[cells];
@@ -65,7 +86,8 @@ public class PackedArrayChart extends Chart {
     public float getInside(final int start, final int end, final int nonTerminal) {
         final int cellIndex = cellIndex(start, end);
         final int offset = cellIndex * sparseMatrixGrammar.numNonTerms();
-        final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex], nonTerminal);
+        final int index = Arrays.binarySearch(nonTerminalIndices, offset,
+            offset + numNonTerminals[cellIndex], nonTerminal);
         if (index < 0) {
             return Float.NEGATIVE_INFINITY;
         }
@@ -127,7 +149,10 @@ public class PackedArrayChart extends Chart {
         private final int cellIndex;
         private final int offset;
 
-        /** Temporary storage for manipulating cell entries. Indexed by parent non-terminal. Only allocated when the cell is being modified */
+        /**
+         * Temporary storage for manipulating cell entries. Indexed by parent non-terminal. Only allocated
+         * when the cell is being modified
+         */
         public int[] tmpChildren;
         public float[] tmpInsideProbabilities;
         public short[] tmpMidpoints;
@@ -213,7 +238,8 @@ public class PackedArrayChart extends Chart {
             }
 
             // TODO Use getBestEdge() ?
-            final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex], nonTerminal);
+            final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset
+                    + numNonTerminals[cellIndex], nonTerminal);
             if (index < 0) {
                 return Float.NEGATIVE_INFINITY;
             }
@@ -221,15 +247,18 @@ public class PackedArrayChart extends Chart {
         }
 
         @Override
-        public void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProbability) {
-            // Allow update of cells created without temporary storage, even though this will be inefficient; it should be rare, and is at least useful for unit testing.
+        public void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell,
+                final float insideProbability) {
+            // Allow update of cells created without temporary storage, even though this will be inefficient;
+            // it should be rare, and is at least useful for unit testing.
             allocateTemporaryStorage();
 
             final int parent = p.parent;
             numEdgesConsidered++;
 
             if (insideProbability > tmpInsideProbabilities[p.parent]) {
-                tmpChildren[parent] = sparseMatrixGrammar.pack(p.leftChild, (short) p.rightChild);
+                tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
+                    (short) p.rightChild);
                 tmpInsideProbabilities[parent] = insideProbability;
 
                 // Midpoint == end for unary productions
@@ -242,7 +271,8 @@ public class PackedArrayChart extends Chart {
         @Override
         public void updateInside(final ChartEdge edge) {
 
-            // Allow update of cells created without temporary storage, even though this will be inefficient; it should be rare, and is at least useful for unit testing.
+            // Allow update of cells created without temporary storage, even though this will be inefficient;
+            // it should be rare, and is at least useful for unit testing.
             allocateTemporaryStorage();
 
             final int parent = edge.prod.parent;
@@ -250,7 +280,8 @@ public class PackedArrayChart extends Chart {
 
             if (edge.inside() > tmpInsideProbabilities[parent]) {
 
-                tmpChildren[parent] = sparseMatrixGrammar.pack(edge.prod.leftChild, (short) edge.prod.rightChild);
+                tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
+                    edge.prod.leftChild, (short) edge.prod.rightChild);
                 tmpInsideProbabilities[parent] = edge.inside();
 
                 // Midpoint == end for unary productions
@@ -274,7 +305,8 @@ public class PackedArrayChart extends Chart {
                 edgeMidpoint = tmpMidpoints[nonTermIndex];
 
             } else {
-                final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex], nonTermIndex);
+                final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset
+                        + numNonTerminals[cellIndex], nonTermIndex);
                 if (index < 0) {
                     return null;
                 }
@@ -282,10 +314,13 @@ public class PackedArrayChart extends Chart {
                 edgeMidpoint = midpoints[index];
             }
 
-            final int leftChild = sparseMatrixGrammar.unpackLeftChild(edgeChildren);
-            final short rightChild = sparseMatrixGrammar.unpackRightChild(edgeChildren);
+            final int leftChild = sparseMatrixGrammar.cartesianProductFunction()
+                .unpackLeftChild(edgeChildren);
+            final short rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
+                edgeChildren);
             final PackedArrayChartCell leftChildCell = getCell(start(), edgeMidpoint);
-            final PackedArrayChartCell rightChildCell = edgeMidpoint < end ? (PackedArrayChartCell) getCell(edgeMidpoint, end) : null;
+            final PackedArrayChartCell rightChildCell = edgeMidpoint < end ? (PackedArrayChartCell) getCell(
+                edgeMidpoint, end) : null;
 
             Production p;
             if (rightChild == Production.LEXICAL_PRODUCTION) {
@@ -297,7 +332,8 @@ public class PackedArrayChart extends Chart {
                 p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, probability, false);
 
             } else {
-                final float probability = sparseMatrixGrammar.binaryLogProbability(nonTermIndex, edgeChildren);
+                final float probability = sparseMatrixGrammar
+                    .binaryLogProbability(nonTermIndex, edgeChildren);
                 p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, rightChild, probability);
             }
             return new ChartEdge(p, leftChildCell, rightChildCell);
@@ -328,8 +364,8 @@ public class PackedArrayChart extends Chart {
         }
 
         /**
-         * Returns the index of the first non-terminal in this cell which is valid as a left child. The grammar must be sorted right, both, left, unary-only, as in
-         * {@link SortedGrammar}.
+         * Returns the index of the first non-terminal in this cell which is valid as a left child. The
+         * grammar must be sorted right, both, left, unary-only, as in {@link SortedGrammar}.
          * 
          * @return the index of the first non-terminal in this cell which is valid as a left child.
          */
@@ -338,8 +374,8 @@ public class PackedArrayChart extends Chart {
         }
 
         /**
-         * Returns the index of the last non-terminal in this cell which is valid as a left child. The grammar must be sorted right, both, left, unary-only, as in
-         * {@link SortedGrammar}.
+         * Returns the index of the last non-terminal in this cell which is valid as a left child. The grammar
+         * must be sorted right, both, left, unary-only, as in {@link SortedGrammar}.
          * 
          * @return the index of the last non-terminal in this cell which is valid as a left child.
          */
@@ -348,8 +384,8 @@ public class PackedArrayChart extends Chart {
         }
 
         /**
-         * Returns the index of the last non-terminal in this cell which is valid as a right child. The grammar must be sorted right, both, left, unary-only, as in
-         * {@link SortedGrammar}.
+         * Returns the index of the last non-terminal in this cell which is valid as a right child. The
+         * grammar must be sorted right, both, left, unary-only, as in {@link SortedGrammar}.
          * 
          * @return the index of the last non-terminal in this cell which is valid as a right child.
          */
@@ -358,7 +394,8 @@ public class PackedArrayChart extends Chart {
         }
 
         /**
-         * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same chart.
+         * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same
+         * chart.
          */
         @Override
         public boolean equals(final Object o) {
@@ -374,7 +411,8 @@ public class PackedArrayChart extends Chart {
         public String toString() {
             final StringBuilder sb = new StringBuilder(256);
 
-            sb.append("PackedArrayChartCell[" + start() + "][" + end() + "] with " + getNumNTs() + " (of " + sparseMatrixGrammar.numNonTerms() + ") edges\n");
+            sb.append("PackedArrayChartCell[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
+                    + sparseMatrixGrammar.numNonTerms() + ") edges\n");
 
             if (tmpChildren == null) {
                 // Format entries from the main chart array
@@ -397,7 +435,9 @@ public class PackedArrayChart extends Chart {
                         final float insideProbability = tmpInsideProbabilities[nonTerminal];
                         final int midpoint = tmpMidpoints[nonTerminal];
 
-                        sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint));
+                        sb
+                            .append(formatCellEntry(nonTerminal, childProductions, insideProbability,
+                                midpoint));
                     }
                 }
 
@@ -405,21 +445,27 @@ public class PackedArrayChart extends Chart {
             return sb.toString();
         }
 
-        private String formatCellEntry(final int nonterminal, final int childProductions, final float insideProbability, final int midpoint) {
-            final int leftChild = sparseMatrixGrammar.unpackLeftChild(childProductions);
-            final short rightChild = sparseMatrixGrammar.unpackRightChild(childProductions);
+        private String formatCellEntry(final int nonterminal, final int childProductions,
+                final float insideProbability, final int midpoint) {
+            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
+                childProductions);
+            final short rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
+                childProductions);
 
             if (rightChild == Production.UNARY_PRODUCTION) {
                 // Unary Production
-                return String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar.mapNonterminal(leftChild), insideProbability,
-                        midpoint);
+                return String.format("%s -> %s (%.5f, %d)\n",
+                    sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar
+                        .mapNonterminal(leftChild), insideProbability, midpoint);
             } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                 // Lexical Production
-                return String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability,
-                        midpoint);
+                return String.format("%s -> %s (%.5f, %d)\n",
+                    sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar
+                        .mapLexicalEntry(leftChild), insideProbability, midpoint);
             } else {
-                return String.format("%s -> %s %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar.mapNonterminal(leftChild),
-                        sparseMatrixGrammar.mapNonterminal(rightChild), insideProbability, midpoint);
+                return String.format("%s -> %s %s (%.5f, %d)\n", sparseMatrixGrammar
+                    .mapNonterminal(nonterminal), sparseMatrixGrammar.mapNonterminal(leftChild),
+                    sparseMatrixGrammar.mapNonterminal(rightChild), insideProbability, midpoint);
             }
         }
     }

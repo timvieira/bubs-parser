@@ -7,6 +7,7 @@ import java.io.StringReader;
 
 import org.junit.Test;
 
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 public abstract class GrammarTestCase {
@@ -23,7 +24,19 @@ public abstract class GrammarTestCase {
             new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
     }
 
-    public static Grammar createSimpleGrammar(final Class<? extends Grammar> grammarClass) throws Exception {
+    public static <C extends Grammar> C createGrammar(final Class<C> grammarClass,
+            final Reader grammarReader, final Reader lexiconReader,
+            final Class<? extends SparseMatrixGrammar.CartesianProductFunction> cartesianProductFunctionClass)
+            throws Exception {
+
+        return grammarClass.getConstructor(
+            new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
+            new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
+                    cartesianProductFunctionClass });
+    }
+
+    public static Grammar createSimpleGrammar(final Class<? extends Grammar> grammarClass,
+            final Class<? extends CartesianProductFunction> cartesionProductFunctionClass) throws Exception {
         final StringBuilder lexiconSb = new StringBuilder(256);
         lexiconSb.append("NN => systems 0\n");
         lexiconSb.append("NN => analyst 0\n");
@@ -42,7 +55,11 @@ public abstract class GrammarTestCase {
         grammarSb.append("NP => NP NP|NN -Infinity\n");
 
         return createGrammar(grammarClass, new StringReader(grammarSb.toString()), new StringReader(lexiconSb
-            .toString()));
+            .toString()), cartesionProductFunctionClass);
+    }
+
+    public static Grammar createSimpleGrammar(final Class<? extends Grammar> grammarClass) throws Exception {
+        return createSimpleGrammar(grammarClass, null);
     }
 
     /**

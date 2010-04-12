@@ -48,18 +48,18 @@ public class SortAndScanCsrSpmvParser extends
 
         final long t0 = System.currentTimeMillis();
         long t1 = t0;
-        long crossProductTime = 0;
+        long cartesianProductTime = 0;
 
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
-            final CrossProductVector crossProductVector = crossProductUnion(start, end);
+            final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
 
             t1 = System.currentTimeMillis();
-            crossProductTime = t1 - t0;
+            cartesianProductTime = t1 - t0;
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
-            binarySpmvMultiply(crossProductVector, spvChartCell);
+            binarySpmvMultiply(cartesianProductVector, spvChartCell);
         }
         final long t2 = System.currentTimeMillis();
         final long binarySpmvTime = t2 - t1;
@@ -78,9 +78,10 @@ public class SortAndScanCsrSpmvParser extends
 
         // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n",
         // start, end, t3
-        // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime,
+        // - t0, cartesianProductSize, totalProducts, cartesianProductTime, cartesianProductSize /
+        // cartesianProductTime,
         // edges, spmvTime, edges / spmvTime);
-        totalCartesianProductTime += crossProductTime;
+        totalCartesianProductTime += cartesianProductTime;
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
@@ -93,7 +94,7 @@ public class SortAndScanCsrSpmvParser extends
      * @return Unioned cross-product
      */
     @Override
-    protected CrossProductVector crossProductUnion(final int start, final int end) {
+    protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
         final long t0 = System.nanoTime() / 1000000;
         // Compute the size of the array we'll need: sum_{m=1}^{M} V_l * V_r (sizes of cartesian product for
@@ -142,8 +143,8 @@ public class SortAndScanCsrSpmvParser extends
                     final int cartesianProductIndex = offsets[midpoint - start] + leftChildrenProcessed
                             * rightCellRightChildren + rightChildrenProcessed;
 
-                    tmpCartesianProductChildren[cartesianProductIndex] = grammar.pack(leftChildIndex,
-                        (short) nonTerminalIndices[j]);
+                    tmpCartesianProductChildren[cartesianProductIndex] = grammar.cartesianProductFunction()
+                        .pack(leftChildIndex, (short) nonTerminalIndices[j]);
                     tmpCartesianProductInsideProbabilities[cartesianProductIndex] = leftProbability
                             + insideProbabilities[j];
                     tmpCartesianProductMidpoints[cartesianProductIndex] = midpoint;
@@ -180,14 +181,14 @@ public class SortAndScanCsrSpmvParser extends
         totalScanTime += t4 - t3;
 
         // Scatter the cartesian product array to a dense representation, writing only the flagged values
-        if (crossProductProbabilities == null) {
-            crossProductProbabilities = new float[grammar.packedArraySize()];
-            crossProductMidpoints = new short[grammar.packedArraySize()];
+        if (cartesianProductProbabilities == null) {
+            cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
+            cartesianProductMidpoints = new short[grammar.cartesianProductFunction().packedArraySize()];
         }
-        Arrays.fill(crossProductProbabilities, Float.NEGATIVE_INFINITY);
-        scanner.scatter(tmpCartesianProductInsideProbabilities, crossProductProbabilities,
+        Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
+        scanner.scatter(tmpCartesianProductInsideProbabilities, cartesianProductProbabilities,
             tmpCartesianProductChildren, segmentFlags);
-        scanner.scatter(tmpCartesianProductMidpoints, crossProductMidpoints, tmpCartesianProductChildren,
+        scanner.scatter(tmpCartesianProductMidpoints, cartesianProductMidpoints, tmpCartesianProductChildren,
             segmentFlags);
 
         int size = 0;
@@ -203,11 +204,13 @@ public class SortAndScanCsrSpmvParser extends
         // System.out.format("Total Child Pairs: %d Size: %d, %.1f%%\n", totalChildPairs, size, size * 100f /
         // totalChildPairs);
 
-        return new CrossProductVector(grammar, crossProductProbabilities, crossProductMidpoints, size);
+        return new CartesianProductVector(grammar, cartesianProductProbabilities, cartesianProductMidpoints,
+            size);
     }
 
     @Override
-    public void binarySpmvMultiply(final CrossProductVector crossProductVector, final ChartCell chartCell) {
+    public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+            final ChartCell chartCell) {
 
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
@@ -216,8 +219,8 @@ public class SortAndScanCsrSpmvParser extends
         final int[] binaryRuleMatrixColumnIndices = grammar.binaryRuleMatrixColumnIndices();
         final float[] binaryRuleMatrixProbabilities = grammar.binaryRuleMatrixProbabilities();
 
-        final float[] tmpCrossProductProbabilities = crossProductVector.probabilities;
-        final short[] tmpCrossProductMidpoints = crossProductVector.midpoints;
+        final float[] tmpCrossProductProbabilities = cartesianProductVector.probabilities;
+        final short[] tmpCrossProductMidpoints = cartesianProductVector.midpoints;
 
         final int[] chartCellChildren = packedArrayCell.tmpChildren;
         final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
@@ -236,8 +239,8 @@ public class SortAndScanCsrSpmvParser extends
                 final int grammarChildren = binaryRuleMatrixColumnIndices[i];
                 final float grammarProbability = binaryRuleMatrixProbabilities[i];
 
-                final float crossProductProbability = tmpCrossProductProbabilities[grammarChildren];
-                final float jointProbability = grammarProbability + crossProductProbability;
+                final float cartesianProductProbability = tmpCrossProductProbabilities[grammarChildren];
+                final float jointProbability = grammarProbability + cartesianProductProbability;
 
                 if (jointProbability > winningProbability) {
                     winningProbability = jointProbability;
@@ -281,7 +284,7 @@ public class SortAndScanCsrSpmvParser extends
             for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
 
                 final int grammarChildren = unaryRuleMatrixColumnIndices[i];
-                final int child = grammar.unpackLeftChild(grammarChildren);
+                final int child = grammar.cartesianProductFunction().unpackLeftChild(grammarChildren);
                 final float grammarProbability = unaryRuleMatrixProbabilities[i];
 
                 final float jointProbability = grammarProbability + chartCellProbabilities[child];

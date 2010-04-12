@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
@@ -74,7 +75,7 @@ public abstract class ExhaustiveChartParserTestCase {
      */
     protected abstract Class<? extends Grammar> grammarClass();
 
-    private Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
+    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
         return grammarClass().getConstructor(
             new Class[] { Reader.class, Reader.class, GrammarFormatType.class }).newInstance(
             new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
@@ -120,7 +121,7 @@ public abstract class ExhaustiveChartParserTestCase {
         }
 
         if (simpleGrammar2 == null || simpleGrammar2.getClass() != grammarClass()) {
-            simpleGrammar2 = createSimpleGrammar2(grammarClass());
+            simpleGrammar2 = createSimpleGrammar2(grammarClass(), null);
         }
 
         // TODO Parameterize ChartTraversalType (this will require a custom Runner implementation)
@@ -133,7 +134,9 @@ public abstract class ExhaustiveChartParserTestCase {
         }
     }
 
-    public static <C extends Grammar> C createSimpleGrammar2(final Class<C> grammarClass) throws Exception {
+    public static <C extends Grammar> C createSimpleGrammar2(final Class<C> grammarClass,
+            final Class<? extends SparseMatrixGrammar.CartesianProductFunction> cartesianProductFunctionClass)
+            throws Exception {
         final StringBuilder lexiconSb = new StringBuilder(256);
         lexiconSb.append("DT => The 0\n");
         lexiconSb.append("NN => fish 0\n");
@@ -159,6 +162,11 @@ public abstract class ExhaustiveChartParserTestCase {
         grammarSb.append("VP => VB VP|VB -1.386294361\n");
         grammarSb.append("VP => VB -1.386294361\n");
         grammarSb.append("VP|VB => NP 0\n");
+
+        if (cartesianProductFunctionClass != null) {
+            return GrammarTestCase.createGrammar(grammarClass, new StringReader(grammarSb.toString()),
+                new StringReader(lexiconSb.toString()), cartesianProductFunctionClass);
+        }
 
         return GrammarTestCase.createGrammar(grammarClass, new StringReader(grammarSb.toString()),
             new StringReader(lexiconSb.toString()));

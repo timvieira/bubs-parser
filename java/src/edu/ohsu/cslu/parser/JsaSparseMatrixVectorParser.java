@@ -37,18 +37,18 @@ public class JsaSparseMatrixVectorParser extends
 
         final long t0 = System.currentTimeMillis();
         long t1 = t0;
-        long crossProductTime = 0;
+        long cartesianProductTime = 0;
 
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
-            final CrossProductVector crossProductVector = crossProductUnion(start, end);
+            final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
 
             t1 = System.currentTimeMillis();
-            crossProductTime = t1 - t0;
+            cartesianProductTime = t1 - t0;
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
-            binarySpmvMultiply(crossProductVector, spvChartCell);
+            binarySpmvMultiply(cartesianProductVector, spvChartCell);
         }
         final long t2 = System.currentTimeMillis();
         final long binarySpmvTime = t2 - t1;
@@ -69,20 +69,20 @@ public class JsaSparseMatrixVectorParser extends
         // start, end, t3
         // - t0, crossProductSize, totalProducts, crossProductTime, crossProductSize / crossProductTime,
         // edges, spmvTime, edges / spmvTime);
-        totalCartesianProductTime += crossProductTime;
+        totalCartesianProductTime += cartesianProductTime;
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
     @Override
-    public void binarySpmvMultiply(final CrossProductVector crossProductVector, final ChartCell chartCell) {
+    public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
 
         final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
 
         final int[][] grammarRuleMatrix = grammar.binaryRuleMatrix();
         final float[][] grammarProbabilities = grammar.binaryProbabilities();
 
-        final float[] tmpCrossProductProbabilities = crossProductVector.probabilities;
-        final short[] tmpCrossProductMidpoints = crossProductVector.midpoints;
+        final float[] tmpCrossProductProbabilities = cartesianProductVector.probabilities;
+        final short[] tmpCrossProductMidpoints = cartesianProductVector.midpoints;
 
         final int[] chartCellChildren = denseVectorCell.children;
         final float[] chartCellProbabilities = denseVectorCell.inside;
@@ -157,7 +157,7 @@ public class JsaSparseMatrixVectorParser extends
 
             for (int i = 0; i < grammarChildrenForParent.length; i++) {
                 final int packedChildren = grammarChildrenForParent[i];
-                final int child = grammar.unpackLeftChild(packedChildren);
+                final int child = grammar.cartesianProductFunction().unpackLeftChild(packedChildren);
 
                 final float grammarProbability = grammarProbabilitiesForParent[i];
                 final float crossProductProbability = chartCellProbabilities[child];
