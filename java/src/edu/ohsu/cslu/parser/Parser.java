@@ -2,6 +2,10 @@ package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.Grammar;
@@ -19,7 +23,6 @@ import edu.ohsu.cslu.parser.util.StringToMD5;
 
 public abstract class Parser<G extends Grammar> {
 
-    // public static ChartEdge nullEdge = new ChartEdge(Grammar.nullProduction, null, null, Float.NEGATIVE_INFINITY);
     public G grammar;
     public ParserOptions opts;
     public EdgeSelector edgeSelector;
@@ -36,7 +39,8 @@ public abstract class Parser<G extends Grammar> {
         this.opts = opts;
 
         edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream, grammar);
-        cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+        cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream,
+            opts.cslutScoresStream);
     }
 
     public abstract float getInside(int start, int end, int nt);
@@ -66,7 +70,8 @@ public abstract class Parser<G extends Grammar> {
 
         final String[] tokens = ParserUtil.tokenize(sentence);
         if (tokens.length > opts.maxLength) {
-            Log.info(1, "INFO: Skipping sentence. Length of " + tokens.length + " is greater than maxLength (" + opts.maxLength + ")");
+            Log.info(1, "INFO: Skipping sentence. Length of " + tokens.length
+                    + " is greater than maxLength (" + opts.maxLength + ")");
             return;
         }
 
@@ -77,7 +82,8 @@ public abstract class Parser<G extends Grammar> {
 
         sentParseTimeSec = (System.currentTimeMillis() - sentStartTimeMS) / 1000.0;
         totalParseTimeSec += sentParseTimeSec;
-        // System.gc(); totalParseMemMB = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() - sentStartMem) / 1024.0 / 1024.0;
+        // System.gc(); totalParseMemMB = (Runtime.getRuntime().totalMemory() -
+        // Runtime.getRuntime().freeMemory() - sentStartMem) / 1024.0 / 1024.0;
 
         if (bestParseTree == null) {
             outputStream.write("No parse found.\n");
@@ -95,20 +101,26 @@ public abstract class Parser<G extends Grammar> {
         }
 
         totalInsideScore += insideScore;
-        final String stats = " sentNum=" + sentenceNumber + " sentLen=" + tokens.length + " md5=" + StringToMD5.computeMD5(sentence) + " seconds=" + sentParseTimeSec + " mem="
+
+        // TODO Use Log4J so this output can be suppressed
+        final String stats = " sentNum=" + sentenceNumber + " sentLen=" + tokens.length + " md5="
+                + StringToMD5.computeMD5(sentence) + " seconds=" + sentParseTimeSec + " mem="
                 + sentMaxMemoryMB + " inside=" + insideScore + " " + this.getStats();
         outputStream.write("STAT:" + stats + "\n");
         outputStream.flush();
     }
 
-    public void parseStream(final BufferedReader inputStream, final BufferedWriter outputStream) throws Exception {
+    public void parseStream(final InputStream inputStream, final OutputStream outputStream) throws Exception {
 
-        for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
-            parseSentence(sentence, outputStream);
+        final BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+        final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(outputStream));
+        for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
+            parseSentence(sentence, bw);
         }
 
-        Log.info(1, "INFO: numSentences=" + sentenceNumber + " totalSeconds=" + totalParseTimeSec + " avgSecondsPerSent=" + (totalParseTimeSec / sentenceNumber)
-                + " totalInsideScore=" + totalInsideScore);
+        Log.info(1, "INFO: numSentences=" + sentenceNumber + " totalSeconds=" + totalParseTimeSec
+                + " avgSecondsPerSent=" + (totalParseTimeSec / sentenceNumber) + " totalInsideScore="
+                + totalInsideScore);
     }
 
     public void printTreeEdgeStats(final ParseTree tree, final Parser<?> parser) {
@@ -118,13 +130,13 @@ public abstract class Parser<G extends Grammar> {
 
         for (final ParseTree node : tree.preOrderTraversal()) {
             if (node.isNonTerminal()) {
-                // System.out.println("FINAL: " + ((BoundaryInOut) ((AgendaChartParser) parser).edgeSelector).calcFOMToString(node.chartEdge));
                 throw new RuntimeException("Doesn't work right now");
             }
         }
     }
 
-    public ParseTree findChartEdgesForTree(final ParseTree tree, final ChartParser<?,?> parser) throws Exception {
+    public ParseTree findChartEdgesForTree(final ParseTree tree, final ChartParser<?, ?> parser)
+            throws Exception {
         final LinkedList<ParseTree> leafNodes = tree.getLeafNodes();
         for (final ParseTree node : tree.postOrderTraversal()) {
             final ParseTree leftLeaf = node.leftMostLeaf();
@@ -145,7 +157,8 @@ public abstract class Parser<G extends Grammar> {
             // if (parentNonTermIndex != -1) {
             // final ChartEdge edge = parser.chart.getRootCell().getBestEdge(parentNonTermIndex);
             // if (edge == null) {
-            // // System.out.println("WARNING: edge[" + start + "][" + end + "][" + node.contents + "] not in chart!");
+            // // System.out.println("WARNING: edge[" + start + "][" + end + "][" + node.contents +
+            // "] not in chart!");
             // node.chartEdge = ChartParser.nullEdge.copy();
             // // TODO: I think this will die when it tries to compute the FOM on a null left/right cell
             // } else {

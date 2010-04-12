@@ -2,9 +2,13 @@ package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.util.zip.GZIPInputStream;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -19,6 +23,10 @@ import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
+import edu.ohsu.cslu.parser.ParserOptions.CartesianProductFunctionType;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.ParserOptions.ParserType;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
@@ -31,7 +39,10 @@ import edu.ohsu.cslu.parser.util.Log;
 
 public class ParserDriver extends BaseCommandlineTool {
 
-    @Option(name = "-g", aliases = { "--grammar-file-prefix" }, required = true, metaVar = "prefix", usage = "Grammar file prefix")
+    @Option(name = "-gp", aliases = { "--grammar-file-prefix" }, metaVar = "prefix", usage = "Grammar file prefix")
+    private String grammarPrefix;
+
+    @Option(name = "-pcfg", aliases = { "--pcfg-file" }, metaVar = "prefix", usage = "PCFG file")
     private String pcfgFileName;
 
     @Option(name = "-lex", aliases = { "--lexicon-file" }, metaVar = "FILE", usage = "Lexicon file if full grammar file is specified for -g option")
@@ -49,7 +60,12 @@ public class ParserDriver extends BaseCommandlineTool {
     @Option(name = "-p", aliases = { "--parser", "--parser-implementation" }, metaVar = "parser", usage = "Parser implementation")
     private ParserType parserType = ParserType.ECPCellCrossList;
 
-    // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage = "Chart cell processing type")
+    // TODO Implement class name mappings in cltool and replace this with a class name
+    @Option(name = "-cpf", aliases = { "--cartesian-product-function" }, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
+    private ParserOptions.CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.Default;
+
+    // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage =
+    // "Chart cell processing type")
     // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
 
     @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
@@ -97,13 +113,20 @@ public class ParserDriver extends BaseCommandlineTool {
 
     @Override
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
-        // setup() is run once for multiple threads
 
-        // TODO: this is hacky. Should have different params: -grammar XXX | -pcfg XXX -lex YYY
-        if (lexFileName == null) {
-            final String grammarFileNamePrefix = pcfgFileName;
-            pcfgFileName = grammarFileNamePrefix + ".pcfg";
-            lexFileName = grammarFileNamePrefix + ".lex";
+        if (grammarPrefix != null) {
+
+            // Handle prefixes with or without trailing periods.
+            pcfgFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "pcfg";
+            lexFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "lex";
+
+            // Handle gzipped grammar files
+            if (!new File(pcfgFileName).exists() && new File(pcfgFileName + ".gz").exists()) {
+                pcfgFileName = pcfgFileName + ".gz";
+            }
+            if (!new File(lexFileName).exists() && new File(lexFileName + ".gz").exists()) {
+                lexFileName = lexFileName + ".gz";
+            }
         }
 
         if (fomModelFileName != null) {
@@ -120,7 +143,8 @@ public class ParserDriver extends BaseCommandlineTool {
 
         // param validation checks
         if (edgeFOMType == EdgeSelectorType.BoundaryInOut && fomTrain == false && fomModelFileName == null) {
-            throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomTrain or -fomModel param set");
+            throw new CmdLineException(cmdlineParser,
+                "BoundaryInOut FOM must also have -fomTrain or -fomModel param set");
         }
 
         if (cellSelectorType == CellSelectorType.CSLUT && cellModelStream == null) {
@@ -128,7 +152,8 @@ public class ParserDriver extends BaseCommandlineTool {
         }
 
         if (cellSelectorType == CellSelectorType.Perceptron && cslutScoresStream == null) {
-            throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
+            throw new CmdLineException(cmdlineParser,
+                "Perceptron span selection must specify -cslutSpanScores");
         }
     }
 
@@ -167,23 +192,31 @@ public class ParserDriver extends BaseCommandlineTool {
         return opts;
     }
 
-    public static Grammar createGrammar(final ParserType parserType, final GrammarFormatType grammarFormat, final String pcfgFileName, final String lexFileName) throws Exception {
+    public Grammar createGrammar() throws Exception {
+        final Reader pcfgReader = pcfgFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
+            new FileInputStream(pcfgFileName))) : new FileReader(pcfgFileName);
+        final Reader lexReader = lexFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
+            new FileInputStream(lexFileName))) : new FileReader(lexFileName);
+
         switch (parserType) {
             case ECPInsideOutside:
             case ECPCellCrossList:
-                return new LeftListGrammar(pcfgFileName, lexFileName, grammarFormat);
+                return new LeftListGrammar(pcfgReader, lexReader, grammarFormat);
+
             case ECPCellCrossHash:
-                return new LeftHashGrammar(pcfgFileName, lexFileName, grammarFormat);
+                return new LeftHashGrammar(pcfgReader, lexReader, grammarFormat);
+
             case ECPCellCrossMatrix:
-                return new ChildMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
+                return new ChildMatrixGrammar(pcfgReader, lexReader, grammarFormat);
+
             case ECPGrammarLoop:
             case ECPGrammarLoopBerkeleyFilter:
-                return new GrammarByChild(pcfgFileName, lexFileName, grammarFormat);
+                return new GrammarByChild(pcfgReader, lexReader, grammarFormat);
 
             case AgendaChartParser:
             case ACPWithMemory:
             case ACPGhostEdges:
-                return new LeftRightListsGrammar(pcfgFileName, lexFileName, grammarFormat);
+                return new LeftRightListsGrammar(pcfgReader, lexReader, grammarFormat);
 
             case LocalBestFirst:
             case LBFPruneViterbi:
@@ -193,20 +226,33 @@ public class ParserDriver extends BaseCommandlineTool {
             case LBFPerceptronCell:
             case CoarseCellAgenda:
             case CoarseCellAgendaCSLUT:
-                return new LeftHashGrammar(pcfgFileName, lexFileName, grammarFormat);
+                return new LeftHashGrammar(pcfgReader, lexReader, grammarFormat);
 
             case JsaSparseMatrixVector:
-                return new JsaSparseMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
+                return new JsaSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat);
+
             case CsrSparseMatrixVector:
             case OpenClSparseMatrixVector:
-                return new CsrSparseMatrixGrammar(pcfgFileName, lexFileName, grammarFormat);
+            case SortAndScanSpmv:
+                switch (cartesianProductFunctionType) {
+                    case Default:
+                        return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            DefaultFunction.class);
+                    case Unfiltered:
+                        return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            UnfilteredFunction.class);
+                    case BitMatrixExactFilter:
+                        return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            BitVectorExactFilterFunction.class);
+                }
 
             default:
                 throw new Exception("Unsupported parser type: " + parserType);
         }
     }
 
-    // public static Parser createParser(final ParserType parserType, final Grammar grammar, final EdgeSelector edgeSelector, final CellSelector cellSelector) throws Exception {
+    // public static Parser createParser(final ParserType parserType, final Grammar grammar, final
+    // EdgeSelector edgeSelector, final CellSelector cellSelector) throws Exception {
     public static Parser<?> createParser(final ParserOptions opts, final Grammar grammar) throws Exception {
 
         switch (opts.parserType) {
@@ -246,7 +292,8 @@ public class ParserDriver extends BaseCommandlineTool {
             case CoarseCellAgenda:
                 return new CoarseCellAgendaParser(opts, (LeftHashGrammar) grammar);
             case CoarseCellAgendaCSLUT:
-                final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+                final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(
+                    opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
                 return new CoarseCellAgendaParserWithCSLUT(opts, (LeftHashGrammar) grammar, cslutScores);
 
             case JsaSparseMatrixVector:
@@ -255,6 +302,8 @@ public class ParserDriver extends BaseCommandlineTool {
                 return new CsrSpmvParser((CsrSparseMatrixGrammar) grammar);
             case OpenClSparseMatrixVector:
                 return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
+            case SortAndScanSpmv:
+                return new SortAndScanCsrSpmvParser((CsrSparseMatrixGrammar) grammar);
 
             default:
                 throw new IllegalArgumentException("Unsupported parser type");
@@ -266,29 +315,44 @@ public class ParserDriver extends BaseCommandlineTool {
         runParser(createOptions());
     }
 
-    public static void runParser(final ParserOptions opts) throws Exception {
+    public void runParser(final ParserOptions opts) throws Exception {
         Log.info(0, opts.toString());
-        final Grammar grammar = createGrammar(opts.parserType, opts.grammarFormat, opts.pcfgFileName, opts.lexFileName);
+        final Grammar grammar = createGrammar();
 
         // TODO: this whole FOM setup is pretty ugly. It needs to be changed
         // TODO: the program should know which FOM to use given the model file
-        // final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream, grammar);
-        // final CellSelector cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+        // final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream,
+        // grammar);
+        // final CellSelector cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream,
+        // opts.cslutScoresStream);
 
         if (opts.fomTrain == true) {
-            final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream, grammar);
+            final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream,
+                grammar);
             edgeSelector.train(opts.inputStream);
             edgeSelector.writeModel(opts.outputStream);
         } else if (opts.cellTrain == true) {
             // TODO: need to follow a similar train/writeModel method like edgeSelector
-            final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
-            final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer(opts, (LeftHashGrammar) grammar);
+            final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) CellSelector
+                .create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+            final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer(opts,
+                (LeftHashGrammar) grammar);
             perceptronCellSelector.train(opts.inputStream, parser);
         } else {
             // run parser
             final Parser<?> parser = createParser(opts, grammar);
-            // parser.parseStream(opts.inputStream, opts.outputStream, opts.maxLength, printUnkLabels, printInsideProbs);
-            parser.parseStream(opts.inputStream, opts.outputStream);
+
+            final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
+            for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
+                parser.parseSentence(sentence, bw);
+                logger.debug(parser.getStats());
+            }
+
+            logger.info("INFO: numSentences=" + parser.sentenceNumber + " totalSeconds="
+                    + parser.totalParseTimeSec + " avgSecondsPerSent="
+                    + (parser.totalParseTimeSec / parser.sentenceNumber) + " totalInsideScore="
+                    + parser.totalInsideScore);
         }
     }
 }

@@ -11,6 +11,7 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 
 public class ParserOptions {
+
     // Parser
     public ParserType parserType = ParserType.ECPCellCrossList;
     public EdgeSelectorType edgeFOMType = EdgeSelectorType.Inside;
@@ -59,12 +60,23 @@ public class ParserOptions {
     }
 
     static public enum ParserType {
-        ECPCellCrossList("ecpccl"), ECPCellCrossHash("ecpcch"), ECPCellCrossMatrix("ecpccm"), ECPGrammarLoop("ecpgl"), ECPGrammarLoopBerkeleyFilter("ecpglbf"), ECPInsideOutside(
-                "ecpio"), AgendaChartParser("acpall"), ACPWithMemory("acpwm"), ACPGhostEdges("acpge"), LocalBestFirst("lbf"), LBFPruneViterbi("lbfpv"), LBFOnlineBeam("lbfob"), LBFBoundedHeap(
-                "lbfbh"), LBFExpDecay("lbfed"), LBFPerceptronCell("lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector("jsa"), OpenClSparseMatrixVector(
-                "opencl"), CsrSparseMatrixVector("csr");
+        ECPCellCrossList("ecpccl"), ECPCellCrossHash("ecpcch"), ECPCellCrossMatrix("ecpccm"), ECPGrammarLoop(
+                "ecpgl"), ECPGrammarLoopBerkeleyFilter("ecpglbf"), ECPInsideOutside("ecpio"), AgendaChartParser(
+                "acpall"), ACPWithMemory("acpwm"), ACPGhostEdges("acpge"), LocalBestFirst("lbf"), LBFPruneViterbi(
+                "lbfpv"), LBFOnlineBeam("lbfob"), LBFBoundedHeap("lbfbh"), LBFExpDecay("lbfed"), LBFPerceptronCell(
+                "lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector(
+                "jsa"), OpenClSparseMatrixVector("opencl"), CsrSparseMatrixVector("csr"), SortAndScanSpmv(
+                "sort-and-scan");
 
         private ParserType(final String... aliases) {
+            EnumAliasMap.singleton().addAliases(this, aliases);
+        }
+    }
+
+    static public enum CartesianProductFunctionType {
+        Default("d", "default"), Unfiltered("u", "unfiltered"), BitMatrixExactFilter("bme", "bitmatrixexact");
+
+        private CartesianProductFunctionType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
         }
     }
