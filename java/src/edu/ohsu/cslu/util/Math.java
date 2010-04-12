@@ -6,7 +6,8 @@ package edu.ohsu.cslu.util;
 /**
  * Implements common mathematical functions. Suitable for static import.
  * 
- * Includes a lot of duplicated method code to avoid needing automatic up-conversion from int->float and float->double (and re-casting the results downward).
+ * Includes a lot of duplicated method code to avoid needing automatic up-conversion from int->float and
+ * float->double (and re-casting the results downward).
  * 
  * @author Aaron Dunlop
  * @since Jun 12, 2008
@@ -393,7 +394,8 @@ public class Math {
     }
 
     /**
-     * Returns the integer log (base 2) of an integer (equivalent to the highest bit set) Simple, but not incredibly efficient.
+     * Returns the integer log (base 2) of an integer (equivalent to the highest bit set) Simple, but not
+     * incredibly efficient.
      * 
      * @param n Integer to take the logarithm of
      * @return The the integer log (base 2) of an integer
@@ -422,20 +424,18 @@ public class Math {
     }
 
     /**
-     * Sort CSR int[] and float[] arrays (stolen from java.util.Arrays and modified to sort parallel arrays)
-     * 
-     * TODO Untested (caveat emptor)
+     * Sort parallel int[] arrays (stolen from java.util.Arrays and modified to sort parallel arrays)
      */
-    public static void sort(final int x[], final float f[]) {
-        sort1(x, f, 0, x.length);
+    public static void sort(final int k[], final int v[]) {
+        sort1(k, v, 0, k.length);
     }
 
-    private static void sort1(final int x[], final float f[], final int off, final int len) {
+    private static void sort1(final int x[], final int v[], final int off, final int len) {
         // Insertion sort on smallest arrays
         if (len < 7) {
             for (int i = off; i < len + off; i++)
                 for (int j = i; j > off && x[j - 1] > x[j]; j--)
-                    swap(x, f, j, j - 1);
+                    swap(x, v, j, j - 1);
             return;
         }
 
@@ -452,39 +452,136 @@ public class Math {
             }
             m = med3(x, l, m, n); // Mid-size, med of 3
         }
-        final int v = x[m];
+        final int val = x[m];
 
         // Establish Invariant: v* (<v)* (>v)* v*
         int a = off, b = a, c = off + len - 1, d = c;
         while (true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v)
-                    swap(x, f, a++, b);
+            while (b <= c && x[b] <= val) {
+                if (x[b] == val)
+                    swap(x, v, a++, b);
                 b++;
             }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v)
-                    swap(x, f, c, d--);
+            while (c >= b && x[c] >= val) {
+                if (x[c] == val)
+                    swap(x, v, c, d--);
                 c--;
             }
             if (b > c)
                 break;
-            swap(x, f, b++, c--);
+            swap(x, v, b++, c--);
         }
 
         // Swap partition elements back to middle
         int s;
         final int n = off + len;
         s = java.lang.Math.min(a - off, b - a);
-        vecswap(x, f, off, b - s, s);
+        vecswap(x, v, off, b - s, s);
         s = java.lang.Math.min(d - c, n - d - 1);
-        vecswap(x, f, b, n - s, s);
+        vecswap(x, v, b, n - s, s);
 
         // Recursively sort non-partition-elements
         if ((s = b - a) > 1)
-            sort1(x, f, off, s);
+            sort1(x, v, off, s);
         if ((s = d - c) > 1)
-            sort1(x, f, n - s, s);
+            sort1(x, v, n - s, s);
+    }
+
+    /**
+     * Swaps x[a] with x[b] and f[a] with f[b].
+     */
+    private static void swap(final int k[], final int v[], final int a, final int b) {
+        final int t = k[a];
+        k[a] = k[b];
+        k[b] = t;
+
+        final int t2 = v[a];
+        v[a] = v[b];
+        v[b] = t2;
+    }
+
+    /**
+     * Swaps k[a .. (a+n-1)] with k[b .. (b+n-1)] and v[a .. (a+n-1)] with v[b .. (b+n-1)].
+     */
+    private static void vecswap(final int k[], final int v[], int a, int b, final int n) {
+        for (int i = 0; i < n; i++, a++, b++) {
+            swap(k, v, a, b);
+        }
+    }
+
+    /**
+     * Returns the index of the median of the three indexed integers.
+     */
+    private static int med3(final int x[], final int a, final int b, final int c) {
+        return (x[a] < x[b] ? (x[b] < x[c] ? b : x[a] < x[c] ? c : a) : (x[b] > x[c] ? b : x[a] > x[c] ? c
+                : a));
+    }
+
+    /**
+     * Sort parallel int[] and float[] arrays (stolen from java.util.Arrays and modified to sort parallel
+     * arrays)
+     * 
+     * TODO Untested (caveat emptor)
+     */
+    public static void sort(final int x[], final float f[]) {
+        sort1(x, f, 0, x.length);
+    }
+
+    private static void sort1(final int x[], final float v[], final int off, final int len) {
+        // Insertion sort on smallest arrays
+        if (len < 7) {
+            for (int i = off; i < len + off; i++)
+                for (int j = i; j > off && x[j - 1] > x[j]; j--)
+                    swap(x, v, j, j - 1);
+            return;
+        }
+
+        // Choose a partition element, v
+        int m = off + (len >> 1); // Small arrays, middle element
+        if (len > 7) {
+            int l = off;
+            int n = off + len - 1;
+            if (len > 40) { // Big arrays, pseudomedian of 9
+                final int s = len / 8;
+                l = med3(x, l, l + s, l + 2 * s);
+                m = med3(x, m - s, m, m + s);
+                n = med3(x, n - 2 * s, n - s, n);
+            }
+            m = med3(x, l, m, n); // Mid-size, med of 3
+        }
+        final int val = x[m];
+
+        // Establish Invariant: v* (<v)* (>v)* v*
+        int a = off, b = a, c = off + len - 1, d = c;
+        while (true) {
+            while (b <= c && x[b] <= val) {
+                if (x[b] == val)
+                    swap(x, v, a++, b);
+                b++;
+            }
+            while (c >= b && x[c] >= val) {
+                if (x[c] == val)
+                    swap(x, v, c, d--);
+                c--;
+            }
+            if (b > c)
+                break;
+            swap(x, v, b++, c--);
+        }
+
+        // Swap partition elements back to middle
+        int s;
+        final int n = off + len;
+        s = java.lang.Math.min(a - off, b - a);
+        vecswap(x, v, off, b - s, s);
+        s = java.lang.Math.min(d - c, n - d - 1);
+        vecswap(x, v, b, n - s, s);
+
+        // Recursively sort non-partition-elements
+        if ((s = b - a) > 1)
+            sort1(x, v, off, s);
+        if ((s = d - c) > 1)
+            sort1(x, v, n - s, s);
     }
 
     /**
@@ -507,12 +604,5 @@ public class Math {
         for (int i = 0; i < n; i++, a++, b++) {
             swap(x, f, a, b);
         }
-    }
-
-    /**
-     * Returns the index of the median of the three indexed integers.
-     */
-    private static int med3(final int x[], final int a, final int b, final int c) {
-        return (x[a] < x[b] ? (x[b] < x[c] ? b : x[a] < x[c] ? c : a) : (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
     }
 }
