@@ -92,7 +92,7 @@
        Called by individual targets below
        
        Arguments:
-         * root-class - Primary root classnam (required)
+         * root-class - Primary root classname (required)
          * additional-root-classes - Additional root classnames, comma-delimited 
              (optional)
          * additional-libs (optional) List of any additional classes which 
@@ -139,6 +139,10 @@
 
 			<!-- Include all args4j property files -->
 			<zipfileset src="${dir.shared.bsd.lib}/args4j.jar" includes="**/*.properties" />
+
+			<!-- Include all opencl files -->
+			<fileset dir="${dir.src}" includes="**/*.cl" />
+
 			<!-- And any additional jars specified by the caller -->
 			<zipgroupfileset dir="." includes="${additional-libs}" />
 		</genjar>
