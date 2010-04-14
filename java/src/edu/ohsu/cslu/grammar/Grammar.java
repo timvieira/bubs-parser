@@ -23,7 +23,9 @@ public class Grammar {
     public int nullSymbol = -1;
     public int startSymbol = -1;
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
-    private boolean isLeftFactored;
+
+    // Default to left-factored
+    private boolean isLeftFactored = true;
 
     protected final SymbolSet<String> nonTermSet = new SymbolSet<String>();
     protected final SymbolSet<String> lexSet = new SymbolSet<String>();
@@ -160,15 +162,8 @@ public class Grammar {
             }
         }
 
-        if (numLeftFactored > 0 && numRightFactored == 0) {
-            isLeftFactored = true;
-        } else if (numRightFactored > 0 && numLeftFactored == 0) {
+        if (numRightFactored > 0 && numLeftFactored == 0) {
             isLeftFactored = false;
-            // } else {
-            // Log.info(0, "ERROR: Factoring of grammar is inconsistent or unknown.  Binary rules have " +
-            // numLeftFactored + " left-factored children and " + numRightFactored
-            // + " right-factored children.  Expecting one to be zero and the other nonzero.");
-            // System.exit(1);
         }
     }
 
@@ -373,6 +368,27 @@ public class Grammar {
             return p.prob;
         }
         return Float.NEGATIVE_INFINITY;
+    }
+
+    /**
+     * Returns a string representation of all child pairs recognized by this grammar.
+     * 
+     * @return a string representation of all child pairs recognized by this grammar.
+     */
+    public String recognitionMatrix() {
+
+        final HashSet<String> validChildPairs = new HashSet<String>(binaryProductions.size() / 2);
+        for (final Production p : binaryProductions) {
+            validChildPairs.add(p.leftChild + "," + p.rightChild);
+        }
+
+        final StringBuilder sb = new StringBuilder(10 * 1024);
+        for (final String childPair : validChildPairs) {
+            sb.append(childPair + '\n');
+        }
+
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
     }
 
     public String getStats() {

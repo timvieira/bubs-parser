@@ -41,12 +41,13 @@ public class SummarizeGrammar extends BaseCommandlineTool {
     @SuppressWarnings("unchecked")
     @Override
     protected void run() throws Exception {
-        if (recognitionMatrix || recognitionMatrixHistogram) {
+        if (recognitionMatrixHistogram) {
             grammarClass = CsrSparseMatrixGrammar.class.getName();
         }
 
         final Class<Grammar> gc = (Class<Grammar>) Class.forName(grammarClass);
-        final java.lang.reflect.Constructor<Grammar> c = gc.getConstructor(Reader.class, Reader.class, GrammarFormatType.class);
+        final java.lang.reflect.Constructor<Grammar> c = gc.getConstructor(Reader.class, Reader.class,
+            GrammarFormatType.class);
 
         File pcfg = new File(prefix + ".pcfg");
         File lexicon = new File(prefix + ".lex");
@@ -60,7 +61,8 @@ public class SummarizeGrammar extends BaseCommandlineTool {
             lexicon = new File(prefix + ".lex.gz");
 
             if (!pcfg.exists()) {
-                throw new FileNotFoundException("Unable to find " + prefix + ".pcfg or " + prefix + ".pcfg.gz");
+                throw new FileNotFoundException("Unable to find " + prefix + ".pcfg or " + prefix
+                        + ".pcfg.gz");
             }
 
             pcfgReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(pcfg)));
@@ -70,8 +72,7 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         final Grammar g = c.newInstance(pcfgReader, lexiconReader, GrammarFormatType.CSLU);
 
         if (recognitionMatrix) {
-            final SparseMatrixGrammar spmg = (SparseMatrixGrammar) g;
-            System.out.print(spmg.recognitionMatrix());
+            System.out.print(g.recognitionMatrix());
         } else if (recognitionMatrixHistogram) {
             final CsrSparseMatrixGrammar spmg = (CsrSparseMatrixGrammar) g;
             final Int2IntMap map = new Int2IntOpenHashMap();

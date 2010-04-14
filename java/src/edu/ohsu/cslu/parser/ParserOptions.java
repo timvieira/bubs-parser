@@ -65,7 +65,7 @@ public class ParserOptions {
                 "acpall"), ACPWithMemory("acpwm"), ACPGhostEdges("acpge"), LocalBestFirst("lbf"), LBFPruneViterbi(
                 "lbfpv"), LBFOnlineBeam("lbfob"), LBFBoundedHeap("lbfbh"), LBFExpDecay("lbfed"), LBFPerceptronCell(
                 "lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector(
-                "jsa"), OpenClSparseMatrixVector("opencl"), CsrSparseMatrixVector("csr"), SortAndScanSpmv(
+                "jsa"), OpenClSparseMatrixVector("opencl"), CsrSpmv("csr"), CsrSpmvPerMidpoint("csrpm"), SortAndScanSpmv(
                 "sort-and-scan");
 
         private ParserType(final String... aliases) {
@@ -74,7 +74,8 @@ public class ParserOptions {
     }
 
     static public enum CartesianProductFunctionType {
-        Default("d", "default"), Unfiltered("u", "unfiltered"), BitMatrixExactFilter("bme", "bitmatrixexact");
+        Default("d", "default"), Unfiltered("u", "unfiltered"), PosFactoredFiltered("pf"), BitMatrixExactFilter(
+                "bme", "bitmatrixexact");
 
         private CartesianProductFunctionType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
@@ -83,6 +84,17 @@ public class ParserOptions {
 
     static public enum GrammarFormatType {
         CSLU, Roark, Berkeley;
+
+        public boolean isFactored(final String nonTerminal) {
+            switch (this) {
+                case CSLU:
+                    return nonTerminal.contains("|");
+                case Berkeley:
+                    return nonTerminal.startsWith("@");
+                default:
+                    throw new RuntimeException("Unable to determine factorization");
+            }
+        }
     }
 
     //
