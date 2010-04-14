@@ -34,6 +34,9 @@ public class SummarizeGrammar extends BaseCommandlineTool {
     @Argument(index = 0, required = true, metaVar = "prefix", usage = "Grammar file prefix")
     private String prefix;
 
+    @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of grammar file")
+    private GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
+
     public static void main(final String[] args) {
         run(args);
     }
@@ -69,7 +72,7 @@ public class SummarizeGrammar extends BaseCommandlineTool {
             lexiconReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(lexicon)));
         }
 
-        final Grammar g = c.newInstance(pcfgReader, lexiconReader, GrammarFormatType.CSLU);
+        final Grammar g = c.newInstance(pcfgReader, lexiconReader, grammarFormat);
 
         if (recognitionMatrix) {
             System.out.print(g.recognitionMatrix());

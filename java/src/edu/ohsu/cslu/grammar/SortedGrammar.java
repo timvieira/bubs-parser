@@ -558,6 +558,7 @@ public abstract class SortedGrammar extends GrammarByChild {
         sb.append("Non Terminals: " + nonTermSet.size() + '\n');
         sb.append("Lexical symbols: " + lexSet.size() + '\n');
         sb.append("POS symbols: " + posSet.size() + '\n');
+        sb.append("POS which don't combine with factored: " + (normalPosStart - posNonFactoredStart) + '\n');
         sb.append("Max POS index: " + maxPOSIndex + '\n');
 
         sb.append("Binary Parents: " + binaryParents + '\n');
