@@ -25,6 +25,7 @@ import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PosFactoredFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
 import edu.ohsu.cslu.parser.ParserOptions.CartesianProductFunctionType;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
@@ -231,16 +232,20 @@ public class ParserDriver extends BaseCommandlineTool {
             case JsaSparseMatrixVector:
                 return new JsaSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat);
 
-            case CsrSparseMatrixVector:
+            case CsrSpmv:
+            case CsrSpmvPerMidpoint:
             case OpenClSparseMatrixVector:
             case SortAndScanSpmv:
                 switch (cartesianProductFunctionType) {
-                    case Default:
-                        return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
-                            DefaultFunction.class);
                     case Unfiltered:
                         return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             UnfilteredFunction.class);
+                    case Default:
+                        return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            DefaultFunction.class);
+                    case PosFactoredFiltered:
+                        return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            PosFactoredFilterFunction.class);
                     case BitMatrixExactFilter:
                         return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             BitVectorExactFilterFunction.class);
@@ -298,8 +303,10 @@ public class ParserDriver extends BaseCommandlineTool {
 
             case JsaSparseMatrixVector:
                 return new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar);
-            case CsrSparseMatrixVector:
+            case CsrSpmv:
                 return new CsrSpmvParser((CsrSparseMatrixGrammar) grammar);
+            case CsrSpmvPerMidpoint:
+                return new CsrSpmvPerMidpointParser((CsrSparseMatrixGrammar) grammar);
             case OpenClSparseMatrixVector:
                 return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
             case SortAndScanSpmv:
@@ -346,7 +353,7 @@ public class ParserDriver extends BaseCommandlineTool {
             final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
             for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
                 parser.parseSentence(sentence, bw);
-                logger.debug(parser.getStats());
+                logger.fine(parser.getStats());
             }
 
             logger.info("INFO: numSentences=" + parser.sentenceNumber + " totalSeconds="

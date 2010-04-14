@@ -21,8 +21,9 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  */
 public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, PackedArrayChart> {
 
-    private int totalCartesianProductSize;
-    private long totalCartesianProductEntriesExamined;
+    protected int totalCartesianProductSize;
+    protected long totalCartesianProductEntriesExamined;
+    protected long totalValidCartesianProductEntries;
 
     public CsrSpmvParser(final CsrSparseMatrixGrammar grammar) {
         super(grammar);
@@ -33,6 +34,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         chart = new PackedArrayChart(sentLength, grammar);
         totalCartesianProductSize = 0;
         totalCartesianProductEntriesExamined = 0;
+        totalValidCartesianProductEntries = 0;
         super.initParser(sentLength);
     }
 
@@ -115,11 +117,13 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
                 for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {
 
                     final int childPair = cpf.pack(leftChild, (short) nonTerminalIndices[j]);
+                    totalCartesianProductEntriesExamined++;
+
                     if (!cpf.isValid(childPair)) {
                         continue;
                     }
 
-                    totalCartesianProductEntriesExamined++;
+                    totalValidCartesianProductEntries++;
 
                     final float jointProbability = leftProbability + insideProbabilities[j];
                     final float currentProbability = cartesianProductProbabilities[childPair];
@@ -147,16 +151,23 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
 
+        final int[] chartCellChildren = packedArrayCell.tmpChildren;
+        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
+        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
+
+        binarySpmvMultiply(cartesianProductVector, chartCellChildren, chartCellProbabilities,
+            chartCellMidpoints);
+    }
+
+    protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+            final int[] productChildren, final float[] productProbabilities, final short[] productMidpoints) {
+
         final int[] binaryRuleMatrixRowIndices = grammar.binaryRuleMatrixRowIndices();
         final int[] binaryRuleMatrixColumnIndices = grammar.binaryRuleMatrixColumnIndices();
         final float[] binaryRuleMatrixProbabilities = grammar.binaryRuleMatrixProbabilities();
 
         final float[] tmpCrossProductProbabilities = cartesianProductVector.probabilities;
         final short[] tmpCrossProductMidpoints = cartesianProductVector.midpoints;
-
-        final int[] chartCellChildren = packedArrayCell.tmpChildren;
-        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
-        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
 
         // Iterate over possible parents (matrix rows)
         for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
@@ -182,9 +193,9 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
             }
 
             if (winningProbability != Float.NEGATIVE_INFINITY) {
-                chartCellChildren[parent] = winningChildren;
-                chartCellProbabilities[parent] = winningProbability;
-                chartCellMidpoints[parent] = winningMidpoint;
+                productChildren[parent] = winningChildren;
+                productProbabilities[parent] = winningProbability;
+                productMidpoints[parent] = winningMidpoint;
             }
         }
     }
@@ -244,8 +255,8 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
     @Override
     public String getStats() {
         return super.getStats()
-                + String.format(", %15.1f, %20d", totalCartesianProductSize * 1.0f / chart.cells,
-                    totalCartesianProductEntriesExamined);
+                + String.format(", %15.1f, %20d, %20d", totalCartesianProductSize * 1.0f / chart.cells,
+                    totalCartesianProductEntriesExamined, totalValidCartesianProductEntries);
     }
 
 }

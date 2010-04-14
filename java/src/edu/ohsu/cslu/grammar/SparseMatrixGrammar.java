@@ -135,6 +135,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
      * 
      * @return a string representation of all child pairs recognized by this grammar.
      */
+    @Override
     public String recognitionMatrix() {
 
         final IntSet validChildPairs = new IntOpenHashSet(binaryProductions.size() / 2);
@@ -158,7 +159,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         final StringBuilder sb = new StringBuilder(1024);
         sb.append(super.getStats());
         sb.append("Valid production pairs: " + validProductionPairs + '\n');
-        sb.append("Valid left children: " + (numNonTerms() - posStart) + '\n');
+        sb.append("Valid left children: " + (numNonTerms() - normalPosStart) + '\n');
         sb.append("Valid right children: " + leftChildOnlyStart + '\n');
 
         sb.append("Max left child: " + (numNonTerms() - 1) + '\n');
@@ -384,6 +385,25 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
     }
 
+    public final class PosFactoredFilterFunction extends DefaultFunction implements CartesianProductFunction {
+
+        @Override
+        public boolean isValid(final int childPair) {
+            if (childPair >= packedArraySize()) {
+                return false;
+            }
+
+            final int leftChild = unpackLeftChild(childPair);
+            final short rightChild = unpackRightChild(childPair);
+            // Eliminate POS which cannot combine with left-factored non-terminals
+            if (leftChild >= leftFactoredStart && leftChild < normalLeftChildStart
+                    && rightChild >= posNonFactoredStart && rightChild < normalPosStart) {
+                return false;
+            }
+            return true;
+        }
+    }
+
     public final class BitVectorExactFilterFunction extends DefaultFunction implements
             CartesianProductFunction {
 
@@ -392,7 +412,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          * 
          * TODO This should really be implemented as a PackedBitMatrix, if we had such a class
          */
-        protected PackedBitVector validChildPairs;
+        private final PackedBitVector validChildPairs;
 
         public BitVectorExactFilterFunction() {
             super();
@@ -409,5 +429,4 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             return validChildPairs.contains(childPair);
         }
     }
-
 }

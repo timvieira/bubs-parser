@@ -17,10 +17,22 @@ public abstract class SortedGrammar extends GrammarByChild {
     public String startSymbolStr = null;
 
     public int rightChildOnlyStart;
-    // posStart should equal eitherChildStart
+
     public int eitherChildStart;
+    /** The first POS. */
     public int posStart;
+    /** The first POS which cannot combine with a factored NT. */
+    public int posNonFactoredStart;
+    /**
+     * The first POS which can combine with a factored NT. Should equal {@link #posStart} and
+     * {@link #eitherChildStart}
+     */
+    public int normalPosStart;
+    /** The first left-factored NT. Should equal {@link #leftChildOnlyStart} */
+    public int leftFactoredStart;
     public int leftChildOnlyStart;
+    public int normalLeftChildStart;
+
     public int unaryChildOnlyStart;
 
     /** The number of non-terminals which occur as the parent of a binary rule */
@@ -91,6 +103,9 @@ public abstract class SortedGrammar extends GrammarByChild {
     /** The number of normal non-terminals which only combine as the right child with factored NTs. */
     private final int normalRightChildrenOnlyWithFactored;
 
+    /** POS which can combine with factored rules */
+    private int posEitherChildWithFactored;
+
     /** The number of non-terminals which occur as the parent of a unary rule */
     private final int unaryParents;
 
@@ -109,7 +124,7 @@ public abstract class SortedGrammar extends GrammarByChild {
     protected SortedGrammar(final Reader grammarFile, final Reader lexiconFile,
             final GrammarFormatType grammarFormat) throws Exception {
         rightChildOnlyStart = 0;
-        eitherChildStart = leftChildOnlyStart = unaryChildOnlyStart = posStart = -1;
+        eitherChildStart = leftChildOnlyStart = unaryChildOnlyStart = posNonFactoredStart = normalPosStart = -1;
 
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
@@ -131,6 +146,7 @@ public abstract class SortedGrammar extends GrammarByChild {
         // All non-terminals
         final HashSet<String> leftChildrenSet = new HashSet<String>();
         final HashSet<String> rightChildrenSet = new HashSet<String>();
+        final HashSet<String> unaryChildrenSet = new HashSet<String>();
 
         // 'Normal' non-terminals (not POS or factored)
         final HashSet<String> normalNonTerminalSet = new HashSet<String>();
@@ -163,10 +179,9 @@ public abstract class SortedGrammar extends GrammarByChild {
             nonTerminals.add(grammarRule.parent);
             nonTerminals.add(grammarRule.leftChild);
 
-            // TODO Handle formats other than Berkeley
-            final boolean parentIsFactored = grammarRule.parent.startsWith("@");
+            final boolean parentIsFactored = grammarFormat.isFactored(grammarRule.parent);
             final boolean parentIsPos = pos.contains(grammarRule.parent);
-            final boolean leftIsFactored = grammarRule.leftChild.startsWith("@");
+            final boolean leftIsFactored = grammarFormat.isFactored(grammarRule.leftChild);
             final boolean leftIsPos = pos.contains(grammarRule.leftChild);
 
             if (!parentIsFactored && !parentIsPos) {
@@ -182,8 +197,8 @@ public abstract class SortedGrammar extends GrammarByChild {
 
             if (grammarRule instanceof BinaryStringRule) {
                 final BinaryStringRule bsr = (BinaryStringRule) grammarRule;
-                // TODO Handle formats other than Berkeley
-                final boolean rightIsFactored = bsr.rightChild.startsWith("@");
+
+                final boolean rightIsFactored = grammarFormat.isFactored(bsr.rightChild);
                 final boolean rightIsPos = pos.contains(bsr.rightChild);
 
                 nonTerminals.add(bsr.rightChild);
@@ -221,6 +236,7 @@ public abstract class SortedGrammar extends GrammarByChild {
             } else {
                 // Unary Rule
                 unaryParentsSet.add(grammarRule.parent);
+                unaryChildrenSet.add(grammarRule.leftChild);
             }
         }
 
@@ -304,6 +320,10 @@ public abstract class SortedGrammar extends GrammarByChild {
         normalRightChildrenOnlyWithFactoredSet.retainAll(normalRightChildrenSet);
         normalRightChildrenOnlyWithFactored = normalRightChildrenOnlyWithFactoredSet.size();
 
+        final HashSet<String> posWithFactoredSet = new HashSet<String>(rightChildrenCombinedWithFactoredSet);
+        posWithFactoredSet.addAll(leftChildrenCombinedWithFactoredSet);
+        posWithFactoredSet.retainAll(pos);
+
         // Count the number of non-terminals which occur both as parents of pre-terminal rules (POS) and as
         // the parents of other rules
         binaryParentSet.retainAll(pos);
@@ -319,11 +339,15 @@ public abstract class SortedGrammar extends GrammarByChild {
         final HashSet<String> rightChildrenOnlySet = new HashSet<String>(rightChildrenSet);
         rightChildrenOnlySet.removeAll(leftChildrenSet);
 
+        final HashSet<String> unaryChildrenOnlySet = new HashSet<String>(unaryParentsSet);
+        unaryChildrenOnlySet.removeAll(leftChildrenSet);
+        unaryChildrenOnlySet.removeAll(rightChildrenSet);
+
         // Now, sort the NTs by class (see NonTerminalClass).
         final TreeSet<NonTerminal> sortedNonTerminals = new TreeSet<NonTerminal>();
         for (final String nt : nonTerminals) {
-            final NonTerminal n = create(nt, leftChildrenOnlySet, rightChildrenOnlySet, bothChildrenSet,
-                unaryParentsOnlySet, pos);
+            final NonTerminal n = create(nt, pos, posWithFactoredSet, factoredLeftChildrenSet,
+                leftChildrenOnlySet, rightChildrenOnlySet, bothChildrenSet, unaryChildrenOnlySet);
             if (n != null) {
                 sortedNonTerminals.add(n);
             }
@@ -345,11 +369,20 @@ public abstract class SortedGrammar extends GrammarByChild {
                     case EITHER_CHILD:
                         eitherChildStart = index;
                         break;
-                    case LEFT_CHILD_ONLY:
+                    case LEFT_FACTORED:
+                        leftFactoredStart = index;
                         leftChildOnlyStart = index;
                         break;
-                    case POS:
+                    case NORMAL_LEFT_CHILD_ONLY:
+                        normalLeftChildStart = index;
+                        break;
+                    case POS_NON_FACTORED:
+                        posNonFactoredStart = index;
                         posStart = index;
+                        normalPosStart = index;
+                        break;
+                    case NORMAL_POS:
+                        normalPosStart = index;
                         break;
                     case UNARY_CHILD_ONLY:
                         unaryChildOnlyStart = index;
@@ -358,12 +391,19 @@ public abstract class SortedGrammar extends GrammarByChild {
                 ntClass = nonTerminal.ntClass;
             }
 
-            if (nonTerminal.ntClass == NonTerminalClass.POS) {
+            if (nonTerminal.ntClass == NonTerminalClass.NORMAL_POS
+                    || nonTerminal.ntClass == NonTerminalClass.POS_NON_FACTORED) {
                 posSet.add(index);
             }
         }
 
-        // If there are no NTs which occur as right children only, set the index to the beginning of the unary
+        // If there are no NTs which occur as left children only, set the index to the beginning of the unary
+        // set
+        if (unaryChildOnlyStart == -1) {
+            unaryChildOnlyStart = sortedNonTerminals.size();
+        }
+
+        // If there are no NTs which occur as left children only, set the index to the beginning of the unary
         // set
         if (leftChildOnlyStart == -1) {
             leftChildOnlyStart = unaryChildOnlyStart;
@@ -375,7 +415,7 @@ public abstract class SortedGrammar extends GrammarByChild {
             eitherChildStart = leftChildOnlyStart;
         }
 
-        maxPOSIndex = posStart + posSet.size() - 1;
+        maxPOSIndex = posNonFactoredStart + posSet.size() - 1;
 
         startSymbol = nonTermSet.addSymbol(startSymbolStr);
         nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
@@ -485,7 +525,7 @@ public abstract class SortedGrammar extends GrammarByChild {
     }
 
     public final boolean isPos(final int child) {
-        return child >= posStart && child <= maxPOSIndex;
+        return child >= normalPosStart && child <= maxPOSIndex;
     }
 
     /**
@@ -505,7 +545,7 @@ public abstract class SortedGrammar extends GrammarByChild {
      * @return true if the non-terminal occurs as a right child in the grammar.
      */
     public boolean isValidLeftChild(final int nonTerminal) {
-        return (nonTerminal >= posStart && nonTerminal < unaryChildOnlyStart && nonTerminal != nullSymbol);
+        return (nonTerminal >= normalPosStart && nonTerminal < unaryChildOnlyStart && nonTerminal != nullSymbol);
     }
 
     @Override
@@ -597,19 +637,30 @@ public abstract class SortedGrammar extends GrammarByChild {
         }
     }
 
-    public NonTerminal create(final String label, final Set<String> leftChildrenOnly,
-            final Set<String> rightChildrenOnly, final Set<String> bothChildren,
-            final Set<String> unaryChildren, final HashSet<String> pos) {
+    public NonTerminal create(final String label, final HashSet<String> pos,
+            final HashSet<String> posWithFactoredSet, final Set<String> leftFactored,
+            final Set<String> leftChildrenOnly, final Set<String> rightChildrenOnly,
+            final Set<String> bothChildren, final Set<String> unaryChildren) {
         final String internLabel = label.intern();
 
-        if (pos.contains(internLabel)) {
-            return new NonTerminal(internLabel, NonTerminalClass.POS);
+        if (pos.contains(internLabel) && !posWithFactoredSet.contains(internLabel)) {
+            return new NonTerminal(internLabel, NonTerminalClass.POS_NON_FACTORED);
+
+        } else if (pos.contains(internLabel)) {
+            return new NonTerminal(internLabel, NonTerminalClass.NORMAL_POS);
+
+        } else if (leftFactored.contains(internLabel)) {
+            return new NonTerminal(internLabel, NonTerminalClass.LEFT_FACTORED);
+
         } else if (leftChildrenOnly.contains(internLabel)) {
-            return new NonTerminal(internLabel, NonTerminalClass.LEFT_CHILD_ONLY);
+            return new NonTerminal(internLabel, NonTerminalClass.NORMAL_LEFT_CHILD_ONLY);
+
         } else if (rightChildrenOnly.contains(internLabel)) {
             return new NonTerminal(internLabel, NonTerminalClass.RIGHT_CHILD_ONLY);
+
         } else if (bothChildren.contains(internLabel)) {
             return new NonTerminal(internLabel, NonTerminalClass.EITHER_CHILD);
+
         } else if (unaryChildren.contains(internLabel)) {
             return new NonTerminal(internLabel, NonTerminalClass.UNARY_CHILD_ONLY);
         }
@@ -646,15 +697,20 @@ public abstract class SortedGrammar extends GrammarByChild {
     /**
      * 1 - Right child only
      * 
-     * 2 - POS
+     * 2 - POS which cannot combine with factored rules
      * 
-     * 3 - Either child of binary rules
+     * 3 - All other POS
      * 
-     * 4 - Left child only of binary rules
+     * 4 - Either child of binary rules
      * 
-     * 5 - Unary children only
+     * 5 - Left-factored NTs (which only occur as the left child)
+     * 
+     * 6 - Other NTs which only occur as the left child
+     * 
+     * 7 - Unary children only
      */
     private enum NonTerminalClass {
-        RIGHT_CHILD_ONLY, POS, EITHER_CHILD, LEFT_CHILD_ONLY, UNARY_CHILD_ONLY;
+        // TODO Add factored classes
+        RIGHT_CHILD_ONLY, POS_NON_FACTORED, NORMAL_POS, EITHER_CHILD, LEFT_FACTORED, NORMAL_LEFT_CHILD_ONLY, UNARY_CHILD_ONLY;
     }
 }

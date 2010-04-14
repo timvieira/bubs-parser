@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.grammar;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.Theories;
@@ -11,13 +9,17 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
+import static junit.framework.Assert.assertEquals;
+
 @RunWith(Theories.class)
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
     @DataPoint
+    public final static Class<? extends CartesianProductFunction> UNFILTERED = SparseMatrixGrammar.UnfilteredFunction.class;
+    @DataPoint
     public final static Class<? extends CartesianProductFunction> DEFAULT = SparseMatrixGrammar.DefaultFunction.class;
     @DataPoint
-    public final static Class<? extends CartesianProductFunction> UNFILTERED = SparseMatrixGrammar.UnfilteredFunction.class;
+    public final static Class<? extends CartesianProductFunction> POS_AND_FACTORED = SparseMatrixGrammar.PosFactoredFilterFunction.class;
     @DataPoint
     public final static Class<? extends CartesianProductFunction> BIT_VECTOR_EXACT = SparseMatrixGrammar.BitVectorExactFilterFunction.class;
 
@@ -81,7 +83,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals("<null>", Grammar.nullSymbolStr);
 
         assertEquals(0, simpleGrammar.rightChildOnlyStart);
-        assertEquals(1, simpleGrammar.posStart);
+        assertEquals(1, simpleGrammar.normalPosStart);
         assertEquals(2, simpleGrammar.maxPOSIndex);
         assertEquals(3, simpleGrammar.eitherChildStart);
         assertEquals(4, simpleGrammar.leftChildOnlyStart);
@@ -119,7 +121,8 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(-12.116870f, g.lexicalLogProbability("NNP", "Ranger"), 0.01f);
 
         assertEquals(0, g.rightChildOnlyStart);
-        assertEquals(1, g.posStart);
+        assertEquals(1, g.posNonFactoredStart);
+        assertEquals(8, g.normalPosStart);
         assertEquals(46, g.maxPOSIndex());
         assertEquals(47, g.eitherChildStart);
         assertEquals(71, g.leftChildOnlyStart);
@@ -144,7 +147,8 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals("3,200", g.mapLexicalEntry(40000));
 
         assertEquals(0, g.rightChildOnlyStart);
-        assertEquals(103, g.posStart);
+        assertEquals(103, g.posNonFactoredStart);
+        assertEquals(110, g.normalPosStart);
         assertEquals(148, g.maxPOSIndex());
         assertEquals(149, g.eitherChildStart);
         assertEquals(286, g.leftChildOnlyStart);

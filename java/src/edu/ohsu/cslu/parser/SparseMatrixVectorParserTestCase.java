@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.Reader;
 import java.util.Arrays;
 
@@ -9,7 +7,7 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PosFactoredFilterFunction;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CartesianProductVector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
@@ -18,6 +16,7 @@ import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test class for all sparse-matrix-vector parsers
@@ -36,7 +35,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         return grammarClass().getConstructor(
             new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
             new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
-                    BitVectorExactFilterFunction.class });
+                    PosFactoredFilterFunction.class });
     }
 
     /**
@@ -100,7 +99,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         // So: 0,3 X 3,4 cross-product = NP/NP (-4,3)
 
         // Cross-product union should be NN/NN (-5,1), NN/NP (-6,1), NP/NN (-7,2), NP/NP (-4,3)
-        final SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0, 4);
+        final SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0,
+            4);
         final int[] expectedChildren = new int[] { pack(g, nn, nn), pack(g, nn, np), pack(g, np, nn),
                 pack(g, np, np) };
         final float[] expectedProbabilities = new float[] { -5f, -6f, -7f, -4f };
@@ -226,6 +226,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final ChartCell cell_3_4 = chart.getCell(3, 4);
         cell_3_4.updateInside(simpleGrammar2.new Production("VP", "VB", -2.07944f, false), cell_3_4, null,
             -2.07944f);
+        System.out.println(cell_3_4.toString());
         cell_3_4.updateInside(simpleGrammar2.new Production("NN", "stands", -.69315f, true), cell_3_4, null,
             -.69315f);
         cell_3_4.updateInside(simpleGrammar2.new Production("VB", "stands", -.69315f, true), cell_3_4, null,
@@ -322,7 +323,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     /**
-     * Tests the cross-product vector computed in the top cell of the 'The fish market stands last' example.
+     * Tests the cross-product vector computed in the top cells of the 'The fish market stands last' example.
      * 
      * @throws Exception if something bad happens
      */
@@ -426,7 +427,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     /**
-     * Tests the cross-product vector computed in the top cell of the 'The fish market stands last' example.
+     * Tests the cross-product vector computed in the top cells of the 'The fish market stands last' example.
      * 
      * @throws Exception if something bad happens
      */
