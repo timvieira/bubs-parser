@@ -1,6 +1,7 @@
 package edu.ohsu.cslu.grammar;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -69,10 +70,10 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
      * Returns the log probability of the specified parent / child production
      * 
      * @param parent Parent index
-     * @param children Packed children
+     * @param childPair Packed children
      * @return Log probability
      */
-    public abstract float binaryLogProbability(final int parent, final int children);
+    public abstract float binaryLogProbability(final int parent, final int childPair);
 
     @Override
     public final float binaryLogProbability(final int parent, final int leftChild, final int rightChild) {
@@ -96,7 +97,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
      * @param productions Rules to be mapped
      * @return Array of maps from children -> probability
      */
-    protected Int2FloatOpenHashMap[] mapRules(final Collection<Production> productions) {
+    protected Int2FloatOpenHashMap[] mapRulesByParent(final Collection<Production> productions) {
         // Bin all rules by parent, mapping packed children -> probability
         final Int2FloatOpenHashMap[] maps = new Int2FloatOpenHashMap[numNonTerms()];
         for (int i = 0; i < numNonTerms(); i++) {
@@ -105,6 +106,31 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
         for (final Production p : productions) {
             maps[p.parent].put(cartesianProductFunction.pack(p.leftChild, (short) p.rightChild), p.prob);
+        }
+        return maps;
+    }
+
+    /**
+     * Returns all rules as an array of maps, indexed by child pair, each of which maps the parent to the
+     * probability.
+     * 
+     * @param productions Rules to be mapped
+     * @return Array of maps from children -> probability
+     */
+    protected Int2ObjectOpenHashMap<Int2FloatOpenHashMap> mapRulesByChildPairs(
+            final Collection<Production> productions) {
+        // Bin all rules by child pair, mapping parent -> probability
+        final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(
+            1000);
+
+        for (final Production p : productions) {
+            final int childPair = cartesianProductFunction.pack(p.leftChild, (short) p.rightChild);
+            Int2FloatOpenHashMap map = maps.get(childPair);
+            if (map == null) {
+                map = new Int2FloatOpenHashMap(20);
+                maps.put(childPair, map);
+            }
+            map.put(p.parent, p.prob);
         }
         return maps;
     }

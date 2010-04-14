@@ -66,7 +66,7 @@ public final class JsaSparseMatrixGrammar extends SparseMatrixGrammar {
     private void storeRulesAsMatrix(final Collection<Production> productions, final int[][] productionMatrix,
             final float[][] probabilityMatrix) {
 
-        final Int2FloatOpenHashMap[] maps = mapRules(productions);
+        final Int2FloatOpenHashMap[] maps = mapRulesByParent(productions);
 
         // Store rules in parent bins, sorted by packed children
         for (int parent = 0; parent < numNonTerms(); parent++) {

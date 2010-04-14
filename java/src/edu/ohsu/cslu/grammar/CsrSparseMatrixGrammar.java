@@ -29,8 +29,8 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     private int[] csrBinaryRowIndices;
 
     /**
-     * Column indices of each matrix entry in {@link #csrBinaryProbabilities}. The same size as
-     * {@link #csrBinaryProbabilities}.
+     * Column indices of each matrix entry in {@link #csrBinaryProbabilities}. One entry for each binary rule;
+     * the same size as {@link #csrBinaryProbabilities}.
      */
     private int[] csrBinaryColumnIndices;
 
@@ -44,12 +44,12 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     private int[] csrUnaryRowIndices;
 
     /**
-     * Column indices of each matrix entry in {@link #csrUnaryProbabilities}. The same size as
-     * {@link #csrUnaryProbabilities}.
+     * Column indices of each matrix entry in {@link #csrUnaryProbabilities}. One entry for each unary rule;
+     * the same size as {@link #csrUnaryProbabilities}.
      */
     private int[] csrUnaryColumnIndices;
 
-    /** Binary rule probabilities */
+    /** Unary rule probabilities */
     private float[] csrUnaryProbabilities;
 
     public CsrSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
@@ -88,7 +88,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     private void storeRulesAsMatrix(final Collection<Production> productions, final int[] csrRowIndices,
             final int[] csrColumnIndices, final float[] csrProbabilities) {
 
-        final Int2FloatOpenHashMap[] maps = mapRules(productions);
+        final Int2FloatOpenHashMap[] maps = mapRulesByParent(productions);
 
         // Store rules in CSR matrix
         int i = 0;
@@ -131,14 +131,14 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     }
 
     @Override
-    public final float binaryLogProbability(final int parent, final int children) {
+    public final float binaryLogProbability(final int parent, final int childPair) {
 
         for (int i = csrBinaryRowIndices[parent]; i < csrBinaryRowIndices[parent + 1]; i++) {
             final int column = csrBinaryColumnIndices[i];
-            if (column == children) {
+            if (column == childPair) {
                 return csrBinaryProbabilities[i];
             }
-            if (column > children) {
+            if (column > childPair) {
                 return Float.NEGATIVE_INFINITY;
             }
         }

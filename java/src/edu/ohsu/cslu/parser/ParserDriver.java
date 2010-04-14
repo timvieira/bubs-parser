@@ -16,6 +16,7 @@ import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
+import edu.ohsu.cslu.grammar.CscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarByChild;
@@ -249,6 +250,26 @@ public class ParserDriver extends BaseCommandlineTool {
                     case BitMatrixExactFilter:
                         return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             BitVectorExactFilterFunction.class);
+                    default:
+                        throw new Exception("Unsupported filter type: " + cartesianProductFunctionType);
+                }
+
+            case CscSpmv:
+                switch (cartesianProductFunctionType) {
+                    case Unfiltered:
+                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            UnfilteredFunction.class);
+                    case Default:
+                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            DefaultFunction.class);
+                    case PosFactoredFiltered:
+                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            PosFactoredFilterFunction.class);
+                    case BitMatrixExactFilter:
+                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            BitVectorExactFilterFunction.class);
+                    default:
+                        throw new Exception("Unsupported filter type: " + cartesianProductFunctionType);
                 }
 
             default:
@@ -307,6 +328,8 @@ public class ParserDriver extends BaseCommandlineTool {
                 return new CsrSpmvParser((CsrSparseMatrixGrammar) grammar);
             case CsrSpmvPerMidpoint:
                 return new CsrSpmvPerMidpointParser((CsrSparseMatrixGrammar) grammar);
+            case CscSpmv:
+                return new CscSpmvParser((CscSparseMatrixGrammar) grammar);
             case OpenClSparseMatrixVector:
                 return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
             case SortAndScanSpmv:
