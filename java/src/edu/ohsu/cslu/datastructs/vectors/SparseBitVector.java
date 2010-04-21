@@ -37,10 +37,8 @@ public class SparseBitVector extends BaseVector implements BitVector {
      * The array should consists of either indices or index, boolean tuples (as specified by the 'tuples'
      * parameter)
      * 
-     * @param array
-     *            Index, boolean tuples
-     * @param tuples
-     *            Treat the supplied array as a set of index, value tuples
+     * @param array Index, boolean tuples
+     * @param tuples Treat the supplied array as a set of index, value tuples
      */
     public SparseBitVector(final int[] array, final boolean tuples) {
         super(array.length == 0 ? 0 : (tuples ? array[array.length - 2] + 1 : array[array.length - 1] + 1));
@@ -55,8 +53,7 @@ public class SparseBitVector extends BaseVector implements BitVector {
     /**
      * Constructs a {@link SparseBitVector} from a boolean array.
      * 
-     * @param array
-     *            array of populated bits
+     * @param array array of populated bits
      */
     public SparseBitVector(final boolean[] array) {
         super(array.length);
@@ -98,7 +95,7 @@ public class SparseBitVector extends BaseVector implements BitVector {
     }
 
     @Override
-    public void add(final int toAdd) {
+    public boolean add(final int toAdd) {
         throw new UnsupportedOperationException("SparseBitVector is immutable");
     }
 

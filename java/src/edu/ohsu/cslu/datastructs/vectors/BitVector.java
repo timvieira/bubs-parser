@@ -21,24 +21,22 @@ public interface BitVector extends Vector {
     /**
      * Set-convention convenience method (optional operation)
      * 
-     * @param toAdd
-     *            element to add to the set
+     * @param toAdd element to add to the set
+     * @return true if this set did not already contain the specified element
      */
-    public void add(final int toAdd);
+    public boolean add(final int toAdd);
 
     /**
      * Set-convention convenience method (optional operation)
      * 
-     * @param toAdd
-     *            elements to add to the set
+     * @param toAdd elements to add to the set
      */
     public void addAll(final int[] toAdd);
 
     /**
      * Set-convention convenience method (optional operation)
      * 
-     * @param toAdd
-     *            elements to add to the set
+     * @param toAdd elements to add to the set
      */
     public void addAll(IntSet toAdd);
 
@@ -46,16 +44,14 @@ public interface BitVector extends Vector {
      * Set-convention convenience method, equivalent to performing {@link #elementwiseMultiply(Vector)} on two
      * {@link BitVector}s.
      * 
-     * @param v
-     *            vector to intersect
+     * @param v vector to intersect
      */
     public BitVector intersection(BitVector v);
 
     /**
      * Set-convention convenience method
      * 
-     * @param i
-     *            element whose presence in this set is to be tested
+     * @param i element whose presence in this set is to be tested
      * @return True if the specified element is contained in this set
      */
     public boolean contains(final int i);
@@ -63,8 +59,7 @@ public interface BitVector extends Vector {
     /**
      * Set-convention convenience method (optional operation)
      * 
-     * @param toRemove
-     *            element to remove from the set
+     * @param toRemove element to remove from the set
      * @return True if the specified element was contained in this set
      */
     public boolean remove(final int toRemove);
@@ -72,16 +67,14 @@ public interface BitVector extends Vector {
     /**
      * Set-convention convenience method (optional operation)
      * 
-     * @param toRemove
-     *            elements to remove from the set
+     * @param toRemove elements to remove from the set
      */
     public void removeAll(final int[] toRemove);
 
     /**
      * Set-convention convenience method (optional operation)
      * 
-     * @param toRemove
-     *            elements to remove from the set
+     * @param toRemove elements to remove from the set
      */
     public void removeAll(final IntSet toRemove);
 

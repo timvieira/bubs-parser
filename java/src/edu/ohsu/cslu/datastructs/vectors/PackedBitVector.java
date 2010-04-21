@@ -185,9 +185,16 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
      * Set-convention convenience method
      * 
      * @param toAdd element to add to the set
+     * @return true if this set did not already contain the specified element
      */
-    public final void add(final int toAdd) {
-        set(toAdd, true);
+    public final boolean add(final int toAdd) {
+        final int index = toAdd >> 5;
+        final int shift = (toAdd & 0x1f);
+
+        // Set
+        final boolean alreadyPresent = ((packedVector[index] >> shift) & 0x01) != 0;
+        packedVector[index] = packedVector[index] | (1 << shift);
+        return alreadyPresent;
     }
 
     /**
