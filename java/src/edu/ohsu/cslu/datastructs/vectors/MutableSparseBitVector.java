@@ -39,8 +39,7 @@ public class MutableSparseBitVector extends BaseVector implements BitVector {
      * are different from those of most other {@link Vector} constructors with the same signature. The array
      * should consists of index, boolean tuples.
      * 
-     * @param array
-     *            Index, boolean tuples
+     * @param array Index, boolean tuples
      */
     public MutableSparseBitVector(final int[] array) {
         super(0);
@@ -56,8 +55,7 @@ public class MutableSparseBitVector extends BaseVector implements BitVector {
     /**
      * Constructs a {@link MutableSparseBitVector} from a boolean array.
      * 
-     * @param array
-     *            array of populated bits
+     * @param array array of populated bits
      */
     public MutableSparseBitVector(final boolean[] array) {
         super(array.length);
@@ -97,11 +95,11 @@ public class MutableSparseBitVector extends BaseVector implements BitVector {
     }
 
     @Override
-    public void add(final int toAdd) {
-        intSet.add(toAdd);
+    public boolean add(final int toAdd) {
         if ((toAdd + 1) > length) {
             length = toAdd + 1;
         }
+        return intSet.add(toAdd);
     }
 
     @Override
