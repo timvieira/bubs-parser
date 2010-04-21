@@ -125,16 +125,16 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
                     totalValidCartesianProductEntries++;
 
-                    final float jointProbability = leftProbability + insideProbabilities[j];
                     final float currentProbability = cartesianProductProbabilities[childPair];
+                    final float jointProbability = leftProbability + insideProbabilities[j];
 
-                    if (jointProbability > currentProbability) {
+                    if (currentProbability == Float.NEGATIVE_INFINITY) {
+                        size++;
                         cartesianProductProbabilities[childPair] = jointProbability;
                         cartesianProductMidpoints[childPair] = midpoint;
-
-                        if (currentProbability == Float.NEGATIVE_INFINITY) {
-                            size++;
-                        }
+                    } else if (jointProbability > currentProbability) {
+                        cartesianProductProbabilities[childPair] = jointProbability;
+                        cartesianProductMidpoints[childPair] = midpoint;
                     }
                 }
             }
@@ -249,13 +249,13 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
     @Override
     public String getStatHeader() {
-        return super.getStatHeader() + ", Avg X-prod Size, Total X-prod Entries";
+        return super.getStatHeader() + ", Avg X-prod size, X-prod Entries Examined, Total X-prod Entries";
     }
 
     @Override
     public String getStats() {
         return super.getStats()
-                + String.format(", %15.1f, %20d, %20d", totalCartesianProductSize * 1.0f / chart.cells,
+                + String.format(", %15.1f, %23d, %20d", totalCartesianProductSize * 1.0f / chart.cells,
                     totalCartesianProductEntriesExamined, totalValidCartesianProductEntries);
     }
 
