@@ -271,100 +271,28 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public int rightChildEnd();
     }
 
-    public class UnfilteredFunction implements CartesianProductFunction {
-
-        private final int modulus = numNonTerms();
-
-        public UnfilteredFunction() {
-        }
-
-        @Override
-        public boolean isValid(final int childPair) {
-            return childPair < packedArraySize();
-        }
-
-        @Override
-        public final int packedArraySize() {
-            return numNonTerms() * numNonTerms();
-        }
-
-        @Override
-        public final int pack(final int leftChild, final short rightChild) {
-
-            if (rightChild < 0) {
-                if (rightChild == Production.UNARY_PRODUCTION) {
-                    return -leftChild;
-                }
-
-                // Lexical Production
-                return -numNonTerms() - leftChild;
-            }
-            return rightChild * modulus + leftChild;
-        }
-
-        @Override
-        public final int unpackLeftChild(final int childPair) {
-
-            if (childPair < 0) {
-                if (childPair <= -numNonTerms()) {
-                    // Lexical production
-                    return -childPair - numNonTerms();
-                }
-
-                // Unary production
-                return -childPair;
-            }
-            return childPair % modulus;
-        }
-
-        @Override
-        public final short unpackRightChild(final int childPair) {
-            if (childPair < 0) {
-                return (short) (childPair <= -numNonTerms() ? Production.LEXICAL_PRODUCTION
-                        : Production.UNARY_PRODUCTION);
-            }
-            return (short) (childPair / modulus);
-        }
-
-        @Override
-        public int leftChildStart() {
-            return 0;
-        }
-
-        @Override
-        public int leftChildEnd() {
-            return numNonTerms();
-        }
-
-        @Override
-        public int rightChildStart() {
-            return 0;
-        }
-
-        @Override
-        public int rightChildEnd() {
-            return numNonTerms();
-        }
-    }
-
     public class DefaultFunction implements CartesianProductFunction {
 
         // Shift lengths and mask for packing and unpacking non-terminals into an int
-        public final int leftChildShift;
-        public final int rightChildShift;
+        public final int leftShift;
+        public final int rightShift;
         public final int mask;
 
-        public DefaultFunction() {
+        protected DefaultFunction(final int maxShiftedNonTerminal) {
             // Add 1 bit to leave empty for sign
-            leftChildShift = edu.ohsu.cslu.util.Math.logBase2(leftChildOnlyStart) + 1;
-            rightChildShift = 32 - leftChildShift;
+            leftShift = edu.ohsu.cslu.util.Math.logBase2(maxShiftedNonTerminal) + 1;
+            rightShift = 32 - leftShift;
             int m = 0;
-            for (int i = 0; i < leftChildShift; i++) {
+            for (int i = 0; i < leftShift; i++) {
                 m = m << 1 | 1;
             }
             mask = m;
         }
 
+        public DefaultFunction() {
+            this(leftChildOnlyStart);
+        }
+
         @Override
         public boolean isValid(final int childPair) {
             return childPair < packedArraySize();
@@ -372,22 +300,22 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
         @Override
         public final int packedArraySize() {
-            return numNonTerms() << leftChildShift;
+            return numNonTerms() << leftShift;
         }
 
         @Override
         public final int pack(final int leftChild, final short rightChild) {
-            return leftChild << leftChildShift | (rightChild & mask);
+            return leftChild << leftShift | (rightChild & mask);
         }
 
         @Override
         public final int unpackLeftChild(final int childPair) {
-            return childPair >>> leftChildShift;
+            return childPair >>> leftShift;
         }
 
         @Override
         public final short unpackRightChild(final int childPair) {
-            return (short) ((childPair << rightChildShift) >> rightChildShift);
+            return (short) ((childPair << rightShift) >> rightShift);
         }
 
         @Override
@@ -408,6 +336,38 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         @Override
         public int rightChildEnd() {
             return leftChildOnlyStart;
+        }
+    }
+
+    public class UnfilteredFunction extends DefaultFunction {
+
+        public UnfilteredFunction() {
+            super(numNonTerms());
+        }
+
+        @Override
+        public boolean isValid(final int childPair) {
+            return childPair < packedArraySize();
+        }
+
+        @Override
+        public int leftChildStart() {
+            return 0;
+        }
+
+        @Override
+        public int leftChildEnd() {
+            return numNonTerms();
+        }
+
+        @Override
+        public int rightChildStart() {
+            return 0;
+        }
+
+        @Override
+        public int rightChildEnd() {
+            return numNonTerms();
         }
     }
 
