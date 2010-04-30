@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.grammar;
 
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.Theories;
@@ -9,8 +11,6 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
-import static junit.framework.Assert.assertEquals;
-
 @RunWith(Theories.class)
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
@@ -18,6 +18,8 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     public final static Class<? extends CartesianProductFunction> UNFILTERED = SparseMatrixGrammar.UnfilteredFunction.class;
     @DataPoint
     public final static Class<? extends CartesianProductFunction> DEFAULT = SparseMatrixGrammar.DefaultFunction.class;
+//    @DataPoint
+//    public final static Class<? extends CartesianProductFunction> RIGHT_SHIFT = SparseMatrixGrammar.RightShiftFunction.class;
     @DataPoint
     public final static Class<? extends CartesianProductFunction> POS_AND_FACTORED = SparseMatrixGrammar.PosFactoredFilterFunction.class;
     @DataPoint
@@ -53,6 +55,26 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
         assertEquals(2, f.unpackLeftChild(f.pack(2, (short) 0)));
         assertEquals(0, f.unpackRightChild(f.pack(2, (short) 0)));
+
+        // And a couple tests with a larger grammar
+        final SparseMatrixGrammar g2 = (SparseMatrixGrammar) createGrammar(grammarClass(), SharedNlpTests
+            .unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"), SharedNlpTests
+            .unitTestDataAsReader("grammars/f2-21-R2-p1-unk.lex.gz"));
+        final CartesianProductFunction f2 = g2.cartesianProductFunction;
+        assertEquals(2, f2.unpackLeftChild(f2.pack(2, (short) 0)));
+        assertEquals(0, f2.unpackRightChild(f2.pack(2, (short) 0)));
+
+        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, (short) 0)));
+        assertEquals(0, f2.unpackRightChild(f2.pack(5000, (short) 0)));
+
+        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, (short) 250)));
+        assertEquals(250, f2.unpackRightChild(f2.pack(5000, (short) 250)));
+
+        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, (short) -1)));
+        assertEquals(-1, f2.unpackRightChild(f2.pack(5000, (short) -1)));
+
+        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, (short) -2)));
+        assertEquals(-2, f2.unpackRightChild(f2.pack(5000, (short) -2)));
     }
 
     /**

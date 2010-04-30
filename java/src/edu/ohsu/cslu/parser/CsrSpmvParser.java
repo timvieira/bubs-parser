@@ -116,7 +116,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
                 for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {
 
-                    final int childPair = cpf.pack(leftChild, (short) nonTerminalIndices[j]);
+                    final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
                     totalCartesianProductEntriesExamined++;
 
                     if (!cpf.isValid(childPair)) {

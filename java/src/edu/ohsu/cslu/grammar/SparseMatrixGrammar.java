@@ -172,7 +172,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         final StringBuilder sb = new StringBuilder(10 * 1024);
         for (final int childPair : validChildPairs) {
             final int leftChild = cartesianProductFunction.unpackLeftChild(childPair);
-            final short rightChild = cartesianProductFunction.unpackRightChild(childPair);
+            final int rightChild = cartesianProductFunction.unpackRightChild(childPair);
             sb.append(leftChild + "," + rightChild + '\n');
         }
 
@@ -220,7 +220,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          * @param rightChild
          * @return packed representation of the specified child pair.
          */
-        public int pack(final int leftChild, final short rightChild);
+        public int pack(final int leftChild, final int rightChild);
 
         /**
          * Returns the left child encoded into a packed child pair
@@ -236,7 +236,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          * @param childPair
          * @return the right child encoded into a packed child pair
          */
-        public short unpackRightChild(final int childPair);
+        public int unpackRightChild(final int childPair);
 
         /**
          * Returns the index of first non-terminal valid as a left child.
@@ -269,24 +269,31 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          *         range).
          */
         public int rightChildEnd();
+
+        public String openClPackDefine();
     }
 
     public class DefaultFunction implements CartesianProductFunction {
 
-        // Shift lengths and mask for packing and unpacking non-terminals into an int
+        // Shift lengths and masks for packing and unpacking non-terminals into an int
         public final int leftShift;
-        public final int rightShift;
-        public final int mask;
+        private final int leftMask;
+        protected final int rightMask;
+        private final int rightNegativeBit;
+        private final int packedArraySize;
 
         protected DefaultFunction(final int maxShiftedNonTerminal) {
             // Add 1 bit to leave empty for sign
             leftShift = edu.ohsu.cslu.util.Math.logBase2(maxShiftedNonTerminal) + 1;
-            rightShift = 32 - leftShift;
             int m = 0;
             for (int i = 0; i < leftShift; i++) {
                 m = m << 1 | 1;
             }
-            mask = m;
+            rightMask = m;
+            leftMask = ~m;
+            rightNegativeBit = 1 << (leftShift - 1);
+
+            packedArraySize = numNonTerms() << leftShift;
         }
 
         public DefaultFunction() {
@@ -295,27 +302,33 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
         @Override
         public boolean isValid(final int childPair) {
-            return childPair < packedArraySize();
+            return childPair < packedArraySize;
         }
 
         @Override
         public final int packedArraySize() {
-            return numNonTerms() << leftShift;
+            return packedArraySize;
         }
 
         @Override
-        public final int pack(final int leftChild, final short rightChild) {
-            return leftChild << leftShift | (rightChild & mask);
+        public final int pack(final int leftChild, final int rightChild) {
+            return leftChild << leftShift | (rightChild & rightMask);
         }
 
         @Override
         public final int unpackLeftChild(final int childPair) {
-            return childPair >>> leftShift;
+            return childPair >> leftShift;
         }
 
         @Override
-        public final short unpackRightChild(final int childPair) {
-            return (short) ((childPair << rightShift) >> rightShift);
+        public final int unpackRightChild(final int childPair) {
+            final int lower = childPair & rightMask;
+
+            // Handle negative lower values
+            if ((lower & rightNegativeBit) == rightNegativeBit) {
+                return lower | leftMask;
+            }
+            return lower;
         }
 
         @Override
@@ -337,7 +350,47 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public int rightChildEnd() {
             return leftChildOnlyStart;
         }
+
+        @Override
+        public String openClPackDefine() {
+            return "#define PACK ((validLeftChildren[leftChildIndex] << " + leftShift
+                    + ") | (validRightChildren[rightChildIndex] & " + rightMask + "))";
+        }
     }
+
+    // public class RightShiftFunction extends DefaultFunction {
+    //
+    // public RightShiftFunction() {
+    // super(numNonTerms());
+    // }
+    //
+    // @Override
+    // public final int pack(final int leftChild, final int rightChild) {
+    // return rightChild << leftShift | (leftChild & rightMask);
+    // }
+    //
+    // @Override
+    // public final int unpackLeftChild(final int childPair) {
+    // final int lower = childPair & rightMask;
+    //
+    // // Handle negative lower values
+    // if ((lower & rightNegativeBit) == rightNegativeBit) {
+    // return lower | leftMask;
+    // }
+    // return lower;
+    // }
+    //
+    // @Override
+    // public final int unpackRightChild(final int childPair) {
+    // return childPair >> leftShift;
+    // }
+    //
+    // @Override
+    // public String openClPackDefine() {
+    // return "#define PACK ((validLeftChildren[leftChildIndex] << " + leftShift
+    // + ") | (validRightChildren[rightChildIndex] & " + rightMask + "))";
+    // }
+    // }
 
     public class UnfilteredFunction extends DefaultFunction {
 
@@ -369,6 +422,12 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public int rightChildEnd() {
             return numNonTerms();
         }
+
+        @Override
+        public String openClPackDefine() {
+            return "#define PACK ((validLeftChildren[leftChildIndex] << " + leftShift
+                    + ") | (validRightChildren[rightChildIndex] & " + rightMask + "))";
+        }
     }
 
     public final class PosFactoredFilterFunction extends DefaultFunction implements CartesianProductFunction {
@@ -380,7 +439,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             }
 
             final int leftChild = unpackLeftChild(childPair);
-            final short rightChild = unpackRightChild(childPair);
+            final int rightChild = unpackRightChild(childPair);
             // Eliminate POS which cannot combine with left-factored non-terminals
             if (leftChild >= leftFactoredStart && leftChild < normalLeftChildStart
                     && rightChild >= posNonFactoredStart && rightChild < normalPosStart) {

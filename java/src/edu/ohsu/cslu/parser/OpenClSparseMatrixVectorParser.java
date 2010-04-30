@@ -89,8 +89,7 @@ public class OpenClSparseMatrixVectorParser extends
             final StringWriter prefix = new StringWriter();
             prefix.write("#define LEFT_CHILD_SHIFT "
                     + ((DefaultFunction) grammar.cartesianProductFunction()).leftShift + '\n');
-            prefix
-                .write("#define MASK " + ((DefaultFunction) grammar.cartesianProductFunction()).mask + '\n');
+            prefix.write(grammar.cartesianProductFunction().openClPackDefine() + '\n');
 
             final CLProgram program = OpenClUtils.compileClKernels(context, getClass(), prefix.toString());
             fillFloatKernel = program.createKernel("fillFloat");
