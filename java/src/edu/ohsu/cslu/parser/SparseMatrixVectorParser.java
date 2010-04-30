@@ -184,7 +184,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
             for (int i = 0; i < probabilities.length; i++) {
                 if (probabilities[i] != Float.NEGATIVE_INFINITY) {
                     final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(i);
-                    final short rightChild = grammar.cartesianProductFunction().unpackRightChild(i);
+                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(i);
                     final int midpoint = midpoints[i];
                     final float probability = probabilities[i];
 

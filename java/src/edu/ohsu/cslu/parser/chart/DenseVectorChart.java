@@ -131,7 +131,7 @@ public class DenseVectorChart extends CellChart {
 
             final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
                 children[nonTermIndex]);
-            final short rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
+            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
                 children[nonTermIndex]);
 
             final int midpoint = midpoints[nonTermIndex];
@@ -172,7 +172,7 @@ public class DenseVectorChart extends CellChart {
 
                     final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
                         childProductions);
-                    final short rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
+                    final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
                         childProductions);
 
                     if (rightChild == Production.UNARY_PRODUCTION) {

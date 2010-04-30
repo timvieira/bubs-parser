@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PosFactoredFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CartesianProductVector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
@@ -34,8 +34,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
         return grammarClass().getConstructor(
             new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
-            new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
-                    PosFactoredFilterFunction.class });
+            new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU, DefaultFunction.class });
     }
 
     /**

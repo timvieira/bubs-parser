@@ -316,7 +316,7 @@ public class PackedArrayChart extends Chart {
 
             final int leftChild = sparseMatrixGrammar.cartesianProductFunction()
                 .unpackLeftChild(edgeChildren);
-            final short rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
+            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
                 edgeChildren);
             final PackedArrayChartCell leftChildCell = getCell(start(), edgeMidpoint);
             final PackedArrayChartCell rightChildCell = edgeMidpoint < end ? (PackedArrayChartCell) getCell(
@@ -449,7 +449,7 @@ public class PackedArrayChart extends Chart {
                 final float insideProbability, final int midpoint) {
             final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
                 childProductions);
-            final short rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
+            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
                 childProductions);
 
             if (rightChild == Production.UNARY_PRODUCTION) {
