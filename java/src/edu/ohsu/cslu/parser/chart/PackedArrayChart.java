@@ -116,7 +116,7 @@ public class PackedArrayChart extends Chart {
      * @param end
      * @return the index of the specified cell in the parallel chart arrays
      */
-    int cellIndex(final int start, final int end) {
+    public final int cellIndex(final int start, final int end) {
 
         if (start < 0 || start > size) {
             throw new IllegalArgumentException("Illegal start: " + start);
@@ -142,6 +142,22 @@ public class PackedArrayChart extends Chart {
         }
 
         return sb.toString();
+    }
+
+    public final int minLeftChildIndex(final int cellIndex) {
+        return minLeftChildIndex[cellIndex];
+    }
+
+    public final int maxLeftChildIndex(final int cellIndex) {
+        return maxLeftChildIndex[cellIndex];
+    }
+
+    public final int offset(final int cellIndex) {
+        return cellOffsets[cellIndex];
+    }
+
+    public final int maxRightChildIndex(final int cellIndex) {
+        return maxRightChildIndex[cellIndex];
     }
 
     public class PackedArrayChartCell extends ChartCell {

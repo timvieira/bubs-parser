@@ -181,10 +181,6 @@ public class SortAndScanCsrSpmvParser extends
         totalScanTime += t4 - t3;
 
         // Scatter the cartesian product array to a dense representation, writing only the flagged values
-        if (cartesianProductProbabilities == null) {
-            cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
-            cartesianProductMidpoints = new short[grammar.cartesianProductFunction().packedArraySize()];
-        }
         Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
         scanner.scatter(tmpCartesianProductInsideProbabilities, cartesianProductProbabilities,
             tmpCartesianProductChildren, segmentFlags);

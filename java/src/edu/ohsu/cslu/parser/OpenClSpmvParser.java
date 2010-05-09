@@ -18,8 +18,8 @@ import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
-import edu.ohsu.cslu.parser.OpenClSparseMatrixVectorParser.OpenClChart.OpenClChartCell;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
+import edu.ohsu.cslu.parser.OpenClSpmvParser.OpenClChart.OpenClChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
@@ -34,8 +34,8 @@ import edu.ohsu.cslu.util.OpenClUtils;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class OpenClSparseMatrixVectorParser extends
-        SparseMatrixVectorParser<CsrSparseMatrixGrammar, OpenClSparseMatrixVectorParser.OpenClChart> {
+public class OpenClSpmvParser extends
+        SparseMatrixVectorParser<CsrSparseMatrixGrammar, OpenClSpmvParser.OpenClChart> {
 
     private final static int LOCAL_WORK_SIZE = 64;
 
@@ -67,11 +67,15 @@ public class OpenClSparseMatrixVectorParser extends
     private CLFloatBuffer clCrossProductProbabilities1;
     private CLShortBuffer clCrossProductMidpoints1;
 
-    public OpenClSparseMatrixVectorParser(final CsrSparseMatrixGrammar grammar) {
-        super(grammar);
+    public OpenClSpmvParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
+        super(opts, grammar);
 
         context = createBestContext();
         clQueue = context.createDefaultQueue();
+    }
+
+    public OpenClSpmvParser(final CsrSparseMatrixGrammar grammar) {
+        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
     }
 
     @Override
@@ -88,7 +92,7 @@ public class OpenClSparseMatrixVectorParser extends
             // Compile OpenCL kernels
             final StringWriter prefix = new StringWriter();
             prefix.write("#define LEFT_CHILD_SHIFT "
-                    + ((DefaultFunction) grammar.cartesianProductFunction()).leftShift + '\n');
+                    + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift + '\n');
             prefix.write(grammar.cartesianProductFunction().openClPackDefine() + '\n');
 
             final CLProgram program = OpenClUtils.compileClKernels(context, getClass(), prefix.toString());

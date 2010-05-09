@@ -51,7 +51,7 @@ public class SymbolSet<E> implements Iterable<E> {
         return symbolVector.get(index);
     }
 
-    public int numSymbols() {
+    public final int numSymbols() {
         return symbolVector.size();
     }
 

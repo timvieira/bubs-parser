@@ -202,14 +202,14 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          * @param childPair
          * @return true if the specified child pair is a valid cross-product vector entry
          */
-        public boolean isValid(int childPair);
+        public abstract boolean isValid(int childPair);
 
         /**
          * Returns the array size required to store all possible child combinations.
          * 
          * @return the array size required to store all possible child combinations.
          */
-        public int packedArraySize();
+        public abstract int packedArraySize();
 
         /**
          * Returns a single int representing a child pair.
@@ -220,7 +220,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          * @param rightChild
          * @return packed representation of the specified child pair.
          */
-        public int pack(final int leftChild, final int rightChild);
+        public abstract int pack(final int leftChild, final int rightChild);
 
         /**
          * Returns the left child encoded into a packed child pair
@@ -228,7 +228,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          * @param childPair
          * @return the left child encoded into a packed child pair
          */
-        public int unpackLeftChild(final int childPair);
+        public abstract int unpackLeftChild(final int childPair);
 
         /**
          * Returns the right child encoded into a packed child pair
@@ -236,7 +236,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          * @param childPair
          * @return the right child encoded into a packed child pair
          */
-        public int unpackRightChild(final int childPair);
+        public abstract int unpackRightChild(final int childPair);
 
         /**
          * Returns the index of first non-terminal valid as a left child.
@@ -270,39 +270,29 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          */
         public int rightChildEnd();
 
-        public String openClPackDefine();
+        public abstract String openClPackDefine();
     }
 
-    public class DefaultFunction implements CartesianProductFunction {
-
+    protected abstract class ShiftFunction implements CartesianProductFunction {
         // Shift lengths and masks for packing and unpacking non-terminals into an int
-        public final int leftShift;
-        private final int leftMask;
-        protected final int rightMask;
-        private final int rightNegativeBit;
+        public final int shift;
+        protected final int highOrderMask;
+        protected final int lowOrderMask;
+        protected final int lowOrderNegativeBit;
         private final int packedArraySize;
 
-        protected DefaultFunction(final int maxShiftedNonTerminal) {
+        protected ShiftFunction(final int maxShiftedNonTerminal) {
             // Add 1 bit to leave empty for sign
-            leftShift = edu.ohsu.cslu.util.Math.logBase2(maxShiftedNonTerminal) + 1;
+            shift = edu.ohsu.cslu.util.Math.logBase2(maxShiftedNonTerminal) + 1;
             int m = 0;
-            for (int i = 0; i < leftShift; i++) {
+            for (int i = 0; i < shift; i++) {
                 m = m << 1 | 1;
             }
-            rightMask = m;
-            leftMask = ~m;
-            rightNegativeBit = 1 << (leftShift - 1);
+            lowOrderMask = m;
+            highOrderMask = ~m;
+            lowOrderNegativeBit = 1 << (shift - 1);
 
-            packedArraySize = numNonTerms() << leftShift;
-        }
-
-        public DefaultFunction() {
-            this(leftChildOnlyStart);
-        }
-
-        @Override
-        public boolean isValid(final int childPair) {
-            return childPair < packedArraySize;
+            packedArraySize = numNonTerms() << shift;
         }
 
         @Override
@@ -311,50 +301,69 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
 
         @Override
+        public boolean isValid(final int childPair) {
+            return childPair < packedArraySize;
+        }
+    }
+
+    public abstract class LeftShiftFunction extends ShiftFunction {
+
+        public LeftShiftFunction(final int maxShiftedNonTerminal) {
+            super(maxShiftedNonTerminal);
+        }
+
+        @Override
         public final int pack(final int leftChild, final int rightChild) {
-            return leftChild << leftShift | (rightChild & rightMask);
+            return leftChild << shift | (rightChild & lowOrderMask);
         }
 
         @Override
         public final int unpackLeftChild(final int childPair) {
-            return childPair >> leftShift;
+            return childPair >> shift;
         }
 
         @Override
         public final int unpackRightChild(final int childPair) {
-            final int lower = childPair & rightMask;
+            final int lower = childPair & lowOrderMask;
 
             // Handle negative lower values
-            if ((lower & rightNegativeBit) == rightNegativeBit) {
-                return lower | leftMask;
+            if ((lower & lowOrderNegativeBit) == lowOrderNegativeBit) {
+                return lower | highOrderMask;
             }
             return lower;
         }
 
         @Override
-        public int leftChildStart() {
+        public final String openClPackDefine() {
+            return "#define PACK ((validLeftChildren[leftChildIndex] << " + shift
+                    + ") | (validRightChildren[rightChildIndex] & " + lowOrderMask + "))";
+        }
+    }
+
+    public final class DefaultFunction extends LeftShiftFunction {
+
+        public DefaultFunction() {
+            super(leftChildOnlyStart);
+        }
+
+        @Override
+        public final int leftChildStart() {
             return posStart;
         }
 
         @Override
-        public int leftChildEnd() {
+        public final int leftChildEnd() {
             return unaryChildOnlyStart;
         }
 
         @Override
-        public int rightChildStart() {
+        public final int rightChildStart() {
             return rightChildOnlyStart;
         }
 
         @Override
-        public int rightChildEnd() {
+        public final int rightChildEnd() {
             return leftChildOnlyStart;
-        }
-
-        @Override
-        public String openClPackDefine() {
-            return "#define PACK ((validLeftChildren[leftChildIndex] << " + leftShift
-                    + ") | (validRightChildren[rightChildIndex] & " + rightMask + "))";
         }
     }
 
@@ -392,45 +401,40 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     // }
     // }
 
-    public class UnfilteredFunction extends DefaultFunction {
+    public final class UnfilteredFunction extends LeftShiftFunction {
+        private final int numNonTerms;
 
         public UnfilteredFunction() {
             super(numNonTerms());
+            this.numNonTerms = numNonTerms();
         }
 
         @Override
-        public boolean isValid(final int childPair) {
-            return childPair < packedArraySize();
-        }
-
-        @Override
-        public int leftChildStart() {
+        public final int leftChildStart() {
             return 0;
         }
 
         @Override
-        public int leftChildEnd() {
-            return numNonTerms();
+        public final int leftChildEnd() {
+            return numNonTerms;
         }
 
         @Override
-        public int rightChildStart() {
+        public final int rightChildStart() {
             return 0;
         }
 
         @Override
-        public int rightChildEnd() {
-            return numNonTerms();
-        }
-
-        @Override
-        public String openClPackDefine() {
-            return "#define PACK ((validLeftChildren[leftChildIndex] << " + leftShift
-                    + ") | (validRightChildren[rightChildIndex] & " + rightMask + "))";
+        public final int rightChildEnd() {
+            return numNonTerms;
         }
     }
 
-    public final class PosFactoredFilterFunction extends DefaultFunction implements CartesianProductFunction {
+    public final class PosFactoredFilterFunction extends LeftShiftFunction {
+
+        public PosFactoredFilterFunction() {
+            super(leftChildOnlyStart);
+        }
 
         @Override
         public boolean isValid(final int childPair) {
@@ -447,10 +451,29 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             }
             return true;
         }
+
+        @Override
+        public final int leftChildStart() {
+            return posStart;
+        }
+
+        @Override
+        public final int leftChildEnd() {
+            return unaryChildOnlyStart;
+        }
+
+        @Override
+        public final int rightChildStart() {
+            return rightChildOnlyStart;
+        }
+
+        @Override
+        public final int rightChildEnd() {
+            return leftChildOnlyStart;
+        }
     }
 
-    public final class BitVectorExactFilterFunction extends DefaultFunction implements
-            CartesianProductFunction {
+    public final class BitVectorExactFilterFunction extends LeftShiftFunction {
 
         /**
          * {@link BitVector} of child pairs found in binary grammar rules.
@@ -460,7 +483,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         private final PackedBitVector validChildPairs;
 
         public BitVectorExactFilterFunction() {
-            super();
+            super(leftChildOnlyStart);
 
             validChildPairs = new PackedBitVector(packedArraySize());
 
@@ -470,8 +493,28 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
 
         @Override
-        public boolean isValid(final int childPair) {
+        public final boolean isValid(final int childPair) {
             return validChildPairs.contains(childPair);
+        }
+
+        @Override
+        public final int leftChildStart() {
+            return posStart;
+        }
+
+        @Override
+        public final int leftChildEnd() {
+            return unaryChildOnlyStart;
+        }
+
+        @Override
+        public final int rightChildStart() {
+            return rightChildOnlyStart;
+        }
+
+        @Override
+        public final int rightChildEnd() {
+            return leftChildOnlyStart;
         }
     }
 }

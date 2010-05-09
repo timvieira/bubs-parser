@@ -1,5 +1,5 @@
 /**
- * OpenCL kernels for OpenClSparseMatrixVectorParser
+ * OpenCL kernels for OpenClSpmvParser
  *
  * Note: All kernels start with something like 'if threadId < n' so that we can start 
  *       thread blocks of an even multiple the warp size even if the data set is 
@@ -42,7 +42,7 @@ Total: O(V_l * V_r) global memory writes (1 time through the V^2 vector)
  *   (indexed by child pair)
  *  
  */
-__kernel void crossProduct(const __global int* validLeftChildren,
+__kernel void cartesianProduct(const __global int* validLeftChildren,
         const __global float* validLeftChildrenProbabilities,
         uint numValidLeftChildren,
         const __global short* validRightChildren,
@@ -60,7 +60,7 @@ __kernel void crossProduct(const __global int* validLeftChildren,
 		int rightChildIndex = threadId % numValidRightChildren;
 		 
 		float jointProbability = validLeftChildrenProbabilities[leftChildIndex] + validRightChildrenProbabilities[rightChildIndex];
-		int child = ((validLeftChildren[leftChildIndex] << LEFT_CHILD_SHIFT) | (validRightChildren[rightChildIndex] & MASK));
+		int child = PACK;
 		crossProductProbabilities[child] = jointProbability;
 		crossProductMidpoints[child] = midpoint;
     }
@@ -71,7 +71,7 @@ __kernel void crossProduct(const __global int* validLeftChildren,
  *   non-terminal pair. Warning: This union is destructive, overwriting the initial contents of 
  *   crossProductProbabilities0 and crossProductMidpoints0
  */
-__kernel void crossProductUnion(__global float* crossProductProbabilities0,
+__kernel void cartesianProductUnion(__global float* crossProductProbabilities0,
         __global short* crossProductMidpoints0,
         const __global float* crossProductProbabilities1,
         const __global short* crossProductMidpoints1,

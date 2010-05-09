@@ -29,10 +29,17 @@ public abstract class GrammarTestCase {
             final Class<? extends SparseMatrixGrammar.CartesianProductFunction> cartesianProductFunctionClass)
             throws Exception {
 
-        return grammarClass.getConstructor(
-            new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
-            new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
-                    cartesianProductFunctionClass });
+        try {
+            return grammarClass.getConstructor(
+                new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class })
+                .newInstance(
+                    new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
+                            cartesianProductFunctionClass });
+        } catch (final NoSuchMethodException e) {
+            return grammarClass.getConstructor(
+                new Class[] { Reader.class, Reader.class, GrammarFormatType.class }).newInstance(
+                new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
+        }
     }
 
     public static Grammar createSimpleGrammar(final Class<? extends Grammar> grammarClass,

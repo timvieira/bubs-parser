@@ -15,13 +15,14 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class JsaSparseMatrixVectorParser extends
-        SparseMatrixVectorParser<JsaSparseMatrixGrammar, DenseVectorChart> {
+public class JsaSpmvParser extends SparseMatrixVectorParser<JsaSparseMatrixGrammar, DenseVectorChart> {
 
-    // private final JsaSparseMatrixGrammar jsaSparseMatrixGrammar;
+    public JsaSpmvParser(final ParserOptions opts, final JsaSparseMatrixGrammar grammar) {
+        super(opts, grammar);
+    }
 
-    public JsaSparseMatrixVectorParser(final JsaSparseMatrixGrammar grammar) {
-        super(grammar);
+    public JsaSpmvParser(final JsaSparseMatrixGrammar grammar) {
+        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
     }
 
     @Override
@@ -74,7 +75,8 @@ public class JsaSparseMatrixVectorParser extends
     }
 
     @Override
-    public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
+    public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+            final ChartCell chartCell) {
 
         final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
 

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -114,6 +115,16 @@ public abstract class SortedGrammar extends GrammarByChild {
 
     /** The number of non-terminals which occur as the parent of both unary and binary rules */
     private final int unaryAndBinaryParents;
+
+    /**
+     * A temporary String -> String map, used to conserve memory while reading and sorting the grammar.
+     * Similar to {@link String}'s own intern map, but we don't need to internalize Strings indefinitely, so
+     * we map them ourselves and allow the map to be GC'd after we're done constructing the grammar.
+     * 
+     * TODO Use {@link String#intern()} here and in {@link SymbolSet}; we have to maintain the String there
+     * anyway, so it'll eliminate the extra map and GC
+     */
+    private HashMap<String, String> internMap = new HashMap<String, String>();
 
     protected SortedGrammar(final String grammarFile, final String lexiconFile,
             final GrammarFormatType grammarFormat) throws Exception {
@@ -453,6 +464,7 @@ public abstract class SortedGrammar extends GrammarByChild {
         numLexProds = lexicalProductions.size();
         lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
         lexicalProductions = null; // remove from memory since we now store by child
+        internMap = null; // We no longer need the String intern map, so let it be GC'd
     }
 
     private List<StringRule> readLexProds(final Reader lexFile) throws IOException {
@@ -606,14 +618,23 @@ public abstract class SortedGrammar extends GrammarByChild {
         return sb.toString();
     }
 
+    private String intern(final String s) {
+        final String internedString = internMap.get(s);
+        if (internedString != null) {
+            return internedString;
+        }
+        internMap.put(s, s);
+        return s;
+    }
+
     private class StringRule {
         public final String parent;
         public final String leftChild;
         public final float probability;
 
         public StringRule(final String parent, final String leftChild, final float probability) {
-            this.parent = parent.intern();
-            this.leftChild = leftChild.intern();
+            this.parent = intern(parent);
+            this.leftChild = intern(leftChild);
             this.probability = probability;
         }
 
@@ -629,7 +650,7 @@ public abstract class SortedGrammar extends GrammarByChild {
         public BinaryStringRule(final String parent, final String leftChild, final String rightChild,
                 final float probability) {
             super(parent, leftChild, probability);
-            this.rightChild = rightChild.intern();
+            this.rightChild = intern(rightChild);
         }
 
         @Override
@@ -642,7 +663,7 @@ public abstract class SortedGrammar extends GrammarByChild {
             final HashSet<String> posWithFactoredSet, final Set<String> leftFactored,
             final Set<String> leftChildrenOnly, final Set<String> rightChildrenOnly,
             final Set<String> bothChildren, final Set<String> unaryChildren) {
-        final String internLabel = label.intern();
+        final String internLabel = intern(label);
 
         if (pos.contains(internLabel) && !posWithFactoredSet.contains(internLabel)) {
             return new NonTerminal(internLabel, NonTerminalClass.POS_NON_FACTORED);

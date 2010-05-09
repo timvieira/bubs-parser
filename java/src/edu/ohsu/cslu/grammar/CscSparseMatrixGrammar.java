@@ -26,6 +26,12 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
     /**
+     * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal. Indexed by left
+     * non-terminal.
+     */
+    private int[] cscBinaryLeftChildStartIndices;
+
+    /**
      * Indices of populated columns (child pairs).
      */
     private int[] cscBinaryPopulatedColumns;
@@ -92,6 +98,21 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         storeRulesAsMatrix(binaryProductions, sortedPopulatedBinaryColumnIndices, cscBinaryPopulatedColumns,
             cscBinaryColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
 
+        cscBinaryLeftChildStartIndices = new int[numNonTerms() + 1];
+        for (int i = 0; i < cscBinaryPopulatedColumns.length; i++) {
+            final int leftChild = cartesianProductFunction.unpackLeftChild(cscBinaryPopulatedColumns[i]);
+            cscBinaryLeftChildStartIndices[leftChild] = i;
+            while (i < cscBinaryPopulatedColumns.length
+                    && cartesianProductFunction.unpackLeftChild(cscBinaryPopulatedColumns[i]) == leftChild) {
+                i++;
+            }
+        }
+        for (int i = 1; i < cscBinaryLeftChildStartIndices.length; i++) {
+            if (cscBinaryLeftChildStartIndices[i] == 0) {
+                cscBinaryLeftChildStartIndices[i] = cscBinaryLeftChildStartIndices[i - 1];
+            }
+        }
+
         final IntSet populatedUnaryColumnIndices = new IntOpenHashSet(unaryProductions.size() / 10);
         for (final Production p : unaryProductions) {
             populatedUnaryColumnIndices.add(cartesianProductFunction.pack(p.leftChild, (short) p.rightChild));
@@ -154,6 +175,10 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             }
         }
         cscColumnIndices[cscColumnIndices.length - 1] = j;
+    }
+
+    public final int[] binaryLeftChildStartIndices() {
+        return cscBinaryLeftChildStartIndices;
     }
 
     public final int[] binaryRuleMatrixPopulatedColumns() {
