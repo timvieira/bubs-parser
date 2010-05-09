@@ -8,14 +8,14 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
- * Tests for {@link OpenClSparseMatrixVectorParser}.
+ * Tests for {@link OpenClSpMVParser}.
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestOpenClSparseMatrixVectorParser extends SparseMatrixVectorParserTestCase {
+public class TestOpenClSpmvParser extends SparseMatrixVectorParserTestCase {
 
     @Override
     protected Class<? extends Grammar> grammarClass() {
@@ -24,7 +24,7 @@ public class TestOpenClSparseMatrixVectorParser extends SparseMatrixVectorParser
 
     @Override
     protected Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
+        return new OpenClSpmvParser((CsrSparseMatrixGrammar) grammar);
     }
 
     @Override

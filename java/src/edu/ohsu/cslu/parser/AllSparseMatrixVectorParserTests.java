@@ -4,6 +4,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses( { TestOpenClSparseMatrixVectorParser.class, TestJsaSparseMatrixVectorParser.class, TestCsrSpmvParser.class })
+@Suite.SuiteClasses( { TestOpenClSpmvParser.class, TestJsaSpmvParser.class, TestCsrSpmvParser.class })
 public class AllSparseMatrixVectorParserTests {
 }

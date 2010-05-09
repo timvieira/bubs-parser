@@ -29,20 +29,30 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends Chart> extends
         ExhaustiveChartParser<G, C> {
 
-    protected float[] cartesianProductProbabilities;
-    protected short[] cartesianProductMidpoints;
+    protected final float[] cartesianProductProbabilities;
+    protected final short[] cartesianProductMidpoints;
 
     public long startTime = 0;
     public long totalCartesianProductTime = 0;
     public long totalCartesianProductUnionTime = 0;
     public long totalSpMVTime = 0;
 
+    /**
+     * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
+     * {@link ParserOptions}, but duplicated here as a final variable, so that the JIT can eliminate
+     * potentially-expensive counting code when we don't need it
+     */
+    protected final boolean collectDetailedStatistics;
+
     public SparseMatrixVectorParser(final ParserOptions opts, final G grammar) {
         super(opts, grammar);
+        cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
+        cartesianProductMidpoints = new short[cartesianProductProbabilities.length];
+        this.collectDetailedStatistics = opts.collectDetailedStatistics();
     }
 
     public SparseMatrixVectorParser(final G grammar) {
-        super(grammar);
+        this(new ParserOptions(), grammar);
     }
 
     /**
@@ -92,11 +102,6 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      * @return Unioned cross-product
      */
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
-
-        if (cartesianProductProbabilities == null) {
-            cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
-            cartesianProductMidpoints = new short[cartesianProductProbabilities.length];
-        }
 
         Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
         int size = 0;
@@ -156,14 +161,21 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         private final SparseMatrixGrammar grammar;
         final float[] probabilities;
         final short[] midpoints;
+        final int[] populatedLeftChildren;
         private int size = 0;
 
         public CartesianProductVector(final SparseMatrixGrammar grammar, final float[] probabilities,
-                final short[] midpoints, final int size) {
+                final short[] midpoints, final int[] populatedLeftChildren, final int size) {
             this.grammar = grammar;
             this.probabilities = probabilities;
             this.midpoints = midpoints;
+            this.populatedLeftChildren = populatedLeftChildren;
             this.size = size;
+        }
+
+        public CartesianProductVector(final SparseMatrixGrammar grammar, final float[] probabilities,
+                final short[] midpoints, final int size) {
+            this(grammar, probabilities, midpoints, null, size);
         }
 
         public final int size() {
@@ -182,7 +194,10 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         public String toString() {
             final StringBuilder sb = new StringBuilder(256);
             for (int i = 0; i < probabilities.length; i++) {
-                if (probabilities[i] != Float.NEGATIVE_INFINITY) {
+                // Some parsers initialize the midpoints and use 0 as `unpopulated'. Others initialize the
+                // probabilities and use Float.NEGATIVE_INFINITY. Since toString() isn't time-crucial, check
+                // both.
+                if (midpoints[i] != 0 && probabilities[i] != Float.NEGATIVE_INFINITY) {
                     final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(i);
                     final int rightChild = grammar.cartesianProductFunction().unpackRightChild(i);
                     final int midpoint = midpoints[i];

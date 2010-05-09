@@ -18,8 +18,9 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     public final static Class<? extends CartesianProductFunction> UNFILTERED = SparseMatrixGrammar.UnfilteredFunction.class;
     @DataPoint
     public final static Class<? extends CartesianProductFunction> DEFAULT = SparseMatrixGrammar.DefaultFunction.class;
-//    @DataPoint
-//    public final static Class<? extends CartesianProductFunction> RIGHT_SHIFT = SparseMatrixGrammar.RightShiftFunction.class;
+    // @DataPoint
+    // public final static Class<? extends CartesianProductFunction> RIGHT_SHIFT =
+    // SparseMatrixGrammar.RightShiftDefaultFunction.class;
     @DataPoint
     public final static Class<? extends CartesianProductFunction> POS_AND_FACTORED = SparseMatrixGrammar.PosFactoredFilterFunction.class;
     @DataPoint

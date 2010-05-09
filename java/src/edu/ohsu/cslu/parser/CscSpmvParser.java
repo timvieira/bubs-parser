@@ -13,7 +13,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * {@link CscSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
  * 
  * @see CsrSpmvParser
- * @see OpenClSparseMatrixVectorParser
+ * @see OpenClSpMVParser
  * 
  *      TODO Share code copied from {@link CsrSpmvParser}
  * 
@@ -27,8 +27,12 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
     protected long totalCartesianProductEntriesExamined;
     protected long totalValidCartesianProductEntries;
 
+    public CscSpmvParser(final ParserOptions opts, final CscSparseMatrixGrammar grammar) {
+        super(opts, grammar);
+    }
+
     public CscSpmvParser(final CscSparseMatrixGrammar grammar) {
-        super(grammar);
+        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
     }
 
     @Override
@@ -92,24 +96,18 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
     @Override
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
-        if (cartesianProductProbabilities == null) {
-            cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
-            cartesianProductMidpoints = new short[cartesianProductProbabilities.length];
-        }
-
-        Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
+        Arrays.fill(cartesianProductMidpoints, (short) 0);
         int size = 0;
 
         final CartesianProductFunction cpf = grammar.cartesianProductFunction();
+        final int[] nonTerminalIndices = chart.nonTerminalIndices;
+        final float[] insideProbabilities = chart.insideProbabilities;
 
         // Iterate over all possible midpoints, unioning together the cross-product of discovered
         // non-terminals in each left/right child pair
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
             final PackedArrayChartCell leftCell = chart.getCell(start, midpoint);
             final PackedArrayChartCell rightCell = chart.getCell(midpoint, end);
-
-            final int[] nonTerminalIndices = chart.nonTerminalIndices;
-            final float[] insideProbabilities = chart.insideProbabilities;
 
             for (int i = leftCell.minLeftChildIndex(); i <= leftCell.maxLeftChildIndex(); i++) {
 
@@ -118,7 +116,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
 
                 for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {
 
-                    final int childPair = cpf.pack(leftChild, (short) nonTerminalIndices[j]);
+                    final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
                     totalCartesianProductEntriesExamined++;
 
                     if (!cpf.isValid(childPair)) {
@@ -127,15 +125,22 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
 
                     totalValidCartesianProductEntries++;
 
-                    final float jointProbability = leftProbability + insideProbabilities[j];
-                    final float currentProbability = cartesianProductProbabilities[childPair];
+                    // If this cartesian-product entry is not populated, we can populate it without comparing
+                    // to a current probability
+                    if (cartesianProductMidpoints[childPair] == 0) {
+                        final float jointProbability = leftProbability + insideProbabilities[j];
 
-                    if (jointProbability > currentProbability) {
                         cartesianProductProbabilities[childPair] = jointProbability;
                         cartesianProductMidpoints[childPair] = midpoint;
+                        size++;
 
-                        if (currentProbability == Float.NEGATIVE_INFINITY) {
-                            size++;
+                    } else {
+                        final float jointProbability = leftProbability + insideProbabilities[j];
+                        final float currentProbability = cartesianProductProbabilities[childPair];
+
+                        if (jointProbability > currentProbability) {
+                            cartesianProductProbabilities[childPair] = jointProbability;
+                            cartesianProductMidpoints[childPair] = midpoint;
                         }
                     }
                 }
@@ -169,26 +174,31 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
         final int[] binaryRuleMatrixRowIndices = grammar.binaryRuleMatrixRowIndices();
         final float[] binaryRuleMatrixProbabilities = grammar.binaryRuleMatrixProbabilities();
 
-        final float[] localCrossProductProbabilities = cartesianProductVector.probabilities;
-        final short[] localCrossProductMidpoints = cartesianProductVector.midpoints;
+        final float[] localCartesianProductProbabilities = cartesianProductVector.probabilities;
+        final short[] localCartesianProductMidpoints = cartesianProductVector.midpoints;
 
         // Iterate over possible populated child pairs (matrix columns)
         for (int i = 0; i < binaryRuleMatrixPopulatedColumns.length; i++) {
 
             final int childPair = binaryRuleMatrixPopulatedColumns[i];
-            final float cartesianProductProbability = localCrossProductProbabilities[childPair];
-            final short cartesianProductMidpoint = localCrossProductMidpoints[childPair];
+            final short cartesianProductMidpoint = localCartesianProductMidpoints[childPair];
 
-            // Iterate over possible parents of the child pair (rows with non-zero entries)
-            for (int j = binaryRuleMatrixColumnOffsets[i]; j < binaryRuleMatrixColumnOffsets[i + 1]; j++) {
+            // Skip grammar matrix columns for unpopulated cartesian-product entries
+            if (cartesianProductMidpoint != 0) {
+                final float cartesianProductProbability = localCartesianProductProbabilities[childPair];
 
-                final int parent = binaryRuleMatrixRowIndices[j];
-                final float jointProbability = binaryRuleMatrixProbabilities[j] + cartesianProductProbability;
+                // Iterate over possible parents of the child pair (rows with non-zero entries)
+                for (int j = binaryRuleMatrixColumnOffsets[i]; j < binaryRuleMatrixColumnOffsets[i + 1]; j++) {
 
-                if (jointProbability > productProbabilities[parent]) {
-                    productChildren[parent] = childPair;
-                    productProbabilities[parent] = jointProbability;
-                    productMidpoints[parent] = cartesianProductMidpoint;
+                    final float jointProbability = binaryRuleMatrixProbabilities[j]
+                            + cartesianProductProbability;
+                    final int parent = binaryRuleMatrixRowIndices[j];
+
+                    if (jointProbability > productProbabilities[parent]) {
+                        productChildren[parent] = childPair;
+                        productProbabilities[parent] = jointProbability;
+                        productMidpoints[parent] = cartesianProductMidpoint;
+                    }
                 }
             }
         }

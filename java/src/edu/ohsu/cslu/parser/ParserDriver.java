@@ -323,7 +323,7 @@ public class ParserDriver extends BaseCommandlineTool {
                 return new CoarseCellAgendaParserWithCSLUT(opts, (LeftHashGrammar) grammar, cslutScores);
 
             case JsaSparseMatrixVector:
-                return new JsaSparseMatrixVectorParser((JsaSparseMatrixGrammar) grammar);
+                return new JsaSpmvParser((JsaSparseMatrixGrammar) grammar);
             case CsrSpmv:
                 return new CsrSpmvParser((CsrSparseMatrixGrammar) grammar);
             case CsrSpmvPerMidpoint:
@@ -331,7 +331,7 @@ public class ParserDriver extends BaseCommandlineTool {
             case CscSpmv:
                 return new CscSpmvParser((CscSparseMatrixGrammar) grammar);
             case OpenClSparseMatrixVector:
-                return new OpenClSparseMatrixVectorParser((CsrSparseMatrixGrammar) grammar);
+                return new OpenClSpmvParser((CsrSparseMatrixGrammar) grammar);
             case SortAndScanSpmv:
                 return new SortAndScanCsrSpmvParser((CsrSparseMatrixGrammar) grammar);
 

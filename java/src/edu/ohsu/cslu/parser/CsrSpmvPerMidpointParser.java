@@ -17,8 +17,12 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  */
 public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
 
+    public CsrSpmvPerMidpointParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
+        super(opts, grammar);
+    }
+
     public CsrSpmvPerMidpointParser(final CsrSparseMatrixGrammar grammar) {
-        super(grammar);
+        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
     }
 
     @Override
@@ -93,11 +97,6 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
     }
 
     protected CartesianProductVector cartesianProduct(final int start, final int end, final short midpoint) {
-
-        if (cartesianProductProbabilities == null) {
-            cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
-            cartesianProductMidpoints = new short[cartesianProductProbabilities.length];
-        }
 
         Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
         int size = 0;

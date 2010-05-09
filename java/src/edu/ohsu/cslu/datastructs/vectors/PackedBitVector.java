@@ -59,7 +59,11 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
         final int index = i >> 5;
         final int shift = i & 0x1f;
 
-        return index < packedVector.length && ((packedVector[index] >> shift) & 0x01) == 1;
+        try {
+            return ((packedVector[index] >> shift) & 0x01) != 0;
+        } catch (final ArrayIndexOutOfBoundsException e) {
+            return false;
+        }
     }
 
     @Override

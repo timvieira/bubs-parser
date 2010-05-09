@@ -12,7 +12,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format (
  * {@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
  * 
- * @see OpenClSparseMatrixVectorParser
+ * @see OpenClSpMVParser
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
@@ -25,8 +25,12 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
     protected long totalCartesianProductEntriesExamined;
     protected long totalValidCartesianProductEntries;
 
+    public CsrSpmvParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
+        super(opts, grammar);
+    }
+
     public CsrSpmvParser(final CsrSparseMatrixGrammar grammar) {
-        super(grammar);
+        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
     }
 
     @Override
@@ -90,51 +94,54 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
     @Override
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
-        if (cartesianProductProbabilities == null) {
-            cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
-            cartesianProductMidpoints = new short[cartesianProductProbabilities.length];
-        }
-
-        Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
+        Arrays.fill(cartesianProductMidpoints, (short) 0);
         int size = 0;
 
         final CartesianProductFunction cpf = grammar.cartesianProductFunction();
+        final int[] nonTerminalIndices = chart.nonTerminalIndices;
+        final float[] insideProbabilities = chart.insideProbabilities;
 
         // Iterate over all possible midpoints, unioning together the cross-product of discovered
         // non-terminals in each left/right child pair
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
-            final PackedArrayChartCell leftCell = chart.getCell(start, midpoint);
-            final PackedArrayChartCell rightCell = chart.getCell(midpoint, end);
+            final int leftCellIndex = chart.cellIndex(start, midpoint);
+            final int rightCellIndex = chart.cellIndex(midpoint, end);
 
-            final int[] nonTerminalIndices = chart.nonTerminalIndices;
-            final float[] insideProbabilities = chart.insideProbabilities;
-
-            for (int i = leftCell.minLeftChildIndex(); i <= leftCell.maxLeftChildIndex(); i++) {
-
+            for (int i = chart.minLeftChildIndex(leftCellIndex); i <= chart.maxLeftChildIndex(leftCellIndex); i++) {
                 final int leftChild = nonTerminalIndices[i];
                 final float leftProbability = insideProbabilities[i];
 
-                for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {
+                for (int j = chart.offset(rightCellIndex); j <= chart.maxRightChildIndex(rightCellIndex); j++) {
 
                     final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
-                    totalCartesianProductEntriesExamined++;
+                    if (collectDetailedStatistics) {
+                        totalCartesianProductEntriesExamined++;
+                    }
 
                     if (!cpf.isValid(childPair)) {
                         continue;
                     }
 
-                    totalValidCartesianProductEntries++;
-
-                    final float currentProbability = cartesianProductProbabilities[childPair];
                     final float jointProbability = leftProbability + insideProbabilities[j];
 
-                    if (currentProbability == Float.NEGATIVE_INFINITY) {
-                        size++;
+                    if (collectDetailedStatistics) {
+                        totalValidCartesianProductEntries++;
+                    }
+
+                    // If this cartesian-product entry is not populated, we can populate it without comparing
+                    // to a current probability
+                    if (midpoint == (start + 1) || cartesianProductMidpoints[childPair] == 0) {
                         cartesianProductProbabilities[childPair] = jointProbability;
                         cartesianProductMidpoints[childPair] = midpoint;
-                    } else if (jointProbability > currentProbability) {
-                        cartesianProductProbabilities[childPair] = jointProbability;
-                        cartesianProductMidpoints[childPair] = midpoint;
+                        if (collectDetailedStatistics) {
+                            size++;
+                        }
+
+                    } else {
+                        if (jointProbability > cartesianProductProbabilities[childPair]) {
+                            cartesianProductProbabilities[childPair] = jointProbability;
+                            cartesianProductMidpoints[childPair] = midpoint;
+                        }
                     }
                 }
             }
@@ -166,13 +173,16 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         final int[] binaryRuleMatrixColumnIndices = grammar.binaryRuleMatrixColumnIndices();
         final float[] binaryRuleMatrixProbabilities = grammar.binaryRuleMatrixProbabilities();
 
-        final float[] localCrossProductProbabilities = cartesianProductVector.probabilities;
+        // TODO: Do we need these local copies now that cartesianProductVector is final?
+        final float[] localCartesianProductProbabilities = cartesianProductVector.probabilities;
         final short[] localCrossProductMidpoints = cartesianProductVector.midpoints;
 
         // Iterate over possible parents (matrix rows)
-        for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
+        // TODO: This depends explicitly on the grammar sort order, which probably isn't a good idea. Maybe
+        // add a `possibleParents()' method to the grammar and iterate over that?
+        final int numNonTerms = grammar.numNonTerms();
+        for (int parent = 0; parent < numNonTerms; parent++) {
 
-            // Production winningProduction = null;
             float winningProbability = Float.NEGATIVE_INFINITY;
             int winningChildren = Integer.MIN_VALUE;
             short winningMidpoint = 0;
@@ -180,15 +190,16 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
             // Iterate over possible children of the parent (columns with non-zero entries)
             for (int i = binaryRuleMatrixRowIndices[parent]; i < binaryRuleMatrixRowIndices[parent + 1]; i++) {
                 final int grammarChildren = binaryRuleMatrixColumnIndices[i];
-                final float grammarProbability = binaryRuleMatrixProbabilities[i];
 
-                final float cartesianProductProbability = localCrossProductProbabilities[grammarChildren];
-                final float jointProbability = grammarProbability + cartesianProductProbability;
+                if (localCrossProductMidpoints[grammarChildren] != 0) {
+                    final float jointProbability = binaryRuleMatrixProbabilities[i]
+                            + localCartesianProductProbabilities[grammarChildren];
 
-                if (jointProbability > winningProbability) {
-                    winningProbability = jointProbability;
-                    winningChildren = grammarChildren;
-                    winningMidpoint = localCrossProductMidpoints[grammarChildren];
+                    if (jointProbability > winningProbability) {
+                        winningProbability = jointProbability;
+                        winningChildren = grammarChildren;
+                        winningMidpoint = localCrossProductMidpoints[grammarChildren];
+                    }
                 }
             }
 
