@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
+import java.util.Arrays;
 
 /**
  * Implementation of the {@link BitVector} interface which stores single bits (logically booleans) packed into
@@ -117,6 +118,10 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     @Override
     public final float negativeInfinity() {
         return 0;
+    }
+
+    public final void clear() {
+        Arrays.fill(packedVector, 0);
     }
 
     @Override
