@@ -2,6 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import java.util.Arrays;
 
+import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -25,8 +26,12 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
     protected long totalCartesianProductEntriesExamined;
     protected long totalValidCartesianProductEntries;
 
+    private final PackedBitVector observedLeftChildren;
+
     public CsrSpmvParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
         super(opts, grammar);
+
+        observedLeftChildren = new PackedBitVector(grammar.numNonTerms());
     }
 
     public CsrSpmvParser(final CsrSparseMatrixGrammar grammar) {
@@ -96,6 +101,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
         Arrays.fill(cartesianProductMidpoints, (short) 0);
         int size = 0;
+        observedLeftChildren.clear();
 
         final CartesianProductFunction cpf = grammar.cartesianProductFunction();
         final int[] nonTerminalIndices = chart.nonTerminalIndices;
@@ -109,11 +115,13 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
             for (int i = chart.minLeftChildIndex(leftCellIndex); i <= chart.maxLeftChildIndex(leftCellIndex); i++) {
                 final int leftChild = nonTerminalIndices[i];
+                final boolean leftChildObserved = observedLeftChildren.add(leftChild);
                 final float leftProbability = insideProbabilities[i];
 
                 for (int j = chart.offset(rightCellIndex); j <= chart.maxRightChildIndex(rightCellIndex); j++) {
 
                     final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
+
                     if (collectDetailedStatistics) {
                         totalCartesianProductEntriesExamined++;
                     }
@@ -129,10 +137,12 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
                     }
 
                     // If this cartesian-product entry is not populated, we can populate it without comparing
-                    // to a current probability
-                    if (midpoint == (start + 1) || cartesianProductMidpoints[childPair] == 0) {
+                    // to a current probability.
+                    if (midpoint == (start + 1) || !leftChildObserved
+                            || cartesianProductMidpoints[childPair] == 0) {
                         cartesianProductProbabilities[childPair] = jointProbability;
                         cartesianProductMidpoints[childPair] = midpoint;
+
                         if (collectDetailedStatistics) {
                             size++;
                         }

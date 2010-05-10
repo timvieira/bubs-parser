@@ -100,6 +100,9 @@ public class ParserDriver extends BaseCommandlineTool {
     @Option(name = "-inOutSum", usage = "Use sum instead of max for inside and outside calculations")
     public boolean inOutSum = false;
 
+    @Option(name = "-ds", aliases = { "--detailed-stats" }, usage = "Collect detailed counts and statistics (e.g., non-terminals per cell, cartesian-product size, etc.)")
+    public boolean collectDetailedStatistics = false;
+
     @Option(name = "-x1", usage = "Tuning param #1")
     public float param1 = -1;
 
@@ -161,6 +164,9 @@ public class ParserDriver extends BaseCommandlineTool {
 
     public ParserOptions createOptions() {
         final ParserOptions opts = new ParserOptions();
+        if (collectDetailedStatistics) {
+            opts.setCollectDetailedStatistics();
+        }
 
         opts.parserType = parserType;
         opts.edgeFOMType = edgeFOMType;
@@ -323,15 +329,15 @@ public class ParserDriver extends BaseCommandlineTool {
                 return new CoarseCellAgendaParserWithCSLUT(opts, (LeftHashGrammar) grammar, cslutScores);
 
             case JsaSparseMatrixVector:
-                return new JsaSpmvParser((JsaSparseMatrixGrammar) grammar);
+                return new JsaSpmvParser(opts, (JsaSparseMatrixGrammar) grammar);
             case CsrSpmv:
-                return new CsrSpmvParser((CsrSparseMatrixGrammar) grammar);
+                return new CsrSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case CsrSpmvPerMidpoint:
-                return new CsrSpmvPerMidpointParser((CsrSparseMatrixGrammar) grammar);
+                return new CsrSpmvPerMidpointParser(opts, (CsrSparseMatrixGrammar) grammar);
             case CscSpmv:
-                return new CscSpmvParser((CscSparseMatrixGrammar) grammar);
+                return new CscSpmvParser(opts, (CscSparseMatrixGrammar) grammar);
             case OpenClSparseMatrixVector:
-                return new OpenClSpmvParser((CsrSparseMatrixGrammar) grammar);
+                return new OpenClSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case SortAndScanSpmv:
                 return new SortAndScanCsrSpmvParser((CsrSparseMatrixGrammar) grammar);
 
