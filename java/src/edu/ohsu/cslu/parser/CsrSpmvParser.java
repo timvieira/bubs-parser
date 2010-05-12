@@ -40,7 +40,11 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
     @Override
     protected void initParser(final int sentLength) {
-        chart = new PackedArrayChart(sentLength, grammar);
+        if (chart != null && chart.size() >= sentLength) {
+            chart.clear(sentLength);
+        } else {
+            chart = new PackedArrayChart(sentLength, grammar);
+        }
         totalCartesianProductSize = 0;
         totalCartesianProductEntriesExamined = 0;
         totalValidCartesianProductEntries = 0;

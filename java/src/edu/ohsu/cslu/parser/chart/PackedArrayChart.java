@@ -82,6 +82,11 @@ public class PackedArrayChart extends Chart {
         }
     }
 
+    public void clear(final int sentenceLength) {
+        this.size = sentenceLength;
+        Arrays.fill(numNonTerminals, 0, cellIndex(0, sentenceLength) + 1, 0);
+    }
+
     @Override
     public float getInside(final int start, final int end, final int nonTerminal) {
         final int cellIndex = cellIndex(start, end);
@@ -96,8 +101,7 @@ public class PackedArrayChart extends Chart {
 
     @Override
     public void updateInside(final int start, final int end, final int nonTerminal, final float insideProb) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException("Not supported by PackedArrayChart");
     }
 
     @Override
@@ -273,8 +277,16 @@ public class PackedArrayChart extends Chart {
             numEdgesConsidered++;
 
             if (insideProbability > tmpInsideProbabilities[p.parent]) {
-                tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
-                    p.rightChild);
+                if (p.isBinaryProd()) {
+                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
+                        p.rightChild);
+                } else if (p.isLexProd()) {
+                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
+                        p.leftChild);
+                } else {
+                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
+                        p.leftChild);
+                }
                 tmpInsideProbabilities[parent] = insideProbability;
 
                 // Midpoint == end for unary productions
@@ -296,8 +308,16 @@ public class PackedArrayChart extends Chart {
 
             if (edge.inside() > tmpInsideProbabilities[parent]) {
 
-                tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
-                    edge.prod.leftChild, edge.prod.rightChild);
+                if (edge.prod.isBinaryProd()) {
+                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
+                        edge.prod.leftChild, edge.prod.rightChild);
+                } else if (edge.prod.isLexProd()) {
+                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
+                        edge.prod.leftChild);
+                } else {
+                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
+                        edge.prod.leftChild);
+                }
                 tmpInsideProbabilities[parent] = edge.inside();
 
                 // Midpoint == end for unary productions
