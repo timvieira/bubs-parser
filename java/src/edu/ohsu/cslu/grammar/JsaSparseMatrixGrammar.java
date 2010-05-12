@@ -116,8 +116,7 @@ public final class JsaSparseMatrixGrammar extends SparseMatrixGrammar {
 
     @Override
     public final float unaryLogProbability(final int parent, final int child) {
-        final short rightChildIndex = Production.UNARY_PRODUCTION;
-        final int children = cartesianProductFunction.pack(child, rightChildIndex);
+        final int children = cartesianProductFunction.packUnary(child);
 
         final int[] rowIndices = jsaUnaryRules[parent];
         final float[] rowProbabilities = jsaUnaryProbabilities[parent];

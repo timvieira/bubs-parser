@@ -8,6 +8,7 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
@@ -33,49 +34,49 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createSimpleGrammar(grammarClass(),
             cartesianProductFunctionClass);
         final CartesianProductFunction f = g.cartesianProductFunction;
-        assertEquals(4, f.unpackLeftChild(f.pack(4, (short) 2)));
-        assertEquals(2, f.unpackRightChild(f.pack(4, (short) 2)));
+        assertEquals(4, f.unpackLeftChild(f.pack(4, 2)));
+        assertEquals(2, f.unpackRightChild(f.pack(4, 2)));
 
-        assertEquals(2, f.unpackLeftChild(f.pack(2, (short) 2)));
-        assertEquals(2, f.unpackRightChild(f.pack(2, (short) 2)));
+        assertEquals(2, f.unpackLeftChild(f.pack(2, 2)));
+        assertEquals(2, f.unpackRightChild(f.pack(2, 2)));
 
-        assertEquals(4, f.unpackLeftChild(f.pack(4, (short) -1)));
-        assertEquals(-1, f.unpackRightChild(f.pack(4, (short) -1)));
+        assertEquals(4, f.unpackLeftChild(f.packUnary(4)));
+        assertEquals(Production.UNARY_PRODUCTION, f.unpackRightChild(f.packUnary(4)));
 
-        assertEquals(9, f.unpackLeftChild(f.pack(9, (short) -2)));
-        assertEquals(-2, f.unpackRightChild(f.pack(9, (short) -2)));
+        assertEquals(9, f.unpackLeftChild(f.packLexical(9)));
+        assertEquals(Production.LEXICAL_PRODUCTION, f.unpackRightChild(f.packLexical(9)));
 
-        assertEquals(0, f.unpackLeftChild(f.pack(0, (short) -2)));
-        assertEquals(-2, f.unpackRightChild(f.pack(0, (short) -2)));
+        assertEquals(0, f.unpackLeftChild(f.packLexical(0)));
+        assertEquals(Production.LEXICAL_PRODUCTION, f.unpackRightChild(f.packLexical(0)));
 
-        assertEquals(0, f.unpackLeftChild(f.pack(0, (short) 0)));
-        assertEquals(0, f.unpackRightChild(f.pack(0, (short) 0)));
+        assertEquals(0, f.unpackLeftChild(f.pack(0, 0)));
+        assertEquals(0, f.unpackRightChild(f.pack(0, 0)));
 
-        assertEquals(0, f.unpackLeftChild(f.pack(0, (short) 2)));
-        assertEquals(2, f.unpackRightChild(f.pack(0, (short) 2)));
+        assertEquals(0, f.unpackLeftChild(f.pack(0, 2)));
+        assertEquals(2, f.unpackRightChild(f.pack(0, 2)));
 
-        assertEquals(2, f.unpackLeftChild(f.pack(2, (short) 0)));
-        assertEquals(0, f.unpackRightChild(f.pack(2, (short) 0)));
+        assertEquals(2, f.unpackLeftChild(f.pack(2, 0)));
+        assertEquals(0, f.unpackRightChild(f.pack(2, 0)));
 
         // And a couple tests with a larger grammar
         final SparseMatrixGrammar g2 = (SparseMatrixGrammar) createGrammar(grammarClass(), SharedNlpTests
             .unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"), SharedNlpTests
             .unitTestDataAsReader("grammars/f2-21-R2-p1-unk.lex.gz"));
         final CartesianProductFunction f2 = g2.cartesianProductFunction;
-        assertEquals(2, f2.unpackLeftChild(f2.pack(2, (short) 0)));
-        assertEquals(0, f2.unpackRightChild(f2.pack(2, (short) 0)));
+        assertEquals(2, f2.unpackLeftChild(f2.pack(2, 0)));
+        assertEquals(0, f2.unpackRightChild(f2.pack(2, 0)));
 
-        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, (short) 0)));
-        assertEquals(0, f2.unpackRightChild(f2.pack(5000, (short) 0)));
+        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, 0)));
+        assertEquals(0, f2.unpackRightChild(f2.pack(5000, 0)));
 
-        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, (short) 250)));
-        assertEquals(250, f2.unpackRightChild(f2.pack(5000, (short) 250)));
+        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, 250)));
+        assertEquals(250, f2.unpackRightChild(f2.pack(5000, 250)));
 
-        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, (short) -1)));
-        assertEquals(-1, f2.unpackRightChild(f2.pack(5000, (short) -1)));
+        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, -1)));
+        assertEquals(Production.UNARY_PRODUCTION, f2.unpackRightChild(f2.packUnary(5000)));
 
-        assertEquals(5000, f2.unpackLeftChild(f2.pack(5000, (short) -2)));
-        assertEquals(-2, f2.unpackRightChild(f2.pack(5000, (short) -2)));
+        assertEquals(5000, f2.unpackLeftChild(f2.packLexical(5000)));
+        assertEquals(Production.LEXICAL_PRODUCTION, f2.unpackRightChild(f2.packLexical(5000)));
     }
 
     /**
@@ -177,9 +178,9 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(286, g.leftChildOnlyStart);
         assertEquals(6060, g.unaryChildOnlyStart);
 
-        assertEquals(193, g.cartesianProductFunction.unpackLeftChild(g.cartesianProductFunction.pack(193,
-            (short) 266)));
+        assertEquals(193, g.cartesianProductFunction.unpackLeftChild(g.cartesianProductFunction
+            .pack(193, 266)));
         assertEquals(266, g.cartesianProductFunction.unpackRightChild(g.cartesianProductFunction.pack(266,
-            (short) 266)));
+            266)));
     }
 }

@@ -144,7 +144,7 @@ public class SortAndScanCsrSpmvParser extends
                             * rightCellRightChildren + rightChildrenProcessed;
 
                     tmpCartesianProductChildren[cartesianProductIndex] = grammar.cartesianProductFunction()
-                        .pack(leftChildIndex, (short) nonTerminalIndices[j]);
+                        .pack(leftChildIndex, nonTerminalIndices[j]);
                     tmpCartesianProductInsideProbabilities[cartesianProductIndex] = leftProbability
                             + insideProbabilities[j];
                     tmpCartesianProductMidpoints[cartesianProductIndex] = midpoint;

@@ -154,15 +154,15 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
         final short[] midpoints = new short[g.cartesianProductFunction().packedArraySize()];
 
-        final int nnNp = g.cartesianProductFunction().pack(nn, (short) np);
+        final int nnNp = g.cartesianProductFunction().pack(nn, np);
         probabilities[nnNp] = -1.897f;
         midpoints[nnNp] = 1;
 
-        final int npNp = g.cartesianProductFunction().pack(np, (short) np);
+        final int npNp = g.cartesianProductFunction().pack(np, np);
         probabilities[npNp] = -1.386f;
         midpoints[npNp] = 2;
 
-        final int npNn = g.cartesianProductFunction().pack(np, (short) nn);
+        final int npNn = g.cartesianProductFunction().pack(np, nn);
         probabilities[npNn] = -1.897f;
         midpoints[npNn] = 3;
 
@@ -654,7 +654,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     private int pack(final SparseMatrixGrammar grammar, final int leftChild, final int rightChild) {
-        return grammar.cartesianProductFunction().pack(leftChild, (short) rightChild);
+        return grammar.cartesianProductFunction().pack(leftChild, rightChild);
     }
 
     @Override

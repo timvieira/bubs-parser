@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
@@ -106,6 +107,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
         int size = 0;
 
+        final CartesianProductFunction cpf = grammar.cartesianProductFunction();
+
         // Iterate over all possible midpoints, unioning together the cross-product of discovered
         // non-terminals in each left/right child pair
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
@@ -125,12 +128,18 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
                 for (int j = 0; j < rightChildren.length; j++) {
 
                     final float jointProbability = leftProbability + rightChildrenProbabilities[j];
-                    final int child = grammar.cartesianProductFunction().pack(leftChild, rightChildren[j]);
-                    final float currentProbability = cartesianProductProbabilities[child];
+                    final int childPair = grammar.cartesianProductFunction()
+                        .pack(leftChild, rightChildren[j]);
+
+                    if (!cpf.isValid(childPair)) {
+                        continue;
+                    }
+
+                    final float currentProbability = cartesianProductProbabilities[childPair];
 
                     if (jointProbability > currentProbability) {
-                        cartesianProductProbabilities[child] = jointProbability;
-                        cartesianProductMidpoints[child] = midpoint;
+                        cartesianProductProbabilities[childPair] = jointProbability;
+                        cartesianProductMidpoints[childPair] = midpoint;
 
                         if (currentProbability == Float.NEGATIVE_INFINITY) {
                             size++;

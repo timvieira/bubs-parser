@@ -117,7 +117,7 @@ public class DenseVectorChart extends CellChart {
                 midpoints[parent] = (short) leftCell.end();
                 inside[parent] = insideProb;
                 children[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
-                    (short) p.rightChild);
+                    p.rightChild);
 
                 numEdgesAdded++;
             }

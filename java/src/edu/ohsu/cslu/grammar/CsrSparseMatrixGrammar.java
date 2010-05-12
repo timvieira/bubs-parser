@@ -147,7 +147,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
     @Override
     public final float unaryLogProbability(final int parent, final int child) {
-        final int children = cartesianProductFunction.pack(child, (short) Production.UNARY_PRODUCTION);
+        final int children = cartesianProductFunction.packUnary(child);
 
         for (int i = csrUnaryRowIndices[parent]; i <= csrUnaryRowIndices[parent + 1]; i++) {
             final int column = csrUnaryColumnIndices[i];

@@ -274,7 +274,7 @@ public class PackedArrayChart extends Chart {
 
             if (insideProbability > tmpInsideProbabilities[p.parent]) {
                 tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
-                    (short) p.rightChild);
+                    p.rightChild);
                 tmpInsideProbabilities[parent] = insideProbability;
 
                 // Midpoint == end for unary productions
@@ -297,7 +297,7 @@ public class PackedArrayChart extends Chart {
             if (edge.inside() > tmpInsideProbabilities[parent]) {
 
                 tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
-                    edge.prod.leftChild, (short) edge.prod.rightChild);
+                    edge.prod.leftChild, edge.prod.rightChild);
                 tmpInsideProbabilities[parent] = edge.inside();
 
                 // Midpoint == end for unary productions

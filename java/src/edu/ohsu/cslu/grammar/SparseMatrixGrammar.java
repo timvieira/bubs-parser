@@ -51,7 +51,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         // Some CartesianProductFunction implementation will duplicate this count, but it's not that expensive
         final IntOpenHashSet productionPairs = new IntOpenHashSet(50000);
         for (final Production p : binaryProductions) {
-            productionPairs.add(cartesianProductFunction.pack(p.leftChild, (short) p.rightChild));
+            productionPairs.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
         }
         validProductionPairs = productionPairs.size();
     }
@@ -105,7 +105,8 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
 
         for (final Production p : productions) {
-            maps[p.parent].put(cartesianProductFunction.pack(p.leftChild, (short) p.rightChild), p.prob);
+            // TODO Map unary and lexical productions separately
+            maps[p.parent].put(cartesianProductFunction.pack(p.leftChild, p.rightChild), p.prob);
         }
         return maps;
     }
@@ -123,8 +124,9 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(
             1000);
 
+        // TODO Map unary and lexical productions separately
         for (final Production p : productions) {
-            final int childPair = cartesianProductFunction.pack(p.leftChild, (short) p.rightChild);
+            final int childPair = cartesianProductFunction.pack(p.leftChild, p.rightChild);
             Int2FloatOpenHashMap map = maps.get(childPair);
             if (map == null) {
                 map = new Int2FloatOpenHashMap(20);
@@ -166,7 +168,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
         final IntSet validChildPairs = new IntOpenHashSet(binaryProductions.size() / 2);
         for (final Production p : binaryProductions) {
-            validChildPairs.add(cartesianProductFunction.pack(p.leftChild, (short) p.rightChild));
+            validChildPairs.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
         }
 
         final StringBuilder sb = new StringBuilder(10 * 1024);
@@ -221,6 +223,22 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          * @return packed representation of the specified child pair.
          */
         public abstract int pack(final int leftChild, final int rightChild);
+
+        /**
+         * Returns a single int representing a unary production.
+         * 
+         * @param child
+         * @return packed representation of the specified production.
+         */
+        public abstract int packUnary(final int child);
+
+        /**
+         * Returns a single int representing a lexical production.
+         * 
+         * @param child
+         * @return packed representation of the specified production.
+         */
+        public abstract int packLexical(final int child);
 
         /**
          * Returns the left child encoded into a packed child pair
@@ -293,6 +311,14 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             lowOrderNegativeBit = 1 << (shift - 1);
 
             packedArraySize = numNonTerms() << shift;
+        }
+
+        public final int packUnary(final int child) {
+            return pack(child, Production.UNARY_PRODUCTION);
+        }
+
+        public final int packLexical(final int child) {
+            return pack(child, Production.LEXICAL_PRODUCTION);
         }
 
         @Override
@@ -488,7 +514,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             validChildPairs = new PackedBitVector(packedArraySize());
 
             for (final Production p : binaryProductions) {
-                validChildPairs.add(pack(p.leftChild, (short) p.rightChild));
+                validChildPairs.add(pack(p.leftChild, p.rightChild));
             }
         }
 
