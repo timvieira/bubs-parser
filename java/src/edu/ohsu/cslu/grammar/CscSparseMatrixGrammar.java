@@ -242,7 +242,7 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
     @Override
     public final float unaryLogProbability(final int parent, final int child) {
-        final int childPair = cartesianProductFunction.pack(child, (short) Production.UNARY_PRODUCTION);
+        final int childPair = cartesianProductFunction.packUnary(child);
 
         // Find the column (child pair)
         int c = -1;

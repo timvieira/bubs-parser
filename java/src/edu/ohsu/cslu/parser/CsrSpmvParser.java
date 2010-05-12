@@ -13,7 +13,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format (
  * {@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
  * 
- * @see OpenClSpMVParser
+ * @see OpenClSpmvParser
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
