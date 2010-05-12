@@ -18,7 +18,7 @@ public abstract class Chart {
         this.parser = parser;
     }
 
-    public int size() {
+    public final int size() {
         return size;
     }
 
@@ -78,8 +78,9 @@ public abstract class Chart {
         public abstract float getInside(final int nonTerminal);
 
         /**
-         * Returns the most probable edge producing the specified non-terminal. Most {@link ChartCell} implementations will only maintain one edge per non-terminal, but some
-         * implementations may maintain multiple edges (e.g., for k-best parsing).
+         * Returns the most probable edge producing the specified non-terminal. Most {@link ChartCell}
+         * implementations will only maintain one edge per non-terminal, but some implementations may maintain
+         * multiple edges (e.g., for k-best parsing).
          * 
          * @param nonTerminal
          * @return the most probable populated edge producing the specified non-terminal
@@ -88,7 +89,8 @@ public abstract class Chart {
 
         public abstract void updateInside(final ChartEdge edge);
 
-        public abstract void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb);
+        public abstract void updateInside(final Production p, final ChartCell leftCell,
+                final ChartCell rightCell, final float insideProb);
 
         /**
          * @return the word index of the first word covered by this cell

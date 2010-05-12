@@ -105,8 +105,13 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
 
         for (final Production p : productions) {
-            // TODO Map unary and lexical productions separately
-            maps[p.parent].put(cartesianProductFunction.pack(p.leftChild, p.rightChild), p.prob);
+            if (p.isBinaryProd()) {
+                maps[p.parent].put(cartesianProductFunction.pack(p.leftChild, p.rightChild), p.prob);
+            } else if (p.isLexProd()) {
+                maps[p.parent].put(cartesianProductFunction.packLexical(p.leftChild), p.prob);
+            } else {
+                maps[p.parent].put(cartesianProductFunction.packUnary(p.leftChild), p.prob);
+            }
         }
         return maps;
     }
@@ -294,31 +299,18 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     protected abstract class ShiftFunction implements CartesianProductFunction {
         // Shift lengths and masks for packing and unpacking non-terminals into an int
         public final int shift;
-        protected final int highOrderMask;
         protected final int lowOrderMask;
-        protected final int lowOrderNegativeBit;
         private final int packedArraySize;
 
         protected ShiftFunction(final int maxShiftedNonTerminal) {
-            // Add 1 bit to leave empty for sign
-            shift = edu.ohsu.cslu.util.Math.logBase2(maxShiftedNonTerminal) + 1;
+            shift = edu.ohsu.cslu.util.Math.logBase2(maxShiftedNonTerminal);
             int m = 0;
             for (int i = 0; i < shift; i++) {
                 m = m << 1 | 1;
             }
             lowOrderMask = m;
-            highOrderMask = ~m;
-            lowOrderNegativeBit = 1 << (shift - 1);
 
             packedArraySize = numNonTerms() << shift;
-        }
-
-        public final int packUnary(final int child) {
-            return pack(child, Production.UNARY_PRODUCTION);
-        }
-
-        public final int packLexical(final int child) {
-            return pack(child, Production.LEXICAL_PRODUCTION);
         }
 
         @Override
@@ -333,6 +325,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     }
 
     public abstract class LeftShiftFunction extends ShiftFunction {
+        private final int maxLexicalProduction = -numNonTerms() - 1;
 
         public LeftShiftFunction(final int maxShiftedNonTerminal) {
             super(maxShiftedNonTerminal);
@@ -343,20 +336,40 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             return leftChild << shift | (rightChild & lowOrderMask);
         }
 
+        public final int packUnary(final int child) {
+            return -child - 1;
+        }
+
+        public final int packLexical(final int child) {
+            return maxLexicalProduction - child;
+        }
+
         @Override
         public final int unpackLeftChild(final int childPair) {
+            if (childPair < 0) {
+                // Unary or lexical production
+                if (childPair <= maxLexicalProduction) {
+                    // Lexical production
+                    return -childPair + maxLexicalProduction;
+                }
+                // Unary production
+                return -childPair - 1;
+            }
             return childPair >> shift;
         }
 
         @Override
         public final int unpackRightChild(final int childPair) {
-            final int lower = childPair & lowOrderMask;
-
-            // Handle negative lower values
-            if ((lower & lowOrderNegativeBit) == lowOrderNegativeBit) {
-                return lower | highOrderMask;
+            if (childPair < 0) {
+                // Unary or lexical production
+                if (childPair <= maxLexicalProduction) {
+                    // Lexical production
+                    return Production.LEXICAL_PRODUCTION;
+                }
+                // Unary production
+                return Production.UNARY_PRODUCTION;
             }
-            return lower;
+            return childPair & lowOrderMask;
         }
 
         @Override
