@@ -117,7 +117,7 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
             for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {
 
                 final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
-                if (!cpf.isValid(childPair)) {
+                if (childPair == Integer.MIN_VALUE) {
                     continue;
                 }
 

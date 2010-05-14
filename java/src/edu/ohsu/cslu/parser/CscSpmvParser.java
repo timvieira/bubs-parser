@@ -13,7 +13,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * {@link CscSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
  * 
  * @see CsrSpmvParser
- * @see OpenClSpMVParser
+ * @see OpenClSpmvParser
  * 
  *      TODO Share code copied from {@link CsrSpmvParser}
  * 
@@ -119,7 +119,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
                     final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
                     totalCartesianProductEntriesExamined++;
 
-                    if (!cpf.isValid(childPair)) {
+                    if (childPair == Integer.MIN_VALUE) {
                         continue;
                     }
 
