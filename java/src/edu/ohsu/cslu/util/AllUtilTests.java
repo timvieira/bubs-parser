@@ -12,7 +12,8 @@ import org.junit.runners.Suite;
  *        $Id$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses( { TestSort.TestRadixSort.class, TestSort.TestMergeSort.class, TestSort.TestBitonicSort.class, TestSort.TestFlashSort.class, TestSort.TestQuickSort.class,
+@Suite.SuiteClasses( { TestMath.class, TestSort.TestRadixSort.class, TestSort.TestMergeSort.class,
+        TestSort.TestBitonicSort.class, TestSort.TestFlashSort.class, TestSort.TestQuickSort.class,
         TestSerialCpuScanner.class, TestStrings.class })
 public class AllUtilTests {
 }
