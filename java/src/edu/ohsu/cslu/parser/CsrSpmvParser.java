@@ -124,13 +124,12 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
                 for (int j = chart.offset(rightCellIndex); j <= chart.maxRightChildIndex(rightCellIndex); j++) {
 
-                    final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
-
                     if (collectDetailedStatistics) {
                         totalCartesianProductEntriesExamined++;
                     }
 
-                    if (!cpf.isValid(childPair)) {
+                    final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
+                    if (childPair == Integer.MIN_VALUE) {
                         continue;
                     }
 

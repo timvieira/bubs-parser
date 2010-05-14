@@ -12,6 +12,7 @@ import java.util.Collection;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
+import edu.ohsu.cslu.util.Math;
 
 /**
  * Stores a grammar as a sparse matrix of probabilities.
@@ -129,9 +130,15 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(
             1000);
 
-        // TODO Map unary and lexical productions separately
         for (final Production p : productions) {
-            final int childPair = cartesianProductFunction.pack(p.leftChild, p.rightChild);
+            int childPair;
+            if (p.isBinaryProd()) {
+                childPair = cartesianProductFunction.pack(p.leftChild, p.rightChild);
+            } else if (p.isLexProd()) {
+                childPair = cartesianProductFunction.packLexical(p.leftChild);
+            } else {
+                childPair = cartesianProductFunction.packUnary(p.leftChild);
+            }
             Int2FloatOpenHashMap map = maps.get(childPair);
             if (map == null) {
                 map = new Int2FloatOpenHashMap(20);
@@ -204,14 +211,6 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     public interface CartesianProductFunction {
 
         /**
-         * Return true if the specified child pair is a valid cross-product vector entry
-         * 
-         * @param childPair
-         * @return true if the specified child pair is a valid cross-product vector entry
-         */
-        public abstract boolean isValid(int childPair);
-
-        /**
          * Returns the array size required to store all possible child combinations.
          * 
          * @return the array size required to store all possible child combinations.
@@ -221,11 +220,10 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         /**
          * Returns a single int representing a child pair.
          * 
-         * TODO Return -1 if the pair is invalid?
-         * 
          * @param leftChild
          * @param rightChild
-         * @return packed representation of the specified child pair.
+         * @return packed representation of the specified child pair or {@link Integer#MIN_VALUE} if the pair
+         *         is invalid.
          */
         public abstract int pack(final int leftChild, final int rightChild);
 
@@ -303,7 +301,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         private final int packedArraySize;
 
         protected ShiftFunction(final int maxShiftedNonTerminal) {
-            shift = edu.ohsu.cslu.util.Math.logBase2(maxShiftedNonTerminal);
+            shift = Math.logBase2(Math.nextPowerOf2(maxShiftedNonTerminal));
             int m = 0;
             for (int i = 0; i < shift; i++) {
                 m = m << 1 | 1;
@@ -317,11 +315,6 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public final int packedArraySize() {
             return packedArraySize;
         }
-
-        @Override
-        public boolean isValid(final int childPair) {
-            return childPair < packedArraySize;
-        }
     }
 
     public abstract class LeftShiftFunction extends ShiftFunction {
@@ -332,7 +325,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
 
         @Override
-        public final int pack(final int leftChild, final int rightChild) {
+        public int pack(final int leftChild, final int rightChild) {
             return leftChild << shift | (rightChild & lowOrderMask);
         }
 
@@ -383,6 +376,12 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
         public DefaultFunction() {
             super(leftChildOnlyStart);
+        }
+
+        @Override
+        public final int pack(final int leftChild, final int rightChild) {
+            final int childPair = leftChild << shift | (rightChild & lowOrderMask);
+            return childPair > packedArraySize() ? Integer.MIN_VALUE : childPair;
         }
 
         @Override
@@ -476,19 +475,13 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
 
         @Override
-        public boolean isValid(final int childPair) {
-            if (childPair >= packedArraySize()) {
-                return false;
-            }
-
-            final int leftChild = unpackLeftChild(childPair);
-            final int rightChild = unpackRightChild(childPair);
-            // Eliminate POS which cannot combine with left-factored non-terminals
+        public int pack(final int leftChild, final int rightChild) {
             if (leftChild >= leftFactoredStart && leftChild < normalLeftChildStart
                     && rightChild >= posNonFactoredStart && rightChild < normalPosStart) {
-                return false;
+                return Integer.MIN_VALUE;
             }
-            return true;
+
+            return leftChild << shift | (rightChild & lowOrderMask);
         }
 
         @Override
@@ -527,13 +520,21 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             validChildPairs = new PackedBitVector(packedArraySize());
 
             for (final Production p : binaryProductions) {
-                validChildPairs.add(pack(p.leftChild, p.rightChild));
+                validChildPairs.add(internalPack(p.leftChild, p.rightChild));
             }
         }
 
         @Override
-        public final boolean isValid(final int childPair) {
-            return validChildPairs.contains(childPair);
+        public final int pack(final int leftChild, final int rightChild) {
+            final int childPair = internalPack(leftChild, rightChild);
+            if (!validChildPairs.contains(childPair)) {
+                return Integer.MIN_VALUE;
+            }
+            return childPair;
+        }
+
+        private int internalPack(final int leftChild, final int rightChild) {
+            return leftChild << shift | (rightChild & lowOrderMask);
         }
 
         @Override

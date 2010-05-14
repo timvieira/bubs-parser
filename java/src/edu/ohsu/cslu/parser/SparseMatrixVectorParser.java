@@ -128,10 +128,9 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
                 for (int j = 0; j < rightChildren.length; j++) {
 
                     final float jointProbability = leftProbability + rightChildrenProbabilities[j];
-                    final int childPair = grammar.cartesianProductFunction()
-                        .pack(leftChild, rightChildren[j]);
+                    final int childPair = cpf.pack(leftChild, rightChildren[j]);
 
-                    if (!cpf.isValid(childPair)) {
+                    if (childPair == Integer.MIN_VALUE) {
                         continue;
                     }
 
