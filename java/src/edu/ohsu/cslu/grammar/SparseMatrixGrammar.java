@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.io.FileReader;
 import java.io.Reader;
+import java.lang.reflect.Constructor;
 import java.util.Collection;
 
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
@@ -34,6 +35,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
     protected final CartesianProductFunction cartesianProductFunction;
 
+    @SuppressWarnings("unchecked")
     public SparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
             final GrammarFormatType grammarFormat, Class<? extends CartesianProductFunction> functionClass)
             throws Exception {
@@ -43,8 +45,15 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             if (functionClass == null) {
                 functionClass = DefaultFunction.class;
             }
-            this.cartesianProductFunction = functionClass.getConstructor(SparseMatrixGrammar.class)
-                .newInstance(this);
+
+            Constructor<CartesianProductFunction> c;
+            try {
+                c = (Constructor<CartesianProductFunction>) functionClass
+                    .getConstructor(SparseMatrixGrammar.class);
+            } catch (final NoSuchMethodException e) {
+                c = (Constructor<CartesianProductFunction>) functionClass.getConstructor(getClass());
+            }
+            this.cartesianProductFunction = c.newInstance(this);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -187,7 +196,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         for (final int childPair : validChildPairs) {
             final int leftChild = cartesianProductFunction.unpackLeftChild(childPair);
             final int rightChild = cartesianProductFunction.unpackRightChild(childPair);
-            sb.append(leftChild + "," + rightChild + '\n');
+            sb.append(leftChild + "," + rightChild + ',' + childPair + '\n');
         }
 
         sb.deleteCharAt(sb.length() - 1);
@@ -312,7 +321,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
 
         @Override
-        public final int packedArraySize() {
+        public int packedArraySize() {
             return packedArraySize;
         }
     }
