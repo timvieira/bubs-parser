@@ -16,6 +16,7 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 public class SummarizeGrammar extends BaseCommandlineTool {
@@ -27,6 +28,10 @@ public class SummarizeGrammar extends BaseCommandlineTool {
 
     @Option(name = "-rm", aliases = { "--recognition-matrix" }, usage = "Print recognition matrix (populated pairs in |V| x |V| matrix)")
     private boolean recognitionMatrix;
+
+    // TODO Implement class name mappings in cltool and replace this with a class name
+    @Option(name = "-cpf", aliases = { "--cartesian-product-function" }, metaVar = "function", usage = "Cartesian-product function (only used when printing a recognition matrix)")
+    private String cartesianProductFunctionClass = null;
 
     @Option(name = "-rmh", aliases = { "--recognition-matrix-histogram" }, usage = "Print recognition matrix histogram (counts of occurrences in the |V| x |V| recognition matrix)")
     private boolean recognitionMatrixHistogram;
@@ -49,8 +54,9 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         }
 
         final Class<Grammar> gc = (Class<Grammar>) Class.forName(grammarClass);
-        final java.lang.reflect.Constructor<Grammar> c = gc.getConstructor(Reader.class, Reader.class,
-            GrammarFormatType.class);
+        final java.lang.reflect.Constructor<Grammar> c = cartesianProductFunctionClass != null ? gc
+            .getConstructor(Reader.class, Reader.class, GrammarFormatType.class, Class.class) : gc
+            .getConstructor(Reader.class, Reader.class, GrammarFormatType.class);
 
         File pcfg = new File(prefix + ".pcfg");
         File lexicon = new File(prefix + ".lex");
@@ -72,7 +78,14 @@ public class SummarizeGrammar extends BaseCommandlineTool {
             lexiconReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(lexicon)));
         }
 
-        final Grammar g = c.newInstance(pcfgReader, lexiconReader, grammarFormat);
+        Grammar g;
+        if (cartesianProductFunctionClass != null) {
+            final Class<? extends CartesianProductFunction> cpfClass = (Class<? extends CartesianProductFunction>) Class
+                .forName(cartesianProductFunctionClass);
+            g = c.newInstance(pcfgReader, lexiconReader, grammarFormat, cpfClass);
+        } else {
+            g = c.newInstance(pcfgReader, lexiconReader, grammarFormat);
+        }
 
         if (recognitionMatrix) {
             System.out.print(g.recognitionMatrix());

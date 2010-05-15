@@ -34,7 +34,10 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
      */
     private int[] csrBinaryColumnIndices;
 
-    /** Binary rule probabilities */
+    /**
+     * Binary rule probabilities. One entry for each binary rule. The same size as
+     * {@link #csrBinaryColumnIndices}.
+     */
     private float[] csrBinaryProbabilities;
 
     /**
