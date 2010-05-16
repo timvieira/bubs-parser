@@ -24,9 +24,9 @@ import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
-import edu.ohsu.cslu.grammar.PerfectHashCsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectHashFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PosFactoredFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
 import edu.ohsu.cslu.parser.ParserOptions.CartesianProductFunctionType;
@@ -257,13 +257,12 @@ public class ParserDriver extends BaseCommandlineTool {
                     case BitMatrixExactFilter:
                         return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             BitVectorExactFilterFunction.class);
+                    case PerfectHash:
+                        return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            PerfectHashFilterFunction.class);
                     default:
                         throw new Exception("Unsupported filter type: " + cartesianProductFunctionType);
                 }
-
-            case PerfectHashCsr:
-                return new PerfectHashCsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
-                    PerfectHashCsrSparseMatrixGrammar.PerfectHashFilterFunction.class);
 
             case CscSpmv:
                 switch (cartesianProductFunctionType) {
@@ -345,8 +344,6 @@ public class ParserDriver extends BaseCommandlineTool {
                 return new OpenClSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case SortAndScanSpmv:
                 return new SortAndScanCsrSpmvParser((CsrSparseMatrixGrammar) grammar);
-            case PerfectHashCsr:
-                return new PerfectHashCsrSpmvParser(opts, (PerfectHashCsrSparseMatrixGrammar) grammar);
 
             default:
                 throw new IllegalArgumentException("Unsupported parser type");
