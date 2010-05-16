@@ -12,6 +12,8 @@ import java.util.Collection;
 
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
+import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.hash.PerfectHash;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.util.Math;
 
@@ -564,6 +566,109 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         @Override
         public final int rightChildEnd() {
             return leftChildOnlyStart;
+        }
+    }
+
+    public final class PerfectHashFilterFunction extends ShiftFunction {
+
+        private final int maxLexicalProduction = -numNonTerms() - 1;
+
+        /** Perfect (collision-free) hash of all observed child pairs. */
+        private final PerfectHash perfectHash;
+
+        private final int packedArraySize;
+
+        public PerfectHashFilterFunction() {
+            super(leftChildOnlyStart);
+
+            final IntSet childPairs = new IntOpenHashSet(binaryProductions.size());
+            for (final Production p : binaryProductions) {
+                childPairs.add(internalPack(p.leftChild, p.rightChild));
+            }
+
+            this.perfectHash = new PerfectHash(childPairs.toIntArray());
+            System.out.println("Hashed grammar: " + perfectHash.toString());
+            this.packedArraySize = perfectHash.hashtableSize();
+        }
+
+        @Override
+        public final int pack(final int leftChild, final int rightChild) {
+            // TODO Combine shifting and masking here with the shift and mask in unsafeHashcode
+            return perfectHash.unsafeHashcode(leftChild << shift | (rightChild & lowOrderMask));
+        }
+
+        private int internalPack(final int leftChild, final int rightChild) {
+            return leftChild << shift | (rightChild & lowOrderMask);
+        }
+
+        public final int packUnary(final int child) {
+            return -child - 1;
+        }
+
+        public final int packLexical(final int child) {
+            return maxLexicalProduction - child;
+        }
+
+        @Override
+        public final int unpackLeftChild(final int packedChildPair) {
+            if (packedChildPair < 0) {
+                // Unary or lexical production
+                if (packedChildPair <= maxLexicalProduction) {
+                    // Lexical production
+                    return -packedChildPair + maxLexicalProduction;
+                }
+                // Unary production
+                return -packedChildPair - 1;
+            }
+
+            final int childPair = perfectHash.unsafeKey(packedChildPair);
+            return childPair >> shift;
+        }
+
+        @Override
+        public final int unpackRightChild(final int packedChildPair) {
+            if (packedChildPair < 0) {
+                // Unary or lexical production
+                if (packedChildPair <= maxLexicalProduction) {
+                    // Lexical production
+                    return Production.LEXICAL_PRODUCTION;
+                }
+                // Unary production
+                return Production.UNARY_PRODUCTION;
+            }
+
+            final int childPair = perfectHash.unsafeKey(packedChildPair);
+            return childPair & lowOrderMask;
+        }
+
+        @Override
+        public final int leftChildStart() {
+            return posStart;
+        }
+
+        @Override
+        public final int leftChildEnd() {
+            return unaryChildOnlyStart;
+        }
+
+        @Override
+        public final int rightChildStart() {
+            return rightChildOnlyStart;
+        }
+
+        @Override
+        public final int rightChildEnd() {
+            return leftChildOnlyStart;
+        }
+
+        @Override
+        public int packedArraySize() {
+            return packedArraySize;
+        }
+
+        @Override
+        public String openClPackDefine() {
+            return "";
         }
     }
 }
