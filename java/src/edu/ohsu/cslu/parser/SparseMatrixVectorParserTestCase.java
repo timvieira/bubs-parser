@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.PerfectHashCsrSparseMatrixGrammar.PerfectHashFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CartesianProductVector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
@@ -36,7 +36,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         return grammarClass().getConstructor(
             new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
             new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
-                    PerfectHashFilterFunction.class });
+                    BitVectorExactFilterFunction.class });
     }
 
     /**

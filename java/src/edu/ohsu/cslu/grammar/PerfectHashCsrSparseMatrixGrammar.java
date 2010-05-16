@@ -29,20 +29,20 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 public class PerfectHashCsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
     /**
-     * Offsets into {@link #csrBinaryColumnIndices} for the start of each row, indexed by row index
+     * Offsets into {@link #csrHashedBinaryColumnIndices} for the start of each row, indexed by row index
      * (non-terminals), with one extra entry appended to prevent loops from falling off the end
      */
     private int[] csrBinaryRowIndices;
 
     /**
-     * Column indices of each matrix entry in {@link #csrBinaryProbabilities}. One entry for each binary rule;
-     * the same size as {@link #csrBinaryProbabilities}.
+     * Hashed column indices of each matrix entry in {@link #csrBinaryProbabilities}. One entry for each
+     * binary rule; the same size as {@link #csrBinaryProbabilities}.
      */
-    private int[] csrBinaryColumnIndices;
+    private int[] csrHashedBinaryColumnIndices;
 
     /**
      * Binary rule probabilities. One entry for each binary rule. The same size as
-     * {@link #csrBinaryColumnIndices}.
+     * {@link #csrHashedBinaryColumnIndices}.
      */
     private float[] csrBinaryProbabilities;
 
@@ -68,10 +68,10 @@ public class PerfectHashCsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
         // Bin all binary rules by parent, mapping packed children -> probability
         csrBinaryRowIndices = new int[numNonTerms() + 1];
-        csrBinaryColumnIndices = new int[numBinaryRules()];
+        csrHashedBinaryColumnIndices = new int[numBinaryRules()];
         csrBinaryProbabilities = new float[numBinaryRules()];
 
-        storeRulesAsMatrix(binaryProductions, csrBinaryRowIndices, csrBinaryColumnIndices,
+        storeRulesAsMatrix(binaryProductions, csrBinaryRowIndices, csrHashedBinaryColumnIndices,
             csrBinaryProbabilities);
 
         // And all unary rules
@@ -120,7 +120,7 @@ public class PerfectHashCsrSparseMatrixGrammar extends SparseMatrixGrammar {
     }
 
     public final int[] binaryRuleMatrixColumnIndices() {
-        return csrBinaryColumnIndices;
+        return csrHashedBinaryColumnIndices;
     }
 
     public final float[] binaryRuleMatrixProbabilities() {
@@ -143,7 +143,7 @@ public class PerfectHashCsrSparseMatrixGrammar extends SparseMatrixGrammar {
     public final float binaryLogProbability(final int parent, final int childPair) {
 
         for (int i = csrBinaryRowIndices[parent]; i < csrBinaryRowIndices[parent + 1]; i++) {
-            final int column = csrBinaryColumnIndices[i];
+            final int column = csrHashedBinaryColumnIndices[i];
             if (column == childPair) {
                 return csrBinaryProbabilities[i];
             }
@@ -188,15 +188,14 @@ public class PerfectHashCsrSparseMatrixGrammar extends SparseMatrixGrammar {
             }
 
             this.perfectHash = new PerfectHash(childPairs.toIntArray());
-            // this.packedArraySize = perfectHash.hashtableSize();
-            this.packedArraySize = numNonTerms() << shift;
+            System.out.println("Hashed grammar: " + perfectHash.toString());
+            this.packedArraySize = perfectHash.hashtableSize();
         }
 
         @Override
         public final int pack(final int leftChild, final int rightChild) {
-            // return perfectHash.unsafeIndex(internalPack(leftChild, rightChild));
-            final int childPair = leftChild << shift | (rightChild & lowOrderMask);
-            return perfectHash.unsafeContainsKey(childPair) ? childPair : Integer.MIN_VALUE;
+            // TODO Combine shifting and masking here with the shift and mask in unsafeHashcode
+            return perfectHash.unsafeHashcode(leftChild << shift | (rightChild & lowOrderMask));
         }
 
         private int internalPack(final int leftChild, final int rightChild) {
@@ -212,36 +211,34 @@ public class PerfectHashCsrSparseMatrixGrammar extends SparseMatrixGrammar {
         }
 
         @Override
-        public final int unpackLeftChild(final int hashcode) {
-            // TODO Lookup key by hashcode in perfect hash
-            final int childPair = hashcode;
-
-            if (childPair < 0) {
+        public final int unpackLeftChild(final int packedChildPair) {
+            if (packedChildPair < 0) {
                 // Unary or lexical production
-                if (childPair <= maxLexicalProduction) {
+                if (packedChildPair <= maxLexicalProduction) {
                     // Lexical production
-                    return -childPair + maxLexicalProduction;
+                    return -packedChildPair + maxLexicalProduction;
                 }
                 // Unary production
-                return -childPair - 1;
+                return -packedChildPair - 1;
             }
+
+            final int childPair = perfectHash.unsafeKey(packedChildPair);
             return childPair >> shift;
         }
 
         @Override
-        public final int unpackRightChild(final int hashcode) {
-            // TODO Lookup key by hashcode in perfect hash
-            final int childPair = hashcode;
-
-            if (childPair < 0) {
+        public final int unpackRightChild(final int packedChildPair) {
+            if (packedChildPair < 0) {
                 // Unary or lexical production
-                if (childPair <= maxLexicalProduction) {
+                if (packedChildPair <= maxLexicalProduction) {
                     // Lexical production
                     return Production.LEXICAL_PRODUCTION;
                 }
                 // Unary production
                 return Production.UNARY_PRODUCTION;
             }
+
+            final int childPair = perfectHash.unsafeKey(packedChildPair);
             return childPair & lowOrderMask;
         }
 

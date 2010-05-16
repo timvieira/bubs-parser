@@ -105,14 +105,25 @@ public class PerfectHash implements ImmutableInt2IntHash {
         if (key > maxKey) {
             return Integer.MIN_VALUE;
         }
-        return unsafeIndex(key);
+        return unsafeHashcode(key);
     }
 
-    public int unsafeIndex(final int key) {
+    public int unsafeHashcode(final int key) {
         final int x = key >> shift;
         final int y = key & mask;
-        final int index = r[x] + y;
-        return hashtable[index] == key ? index : Integer.MIN_VALUE;
+        final int hashcode = r[x] + y;
+        return hashtable[hashcode] == key ? hashcode : Integer.MIN_VALUE;
+    }
+
+    public int key(final int hashcode) {
+        if (hashcode > hashtable.length) {
+            return Integer.MIN_VALUE;
+        }
+        return hashtable[hashcode];
+    }
+
+    public int unsafeKey(final int hashcode) {
+        return hashtable[hashcode];
     }
 
     public boolean containsKey(final int key) {
@@ -130,11 +141,11 @@ public class PerfectHash implements ImmutableInt2IntHash {
         return hashtable[index] == key;
     }
 
-    public int hashtableSize() {
+    public final int hashtableSize() {
         return hashtable.length;
     }
 
-    public int size() {
+    public final int size() {
         return size;
     }
 

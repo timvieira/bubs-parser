@@ -78,7 +78,7 @@ public final class ParserOptions {
                 "lbfpv"), LBFOnlineBeam("lbfob"), LBFBoundedHeap("lbfbh"), LBFExpDecay("lbfed"), LBFPerceptronCell(
                 "lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector(
                 "jsa"), OpenClSparseMatrixVector("opencl"), CsrSpmv("csr"), CsrSpmvPerMidpoint("csrpm"), CscSpmv(
-                "csc"), SortAndScanSpmv("sort-and-scan");
+                "csc"), SortAndScanSpmv("sort-and-scan"), PerfectHashCsr("phcsr");
 
         private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
