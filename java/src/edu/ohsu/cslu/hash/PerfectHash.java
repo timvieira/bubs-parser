@@ -15,13 +15,15 @@ public class PerfectHash implements ImmutableInt2IntHash {
     private final int[] hashtable;
     private final int size;
 
-    public PerfectHash(final int[] keys) {
+    public PerfectHash(final int[] keys, final int modulus) {
         this.size = keys.length;
         this.maxKey = Math.max(keys);
-        this.modulus = Math.nextPowerOf2((int) java.lang.Math.sqrt(maxKey) + 1);
+        final int squareMatrixM = Math.nextPowerOf2((int) java.lang.Math.sqrt(maxKey) + 1);
+        this.modulus = modulus > 0 ? modulus : squareMatrixM;
+        final int n = squareMatrixM * squareMatrixM / modulus;
 
         // Allocate a temporary hashtable of the maximum possible size
-        final int[] tmp = new int[modulus * modulus];
+        final int[] tmp = new int[modulus * n];
         Arrays.fill(tmp, Integer.MIN_VALUE);
 
         shift = Math.logBase2(modulus);
@@ -31,21 +33,21 @@ public class PerfectHash implements ImmutableInt2IntHash {
         }
         mask = bit;
 
-        final int[] rowIndices = new int[modulus];
-        final int[] rowCounts = new int[modulus];
-        final int[][] squareMatrix = new int[modulus][modulus];
-        for (int i = 0; i < modulus; i++) {
+        final int[] rowIndices = new int[n];
+        final int[] rowCounts = new int[n];
+        final int[][] tmpMatrix = new int[n][modulus];
+        for (int i = 0; i < n; i++) {
             rowIndices[i] = i;
-            Arrays.fill(squareMatrix[i], Integer.MIN_VALUE);
+            Arrays.fill(tmpMatrix[i], Integer.MIN_VALUE);
         }
 
         for (final int key : keys) {
             final int x = key >> shift;
             final int y = key & mask;
-            squareMatrix[x][y] = key;
+            tmpMatrix[x][y] = key;
             rowCounts[x]++;
         }
-        r = new int[modulus];
+        r = new int[n];
 
         // Sort rows in descending order by population
         edu.ohsu.cslu.util.Arrays.sort(rowCounts, rowIndices);
@@ -62,10 +64,10 @@ public class PerfectHash implements ImmutableInt2IntHash {
          * 3. Insert this row into the hash table C[].
          */
         for (int row = 0; row < rowIndices.length; row++) {
-            r[row] = findShift(tmp, squareMatrix[row]);
+            r[row] = findShift(tmp, tmpMatrix[row]);
             for (int i = 0; i < modulus; i++) {
-                if (squareMatrix[row][i] != Integer.MIN_VALUE) {
-                    tmp[r[row] + i] = squareMatrix[row][i];
+                if (tmpMatrix[row][i] != Integer.MIN_VALUE) {
+                    tmp[r[row] + i] = tmpMatrix[row][i];
                 }
             }
         }
@@ -74,8 +76,12 @@ public class PerfectHash implements ImmutableInt2IntHash {
         System.arraycopy(tmp, 0, hashtable, 0, hashtable.length);
     }
 
+    public PerfectHash(final int[] keys) {
+        this(keys, Math.nextPowerOf2((int) java.lang.Math.sqrt(Math.max(keys)) + 1));
+    }
+
     private int findShift(final int[] target, final int[] merge) {
-        for (int s = 0; s < target.length - merge.length - 1; s++) {
+        for (int s = 0; s <= target.length - merge.length; s++) {
             if (!shiftCollides(target, merge, s)) {
                 return s;
             }
@@ -151,7 +157,10 @@ public class PerfectHash implements ImmutableInt2IntHash {
 
     @Override
     public String toString() {
-        return String.format("hashtable size: %d modulus: %d keys: %d occupancy: %.2f%% maxkey: %d",
-            hashtable.length, modulus, size, size * 100f / hashtable.length, maxKey);
+        return String
+            .format(
+                "hashtable size: %d modulus: %d shift-table size: %d shift-table max: %d keys: %d occupancy: %.2f%% maxkey: %d",
+                hashtable.length, modulus, r.length, Math.max(r), size, size * 100f / hashtable.length,
+                maxKey);
     }
 }
