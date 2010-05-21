@@ -23,8 +23,8 @@ public class CreatePerfectHash extends BaseCommandlineTool {
             keys.add(Integer.parseInt(line));
         }
 
-        final PerfectHash hash = modulus == 0 ? new PerfectHash(keys.toIntArray()) : new PerfectHash(keys
-            .toIntArray(), modulus);
+        final PerfectInt2IntHash hash = modulus == 0 ? new PerfectInt2IntHash(keys.toIntArray())
+                : new PerfectInt2IntHash(keys.toIntArray(), modulus);
 
         System.out.println(hash.toString());
     }

@@ -12,8 +12,7 @@ import java.util.Collection;
 
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
-import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.hash.PerfectHash;
+import edu.ohsu.cslu.hash.PerfectInt2IntHash;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.util.Math;
 
@@ -239,6 +238,27 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public abstract int pack(final int leftChild, final int rightChild);
 
         /**
+         * Returns a partially-packed representation of a left child.
+         * 
+         * @see #partialPackRight(int, int)
+         * 
+         * @param leftChild
+         * @return partially-packed representation of a left child. See {@link #partialPackRight(int, int)}.
+         */
+        public abstract int partialPackLeft(final int leftChild);
+
+        /**
+         * Returns a partially-packed representation of a left child.
+         * 
+         * @see #partialPackLeft(int)
+         * 
+         * @param packedLeftChild
+         * @param rightChild
+         * @return partially-packed representation of a left child. See {@link #partialPackLeft(int)}.
+         */
+        public abstract int partialPackRight(final int packedLeftChild, final int rightChild);
+
+        /**
          * Returns a single int representing a unary production.
          * 
          * @param child
@@ -338,6 +358,16 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         @Override
         public int pack(final int leftChild, final int rightChild) {
             return leftChild << shift | (rightChild & lowOrderMask);
+        }
+
+        @Override
+        public final int partialPackLeft(final int leftChild) {
+            return leftChild << shift;
+        }
+
+        @Override
+        public final int partialPackRight(final int packedLeftChild, final int rightChild) {
+            return packedLeftChild | (rightChild & lowOrderMask);
         }
 
         public final int packUnary(final int child) {
@@ -574,7 +604,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         private final int maxLexicalProduction = -numNonTerms() - 1;
 
         /** Perfect (collision-free) hash of all observed child pairs. */
-        private final PerfectHash perfectHash;
+        private final PerfectInt2IntHash perfectHash;
 
         private final int packedArraySize;
 
@@ -586,7 +616,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
                 childPairs.add(internalPack(p.leftChild, p.rightChild));
             }
 
-            this.perfectHash = new PerfectHash(childPairs.toIntArray());
+            this.perfectHash = new PerfectInt2IntHash(childPairs.toIntArray());
             System.out.println("Hashed grammar: " + perfectHash.toString());
             this.packedArraySize = perfectHash.hashtableSize();
         }
@@ -599,6 +629,16 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
         private int internalPack(final int leftChild, final int rightChild) {
             return leftChild << shift | (rightChild & lowOrderMask);
+        }
+
+        @Override
+        public final int partialPackLeft(final int leftChild) {
+            return leftChild << shift;
+        }
+
+        @Override
+        public final int partialPackRight(final int packedLeftChild, final int rightChild) {
+            return packedLeftChild | (rightChild & lowOrderMask);
         }
 
         public final int packUnary(final int child) {
