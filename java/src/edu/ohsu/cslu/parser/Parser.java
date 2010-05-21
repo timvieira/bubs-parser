@@ -1,14 +1,11 @@
 package edu.ohsu.cslu.parser;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -51,7 +48,8 @@ public abstract class Parser<G extends Grammar> {
 
     protected abstract ParseTree findBestParse(String sentence) throws Exception;
 
-    public void parseSentence(String sentence, final BufferedWriter outputStream) throws Exception {
+    public void parseSentence(String sentence, final BufferedWriter outputStream,
+            final GrammarFormatType grammarFormatType) throws Exception {
         ParseTree inputTree = null, bestParseTree = null;
         long sentStartTimeMS;
         final long sentMaxMemoryMB = 0;
@@ -93,7 +91,10 @@ public abstract class Parser<G extends Grammar> {
             if (opts.printUnkLabels == false) {
                 bestParseTree.replaceLeafNodes(tokens);
             }
-            outputStream.write(bestParseTree.toString(opts.printInsideProbs) + "\n");
+            final String parse = bestParseTree.toString(opts.printInsideProbs);
+            outputStream.write(opts.unfactor() ? unfactor(parse, grammarFormatType) : parse);
+            outputStream.write('\n');
+
             insideScore = getInside(0, tokens.length, grammar.startSymbol);
             // insideProbStr = Float.toString(insideScore);
             // printTreeEdgeStats(findChartEdgesForTree(inputTree, (ChartParser)parser), parser);
@@ -108,19 +109,6 @@ public abstract class Parser<G extends Grammar> {
                 + sentMaxMemoryMB + " inside=" + insideScore + " " + this.getStats();
         outputStream.write("STAT:" + stats + "\n");
         outputStream.flush();
-    }
-
-    public void parseStream(final InputStream inputStream, final OutputStream outputStream) throws Exception {
-
-        final BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-        final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(outputStream));
-        for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
-            parseSentence(sentence, bw);
-        }
-
-        Log.info(1, "INFO: numSentences=" + sentenceNumber + " totalSeconds=" + totalParseTimeSec
-                + " avgSecondsPerSent=" + (totalParseTimeSec / sentenceNumber) + " totalInsideScore="
-                + totalInsideScore);
     }
 
     public void printTreeEdgeStats(final ParseTree tree, final Parser<?> parser) {
@@ -170,5 +158,52 @@ public abstract class Parser<G extends Grammar> {
             // }
         }
         return tree;
+    }
+
+    /**
+     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening
+     * binary-factored subtrees.
+     * 
+     * @param bracketedTree Bracketed string parse tree
+     * @param grammarFormatType Grammar format
+     * @return Bracketed string representation of the un-factored tree
+     */
+    public static String unfactor(final String bracketedTree, final GrammarFormatType grammarFormatType) {
+        final StringNaryTree factoredTree = StringNaryTree.read(bracketedTree);
+        return unfactor(factoredTree, grammarFormatType).toString();
+    }
+
+    /**
+     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening
+     * binary-factored subtrees.
+     * 
+     * @param factoredTree Factored tree
+     * @param grammarFormatType Grammar format
+     * @return Un-factored tree
+     */
+    public static StringNaryTree unfactor(final StringNaryTree factoredTree,
+            final GrammarFormatType grammarFormatType) {
+
+        // Remove split category labels
+        final String label = grammarFormatType.unsplitNonTerminal(factoredTree.label());
+
+        final StringNaryTree unfactoredTree = new StringNaryTree(label);
+
+        for (final StringNaryTree factoredChild : factoredTree.children()) {
+
+            if (grammarFormatType.isFactored(factoredChild.label())) {
+                // If the child is a factored non-terminal, add each (unfactored) child tree individually to
+                // the unfactored tree
+                for (final StringNaryTree unfactoredChild : unfactor(factoredChild, grammarFormatType)
+                    .children()) {
+                    unfactoredTree.addSubtree(unfactor(unfactoredChild, grammarFormatType));
+                }
+            } else {
+                // Otherwise, add unfactor the child and add it as a subtree
+                unfactoredTree.addSubtree(unfactor(factoredChild, grammarFormatType));
+            }
+        }
+
+        return unfactoredTree;
     }
 }

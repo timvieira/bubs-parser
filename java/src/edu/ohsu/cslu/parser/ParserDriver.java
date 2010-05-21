@@ -104,6 +104,9 @@ public class ParserDriver extends BaseCommandlineTool {
     @Option(name = "-ds", aliases = { "--detailed-stats" }, usage = "Collect detailed counts and statistics (e.g., non-terminals per cell, cartesian-product size, etc.)")
     public boolean collectDetailedStatistics = false;
 
+    @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees")
+    private boolean unfactor = false;
+
     @Option(name = "-x1", usage = "Tuning param #1")
     public float param1 = -1;
 
@@ -165,9 +168,9 @@ public class ParserDriver extends BaseCommandlineTool {
 
     public ParserOptions createOptions() {
         final ParserOptions opts = new ParserOptions();
-        if (collectDetailedStatistics) {
-            opts.setCollectDetailedStatistics();
-        }
+
+        opts.setCollectDetailedStatistics(collectDetailedStatistics);
+        opts.setUnfactor(unfactor);
 
         opts.parserType = parserType;
         opts.edgeFOMType = edgeFOMType;
@@ -385,7 +388,7 @@ public class ParserDriver extends BaseCommandlineTool {
             final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
             for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
-                parser.parseSentence(sentence, bw);
+                parser.parseSentence(sentence, bw, grammarFormat);
                 logger.fine(parser.getStats());
             }
 
