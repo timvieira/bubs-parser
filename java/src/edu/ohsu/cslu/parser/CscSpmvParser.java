@@ -32,7 +32,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
     }
 
     public CscSpmvParser(final CscSparseMatrixGrammar grammar) {
-        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
+        this(new ParserOptions().setCollectDetailedStatistics(true), grammar);
     }
 
     @Override

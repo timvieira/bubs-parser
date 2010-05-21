@@ -75,7 +75,7 @@ public class OpenClSpmvParser extends
     }
 
     public OpenClSpmvParser(final CsrSparseMatrixGrammar grammar) {
-        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
+        this(new ParserOptions().setCollectDetailedStatistics(true), grammar);
     }
 
     @Override

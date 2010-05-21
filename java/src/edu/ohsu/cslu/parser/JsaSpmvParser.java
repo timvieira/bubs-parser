@@ -22,7 +22,7 @@ public class JsaSpmvParser extends SparseMatrixVectorParser<JsaSparseMatrixGramm
     }
 
     public JsaSpmvParser(final JsaSparseMatrixGrammar grammar) {
-        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
+        this(new ParserOptions().setCollectDetailedStatistics(true), grammar);
     }
 
     @Override

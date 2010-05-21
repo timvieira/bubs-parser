@@ -22,7 +22,7 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
     }
 
     public CsrSpmvPerMidpointParser(final CsrSparseMatrixGrammar grammar) {
-        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
+        this(new ParserOptions().setCollectDetailedStatistics(true), grammar);
     }
 
     @Override

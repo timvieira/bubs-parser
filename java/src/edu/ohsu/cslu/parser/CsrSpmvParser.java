@@ -35,7 +35,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
     }
 
     public CsrSpmvParser(final CsrSparseMatrixGrammar grammar) {
-        this(new ParserOptions().setCollectDetailedStatistics(), grammar);
+        this(new ParserOptions().setCollectDetailedStatistics(true), grammar);
     }
 
     @Override
@@ -120,6 +120,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
             for (int i = chart.minLeftChildIndex(leftCellIndex); i <= chart.maxLeftChildIndex(leftCellIndex); i++) {
                 final int leftChild = nonTerminalIndices[i];
                 final boolean leftChildObserved = observedLeftChildren.add(leftChild);
+                // final int packedLeftChild = cpf.partialPackLeft(leftChild);
                 final float leftProbability = insideProbabilities[i];
 
                 for (int j = chart.offset(rightCellIndex); j <= chart.maxRightChildIndex(rightCellIndex); j++) {

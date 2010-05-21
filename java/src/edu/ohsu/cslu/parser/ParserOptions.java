@@ -40,6 +40,7 @@ public final class ParserOptions {
     public boolean viterbiMax = true;
 
     private boolean collectDetailedStatistics;
+    private boolean unfactor;
 
     public static float param1 = -1;
     public static float param2 = -1;
@@ -51,8 +52,17 @@ public final class ParserOptions {
         return collectDetailedStatistics;
     }
 
-    public ParserOptions setCollectDetailedStatistics() {
-        this.collectDetailedStatistics = true;
+    public ParserOptions setCollectDetailedStatistics(final boolean collectDetailedStatistics) {
+        this.collectDetailedStatistics = collectDetailedStatistics;
+        return this;
+    }
+
+    public boolean unfactor() {
+        return unfactor;
+    }
+
+    public ParserOptions setUnfactor(final boolean unfactor) {
+        this.unfactor = unfactor;
         return this;
     }
 
@@ -97,14 +107,33 @@ public final class ParserOptions {
     static public enum GrammarFormatType {
         CSLU, Roark, Berkeley;
 
+        public String unsplitNonTerminal(final String nonTerminal) {
+            switch (this) {
+                case Berkeley:
+                    return nonTerminal.replaceFirst("_[0-9]+$", "");
+                case CSLU:
+                    return nonTerminal.replaceFirst("\\^<[A-Z]+>$", "");
+                case Roark:
+                    // TODO Support Roark format
+
+                default:
+                    throw new IllegalArgumentException("Unsupported format");
+
+            }
+
+        }
+
         public boolean isFactored(final String nonTerminal) {
             switch (this) {
                 case CSLU:
                     return nonTerminal.contains("|");
                 case Berkeley:
                     return nonTerminal.startsWith("@");
+                case Roark:
+                    // TODO Support Roark format
+
                 default:
-                    throw new RuntimeException("Unable to determine factorization");
+                    throw new IllegalArgumentException("Unsupported format");
             }
         }
     }
