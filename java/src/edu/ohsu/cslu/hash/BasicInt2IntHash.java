@@ -2,26 +2,19 @@ package edu.ohsu.cslu.hash;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
-
-public class BasicHash implements ImmutableInt2IntHash {
+public class BasicInt2IntHash implements ImmutableInt2IntHash {
     private final Int2IntOpenHashMap hash;
 
-    public BasicHash(int[] keys) {
+    public BasicInt2IntHash(final int[] keys) {
         hash = new Int2IntOpenHashMap();
-        for (int key : keys) {
+        for (final int key : keys) {
             hash.put(key, key);
         }
         hash.defaultReturnValue(-1);
     }
 
     @Override
-    public boolean containsKey(int key) {
-        return hash.containsKey(key);
-    }
-
-    @Override
-    public int hashcode(int key) {
+    public int hashcode(final int key) {
         return hash.get(key);
     }
-
 }

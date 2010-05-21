@@ -1,9 +1,9 @@
 package edu.ohsu.cslu.hash;
 
-public class TestBasicHash extends TestHash {
+public class TestBasicInt2IntHash extends ImmutableInt2IntHashTestCase {
 
     @Override
     protected ImmutableInt2IntHash hash(final int[] keys, final int modulus) {
-        return new BasicHash(keys);
+        return new BasicInt2IntHash(keys);
     }
 }

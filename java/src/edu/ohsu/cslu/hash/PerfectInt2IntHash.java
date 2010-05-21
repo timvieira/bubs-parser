@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.util.Math;
 
-public class PerfectHash implements ImmutableInt2IntHash {
+public class PerfectInt2IntHash implements ImmutableInt2IntHash {
 
     private final int maxKey;
     private final int modulus;
@@ -15,7 +15,7 @@ public class PerfectHash implements ImmutableInt2IntHash {
     private final int[] hashtable;
     private final int size;
 
-    public PerfectHash(final int[] keys, final int modulus) {
+    public PerfectInt2IntHash(final int[] keys, final int modulus) {
         this.size = keys.length;
         this.maxKey = Math.max(keys);
         final int squareMatrixM = Math.nextPowerOf2((int) java.lang.Math.sqrt(maxKey) + 1);
@@ -76,7 +76,7 @@ public class PerfectHash implements ImmutableInt2IntHash {
         System.arraycopy(tmp, 0, hashtable, 0, hashtable.length);
     }
 
-    public PerfectHash(final int[] keys) {
+    public PerfectInt2IntHash(final int[] keys) {
         this(keys, Math.nextPowerOf2((int) java.lang.Math.sqrt(Math.max(keys)) + 1));
     }
 

@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.hash;
 
+import static org.junit.Assert.assertTrue;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -8,11 +9,8 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 @RunWith(Theories.class)
-public abstract class TestHash {
+public abstract class ImmutableInt2IntHashTestCase {
 
     public final static int[] keys1 = new int[] { 0, 3, 4, 7, 10, 13, 15, 18, 19, 21, 22, 24, 26, 29, 30, 34 };
 
@@ -40,23 +38,7 @@ public abstract class TestHash {
     protected abstract ImmutableInt2IntHash hash(int[] keys, int modulus);
 
     @Theory
-    public void testContainsKey(final Object[] datapoint) {
-        final int[] keys = (int[]) datapoint[0];
-        final IntSet nonKeys = nonKeys(keys);
-
-        final ImmutableInt2IntHash hash = (datapoint.length > 1 ? hash(keys, ((Integer) datapoint[1])
-            .intValue()) : hash(keys, 0));
-
-        for (final int key : keys) {
-            assertTrue(hash.containsKey(key));
-        }
-        for (final int nonkey : nonKeys) {
-            assertFalse(hash.containsKey(nonkey));
-        }
-    }
-
-    @Theory
-    public void testIndex(final Object[] datapoint) {
+    public void testHashcode(final Object[] datapoint) {
         final int[] keys = (int[]) datapoint[0];
         final IntSet nonKeys = nonKeys(keys);
 
