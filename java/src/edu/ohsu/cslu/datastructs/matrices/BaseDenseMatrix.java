@@ -123,4 +123,7 @@ public abstract class BaseDenseMatrix extends BaseMatrix implements DenseMatrix 
         }
         writer.flush();
     }
+
+    @Override
+    public abstract DenseMatrix clone();
 }

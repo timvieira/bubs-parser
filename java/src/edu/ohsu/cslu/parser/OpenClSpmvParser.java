@@ -20,7 +20,6 @@ import com.nativelibs4java.opencl.CLShortBuffer;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.parser.OpenClSpmvParser.OpenClChart.OpenClChartCell;
-import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.util.OpenClUtils;
@@ -402,7 +401,7 @@ public class OpenClSpmvParser extends
         clQueue.finish();
     }
 
-    public static class OpenClChart extends DenseVectorChart {
+    public static class OpenClChart extends edu.ohsu.cslu.parser.chart.DenseVectorChart {
 
         public OpenClChart(final int size, final boolean viterbiMax, final Parser<?> parser) {
             super(new OpenClChartCell[size][size + 1], viterbiMax, parser);
