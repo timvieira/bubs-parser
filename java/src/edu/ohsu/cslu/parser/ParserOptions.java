@@ -97,7 +97,8 @@ public final class ParserOptions {
 
     static public enum CartesianProductFunctionType {
         Default("d", "default"), Unfiltered("u", "unfiltered"), PosFactoredFiltered("pf"), BitMatrixExactFilter(
-                "bme", "bitmatrixexact"), PerfectHash("ph", "perfecthash");
+                "bme", "bitmatrixexact"), PerfectHash("ph", "perfecthash"), PerfectHash2("ph2",
+                "perfecthash2");
 
         private CartesianProductFunctionType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

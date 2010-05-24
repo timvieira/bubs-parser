@@ -27,6 +27,7 @@ import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectHashFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PosFactoredFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
 import edu.ohsu.cslu.parser.ParserOptions.CartesianProductFunctionType;
@@ -263,6 +264,9 @@ public class ParserDriver extends BaseCommandlineTool {
                     case PerfectHash:
                         return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             PerfectHashFilterFunction.class);
+                    case PerfectHash2:
+                        return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            PerfectIntPairHashFilterFunction.class);
                     default:
                         throw new Exception("Unsupported filter type: " + cartesianProductFunctionType);
                 }
