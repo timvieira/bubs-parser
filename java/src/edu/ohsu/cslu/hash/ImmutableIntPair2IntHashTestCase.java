@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.hash;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -18,15 +16,21 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.util.Math;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Theories.class)
 public abstract class ImmutableIntPair2IntHashTestCase {
+
+    public final static int[] keys0 = new int[] { 1, 3 };
 
     public final static int[] keys1 = new int[] { 0, 3, 4, 7, 10, 13, 15, 18, 19, 21, 22, 24, 26, 29, 30, 34 };
 
     public final static int[] keys2 = new int[] { 10, 23, 54, 77, 103, 123, 157, 118, 198, 221, 322, 324,
             426, 529, 530, 1034 };
 
+    @DataPoint
+    public final static Object[] dp0 = new Object[] { keys0 };
     @DataPoint
     public final static Object[] dp1 = new Object[] { keys1 };
     @DataPoint
@@ -46,14 +50,35 @@ public abstract class ImmutableIntPair2IntHashTestCase {
 
     protected abstract ImmutableIntPair2IntHash hash(int[][] keyPairs, int modulus);
 
+    private ImmutableIntPair2IntHash hash(final Object[] datapoint, final int[][] keyPairs) {
+        return (datapoint.length > 1 ? hash(keyPairs, ((Integer) datapoint[1]).intValue())
+                : hash(keyPairs, 0));
+    }
+
     @Theory
     public void testHashcode(final Object[] datapoint) {
         final int[][] keyPairs = keyPairs((int[]) datapoint[0]);
+        verifyHash(hash(datapoint, keyPairs), keyPairs);
+    }
 
-        final ImmutableIntPair2IntHash hash = (datapoint.length > 1 ? hash(keyPairs, ((Integer) datapoint[1])
-            .intValue()) : hash(keyPairs, 0));
+    @Theory
+    public void testKey1(final Object[] datapoint) {
+        final int[][] keyPairs = keyPairs((int[]) datapoint[0]);
+        final ImmutableIntPair2IntHash hash = hash(datapoint, keyPairs);
 
-        verifyHash(hash, keyPairs);
+        for (int i = 0; i < keyPairs[0].length; i++) {
+            assertEquals(keyPairs[0][i], hash.key1(hash.hashcode(keyPairs[0][i], keyPairs[1][i])));
+        }
+    }
+
+    @Theory
+    public void testKey2(final Object[] datapoint) {
+        final int[][] keyPairs = keyPairs((int[]) datapoint[0]);
+        final ImmutableIntPair2IntHash hash = hash(datapoint, keyPairs);
+
+        for (int i = 0; i < keyPairs[0].length; i++) {
+            assertEquals(keyPairs[1][i], hash.key2(hash.hashcode(keyPairs[0][i], keyPairs[1][i])));
+        }
     }
 
     private void verifyHash(final ImmutableIntPair2IntHash hash, final int[][] keyPairs) {

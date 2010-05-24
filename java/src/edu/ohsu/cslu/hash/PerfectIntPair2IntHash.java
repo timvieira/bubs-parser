@@ -6,6 +6,7 @@ import edu.ohsu.cslu.util.Math;
 
 public class PerfectIntPair2IntHash implements ImmutableIntPair2IntHash {
 
+    private final int maxKey2;
     private final int maxPackedKey;
     private final int modulus;
 
@@ -23,13 +24,14 @@ public class PerfectIntPair2IntHash implements ImmutableIntPair2IntHash {
 
         this.size = keyPairs[0].length;
 
-        this.packingShift = Math.logBase2(Math.nextPowerOf2(Math.max(keyPairs[1])));
+        this.maxKey2 = Math.max(keyPairs[1]);
+        this.packingShift = Math.logBase2(Math.nextPowerOf2(maxKey2));
         int m = 0;
         for (int i = 0; i < packingShift; i++) {
             m = m << 1 | 1;
         }
         this.packingMask = m;
-        this.maxPackedKey = Math.max(keyPairs[0]) << packingShift | Math.max(keyPairs[1]);
+        this.maxPackedKey = Math.max(keyPairs[0]) << packingShift | maxKey2;
 
         final int squareMatrixM = Math.nextPowerOf2((int) java.lang.Math.sqrt(maxPackedKey) + 1);
         this.modulus = modulus > 0 ? modulus : squareMatrixM;
@@ -55,7 +57,7 @@ public class PerfectIntPair2IntHash implements ImmutableIntPair2IntHash {
         }
 
         for (int i = 0; i < keyPairs[0].length; i++) {
-            final int packedKey = keyPairs[0][i] << packingShift | keyPairs[1][i];
+            final int packedKey = (keyPairs[0][i] << packingShift) | (keyPairs[1][i] & packingMask);
 
             final int x = packedKey >> packedKeyShift;
             final int y = packedKey & packedKeyMask;
@@ -124,9 +126,9 @@ public class PerfectIntPair2IntHash implements ImmutableIntPair2IntHash {
 
     @Override
     public int hashcode(final int key1, final int key2) {
-        final int packedKey = key1 << packingShift | key2;
+        final int packedKey = (key1 << packingShift) | (key2 & packingMask);
 
-        if (packedKey > maxPackedKey) {
+        if (key2 > maxKey2 || packedKey > maxPackedKey) {
             return Integer.MIN_VALUE;
         }
 
@@ -137,7 +139,7 @@ public class PerfectIntPair2IntHash implements ImmutableIntPair2IntHash {
     }
 
     public int unsafeHashcode(final int key1, final int key2) {
-        final int packedKey = key1 << packingShift | key2;
+        final int packedKey = (key1 << packingShift) | (key2 & packingMask);
 
         final int x = packedKey >> packedKeyShift;
         final int y = packedKey & packedKeyMask;
@@ -145,15 +147,30 @@ public class PerfectIntPair2IntHash implements ImmutableIntPair2IntHash {
         return hashtable[hashcode] == packedKey ? hashcode : Integer.MIN_VALUE;
     }
 
-    public int packedKey(final int hashcode) {
+    @Override
+    public int key1(final int hashcode) {
         if (hashcode > hashtable.length) {
             return Integer.MIN_VALUE;
         }
-        return hashtable[hashcode];
+        return unsafeKey1(hashcode);
     }
 
-    public int unsafePackedKey(final int hashcode) {
-        return hashtable[hashcode];
+    @Override
+    public int unsafeKey1(final int hashcode) {
+        return hashtable[hashcode] >> packingShift;
+    }
+
+    @Override
+    public int key2(final int hashcode) {
+        if (hashcode > hashtable.length) {
+            return Integer.MIN_VALUE;
+        }
+        return unsafeKey2(hashcode);
+    }
+
+    @Override
+    public int unsafeKey2(final int hashcode) {
+        return hashtable[hashcode] & packingMask;
     }
 
     public final int hashtableSize() {
