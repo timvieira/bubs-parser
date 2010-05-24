@@ -23,13 +23,25 @@ public class Math {
      * @return maximum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static int max(final int... arguments) {
-        if (arguments.length == 0) {
+        return max(arguments, 0, arguments.length);
+    }
+
+    /**
+     * Returns the maximum of the arguments supplied
+     * 
+     * @param array
+     * @param start
+     * @param end
+     * @return maximum of the arguments supplied, or 0 if no arguments are supplied
+     */
+    public static int max(final int[] array, final int start, final int end) {
+        if (array.length == 0) {
             return 0;
         }
 
-        int max = arguments[0];
-        for (int i = 1; i < arguments.length; i++) {
-            final int current = arguments[i];
+        int max = array[start];
+        for (int i = start; i < end && i < array.length; i++) {
+            final int current = array[i];
             if (current > max) {
                 max = current;
             }
