@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.util.Math;
 
-public class PerfectInt2IntHash implements ImmutableInt2IntHash {
+public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash {
 
     private final int maxKey;
     private final int modulus;
@@ -15,12 +15,13 @@ public class PerfectInt2IntHash implements ImmutableInt2IntHash {
     private final int[] hashtable;
     private final int size;
 
-    public PerfectInt2IntHash(final int[] keys, final int modulus) {
-        this.size = keys.length;
-        this.maxKey = Math.max(keys);
+    public SegmentedPerfectIntPair2IntHash(final int[][] keyPairs, final int modulus) {
+
+        this.size = keyPairs.length;
+        this.maxKey = maxKey2(keyPairs);
         final int squareMatrixM = Math.nextPowerOf2((int) java.lang.Math.sqrt(maxKey) + 1);
         this.modulus = modulus > 0 ? modulus : squareMatrixM;
-        final int n = squareMatrixM * squareMatrixM / this.modulus;
+        final int n = squareMatrixM * squareMatrixM / modulus;
 
         // Allocate a temporary hashtable of the maximum possible size
         final int[] tmp = new int[modulus * n];
@@ -41,7 +42,8 @@ public class PerfectInt2IntHash implements ImmutableInt2IntHash {
             Arrays.fill(tmpMatrix[i], Integer.MIN_VALUE);
         }
 
-        for (final int key : keys) {
+        for (final int keyPair[] : keyPairs) {
+            final int key = keyPair[0] << 16 | keyPair[1];
             final int x = key >> shift;
             final int y = key & mask;
             tmpMatrix[x][y] = key;
@@ -76,8 +78,18 @@ public class PerfectInt2IntHash implements ImmutableInt2IntHash {
         System.arraycopy(tmp, 0, hashtable, 0, hashtable.length);
     }
 
-    public PerfectInt2IntHash(final int[] keys) {
-        this(keys, Math.nextPowerOf2((int) java.lang.Math.sqrt(Math.max(keys)) + 1));
+    public SegmentedPerfectIntPair2IntHash(final int[][] keyPairs) {
+        this(keyPairs, Math.nextPowerOf2((int) java.lang.Math.sqrt(maxKey2(keyPairs)) + 1));
+    }
+
+    private static int maxKey2(final int[][] keyPairs) {
+        int max = Integer.MIN_VALUE;
+        for (int i = 0; i < keyPairs.length; i++) {
+            if (keyPairs[i][1] > max) {
+                max = keyPairs[i][1];
+            }
+        }
+        return max;
     }
 
     private int findShift(final int[] target, final int[] merge) {
@@ -107,7 +119,10 @@ public class PerfectInt2IntHash implements ImmutableInt2IntHash {
         return false;
     }
 
-    public int hashcode(final int key) {
+    @Override
+    public int hashcode(final int key1, final int key2) {
+        final int key = key1 << 16 | key2;
+
         if (key > maxKey) {
             return Integer.MIN_VALUE;
         }

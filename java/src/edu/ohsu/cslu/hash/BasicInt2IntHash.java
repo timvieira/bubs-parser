@@ -10,7 +10,7 @@ public class BasicInt2IntHash implements ImmutableInt2IntHash {
         for (final int key : keys) {
             hash.put(key, key);
         }
-        hash.defaultReturnValue(-1);
+        hash.defaultReturnValue(Integer.MIN_VALUE);
     }
 
     @Override

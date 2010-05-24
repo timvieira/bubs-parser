@@ -1,13 +1,21 @@
 package edu.ohsu.cslu.hash;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
+
+import edu.ohsu.cslu.tests.SharedNlpTests;
 
 @RunWith(Theories.class)
 public abstract class ImmutableInt2IntHashTestCase {
@@ -40,11 +48,33 @@ public abstract class ImmutableInt2IntHashTestCase {
     @Theory
     public void testHashcode(final Object[] datapoint) {
         final int[] keys = (int[]) datapoint[0];
-        final IntSet nonKeys = nonKeys(keys);
 
         final ImmutableInt2IntHash hash = (datapoint.length > 1 ? hash(keys, ((Integer) datapoint[1])
             .intValue()) : hash(keys, 0));
 
+        verifyHash(hash, keys);
+    }
+
+    @Test
+    public void testR2Grammar() throws Exception {
+        final BufferedReader br = new BufferedReader(new InputStreamReader(SharedNlpTests
+            .unitTestDataAsStream("hash/f2_21_R2.rm")));
+        final IntArrayList keyList = new IntArrayList();
+
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
+            final String[] split = line.split(",");
+            assertEquals(2, split.length);
+            final int i1 = Integer.parseInt(split[0]);
+            final int i2 = Integer.parseInt(split[1]);
+            keyList.add(i1 << 7 | i2);
+        }
+        final int[] keys = keyList.toIntArray();
+        final ImmutableInt2IntHash hash = hash(keys, 0);
+        verifyHash(hash, keys);
+    }
+
+    protected void verifyHash(final ImmutableInt2IntHash hash, final int[] keys) {
+        final IntSet nonKeys = nonKeys(keys);
         for (final int key : keys) {
             assertTrue(hash.hashcode(key) >= 0);
         }
