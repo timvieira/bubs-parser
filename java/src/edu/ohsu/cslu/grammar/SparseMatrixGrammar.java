@@ -12,7 +12,7 @@ import java.util.Collection;
 
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
-import edu.ohsu.cslu.hash.PerfectInt2IntHash;
+import edu.ohsu.cslu.hash.PerfectIntPair2IntHash;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.util.Math;
 
@@ -604,19 +604,25 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         private final int maxLexicalProduction = -numNonTerms() - 1;
 
         /** Perfect (collision-free) hash of all observed child pairs. */
-        private final PerfectInt2IntHash perfectHash;
+        private final PerfectIntPair2IntHash perfectHash;
 
         private final int packedArraySize;
 
         public PerfectHashFilterFunction() {
             super(leftChildOnlyStart);
 
-            final IntSet childPairs = new IntOpenHashSet(binaryProductions.size());
+            final IntSet packedChildPairs = new IntOpenHashSet(binaryProductions.size());
             for (final Production p : binaryProductions) {
-                childPairs.add(internalPack(p.leftChild, p.rightChild));
+                packedChildPairs.add(p.leftChild << shift | (p.rightChild & lowOrderMask));
+            }
+            final int[][] childPairs = new int[2][packedChildPairs.size()];
+            int i = 0;
+            for (final int packedChildPair : packedChildPairs) {
+                childPairs[0][i] = packedChildPair >> shift;
+                childPairs[1][i++] = packedChildPair & lowOrderMask;
             }
 
-            this.perfectHash = new PerfectInt2IntHash(childPairs.toIntArray());
+            this.perfectHash = new PerfectIntPair2IntHash(childPairs);
             System.out.println("Hashed grammar: " + perfectHash.toString());
             this.packedArraySize = perfectHash.hashtableSize();
         }
@@ -624,11 +630,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         @Override
         public final int pack(final int leftChild, final int rightChild) {
             // TODO Combine shifting and masking here with the shift and mask in unsafeHashcode
-            return perfectHash.unsafeHashcode(leftChild << shift | (rightChild & lowOrderMask));
-        }
-
-        private int internalPack(final int leftChild, final int rightChild) {
-            return leftChild << shift | (rightChild & lowOrderMask);
+            return perfectHash.unsafeHashcode(leftChild, rightChild);
         }
 
         @Override
@@ -661,7 +663,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
                 return -packedChildPair - 1;
             }
 
-            final int childPair = perfectHash.unsafeKey(packedChildPair);
+            final int childPair = perfectHash.unsafePackedKey(packedChildPair);
             return childPair >> shift;
         }
 
@@ -677,7 +679,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
                 return Production.UNARY_PRODUCTION;
             }
 
-            final int childPair = perfectHash.unsafeKey(packedChildPair);
+            final int childPair = perfectHash.unsafePackedKey(packedChildPair);
             return childPair & lowOrderMask;
         }
 
