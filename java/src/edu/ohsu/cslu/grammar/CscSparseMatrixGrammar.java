@@ -115,7 +115,7 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
         final IntSet populatedUnaryColumnIndices = new IntOpenHashSet(unaryProductions.size() / 10);
         for (final Production p : unaryProductions) {
-            populatedUnaryColumnIndices.add(cartesianProductFunction.pack(p.leftChild, (short) p.rightChild));
+            populatedUnaryColumnIndices.add(cartesianProductFunction.packUnary(p.leftChild));
         }
         final int[] sortedPopulatedUnaryColumnIndices = populatedUnaryColumnIndices.toIntArray();
         Arrays.sort(sortedPopulatedUnaryColumnIndices);
