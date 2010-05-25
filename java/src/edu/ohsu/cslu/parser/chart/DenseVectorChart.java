@@ -116,8 +116,16 @@ public class DenseVectorChart extends CellChart {
                 // Midpoint == end for unary productions
                 midpoints[parent] = (short) leftCell.end();
                 inside[parent] = insideProb;
-                children[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
-                    p.rightChild);
+
+                if (p.isBinaryProd()) {
+                    children[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
+                        p.rightChild);
+                } else if (p.isLexProd()) {
+                    children[parent] = sparseMatrixGrammar.cartesianProductFunction()
+                        .packLexical(p.leftChild);
+                } else {
+                    children[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(p.leftChild);
+                }
 
                 numEdgesAdded++;
             }
