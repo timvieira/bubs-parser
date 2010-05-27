@@ -331,7 +331,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     }
 
     public abstract class LeftShiftFunction extends ShiftFunction {
-        private final int maxLexicalProduction = -numNonTerms() - 1;
+        public final int maxPackedLexicalProduction = -numNonTerms() - 1;
 
         public LeftShiftFunction(final int maxShiftedNonTerminal) {
             super(maxShiftedNonTerminal);
@@ -347,16 +347,16 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
 
         public final int packLexical(final int child) {
-            return maxLexicalProduction - child;
+            return maxPackedLexicalProduction - child;
         }
 
         @Override
         public final int unpackLeftChild(final int childPair) {
             if (childPair < 0) {
                 // Unary or lexical production
-                if (childPair <= maxLexicalProduction) {
+                if (childPair <= maxPackedLexicalProduction) {
                     // Lexical production
-                    return -childPair + maxLexicalProduction;
+                    return -childPair + maxPackedLexicalProduction;
                 }
                 // Unary production
                 return -childPair - 1;
@@ -368,7 +368,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public final int unpackRightChild(final int childPair) {
             if (childPair < 0) {
                 // Unary or lexical production
-                if (childPair <= maxLexicalProduction) {
+                if (childPair <= maxPackedLexicalProduction) {
                     // Lexical production
                     return Production.LEXICAL_PRODUCTION;
                 }
