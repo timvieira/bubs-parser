@@ -18,6 +18,7 @@ import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.parser.OpenClSpmvParser.OpenClChart.OpenClChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
@@ -90,7 +91,14 @@ public class OpenClSpmvParser extends
 
             // Compile OpenCL kernels
             final StringWriter prefix = new StringWriter();
-            prefix.write("#define LEFT_CHILD_SHIFT "
+            prefix.write("#define UNARY_PRODUCTION " + Production.UNARY_PRODUCTION + '\n');
+            prefix.write("#define LEXICAL_PRODUCTION " + Production.LEXICAL_PRODUCTION + '\n');
+            prefix.write("#define PACKING_SHIFT "
+                    + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift + '\n');
+            prefix.write("#define MAX_PACKED_LEXICAL_PRODUCTION "
+                    + ((LeftShiftFunction) grammar.cartesianProductFunction()).maxPackedLexicalProduction
+                    + '\n');
+            prefix.write("#define PACKING_SHIFT "
                     + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift + '\n');
             prefix.write(grammar.cartesianProductFunction().openClPackDefine() + '\n');
 

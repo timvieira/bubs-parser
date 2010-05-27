@@ -152,7 +152,7 @@ __kernel void unarySpmvMultiply(const __global int* unaryRuleMatrixRowIndices,
         // Iterate over possible children of the parent (columns with non-zero entries)
         for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
             int grammarChildren = unaryRuleMatrixColumnIndices[i];
-            int child = (grammarChildren >> LEFT_CHILD_SHIFT);
+            int child = unpackLeftChild(grammarChildren);
             float grammarProbability = unaryRuleMatrixProbabilities[i];
 
             float jointProbability = grammarProbability + chartCellProbabilities[child];
@@ -223,4 +223,19 @@ __kernel void fillFloat(__global float* buffer,
     if (threadId < size) {
         buffer[threadId] = value;
     }
+}
+
+int unpackLeftChild(const int childPair) {
+    if (childPair < 0) {
+        // Unary or lexical production
+        if (childPair <= MAX_PACKED_LEXICAL_PRODUCTION) {
+            // Lexical production
+            return -childPair + MAX_PACKED_LEXICAL_PRODUCTION;
+        }
+        // Unary production
+        return -childPair - 1;
+    }
+    
+    // Left child of binary production
+    return childPair >> PACKING_SHIFT;
 }
