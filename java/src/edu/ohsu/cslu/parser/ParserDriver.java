@@ -285,6 +285,12 @@ public class ParserDriver extends BaseCommandlineTool {
                     case BitMatrixExactFilter:
                         return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             BitVectorExactFilterFunction.class);
+                    case PerfectHash:
+                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            PerfectHashFilterFunction.class);
+                    case PerfectHash2:
+                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                            PerfectIntPairHashFilterFunction.class);
                     default:
                         throw new Exception("Unsupported filter type: " + cartesianProductFunctionType);
                 }

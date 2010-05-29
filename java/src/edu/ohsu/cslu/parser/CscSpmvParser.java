@@ -57,7 +57,9 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
         if (end - start > 1) {
             final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
 
-            totalCartesianProductSize += cartesianProductVector.size();
+            if (collectDetailedStatistics) {
+                totalCartesianProductSize += cartesianProductVector.size();
+            }
 
             t1 = System.currentTimeMillis();
             cartesianProductTime = t1 - t0;
@@ -88,7 +90,9 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
     /**
      * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together,
      * saving the maximum probability child combinations.
-     * 
+     *
+     * TODO Share with {@link CsrSpmvParser}
+     *
      * @param start
      * @param end
      * @return Unioned cross-product
@@ -106,39 +110,43 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
         // Iterate over all possible midpoints, unioning together the cross-product of discovered
         // non-terminals in each left/right child pair
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
-            final PackedArrayChartCell leftCell = chart.getCell(start, midpoint);
-            final PackedArrayChartCell rightCell = chart.getCell(midpoint, end);
+            final int leftCellIndex = chart.cellIndex(start, midpoint);
+            final int rightCellIndex = chart.cellIndex(midpoint, end);
 
-            for (int i = leftCell.minLeftChildIndex(); i <= leftCell.maxLeftChildIndex(); i++) {
-
+            for (int i = chart.minLeftChildIndex(leftCellIndex); i <= chart.maxLeftChildIndex(leftCellIndex); i++) {
                 final int leftChild = nonTerminalIndices[i];
+                // final int packedLeftChild = cpf.partialPackLeft(leftChild);
                 final float leftProbability = insideProbabilities[i];
 
-                for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {
+                for (int j = chart.offset(rightCellIndex); j <= chart.maxRightChildIndex(rightCellIndex); j++) {
+
+                    if (collectDetailedStatistics) {
+                        totalCartesianProductEntriesExamined++;
+                    }
 
                     final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
-                    totalCartesianProductEntriesExamined++;
-
                     if (childPair == Integer.MIN_VALUE) {
                         continue;
                     }
 
-                    totalValidCartesianProductEntries++;
+                    final float jointProbability = leftProbability + insideProbabilities[j];
+
+                    if (collectDetailedStatistics) {
+                        totalValidCartesianProductEntries++;
+                    }
 
                     // If this cartesian-product entry is not populated, we can populate it without comparing
-                    // to a current probability
+                    // to a current probability.
                     if (cartesianProductMidpoints[childPair] == 0) {
-                        final float jointProbability = leftProbability + insideProbabilities[j];
-
                         cartesianProductProbabilities[childPair] = jointProbability;
                         cartesianProductMidpoints[childPair] = midpoint;
-                        size++;
+
+                        if (collectDetailedStatistics) {
+                            size++;
+                        }
 
                     } else {
-                        final float jointProbability = leftProbability + insideProbabilities[j];
-                        final float currentProbability = cartesianProductProbabilities[childPair];
-
-                        if (jointProbability > currentProbability) {
+                        if (jointProbability > cartesianProductProbabilities[childPair]) {
                             cartesianProductProbabilities[childPair] = jointProbability;
                             cartesianProductMidpoints[childPair] = midpoint;
                         }
@@ -244,13 +252,13 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
 
     @Override
     public String getStatHeader() {
-        return super.getStatHeader() + ", Avg X-prod Size, Total X-prod Entries";
+        return super.getStatHeader() + ", Avg X-prod size, X-prod Entries Examined, Total X-prod Entries";
     }
 
     @Override
     public String getStats() {
         return super.getStats()
-                + String.format(", %15.1f, %20d, %20d", totalCartesianProductSize * 1.0f / chart.cells,
+                + String.format(", %15.1f, %23d, %20d", totalCartesianProductSize * 1.0f / chart.cells,
                     totalCartesianProductEntriesExamined, totalValidCartesianProductEntries);
     }
 
