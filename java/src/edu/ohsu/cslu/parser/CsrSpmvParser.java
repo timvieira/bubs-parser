@@ -59,7 +59,9 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         if (end - start > 1) {
             final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
 
-            totalCartesianProductSize += cartesianProductVector.size();
+            if (collectDetailedStatistics) {
+                totalCartesianProductSize += cartesianProductVector.size();
+            }
 
             t1 = System.currentTimeMillis();
             cartesianProductTime = t1 - t0;
