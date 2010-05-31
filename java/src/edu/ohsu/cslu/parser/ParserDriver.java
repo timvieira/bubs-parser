@@ -20,7 +20,6 @@ import edu.ohsu.cslu.grammar.CscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarByChild;
-import edu.ohsu.cslu.grammar.JsaSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
@@ -241,9 +240,6 @@ public class ParserDriver extends BaseCommandlineTool {
             case CoarseCellAgendaCSLUT:
                 return new LeftHashGrammar(pcfgReader, lexReader, grammarFormat);
 
-            case JsaSparseMatrixVector:
-                return new JsaSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat);
-
             case CsrSpmv:
             case CsrSpmvPerMidpoint:
             case OpenClSparseMatrixVector:
@@ -345,8 +341,6 @@ public class ParserDriver extends BaseCommandlineTool {
                     opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
                 return new CoarseCellAgendaParserWithCSLUT(opts, (LeftHashGrammar) grammar, cslutScores);
 
-            case JsaSparseMatrixVector:
-                return new JsaSpmvParser(opts, (JsaSparseMatrixGrammar) grammar);
             case CsrSpmv:
                 return new CsrSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case CsrSpmvPerMidpoint:
