@@ -46,7 +46,7 @@ public class TestOpenClSpmvParser extends SparseMatrixVectorParserTestCase {
 
     @Override
     @Test
-    @PerformanceTest( { "mbp", "2236920" })
+    @PerformanceTest( { "mbp", "667853" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
