@@ -106,7 +106,7 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
         final PackedArrayChartCell leftCell = chart.getCell(start, midpoint);
         final PackedArrayChartCell rightCell = chart.getCell(midpoint, end);
 
-        final int[] nonTerminalIndices = chart.nonTerminalIndices;
+        final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 
         for (int i = leftCell.minLeftChildIndex(); i <= leftCell.maxLeftChildIndex(); i++) {

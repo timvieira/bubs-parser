@@ -104,7 +104,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         int size = 0;
 
         final CartesianProductFunction cpf = grammar.cartesianProductFunction();
-        final int[] nonTerminalIndices = chart.nonTerminalIndices;
+        final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 
         // Iterate over all possible midpoints, unioning together the cross-product of discovered

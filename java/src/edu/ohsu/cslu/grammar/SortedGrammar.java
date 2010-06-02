@@ -20,7 +20,9 @@ public abstract class SortedGrammar extends GrammarByChild {
     public int rightChildOnlyStart;
 
     public int eitherChildStart;
-    /** The first POS. */
+    /**
+     * The first POS. TODO Add another index specifically for the first left child
+     */
     public int posStart;
     /** The first POS which cannot combine with a factored NT. */
     public int posNonFactoredStart;
@@ -701,6 +703,7 @@ public abstract class SortedGrammar extends GrammarByChild {
         }
 
         @Override
+        // TODO Generalize this into a Comparator so we can swap in different sort orders
         public int compareTo(final NonTerminal o) {
             if (ntClass.ordinal() < o.ntClass.ordinal()) {
                 return -1;
@@ -732,6 +735,7 @@ public abstract class SortedGrammar extends GrammarByChild {
      * 7 - Unary children only
      */
     private enum NonTerminalClass {
+        // TODO Generalize this into a Comparator so we can swap in different sort orders
         // TODO Add factored classes
         RIGHT_CHILD_ONLY, POS_NON_FACTORED, NORMAL_POS, EITHER_CHILD, LEFT_FACTORED, NORMAL_LEFT_CHILD_ONLY, UNARY_CHILD_ONLY;
     }

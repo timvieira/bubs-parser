@@ -380,8 +380,8 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
         @Override
         public final String openClPackDefine() {
-            return "#define PACK ((validLeftChildren[leftChildIndex] << " + shift
-                    + ") | (validRightChildren[rightChildIndex] & " + lowOrderMask + "))";
+            return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask
+                    + "))";
         }
     }
 
