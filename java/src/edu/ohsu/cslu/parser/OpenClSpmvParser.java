@@ -43,50 +43,34 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
     private CLKernel cartesianProductUnionKernel;
     private CLQueue clQueue;
 
-    // TODO Make these final once we move kernel compilation into the constructor
-
     /** Grammar binary rules stored on device */
-    private CLIntBuffer clBinaryRuleMatrixRowIndices;
-    private CLIntBuffer clBinaryRuleMatrixColumnIndices;
-    private CLFloatBuffer clBinaryRuleMatrixProbabilities;
+    private final CLIntBuffer clBinaryRuleMatrixRowIndices;
+    private final CLIntBuffer clBinaryRuleMatrixColumnIndices;
+    private final CLFloatBuffer clBinaryRuleMatrixProbabilities;
 
     /** Grammar unary rules stored on device */
-    private CLIntBuffer clUnaryRuleMatrixRowIndices;
-    private CLIntBuffer clUnaryRuleMatrixColumnIndices;
-    private CLFloatBuffer clUnaryRuleMatrixProbabilities;
+    private final CLIntBuffer clUnaryRuleMatrixRowIndices;
+    private final CLIntBuffer clUnaryRuleMatrixColumnIndices;
+    private final CLFloatBuffer clUnaryRuleMatrixProbabilities;
 
     private CLFloatBuffer clChartInsideProbabilities;
     private CLIntBuffer clChartPackedChildren;
     private CLShortBuffer clChartMidpoints;
+    private int chartSize;
 
-    // Cross-product vector
-    private CLFloatBuffer clCartesianProductProbabilities0;
-    private CLShortBuffer clCartesianProductMidpoints0;
-    private CLFloatBuffer clCartesianProductProbabilities1;
-    private CLShortBuffer clCartesianProductMidpoints1;
+    // Cartesian-product vector
+    private final CLFloatBuffer clCartesianProductProbabilities0;
+    private final CLShortBuffer clCartesianProductMidpoints0;
+    private final CLFloatBuffer clCartesianProductProbabilities1;
+    private final CLShortBuffer clCartesianProductMidpoints1;
 
     public OpenClSpmvParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
         super(opts, grammar);
 
         context = createBestContext();
         clQueue = context.createDefaultQueue();
-    }
-
-    public OpenClSpmvParser(final CsrSparseMatrixGrammar grammar) {
-        this(new ParserOptions().setCollectDetailedStatistics(true), grammar);
-    }
-
-    @Override
-    protected void initParser(final int sentLength) {
-        chart = new DenseVectorChart(sentLength, grammar);
-
-        totalSpMVTime = 0;
-        totalCartesianProductTime = 0;
-
-        // TODO Move this to constructor after debugging
 
         try {
-
             // Compile OpenCL kernels
             final StringWriter prefix = new StringWriter();
             prefix.write("#define UNARY_PRODUCTION " + Production.UNARY_PRODUCTION + '\n');
@@ -126,12 +110,6 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
         clUnaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(clQueue, grammar
             .unaryRuleMatrixProbabilities(), CLMem.Usage.Input);
 
-        // Allocate OpenCL-hosted memory for chart storage
-        clChartInsideProbabilities = context.createFloatBuffer(CLMem.Usage.InputOutput, chart
-            .chartArraySize());
-        clChartPackedChildren = context.createIntBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
-        clChartMidpoints = context.createShortBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
-
         // And for cross-product storage
         clCartesianProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
             .cartesianProductFunction().packedArraySize());
@@ -141,6 +119,27 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
             .cartesianProductFunction().packedArraySize());
         clCartesianProductMidpoints1 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
             .cartesianProductFunction().packedArraySize());
+    }
+
+    public OpenClSpmvParser(final CsrSparseMatrixGrammar grammar) {
+        this(new ParserOptions().setCollectDetailedStatistics(true), grammar);
+    }
+
+    @Override
+    protected void initParser(final int sentLength) {
+        chart = new DenseVectorChart(sentLength, grammar);
+
+        totalSpMVTime = 0;
+        totalCartesianProductTime = 0;
+
+        if (clChartInsideProbabilities == null || sentLength > chartSize) {
+            // Allocate OpenCL-hosted memory for chart storage
+            clChartInsideProbabilities = context.createFloatBuffer(CLMem.Usage.InputOutput, chart
+                .chartArraySize());
+            clChartPackedChildren = context.createIntBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
+            clChartMidpoints = context.createShortBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
+            chartSize = sentLength;
+        }
     }
 
     @Override
@@ -392,7 +391,6 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
         OpenClUtils.copyToDevice(clQueue, clChartInsideProbabilities, chart.insideProbabilities);
         OpenClUtils.copyToDevice(clQueue, clChartPackedChildren, chart.packedChildren);
         OpenClUtils.copyToDevice(clQueue, clChartMidpoints, chart.midpoints);
-
     }
 
     private void copyChartFromDevice() {
