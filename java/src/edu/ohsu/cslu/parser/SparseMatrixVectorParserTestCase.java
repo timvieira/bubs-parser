@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.Reader;
 import java.util.Arrays;
 
@@ -16,7 +18,6 @@ import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Base test class for all sparse-matrix-vector parsers
@@ -94,8 +95,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         cell_3_4.updateInside(g.new Production("NP", "NP", -2f, false), chart.getCell(3, 4), null, -2f);
         cell_3_4.finalizeCell();
 
-        // So: 0,1 X 1,4 cross-product = NN/NN (-5,1), NN/2 (-6,1)
-        // So: 0,2 X 2,4 cross-product = NN/NN (-6,2), NN/2 (-6,2), NP/NN (-7,2), NP/NP (-7,2)
+        // So: 0,1 X 1,4 cross-product = NN/NN (-5,1), NN/NP (-6,1)
+        // So: 0,2 X 2,4 cross-product = NN/NN (-6,2), NN/NP (-6,2), NP/NN (-7,2), NP/NP (-7,2)
         // So: 0,3 X 3,4 cross-product = NP/NP (-4,3)
 
         // Cross-product union should be NN/NN (-5,1), NN/NP (-6,1), NP/NN (-7,2), NP/NP (-4,3)
@@ -226,7 +227,6 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         final ChartCell cell_3_4 = chart.getCell(3, 4);
         cell_3_4.updateInside(simpleGrammar2.new Production("VP", "VB", -2.07944f, false), cell_3_4, null,
             -2.07944f);
-        System.out.println(cell_3_4.toString());
         cell_3_4.updateInside(simpleGrammar2.new Production("NN", "stands", -.69315f, true), cell_3_4, null,
             -.69315f);
         cell_3_4.updateInside(simpleGrammar2.new Production("VB", "stands", -.69315f, true), cell_3_4, null,

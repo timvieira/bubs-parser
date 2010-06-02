@@ -129,7 +129,7 @@ public class SortAndScanCsrSpmvParser extends
 
             final int rightCellRightChildren = rightCell.maxRightChildIndex() - rightCell.offset() + 1;
 
-            final int[] nonTerminalIndices = chart.nonTerminalIndices;
+            final short[] nonTerminalIndices = chart.nonTerminalIndices;
             final float[] insideProbabilities = chart.insideProbabilities;
 
             for (int i = leftCell.minLeftChildIndex(); i <= leftCell.maxLeftChildIndex(); i++) {
