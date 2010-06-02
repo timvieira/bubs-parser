@@ -6,6 +6,36 @@ import edu.ohsu.cslu.grammar.SortedGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 
+/**
+ * Stores a chart in a 4-way parallel array of:
+ * <ol>
+ * <li>Populated non-terminals (short)</li>
+ * <li>Probabilities of those non-terminals (float)</li>
+ * <li>Child pairs producing each non-terminal --- equivalent to the grammar rule (int)</li>
+ * <li>Midpoints (short)</li>
+ * </ol>
+ * 
+ * Those 4 pieces of information allow us to back-trace through the chart and construct the parse tree.
+ * 
+ * Each parallel array entry consumes 2 + 4 + 4 + 2 = 12 bytes
+ * 
+ * Individual cells in the parallel array are indexed by cell offsets of fixed length (the number of
+ * non-terminals in the grammar).
+ * 
+ * The ancillary data structures are relatively small, so the total size consumed is approximately = n * (n-1)
+ * / 2 * V * 12 bytes.
+ * 
+ * Similar to {@link DenseVectorChart}, but observed non-terminals are packed together in
+ * {@link PackedArrayChartCell#finalizeCell()}; this packing scan and the resulting denser access to observed
+ * non-terminals may prove beneficial on certain architectures.
+ * 
+ * @see DenseVectorChart
+ * 
+ * @author Aaron Dunlop
+ * @since March 25, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class PackedArrayChart extends Chart {
 
     public final SparseMatrixGrammar sparseMatrixGrammar;
@@ -44,16 +74,22 @@ public class PackedArrayChart extends Chart {
     public final int cells;
 
     /**
-     * Stores packed non-terminals and their inside probabilities. Entries for each cell begin at indices from
-     * {@link #cellOffsets}.
+     * Parallel arrays storing non-terminals, inside probabilities, and the grammar rules and midpoints which
+     * produced them. Entries for each cell begin at indices from {@link #cellOffsets}.
      */
-    public final int[] nonTerminalIndices;
+    public final short[] nonTerminalIndices;
     public final float[] insideProbabilities;
-    public final int[] children;
+    public final int[] packedChildren;
     public final short[] midpoints;
 
     public final PackedArrayChartCell[][] temporaryCells;
 
+    /**
+     * Constructs a chart
+     * 
+     * @param size Sentence length
+     * @param sparseMatrixGrammar Grammar
+     */
     public PackedArrayChart(final int size, final SparseMatrixGrammar sparseMatrixGrammar) {
         super(size, true, null);
         this.sparseMatrixGrammar = sparseMatrixGrammar;
@@ -64,11 +100,11 @@ public class PackedArrayChart extends Chart {
         maxLeftChildIndex = new int[cells];
         maxRightChildIndex = new int[cells];
 
-        final int packedArraySize = cells * sparseMatrixGrammar.numNonTerms();
-        nonTerminalIndices = new int[packedArraySize];
-        insideProbabilities = new float[packedArraySize];
-        children = new int[packedArraySize];
-        midpoints = new short[packedArraySize];
+        final int chartArraySize = cells * sparseMatrixGrammar.numNonTerms();
+        nonTerminalIndices = new short[chartArraySize];
+        insideProbabilities = new float[chartArraySize];
+        packedChildren = new int[chartArraySize];
+        midpoints = new short[chartArraySize];
 
         temporaryCells = new PackedArrayChartCell[size][size + 1];
 
@@ -92,7 +128,7 @@ public class PackedArrayChart extends Chart {
         final int cellIndex = cellIndex(start, end);
         final int offset = cellIndex * sparseMatrixGrammar.numNonTerms();
         final int index = Arrays.binarySearch(nonTerminalIndices, offset,
-            offset + numNonTerminals[cellIndex], nonTerminal);
+            offset + numNonTerminals[cellIndex], (short) nonTerminal);
         if (index < 0) {
             return Float.NEGATIVE_INFINITY;
         }
@@ -199,7 +235,7 @@ public class PackedArrayChart extends Chart {
                 // Copy from main chart array to temporary parallel array
                 for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
                     final int nonTerminal = nonTerminalIndices[i];
-                    tmpChildren[nonTerminal] = children[i];
+                    tmpChildren[nonTerminal] = packedChildren[i];
                     tmpInsideProbabilities[nonTerminal] = insideProbabilities[i];
                     tmpMidpoints[nonTerminal] = midpoints[i];
                 }
@@ -219,13 +255,13 @@ public class PackedArrayChart extends Chart {
             int tmpMaxLeftChildIndex = offset - 1;
             int tmpMaxRightChildIndex = offset - 1;
 
-            for (int nonTerminal = 0; nonTerminal < tmpInsideProbabilities.length; nonTerminal++) {
+            for (short nonTerminal = 0; nonTerminal < tmpInsideProbabilities.length; nonTerminal++) {
 
                 if (tmpInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
 
                     nonTerminalIndices[nonTerminalOffset] = nonTerminal;
                     insideProbabilities[nonTerminalOffset] = tmpInsideProbabilities[nonTerminal];
-                    children[nonTerminalOffset] = tmpChildren[nonTerminal];
+                    packedChildren[nonTerminalOffset] = tmpChildren[nonTerminal];
                     midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
 
                     if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
@@ -259,7 +295,7 @@ public class PackedArrayChart extends Chart {
 
             // TODO Use getBestEdge() ?
             final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset
-                    + numNonTerminals[cellIndex], nonTerminal);
+                    + numNonTerminals[cellIndex], (short) nonTerminal);
             if (index < 0) {
                 return Float.NEGATIVE_INFINITY;
             }
@@ -328,25 +364,25 @@ public class PackedArrayChart extends Chart {
         }
 
         @Override
-        public ChartEdge getBestEdge(final int nonTermIndex) {
+        public ChartEdge getBestEdge(final int nonTerminal) {
             int edgeChildren;
             short edgeMidpoint;
 
             if (tmpChildren != null) {
-                if (tmpInsideProbabilities[nonTermIndex] == Float.NEGATIVE_INFINITY) {
+                if (tmpInsideProbabilities[nonTerminal] == Float.NEGATIVE_INFINITY) {
                     return null;
                 }
 
-                edgeChildren = tmpChildren[nonTermIndex];
-                edgeMidpoint = tmpMidpoints[nonTermIndex];
+                edgeChildren = tmpChildren[nonTerminal];
+                edgeMidpoint = tmpMidpoints[nonTerminal];
 
             } else {
                 final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset
-                        + numNonTerminals[cellIndex], nonTermIndex);
+                        + numNonTerminals[cellIndex], (short) nonTerminal);
                 if (index < 0) {
                     return null;
                 }
-                edgeChildren = children[index];
+                edgeChildren = packedChildren[index];
                 edgeMidpoint = midpoints[index];
             }
 
@@ -360,17 +396,16 @@ public class PackedArrayChart extends Chart {
 
             Production p;
             if (rightChild == Production.LEXICAL_PRODUCTION) {
-                final float probability = sparseMatrixGrammar.lexicalLogProbability(nonTermIndex, leftChild);
-                p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, probability, true);
+                final float probability = sparseMatrixGrammar.lexicalLogProbability(nonTerminal, leftChild);
+                p = sparseMatrixGrammar.new Production(nonTerminal, leftChild, probability, true);
 
             } else if (rightChild == Production.UNARY_PRODUCTION) {
-                final float probability = sparseMatrixGrammar.unaryLogProbability(nonTermIndex, leftChild);
-                p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, probability, false);
+                final float probability = sparseMatrixGrammar.unaryLogProbability(nonTerminal, leftChild);
+                p = sparseMatrixGrammar.new Production(nonTerminal, leftChild, probability, false);
 
             } else {
-                final float probability = sparseMatrixGrammar
-                    .binaryLogProbability(nonTermIndex, edgeChildren);
-                p = sparseMatrixGrammar.new Production(nonTermIndex, leftChild, rightChild, probability);
+                final float probability = sparseMatrixGrammar.binaryLogProbability(nonTerminal, edgeChildren);
+                p = sparseMatrixGrammar.new Production(nonTerminal, leftChild, rightChild, probability);
             }
             return new ChartEdge(p, leftChildCell, rightChildCell);
         }
@@ -453,7 +488,7 @@ public class PackedArrayChart extends Chart {
             if (tmpChildren == null) {
                 // Format entries from the main chart array
                 for (int index = offset; index < offset + numNonTerminals[cellIndex]; index++) {
-                    final int childProductions = children[index];
+                    final int childProductions = packedChildren[index];
                     final float insideProbability = insideProbabilities[index];
                     final int midpoint = midpoints[index];
 

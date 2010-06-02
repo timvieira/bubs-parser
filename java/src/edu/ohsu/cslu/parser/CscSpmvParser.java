@@ -90,9 +90,9 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
     /**
      * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together,
      * saving the maximum probability child combinations.
-     *
+     * 
      * TODO Share with {@link CsrSpmvParser}
-     *
+     * 
      * @param start
      * @param end
      * @return Unioned cross-product
@@ -104,7 +104,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
         int size = 0;
 
         final CartesianProductFunction cpf = grammar.cartesianProductFunction();
-        final int[] nonTerminalIndices = chart.nonTerminalIndices;
+        final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 
         // Iterate over all possible midpoints, unioning together the cross-product of discovered

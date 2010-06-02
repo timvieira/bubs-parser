@@ -1,14 +1,10 @@
 package edu.ohsu.cslu.parser;
 
-import java.util.Arrays;
-
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
-import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
  * A class of parser which performs the grammar intersection in each cell by:
@@ -102,55 +98,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      * @param end
      * @return Unioned cross-product
      */
-    protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
-
-        Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
-        int size = 0;
-
-        final CartesianProductFunction cpf = grammar.cartesianProductFunction();
-
-        // Iterate over all possible midpoints, unioning together the cross-product of discovered
-        // non-terminals in each left/right child pair
-        for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
-            final DenseVectorChartCell leftCell = (DenseVectorChartCell) chart.getCell(start, midpoint);
-            final DenseVectorChartCell rightCell = (DenseVectorChartCell) chart.getCell(midpoint, end);
-
-            final int[] leftChildren = leftCell.validLeftChildren;
-            final float[] leftChildrenProbabilities = leftCell.validLeftChildrenProbabilities;
-            final short[] rightChildren = rightCell.validRightChildren;
-            final float[] rightChildrenProbabilities = rightCell.validRightChildrenProbabilities;
-
-            for (int i = 0; i < leftChildren.length; i++) {
-
-                final int leftChild = leftChildren[i];
-                final float leftProbability = leftChildrenProbabilities[i];
-
-                for (int j = 0; j < rightChildren.length; j++) {
-
-                    final float jointProbability = leftProbability + rightChildrenProbabilities[j];
-                    final int childPair = cpf.pack(leftChild, rightChildren[j]);
-
-                    if (childPair == Integer.MIN_VALUE) {
-                        continue;
-                    }
-
-                    final float currentProbability = cartesianProductProbabilities[childPair];
-
-                    if (jointProbability > currentProbability) {
-                        cartesianProductProbabilities[childPair] = jointProbability;
-                        cartesianProductMidpoints[childPair] = midpoint;
-
-                        if (currentProbability == Float.NEGATIVE_INFINITY) {
-                            size++;
-                        }
-                    }
-                }
-            }
-        }
-
-        return new CartesianProductVector(grammar, cartesianProductProbabilities, cartesianProductMidpoints,
-            size);
-    }
+    protected abstract CartesianProductVector cartesianProductUnion(final int start, final int end);
 
     @Override
     public String getStatHeader() {
