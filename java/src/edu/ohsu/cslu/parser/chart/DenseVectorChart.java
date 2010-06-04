@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser.chart;
 
-import java.util.Arrays;
-
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 
@@ -34,28 +32,7 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class DenseVectorChart extends Chart {
-
-    public final SparseMatrixGrammar sparseMatrixGrammar;
-
-    /**
-     * Start indices for each cell. Computed from cell start and end indices and stored in the chart for
-     * convenience
-     */
-    private final int[] cellOffsets;
-
-    /** The number of cells in this chart */
-    public final int cells;
-
-    private final int chartArraySize;
-
-    /**
-     * Parallel arrays storing non-terminals, inside probabilities, and the grammar rules and midpoints which
-     * produced them. Entries for each cell begin at indices from {@link #cellOffsets}.
-     */
-    public final float[] insideProbabilities;
-    public final int[] packedChildren;
-    public final short[] midpoints;
+public class DenseVectorChart extends ParallelArrayChart {
 
     /**
      * Constructs a chart
@@ -64,25 +41,7 @@ public class DenseVectorChart extends Chart {
      * @param sparseMatrixGrammar Grammar
      */
     public DenseVectorChart(final int size, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(size, true, null);
-        this.sparseMatrixGrammar = sparseMatrixGrammar;
-
-        cells = cellIndex(0, size) + 1;
-
-        chartArraySize = cells * sparseMatrixGrammar.numNonTerms();
-        insideProbabilities = new float[chartArraySize];
-        Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
-        packedChildren = new int[chartArraySize];
-        midpoints = new short[chartArraySize];
-
-        // Calculate all cell offsets
-        cellOffsets = new int[cells];
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end < size + 1; end++) {
-                final int cellIndex = cellIndex(start, end);
-                cellOffsets[cellIndex] = cellIndex * sparseMatrixGrammar.numNonTerms();
-            }
-        }
+        super(size, sparseMatrixGrammar);
     }
 
     public void clear(final int sentenceLength) {
@@ -106,27 +65,6 @@ public class DenseVectorChart extends Chart {
         return new DenseVectorChartCell(start, end);
     }
 
-    /**
-     * Returns the index of the specified cell in the parallel chart arrays
-     * 
-     * @param start
-     * @param end
-     * @return the index of the specified cell in the parallel chart arrays
-     */
-    public final int cellIndex(final int start, final int end) {
-
-        if (start < 0 || start > size) {
-            throw new IllegalArgumentException("Illegal start: " + start);
-        }
-
-        if (end < 0 || end > size) {
-            throw new IllegalArgumentException("Illegal end: " + end);
-        }
-
-        final int row = end - start - 1;
-        return size * row - ((row - 1) * row / 2) + start;
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
@@ -141,73 +79,11 @@ public class DenseVectorChart extends Chart {
         return sb.toString();
     }
 
-    public final int offset(final int cellIndex) {
-        return cellOffsets[cellIndex];
-    }
-
-    public final int chartArraySize() {
-        return chartArraySize;
-    }
-
-    public class DenseVectorChartCell extends ChartCell {
-
-        private final int cellIndex;
-        private final int offset;
+    public class DenseVectorChartCell extends ParallelArrayChartCell {
 
         public DenseVectorChartCell(final int start, final int end) {
             super(start, end);
-
-            cellIndex = cellIndex(start, end);
-            offset = cellIndex * sparseMatrixGrammar.numNonTerms();
-            if (offset < 0) {
-                System.out.println("Found negative offset");
-            }
         }
-
-        // @Override
-        // public void finalizeCell() {
-        //
-        // // Copy and pack entries from temporary array into the main chart array
-        // if (tmpChildren == null) {
-        // return;
-        // }
-        //
-        // int nonTerminalOffset = offset;
-        // int tmpMinLeftChildIndex = Integer.MAX_VALUE;
-        // int tmpMaxLeftChildIndex = offset - 1;
-        // int tmpMaxRightChildIndex = offset - 1;
-        //
-        // for (short nonTerminal = 0; nonTerminal < tmpInsideProbabilities.length; nonTerminal++) {
-        //
-        // if (tmpInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
-        //
-        // nonTerminalIndices[nonTerminalOffset] = nonTerminal;
-        // insideProbabilities[nonTerminalOffset] = tmpInsideProbabilities[nonTerminal];
-        // packedChildren[nonTerminalOffset] = tmpChildren[nonTerminal];
-        // midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
-        //
-        // if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
-        // if (tmpMinLeftChildIndex == Integer.MAX_VALUE) {
-        // tmpMinLeftChildIndex = nonTerminalOffset;
-        // }
-        // tmpMaxLeftChildIndex = nonTerminalOffset;
-        // }
-        //
-        // if (sparseMatrixGrammar.isValidRightChild(nonTerminal)) {
-        // tmpMaxRightChildIndex = nonTerminalOffset;
-        // }
-        //
-        // nonTerminalOffset++;
-        // }
-        // }
-        //
-        // numNonTerminals[cellIndex] = nonTerminalOffset - offset;
-        // minLeftChildIndex[cellIndex] = tmpMinLeftChildIndex;
-        // maxLeftChildIndex[cellIndex] = tmpMaxLeftChildIndex;
-        // maxRightChildIndex[cellIndex] = tmpMaxRightChildIndex;
-        //
-        // temporaryCells[start][end] = null;
-        // }
 
         @Override
         public float getInside(final int nonTerminal) {
@@ -313,15 +189,6 @@ public class DenseVectorChart extends Chart {
         }
 
         /**
-         * Returns the start index of this cell in the main packed array
-         * 
-         * @return the start index of this cell in the main packed array
-         */
-        public final int offset() {
-            return offset;
-        }
-
-        /**
          * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same
          * chart.
          */
@@ -354,30 +221,6 @@ public class DenseVectorChart extends Chart {
                 }
             }
             return sb.toString();
-        }
-
-        private String formatCellEntry(final int nonterminal, final int childProductions,
-                final float insideProbability, final int midpoint) {
-            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
-                childProductions);
-            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
-                childProductions);
-
-            if (rightChild == Production.UNARY_PRODUCTION) {
-                // Unary Production
-                return String.format("%s -> %s (%.5f, %d)\n",
-                    sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar
-                        .mapNonterminal(leftChild), insideProbability, midpoint);
-            } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-                // Lexical Production
-                return String.format("%s -> %s (%.5f, %d)\n",
-                    sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar
-                        .mapLexicalEntry(leftChild), insideProbability, midpoint);
-            } else {
-                return String.format("%s -> %s %s (%.5f, %d)\n", sparseMatrixGrammar
-                    .mapNonterminal(nonterminal), sparseMatrixGrammar.mapNonterminal(leftChild),
-                    sparseMatrixGrammar.mapNonterminal(rightChild), insideProbability, midpoint);
-            }
         }
     }
 }

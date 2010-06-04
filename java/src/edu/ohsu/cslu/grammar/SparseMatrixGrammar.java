@@ -305,6 +305,8 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public int rightChildEnd();
 
         public abstract String openClPackDefine();
+
+        public abstract String openClUnpackLeftChild();
     }
 
     protected abstract class ShiftFunction implements CartesianProductFunction {
@@ -382,6 +384,25 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public final String openClPackDefine() {
             return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask
                     + "))";
+        }
+
+        public final String openClUnpackLeftChild() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("int unpackLeftChild(const int childPair) {\n");
+            sb.append("    if (childPair < 0) {\n");
+            sb.append("        // Unary or lexical production\n");
+            sb.append("        if (childPair <= MAX_PACKED_LEXICAL_PRODUCTION) {\n");
+            sb.append("            // Lexical production\n");
+            sb.append("            return -childPair + MAX_PACKED_LEXICAL_PRODUCTION;\n");
+            sb.append("        }\n");
+            sb.append("        // Unary production\n");
+            sb.append("        return -childPair - 1;\n");
+            sb.append("    }\n");
+            sb.append("    \n");
+            sb.append("    // Left child of binary production\n");
+            sb.append("    return childPair >> PACKING_SHIFT;\n");
+            sb.append("}\n");
+            return sb.toString();
         }
     }
 
@@ -673,6 +694,11 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public String openClPackDefine() {
             return "";
         }
+
+        @Override
+        public String openClUnpackLeftChild() {
+            return "";
+        }
     }
 
     public final class PerfectIntPairHashFilterFunction extends ShiftFunction {
@@ -773,6 +799,11 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
         @Override
         public String openClPackDefine() {
+            return "";
+        }
+
+        @Override
+        public String openClUnpackLeftChild() {
             return "";
         }
     }
