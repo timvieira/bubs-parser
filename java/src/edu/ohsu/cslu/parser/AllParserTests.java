@@ -7,7 +7,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses( { TestParser.class, TestECPGramLoop.class, TestECPGramLoopBerkFilter.class,
         TestECPCellCrossHash.class, TestECPCellCrossList.class, TestECPCellCrossMatrix.class,
         TestCsrSpmvParser.class, TestCsrSpmvPerMidpointParser.class, TestCscSpmvParser.class,
-        TestOpenClSpmvParser.class, TestSortAndScanCsrSpmvParser.class })
+        OpenClSpmvParserTestCase.class, TestSortAndScanCsrSpmvParser.class })
 public class AllParserTests {
 
 }

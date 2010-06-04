@@ -242,7 +242,8 @@ public class ParserDriver extends BaseCommandlineTool {
 
             case CsrSpmv:
             case CsrSpmvPerMidpoint:
-            case OpenClSparseMatrixVector:
+            case PackedOpenClSparseMatrixVector:
+            case DenseVectorOpenClSparseMatrixVector:
             case SortAndScanSpmv:
                 switch (cartesianProductFunctionType) {
                     case Unfiltered:
@@ -347,8 +348,10 @@ public class ParserDriver extends BaseCommandlineTool {
                 return new CsrSpmvPerMidpointParser(opts, (CsrSparseMatrixGrammar) grammar);
             case CscSpmv:
                 return new CscSpmvParser(opts, (CscSparseMatrixGrammar) grammar);
-            case OpenClSparseMatrixVector:
-                return new OpenClSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
+            case DenseVectorOpenClSparseMatrixVector:
+                return new DenseVectorOpenClSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
+            case PackedOpenClSparseMatrixVector:
+                return new PackedOpenClSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case SortAndScanSpmv:
                 return new SortAndScanCsrSpmvParser((CsrSparseMatrixGrammar) grammar);
 

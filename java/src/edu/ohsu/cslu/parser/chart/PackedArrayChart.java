@@ -36,15 +36,14 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class PackedArrayChart extends Chart {
-
-    public final SparseMatrixGrammar sparseMatrixGrammar;
+public class PackedArrayChart extends ParallelArrayChart {
 
     /**
-     * Start indices for each cell. Computed from cell start and end indices and stored in the chart for
-     * convenience
+     * Parallel array storing non-terminals (parallel to {@link ParallelArrayChart#insideProbabilities},
+     * {@link ParallelArrayChart#packedChildren}, and {@link ParallelArrayChart#midpoints}. Entries for each
+     * cell begin at indices from {@link #cellOffsets}.
      */
-    private final int[] cellOffsets;
+    public final short[] nonTerminalIndices;
 
     /**
      * The number of non-terminals populated in each cell. Indexed by cell index ({@link #cellIndex(int, int)}
@@ -70,18 +69,6 @@ public class PackedArrayChart extends Chart {
      */
     private final int[] minLeftChildIndex;
 
-    /** The number of cells in this chart */
-    public final int cells;
-
-    /**
-     * Parallel arrays storing non-terminals, inside probabilities, and the grammar rules and midpoints which
-     * produced them. Entries for each cell begin at indices from {@link #cellOffsets}.
-     */
-    public final short[] nonTerminalIndices;
-    public final float[] insideProbabilities;
-    public final int[] packedChildren;
-    public final short[] midpoints;
-
     public final PackedArrayChartCell[][] temporaryCells;
 
     /**
@@ -91,31 +78,16 @@ public class PackedArrayChart extends Chart {
      * @param sparseMatrixGrammar Grammar
      */
     public PackedArrayChart(final int size, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(size, true, null);
-        this.sparseMatrixGrammar = sparseMatrixGrammar;
+        super(size, sparseMatrixGrammar);
 
-        cells = cellIndex(0, size) + 1;
         numNonTerminals = new int[cells];
         minLeftChildIndex = new int[cells];
         maxLeftChildIndex = new int[cells];
         maxRightChildIndex = new int[cells];
 
-        final int chartArraySize = cells * sparseMatrixGrammar.numNonTerms();
         nonTerminalIndices = new short[chartArraySize];
-        insideProbabilities = new float[chartArraySize];
-        packedChildren = new int[chartArraySize];
-        midpoints = new short[chartArraySize];
 
         temporaryCells = new PackedArrayChartCell[size][size + 1];
-
-        // Calculate all cell offsets
-        cellOffsets = new int[cells];
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end < size + 1; end++) {
-                final int cellIndex = cellIndex(start, end);
-                cellOffsets[cellIndex] = cellIndex * sparseMatrixGrammar.numNonTerms();
-            }
-        }
     }
 
     public void clear(final int sentenceLength) {
@@ -149,27 +121,6 @@ public class PackedArrayChart extends Chart {
         return new PackedArrayChartCell(start, end);
     }
 
-    /**
-     * Returns the index of the specified cell in the parallel chart arrays
-     * 
-     * @param start
-     * @param end
-     * @return the index of the specified cell in the parallel chart arrays
-     */
-    public final int cellIndex(final int start, final int end) {
-
-        if (start < 0 || start > size) {
-            throw new IllegalArgumentException("Illegal start: " + start);
-        }
-
-        if (end < 0 || end > size) {
-            throw new IllegalArgumentException("Illegal end: " + end);
-        }
-
-        final int row = end - start - 1;
-        return size * row - ((row - 1) * row / 2) + start;
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
@@ -192,18 +143,11 @@ public class PackedArrayChart extends Chart {
         return maxLeftChildIndex[cellIndex];
     }
 
-    public final int offset(final int cellIndex) {
-        return cellOffsets[cellIndex];
-    }
-
     public final int maxRightChildIndex(final int cellIndex) {
         return maxRightChildIndex[cellIndex];
     }
 
-    public class PackedArrayChartCell extends ChartCell {
-
-        private final int cellIndex;
-        private final int offset;
+    public class PackedArrayChartCell extends ParallelArrayChartCell {
 
         /**
          * Temporary storage for manipulating cell entries. Indexed by parent non-terminal. Only allocated
@@ -215,9 +159,6 @@ public class PackedArrayChart extends Chart {
 
         public PackedArrayChartCell(final int start, final int end) {
             super(start, end);
-
-            cellIndex = cellIndex(start, end);
-            offset = cellIndex * sparseMatrixGrammar.numNonTerms();
         }
 
         public void allocateTemporaryStorage() {
@@ -426,15 +367,6 @@ public class PackedArrayChart extends Chart {
         }
 
         /**
-         * Returns the start index of this cell in the main packed array
-         * 
-         * @return the start index of this cell in the main packed array
-         */
-        public final int offset() {
-            return offset;
-        }
-
-        /**
          * Returns the index of the first non-terminal in this cell which is valid as a left child. The
          * grammar must be sorted right, both, left, unary-only, as in {@link SortedGrammar}.
          * 
@@ -514,30 +446,6 @@ public class PackedArrayChart extends Chart {
 
             }
             return sb.toString();
-        }
-
-        private String formatCellEntry(final int nonterminal, final int childProductions,
-                final float insideProbability, final int midpoint) {
-            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
-                childProductions);
-            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
-                childProductions);
-
-            if (rightChild == Production.UNARY_PRODUCTION) {
-                // Unary Production
-                return String.format("%s -> %s (%.5f, %d)\n",
-                    sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar
-                        .mapNonterminal(leftChild), insideProbability, midpoint);
-            } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-                // Lexical Production
-                return String.format("%s -> %s (%.5f, %d)\n",
-                    sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar
-                        .mapLexicalEntry(leftChild), insideProbability, midpoint);
-            } else {
-                return String.format("%s -> %s %s (%.5f, %d)\n", sparseMatrixGrammar
-                    .mapNonterminal(nonterminal), sparseMatrixGrammar.mapNonterminal(leftChild),
-                    sparseMatrixGrammar.mapNonterminal(rightChild), insideProbability, midpoint);
-            }
         }
     }
 }

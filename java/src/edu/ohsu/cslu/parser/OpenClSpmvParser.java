@@ -16,9 +16,10 @@ import com.nativelibs4java.opencl.CLShortBuffer;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
-import edu.ohsu.cslu.parser.chart.DenseVectorChart;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.util.OpenClUtils;
 
@@ -31,40 +32,43 @@ import edu.ohsu.cslu.util.OpenClUtils;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, DenseVectorChart> {
+public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
+        SparseMatrixVectorParser<CsrSparseMatrixGrammar, C> {
 
-    private final static int LOCAL_WORK_SIZE = 64;
+    protected final static int LOCAL_WORK_SIZE = 64;
 
-    private CLContext context;
-    private CLKernel fillFloatKernel;
-    private CLKernel binarySpmvKernel;
-    private CLKernel unarySpmvKernel;
-    private CLKernel cartesianProductKernel;
-    private CLKernel cartesianProductUnionKernel;
-    private CLQueue clQueue;
+    protected final CLContext context;
+    protected final CLKernel fillFloatKernel;
+    protected final CLKernel binarySpmvKernel;
+    protected final CLKernel unarySpmvKernel;
+    protected final CLKernel cartesianProductKernel;
+    protected final CLKernel cartesianProductUnionKernel;
+    protected final CLQueue clQueue;
 
     /** Grammar binary rules stored on device */
-    private final CLIntBuffer clBinaryRuleMatrixRowIndices;
-    private final CLIntBuffer clBinaryRuleMatrixColumnIndices;
-    private final CLFloatBuffer clBinaryRuleMatrixProbabilities;
+    protected final CLIntBuffer clBinaryRuleMatrixRowIndices;
+    protected final CLIntBuffer clBinaryRuleMatrixColumnIndices;
+    protected final CLFloatBuffer clBinaryRuleMatrixProbabilities;
 
     /** Grammar unary rules stored on device */
-    private final CLIntBuffer clUnaryRuleMatrixRowIndices;
-    private final CLIntBuffer clUnaryRuleMatrixColumnIndices;
-    private final CLFloatBuffer clUnaryRuleMatrixProbabilities;
+    protected final CLIntBuffer clUnaryRuleMatrixRowIndices;
+    protected final CLIntBuffer clUnaryRuleMatrixColumnIndices;
+    protected final CLFloatBuffer clUnaryRuleMatrixProbabilities;
 
-    private CLFloatBuffer clChartInsideProbabilities;
-    private CLIntBuffer clChartPackedChildren;
-    private CLShortBuffer clChartMidpoints;
-    private int chartSize;
+    /** Chart */
+    protected CLFloatBuffer clChartInsideProbabilities;
+    protected CLIntBuffer clChartPackedChildren;
+    protected CLShortBuffer clChartMidpoints;
 
     // Cartesian-product vector
-    private final CLFloatBuffer clCartesianProductProbabilities0;
-    private final CLShortBuffer clCartesianProductMidpoints0;
-    private final CLFloatBuffer clCartesianProductProbabilities1;
-    private final CLShortBuffer clCartesianProductMidpoints1;
+    protected final CLFloatBuffer clCartesianProductProbabilities0;
+    protected final CLShortBuffer clCartesianProductMidpoints0;
+    protected final CLFloatBuffer clCartesianProductProbabilities1;
+    protected final CLShortBuffer clCartesianProductMidpoints1;
 
-    public OpenClSpmvParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
+    private int chartSize;
+
+    protected OpenClSpmvParser(final ParserOptions opts, final CsrSparseMatrixGrammar grammar) {
         super(opts, grammar);
 
         context = createBestContext();
@@ -83,13 +87,20 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
             prefix.write("#define PACKING_SHIFT "
                     + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift + '\n');
             prefix.write(grammar.cartesianProductFunction().openClPackDefine() + '\n');
+            prefix.write(grammar.cartesianProductFunction().openClUnpackLeftChild() + '\n');
 
+            // Compile kernels shared by all implementing classes
+            final CLProgram sharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class,
+                prefix.toString());
+            fillFloatKernel = sharedProgram.createKernel("fillFloat");
+            cartesianProductUnionKernel = sharedProgram.createKernel("cartesianProductUnion");
+
+            // Compile kernels specific to the subclass
             final CLProgram program = OpenClUtils.compileClKernels(context, getClass(), prefix.toString());
-            fillFloatKernel = program.createKernel("fillFloat");
+            cartesianProductKernel = program.createKernel("cartesianProduct");
             binarySpmvKernel = program.createKernel("binarySpmvMultiply");
             unarySpmvKernel = program.createKernel("unarySpmvMultiply");
-            cartesianProductKernel = program.createKernel("cartesianProduct");
-            cartesianProductUnionKernel = program.createKernel("cartesianProductUnion");
+
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -121,25 +132,36 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
             .cartesianProductFunction().packedArraySize());
     }
 
-    public OpenClSpmvParser(final CsrSparseMatrixGrammar grammar) {
+    protected OpenClSpmvParser(final CsrSparseMatrixGrammar grammar) {
         this(new ParserOptions().setCollectDetailedStatistics(true), grammar);
     }
 
     @Override
     protected void initParser(final int sentLength) {
-        chart = new DenseVectorChart(sentLength, grammar);
-
-        totalSpMVTime = 0;
-        totalCartesianProductTime = 0;
+        super.initParser(sentLength);
 
         if (clChartInsideProbabilities == null || sentLength > chartSize) {
-            // Allocate OpenCL-hosted memory for chart storage
-            clChartInsideProbabilities = context.createFloatBuffer(CLMem.Usage.InputOutput, chart
-                .chartArraySize());
-            clChartPackedChildren = context.createIntBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
-            clChartMidpoints = context.createShortBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
-            chartSize = sentLength;
+            allocateOpenClChart();
         }
+    }
+
+    protected void allocateOpenClChart() {
+
+        if (clChartInsideProbabilities != null) {
+            clChartInsideProbabilities.release();
+            clChartInsideProbabilities = null;
+            clChartPackedChildren.release();
+            clChartPackedChildren = null;
+            clChartMidpoints.release();
+            clChartMidpoints = null;
+        }
+
+        // Allocate OpenCL-hosted memory for chart storage
+        clChartInsideProbabilities = context.createFloatBuffer(CLMem.Usage.InputOutput, chart
+            .chartArraySize());
+        clChartPackedChildren = context.createIntBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
+        clChartMidpoints = context.createShortBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
+        chartSize = chart.size();
     }
 
     @Override
@@ -157,7 +179,7 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
     @Override
     protected void visitCell(final short start, final short end) {
 
-        final DenseVectorChartCell spvChartCell = chart.getCell(start, end);
+        final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
 
         // final long t0 = System.currentTimeMillis();
 
@@ -166,7 +188,7 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
             // final CrossProductVector cartesianProductVector = cartesianProductUnion(start, end);
-            internalCrossProductUnion(start, end);
+            internalCartesianProductUnion(start, end);
 
             final long t1 = System.currentTimeMillis();
 
@@ -220,7 +242,7 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
 
         copyChartToDevice();
 
-        internalCrossProductUnion(start, end);
+        internalCartesianProductUnion(start, end);
 
         final int packedArraySize = grammar.cartesianProductFunction().packedArraySize();
         final float[] probabilities = OpenClUtils.copyFromDevice(clQueue, clCartesianProductProbabilities0,
@@ -238,7 +260,7 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
         return new CartesianProductVector(grammar, probabilities, midpoints, size);
     }
 
-    private void internalCrossProductUnion(final int start, final int end) {
+    protected void internalCartesianProductUnion(final int start, final int end) {
 
         long t0 = System.currentTimeMillis();
 
@@ -261,8 +283,8 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
         // non-terminals in each left/right child pair
         for (short midpoint = (short) (start + 2); midpoint <= end - 1; midpoint++) {
 
-            final DenseVectorChartCell leftCell = chart.getCell(start, midpoint);
-            final DenseVectorChartCell rightCell = chart.getCell(midpoint, end);
+            final ParallelArrayChartCell leftCell = chart.getCell(start, midpoint);
+            final ParallelArrayChartCell rightCell = chart.getCell(midpoint, end);
 
             t0 = System.currentTimeMillis();
 
@@ -292,38 +314,9 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
         }
     }
 
-    private void internalCartesianProduct(final DenseVectorChartCell leftCell,
-            final DenseVectorChartCell rightCell, final CLFloatBuffer tmpClCrossProductProbabilities,
-            final CLShortBuffer tmpClCrossProductMidpoints) {
-
-        final int leftChildrenStart = grammar.posStart;
-        final int validLeftChildren = grammar.unaryChildOnlyStart - leftChildrenStart;
-        final int rightChildrenStart = 0;
-        final int validRightChildren = grammar.leftChildOnlyStart - rightChildrenStart;
-
-        // Bind the arguments of the OpenCL kernel
-        cartesianProductKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
-            leftCell.offset(), leftChildrenStart, validLeftChildren, rightCell.offset(), rightChildrenStart,
-            validRightChildren, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints, (short) rightCell
-                .start());
-
-        // Call the kernel and wait for results
-        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp((validLeftChildren * validRightChildren),
-            LOCAL_WORK_SIZE);
-        cartesianProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
-            new int[] { LOCAL_WORK_SIZE });
-
-        clQueue.finish();
-    }
-
-    // private void printCrossProduct(final float[] cp) {
-    // for (int i = 0; i < cp.length; i++) {
-    // if (cp[i] != Float.NEGATIVE_INFINITY) {
-    // System.out.format("%d : %.2f\n", i, cp[i]);
-    // }
-    // }
-    // System.out.println();
-    // }
+    protected abstract void internalCartesianProduct(final ParallelArrayChartCell leftCell,
+            final ParallelArrayChartCell rightCell, final CLFloatBuffer tmpClCrossProductProbabilities,
+            final CLShortBuffer tmpClCrossProductMidpoints);
 
     /**
      * This version copies the cross-product to device memory and the resulting chart cell back into main
@@ -345,19 +338,7 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
         copyChartFromDevice();
     }
 
-    private void internalBinarySpmvMultiply(final int chartCellOffset) {
-
-        // Bind the arguments of the OpenCL kernel
-        binarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
-            chartCellOffset, clCartesianProductProbabilities0, clCartesianProductMidpoints0,
-            clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities,
-            grammar.numNonTerms());
-
-        // Call the kernel and wait for results
-        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
-        binarySpmvKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
-        clQueue.finish();
-    }
+    protected abstract void internalBinarySpmvMultiply(final int chartCellOffset);
 
     /**
      * This version copies the current cell population to device memory and the results back into main memory.
@@ -374,26 +355,15 @@ public class OpenClSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGr
         copyChartFromDevice();
     }
 
-    private void internalUnarySpmvMultiply(final int chartCellOffset, final short chartCellEnd) {
+    protected abstract void internalUnarySpmvMultiply(final int chartCellOffset, final short chartCellEnd);
 
-        // Bind the arguments of the OpenCL kernel
-        unarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
-            chartCellOffset, clUnaryRuleMatrixRowIndices, clUnaryRuleMatrixColumnIndices,
-            clUnaryRuleMatrixProbabilities, grammar.numNonTerms(), chartCellEnd);
-
-        // Call the kernel and wait for results
-        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
-        unarySpmvKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
-        clQueue.finish();
-    }
-
-    private void copyChartToDevice() {
+    protected void copyChartToDevice() {
         OpenClUtils.copyToDevice(clQueue, clChartInsideProbabilities, chart.insideProbabilities);
         OpenClUtils.copyToDevice(clQueue, clChartPackedChildren, chart.packedChildren);
         OpenClUtils.copyToDevice(clQueue, clChartMidpoints, chart.midpoints);
     }
 
-    private void copyChartFromDevice() {
+    protected void copyChartFromDevice() {
         OpenClUtils.copyFromDevice(clQueue, clChartInsideProbabilities, chart.insideProbabilities);
         OpenClUtils.copyFromDevice(clQueue, clChartPackedChildren, chart.packedChildren);
         OpenClUtils.copyFromDevice(clQueue, clChartMidpoints, chart.midpoints);
