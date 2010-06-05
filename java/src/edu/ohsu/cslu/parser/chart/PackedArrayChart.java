@@ -153,7 +153,7 @@ public class PackedArrayChart extends ParallelArrayChart {
          * Temporary storage for manipulating cell entries. Indexed by parent non-terminal. Only allocated
          * when the cell is being modified
          */
-        public int[] tmpChildren;
+        public int[] tmpPackedChildren;
         public float[] tmpInsideProbabilities;
         public short[] tmpMidpoints;
 
@@ -165,10 +165,10 @@ public class PackedArrayChart extends ParallelArrayChart {
             temporaryCells[start][end] = this;
 
             // Allocate storage
-            if (tmpChildren == null) {
+            if (tmpPackedChildren == null) {
                 final int arraySize = sparseMatrixGrammar.numNonTerms();
 
-                this.tmpChildren = new int[arraySize];
+                this.tmpPackedChildren = new int[arraySize];
                 this.tmpInsideProbabilities = new float[arraySize];
                 Arrays.fill(tmpInsideProbabilities, Float.NEGATIVE_INFINITY);
                 this.tmpMidpoints = new short[arraySize];
@@ -176,7 +176,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                 // Copy from main chart array to temporary parallel array
                 for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
                     final int nonTerminal = nonTerminalIndices[i];
-                    tmpChildren[nonTerminal] = packedChildren[i];
+                    tmpPackedChildren[nonTerminal] = packedChildren[i];
                     tmpInsideProbabilities[nonTerminal] = insideProbabilities[i];
                     tmpMidpoints[nonTerminal] = midpoints[i];
                 }
@@ -187,7 +187,7 @@ public class PackedArrayChart extends ParallelArrayChart {
         public void finalizeCell() {
 
             // Copy and pack entries from temporary array into the main chart array
-            if (tmpChildren == null) {
+            if (tmpPackedChildren == null) {
                 return;
             }
 
@@ -202,7 +202,7 @@ public class PackedArrayChart extends ParallelArrayChart {
 
                     nonTerminalIndices[nonTerminalOffset] = nonTerminal;
                     insideProbabilities[nonTerminalOffset] = tmpInsideProbabilities[nonTerminal];
-                    packedChildren[nonTerminalOffset] = tmpChildren[nonTerminal];
+                    packedChildren[nonTerminalOffset] = tmpPackedChildren[nonTerminal];
                     midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
 
                     if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
@@ -230,7 +230,7 @@ public class PackedArrayChart extends ParallelArrayChart {
 
         @Override
         public float getInside(final int nonTerminal) {
-            if (tmpChildren != null) {
+            if (tmpPackedChildren != null) {
                 return tmpInsideProbabilities[nonTerminal];
             }
 
@@ -255,13 +255,13 @@ public class PackedArrayChart extends ParallelArrayChart {
 
             if (insideProbability > tmpInsideProbabilities[p.parent]) {
                 if (p.isBinaryProd()) {
-                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
                         p.rightChild);
                 } else if (p.isLexProd()) {
-                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
                         p.leftChild);
                 } else {
-                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
                         p.leftChild);
                 }
                 tmpInsideProbabilities[parent] = insideProbability;
@@ -286,13 +286,13 @@ public class PackedArrayChart extends ParallelArrayChart {
             if (edge.inside() > tmpInsideProbabilities[parent]) {
 
                 if (edge.prod.isBinaryProd()) {
-                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
                         edge.prod.leftChild, edge.prod.rightChild);
                 } else if (edge.prod.isLexProd()) {
-                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
                         edge.prod.leftChild);
                 } else {
-                    tmpChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
                         edge.prod.leftChild);
                 }
                 tmpInsideProbabilities[parent] = edge.inside();
@@ -309,12 +309,12 @@ public class PackedArrayChart extends ParallelArrayChart {
             int edgeChildren;
             short edgeMidpoint;
 
-            if (tmpChildren != null) {
+            if (tmpPackedChildren != null) {
                 if (tmpInsideProbabilities[nonTerminal] == Float.NEGATIVE_INFINITY) {
                     return null;
                 }
 
-                edgeChildren = tmpChildren[nonTerminal];
+                edgeChildren = tmpPackedChildren[nonTerminal];
                 edgeMidpoint = tmpMidpoints[nonTerminal];
 
             } else {
@@ -353,7 +353,7 @@ public class PackedArrayChart extends ParallelArrayChart {
 
         @Override
         public int getNumNTs() {
-            if (tmpChildren != null) {
+            if (tmpPackedChildren != null) {
                 int numNTs = 0;
                 for (int i = 0; i < tmpInsideProbabilities.length; i++) {
                     if (tmpInsideProbabilities[i] != Float.NEGATIVE_INFINITY) {
@@ -417,7 +417,7 @@ public class PackedArrayChart extends ParallelArrayChart {
             sb.append("PackedArrayChartCell[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
                     + sparseMatrixGrammar.numNonTerms() + ") edges\n");
 
-            if (tmpChildren == null) {
+            if (tmpPackedChildren == null) {
                 // Format entries from the main chart array
                 for (int index = offset; index < offset + numNonTerminals[cellIndex]; index++) {
                     final int childProductions = packedChildren[index];
@@ -434,7 +434,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                 for (int nonTerminal = 0; nonTerminal < sparseMatrixGrammar.numNonTerms(); nonTerminal++) {
 
                     if (tmpInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
-                        final int childProductions = tmpChildren[nonTerminal];
+                        final int childProductions = tmpPackedChildren[nonTerminal];
                         final float insideProbability = tmpInsideProbabilities[nonTerminal];
                         final int midpoint = tmpMidpoints[nonTerminal];
 

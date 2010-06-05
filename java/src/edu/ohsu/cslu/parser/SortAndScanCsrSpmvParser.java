@@ -218,7 +218,7 @@ public class SortAndScanCsrSpmvParser extends
         final float[] tmpCrossProductProbabilities = cartesianProductVector.probabilities;
         final short[] tmpCrossProductMidpoints = cartesianProductVector.midpoints;
 
-        final int[] chartCellChildren = packedArrayCell.tmpChildren;
+        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
         final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
         final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
 
@@ -263,7 +263,7 @@ public class SortAndScanCsrSpmvParser extends
         final int[] unaryRuleMatrixColumnIndices = grammar.unaryRuleMatrixColumnIndices();
         final float[] unaryRuleMatrixProbabilities = grammar.unaryRuleMatrixProbabilities();
 
-        final int[] chartCellChildren = packedArrayCell.tmpChildren;
+        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
         final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
         final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
         final short chartCellEnd = (short) chartCell.end();

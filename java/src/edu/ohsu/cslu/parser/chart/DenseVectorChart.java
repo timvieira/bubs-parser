@@ -69,8 +69,9 @@ public class DenseVectorChart extends ParallelArrayChart {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
 
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end < size + 1; end++) {
+        for (int span = 1; span <= size; span++) {
+            for (int start = 0; start <= size - span; start++) {
+                final int end = start + span;
                 sb.append(getCell(start, end).toString());
                 sb.append("\n\n");
             }

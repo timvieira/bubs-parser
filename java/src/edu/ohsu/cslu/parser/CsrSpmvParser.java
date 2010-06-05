@@ -166,7 +166,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
 
-        final int[] chartCellChildren = packedArrayCell.tmpChildren;
+        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
         final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
         final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
 
@@ -229,7 +229,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         final int[] unaryRuleMatrixColumnIndices = grammar.unaryRuleMatrixColumnIndices();
         final float[] unaryRuleMatrixProbabilities = grammar.unaryRuleMatrixProbabilities();
 
-        final int[] chartCellChildren = packedArrayCell.tmpChildren;
+        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
         final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
         final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
         final short chartCellEnd = (short) chartCell.end();
