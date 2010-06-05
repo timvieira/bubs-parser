@@ -35,7 +35,7 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
 
         packedArrayCell.allocateTemporaryStorage();
 
-        final int[] chartCellChildren = packedArrayCell.tmpChildren;
+        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
         final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
         final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
 

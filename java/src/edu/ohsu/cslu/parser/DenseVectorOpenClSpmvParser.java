@@ -55,11 +55,11 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
     }
 
     @Override
-    protected void internalBinarySpmvMultiply(final int chartCellOffset) {
+    protected void internalBinarySpmvMultiply(final ParallelArrayChartCell chartCell) {
 
         // Bind the arguments of the OpenCL kernel
         binarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
-            chartCellOffset, clCartesianProductProbabilities0, clCartesianProductMidpoints0,
+            chartCell.offset(), clCartesianProductProbabilities0, clCartesianProductMidpoints0,
             clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities,
             grammar.numNonTerms());
 
@@ -70,12 +70,12 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
     }
 
     @Override
-    protected void internalUnarySpmvMultiply(final int chartCellOffset, final short chartCellEnd) {
+    protected void internalUnarySpmvMultiply(final ParallelArrayChartCell chartCell) {
 
         // Bind the arguments of the OpenCL kernel
         unarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
-            chartCellOffset, clUnaryRuleMatrixRowIndices, clUnaryRuleMatrixColumnIndices,
-            clUnaryRuleMatrixProbabilities, grammar.numNonTerms(), chartCellEnd);
+            chartCell.offset(), clUnaryRuleMatrixRowIndices, clUnaryRuleMatrixColumnIndices,
+            clUnaryRuleMatrixProbabilities, grammar.numNonTerms(), (short) chartCell.end());
 
         // Call the kernel and wait for results
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);

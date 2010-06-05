@@ -18,7 +18,6 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.util.OpenClUtils;
@@ -171,9 +170,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     @Override
-    protected ParseTree extractBestParse(final ChartCell cell, final int nonTermIndex) {
+    protected ParseTree extractBestParse() {
         copyChartFromDevice();
-        return super.extractBestParse(cell, nonTermIndex);
+        // System.out.println(chart.toString());
+        return super.extractBestParse();
     }
 
     @Override
@@ -194,13 +194,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
-            // binarySpmvMultiply(cartesianProductVector, spvChartCell);
-
-            // Copy cross-product to OpenCL memory
-            // OpenClUtils.copyToDevice(clCrossProductProbabilities0, cartesianProductVector.probabilities);
-            // OpenClUtils.copyToDevice(clCrossProductMidpoints0, cartesianProductVector.midpoints);
-
-            internalBinarySpmvMultiply(spvChartCell.offset());
+            internalBinarySpmvMultiply(spvChartCell);
 
             t2 = System.currentTimeMillis();
             binarySpmvTime = t2 - t1;
@@ -213,18 +207,13 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         // TODO: This only goes through unary rules one time, so it can't create unary chains unless such
         // chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
-        internalUnarySpmvMultiply(spvChartCell.offset(), end);
+        internalUnarySpmvMultiply(spvChartCell);
 
         final long t3 = System.currentTimeMillis();
         final long unarySpmvTime = t3 - t2;
 
         spvChartCell.finalizeCell();
 
-        // System.out.format("Visited cell: %2d,%2d (%5d ms). Cross-product: %6d/%6d combinations (%5.0f ms, %4.2f/ms), Multiply: %5d edges (%5.0f ms, %4.2f /ms)\n",
-        // start, end, t3
-        // - t0, cartesianProductSize, totalProducts, cartesianProductTime, cartesianProductSize /
-        // cartesianProductTime,
-        // edges, spmvTime, edges / spmvTime);
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
@@ -333,12 +322,12 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             cartesianProductVector.probabilities);
         OpenClUtils.copyToDevice(clQueue, clCartesianProductMidpoints0, cartesianProductVector.midpoints);
 
-        internalBinarySpmvMultiply(((DenseVectorChartCell) chartCell).offset());
+        internalBinarySpmvMultiply(((ParallelArrayChartCell) chartCell));
 
         copyChartFromDevice();
     }
 
-    protected abstract void internalBinarySpmvMultiply(final int chartCellOffset);
+    protected abstract void internalBinarySpmvMultiply(final ParallelArrayChartCell chartCell);
 
     /**
      * This version copies the current cell population to device memory and the results back into main memory.
@@ -350,12 +339,12 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         // Copy current chart cell entries to OpenCL memory
         copyChartToDevice();
 
-        internalUnarySpmvMultiply(((DenseVectorChartCell) chartCell).offset(), (short) chartCell.end());
+        internalUnarySpmvMultiply((ParallelArrayChartCell) chartCell);
 
         copyChartFromDevice();
     }
 
-    protected abstract void internalUnarySpmvMultiply(final int chartCellOffset, final short chartCellEnd);
+    protected abstract void internalUnarySpmvMultiply(final ParallelArrayChartCell chartCell);
 
     protected void copyChartToDevice() {
         OpenClUtils.copyToDevice(clQueue, clChartInsideProbabilities, chart.insideProbabilities);
