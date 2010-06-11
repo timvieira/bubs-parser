@@ -29,7 +29,7 @@ public class TestCsrSpmvParser extends SparseMatrixVectorParserTestCase {
 
     @Override
     @Test
-    @PerformanceTest( { "mbp", "25248", "d820", "45104" })
+    @PerformanceTest( { "mbp", "22223", "d820", "45104" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

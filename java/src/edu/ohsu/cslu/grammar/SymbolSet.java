@@ -72,4 +72,13 @@ public class SymbolSet<E> implements Iterable<E> {
     public void unfinalize() {
         finalized = false;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < symbolVector.size(); i++) {
+            sb.append(i + " : " + symbolVector.get(i) + '\n');
+        }
+        return sb.toString();
+    }
 }

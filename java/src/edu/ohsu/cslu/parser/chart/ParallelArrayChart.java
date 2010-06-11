@@ -103,6 +103,21 @@ public abstract class ParallelArrayChart extends Chart {
         return chartArraySize;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+
+        for (int span = 1; span <= size; span++) {
+            for (int start = 0; start <= size - span; start++) {
+                final int end = start + span;
+                sb.append(getCell(start, end).toString());
+                sb.append("\n\n");
+            }
+        }
+
+        return sb.toString();
+    }
+
     public abstract class ParallelArrayChartCell extends ChartCell {
         protected final int cellIndex;
         protected final int offset;

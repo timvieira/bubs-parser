@@ -59,7 +59,7 @@ public abstract class GrammarTestCase {
         grammarSb.append("NP => NN NP -2.302585\n");
         grammarSb.append("NP => NP NP -2.302585\n");
         // Add a fake factored category just to keep Grammar happy
-        grammarSb.append("NP => NP NP|NN -Infinity\n");
+        grammarSb.append("NP => NP|NN NP -Infinity\n");
 
         return createGrammar(grammarClass, new StringReader(grammarSb.toString()), new StringReader(lexiconSb
             .toString()), cartesionProductFunctionClass);

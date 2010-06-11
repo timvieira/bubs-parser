@@ -35,7 +35,7 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
     private final short[] hashtable;
     private final int size;
 
-    public SegmentedPerfectIntPair2IntHash(final int[][] keyPairs, final int modulus) {
+    public SegmentedPerfectIntPair2IntHash(final int[][] keyPairs, final int maxKey2, final int modulus) {
 
         this.size = keyPairs[0].length;
 
@@ -48,9 +48,9 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
             keys2[keyPairs[0][i]].add(keyPairs[1][i]);
         }
 
-        this.maxKey2 = Math.max(keyPairs[1]);
+        this.maxKey2 = maxKey2 == 0 ? Math.max(keyPairs[1]) : maxKey2;
 
-        final int squareMatrixM = Math.nextPowerOf2((int) java.lang.Math.sqrt(maxKey2) + 1);
+        final int squareMatrixM = Math.nextPowerOf2((int) java.lang.Math.sqrt(this.maxKey2) + 1);
         this.modulus = modulus > 0 ? modulus : squareMatrixM;
         this.n = squareMatrixM * squareMatrixM / this.modulus;
 
@@ -90,8 +90,12 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
         }
     }
 
+    public SegmentedPerfectIntPair2IntHash(final int[][] keyPairs, final int maxKey2) {
+        this(keyPairs, maxKey2, 0);
+    }
+
     public SegmentedPerfectIntPair2IntHash(final int[][] keyPairs) {
-        this(keyPairs, 0);
+        this(keyPairs, 0, 0);
     }
 
     private int findShift(final short[] target, final short[] merge) {

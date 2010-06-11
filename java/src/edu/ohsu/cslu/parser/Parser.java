@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.parser;
 
 import java.io.BufferedWriter;
-import java.util.LinkedList;
 
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
@@ -15,8 +14,7 @@ import edu.ohsu.cslu.parser.util.ParserUtil;
 import edu.ohsu.cslu.parser.util.StringToMD5;
 
 // TODO: allow gold trees as input and report F-score
-// TODO: need to port python tree transforms / de-transforms to Java
-// and either write our own eval or make external call to EVALB
+// TODO: write our own eval or make external call to EVALB
 
 public abstract class Parser<G extends Grammar> {
 
@@ -121,43 +119,6 @@ public abstract class Parser<G extends Grammar> {
                 throw new RuntimeException("Doesn't work right now");
             }
         }
-    }
-
-    public ParseTree findChartEdgesForTree(final ParseTree tree, final ChartParser<?, ?> parser)
-            throws Exception {
-        final LinkedList<ParseTree> leafNodes = tree.getLeafNodes();
-        for (final ParseTree node : tree.postOrderTraversal()) {
-            final ParseTree leftLeaf = node.leftMostLeaf();
-            final ParseTree rightLeaf = node.rightMostLeaf();
-            int start = -1, end = -1, i = 0;
-            for (final ParseTree leaf : leafNodes) {
-                if (leaf == leftLeaf)
-                    start = i;
-                if (leaf == rightLeaf)
-                    end = i + 1;
-                i += 1;
-            }
-
-            throw new RuntimeException("Doesn't work right now");
-
-            // if ((end - start >= 1) && node.isNonTerminal()) {
-            // final int parentNonTermIndex = parser.grammar.mapNonterminal(node.contents);
-            // if (parentNonTermIndex != -1) {
-            // final ChartEdge edge = parser.chart.getRootCell().getBestEdge(parentNonTermIndex);
-            // if (edge == null) {
-            // // System.out.println("WARNING: edge[" + start + "][" + end + "][" + node.contents +
-            // "] not in chart!");
-            // node.chartEdge = ChartParser.nullEdge.copy();
-            // // TODO: I think this will die when it tries to compute the FOM on a null left/right cell
-            // } else {
-            // node.chartEdge = edge;
-            // }
-            // } else {
-            // Log.info(0, "WARNING: '" + node.contents + "' not in nonTermSet!");
-            // }
-            // }
-        }
-        return tree;
     }
 
     /**

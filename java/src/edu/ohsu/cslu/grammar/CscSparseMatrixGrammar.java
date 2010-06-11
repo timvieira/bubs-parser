@@ -46,6 +46,8 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     /**
      * Row indices of each matrix entry in {@link #cscBinaryProbabilities}. One entry for each binary rule;
      * the same size as {@link #cscBinaryProbabilities}.
+     * 
+     * TODO Make this a short[]?
      */
     private int[] cscBinaryRowIndices;
 
@@ -70,6 +72,8 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     /**
      * Row indices of each matrix entry in {@link #cscUnaryProbabilities}. One entry for each unary rule; the
      * same size as {@link #cscUnaryProbabilities}.
+     * 
+     * TODO Make this a short[]?
      */
     private int[] cscUnaryRowIndices;
 
@@ -83,8 +87,7 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
         final IntSet populatedBinaryColumnIndices = new IntOpenHashSet(binaryProductions.size() / 10);
         for (final Production p : binaryProductions) {
-            populatedBinaryColumnIndices
-                .add(cartesianProductFunction.pack(p.leftChild, (short) p.rightChild));
+            populatedBinaryColumnIndices.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
         }
         final int[] sortedPopulatedBinaryColumnIndices = populatedBinaryColumnIndices.toIntArray();
         Arrays.sort(sortedPopulatedBinaryColumnIndices);

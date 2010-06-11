@@ -18,7 +18,8 @@ public class GrammarByChild extends Grammar {
         super();
     }
 
-    public GrammarByChild(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public GrammarByChild(final Reader grammarFile, final Reader lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
 
         numUnaryProds = unaryProductions.size();
@@ -31,12 +32,14 @@ public class GrammarByChild extends Grammar {
 
     }
 
-    public GrammarByChild(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public GrammarByChild(final String grammarFile, final String lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
     @SuppressWarnings( { "cast", "unchecked" })
-    public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
+    public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods,
+            final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
         for (final Production p : prods) {
