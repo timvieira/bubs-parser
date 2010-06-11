@@ -29,7 +29,7 @@ public class TestECPGramLoop extends ExhaustiveChartParserTestCase {
 
     @Override
     @Test
-    @PerformanceTest( { "mbp", "19884", "d820", "20297" })
+    @PerformanceTest( { "mbp", "25850", "d820", "20297" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

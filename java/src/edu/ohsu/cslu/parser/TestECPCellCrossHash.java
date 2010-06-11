@@ -29,7 +29,7 @@ public class TestECPCellCrossHash extends ExhaustiveChartParserTestCase {
 
     @Override
     @Test
-    @PerformanceTest( { "mbp", "111907", "d820", "169439" })
+    @PerformanceTest( { "mbp", "277203", "d820", "169439" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

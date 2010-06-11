@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.grammar;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.Theories;
@@ -11,6 +9,8 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
 
 @RunWith(Theories.class)
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
@@ -23,8 +23,6 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     // public final static Class<? extends CartesianProductFunction> RIGHT_SHIFT =
     // SparseMatrixGrammar.RightShiftDefaultFunction.class;
     @DataPoint
-    public final static Class<? extends CartesianProductFunction> POS_AND_FACTORED = SparseMatrixGrammar.PosFactoredFilterFunction.class;
-    @DataPoint
     public final static Class<? extends CartesianProductFunction> BIT_VECTOR_EXACT = SparseMatrixGrammar.BitVectorExactFilterFunction.class;
 
     // TODO Move this into its own class (SparseMatrixGrammarTestCase?)
@@ -34,11 +32,8 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createSimpleGrammar(grammarClass(),
             cartesianProductFunctionClass);
         final CartesianProductFunction f = g.cartesianProductFunction;
-        assertEquals(4, f.unpackLeftChild(f.pack(4, 2)));
-        assertEquals(2, f.unpackRightChild(f.pack(4, 2)));
-
-        assertEquals(2, f.unpackLeftChild(f.pack(2, 2)));
-        assertEquals(2, f.unpackRightChild(f.pack(2, 2)));
+        assertEquals(4, f.unpackLeftChild(f.pack(4, 4)));
+        assertEquals(4, f.unpackRightChild(f.pack(4, 4)));
 
         assertEquals(4, f.unpackLeftChild(f.packUnary(4)));
         assertEquals(Production.UNARY_PRODUCTION, f.unpackRightChild(f.packUnary(4)));
@@ -48,15 +43,6 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
         assertEquals(0, f.unpackLeftChild(f.packLexical(0)));
         assertEquals(Production.LEXICAL_PRODUCTION, f.unpackRightChild(f.packLexical(0)));
-
-        assertEquals(0, f.unpackLeftChild(f.pack(0, 0)));
-        assertEquals(0, f.unpackRightChild(f.pack(0, 0)));
-
-        assertEquals(0, f.unpackLeftChild(f.pack(0, 2)));
-        assertEquals(2, f.unpackRightChild(f.pack(0, 2)));
-
-        assertEquals(2, f.unpackLeftChild(f.pack(2, 0)));
-        assertEquals(0, f.unpackRightChild(f.pack(2, 0)));
 
         // And a couple tests with a larger grammar
         final SparseMatrixGrammar g2 = (SparseMatrixGrammar) createGrammar(grammarClass(), SharedNlpTests
@@ -106,12 +92,12 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals("TOP", simpleGrammar.startSymbol());
         assertEquals("<null>", Grammar.nullSymbolStr);
 
-        assertEquals(0, simpleGrammar.rightChildOnlyStart);
-        assertEquals(1, simpleGrammar.normalPosStart);
-        assertEquals(2, simpleGrammar.maxPOSIndex);
-        assertEquals(3, simpleGrammar.eitherChildStart);
-        assertEquals(4, simpleGrammar.leftChildOnlyStart);
-        assertEquals(4, simpleGrammar.unaryChildOnlyStart);
+        assertEquals(0, simpleGrammar.leftChildrenStart);
+        assertEquals(2, simpleGrammar.leftChildrenEnd);
+        assertEquals(2, simpleGrammar.rightChildrenStart);
+        assertEquals(2, simpleGrammar.rightChildrenEnd);
+        assertEquals(3, simpleGrammar.posStart);
+        assertEquals(4, simpleGrammar.posEnd);
 
         assertEquals(-0.693147f, simpleGrammar.binaryLogProbability("NP", "NN", "NN"), .01f);
         assertEquals(-1.203972f, simpleGrammar.binaryLogProbability("NP", "NP", "NN"), .01f);
@@ -124,7 +110,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     @Override
     @Test
     public void testSimpleGrammar() throws Exception {
-        testSimpleGrammar(DEFAULT);
+        // Already handled in the testSimpleGrammar Theory
     }
 
     @Test
@@ -144,14 +130,12 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals("Ranger", g.mapLexicalEntry(40000));
         assertEquals(-12.116870f, g.lexicalLogProbability("NNP", "Ranger"), 0.01f);
 
-        assertEquals(0, g.rightChildOnlyStart);
-        assertEquals(1, g.posNonFactoredStart);
-        assertEquals(8, g.normalPosStart);
-        assertEquals(46, g.maxPOSIndex());
-        assertEquals(47, g.eitherChildStart);
-        assertEquals(71, g.leftChildOnlyStart);
-        assertEquals(2656, g.unaryChildOnlyStart);
-
+        assertEquals(0, g.leftChildrenStart);
+        assertEquals(2610, g.leftChildrenEnd);
+        assertEquals(2586, g.rightChildrenStart);
+        assertEquals(2610, g.rightChildrenEnd);
+        assertEquals(2611, g.posStart);
+        assertEquals(2656, g.posEnd);
     }
 
     @Test
@@ -170,17 +154,16 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
         assertEquals("3,200", g.mapLexicalEntry(40000));
 
-        assertEquals(0, g.rightChildOnlyStart);
-        assertEquals(103, g.posNonFactoredStart);
-        assertEquals(110, g.normalPosStart);
-        assertEquals(148, g.maxPOSIndex());
-        assertEquals(149, g.eitherChildStart);
-        assertEquals(286, g.leftChildOnlyStart);
-        assertEquals(6060, g.unaryChildOnlyStart);
+        assertEquals(0, g.leftChildrenStart);
+        assertEquals(6036, g.leftChildrenEnd);
+        assertEquals(5797, g.rightChildrenStart);
+        assertEquals(6036, g.rightChildrenEnd);
+        assertEquals(6037, g.posStart);
+        assertEquals(6082, g.posEnd);
 
-        assertEquals(193, g.cartesianProductFunction.unpackLeftChild(g.cartesianProductFunction
-            .pack(193, 266)));
-        assertEquals(266, g.cartesianProductFunction.unpackRightChild(g.cartesianProductFunction.pack(266,
-            266)));
+        assertEquals(1930, g.cartesianProductFunction.unpackLeftChild(g.cartesianProductFunction.pack(1930,
+            250)));
+        assertEquals(250, g.cartesianProductFunction.unpackRightChild(g.cartesianProductFunction.pack(1930,
+            250)));
     }
 }

@@ -52,10 +52,10 @@ public class PackedArrayChart extends ParallelArrayChart {
     private final int[] numNonTerminals;
 
     /**
-     * The index in the main chart array of the last non-terminal in each cell which is valid as a right
+     * The index in the main chart array of the first non-terminal in each cell which is valid as a left
      * child. Indexed by cell index ({@link #cellIndex(int, int)}).
      */
-    private final int[] maxRightChildIndex;
+    private final int[] minLeftChildIndex;
 
     /**
      * The index in the main chart array of the last non-terminal in each cell which is valid as a left child.
@@ -64,10 +64,16 @@ public class PackedArrayChart extends ParallelArrayChart {
     private final int[] maxLeftChildIndex;
 
     /**
-     * The index in the main chart array of the first non-terminal in each cell which is valid as a left
+     * The index in the main chart array of the last non-terminal in each cell which is valid as a right
      * child. Indexed by cell index ({@link #cellIndex(int, int)}).
      */
-    private final int[] minLeftChildIndex;
+    private final int[] minRightChildIndex;
+
+    /**
+     * The index in the main chart array of the last non-terminal in each cell which is valid as a right
+     * child. Indexed by cell index ({@link #cellIndex(int, int)}).
+     */
+    private final int[] maxRightChildIndex;
 
     public final PackedArrayChartCell[][] temporaryCells;
 
@@ -83,6 +89,7 @@ public class PackedArrayChart extends ParallelArrayChart {
         numNonTerminals = new int[cells];
         minLeftChildIndex = new int[cells];
         maxLeftChildIndex = new int[cells];
+        minRightChildIndex = new int[cells];
         maxRightChildIndex = new int[cells];
 
         nonTerminalIndices = new short[chartArraySize];
@@ -121,20 +128,6 @@ public class PackedArrayChart extends ParallelArrayChart {
         return new PackedArrayChartCell(start, end);
     }
 
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end < size + 1; end++) {
-                sb.append(getCell(start, end).toString());
-                sb.append("\n\n");
-            }
-        }
-
-        return sb.toString();
-    }
-
     public final int minLeftChildIndex(final int cellIndex) {
         return minLeftChildIndex[cellIndex];
     }
@@ -143,8 +136,16 @@ public class PackedArrayChart extends ParallelArrayChart {
         return maxLeftChildIndex[cellIndex];
     }
 
+    public final int minRightChildIndex(final int cellIndex) {
+        return minRightChildIndex[cellIndex];
+    }
+
     public final int maxRightChildIndex(final int cellIndex) {
         return maxRightChildIndex[cellIndex];
+    }
+
+    public int[] numNonTerminals() {
+        return numNonTerminals;
     }
 
     public class PackedArrayChartCell extends ParallelArrayChartCell {
@@ -183,6 +184,12 @@ public class PackedArrayChart extends ParallelArrayChart {
             }
         }
 
+        public void clearTemporaryStorage() {
+            tmpPackedChildren = null;
+            tmpInsideProbabilities = null;
+            tmpMidpoints = null;
+        }
+
         @Override
         public void finalizeCell() {
 
@@ -191,10 +198,13 @@ public class PackedArrayChart extends ParallelArrayChart {
                 return;
             }
 
+            boolean foundMinLeftChild = false, foundMinRightChild = false;
             int nonTerminalOffset = offset;
-            int tmpMinLeftChildIndex = Integer.MAX_VALUE;
-            int tmpMaxLeftChildIndex = offset - 1;
-            int tmpMaxRightChildIndex = offset - 1;
+
+            minLeftChildIndex[cellIndex] = offset;
+            maxLeftChildIndex[cellIndex] = offset - 1;
+            minRightChildIndex[cellIndex] = offset;
+            maxRightChildIndex[cellIndex] = offset - 1;
 
             for (short nonTerminal = 0; nonTerminal < tmpInsideProbabilities.length; nonTerminal++) {
 
@@ -206,14 +216,19 @@ public class PackedArrayChart extends ParallelArrayChart {
                     midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
 
                     if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
-                        if (tmpMinLeftChildIndex == Integer.MAX_VALUE) {
-                            tmpMinLeftChildIndex = nonTerminalOffset;
+                        if (!foundMinLeftChild) {
+                            minLeftChildIndex[cellIndex] = nonTerminalOffset;
+                            foundMinLeftChild = true;
                         }
-                        tmpMaxLeftChildIndex = nonTerminalOffset;
+                        maxLeftChildIndex[cellIndex] = nonTerminalOffset;
                     }
 
                     if (sparseMatrixGrammar.isValidRightChild(nonTerminal)) {
-                        tmpMaxRightChildIndex = nonTerminalOffset;
+                        if (!foundMinRightChild) {
+                            minRightChildIndex[cellIndex] = nonTerminalOffset;
+                            foundMinRightChild = true;
+                        }
+                        maxRightChildIndex[cellIndex] = nonTerminalOffset;
                     }
 
                     nonTerminalOffset++;
@@ -221,10 +236,6 @@ public class PackedArrayChart extends ParallelArrayChart {
             }
 
             numNonTerminals[cellIndex] = nonTerminalOffset - offset;
-            minLeftChildIndex[cellIndex] = tmpMinLeftChildIndex;
-            maxLeftChildIndex[cellIndex] = tmpMaxLeftChildIndex;
-            maxRightChildIndex[cellIndex] = tmpMaxRightChildIndex;
-
             temporaryCells[start][end] = null;
         }
 
@@ -255,8 +266,8 @@ public class PackedArrayChart extends ParallelArrayChart {
 
             if (insideProbability > tmpInsideProbabilities[p.parent]) {
                 if (p.isBinaryProd()) {
-                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
-                        p.rightChild);
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
+                        p.leftChild, p.rightChild);
                 } else if (p.isLexProd()) {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
                         p.leftChild);

@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.Reader;
 import java.util.Arrays;
 
@@ -18,6 +16,7 @@ import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test class for all sparse-matrix-vector parsers
@@ -40,14 +39,14 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     /**
-     * Tests an imagined example cross-product vector (based very loosely on the computation of the top cell
-     * in the 'systems analyst arbitration chef' example)
+     * Tests an imagined example cartesian-product vector (based very loosely on the computation of the top
+     * cell in the 'systems analyst arbitration chef' example)
      * 
      * @throws Exception if something bad happens
      */
     @SuppressWarnings("unchecked")
     @Test
-    public void testCrossProductVectorExample() throws Exception {
+    public void testCartesianProductVectorExample() throws Exception {
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
@@ -116,8 +115,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     /**
-     * Tests the binary SpMV multiplication of the cross-product computed in
-     * {@link #testCrossProductVectorExample()} with simple grammar 1.
+     * Tests the binary SpMV multiplication of a cartesian-product against simple grammar 1.
      * 
      * @throws Exception if something bad happens
      */
@@ -323,13 +321,14 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     /**
-     * Tests the cross-product vector computed in the top cells of the 'The fish market stands last' example.
+     * Tests the cartesian-product vector computed in the top cells of the 'The fish market stands last'
+     * example.
      * 
      * @throws Exception if something bad happens
      */
     @SuppressWarnings("unchecked")
     @Test
-    public void testUnfilteredCrossProductVectorSimpleGrammar2() throws Exception {
+    public void testUnfilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
 
@@ -358,7 +357,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Cross-product union for cell 0,4
         SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0, 4);
-        assertEquals(8, crossProductVector.size());
+        assertEquals(20, crossProductVector.size());
 
         // Midpoint 1
         assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g
@@ -400,7 +399,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Cross-product union for cell 0,5
         crossProductVector = p.cartesianProductUnion(0, 5);
-        assertEquals(5, crossProductVector.size());
+        assertEquals(20, crossProductVector.size());
 
         // Midpoint 3
         assertEquals(-5.37528f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g
@@ -427,13 +426,14 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     /**
-     * Tests the cross-product vector computed in the top cells of the 'The fish market stands last' example.
+     * Tests the cartesian-product vector computed in the top cells of the 'The fish market stands last'
+     * example.
      * 
      * @throws Exception if something bad happens
      */
     @SuppressWarnings("unchecked")
     @Test
-    public void testFilteredCrossProductVectorSimpleGrammar2() throws Exception {
+    public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createSimpleGrammar2(grammarClass(),
             SparseMatrixGrammar.BitVectorExactFilterFunction.class);
@@ -486,8 +486,8 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     }
 
     /**
-     * Tests the binary SpMV multiplication of the cross-products computed in
-     * {@link #testUnfilteredCrossProductVectorSimpleGrammar2()} with simple grammar 2.
+     * Tests the binary SpMV multiplication of the cartesian-product computed in
+     * {@link #testUnfilteredCartesianProductVectorSimpleGrammar2()} with simple grammar 2.
      * 
      * @throws Exception if something bad happens
      */
@@ -674,6 +674,14 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     public void testPartialSentence2() throws Exception {
         final String sentence = "The report is due out tomorrow .";
         final ParseTree bestParseTree = parser.findBestParse(sentence);
+
+        // for (int span = 1; span <= 7; span++) {
+        // for (int start = 0; start <= 7 - span; start++) {
+        // final int end = start + span;
+        // System.out.println(parser.chart.getCell(start, end).toString());
+        // }
+        // }
+
         assertEquals(
             "(TOP (S^<TOP> (S|<NP-VP>^<TOP> (NP^<S> (DT The) (NN report)) (VP^<S> (AUX is) (ADJP^<VP> (JJ due) (PP^<ADJP> (IN out) (NP^<PP> (NN tomorrow)))))) (. .)))",
             bestParseTree.toString());

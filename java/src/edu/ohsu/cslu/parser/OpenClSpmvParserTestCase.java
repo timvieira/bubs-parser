@@ -2,12 +2,14 @@ package edu.ohsu.cslu.parser;
 
 import java.io.Reader;
 
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
+import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 
 /**
  * Tests for {@link OpenClSpmvParser}.
@@ -31,9 +33,21 @@ public abstract class OpenClSpmvParserTestCase extends SparseMatrixVectorParserT
             new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU, DefaultFunction.class });
     }
 
+    @BeforeClass
+    public static void checkOpenCL() throws Exception {
+
+        // Verify that we can load the JavaCL library; ignore tests of OpenCL parsers on platforms that do not
+        // support OpenCL
+        try {
+            createBestContext();
+        } catch (final Throwable t) {
+            org.junit.Assume.assumeNoException(t);
+        }
+    }
+
     @Override
-    @Ignore("OpenCL Parser does not currently implement filtering")
-    public void testFilteredCrossProductVectorSimpleGrammar2() throws Exception {
+    @Ignore("OpenCL Parsers do not currently implement filtering")
+    public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
     }
 
 }

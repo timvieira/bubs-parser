@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static com.nativelibs4java.opencl.JavaCL.createBestContext;
-
 import java.io.StringWriter;
 
 import com.nativelibs4java.opencl.CLContext;
@@ -21,6 +19,7 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.util.OpenClUtils;
+import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format (
@@ -37,6 +36,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     protected final static int LOCAL_WORK_SIZE = 64;
 
     protected final CLContext context;
+    protected final CLProgram clProgram;
     protected final CLKernel fillFloatKernel;
     protected final CLKernel binarySpmvKernel;
     protected final CLKernel unarySpmvKernel;
@@ -74,7 +74,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         clQueue = context.createDefaultQueue();
 
         try {
-            // Compile OpenCL kernels
+            // Construct the #defines, etc. and prepend to the OpenCL source code.
             final StringWriter prefix = new StringWriter();
             prefix.write("#define UNARY_PRODUCTION " + Production.UNARY_PRODUCTION + '\n');
             prefix.write("#define LEXICAL_PRODUCTION " + Production.LEXICAL_PRODUCTION + '\n');
@@ -89,16 +89,16 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             prefix.write(grammar.cartesianProductFunction().openClUnpackLeftChild() + '\n');
 
             // Compile kernels shared by all implementing classes
-            final CLProgram sharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class,
+            final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class,
                 prefix.toString());
-            fillFloatKernel = sharedProgram.createKernel("fillFloat");
-            cartesianProductUnionKernel = sharedProgram.createKernel("cartesianProductUnion");
+            fillFloatKernel = clSharedProgram.createKernel("fillFloat");
+            cartesianProductUnionKernel = clSharedProgram.createKernel("cartesianProductUnion");
 
             // Compile kernels specific to the subclass
-            final CLProgram program = OpenClUtils.compileClKernels(context, getClass(), prefix.toString());
-            cartesianProductKernel = program.createKernel("cartesianProduct");
-            binarySpmvKernel = program.createKernel("binarySpmvMultiply");
-            unarySpmvKernel = program.createKernel("unarySpmvMultiply");
+            clProgram = OpenClUtils.compileClKernels(context, getClass(), prefix.toString());
+            cartesianProductKernel = clProgram.createKernel("cartesianProduct");
+            binarySpmvKernel = clProgram.createKernel("binarySpmvMultiply");
+            unarySpmvKernel = clProgram.createKernel("unarySpmvMultiply");
 
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -144,6 +144,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         }
     }
 
+    /**
+     * De-allocates current OpenCL chart storage (if any) and allocates storage adequate for the current
+     * sentence length.
+     */
     protected void allocateOpenClChart() {
 
         if (clChartInsideProbabilities != null) {
@@ -165,14 +169,16 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
     @Override
     protected void addLexicalProductions(final int[] sent) throws Exception {
+        // Populate the lexical productions and part-of-speech tags in CPU space, and then copy the chart to
+        // device memory.
         super.addLexicalProductions(sent);
         copyChartToDevice();
     }
 
     @Override
     protected ParseTree extractBestParse() {
+        // Copy the chart back from device space to main memory before back-tracing for the parse tree.
         copyChartFromDevice();
-        // System.out.println(chart.toString());
         return super.extractBestParse();
     }
 
@@ -181,13 +187,12 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
         final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
 
-        // final long t0 = System.currentTimeMillis();
-
         long t2;
         long binarySpmvTime = 0;
+
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
-            // final CrossProductVector cartesianProductVector = cartesianProductUnion(start, end);
+
             internalCartesianProductUnion(start, end);
 
             final long t1 = System.currentTimeMillis();
@@ -212,15 +217,16 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         final long t3 = System.currentTimeMillis();
         final long unarySpmvTime = t3 - t2;
 
-        spvChartCell.finalizeCell();
+        finalizeCell(spvChartCell);
 
         totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
     /**
      * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together,
-     * saving the maximum probability child combinations. This version copies the cross-product back into main
-     * memory.
+     * saving the maximum probability child combinations. This version copies the chart into device memory
+     * before taking the cartesian product and copies the result back into main memory. Primarily to enable
+     * unit testing of {@link #internalCartesianProductUnion(int, int)}.
      * 
      * @param start
      * @param end
@@ -249,6 +255,12 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         return new CartesianProductVector(grammar, probabilities, midpoints, size);
     }
 
+    /**
+     * Performs the actual cartesian-product union via OpenCL kernel calls.
+     * 
+     * @param start
+     * @param end
+     */
     protected void internalCartesianProductUnion(final int start, final int end) {
 
         long t0 = System.currentTimeMillis();
@@ -303,13 +315,24 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         }
     }
 
+    /**
+     * Creates a single cartesian-product via OpenCL kernel calls. Must be implemented by subclasses.
+     * 
+     * @param leftCell
+     * @param rightCell
+     * @param tmpClCrossProductProbabilities
+     * @param tmpClCrossProductMidpoints
+     */
     protected abstract void internalCartesianProduct(final ParallelArrayChartCell leftCell,
             final ParallelArrayChartCell rightCell, final CLFloatBuffer tmpClCrossProductProbabilities,
             final CLShortBuffer tmpClCrossProductMidpoints);
 
     /**
+     * Performs the binary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL
+     * device.
+     * 
      * This version copies the cross-product to device memory and the resulting chart cell back into main
-     * memory. Useful for testing, but we can do better if we avoid the repeated copying.
+     * memory. Primarily for unit testing of {@link #internalBinarySpmvMultiply(ParallelArrayChartCell)} .
      */
     @Override
     public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
@@ -327,11 +350,18 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         copyChartFromDevice();
     }
 
+    /**
+     * Performs the binary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL
+     * device.
+     */
     protected abstract void internalBinarySpmvMultiply(final ParallelArrayChartCell chartCell);
 
     /**
+     * Performs the unary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL
+     * device.
+     * 
      * This version copies the current cell population to device memory and the results back into main memory.
-     * Useful for testing, but we can do better if we avoid the repeated copying.
+     * Primarily for unit testing of {@link #internalUnarySpmvMultiply(ParallelArrayChartCell)}.
      */
     @Override
     public void unarySpmvMultiply(final ChartCell chartCell) {
@@ -344,14 +374,28 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         copyChartFromDevice();
     }
 
+    /**
+     * Performs the unary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL
+     * device.
+     */
     protected abstract void internalUnarySpmvMultiply(final ParallelArrayChartCell chartCell);
 
+    protected void finalizeCell(final ParallelArrayChartCell chartCell) {
+        chartCell.finalizeCell();
+    }
+
+    /**
+     * Copies the chart from main memory to device memory.
+     */
     protected void copyChartToDevice() {
         OpenClUtils.copyToDevice(clQueue, clChartInsideProbabilities, chart.insideProbabilities);
         OpenClUtils.copyToDevice(clQueue, clChartPackedChildren, chart.packedChildren);
         OpenClUtils.copyToDevice(clQueue, clChartMidpoints, chart.midpoints);
     }
 
+    /**
+     * Copies the chart from device memory to main memory.
+     */
     protected void copyChartFromDevice() {
         OpenClUtils.copyFromDevice(clQueue, clChartInsideProbabilities, chart.insideProbabilities);
         OpenClUtils.copyFromDevice(clQueue, clChartPackedChildren, chart.packedChildren);

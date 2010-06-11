@@ -27,7 +27,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectHashFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PosFactoredFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
 import edu.ohsu.cslu.parser.ParserOptions.CartesianProductFunctionType;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
@@ -252,9 +251,6 @@ public class ParserDriver extends BaseCommandlineTool {
                     case Default:
                         return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             DefaultFunction.class);
-                    case PosFactoredFiltered:
-                        return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
-                            PosFactoredFilterFunction.class);
                     case BitMatrixExactFilter:
                         return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             BitVectorExactFilterFunction.class);
@@ -276,9 +272,6 @@ public class ParserDriver extends BaseCommandlineTool {
                     case Default:
                         return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             DefaultFunction.class);
-                    case PosFactoredFiltered:
-                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
-                            PosFactoredFilterFunction.class);
                     case BitMatrixExactFilter:
                         return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             BitVectorExactFilterFunction.class);

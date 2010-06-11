@@ -109,16 +109,21 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
         // Iterate over all possible midpoints, unioning together the cross-product of discovered
         // non-terminals in each left/right child pair
+
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
             final int leftCellIndex = chart.cellIndex(start, midpoint);
             final int rightCellIndex = chart.cellIndex(midpoint, end);
 
-            for (int i = chart.minLeftChildIndex(leftCellIndex); i <= chart.maxLeftChildIndex(leftCellIndex); i++) {
+            final int leftStart = chart.minLeftChildIndex(leftCellIndex);
+            final int leftEnd = chart.maxLeftChildIndex(leftCellIndex);
+            final int rightStart = chart.minRightChildIndex(rightCellIndex);
+            final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
+
+            for (int i = leftStart; i <= leftEnd; i++) {
                 final int leftChild = nonTerminalIndices[i];
-                // final int packedLeftChild = cpf.partialPackLeft(leftChild);
                 final float leftProbability = insideProbabilities[i];
 
-                for (int j = chart.offset(rightCellIndex); j <= chart.maxRightChildIndex(rightCellIndex); j++) {
+                for (int j = rightStart; j <= rightEnd; j++) {
 
                     if (collectDetailedStatistics) {
                         totalCartesianProductEntriesExamined++;

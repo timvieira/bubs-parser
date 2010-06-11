@@ -23,6 +23,7 @@ public class Grammar {
     public int nullSymbol = -1;
     public int startSymbol = -1;
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
+    public int numPosSymbols;
 
     // Default to left-factored
     private boolean isLeftFactored = true;
@@ -30,7 +31,6 @@ public class Grammar {
     protected final SymbolSet<String> nonTermSet = new SymbolSet<String>();
     protected final SymbolSet<String> lexSet = new SymbolSet<String>();
     protected final Vector<NonTerminal> nonTermInfo = new Vector<NonTerminal>();
-    protected final HashSet<Integer> posSet = new HashSet<Integer>();
 
     public Tokenizer tokenizer;
 
@@ -140,16 +140,19 @@ public class Grammar {
         }
 
         // add the indices of factored non-terminals to their own set
+        int posCount = 0;
         for (final String nt : nonTermSet) {
             final int ntIndex = nonTermSet.getIndex(nt);
             if (getNonterminal(ntIndex).isPOS()) {
-                posSet.add(ntIndex);
+                posCount++;
             }
 
             if (isFactoredNonTerm(nt, grammarFormat)) {
                 getNonterminal(ntIndex).isFactored = true;
             }
         }
+
+        numPosSymbols = posCount;
 
         // figure out which way the grammar is factored
         int numLeftFactored = 0, numRightFactored = 0;
@@ -176,7 +179,7 @@ public class Grammar {
     }
 
     public final int numPosSymbols() {
-        return posSet.size();
+        return numPosSymbols;
     }
 
     public int numBinaryProds() {

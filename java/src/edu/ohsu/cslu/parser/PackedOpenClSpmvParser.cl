@@ -76,22 +76,24 @@
  * @param chartPackedChildren      
  * @param chartMidpoints
  *      
- * @param leftChildrenStart The offset into the chart array for the first non-terminal
- *                          observed in the left child cell which is valid as a left child.
+ * @param leftChildrenStart    The offset into the chart array for the first non-terminal
+ *                               observed in the left child cell which is valid as a left child.
  * @param observedLeftChildren The number of non-terminals valid as left children observed in 
- *                             the left child cell
+ *                               the left child cell
  *      
- * @param righttChildrenStart The offset into the chart array for the first non-terminal
- *                            observed in the right child cell which is valid as a right child.
+ * @param righttChildrenStart  The offset into the chart array for the first non-terminal
+ *                               observed in the right child cell which is valid as a right 
+ *                               child.
  * @param observedLeftChildren The number of non-terminals valid as right children observed in 
- *                             the right child cell
+ *                               the right child cell
  *        
  * @param cartesianProductProbabilities Cartesian product parallel array to be populated. 
- * @param cartesianProductMidpoints     Probabilities and midpoints. Indexed by packed child pair.
+ * @param cartesianProductMidpoints     Probabilities and midpoints. Indexed by packed 
+ *                                        child pair.
  *
  * @param midpoint The midpoint which defines the pair of child cells
  *
- * TODO: Is it better to launch O(|V|^2) threads (up to ~1 million for the Berkeley grammar)
+ * TODO: Is it better to launch O(|V|^2) threads (1+ million for the Berkeley grammar)
  *       or to iterate over subsets (left children perhaps)
  */
 __kernel void cartesianProduct(const __global short* chartNonTerminalIndices,
@@ -143,13 +145,13 @@ __kernel void cartesianProduct(const __global short* chartNonTerminalIndices,
  * Populates the target cell with the resulting vector.
  *
  * @param targetCellInsideProbabilities Temporary target cell storage. Indexed by 
- * @param targetCellPackedChildren      non-terminal index
+ * @param targetCellPackedChildren      non-terminal
  * @param targetCellMidpoints
  *
  * @param cartesianProductProbabilities Cartesian product parallel array. Probabilities
  * @param cartesianProductMidpoints     and midpoints. Indexed by packed child pair
  *
- * @param binaryRuleMatrixRowIndices Binary rule matrix in CSR format
+ * @param binaryRuleMatrixRowIndices    Binary rule matrix in CSR format
  * @param binaryRuleMatrixColumnIndices
  * @param binaryRuleMatrixProbabilities
  * @param binaryRuleMatrixRows
@@ -163,8 +165,8 @@ __kernel void cartesianProduct(const __global short* chartNonTerminalIndices,
     const __global int* binaryRuleMatrixColumnIndices,
     const __global float* binaryRuleMatrixProbabilities,
     uint binaryRuleMatrixRows) {
-    uint threadId = get_global_id(0);
-    uint parent = threadId;
+    
+    uint parent = get_global_id(0);
 
     if (parent < binaryRuleMatrixRows) {
         // Production winningProduction = null;
@@ -207,10 +209,10 @@ __kernel void cartesianProduct(const __global short* chartNonTerminalIndices,
  * Because the unary rule matrix is fairly small, this operation is generally quite fast.
  *
  * @param targetCellInsideProbabilities Temporary target cell storage. Indexed by 
- * @param targetCellPackedChildren      non-terminal index
+ * @param targetCellPackedChildren      non-terminal
  * @param targetCellMidpoints
  *
- * @param unaryRuleMatrixRowIndices Binary rule matrix in CSR format
+ * @param unaryRuleMatrixRowIndices     Binary rule matrix in CSR format
  * @param unaryRuleMatrixColumnIndices
  * @param unaryRuleMatrixProbabilities
  * @param unaryRuleMatrixRows
@@ -220,8 +222,7 @@ __kernel void cartesianProduct(const __global short* chartNonTerminalIndices,
  *                     so we can reproduce the unary production when we back-trace and
  *                     create the chart.
  */        
-__kernel void unarySpmvMultiply(__global short* targetCellNonTerminalIndices,
-        __global float* targetCellInsideProbabilities,
+__kernel void unarySpmvMultiply(__global float* targetCellInsideProbabilities,
         __global int* targetCellPackedChildren,
         __global short* targetCellMidpoints,
         const __global int* unaryRuleMatrixRowIndices,
@@ -261,41 +262,122 @@ __kernel void unarySpmvMultiply(__global short* targetCellNonTerminalIndices,
     }
 }
 
+/**
+ * An incredibly naive prefix-sum, which simply `adds' one for each non-zero log probability
+ * in a target cell. Execute single-threaded.
+ *
+ * TODO Replace ASAP with a custom parallel prefix scan
+ *
+ * @param targetCellInsideProbabilities Temporary target cell probabilities. Indexed by 
+ *                                      non-terminal
+ * @param prefixSum                     Target `sum' array
+ * @param numNonTerminals               The number of observed non-terminals in each cell
+ * @param cellIndex                     Index of the target cell
+ * @param n                             Size of targetCellInsideProbabilities and prefixSum
+ *
+ */        
+__kernel void prefixSum(const __global float* targetCellInsideProbabilities,
+        __global short* prefixSum,
+        __global int* numNonTerminals,
+        uint cellIndex,
+        uint n) {
+
+    uint sum = 0;
+    int i;
+    for (i = 0; i < n; i++) {
+        if (targetCellInsideProbabilities[i] != -INFINITY) {
+            prefixSum[i] = sum++;
+        } else {
+            prefixSum[i] = -1;
+        }
+    }
+    numNonTerminals[cellIndex] = sum;
+}
 
 /*
- TODO: Count valid left and right children (in shared memory?) and collapse down to just observed non-terminals
+            minLeftChildIndex[cellIndex] = tmpMinLeftChildIndex;
+            maxLeftChildIndex[cellIndex] = tmpMaxLeftChildIndex;
+            maxRightChildIndex[cellIndex] = tmpMaxRightChildIndex;
+*/
 
-   --Write a flag array as well as our probability array
-   --Perform prefix sum (scan) operation (producing s, below)
+/**
+ * Packs temporary cell storage into the chart. Uses the prefix sum computed by the 
+ *   prefixSum kernel.
+ *
+ * @param targetCellInsideProbabilities Temporary target cell storage. Indexed by 
+ * @param targetCellPackedChildren      non-terminal
+ * @param targetCellMidpoints
+ * @param prefixSum                     `sum' array populated in 
+ *
+ * @param chartNonTerminalIndices       Chart storage (as described in `Data Structures'
+ * @param chartInsideProbabilities      documentation above)
+ * @param chartPackedChildren      
+ * @param chartMidpoints
+ *
+ * @param cellOffset                    Offset of the target cell in the chart array
+ * @param n                             Size of targetCellInsideProbabilities and prefixSum
+ *
+ */        
+__kernel void pack(const __global float* targetCellInsideProbabilities,
+        const __global int* targetCellPackedChildren,
+        const __global short* targetCellMidpoints,
+        const __global short* prefixSum,
+        __global short* chartNonTerminalIndices,
+        __global float* chartInsideProbabilities,
+        __global int* chartPackedChildren,
+        __global short* chartMidpoints,
+        uint cellOffset,
+        uint n) {
 
-     i 0   1   2   3   4   5   6   7   8   9   10 
-     p -  .5   -   -  .7   -  .9   2   -   1   -
-  flag 0   1   0   0   1   0   1   1   0   1   0
-     s 0   1   1   1   2   2   3   4   4   5   5
-
-   Allocate an array the size of s[|V|] (5)
-       
-
-   Populate with a variant of the following kernel (from NVIDIA Marching Cubes example). 
-
- compact voxel array
-__global__ void
-compactVoxels(uint *compactedVoxelArray, uint *voxelOccupied, uint *voxelOccupiedScan, uint numVoxels)
-{
-    uint blockId = __mul24(blockIdx.y, gridDim.x) + blockIdx.x;
-    uint i = __mul24(blockId, blockDim.x) + threadIdx.x;
-
-    if (voxelOccupied[i] && (i < numVoxels)) {
-        compactedVoxelArray[ voxelOccupiedScan[i] ] = i;
+    uint threadId = get_global_id(0);
+    if (threadId < n) {
+        if (prefixSum[threadId] >= 0) {
+            int index = prefixSum[threadId] + cellOffset;
+            chartNonTerminalIndices[index] = threadId;
+            chartInsideProbabilities[index] = targetCellInsideProbabilities[threadId];
+            chartPackedChildren[index] = targetCellPackedChildren[threadId];
+            chartMidpoints[index] = targetCellMidpoints[threadId];
+        }
     }
 }
 
-            if (currentProbability == -INFINITY) {
-                if (csrSparseMatrixGrammar.isValidLeftChild(parent)) {
-                    chartCell.numValidLeftChildren++;
-                }
-                if (csrSparseMatrixGrammar.isValidRightChild(parent)) {
-                    chartCell.numValidRightChildren++;
+
+
+/* TODO This is the tricky part of packing in parallel
+
+  Note: isValidLeftChild consists of:
+    nonTerminal >= cartesianProductFunction.leftChildStart()
+       && nonTerminal < cartesianProductFunction.leftChildEnd() && nonTerminal != nullSymbol
+       
+    We should be able to pass in leftChildStart, leftChildEnd, 
+                                 rightChildStart, rightChildEnd, and nullSymbol   
+
+  We need to get back 
+            numNonTerminals
+            minLeftChildIndex
+            maxLeftChildIndex
+            maxRightChildIndex
+            
+            (we assume that minRightChildIndex == 0)
+
+                
+                    if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
+                        if (tmpMinLeftChildIndex == Integer.MAX_VALUE) {
+                            tmpMinLeftChildIndex = nonTerminalOffset;
+                        }
+                        tmpMaxLeftChildIndex = nonTerminalOffset;
+                    }
+
+                    if (sparseMatrixGrammar.isValidRightChild(nonTerminal)) {
+                        tmpMaxRightChildIndex = nonTerminalOffset;
+                    }
+
+                    nonTerminalOffset++;
                 }
             }
+
+            numNonTerminals[cellIndex] = nonTerminalOffset - offset;
+            minLeftChildIndex[cellIndex] = tmpMinLeftChildIndex;
+            maxLeftChildIndex[cellIndex] = tmpMaxLeftChildIndex;
+            maxRightChildIndex[cellIndex] = tmpMaxRightChildIndex;
  */

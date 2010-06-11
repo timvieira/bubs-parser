@@ -171,14 +171,14 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
     @Override
     public final boolean isValidRightChild(final int nonTerminal) {
-        return (nonTerminal >= cartesianProductFunction.rightChildStart()
-                && nonTerminal < cartesianProductFunction.rightChildEnd() && nonTerminal != nullSymbol);
+        return nonTerminal >= rightChildrenStart && nonTerminal <= rightChildrenEnd
+                && nonTerminal != nullSymbol;
     }
 
     @Override
     public final boolean isValidLeftChild(final int nonTerminal) {
-        return (nonTerminal >= cartesianProductFunction.leftChildStart()
-                && nonTerminal < cartesianProductFunction.leftChildEnd() && nonTerminal != nullSymbol);
+        return nonTerminal >= leftChildrenStart && nonTerminal <= leftChildrenEnd
+                && nonTerminal != nullSymbol;
     }
 
     /**
@@ -212,12 +212,6 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         sb.append("Cartesian Product Function: " + cartesianProductFunction.getClass().getName() + '\n');
         sb.append("Packed Array Size: " + cartesianProductFunction.packedArraySize() + '\n');
         sb.append("Valid production pairs: " + validProductionPairs + '\n');
-        sb.append("Valid left children: " + (numNonTerms() - normalPosStart) + '\n');
-        sb.append("Valid right children: " + leftChildOnlyStart + '\n');
-
-        sb.append("Max left child: " + (numNonTerms() - 1) + '\n');
-        sb.append("Max right child: " + (leftChildOnlyStart - 1) + '\n');
-
         return sb.toString();
     }
 
@@ -272,38 +266,6 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
          */
         public abstract int unpackRightChild(final int childPair);
 
-        /**
-         * Returns the index of first non-terminal valid as a left child.
-         * 
-         * @return the index of first non-terminal valid as a left child.
-         */
-        public int leftChildStart();
-
-        /**
-         * Returns the index of first child not valid as a left child (the exclusive end of the left-child
-         * range).
-         * 
-         * @return the index of first child not valid as a left child (the exclusive end of the left-child
-         *         range).
-         */
-        public int leftChildEnd();
-
-        /**
-         * Returns the index of first non-terminal valid as a right child.
-         * 
-         * @return the index of first non-terminal valid as a right child.
-         */
-        public int rightChildStart();
-
-        /**
-         * Returns the index of first child not valid as a left child (the exclusive end of the left-child
-         * range).
-         * 
-         * @return the index of first child not valid as a left child (the exclusive end of the left-child
-         *         range).
-         */
-        public int rightChildEnd();
-
         public abstract String openClPackDefine();
 
         public abstract String openClUnpackLeftChild();
@@ -315,15 +277,15 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         protected final int lowOrderMask;
         private final int packedArraySize;
 
-        protected ShiftFunction(final int maxShiftedNonTerminal) {
-            shift = Math.logBase2(Math.nextPowerOf2(maxShiftedNonTerminal));
+        protected ShiftFunction(final int maxUnshiftedNonTerminal) {
+            shift = Math.logBase2(Math.nextPowerOf2(maxUnshiftedNonTerminal + 1));
             int m = 0;
             for (int i = 0; i < shift; i++) {
                 m = m << 1 | 1;
             }
             lowOrderMask = m;
 
-            packedArraySize = numNonTerms() << shift;
+            packedArraySize = numNonTerms() << shift | lowOrderMask;
         }
 
         @Override
@@ -335,8 +297,8 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     public abstract class LeftShiftFunction extends ShiftFunction {
         public final int maxPackedLexicalProduction = -numNonTerms() - 1;
 
-        public LeftShiftFunction(final int maxShiftedNonTerminal) {
-            super(maxShiftedNonTerminal);
+        public LeftShiftFunction(final int maxUnshiftedNonTerminal) {
+            super(maxUnshiftedNonTerminal);
         }
 
         @Override
@@ -409,33 +371,17 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     public final class DefaultFunction extends LeftShiftFunction {
 
         public DefaultFunction() {
-            super(leftChildOnlyStart);
+            super(rightChildrenEnd);
         }
 
         @Override
         public final int pack(final int leftChild, final int rightChild) {
             final int childPair = leftChild << shift | (rightChild & lowOrderMask);
-            return childPair > packedArraySize() ? Integer.MIN_VALUE : childPair;
-        }
-
-        @Override
-        public final int leftChildStart() {
-            return posStart;
-        }
-
-        @Override
-        public final int leftChildEnd() {
-            return unaryChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildStart() {
-            return rightChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildEnd() {
-            return leftChildOnlyStart;
+            if (childPair > packedArraySize()) {
+                return Integer.MIN_VALUE;
+            }
+            return childPair;
+            // return childPair > packedArraySize() ? Integer.MIN_VALUE : childPair;
         }
     }
 
@@ -474,68 +420,8 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     // }
 
     public final class UnfilteredFunction extends LeftShiftFunction {
-        private final int numNonTerms;
-
         public UnfilteredFunction() {
             super(numNonTerms());
-            this.numNonTerms = numNonTerms();
-        }
-
-        @Override
-        public final int leftChildStart() {
-            return 0;
-        }
-
-        @Override
-        public final int leftChildEnd() {
-            return numNonTerms;
-        }
-
-        @Override
-        public final int rightChildStart() {
-            return 0;
-        }
-
-        @Override
-        public final int rightChildEnd() {
-            return numNonTerms;
-        }
-    }
-
-    public final class PosFactoredFilterFunction extends LeftShiftFunction {
-
-        public PosFactoredFilterFunction() {
-            super(leftChildOnlyStart);
-        }
-
-        @Override
-        public int pack(final int leftChild, final int rightChild) {
-            if (leftChild >= leftFactoredStart && leftChild < normalLeftChildStart
-                    && rightChild >= posNonFactoredStart && rightChild < normalPosStart) {
-                return Integer.MIN_VALUE;
-            }
-
-            return leftChild << shift | (rightChild & lowOrderMask);
-        }
-
-        @Override
-        public final int leftChildStart() {
-            return posStart;
-        }
-
-        @Override
-        public final int leftChildEnd() {
-            return unaryChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildStart() {
-            return rightChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildEnd() {
-            return leftChildOnlyStart;
         }
     }
 
@@ -549,7 +435,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         private final PackedBitVector validChildPairs;
 
         public BitVectorExactFilterFunction() {
-            super(leftChildOnlyStart);
+            super(rightChildrenEnd);
 
             validChildPairs = new PackedBitVector(packedArraySize());
 
@@ -570,26 +456,6 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         private int internalPack(final int leftChild, final int rightChild) {
             return leftChild << shift | (rightChild & lowOrderMask);
         }
-
-        @Override
-        public final int leftChildStart() {
-            return posStart;
-        }
-
-        @Override
-        public final int leftChildEnd() {
-            return unaryChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildStart() {
-            return rightChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildEnd() {
-            return leftChildOnlyStart;
-        }
     }
 
     public final class PerfectHashFilterFunction extends ShiftFunction {
@@ -603,7 +469,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
 
         public PerfectHashFilterFunction() {
 
-            super(leftChildOnlyStart);
+            super(rightChildrenEnd);
 
             final IntSet childPairs = new IntOpenHashSet(binaryProductions.size());
             for (final Production p : binaryProductions) {
@@ -666,26 +532,6 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         }
 
         @Override
-        public final int leftChildStart() {
-            return posStart;
-        }
-
-        @Override
-        public final int leftChildEnd() {
-            return unaryChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildStart() {
-            return rightChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildEnd() {
-            return leftChildOnlyStart;
-        }
-
-        @Override
         public int packedArraySize() {
             return packedArraySize;
         }
@@ -711,8 +557,9 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         private final int packedArraySize;
 
         public PerfectIntPairHashFilterFunction() {
-            super(leftChildOnlyStart);
+            super(rightChildrenEnd);
 
+            // TODO Eliminate packedChildPairs and populate childPairs[][] directly from binaryProductions
             final IntSet packedChildPairs = new IntOpenHashSet(binaryProductions.size());
             for (final Production p : binaryProductions) {
                 packedChildPairs.add(p.leftChild << shift | (p.rightChild & lowOrderMask));
@@ -724,7 +571,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
                 childPairs[1][i++] = packedChildPair & lowOrderMask;
             }
 
-            this.perfectHash = new SegmentedPerfectIntPair2IntHash(childPairs);
+            this.perfectHash = new SegmentedPerfectIntPair2IntHash(childPairs, rightChildrenEnd);
             System.out.println("Hashed grammar: " + perfectHash.toString());
             this.packedArraySize = perfectHash.hashtableSize();
         }
@@ -770,26 +617,6 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             }
 
             return perfectHash.unsafeKey2(childPair);
-        }
-
-        @Override
-        public final int leftChildStart() {
-            return posStart;
-        }
-
-        @Override
-        public final int leftChildEnd() {
-            return unaryChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildStart() {
-            return rightChildOnlyStart;
-        }
-
-        @Override
-        public final int rightChildEnd() {
-            return leftChildOnlyStart;
         }
 
         @Override

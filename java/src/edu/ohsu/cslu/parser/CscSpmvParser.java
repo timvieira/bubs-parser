@@ -88,14 +88,14 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
     }
 
     /**
-     * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together,
-     * saving the maximum probability child combinations.
+     * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products
+     * together, saving the maximum probability child combinations.
      * 
      * TODO Share with {@link CsrSpmvParser}
      * 
      * @param start
      * @param end
-     * @return Unioned cross-product
+     * @return Unioned cartesian-product
      */
     @Override
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
@@ -113,12 +113,17 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
             final int leftCellIndex = chart.cellIndex(start, midpoint);
             final int rightCellIndex = chart.cellIndex(midpoint, end);
 
-            for (int i = chart.minLeftChildIndex(leftCellIndex); i <= chart.maxLeftChildIndex(leftCellIndex); i++) {
+            final int leftStart = chart.minLeftChildIndex(leftCellIndex);
+            final int leftEnd = chart.maxLeftChildIndex(leftCellIndex);
+
+            final int rightStart = chart.minRightChildIndex(rightCellIndex);
+            final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
+
+            for (int i = leftStart; i <= leftEnd; i++) {
                 final int leftChild = nonTerminalIndices[i];
-                // final int packedLeftChild = cpf.partialPackLeft(leftChild);
                 final float leftProbability = insideProbabilities[i];
 
-                for (int j = chart.offset(rightCellIndex); j <= chart.maxRightChildIndex(rightCellIndex); j++) {
+                for (int j = rightStart; j <= rightEnd; j++) {
 
                     if (collectDetailedStatistics) {
                         totalCartesianProductEntriesExamined++;
