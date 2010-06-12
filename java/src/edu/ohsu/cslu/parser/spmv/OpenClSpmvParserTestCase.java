@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import java.io.Reader;
 
@@ -8,6 +8,7 @@ import org.junit.Ignore;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
+import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 

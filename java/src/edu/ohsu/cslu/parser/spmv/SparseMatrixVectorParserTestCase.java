@@ -1,4 +1,6 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
+
+import static org.junit.Assert.assertEquals;
 
 import java.io.Reader;
 import java.util.Arrays;
@@ -8,15 +10,15 @@ import org.junit.Test;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
+import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
-import edu.ohsu.cslu.parser.SparseMatrixVectorParser.CartesianProductVector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
+import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector;
 import edu.ohsu.cslu.parser.util.ParseTree;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Base test class for all sparse-matrix-vector parsers
@@ -674,13 +676,6 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
     public void testPartialSentence2() throws Exception {
         final String sentence = "The report is due out tomorrow .";
         final ParseTree bestParseTree = parser.findBestParse(sentence);
-
-        // for (int span = 1; span <= 7; span++) {
-        // for (int start = 0; start <= 7 - span; start++) {
-        // final int end = start + span;
-        // System.out.println(parser.chart.getCell(start, end).toString());
-        // }
-        // }
 
         assertEquals(
             "(TOP (S^<TOP> (S|<NP-VP>^<TOP> (NP^<S> (DT The) (NN report)) (VP^<S> (AUX is) (ADJP^<VP> (JJ due) (PP^<ADJP> (IN out) (NP^<PP> (NN tomorrow)))))) (. .)))",

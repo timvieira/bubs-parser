@@ -37,6 +37,12 @@ import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
+import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
+import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
+import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
+import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
+import edu.ohsu.cslu.parser.spmv.SortAndScanCsrSpmvParser;
 import edu.ohsu.cslu.parser.util.Log;
 
 public class ParserDriver extends BaseCommandlineTool {

@@ -27,7 +27,7 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
     /**
      * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal. Indexed by left
-     * non-terminal.
+     * non-terminal. Length is 1 greater than V, to avoid running off the end of the array.
      */
     private int[] cscBinaryLeftChildStartIndices;
 
@@ -56,29 +56,6 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
      * .
      */
     private float[] cscBinaryProbabilities;
-
-    /**
-     * Indices of populated columns (children).
-     */
-    private int[] cscUnaryPopulatedColumns;
-
-    /**
-     * Offsets into {@link #cscUnaryRowIndices} for the start of each populated column, with one extra entry
-     * appended to prevent loops from falling off the end. Length is 1 greater than
-     * {@link #cscUnaryPopulatedColumns}
-     */
-    private int[] cscUnaryColumnOffsets;
-
-    /**
-     * Row indices of each matrix entry in {@link #cscUnaryProbabilities}. One entry for each unary rule; the
-     * same size as {@link #cscUnaryProbabilities}.
-     * 
-     * TODO Make this a short[]?
-     */
-    private int[] cscUnaryRowIndices;
-
-    /** Unary rule probabilities One entry for each binary rule; the same size as {@link #cscUnaryRowIndices}. */
-    private float[] cscUnaryProbabilities;
 
     public CscSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
             final GrammarFormatType grammarFormat,
@@ -123,14 +100,7 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         final int[] sortedPopulatedUnaryColumnIndices = populatedUnaryColumnIndices.toIntArray();
         Arrays.sort(sortedPopulatedUnaryColumnIndices);
 
-        // And all unary rules
-        cscUnaryPopulatedColumns = new int[populatedUnaryColumnIndices.size()];
-        cscUnaryColumnOffsets = new int[cscUnaryPopulatedColumns.length + 1];
-        cscUnaryRowIndices = new int[numUnaryRules()];
-        cscUnaryProbabilities = new float[numUnaryRules()];
-
-        storeRulesAsMatrix(unaryProductions, sortedPopulatedUnaryColumnIndices, cscUnaryPopulatedColumns,
-            cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
+        storeUnaryRules(unaryProductions);
 
         tokenizer = new Tokenizer(lexSet);
     }
@@ -200,22 +170,6 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         return cscBinaryProbabilities;
     }
 
-    public final int[] unaryRuleMatrixPopulatedColumns() {
-        return cscUnaryPopulatedColumns;
-    }
-
-    public final int[] unaryRuleMatrixColumnOffsets() {
-        return cscUnaryColumnOffsets;
-    }
-
-    public final int[] unaryRuleMatrixRowIndices() {
-        return cscUnaryRowIndices;
-    }
-
-    public final float[] unaryRuleMatrixProbabilities() {
-        return cscUnaryProbabilities;
-    }
-
     @Override
     public final float binaryLogProbability(final int parent, final int childPair) {
 
@@ -235,34 +189,6 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             final int row = cscBinaryRowIndices[i];
             if (row == parent) {
                 return cscBinaryProbabilities[i];
-            }
-            if (row > parent) {
-                return Float.NEGATIVE_INFINITY;
-            }
-        }
-        return Float.NEGATIVE_INFINITY;
-    }
-
-    @Override
-    public final float unaryLogProbability(final int parent, final int child) {
-        final int childPair = cartesianProductFunction.packUnary(child);
-
-        // Find the column (child pair)
-        int c = -1;
-        for (int i = 0; i < cscUnaryPopulatedColumns.length; i++) {
-            if (cscUnaryPopulatedColumns[i] == childPair) {
-                c = i;
-                break;
-            }
-        }
-        if (c == -1) {
-            return Float.NEGATIVE_INFINITY;
-        }
-
-        for (int i = cscUnaryColumnOffsets[c]; i < cscUnaryColumnOffsets[c + 1]; i++) {
-            final int row = cscUnaryRowIndices[i];
-            if (row == parent) {
-                return cscUnaryProbabilities[i];
             }
             if (row > parent) {
                 return Float.NEGATIVE_INFINITY;

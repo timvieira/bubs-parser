@@ -1,10 +1,13 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.ExhaustiveChartParser;
+import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
 
 /**
  * A class of parser which performs the grammar intersection in each cell by:
@@ -37,7 +40,10 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     /**
      * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
      * {@link ParserOptions}, but duplicated here as a final variable, so that the JIT can eliminate
-     * potentially-expensive counting code when we don't need it
+     * potentially-expensive counting code when we don't need it.
+     * 
+     * TODO Move up to {@link ExhaustiveChartParser} (or even higher) and share with
+     * {@link SparseMatrixLoopParser}
      */
     protected final boolean collectDetailedStatistics;
 
@@ -53,8 +59,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     }
 
     /**
-     * Multiplies the grammar matrix (stored sparsely) by the supplied cross-product vector (stored densely),
-     * and populates this chart cell.
+     * Multiplies the grammar matrix (stored sparsely) by the supplied cartesian product vector (stored
+     * densely), and populates this chart cell.
      * 
      * @param cartesianProductVector
      * @param chartCell
@@ -68,7 +74,51 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      * 
      * @param chartCell
      */
-    public abstract void unarySpmvMultiply(final ChartCell chartCell);
+    public void unarySpmvMultiply(final ChartCell chartCell) {
+
+        final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
+        packedArrayCell.allocateTemporaryStorage();
+
+        final int[] unaryRuleMatrixRowIndices = grammar.unaryRuleMatrixRowIndices();
+        final int[] unaryRuleMatrixColumnIndices = grammar.unaryRuleMatrixColumnIndices();
+        final float[] unaryRuleMatrixProbabilities = grammar.unaryRuleMatrixProbabilities();
+
+        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
+        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
+        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
+        final short chartCellEnd = (short) chartCell.end();
+
+        // Iterate over possible parents (matrix rows)
+        for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
+
+            final float currentProbability = chartCellProbabilities[parent];
+            float winningProbability = currentProbability;
+            int winningChildren = Integer.MIN_VALUE;
+            short winningMidpoint = 0;
+
+            // Iterate over possible children of the parent (columns with non-zero entries)
+            for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
+
+                final int grammarChildren = unaryRuleMatrixColumnIndices[i];
+                final int child = grammar.cartesianProductFunction().unpackLeftChild(grammarChildren);
+                final float grammarProbability = unaryRuleMatrixProbabilities[i];
+
+                final float jointProbability = grammarProbability + chartCellProbabilities[child];
+
+                if (jointProbability > winningProbability) {
+                    winningProbability = jointProbability;
+                    winningChildren = grammarChildren;
+                    winningMidpoint = chartCellEnd;
+                }
+            }
+
+            if (winningChildren != Integer.MIN_VALUE) {
+                chartCellChildren[parent] = winningChildren;
+                chartCellProbabilities[parent] = winningProbability;
+                chartCellMidpoints[parent] = winningMidpoint;
+            }
+        }
+    }
 
     @Override
     protected void initParser(final int sentLength) {
@@ -78,25 +128,13 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         totalCartesianProductUnionTime = 0;
     }
 
-    // TODO Do this with a matrix multiply?
-    @Override
-    protected void addLexicalProductions(final int[] sent) throws Exception {
-        for (int i = 0; i < chart.size(); i++) {
-            final ChartCell cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
-                cell.updateInside(new ChartEdge(lexProd, cell));
-            }
-            cell.finalizeCell();
-        }
-    }
-
     /**
-     * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together,
-     * saving the maximum probability child combinations.
+     * Takes the cartesian product of all potential child-cell combinations. Unions those cartesian products
+     * together, saving the maximum probability child combinations.
      * 
      * @param start
      * @param end
-     * @return Unioned cross-product
+     * @return Unioned cartesian product
      */
     protected abstract CartesianProductVector cartesianProductUnion(final int start, final int end);
 

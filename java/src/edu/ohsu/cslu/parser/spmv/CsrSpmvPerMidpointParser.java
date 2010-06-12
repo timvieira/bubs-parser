@@ -1,9 +1,10 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**

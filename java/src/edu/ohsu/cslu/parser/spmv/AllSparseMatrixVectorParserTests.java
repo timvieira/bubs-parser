@@ -1,10 +1,13 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses( { TestCsrSpmvParser.class, TestCsrSpmvPerMidpointParser.class, TestCscSpmvParser.class,
-        OpenClSpmvParserTestCase.class, TestSortAndScanCsrSpmvParser.class })
+        TestDenseVectorOpenClSpmvParser.class
+// , TestPackedOpenClSpmvParser
+// , TestSortAndScanCsrSpmvParser.class
+})
 public class AllSparseMatrixVectorParserTests {
 }

@@ -1,25 +1,25 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
- * Unit tests for {@link DenseVectorOpenClSpmvParser}
+ * Unit tests for {@link PackedOpenClSpmvParser}
  * 
  * @author Aaron Dunlop
  * @since Jun 2, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestDenseVectorOpenClSpmvParser extends OpenClSpmvParserTestCase {
-
+public class TestPackedOpenClSpmvParser extends OpenClSpmvParserTestCase {
     @Override
     protected Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new DenseVectorOpenClSpmvParser((CsrSparseMatrixGrammar) grammar);
+        return new PackedOpenClSpmvParser((CsrSparseMatrixGrammar) grammar);
     }
 
     @Override

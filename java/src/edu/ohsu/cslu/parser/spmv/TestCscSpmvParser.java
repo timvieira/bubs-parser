@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import java.io.Reader;
 
@@ -7,6 +7,8 @@ import org.junit.Test;
 import edu.ohsu.cslu.grammar.CscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
+import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;

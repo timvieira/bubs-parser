@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import com.nativelibs4java.opencl.CLFloatBuffer;
 import com.nativelibs4java.opencl.CLIntBuffer;
@@ -7,6 +7,7 @@ import com.nativelibs4java.opencl.CLMem;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
