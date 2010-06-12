@@ -38,6 +38,7 @@ public abstract class ChartParser<G extends GrammarByChild, C extends Chart> ext
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
             }
+            cell.finalizeCell();
         }
     }
 

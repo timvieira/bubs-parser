@@ -44,6 +44,7 @@ public class DenseVectorChart extends ParallelArrayChart {
         super(size, sparseMatrixGrammar);
     }
 
+    @Override
     public void clear(final int sentenceLength) {
         this.size = sentenceLength;
     }

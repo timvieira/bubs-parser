@@ -71,6 +71,13 @@ public abstract class ParallelArrayChart extends Chart {
         }
     }
 
+    /**
+     * Removes existing chart entries and re-initializes chart state.
+     * 
+     * @param sentenceLength
+     */
+    public abstract void clear(final int sentenceLength);
+
     @Override
     public abstract ParallelArrayChartCell getCell(final int start, final int end);
 

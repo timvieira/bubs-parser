@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 

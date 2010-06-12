@@ -1,9 +1,10 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.CscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -212,44 +213,6 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
                         productProbabilities[parent] = jointProbability;
                         productMidpoints[parent] = cartesianProductMidpoint;
                     }
-                }
-            }
-        }
-    }
-
-    @Override
-    public void unarySpmvMultiply(final ChartCell chartCell) {
-
-        final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
-        packedArrayCell.allocateTemporaryStorage();
-
-        final int[] unaryRuleMatrixPopulatedColumns = grammar.unaryRuleMatrixPopulatedColumns();
-        final int[] unaryRuleMatrixColumnOffsets = grammar.unaryRuleMatrixColumnOffsets();
-        final int[] unaryRuleMatrixRowIndices = grammar.unaryRuleMatrixRowIndices();
-        final float[] unaryRuleMatrixProbabilities = grammar.unaryRuleMatrixProbabilities();
-
-        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
-        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
-        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
-        final short chartCellEnd = (short) chartCell.end();
-
-        // Iterate over possible populated child pairs (matrix columns)
-        for (int i = 0; i < unaryRuleMatrixPopulatedColumns.length; i++) {
-
-            final int childPair = unaryRuleMatrixPopulatedColumns[i];
-            final int child = grammar.cartesianProductFunction().unpackLeftChild(childPair);
-            final float currentProbability = chartCellProbabilities[child];
-
-            // Iterate over possible parents of the child (rows with non-zero entries)
-            for (int j = unaryRuleMatrixColumnOffsets[i]; j < unaryRuleMatrixColumnOffsets[i + 1]; j++) {
-
-                final int parent = unaryRuleMatrixRowIndices[j];
-                final float jointProbability = unaryRuleMatrixProbabilities[j] + currentProbability;
-
-                if (jointProbability > chartCellProbabilities[parent]) {
-                    chartCellChildren[parent] = childPair;
-                    chartCellProbabilities[parent] = jointProbability;
-                    chartCellMidpoints[parent] = chartCellEnd;
                 }
             }
         }

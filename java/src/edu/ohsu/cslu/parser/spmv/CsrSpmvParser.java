@@ -1,9 +1,10 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -220,53 +221,6 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
                 productChildren[parent] = winningChildren;
                 productProbabilities[parent] = winningProbability;
                 productMidpoints[parent] = winningMidpoint;
-            }
-        }
-    }
-
-    @Override
-    public void unarySpmvMultiply(final ChartCell chartCell) {
-
-        final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
-        packedArrayCell.allocateTemporaryStorage();
-
-        final int[] unaryRuleMatrixRowIndices = grammar.unaryRuleMatrixRowIndices();
-        final int[] unaryRuleMatrixColumnIndices = grammar.unaryRuleMatrixColumnIndices();
-        final float[] unaryRuleMatrixProbabilities = grammar.unaryRuleMatrixProbabilities();
-
-        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
-        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
-        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
-        final short chartCellEnd = (short) chartCell.end();
-
-        // Iterate over possible parents (matrix rows)
-        for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
-
-            final float currentProbability = chartCellProbabilities[parent];
-            float winningProbability = currentProbability;
-            int winningChildren = Integer.MIN_VALUE;
-            short winningMidpoint = 0;
-
-            // Iterate over possible children of the parent (columns with non-zero entries)
-            for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
-
-                final int grammarChildren = unaryRuleMatrixColumnIndices[i];
-                final int child = grammar.cartesianProductFunction().unpackLeftChild(grammarChildren);
-                final float grammarProbability = unaryRuleMatrixProbabilities[i];
-
-                final float jointProbability = grammarProbability + chartCellProbabilities[child];
-
-                if (jointProbability > winningProbability) {
-                    winningProbability = jointProbability;
-                    winningChildren = grammarChildren;
-                    winningMidpoint = chartCellEnd;
-                }
-            }
-
-            if (winningChildren != Integer.MIN_VALUE) {
-                chartCellChildren[parent] = winningChildren;
-                chartCellProbabilities[parent] = winningProbability;
-                chartCellMidpoints[parent] = winningMidpoint;
             }
         }
     }
