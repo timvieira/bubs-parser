@@ -26,22 +26,31 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
     /**
-     * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal. Indexed by left
-     * non-terminal. Length is 1 greater than V, to avoid running off the end of the array.
+     * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal, or -1 for
+     * non-terminals which do not occur as left children. Indexed by left non-terminal. Length is 1 greater
+     * than V, to simplify loops.
      */
-    private int[] cscBinaryLeftChildStartIndices;
+    public final int[] cscBinaryLeftChildStartIndices;
 
     /**
-     * Indices of populated columns (child pairs).
+     * Indices in {@link #cscBinaryPopulatedColumns} of final columns for each non-terminal, or -1 for
+     * non-terminals which do not occur as left children. Indexed by left non-terminal. Length is 1 greater
+     * than V, to simplify loops.
      */
-    private int[] cscBinaryPopulatedColumns;
+    public final int[] cscBinaryLeftChildEndIndices;
 
     /**
-     * Offsets into {@link #cscBinaryRowIndices} for the start of each populated column, with one extra entry
-     * appended to prevent loops from falling off the end. Length is 1 greater than
-     * {@link #cscBinaryPopulatedColumns}.
+     * Parallel array with {@link #cscBinaryPopulatedColumnOffsets}, containing indices of populated columns
+     * (child pairs) and the offsets into {@link #cscBinaryRowIndices} at which each column starts. Array size
+     * is the number of non-empty columns (+1 to simplify loops).
      */
-    private int[] cscBinaryColumnOffsets;
+    public final int[] cscBinaryPopulatedColumns;
+
+    /**
+     * Parallel array with {@link #cscBinaryPopulatedColumns} containing offsets into
+     * {@link #cscBinaryRowIndices} at which each column starts.
+     */
+    public final int[] cscBinaryPopulatedColumnOffsets;
 
     /**
      * Row indices of each matrix entry in {@link #cscBinaryProbabilities}. One entry for each binary rule;
@@ -49,13 +58,13 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
      * 
      * TODO Make this a short[]?
      */
-    private int[] cscBinaryRowIndices;
+    public final int[] cscBinaryRowIndices;
 
     /**
      * Binary rule probabilities One entry for each binary rule; the same size as {@link #cscBinaryRowIndices}
      * .
      */
-    private float[] cscBinaryProbabilities;
+    public final float[] cscBinaryProbabilities;
 
     public CscSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
             final GrammarFormatType grammarFormat,
@@ -71,26 +80,32 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
         // Bin all binary rules by child pair, mapping parent -> probability
         cscBinaryPopulatedColumns = new int[populatedBinaryColumnIndices.size()];
-        cscBinaryColumnOffsets = new int[cscBinaryPopulatedColumns.length + 1];
+        cscBinaryPopulatedColumnOffsets = new int[cscBinaryPopulatedColumns.length + 1];
         cscBinaryRowIndices = new int[numBinaryRules()];
         cscBinaryProbabilities = new float[numBinaryRules()];
 
         storeRulesAsMatrix(binaryProductions, sortedPopulatedBinaryColumnIndices, cscBinaryPopulatedColumns,
-            cscBinaryColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
+            cscBinaryPopulatedColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
 
         cscBinaryLeftChildStartIndices = new int[numNonTerms() + 1];
+        cscBinaryLeftChildEndIndices = new int[numNonTerms() + 1];
+        Arrays.fill(cscBinaryLeftChildStartIndices, -1);
+        Arrays.fill(cscBinaryLeftChildEndIndices, -1);
+
+        final String[] sBinaryPopulatedColumnsLeft = new String[cscBinaryPopulatedColumns.length - 1];
+        final String[] sBinaryPopulatedColumnsRight = new String[cscBinaryPopulatedColumns.length - 1];
+        for (int i = 0; i < cscBinaryPopulatedColumns.length - 1; i++) {
+            sBinaryPopulatedColumnsLeft[i] = mapNonterminal(cartesianProductFunction
+                .unpackLeftChild(cscBinaryPopulatedColumns[i]));
+            sBinaryPopulatedColumnsRight[i] = mapNonterminal(cartesianProductFunction
+                .unpackRightChild(cscBinaryPopulatedColumns[i]));
+        }
         for (int i = 0; i < cscBinaryPopulatedColumns.length; i++) {
             final int leftChild = cartesianProductFunction.unpackLeftChild(cscBinaryPopulatedColumns[i]);
-            cscBinaryLeftChildStartIndices[leftChild] = i;
-            while (i < cscBinaryPopulatedColumns.length
-                    && cartesianProductFunction.unpackLeftChild(cscBinaryPopulatedColumns[i]) == leftChild) {
-                i++;
+            if (cscBinaryLeftChildStartIndices[leftChild] < 0) {
+                cscBinaryLeftChildStartIndices[leftChild] = i;
             }
-        }
-        for (int i = 1; i < cscBinaryLeftChildStartIndices.length; i++) {
-            if (cscBinaryLeftChildStartIndices[i] == 0) {
-                cscBinaryLeftChildStartIndices[i] = cscBinaryLeftChildStartIndices[i - 1];
-            }
+            cscBinaryLeftChildEndIndices[leftChild] = i;
         }
 
         final IntSet populatedUnaryColumnIndices = new IntOpenHashSet(unaryProductions.size() / 10);
@@ -100,7 +115,7 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         final int[] sortedPopulatedUnaryColumnIndices = populatedUnaryColumnIndices.toIntArray();
         Arrays.sort(sortedPopulatedUnaryColumnIndices);
 
-        storeUnaryRules(unaryProductions);
+        storeUnaryRules();
 
         tokenizer = new Tokenizer(lexSet);
     }
@@ -150,26 +165,6 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         cscColumnIndices[cscColumnIndices.length - 1] = j;
     }
 
-    public final int[] binaryLeftChildStartIndices() {
-        return cscBinaryLeftChildStartIndices;
-    }
-
-    public final int[] binaryRuleMatrixPopulatedColumns() {
-        return cscBinaryPopulatedColumns;
-    }
-
-    public final int[] binaryRuleMatrixColumnOffsets() {
-        return cscBinaryColumnOffsets;
-    }
-
-    public final int[] binaryRuleMatrixRowIndices() {
-        return cscBinaryRowIndices;
-    }
-
-    public final float[] binaryRuleMatrixProbabilities() {
-        return cscBinaryProbabilities;
-    }
-
     @Override
     public final float binaryLogProbability(final int parent, final int childPair) {
 
@@ -185,7 +180,7 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             return Float.NEGATIVE_INFINITY;
         }
 
-        for (int i = cscBinaryColumnOffsets[c]; i < cscBinaryColumnOffsets[c + 1]; i++) {
+        for (int i = cscBinaryPopulatedColumnOffsets[c]; i < cscBinaryPopulatedColumnOffsets[c + 1]; i++) {
             final int row = cscBinaryRowIndices[i];
             if (row == parent) {
                 return cscBinaryProbabilities[i];

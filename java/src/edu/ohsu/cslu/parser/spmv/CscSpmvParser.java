@@ -183,30 +183,22 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
     protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
             final int[] productChildren, final float[] productProbabilities, final short[] productMidpoints) {
 
-        final int[] binaryRuleMatrixPopulatedColumns = grammar.binaryRuleMatrixPopulatedColumns();
-        final int[] binaryRuleMatrixColumnOffsets = grammar.binaryRuleMatrixColumnOffsets();
-        final int[] binaryRuleMatrixRowIndices = grammar.binaryRuleMatrixRowIndices();
-        final float[] binaryRuleMatrixProbabilities = grammar.binaryRuleMatrixProbabilities();
-
-        final float[] localCartesianProductProbabilities = cartesianProductVector.probabilities;
-        final short[] localCartesianProductMidpoints = cartesianProductVector.midpoints;
-
         // Iterate over possible populated child pairs (matrix columns)
-        for (int i = 0; i < binaryRuleMatrixPopulatedColumns.length; i++) {
+        for (int i = 0; i < grammar.cscBinaryPopulatedColumns.length; i++) {
 
-            final int childPair = binaryRuleMatrixPopulatedColumns[i];
-            final short cartesianProductMidpoint = localCartesianProductMidpoints[childPair];
+            final int childPair = grammar.cscBinaryPopulatedColumns[i];
+            final short cartesianProductMidpoint = cartesianProductVector.midpoints[childPair];
 
             // Skip grammar matrix columns for unpopulated cartesian-product entries
             if (cartesianProductMidpoint != 0) {
-                final float cartesianProductProbability = localCartesianProductProbabilities[childPair];
+                final float cartesianProductProbability = cartesianProductVector.probabilities[childPair];
 
                 // Iterate over possible parents of the child pair (rows with non-zero entries)
-                for (int j = binaryRuleMatrixColumnOffsets[i]; j < binaryRuleMatrixColumnOffsets[i + 1]; j++) {
+                for (int j = grammar.cscBinaryPopulatedColumnOffsets[i]; j < grammar.cscBinaryPopulatedColumnOffsets[i + 1]; j++) {
 
-                    final float jointProbability = binaryRuleMatrixProbabilities[j]
+                    final float jointProbability = grammar.cscBinaryProbabilities[j]
                             + cartesianProductProbability;
-                    final int parent = binaryRuleMatrixRowIndices[j];
+                    final int parent = grammar.cscBinaryRowIndices[j];
 
                     if (jointProbability > productProbabilities[parent]) {
                         productChildren[parent] = childPair;

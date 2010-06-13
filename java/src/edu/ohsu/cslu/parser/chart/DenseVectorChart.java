@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser.chart;
 
+import java.util.Arrays;
+
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 
@@ -47,6 +49,10 @@ public class DenseVectorChart extends ParallelArrayChart {
     @Override
     public void clear(final int sentenceLength) {
         this.size = sentenceLength;
+        // TODO We probably don't need to re-initialize all three arrays
+        Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
+        Arrays.fill(packedChildren, 0);
+        Arrays.fill(midpoints, (short) 0);
     }
 
     @Override
@@ -133,17 +139,16 @@ public class DenseVectorChart extends ParallelArrayChart {
 
         @Override
         public ChartEdge getBestEdge(final int nonTerminal) {
-            int edgeChildren;
-            short edgeMidpoint;
 
             final int index = offset + nonTerminal;
-            edgeChildren = packedChildren[index];
-            edgeMidpoint = midpoints[index];
+            final int edgeChildren = packedChildren[index];
+            final short edgeMidpoint = midpoints[index];
 
             final int leftChild = sparseMatrixGrammar.cartesianProductFunction()
                 .unpackLeftChild(edgeChildren);
             final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
                 edgeChildren);
+
             final DenseVectorChartCell leftChildCell = getCell(start(), edgeMidpoint);
             final DenseVectorChartCell rightChildCell = edgeMidpoint < end ? (DenseVectorChartCell) getCell(
                 edgeMidpoint, end) : null;

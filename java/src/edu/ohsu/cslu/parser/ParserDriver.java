@@ -37,6 +37,7 @@ import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
@@ -291,6 +292,9 @@ public class ParserDriver extends BaseCommandlineTool {
                         throw new Exception("Unsupported filter type: " + cartesianProductFunctionType);
                 }
 
+            case LeftChildMatrixLoop:
+                return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, DefaultFunction.class);
+
             default:
                 throw new Exception("Unsupported parser type: " + parserType);
         }
@@ -353,6 +357,9 @@ public class ParserDriver extends BaseCommandlineTool {
                 return new PackedOpenClSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case SortAndScanSpmv:
                 return new SortAndScanCsrSpmvParser((CsrSparseMatrixGrammar) grammar);
+
+            case LeftChildMatrixLoop:
+                return new LeftChildLoopSpmlParser((CscSparseMatrixGrammar) grammar);
 
             default:
                 throw new IllegalArgumentException("Unsupported parser type");
