@@ -195,13 +195,14 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         return maps;
     }
 
-    protected void storeUnaryRules(final Collection<Production> unaryProductions) {
+    protected void storeUnaryRules() {
         // And all unary rules
         csrUnaryRowIndices = new int[numNonTerms() + 1];
         csrUnaryColumnIndices = new int[numUnaryRules()];
         csrUnaryProbabilities = new float[numUnaryRules()];
 
-        storeRulesAsCsrMatrix(unaryProductions, csrUnaryRowIndices, csrUnaryColumnIndices, csrUnaryProbabilities);
+        storeRulesAsCsrMatrix(unaryProductions, csrUnaryRowIndices, csrUnaryColumnIndices,
+            csrUnaryProbabilities);
     }
 
     protected void storeRulesAsCsrMatrix(final Collection<Production> productions, final int[] csrRowIndices,

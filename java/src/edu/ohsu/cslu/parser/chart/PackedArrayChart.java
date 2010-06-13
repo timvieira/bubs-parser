@@ -97,6 +97,7 @@ public class PackedArrayChart extends ParallelArrayChart {
         temporaryCells = new PackedArrayChartCell[size][size + 1];
     }
 
+    @Override
     public void clear(final int sentenceLength) {
         this.size = sentenceLength;
         Arrays.fill(numNonTerminals, 0, cellIndex(0, sentenceLength) + 1, 0);

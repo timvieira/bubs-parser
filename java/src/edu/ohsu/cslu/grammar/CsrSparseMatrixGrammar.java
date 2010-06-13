@@ -49,7 +49,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         storeRulesAsCsrMatrix(binaryProductions, csrBinaryRowIndices, csrBinaryColumnIndices,
             csrBinaryProbabilities);
 
-        storeUnaryRules(unaryProductions);
+        storeUnaryRules();
 
         tokenizer = new Tokenizer(lexSet);
     }
