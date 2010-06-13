@@ -5,6 +5,15 @@ import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
+/**
+ * Left-child loop exhaustive parser using a sparse-matrix grammar representation (
+ * {@link CscSparseMatrixGrammar}).
+ * 
+ * @author Aaron Dunlop
+ * @since Jun 13, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<CscSparseMatrixGrammar, DenseVectorChart> {
 
     public LeftChildLoopSpmlParser(final ParserOptions opts, final CscSparseMatrixGrammar grammar) {

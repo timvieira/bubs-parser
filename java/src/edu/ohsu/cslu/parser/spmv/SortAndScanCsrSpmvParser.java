@@ -211,10 +211,6 @@ public class SortAndScanCsrSpmvParser extends
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
 
-        final int[] binaryRuleMatrixRowIndices = grammar.binaryRuleMatrixRowIndices();
-        final int[] binaryRuleMatrixColumnIndices = grammar.binaryRuleMatrixColumnIndices();
-        final float[] binaryRuleMatrixProbabilities = grammar.binaryRuleMatrixProbabilities();
-
         final float[] tmpCrossProductProbabilities = cartesianProductVector.probabilities;
         final short[] tmpCrossProductMidpoints = cartesianProductVector.midpoints;
 
@@ -231,9 +227,9 @@ public class SortAndScanCsrSpmvParser extends
             short winningMidpoint = 0;
 
             // Iterate over possible children of the parent (columns with non-zero entries)
-            for (int i = binaryRuleMatrixRowIndices[parent]; i < binaryRuleMatrixRowIndices[parent + 1]; i++) {
-                final int grammarChildren = binaryRuleMatrixColumnIndices[i];
-                final float grammarProbability = binaryRuleMatrixProbabilities[i];
+            for (int i = grammar.csrBinaryRowIndices[parent]; i < grammar.csrBinaryRowIndices[parent + 1]; i++) {
+                final int grammarChildren = grammar.csrBinaryColumnIndices[i];
+                final float grammarProbability = grammar.csrBinaryProbabilities[i];
 
                 final float cartesianProductProbability = tmpCrossProductProbabilities[grammarChildren];
                 final float jointProbability = grammarProbability + cartesianProductProbability;
