@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser.spmv;
 
+import static com.nativelibs4java.opencl.JavaCL.createBestContext;
+
 import java.io.StringWriter;
 
 import com.nativelibs4java.opencl.CLContext;
@@ -20,7 +22,6 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.util.OpenClUtils;
-import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format (
@@ -106,12 +107,12 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         }
 
         // Allocate OpenCL-hosted memory for binary rules and copy to the device
-        clBinaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(clQueue,
-            grammar.binaryRuleMatrixRowIndices(), CLMem.Usage.Input);
-        clBinaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar
-            .binaryRuleMatrixColumnIndices(), CLMem.Usage.Input);
-        clBinaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(clQueue, grammar
-            .binaryRuleMatrixProbabilities(), CLMem.Usage.Input);
+        clBinaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrBinaryRowIndices,
+            CLMem.Usage.Input);
+        clBinaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrBinaryColumnIndices,
+            CLMem.Usage.Input);
+        clBinaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(clQueue, grammar.csrBinaryProbabilities,
+            CLMem.Usage.Input);
 
         // Repeat for unary rules
         clUnaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(clQueue, grammar.unaryRuleMatrixRowIndices(),

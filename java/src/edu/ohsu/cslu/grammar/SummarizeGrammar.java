@@ -93,7 +93,7 @@ public class SummarizeGrammar extends BaseCommandlineTool {
             final CsrSparseMatrixGrammar spmg = (CsrSparseMatrixGrammar) g;
             final Int2IntMap map = new Int2IntOpenHashMap();
 
-            for (final int children : spmg.binaryRuleMatrixColumnIndices()) {
+            for (final int children : spmg.csrBinaryColumnIndices) {
                 map.put(children, map.get(children) + 1);
             }
 

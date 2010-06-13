@@ -183,30 +183,24 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
     protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
             final int[] productChildren, final float[] productProbabilities, final short[] productMidpoints) {
 
-        final int[] binaryRuleMatrixRowIndices = grammar.binaryRuleMatrixRowIndices();
-        final int[] binaryRuleMatrixColumnIndices = grammar.binaryRuleMatrixColumnIndices();
-        final float[] binaryRuleMatrixProbabilities = grammar.binaryRuleMatrixProbabilities();
-
         // TODO: Do we need these local copies now that cartesianProductVector is final?
         final float[] localCartesianProductProbabilities = cartesianProductVector.probabilities;
         final short[] localCrossProductMidpoints = cartesianProductVector.midpoints;
 
         // Iterate over possible parents (matrix rows)
-        // TODO: This depends explicitly on the grammar sort order, which probably isn't a good idea. Maybe
-        // add a `possibleParents()' method to the grammar and iterate over that?
-        final int numNonTerms = grammar.numNonTerms();
-        for (int parent = 0; parent < numNonTerms; parent++) {
+        final int v = grammar.numNonTerms();
+        for (int parent = 0; parent < v; parent++) {
 
             float winningProbability = Float.NEGATIVE_INFINITY;
             int winningChildren = Integer.MIN_VALUE;
             short winningMidpoint = 0;
 
             // Iterate over possible children of the parent (columns with non-zero entries)
-            for (int i = binaryRuleMatrixRowIndices[parent]; i < binaryRuleMatrixRowIndices[parent + 1]; i++) {
-                final int grammarChildren = binaryRuleMatrixColumnIndices[i];
+            for (int i = grammar.csrBinaryRowIndices[parent]; i < grammar.csrBinaryRowIndices[parent + 1]; i++) {
+                final int grammarChildren = grammar.csrBinaryColumnIndices[i];
 
                 if (localCrossProductMidpoints[grammarChildren] != 0) {
-                    final float jointProbability = binaryRuleMatrixProbabilities[i]
+                    final float jointProbability = grammar.csrBinaryProbabilities[i]
                             + localCartesianProductProbabilities[grammarChildren];
 
                     if (jointProbability > winningProbability) {

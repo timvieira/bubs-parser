@@ -22,19 +22,19 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
      * Offsets into {@link #csrBinaryColumnIndices} for the start of each row, indexed by row index
      * (non-terminals), with one extra entry appended to prevent loops from falling off the end
      */
-    private int[] csrBinaryRowIndices;
+    public final int[] csrBinaryRowIndices;
 
     /**
      * Column indices of each matrix entry in {@link #csrBinaryProbabilities}. One entry for each binary rule;
      * the same size as {@link #csrBinaryProbabilities}.
      */
-    private int[] csrBinaryColumnIndices;
+    public final int[] csrBinaryColumnIndices;
 
     /**
      * Binary rule probabilities. One entry for each binary rule. The same size as
      * {@link #csrBinaryColumnIndices}.
      */
-    private float[] csrBinaryProbabilities;
+    public final float[] csrBinaryProbabilities;
 
     public CsrSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
             final GrammarFormatType grammarFormat,
@@ -62,18 +62,6 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile,
             final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
-    }
-
-    public final int[] binaryRuleMatrixRowIndices() {
-        return csrBinaryRowIndices;
-    }
-
-    public final int[] binaryRuleMatrixColumnIndices() {
-        return csrBinaryColumnIndices;
-    }
-
-    public final float[] binaryRuleMatrixProbabilities() {
-        return csrBinaryProbabilities;
     }
 
     @Override
