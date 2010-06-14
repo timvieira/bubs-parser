@@ -180,6 +180,10 @@ public class DenseVectorChart extends ParallelArrayChart {
             return numNTs;
         }
 
+        @Override
+        public final void finalizeCell() {
+        }
+
         /**
          * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same
          * chart.

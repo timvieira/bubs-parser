@@ -89,7 +89,8 @@ public final class ParserOptions {
                 "lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT("cccslut"), JsaSparseMatrixVector(
                 "jsa"), DenseVectorOpenClSparseMatrixVector("dvopencl"), PackedOpenClSparseMatrixVector(
                 "popencl"), CsrSpmv("csr"), CsrSpmvPerMidpoint("csrpm"), CscSpmv("csc"), SortAndScanSpmv(
-                "sort-and-scan"), LeftChildMatrixLoop("lcml"), GrammarLoopMatrixLoop("glml");
+                "sort-and-scan"), LeftChildMatrixLoop("lcml"), GrammarLoopMatrixLoop("glml"), CartesianProductBinarySearch(
+                "cpbs"), CartesianProductBinarySearchLeftChild("cplc");
 
         private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

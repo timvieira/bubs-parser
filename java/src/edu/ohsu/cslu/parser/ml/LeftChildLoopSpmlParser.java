@@ -40,12 +40,6 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<CscSparseMat
         final DenseVectorChartCell targetCell = chart.getCell(start, end);
         final int targetCellOffset = targetCell.offset();
 
-        // Local copies of chart storage. These shouldn't really be necessary, but the JIT doesn't always
-        // figure out to inline remote references.
-        final float[] chartInsideProbabilities = chart.insideProbabilities;
-        final int[] chartPackedChildren = chart.packedChildren;
-        final short[] chartMidpoints = chart.midpoints;
-
         final int v = grammar.numNonTerms();
 
         // Iterate over all possible midpoints
@@ -58,7 +52,7 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<CscSparseMat
 
             // Iterate over children in the left child cell
             for (int leftChild = 0; leftChild < v; leftChild++) {
-                final float leftInsideProbability = chartInsideProbabilities[leftCellOffset + leftChild];
+                final float leftInsideProbability = chart.insideProbabilities[leftCellOffset + leftChild];
                 if (leftInsideProbability == Float.NEGATIVE_INFINITY) {
                     continue;
                 }
@@ -73,7 +67,7 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<CscSparseMat
                         packedChildPair);
 
                     // Look up the right child NT's probability in the right child cell
-                    final float rightInsideProbability = chartInsideProbabilities[rightCellOffset
+                    final float rightInsideProbability = chart.insideProbabilities[rightCellOffset
                             + rightChild];
 
                     if (rightInsideProbability == Float.NEGATIVE_INFINITY) {
@@ -88,25 +82,19 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<CscSparseMat
 
                         final int targetCellParentIndex = targetCellOffset + parent;
 
-                        if (jointProbability > chartInsideProbabilities[targetCellParentIndex]) {
-                            chartInsideProbabilities[targetCellParentIndex] = jointProbability;
-                            chartPackedChildren[targetCellParentIndex] = packedChildPair;
-                            chartMidpoints[targetCellParentIndex] = midpoint;
+                        if (jointProbability > chart.insideProbabilities[targetCellParentIndex]) {
+                            chart.insideProbabilities[targetCellParentIndex] = jointProbability;
+                            chart.packedChildren[targetCellParentIndex] = packedChildPair;
+                            chart.midpoints[targetCellParentIndex] = midpoint;
                         }
                     }
                 }
-
-                // grammar.binaryLeftChildStartIndices()
-                // for (final int j = 0; j <= v; j++) {
-                // final float rightInsideProbability = insideProbabilities[rightStart + j];
-                // if (rightInsideProbability == Float.NEGATIVE_INFINITY) {
-                // continue;
-                // }
-                // }
             }
         }
 
         // Apply unary rules
         applyUnaryRuleMatrix(targetCell);
+
+        targetCell.finalizeCell();
     }
 }
