@@ -169,19 +169,16 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
     public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
             final ChartCell chartCell) {
 
-        final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
-        packedArrayCell.allocateTemporaryStorage();
+        final PackedArrayChartCell targetCell = (PackedArrayChartCell) chartCell;
+        targetCell.allocateTemporaryStorage();
 
-        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
-        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
-        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
-
-        binarySpmvMultiply(cartesianProductVector, chartCellChildren, chartCellProbabilities,
-            chartCellMidpoints);
+        binarySpmvMultiply(cartesianProductVector, targetCell.tmpPackedChildren,
+            targetCell.tmpInsideProbabilities, targetCell.tmpMidpoints);
     }
 
     protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
-            final int[] productChildren, final float[] productProbabilities, final short[] productMidpoints) {
+            final int[] targetCellChildren, final float[] targetCellProbabilities,
+            final short[] targetCellMidpoints) {
 
         // Iterate over possible populated child pairs (matrix columns)
         for (int i = 0; i < grammar.cscBinaryPopulatedColumns.length; i++) {
@@ -200,10 +197,10 @@ public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGramm
                             + cartesianProductProbability;
                     final int parent = grammar.cscBinaryRowIndices[j];
 
-                    if (jointProbability > productProbabilities[parent]) {
-                        productChildren[parent] = childPair;
-                        productProbabilities[parent] = jointProbability;
-                        productMidpoints[parent] = cartesianProductMidpoint;
+                    if (jointProbability > targetCellProbabilities[parent]) {
+                        targetCellChildren[parent] = childPair;
+                        targetCellProbabilities[parent] = jointProbability;
+                        targetCellMidpoints[parent] = cartesianProductMidpoint;
                     }
                 }
             }
