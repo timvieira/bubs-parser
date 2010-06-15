@@ -4,7 +4,7 @@ import java.io.Reader;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.CscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.Parser;
@@ -25,7 +25,7 @@ public class TestCscSpmvParser extends SparseMatrixVectorParserTestCase {
 
     @Override
     protected Class<? extends Grammar> grammarClass() {
-        return CscSparseMatrixGrammar.class;
+        return LeftCscSparseMatrixGrammar.class;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class TestCscSpmvParser extends SparseMatrixVectorParserTestCase {
 
     @Override
     protected Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new CscSpmvParser((CscSparseMatrixGrammar) grammar);
+        return new CscSpmvParser((LeftCscSparseMatrixGrammar) grammar);
     }
 
     @Override

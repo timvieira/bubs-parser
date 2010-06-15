@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser.ml;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.CscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -19,13 +19,13 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * @version $Revision$ $Date$ $Author$
  */
 public class CartesianProductBinarySearchSpmlParser extends
-        SparseMatrixLoopParser<CscSparseMatrixGrammar, PackedArrayChart> {
+        SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, PackedArrayChart> {
 
-    public CartesianProductBinarySearchSpmlParser(final ParserOptions opts, final CscSparseMatrixGrammar grammar) {
+    public CartesianProductBinarySearchSpmlParser(final ParserOptions opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
     }
 
-    public CartesianProductBinarySearchSpmlParser(final CscSparseMatrixGrammar grammar) {
+    public CartesianProductBinarySearchSpmlParser(final LeftCscSparseMatrixGrammar grammar) {
         this(new ParserOptions(), grammar);
     }
 

@@ -24,7 +24,7 @@ import edu.ohsu.cslu.util.Math;
  * Assumes fewer than 2^15 total non-terminals (so that a production pair will fit into a signed 32-bit int).
  * 
  * Implementations may store the binary rule matrix in a variety of formats (e.g. CSR (
- * {@link CsrSparseMatrixGrammar}) or CSC ({@link CscSparseMatrixGrammar})).
+ * {@link CsrSparseMatrixGrammar}) or CSC ({@link LeftCscSparseMatrixGrammar})).
  * 
  * The unary rules are always stored in CSR format, with rows denoting rule parents and columns rule children.
  * We anticipate relatively few unary rules (the Berkeley grammar has only ~100k), and iteration order doesn't

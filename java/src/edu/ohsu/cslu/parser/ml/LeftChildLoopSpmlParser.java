@@ -1,26 +1,26 @@
 package edu.ohsu.cslu.parser.ml;
 
-import edu.ohsu.cslu.grammar.CscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
  * Left-child loop exhaustive parser using a sparse-matrix grammar representation (
- * {@link CscSparseMatrixGrammar}).
+ * {@link LeftCscSparseMatrixGrammar}).
  * 
  * @author Aaron Dunlop
  * @since Jun 13, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<CscSparseMatrixGrammar, DenseVectorChart> {
+public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, DenseVectorChart> {
 
-    public LeftChildLoopSpmlParser(final ParserOptions opts, final CscSparseMatrixGrammar grammar) {
+    public LeftChildLoopSpmlParser(final ParserOptions opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
     }
 
-    public LeftChildLoopSpmlParser(final CscSparseMatrixGrammar grammar) {
+    public LeftChildLoopSpmlParser(final LeftCscSparseMatrixGrammar grammar) {
         this(new ParserOptions(), grammar);
     }
 
