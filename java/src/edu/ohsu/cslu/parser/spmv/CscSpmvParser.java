@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.CscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -11,7 +11,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSC format (
- * {@link CscSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
+ * {@link LeftCscSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
  * 
  * @see CsrSpmvParser
  * @see OpenClSpmvParser
@@ -23,16 +23,16 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class CscSpmvParser extends SparseMatrixVectorParser<CscSparseMatrixGrammar, PackedArrayChart> {
+public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixGrammar, PackedArrayChart> {
     protected int totalCartesianProductSize;
     protected long totalCartesianProductEntriesExamined;
     protected long totalValidCartesianProductEntries;
 
-    public CscSpmvParser(final ParserOptions opts, final CscSparseMatrixGrammar grammar) {
+    public CscSpmvParser(final ParserOptions opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
     }
 
-    public CscSpmvParser(final CscSparseMatrixGrammar grammar) {
+    public CscSpmvParser(final LeftCscSparseMatrixGrammar grammar) {
         this(new ParserOptions().setCollectDetailedStatistics(true), grammar);
     }
 

@@ -23,7 +23,7 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
+public class LeftCscSparseMatrixGrammar extends SparseMatrixGrammar {
 
     /**
      * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal, or -1 for
@@ -66,7 +66,7 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
      */
     public final float[] cscBinaryProbabilities;
 
-    public CscSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
+    public LeftCscSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
             final GrammarFormatType grammarFormat,
             final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat, cartesianProductFunctionClass);
@@ -120,12 +120,12 @@ public class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         tokenizer = new Tokenizer(lexSet);
     }
 
-    public CscSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
+    public LeftCscSparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
             final GrammarFormatType grammarFormat) throws Exception {
         this(grammarFile, lexiconFile, grammarFormat, null);
     }
 
-    public CscSparseMatrixGrammar(final String grammarFile, final String lexiconFile,
+    public LeftCscSparseMatrixGrammar(final String grammarFile, final String lexiconFile,
             final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }

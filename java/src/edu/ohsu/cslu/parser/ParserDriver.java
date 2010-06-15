@@ -16,7 +16,7 @@ import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
-import edu.ohsu.cslu.grammar.CscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarByChild;
@@ -277,19 +277,19 @@ public class ParserDriver extends BaseCommandlineTool {
             case CscSpmv:
                 switch (cartesianProductFunctionType) {
                     case Unfiltered:
-                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                        return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             UnfilteredFunction.class);
                     case Default:
-                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                        return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             DefaultFunction.class);
                     case BitMatrixExactFilter:
-                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                        return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             BitVectorExactFilterFunction.class);
                     case PerfectHash:
-                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                        return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             PerfectHashFilterFunction.class);
                     case PerfectHash2:
-                        return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                        return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                             PerfectIntPairHashFilterFunction.class);
                     default:
                         throw new Exception("Unsupported filter type: " + cartesianProductFunctionType);
@@ -298,7 +298,7 @@ public class ParserDriver extends BaseCommandlineTool {
             case LeftChildMatrixLoop:
             case CartesianProductBinarySearch:
             case CartesianProductBinarySearchLeftChild:
-                return new CscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, DefaultFunction.class);
+                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, DefaultFunction.class);
             case GrammarLoopMatrixLoop:
                 return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, DefaultFunction.class);
 
@@ -357,7 +357,7 @@ public class ParserDriver extends BaseCommandlineTool {
             case CsrSpmvPerMidpoint:
                 return new CsrSpmvPerMidpointParser(opts, (CsrSparseMatrixGrammar) grammar);
             case CscSpmv:
-                return new CscSpmvParser(opts, (CscSparseMatrixGrammar) grammar);
+                return new CscSpmvParser(opts, (LeftCscSparseMatrixGrammar) grammar);
             case DenseVectorOpenClSparseMatrixVector:
                 return new DenseVectorOpenClSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case PackedOpenClSparseMatrixVector:
@@ -366,13 +366,13 @@ public class ParserDriver extends BaseCommandlineTool {
                 return new SortAndScanCsrSpmvParser((CsrSparseMatrixGrammar) grammar);
 
             case LeftChildMatrixLoop:
-                return new LeftChildLoopSpmlParser((CscSparseMatrixGrammar) grammar);
+                return new LeftChildLoopSpmlParser((LeftCscSparseMatrixGrammar) grammar);
             case GrammarLoopMatrixLoop:
                 return new GrammarLoopSpmlParser((CsrSparseMatrixGrammar) grammar);
             case CartesianProductBinarySearch:
-                return new CartesianProductBinarySearchSpmlParser((CscSparseMatrixGrammar) grammar);
+                return new CartesianProductBinarySearchSpmlParser((LeftCscSparseMatrixGrammar) grammar);
             case CartesianProductBinarySearchLeftChild:
-                return new CartesianProductBinarySearchLeftChildSpmlParser((CscSparseMatrixGrammar) grammar);
+                return new CartesianProductBinarySearchLeftChildSpmlParser((LeftCscSparseMatrixGrammar) grammar);
 
             default:
                 throw new IllegalArgumentException("Unsupported parser type");
