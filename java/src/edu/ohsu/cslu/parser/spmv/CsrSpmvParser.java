@@ -69,7 +69,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
-            binarySpmvMultiply(cartesianProductVector, spvChartCell);
+            binarySpmv(cartesianProductVector, spvChartCell);
         }
         final long t2 = System.currentTimeMillis();
         final long binarySpmvTime = t2 - t1;
@@ -78,7 +78,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
         // TODO: This only goes through unary rules one time, so it can't create unary chains unless such
         // chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
-        unarySpmvMultiply(spvChartCell);
+        unarySpmv(spvChartCell);
 
         final long t3 = System.currentTimeMillis();
         final long unarySpmvTime = t3 - t2;
@@ -166,7 +166,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
     }
 
     @Override
-    public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+    public void binarySpmv(final CartesianProductVector cartesianProductVector,
             final ChartCell chartCell) {
 
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
@@ -183,10 +183,6 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
     protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
             final int[] productChildren, final float[] productProbabilities, final short[] productMidpoints) {
 
-        // TODO: Do we need these local copies now that cartesianProductVector is final?
-        final float[] localCartesianProductProbabilities = cartesianProductVector.probabilities;
-        final short[] localCrossProductMidpoints = cartesianProductVector.midpoints;
-
         // Iterate over possible parents (matrix rows)
         final int v = grammar.numNonTerms();
         for (int parent = 0; parent < v; parent++) {
@@ -199,15 +195,17 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
             for (int i = grammar.csrBinaryRowIndices[parent]; i < grammar.csrBinaryRowIndices[parent + 1]; i++) {
                 final int grammarChildren = grammar.csrBinaryColumnIndices[i];
 
-                if (localCrossProductMidpoints[grammarChildren] != 0) {
-                    final float jointProbability = grammar.csrBinaryProbabilities[i]
-                            + localCartesianProductProbabilities[grammarChildren];
+                if (cartesianProductVector.midpoints[grammarChildren] == 0) {
+                    continue;
+                }
 
-                    if (jointProbability > winningProbability) {
-                        winningProbability = jointProbability;
-                        winningChildren = grammarChildren;
-                        winningMidpoint = localCrossProductMidpoints[grammarChildren];
-                    }
+                final float jointProbability = grammar.csrBinaryProbabilities[i]
+                        + cartesianProductVector.probabilities[grammarChildren];
+
+                if (jointProbability > winningProbability) {
+                    winningProbability = jointProbability;
+                    winningChildren = grammarChildren;
+                    winningMidpoint = cartesianProductVector.midpoints[grammarChildren];
                 }
             }
 

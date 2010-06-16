@@ -92,7 +92,7 @@ public class RightChildLoopSpmlParser extends
         }
 
         // Apply unary rules
-        applyUnaryRuleMatrix(targetCell);
+        unarySpmv(targetCell);
 
         targetCell.finalizeCell();
     }

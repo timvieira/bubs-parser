@@ -93,6 +93,6 @@ public class GrammarLoopSpmlParser extends SparseMatrixLoopParser<CsrSparseMatri
         }
 
         // Apply unary rules
-        applyUnaryRuleMatrix(targetCell);
+        unarySpmv(targetCell);
     }
 }

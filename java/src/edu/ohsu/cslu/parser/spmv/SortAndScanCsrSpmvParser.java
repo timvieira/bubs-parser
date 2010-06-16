@@ -59,7 +59,7 @@ public class SortAndScanCsrSpmvParser extends
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
-            binarySpmvMultiply(cartesianProductVector, spvChartCell);
+            binarySpmv(cartesianProductVector, spvChartCell);
         }
         final long t2 = System.currentTimeMillis();
         final long binarySpmvTime = t2 - t1;
@@ -68,7 +68,7 @@ public class SortAndScanCsrSpmvParser extends
         // TODO: This only goes through unary rules one time, so it can't create unary chains unless such
         // chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
-        unarySpmvMultiply(spvChartCell);
+        unarySpmv(spvChartCell);
 
         final long t3 = System.currentTimeMillis();
         final long unarySpmvTime = t3 - t2;
@@ -205,7 +205,7 @@ public class SortAndScanCsrSpmvParser extends
     }
 
     @Override
-    public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+    public void binarySpmv(final CartesianProductVector cartesianProductVector,
             final ChartCell chartCell) {
 
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
@@ -250,14 +250,10 @@ public class SortAndScanCsrSpmvParser extends
     }
 
     @Override
-    public void unarySpmvMultiply(final ChartCell chartCell) {
+    public void unarySpmv(final ChartCell chartCell) {
 
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
-
-        final int[] unaryRuleMatrixRowIndices = grammar.unaryRuleMatrixRowIndices();
-        final int[] unaryRuleMatrixColumnIndices = grammar.unaryRuleMatrixColumnIndices();
-        final float[] unaryRuleMatrixProbabilities = grammar.unaryRuleMatrixProbabilities();
 
         final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
         final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
@@ -269,27 +265,26 @@ public class SortAndScanCsrSpmvParser extends
 
             final float currentProbability = chartCellProbabilities[parent];
             float winningProbability = currentProbability;
-            int winningChildren = Integer.MIN_VALUE;
+            int winningChild = Integer.MIN_VALUE;
             short winningMidpoint = 0;
 
             // Iterate over possible children of the parent (columns with non-zero entries)
-            for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
+            for (int i = grammar.csrUnaryRowStartIndices[parent]; i < grammar.csrUnaryRowStartIndices[parent + 1]; i++) {
 
-                final int grammarChildren = unaryRuleMatrixColumnIndices[i];
-                final int child = grammar.cartesianProductFunction().unpackLeftChild(grammarChildren);
-                final float grammarProbability = unaryRuleMatrixProbabilities[i];
+                final int child = grammar.csrUnaryColumnIndices[i];
+                final float grammarProbability = grammar.csrUnaryProbabilities[i];
 
                 final float jointProbability = grammarProbability + chartCellProbabilities[child];
 
                 if (jointProbability > winningProbability) {
                     winningProbability = jointProbability;
-                    winningChildren = grammarChildren;
+                    winningChild = child;
                     winningMidpoint = chartCellEnd;
                 }
             }
 
-            if (winningChildren != Integer.MIN_VALUE) {
-                chartCellChildren[parent] = winningChildren;
+            if (winningChild != Integer.MIN_VALUE) {
+                chartCellChildren[parent] = winningChild;
                 chartCellProbabilities[parent] = winningProbability;
                 chartCellMidpoints[parent] = winningMidpoint;
             }

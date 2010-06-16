@@ -67,7 +67,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
-            binarySpmvMultiply(cartesianProductVector, spvChartCell);
+            binarySpmv(cartesianProductVector, spvChartCell);
         }
         final long t2 = System.currentTimeMillis();
         final long binarySpmvTime = t2 - t1;
@@ -76,7 +76,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
         // TODO: This only goes through unary rules one time, so it can't create unary chains unless such
         // chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
-        unarySpmvMultiply(spvChartCell);
+        unarySpmv(spvChartCell);
 
         final long t3 = System.currentTimeMillis();
         final long unarySpmvTime = t3 - t2;
@@ -166,7 +166,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
     }
 
     @Override
-    public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+    public void binarySpmv(final CartesianProductVector cartesianProductVector,
             final ChartCell chartCell) {
 
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) chartCell;
@@ -187,21 +187,22 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
             final short cartesianProductMidpoint = cartesianProductVector.midpoints[childPair];
 
             // Skip grammar matrix columns for unpopulated cartesian-product entries
-            if (cartesianProductMidpoint != 0) {
-                final float cartesianProductProbability = cartesianProductVector.probabilities[childPair];
+            if (cartesianProductMidpoint == 0) {
+                continue;
+            }
+            final float cartesianProductProbability = cartesianProductVector.probabilities[childPair];
 
-                // Iterate over possible parents of the child pair (rows with non-zero entries)
-                for (int j = grammar.cscBinaryPopulatedColumnOffsets[i]; j < grammar.cscBinaryPopulatedColumnOffsets[i + 1]; j++) {
+            // Iterate over possible parents of the child pair (rows with non-zero entries)
+            for (int j = grammar.cscBinaryPopulatedColumnOffsets[i]; j < grammar.cscBinaryPopulatedColumnOffsets[i + 1]; j++) {
 
-                    final float jointProbability = grammar.cscBinaryProbabilities[j]
-                            + cartesianProductProbability;
-                    final int parent = grammar.cscBinaryRowIndices[j];
+                final float jointProbability = grammar.cscBinaryProbabilities[j]
+                        + cartesianProductProbability;
+                final int parent = grammar.cscBinaryRowIndices[j];
 
-                    if (jointProbability > targetCellProbabilities[parent]) {
-                        targetCellChildren[parent] = childPair;
-                        targetCellProbabilities[parent] = jointProbability;
-                        targetCellMidpoints[parent] = cartesianProductMidpoint;
-                    }
+                if (jointProbability > targetCellProbabilities[parent]) {
+                    targetCellChildren[parent] = childPair;
+                    targetCellProbabilities[parent] = jointProbability;
+                    targetCellMidpoints[parent] = cartesianProductMidpoint;
                 }
             }
         }

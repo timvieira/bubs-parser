@@ -4,7 +4,8 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ExhaustiveChartParser;
 import edu.ohsu.cslu.parser.ParserOptions;
-import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.SparseMatrixParser;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
@@ -26,8 +27,8 @@ import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends Chart> extends
-        ExhaustiveChartParser<G, C> {
+public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart>
+        extends SparseMatrixParser<G, C> {
 
     protected final float[] cartesianProductProbabilities;
     protected final short[] cartesianProductMidpoints;
@@ -65,7 +66,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      * @param cartesianProductVector
      * @param chartCell
      */
-    public abstract void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+    public abstract void binarySpmv(final CartesianProductVector cartesianProductVector,
             final ChartCell chartCell);
 
     /**
@@ -74,50 +75,18 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      * 
      * @param chartCell
      */
-    public void unarySpmvMultiply(final ChartCell chartCell) {
+    @Override
+    public void unarySpmv(final ChartCell chartCell) {
 
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
-
-        final int[] unaryRuleMatrixRowIndices = grammar.unaryRuleMatrixRowIndices();
-        final int[] unaryRuleMatrixColumnIndices = grammar.unaryRuleMatrixColumnIndices();
-        final float[] unaryRuleMatrixProbabilities = grammar.unaryRuleMatrixProbabilities();
 
         final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
         final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
         final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
         final short chartCellEnd = (short) chartCell.end();
 
-        // Iterate over possible parents (matrix rows)
-        for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
-
-            final float currentProbability = chartCellProbabilities[parent];
-            float winningProbability = currentProbability;
-            int winningChildren = Integer.MIN_VALUE;
-            short winningMidpoint = 0;
-
-            // Iterate over possible children of the parent (columns with non-zero entries)
-            for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
-
-                final int grammarChildren = unaryRuleMatrixColumnIndices[i];
-                final int child = grammar.cartesianProductFunction().unpackLeftChild(grammarChildren);
-                final float grammarProbability = unaryRuleMatrixProbabilities[i];
-
-                final float jointProbability = grammarProbability + chartCellProbabilities[child];
-
-                if (jointProbability > winningProbability) {
-                    winningProbability = jointProbability;
-                    winningChildren = grammarChildren;
-                    winningMidpoint = chartCellEnd;
-                }
-            }
-
-            if (winningChildren != Integer.MIN_VALUE) {
-                chartCellChildren[parent] = winningChildren;
-                chartCellProbabilities[parent] = winningProbability;
-                chartCellMidpoints[parent] = winningMidpoint;
-            }
-        }
+        unarySpmv(chartCellChildren, chartCellProbabilities, chartCellMidpoints, 0, chartCellEnd);
     }
 
     @Override
