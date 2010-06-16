@@ -16,13 +16,14 @@ import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
-import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarByChild;
+import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectHashFilterFunction;
@@ -41,6 +42,7 @@ import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
+import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
@@ -298,7 +300,10 @@ public class ParserDriver extends BaseCommandlineTool {
             case LeftChildMatrixLoop:
             case CartesianProductBinarySearch:
             case CartesianProductBinarySearchLeftChild:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, DefaultFunction.class);
+                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
+                    DefaultFunction.class);
+            case RightChildMatrixLoop:
+                return new RightCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat);
             case GrammarLoopMatrixLoop:
                 return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, DefaultFunction.class);
 
@@ -367,12 +372,15 @@ public class ParserDriver extends BaseCommandlineTool {
 
             case LeftChildMatrixLoop:
                 return new LeftChildLoopSpmlParser((LeftCscSparseMatrixGrammar) grammar);
+            case RightChildMatrixLoop:
+                return new RightChildLoopSpmlParser((RightCscSparseMatrixGrammar) grammar);
             case GrammarLoopMatrixLoop:
                 return new GrammarLoopSpmlParser((CsrSparseMatrixGrammar) grammar);
             case CartesianProductBinarySearch:
                 return new CartesianProductBinarySearchSpmlParser((LeftCscSparseMatrixGrammar) grammar);
             case CartesianProductBinarySearchLeftChild:
-                return new CartesianProductBinarySearchLeftChildSpmlParser((LeftCscSparseMatrixGrammar) grammar);
+                return new CartesianProductBinarySearchLeftChildSpmlParser(
+                    (LeftCscSparseMatrixGrammar) grammar);
 
             default:
                 throw new IllegalArgumentException("Unsupported parser type");
