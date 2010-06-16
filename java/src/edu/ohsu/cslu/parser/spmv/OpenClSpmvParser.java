@@ -52,9 +52,9 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     protected final CLFloatBuffer clBinaryRuleMatrixProbabilities;
 
     /** Grammar unary rules stored on device */
-    protected final CLIntBuffer clUnaryRuleMatrixRowIndices;
-    protected final CLIntBuffer clUnaryRuleMatrixColumnIndices;
-    protected final CLFloatBuffer clUnaryRuleMatrixProbabilities;
+    protected final CLIntBuffer clCsrUnaryRowStartIndices;
+    protected final CLShortBuffer clCsrUnaryColumnIndices;
+    protected final CLFloatBuffer clCsrUnaryProbabilities;
 
     /** Chart */
     protected CLFloatBuffer clChartInsideProbabilities;
@@ -99,8 +99,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             // Compile kernels specific to the subclass
             clProgram = OpenClUtils.compileClKernels(context, getClass(), prefix.toString());
             cartesianProductKernel = clProgram.createKernel("cartesianProduct");
-            binarySpmvKernel = clProgram.createKernel("binarySpmvMultiply");
-            unarySpmvKernel = clProgram.createKernel("unarySpmvMultiply");
+            binarySpmvKernel = clProgram.createKernel("binarySpmv");
+            unarySpmvKernel = clProgram.createKernel("unarySpmv");
 
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -115,12 +115,12 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             CLMem.Usage.Input);
 
         // Repeat for unary rules
-        clUnaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(clQueue, grammar.unaryRuleMatrixRowIndices(),
+        clCsrUnaryRowStartIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrUnaryRowStartIndices,
             CLMem.Usage.Input);
-        clUnaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar
-            .unaryRuleMatrixColumnIndices(), CLMem.Usage.Input);
-        clUnaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(clQueue, grammar
-            .unaryRuleMatrixProbabilities(), CLMem.Usage.Input);
+        clCsrUnaryColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrUnaryColumnIndices,
+            CLMem.Usage.Input);
+        clCsrUnaryProbabilities = OpenClUtils.copyToDevice(clQueue, grammar.csrUnaryProbabilities,
+            CLMem.Usage.Input);
 
         // And for cross-product storage
         clCartesianProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
@@ -337,7 +337,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
      * memory. Primarily for unit testing of {@link #internalBinarySpmvMultiply(ParallelArrayChartCell)} .
      */
     @Override
-    public void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+    public void binarySpmv(final CartesianProductVector cartesianProductVector,
             final ChartCell chartCell) {
 
         copyChartToDevice();
@@ -366,7 +366,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
      * Primarily for unit testing of {@link #internalUnarySpmvMultiply(ParallelArrayChartCell)}.
      */
     @Override
-    public void unarySpmvMultiply(final ChartCell chartCell) {
+    public void unarySpmv(final ChartCell chartCell) {
 
         // Copy current chart cell entries to OpenCL memory
         copyChartToDevice();

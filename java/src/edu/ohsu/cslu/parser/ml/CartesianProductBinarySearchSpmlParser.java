@@ -116,7 +116,7 @@ public class CartesianProductBinarySearchSpmlParser extends
         }
 
         // Apply unary rules
-        applyUnaryRuleMatrix(targetCell);
+        unarySpmv(targetCell);
 
         targetCell.finalizeCell();
     }

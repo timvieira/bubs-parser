@@ -168,7 +168,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         final CartesianProductVector cpv = new CartesianProductVector(g, probabilities, midpoints, 3);
         final ChartCell cell_0_4 = chart.getCell(0, 4);
-        p.binarySpmvMultiply(cpv, cell_0_4);
+        p.binarySpmv(cpv, cell_0_4);
         assertEquals(1, cell_0_4.getNumNTs());
 
         final ChartEdge edge = cell_0_4.getBestEdge(np);
@@ -198,7 +198,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
             g.new Production(parent, g.mapNonterminal("NP"), g.mapNonterminal("NN"), -3.101f), p.chart
                 .getCell(0, 3), p.chart.getCell(3, 4), -3.101f);
 
-        p.unarySpmvMultiply(topCell);
+        p.unarySpmv(topCell);
         assertEquals(2, topCell.getNumNTs());
 
         final ChartEdge topEdge = topCell.getBestEdge(g.mapNonterminal("TOP"));
@@ -544,7 +544,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Check the SpMV multiplication
         final ChartCell cell_0_4 = p.chart.getCell(0, 4);
-        p.binarySpmvMultiply(crossProductVector, cell_0_4);
+        p.binarySpmv(crossProductVector, cell_0_4);
 
         assertEquals(2, cell_0_4.getNumNTs());
 
@@ -587,7 +587,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Check the SpMV multiplication
         final ChartCell cell_0_5 = p.chart.getCell(0, 5);
-        p.binarySpmvMultiply(crossProductVector, cell_0_5);
+        p.binarySpmv(crossProductVector, cell_0_5);
 
         assertEquals(1, cell_0_5.getNumNTs());
 
@@ -621,7 +621,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         cell.updateInside(g.new Production("S", "NP", "VP", -5.37528f), chart.getCell(0, 3), chart.getCell(3,
             5), -5.37528f);
 
-        p.unarySpmvMultiply(cell);
+        p.unarySpmv(cell);
 
         // We expect a single entry to have been added for 'TOP -> S'
         assertEquals(2, cell.getNumNTs());
@@ -638,7 +638,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
         cell.updateInside(g.new Production("S", "NP", "VP", -5.66296f), chart.getCell(0, 3), chart.getCell(3,
             4), -5.66296f);
 
-        p.unarySpmvMultiply(cell);
+        p.unarySpmv(cell);
 
         // We expect two entries to have been added for 'TOP -> S' and 'VP|VB -> NP'
         assertEquals(4, cell.getNumNTs());

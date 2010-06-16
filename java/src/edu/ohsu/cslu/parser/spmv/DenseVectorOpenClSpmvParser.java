@@ -85,8 +85,8 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
 
         // Bind the arguments of the OpenCL kernel
         unarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
-            chartCell.offset(), clUnaryRuleMatrixRowIndices, clUnaryRuleMatrixColumnIndices,
-            clUnaryRuleMatrixProbabilities, grammar.numNonTerms(), (short) chartCell.end());
+            chartCell.offset(), clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices,
+            clCsrUnaryProbabilities, grammar.numNonTerms(), (short) chartCell.end());
 
         // Call the unary SpMV kernel with |V| threads (rounded up to the nearest multiple of LOCAL_WORK_SIZE)
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);

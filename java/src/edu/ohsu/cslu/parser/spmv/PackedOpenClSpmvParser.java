@@ -154,7 +154,7 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
 
         // Bind the arguments of the OpenCL kernel
         unarySpmvKernel.setArgs(clTmpCellInsideProbabilities, clTmpCellPackedChildren, clTmpCellMidpoints,
-            clUnaryRuleMatrixRowIndices, clUnaryRuleMatrixColumnIndices, clUnaryRuleMatrixProbabilities,
+            clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices, clCsrUnaryProbabilities,
             grammar.numNonTerms(), (short) chartCell.end());
 
         // Call the kernel and wait for results

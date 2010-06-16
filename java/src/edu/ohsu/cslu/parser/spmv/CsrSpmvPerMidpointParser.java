@@ -73,7 +73,7 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
         // TODO: This only goes through unary rules one time, so it can't create unary chains unless such
         // chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
-        unarySpmvMultiply(packedArrayCell);
+        unarySpmv(packedArrayCell);
 
         final long t4 = System.currentTimeMillis();
         final long unarySpmvTime = t4 - t3;

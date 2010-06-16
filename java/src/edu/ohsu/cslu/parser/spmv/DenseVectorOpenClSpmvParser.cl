@@ -146,7 +146,7 @@ __kernel void cartesianProduct(const __global float* chartInsideProbabilities,
  * @param binaryRuleMatrixProbabilities
  * @param binaryRuleMatrixRows
  */        
- __kernel void binarySpmvMultiply(__global float* chartInsideProbabilities,
+ __kernel void binarySpmv(__global float* chartInsideProbabilities,
     __global int* chartPackedChildren,
     __global short* chartMidpoints,
     const uint targetCellOffset,
@@ -191,9 +191,8 @@ __kernel void cartesianProduct(const __global float* chartInsideProbabilities,
 }
 
 /**
- * Performs Sparse Matrix X Vector multiplication between the unary grammar rule matrix
- * and the observed non-terminals in a cell. The unary grammar rule matrix is 
- * stored in the same format as the binary rule matrix, but is generally much smaller.
+ * Applies the unary rule matrix to the observed non-terminals in a cell. Like the binary rule matrix, 
+ * the unary grammar rule matrix is stored in a CSR format, but is generally much smaller.
  *
  * This operation is performed _after_ the binary multiplication, potentially overwriting
  * the probabilities of non-terminal parents populated in that step if a unary rule is 
@@ -206,9 +205,9 @@ __kernel void cartesianProduct(const __global float* chartInsideProbabilities,
  * @param chartMidpoints
  * @param targetCellOffset
  *
- * @param unaryRuleMatrixRowIndices Binary rule matrix in CSR format
- * @param unaryRuleMatrixColumnIndices
- * @param unaryRuleMatrixProbabilities
+ * @param csrUnaryRowStartIndices Unary rule matrix in CSR format
+ * @param csrUnaryColumnIndices
+ * @param csrUnaryProbabilities
  * @param unaryRuleMatrixRows
  *
  * @param chartCellEnd If we populate a non-terminal probability with a unary production,
@@ -216,13 +215,13 @@ __kernel void cartesianProduct(const __global float* chartInsideProbabilities,
  *                     so we can reproduce the unary production when we back-trace and
  *                     create the chart.
  */        
-__kernel void unarySpmvMultiply(__global float* chartInsideProbabilities,
+__kernel void unarySpmv(__global float* chartInsideProbabilities,
         __global int* chartPackedChildren,
         __global short* chartMidpoints,
         const uint targetCellOffset,
-        const __global int* unaryRuleMatrixRowIndices,
-        const __global int* unaryRuleMatrixColumnIndices,
-        const __global float* unaryRuleMatrixProbabilities,
+        const __global int* csrUnaryRowStartIndices,
+        const __global short* csrUnaryColumnIndices,
+        const __global float* csrUnaryProbabilities,
         uint unaryRuleMatrixRows,
         short chartCellEnd) {
 
@@ -232,27 +231,26 @@ __kernel void unarySpmvMultiply(__global float* chartInsideProbabilities,
     if (parent < unaryRuleMatrixRows) {
         int index = targetCellOffset + parent;
         float winningProbability = chartInsideProbabilities[index];
-        int winningPackedChildren = INT_MIN;
+        int winningChild = INT_MIN;
         short winningMidpoint = 0;
 
         // Iterate over possible children of the parent (columns with non-zero entries)
-        for (int i = unaryRuleMatrixRowIndices[parent]; i < unaryRuleMatrixRowIndices[parent + 1]; i++) {
-            int grammarChildren = unaryRuleMatrixColumnIndices[i];
-            int leftChild = unpackLeftChild(grammarChildren);
-            float grammarProbability = unaryRuleMatrixProbabilities[i];
+        for (int i = csrUnaryRowStartIndices[parent]; i < csrUnaryRowStartIndices[parent + 1]; i++) {
+            int child = csrUnaryColumnIndices[i];
+            float grammarProbability = csrUnaryProbabilities[i];
 
-            float jointProbability = grammarProbability + chartInsideProbabilities[targetCellOffset + leftChild];
+            float jointProbability = grammarProbability + chartInsideProbabilities[targetCellOffset + child];
 
             if (jointProbability > winningProbability) {
                 winningProbability = jointProbability;
-                winningPackedChildren = grammarChildren;
+                winningChild = child;
                 winningMidpoint = chartCellEnd;
             }
         }
 
-        if (winningPackedChildren != INT_MIN) {
+        if (winningChild != INT_MIN) {
             chartInsideProbabilities[index] = winningProbability;
-            chartPackedChildren[index] = winningPackedChildren;
+            chartPackedChildren[index] = PACK_UNARY;
             chartMidpoints[index] = winningMidpoint;
         }
     }

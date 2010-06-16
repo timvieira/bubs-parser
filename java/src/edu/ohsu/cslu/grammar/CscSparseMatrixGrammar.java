@@ -32,7 +32,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
      * 
      * TODO Make this a short[]?
      */
-    public final int[] cscBinaryRowIndices;
+    public final short[] cscBinaryRowIndices;
 
     /**
      * Binary rule probabilities One entry for each binary rule; the same size as {@link #cscBinaryRowIndices}
@@ -55,7 +55,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         // Bin all binary rules by child pair, mapping parent -> probability
         cscBinaryPopulatedColumns = new int[populatedBinaryColumnIndices.size()];
         cscBinaryPopulatedColumnOffsets = new int[cscBinaryPopulatedColumns.length + 1];
-        cscBinaryRowIndices = new int[numBinaryRules()];
+        cscBinaryRowIndices = new short[numBinaryRules()];
         cscBinaryProbabilities = new float[numBinaryRules()];
 
         storeRulesAsMatrix(binaryProductions, sortedPopulatedBinaryColumnIndices, cscBinaryPopulatedColumns,
@@ -67,8 +67,6 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         }
         final int[] sortedPopulatedUnaryColumnIndices = populatedUnaryColumnIndices.toIntArray();
         Arrays.sort(sortedPopulatedUnaryColumnIndices);
-
-        storeUnaryRules();
 
         tokenizer = new Tokenizer(lexSet);
     }
@@ -93,10 +91,30 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
      * @param csrProbabilities
      */
     private void storeRulesAsMatrix(final Collection<Production> productions, final int[] validChildPairs,
-            final int[] cscPopulatedColumns, final int[] cscColumnIndices, final int[] cscRowIndices,
+            final int[] cscPopulatedColumns, final int[] cscColumnIndices, final short[] cscRowIndices,
             final float[] csrProbabilities) {
 
-        final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = mapRulesByChildPairs(productions);
+        // Bin all rules by child pair, mapping parent -> probability
+        final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps1 = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(
+            1000);
+
+        for (final Production p : productions) {
+            int childPair1;
+            if (p.isBinaryProd()) {
+                childPair1 = cartesianProductFunction.pack(p.leftChild, p.rightChild);
+            } else if (p.isLexProd()) {
+                childPair1 = cartesianProductFunction.packLexical(p.leftChild);
+            } else {
+                childPair1 = cartesianProductFunction.packUnary(p.leftChild);
+            }
+            Int2FloatOpenHashMap map1 = maps1.get(childPair1);
+            if (map1 == null) {
+                map1 = new Int2FloatOpenHashMap(20);
+                maps1.put(childPair1, map1);
+            }
+            map1.put(p.parent, p.prob);
+        }
+        final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = maps1;
 
         // Store rules in CSC matrix
         int j = 0;
@@ -111,7 +129,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             Arrays.sort(parents);
 
             for (int k = 0; k < parents.length; k++) {
-                cscRowIndices[j] = parents[k];
+                cscRowIndices[j] = (short) parents[k];
                 csrProbabilities[j++] = map.get(parents[k]);
             }
         }

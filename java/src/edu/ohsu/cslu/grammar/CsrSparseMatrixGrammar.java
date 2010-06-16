@@ -1,7 +1,10 @@
 package edu.ohsu.cslu.grammar;
 
+import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
+
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.Arrays;
 
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
@@ -46,10 +49,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         csrBinaryColumnIndices = new int[numBinaryRules()];
         csrBinaryProbabilities = new float[numBinaryRules()];
 
-        storeRulesAsCsrMatrix(binaryProductions, csrBinaryRowIndices, csrBinaryColumnIndices,
-            csrBinaryProbabilities);
-
-        storeUnaryRules();
+        storeBinaryRulesAsCsrMatrix(csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
 
         tokenizer = new Tokenizer(lexSet);
     }
@@ -62,6 +62,36 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     public CsrSparseMatrixGrammar(final String grammarFile, final String lexiconFile,
             final GrammarFormatType grammarFormat) throws Exception {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    }
+
+    protected void storeBinaryRulesAsCsrMatrix(final int[] csrRowIndices, final int[] csrColumnIndices,
+            final float[] csrProbabilities) {
+
+        // Bin all rules by parent, mapping packed children -> probability
+        final Int2FloatOpenHashMap[] maps1 = new Int2FloatOpenHashMap[numNonTerms()];
+        for (int i1 = 0; i1 < numNonTerms(); i1++) {
+            maps1[i1] = new Int2FloatOpenHashMap(1000);
+        }
+
+        for (final Production p : binaryProductions) {
+            maps1[p.parent].put(cartesianProductFunction.pack(p.leftChild, p.rightChild), p.prob);
+        }
+        final Int2FloatOpenHashMap[] maps = maps1;
+
+        // Store rules in CSR matrix
+        int i = 0;
+        for (int parent = 0; parent < numNonTerms(); parent++) {
+
+            csrRowIndices[parent] = i;
+
+            final int[] children = maps[parent].keySet().toIntArray();
+            Arrays.sort(children);
+            for (int j = 0; j < children.length; j++) {
+                csrColumnIndices[i] = children[j];
+                csrProbabilities[i++] = maps[parent].get(children[j]);
+            }
+        }
+        csrRowIndices[csrRowIndices.length - 1] = i;
     }
 
     @Override

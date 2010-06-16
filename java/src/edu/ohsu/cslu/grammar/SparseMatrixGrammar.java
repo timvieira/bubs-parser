@@ -1,15 +1,13 @@
 package edu.ohsu.cslu.grammar;
 
-import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
 
 import java.io.FileReader;
 import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
-import java.util.Collection;
 
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
@@ -48,16 +46,16 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
      * Offsets into {@link #csrUnaryColumnIndices} for the start of each row, indexed by row index
      * (non-terminals)
      */
-    private int[] csrUnaryRowIndices;
+    public final int[] csrUnaryRowStartIndices;
 
     /**
      * Column indices of each matrix entry in {@link #csrUnaryProbabilities}. One entry for each unary rule;
      * the same size as {@link #csrUnaryProbabilities}.
      */
-    private int[] csrUnaryColumnIndices;
+    public final short[] csrUnaryColumnIndices;
 
     /** Unary rule probabilities */
-    private float[] csrUnaryProbabilities;
+    public final float[] csrUnaryProbabilities;
 
     @SuppressWarnings("unchecked")
     public SparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
@@ -88,6 +86,13 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             productionPairs.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
         }
         validProductionPairs = productionPairs.size();
+
+        // And all unary rules
+        csrUnaryRowStartIndices = new int[numNonTerms() + 1];
+        csrUnaryColumnIndices = new short[numUnaryRules()];
+        csrUnaryProbabilities = new float[numUnaryRules()];
+
+        storeUnaryRulesAsCsrMatrix();
     }
 
     public SparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
@@ -123,119 +128,43 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
      */
     @Override
     public final float unaryLogProbability(final int parent, final int child) {
-        final int children = cartesianProductFunction.packUnary(child);
-
-        for (int i = csrUnaryRowIndices[parent]; i <= csrUnaryRowIndices[parent + 1]; i++) {
+        for (int i = csrUnaryRowStartIndices[parent]; i <= csrUnaryRowStartIndices[parent + 1]; i++) {
             final int column = csrUnaryColumnIndices[i];
-            if (column == children) {
+            if (column == child) {
                 return csrUnaryProbabilities[i];
             }
-            if (column > children) {
+            if (column > child) {
                 return Float.NEGATIVE_INFINITY;
             }
         }
         return Float.NEGATIVE_INFINITY;
     }
 
-    /**
-     * Returns all rules as an array of maps, indexed by parent, each of which maps the packed children to the
-     * probability.
-     * 
-     * @param productions Rules to be mapped
-     * @return Array of maps from children -> probability
-     */
-    protected Int2FloatOpenHashMap[] mapRulesByParent(final Collection<Production> productions) {
-        // Bin all rules by parent, mapping packed children -> probability
-        final Int2FloatOpenHashMap[] maps = new Int2FloatOpenHashMap[numNonTerms()];
+    protected void storeUnaryRulesAsCsrMatrix() {
+
+        // Bin all rules by parent, mapping child -> probability
+        final Short2FloatOpenHashMap[] maps = new Short2FloatOpenHashMap[numNonTerms()];
         for (int i = 0; i < numNonTerms(); i++) {
-            maps[i] = new Int2FloatOpenHashMap(1000);
+            maps[i] = new Short2FloatOpenHashMap(1000);
         }
 
-        for (final Production p : productions) {
-            if (p.isBinaryProd()) {
-                maps[p.parent].put(cartesianProductFunction.pack(p.leftChild, p.rightChild), p.prob);
-            } else if (p.isLexProd()) {
-                maps[p.parent].put(cartesianProductFunction.packLexical(p.leftChild), p.prob);
-            } else {
-                maps[p.parent].put(cartesianProductFunction.packUnary(p.leftChild), p.prob);
-            }
+        for (final Production p : unaryProductions) {
+            maps[p.parent].put((short) p.leftChild, p.prob);
         }
-        return maps;
-    }
-
-    /**
-     * Returns all rules as an array of maps, indexed by child pair, each of which maps the parent to the
-     * probability.
-     * 
-     * @param productions Rules to be mapped
-     * @return Array of maps from children -> probability
-     */
-    protected Int2ObjectOpenHashMap<Int2FloatOpenHashMap> mapRulesByChildPairs(
-            final Collection<Production> productions) {
-        // Bin all rules by child pair, mapping parent -> probability
-        final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(
-            1000);
-
-        for (final Production p : productions) {
-            int childPair;
-            if (p.isBinaryProd()) {
-                childPair = cartesianProductFunction.pack(p.leftChild, p.rightChild);
-            } else if (p.isLexProd()) {
-                childPair = cartesianProductFunction.packLexical(p.leftChild);
-            } else {
-                childPair = cartesianProductFunction.packUnary(p.leftChild);
-            }
-            Int2FloatOpenHashMap map = maps.get(childPair);
-            if (map == null) {
-                map = new Int2FloatOpenHashMap(20);
-                maps.put(childPair, map);
-            }
-            map.put(p.parent, p.prob);
-        }
-        return maps;
-    }
-
-    protected void storeUnaryRules() {
-        // And all unary rules
-        csrUnaryRowIndices = new int[numNonTerms() + 1];
-        csrUnaryColumnIndices = new int[numUnaryRules()];
-        csrUnaryProbabilities = new float[numUnaryRules()];
-
-        storeRulesAsCsrMatrix(unaryProductions, csrUnaryRowIndices, csrUnaryColumnIndices,
-            csrUnaryProbabilities);
-    }
-
-    protected void storeRulesAsCsrMatrix(final Collection<Production> productions, final int[] csrRowIndices,
-            final int[] csrColumnIndices, final float[] csrProbabilities) {
-
-        final Int2FloatOpenHashMap[] maps = mapRulesByParent(productions);
 
         // Store rules in CSR matrix
         int i = 0;
         for (int parent = 0; parent < numNonTerms(); parent++) {
+            csrUnaryRowStartIndices[parent] = i;
 
-            csrRowIndices[parent] = i;
-
-            final int[] children = maps[parent].keySet().toIntArray();
+            final short[] children = maps[parent].keySet().toShortArray();
             Arrays.sort(children);
             for (int j = 0; j < children.length; j++) {
-                csrColumnIndices[i] = children[j];
-                csrProbabilities[i++] = maps[parent].get(children[j]);
+                csrUnaryColumnIndices[i] = children[j];
+                csrUnaryProbabilities[i++] = maps[parent].get(children[j]);
             }
         }
-        csrRowIndices[csrRowIndices.length - 1] = i;
-    }
-
-    public final int[] unaryRuleMatrixRowIndices() {
-        return csrUnaryRowIndices;
-    }
-
-    public final int[] unaryRuleMatrixColumnIndices() {
-        return csrUnaryColumnIndices;
-    }
-
-    public final float[] unaryRuleMatrixProbabilities() {
-        return csrUnaryProbabilities;
+        csrUnaryRowStartIndices[csrUnaryRowStartIndices.length - 1] = i;
     }
 
     /**
@@ -423,7 +352,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         @Override
         public final String openClPackDefine() {
             return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask
-                    + "))";
+                    + "))\n" + "#define PACK_UNARY -winningChild - 1\n";
         }
 
         public final String openClUnpackLeftChild() {
@@ -517,7 +446,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         @Override
         public final String openClPackDefine() {
             return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask
-                    + "))";
+                    + "))\n" + "#define PACK_UNARY -winningChild - 1\n";
         }
 
         public final String openClUnpackLeftChild() {
