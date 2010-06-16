@@ -459,43 +459,86 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
                 return Integer.MIN_VALUE;
             }
             return childPair;
-            // return childPair > packedArraySize() ? Integer.MIN_VALUE : childPair;
         }
     }
 
-    // public class RightShiftFunction extends DefaultFunction {
-    //
-    // public RightShiftFunction() {
-    // super(numNonTerms());
-    // }
-    //
-    // @Override
-    // public final int pack(final int leftChild, final int rightChild) {
-    // return rightChild << leftShift | (leftChild & rightMask);
-    // }
-    //
-    // @Override
-    // public final int unpackLeftChild(final int childPair) {
-    // final int lower = childPair & rightMask;
-    //
-    // // Handle negative lower values
-    // if ((lower & rightNegativeBit) == rightNegativeBit) {
-    // return lower | leftMask;
-    // }
-    // return lower;
-    // }
-    //
-    // @Override
-    // public final int unpackRightChild(final int childPair) {
-    // return childPair >> leftShift;
-    // }
-    //
-    // @Override
-    // public String openClPackDefine() {
-    // return "#define PACK ((validLeftChildren[leftChildIndex] << " + leftShift
-    // + ") | (validRightChildren[rightChildIndex] & " + rightMask + "))";
-    // }
-    // }
+    public class RightShiftFunction extends ShiftFunction {
+        public final int maxPackedLexicalProduction = -numNonTerms() - 1;
+
+        public RightShiftFunction() {
+            super(leftChildrenEnd);
+        }
+
+        @Override
+        public final int pack(final int leftChild, final int rightChild) {
+            final int childPair = rightChild << shift | (leftChild & lowOrderMask);
+            if (childPair > packedArraySize()) {
+                return Integer.MIN_VALUE;
+            }
+            return childPair;
+        }
+
+        public final int packUnary(final int child) {
+            return -child - 1;
+        }
+
+        public final int packLexical(final int child) {
+            return maxPackedLexicalProduction - child;
+        }
+
+        @Override
+        public final int unpackLeftChild(final int childPair) {
+            if (childPair < 0) {
+                // Unary or lexical production
+                if (childPair <= maxPackedLexicalProduction) {
+                    // Lexical production
+                    return -childPair + maxPackedLexicalProduction;
+                }
+                // Unary production
+                return -childPair - 1;
+            }
+            return childPair & lowOrderMask;
+        }
+
+        @Override
+        public final int unpackRightChild(final int childPair) {
+            if (childPair < 0) {
+                // Unary or lexical production
+                if (childPair <= maxPackedLexicalProduction) {
+                    // Lexical production
+                    return Production.LEXICAL_PRODUCTION;
+                }
+                // Unary production
+                return Production.UNARY_PRODUCTION;
+            }
+            return childPair >> shift;
+        }
+
+        @Override
+        public final String openClPackDefine() {
+            return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask
+                    + "))";
+        }
+
+        public final String openClUnpackLeftChild() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("int unpackLeftChild(const int childPair) {\n");
+            sb.append("    if (childPair < 0) {\n");
+            sb.append("        // Unary or lexical production\n");
+            sb.append("        if (childPair <= MAX_PACKED_LEXICAL_PRODUCTION) {\n");
+            sb.append("            // Lexical production\n");
+            sb.append("            return -childPair + MAX_PACKED_LEXICAL_PRODUCTION;\n");
+            sb.append("        }\n");
+            sb.append("        // Unary production\n");
+            sb.append("        return -childPair - 1;\n");
+            sb.append("    }\n");
+            sb.append("    \n");
+            sb.append("    // Left child of binary production\n");
+            sb.append("    return childPair & " + lowOrderMask + ";\n");
+            sb.append("}\n");
+            return sb.toString();
+        }
+    }
 
     public final class UnfilteredFunction extends LeftShiftFunction {
         public UnfilteredFunction() {
