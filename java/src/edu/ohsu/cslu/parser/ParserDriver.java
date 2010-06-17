@@ -40,6 +40,8 @@ import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
+import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
+import edu.ohsu.cslu.parser.ml.CartesianProductLeftChildHashSpmlParser;
 import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
@@ -300,6 +302,8 @@ public class ParserDriver extends BaseCommandlineTool {
             case LeftChildMatrixLoop:
             case CartesianProductBinarySearch:
             case CartesianProductBinarySearchLeftChild:
+            case CartesianProductHash:
+            case CartesianProductLeftChildHash:
                 return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                     DefaultFunction.class);
             case RightChildMatrixLoop:
@@ -381,6 +385,10 @@ public class ParserDriver extends BaseCommandlineTool {
             case CartesianProductBinarySearchLeftChild:
                 return new CartesianProductBinarySearchLeftChildSpmlParser(
                     (LeftCscSparseMatrixGrammar) grammar);
+            case CartesianProductHash:
+                return new CartesianProductHashSpmlParser((LeftCscSparseMatrixGrammar) grammar);
+            case CartesianProductLeftChildHash:
+                return new CartesianProductLeftChildHashSpmlParser((LeftCscSparseMatrixGrammar) grammar);
 
             default:
                 throw new IllegalArgumentException("Unsupported parser type");

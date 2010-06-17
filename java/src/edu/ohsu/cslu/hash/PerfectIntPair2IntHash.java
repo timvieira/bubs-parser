@@ -20,6 +20,10 @@ public class PerfectIntPair2IntHash implements ImmutableIntPair2IntHash {
     private final int[] hashtable;
     private final int size;
 
+    /**
+     * @param keyPairs Parallel array of key pairs (keyPairs[0] = key1 array, keyPairs[1] = key2 array).
+     * @param modulus
+     */
     public PerfectIntPair2IntHash(final int[][] keyPairs, final int modulus) {
 
         this.size = keyPairs[0].length;
