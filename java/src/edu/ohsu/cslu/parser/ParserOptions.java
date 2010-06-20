@@ -90,7 +90,7 @@ public final class ParserOptions {
                 "jsa"), DenseVectorOpenClSparseMatrixVector("dvopencl"), PackedOpenClSparseMatrixVector(
                 "popencl"), CsrSpmv("csr"), CsrSpmvPerMidpoint("csrpm"), CscSpmv("csc"), SortAndScanSpmv(
                 "sort-and-scan"), LeftChildMatrixLoop("lcml"), RightChildMatrixLoop("rcml"), GrammarLoopMatrixLoop(
-                "glml"), CartesianProductBinarySearch("cpbs"), CartesianProductBinarySearchLeftChild("cplc"), CartesianProductHash(
+                "glml"), CartesianProductBinarySearch("cpbs"), CartesianProductBinarySearchLeftChild("cplbs"), CartesianProductHash(
                 "cph"), CartesianProductLeftChildHash("cplch");
 
         private ParserType(final String... aliases) {
