@@ -121,7 +121,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
             final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
 
             for (int i = leftStart; i <= leftEnd; i++) {
-                final int leftChild = nonTerminalIndices[i];
+                final short leftChild = nonTerminalIndices[i];
                 final float leftProbability = insideProbabilities[i];
 
                 for (int j = rightStart; j <= rightEnd; j++) {
@@ -166,8 +166,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
     }
 
     @Override
-    public void binarySpmv(final CartesianProductVector cartesianProductVector,
-            final ChartCell chartCell) {
+    public void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
 
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) chartCell;
         targetCell.allocateTemporaryStorage();
