@@ -115,10 +115,10 @@ public abstract class SortedGrammar extends GrammarByChild {
         }
 
         // Special cases for the start symbol and the null symbol (used for start/end of sentence markers and
-        // dummy non-terminals). Label the null symbol as a POS. I'm not sure that's right, but it seems to
+        // dummy non-terminals). Label them as POS. I'm not sure that's right, but it seems to
         // work.
         nonTerminals.add(startSymbolStr);
-        nonPosSet.add(startSymbolStr);
+        pos.add(startSymbolStr);
         nonTerminals.add(nullSymbolStr);
         pos.add(nullSymbolStr);
 
@@ -266,20 +266,20 @@ public abstract class SortedGrammar extends GrammarByChild {
     }
 
     /**
-     * Returns true if the non-terminal occurs as a left child in the grammar.
+     * Returns true if the non-terminal occurs as a right child in the grammar.
      * 
      * @param nonTerminal
-     * @return true if the non-terminal occurs as a left child in the grammar.
+     * @return true if the non-terminal occurs as a right child in the grammar.
      */
     public boolean isValidRightChild(final int nonTerminal) {
         return nonTerminal >= rightChildrenStart && nonTerminal <= rightChildrenEnd;
     }
 
     /**
-     * Returns true if the non-terminal occurs as a right child in the grammar.
+     * Returns true if the non-terminal occurs as a left child in the grammar.
      * 
      * @param nonTerminal
-     * @return true if the non-terminal occurs as a right child in the grammar.
+     * @return true if the non-terminal occurs as a left child in the grammar.
      */
     public boolean isValidLeftChild(final int nonTerminal) {
         return nonTerminal >= leftChildrenStart && nonTerminal <= leftChildrenEnd;

@@ -116,7 +116,7 @@ public final class ParserOptions {
                 case Berkeley:
                     return nonTerminal.replaceFirst("_[0-9]+$", "");
                 case CSLU:
-                    return nonTerminal.replaceFirst("\\^<[A-Z]+>$", "");
+                    return nonTerminal.replaceFirst("[|^]<([A-Z]+)?>$", "");
                 case Roark:
                     // TODO Support Roark format
 
