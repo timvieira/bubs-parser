@@ -27,6 +27,9 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
     protected int totalCartesianProductSize;
     protected long totalCartesianProductEntriesExamined;
     protected long totalValidCartesianProductEntries;
+    protected long totalCellPopulation;
+    protected long totalLeftChildPopulation;
+    protected long totalRightChildPopulation;
 
     public CscSpmvParser(final ParserOptions opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -81,6 +84,11 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
         final long t3 = System.currentTimeMillis();
         final long unarySpmvTime = t3 - t2;
 
+        if (collectDetailedStatistics) {
+            totalCellPopulation += spvChartCell.getNumNTs();
+            totalLeftChildPopulation += spvChartCell.leftChildren();
+            totalRightChildPopulation += spvChartCell.rightChildren();
+        }
         // Pack the temporary cell storage into the main chart array
         spvChartCell.finalizeCell();
 
@@ -209,14 +217,17 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
 
     @Override
     public String getStatHeader() {
-        return super.getStatHeader() + ", Avg X-prod size, X-prod Entries Examined, Total X-prod Entries";
+        return super.getStatHeader()
+                + ", Avg X-prod size, X-prod Entries Examined, Total X-prod Entries, Cells,   Total C, Total C_l, Total C_r";
     }
 
     @Override
     public String getStats() {
         return super.getStats()
-                + String.format(", %15.1f, %23d, %20d", totalCartesianProductSize * 1.0f / chart.cells,
-                    totalCartesianProductEntriesExamined, totalValidCartesianProductEntries);
+                + String.format(", %15.1f, %23d, %20d, %6d, %10d, %10d, %10d", totalCartesianProductSize
+                        * 1.0f / chart.cells, totalCartesianProductEntriesExamined,
+                    totalValidCartesianProductEntries, chart.cells, totalCellPopulation,
+                    totalLeftChildPopulation, totalRightChildPopulation);
     }
 
 }
