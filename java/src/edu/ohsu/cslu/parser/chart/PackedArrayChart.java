@@ -378,6 +378,36 @@ public class PackedArrayChart extends ParallelArrayChart {
             return numNonTerminals[cellIndex(start, end)];
         }
 
+        public int leftChildren() {
+            if (tmpPackedChildren != null) {
+                int count = 0;
+                for (int i = 0; i < tmpInsideProbabilities.length; i++) {
+                    if (tmpInsideProbabilities[i] != Float.NEGATIVE_INFINITY
+                            && sparseMatrixGrammar.isValidLeftChild(i)) {
+                        count++;
+                    }
+                }
+                return count;
+            }
+
+            return maxLeftChildIndex[cellIndex(start, end)] - minLeftChildIndex[cellIndex(start, end)] + 1;
+        }
+
+        public int rightChildren() {
+            if (tmpPackedChildren != null) {
+                int count = 0;
+                for (int i = 0; i < tmpInsideProbabilities.length; i++) {
+                    if (tmpInsideProbabilities[i] != Float.NEGATIVE_INFINITY
+                            && sparseMatrixGrammar.isValidRightChild(i)) {
+                        count++;
+                    }
+                }
+                return count;
+            }
+
+            return maxRightChildIndex[cellIndex(start, end)] - minRightChildIndex[cellIndex(start, end)] + 1;
+        }
+
         /**
          * Returns the index of the first non-terminal in this cell which is valid as a left child. The
          * grammar must be sorted right, both, left, unary-only, as in {@link SortedGrammar}.
