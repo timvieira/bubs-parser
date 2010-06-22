@@ -55,6 +55,39 @@ public class Math {
      * @param arguments
      * @return maximum of the arguments supplied, or 0 if no arguments are supplied
      */
+    public static int max(final short... arguments) {
+        return max(arguments, 0, arguments.length);
+    }
+
+    /**
+     * Returns the maximum of the arguments supplied
+     * 
+     * @param array
+     * @param start
+     * @param end
+     * @return maximum of the arguments supplied, or 0 if no arguments are supplied
+     */
+    public static short max(final short[] array, final int start, final int end) {
+        if (array.length == 0) {
+            return 0;
+        }
+
+        short max = array[start];
+        for (int i = start; i < end && i < array.length; i++) {
+            final short current = array[i];
+            if (current > max) {
+                max = current;
+            }
+        }
+        return max;
+    }
+
+    /**
+     * Returns the maximum of the arguments supplied
+     * 
+     * @param arguments
+     * @return maximum of the arguments supplied, or 0 if no arguments are supplied
+     */
     public static char max(final char... arguments) {
         if (arguments.length == 0) {
             return 0;
