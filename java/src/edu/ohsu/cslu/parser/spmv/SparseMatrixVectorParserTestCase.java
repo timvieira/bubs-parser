@@ -359,7 +359,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Cross-product union for cell 0,4
         SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0, 4);
-        assertEquals(20, crossProductVector.size());
+        assertEquals(21, crossProductVector.size());
 
         // Midpoint 1
         assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g
@@ -401,7 +401,7 @@ public abstract class SparseMatrixVectorParserTestCase extends ExhaustiveChartPa
 
         // Cross-product union for cell 0,5
         crossProductVector = p.cartesianProductUnion(0, 5);
-        assertEquals(20, crossProductVector.size());
+        assertEquals(23, crossProductVector.size());
 
         // Midpoint 3
         assertEquals(-5.37528f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g

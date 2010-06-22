@@ -609,16 +609,11 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         public PerfectIntPairHashFilterFunction() {
             super(rightChildrenEnd);
 
-            // TODO Eliminate packedChildPairs and populate childPairs[][] directly from binaryProductions
-            final IntSet packedChildPairs = new IntOpenHashSet(binaryProductions.size());
-            for (final Production p : binaryProductions) {
-                packedChildPairs.add(p.leftChild << shift | (p.rightChild & lowOrderMask));
-            }
-            final int[][] childPairs = new int[2][packedChildPairs.size()];
+            final int[][] childPairs = new int[2][binaryProductions.size()];
             int i = 0;
-            for (final int packedChildPair : packedChildPairs) {
-                childPairs[0][i] = packedChildPair >> shift;
-                childPairs[1][i++] = packedChildPair & lowOrderMask;
+            for (final Production p : binaryProductions) {
+                childPairs[0][i] = p.leftChild;
+                childPairs[1][i++] = p.rightChild;
             }
 
             this.perfectHash = new SegmentedPerfectIntPair2IntHash(childPairs, rightChildrenEnd);
