@@ -32,6 +32,7 @@ public class CellChart extends Chart {
         return chart[start][end];
     }
 
+    @Override
     public HashSetChartCell getRootCell() {
         return getCell(0, size);
     }
@@ -109,7 +110,9 @@ public class CellChart extends Chart {
         }
 
         // binary edges
-        public void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
+        @Override
+        public void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell,
+                final float insideProb) {
             final int nt = p.parent;
             if (viterbiMax && insideProb > getInside(nt)) {
                 if (bestEdge[nt] == null) {
@@ -151,6 +154,15 @@ public class CellChart extends Chart {
             return childNTs;
         }
 
+        public int[] getNtArray() {
+            final int[] array = new int[childNTs.size()];
+            int i = 0;
+            for (final int nt : childNTs) {
+                array[i++] = nt;
+            }
+            return array;
+        }
+
         public HashSet<Integer> getPosNTs() {
             return posNTs;
         }
@@ -180,7 +192,8 @@ public class CellChart extends Chart {
 
         @Override
         public String toString() {
-            return getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " (of " + parser.grammar.numNonTerms() + ") edges";
+            return getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
+                    + parser.grammar.numNonTerms() + ") edges";
         }
 
         @Override
@@ -230,9 +243,11 @@ public class CellChart extends Chart {
         public final int midpt() {
             if (rightCell == null) {
                 if (leftCell == null) {
-                    throw new RuntimeException("right/leftCell must be set to use start(), end(), and midpt()");
+                    throw new RuntimeException(
+                        "right/leftCell must be set to use start(), end(), and midpt()");
                 }
-                throw new RuntimeException("Do not use midpt() with unary productions.  They do not have midpoints.");
+                throw new RuntimeException(
+                    "Do not use midpt() with unary productions.  They do not have midpoints.");
             }
             return leftCell.end();
         }

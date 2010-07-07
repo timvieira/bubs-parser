@@ -3,13 +3,11 @@ package edu.ohsu.cslu.parser;
 import java.util.Arrays;
 import java.util.Collection;
 
-import com.aliasi.util.Collections;
-
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
 public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<GrammarByChild, CellChart> {
 
@@ -163,7 +161,7 @@ public class ECPGrammarLoopBerkFilter extends CellwiseExhaustiveChartParser<Gram
             }
         }
 
-        for (final int childNT : Collections.toIntArray(cell.getNTs())) {
+        for (final int childNT : cell.getNtArray()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                 prob = p.prob + cell.getInside(childNT);
                 if (prob > cell.getInside(p.parent)) {

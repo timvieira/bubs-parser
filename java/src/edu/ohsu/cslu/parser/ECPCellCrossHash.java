@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import com.aliasi.util.Collections;
-
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -31,7 +29,7 @@ public class ECPCellCrossHash extends CellwiseExhaustiveChartParser<LeftHashGram
             }
         }
 
-        for (final int childNT : Collections.toIntArray(cell.getNTs())) {
+        for (final int childNT : cell.getNtArray()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                 cell.updateInside(p, p.prob + cell.getInside(childNT));
             }

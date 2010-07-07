@@ -3,8 +3,6 @@ package edu.ohsu.cslu.parser;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import com.aliasi.util.Collections;
-
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
@@ -86,8 +84,10 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
                 }
 
                 maxc[start][end] = maxInOut + maxSplit;
-                final Production p = grammar.new Production(bestNT[start][end], bestNT[start][maxSplitMid], bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
-                cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid), chart.getCell(maxSplitMid, end));
+                final Production p = grammar.new Production(bestNT[start][end], bestNT[start][maxSplitMid],
+                    bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
+                cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid),
+                    chart.getCell(maxSplitMid, end));
             }
         }
     }
@@ -115,7 +115,7 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
             }
         }
 
-        for (final int childNT : Collections.toIntArray(cell.getNTs())) {
+        for (final int childNT : cell.getNtArray()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                 // cell.updateInside(p, p.prob + cell.getInside(childNT));
                 cell.updateInside(p.parent, p.prob + cell.getInside(childNT));
@@ -139,7 +139,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
                 }
             }
 
-            // System.out.println("  " + grammar.mapNonterminal(nt) + " = " + (cell.getInside(nt) + cell.getOutside(nt)) + " in=" + cell.getInside(nt) + " out=" +
+            // System.out.println("  " + grammar.mapNonterminal(nt) + " = " + (cell.getInside(nt) +
+            // cell.getOutside(nt)) + " in=" + cell.getInside(nt) + " out=" +
             // cell.getOutside(nt));
         }
 
@@ -176,8 +177,10 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
         // leftCell.updateOutside(edge.prod.leftChild, rightInside + parentOutside + edge.prod.prob);
         // rightCell.updateOutside(edge.prod.rightChild, leftInside + parentOutside + edge.prod.prob);
         //
-        // // System.out.println("binary: " + edge + "\n\tpOut=" + parentOutside + " lIn=" + leftInside + " rIn=" + rightInside + " prod=" + edge.prod.prob + " lOut="
-        // // + outside[start][midpt][edge.prod.leftChild] + " rOut=" + outside[midpt][end][edge.prod.rightChild]);
+        // // System.out.println("binary: " + edge + "\n\tpOut=" + parentOutside + " lIn=" + leftInside +
+        // " rIn=" + rightInside + " prod=" + edge.prod.prob + " lOut="
+        // // + outside[start][midpt][edge.prod.leftChild] + " rOut=" +
+        // outside[midpt][end][edge.prod.rightChild]);
         // }
         // }
     }
@@ -205,7 +208,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
     // // TODO: inside is max, not sum.
     // leftInside = leftCell.getBestEdge(parentEdge.prod.leftChild).inside;
     // logProb = parentOutside + parentEdge.prod.prob + leftInside;
-    // cellOut[parentEdge.prod.rightChild] = (float) ParserUtil.logSum(cellOut[parentEdge.prod.rightChild], logProb);
+    // cellOut[parentEdge.prod.rightChild] = (float) ParserUtil.logSum(cellOut[parentEdge.prod.rightChild],
+    // logProb);
     // }
     // }
     // }
@@ -220,7 +224,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
     // parentOutside = outside[cell.start()][end][parentEdge.prod.parent];
     // rightInside = rightCell.getBestEdge(parentEdge.prod.rightChild).inside;
     // logProb = parentOutside + parentEdge.prod.prob + rightInside;
-    // cellOut[parentEdge.prod.rightChild] = (float) ParserUtil.logSum(cellOut[parentEdge.prod.rightChild], logProb);
+    // cellOut[parentEdge.prod.rightChild] = (float) ParserUtil.logSum(cellOut[parentEdge.prod.rightChild],
+    // logProb);
     // }
     // }
     // }

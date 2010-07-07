@@ -3,8 +3,6 @@ package edu.ohsu.cslu.parser;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.aliasi.util.Collections;
-
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -31,7 +29,8 @@ public class ECPCellCrossMatrix extends CellwiseExhaustiveChartParser<ChildMatri
                     final List<Production> validProductions = gramByLeft[rightNT];
                     if (validProductions != null) {
                         for (final Production p : validProductions) {
-                            final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                            final float prob = p.prob + leftCell.getInside(leftNT)
+                                    + rightCell.getInside(rightNT);
                             cell.updateInside(p, leftCell, rightCell, prob);
                         }
                     }
@@ -39,7 +38,7 @@ public class ECPCellCrossMatrix extends CellwiseExhaustiveChartParser<ChildMatri
             }
         }
 
-        for (final int childNT : Collections.toIntArray(cell.getNTs())) {
+        for (final int childNT : cell.getNtArray()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                 cell.updateInside(chart.new ChartEdge(p, cell));
             }
