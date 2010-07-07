@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import com.aliasi.util.Collections;
-
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -31,7 +29,7 @@ public class ECPGrammarLoop extends CellwiseExhaustiveChartParser<GrammarByChild
             }
         }
 
-        for (final int childNT : Collections.toIntArray(cell.getNTs())) {
+        for (final int childNT : cell.getNtArray()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                 cell.updateInside(chart.new ChartEdge(p, cell));
             }
