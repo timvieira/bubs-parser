@@ -616,7 +616,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
                 childPairs[1][i++] = p.rightChild;
             }
 
-            this.perfectHash = new SegmentedPerfectIntPair2IntHash(childPairs, rightChildrenEnd);
+            this.perfectHash = new SegmentedPerfectIntPair2IntHash(childPairs);
             System.out.println("Hashed grammar: " + perfectHash.toString());
             this.packedArraySize = perfectHash.hashtableSize();
         }

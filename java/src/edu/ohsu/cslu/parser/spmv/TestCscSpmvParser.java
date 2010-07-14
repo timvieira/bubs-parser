@@ -4,11 +4,10 @@ import java.io.Reader;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.ParserOptions;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
@@ -43,7 +42,7 @@ public class TestCscSpmvParser extends SparseMatrixVectorParserTestCase {
 
     @Override
     @Test
-    @PerformanceTest( { "mbp", "23541", "d820", "100329" })
+    @PerformanceTest( { "mbp", "23541", "d820", "48282" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
