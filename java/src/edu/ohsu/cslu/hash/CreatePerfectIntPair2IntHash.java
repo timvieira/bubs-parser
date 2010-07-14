@@ -4,14 +4,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.HashSet;
 
-import org.kohsuke.args4j.Option;
-
 import cltool.BaseCommandlineTool;
 
 public class CreatePerfectIntPair2IntHash extends BaseCommandlineTool {
-
-    @Option(name = "-m", metaVar = "modulus", usage = "Modulus")
-    private int modulus = 0;
 
     @Override
     protected void run() throws Exception {
@@ -29,8 +24,7 @@ public class CreatePerfectIntPair2IntHash extends BaseCommandlineTool {
             keyPairs[1][i++] = Integer.parseInt(split[1]);
         }
 
-        final ImmutableIntPair2IntHash hash = modulus == 0 ? new SegmentedPerfectIntPair2IntHash(keyPairs)
-                : new SegmentedPerfectIntPair2IntHash(keyPairs, modulus);
+        final ImmutableIntPair2IntHash hash = new SegmentedPerfectIntPair2IntHash(keyPairs);
 
         System.out.println(hash.toString());
     }

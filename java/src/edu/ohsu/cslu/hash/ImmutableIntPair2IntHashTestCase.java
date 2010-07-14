@@ -36,17 +36,13 @@ public abstract class ImmutableIntPair2IntHashTestCase {
     @DataPoint
     public final static Object[] dp2 = new Object[] { keys2 };
     @DataPoint
-    public final static Object[] dp3 = new Object[] { keys1, 8 };
+    public final static Object[] dp3 = new Object[] { keys1, 2 };
     @DataPoint
-    public final static Object[] dp4 = new Object[] { keys2, 16 };
+    public final static Object[] dp4 = new Object[] { keys2, 2 };
     @DataPoint
     public final static Object[] dp5 = new Object[] { keys1, 4 };
     @DataPoint
-    public final static Object[] dp6 = new Object[] { keys2, 8 };
-    @DataPoint
-    public final static Object[] dp7 = new Object[] { keys1, 64 };
-    @DataPoint
-    public final static Object[] dp8 = new Object[] { keys2, 64 };
+    public final static Object[] dp6 = new Object[] { keys2, 4 };
 
     protected abstract ImmutableIntPair2IntHash hash(int[][] keyPairs, int modulus);
 
@@ -84,11 +80,13 @@ public abstract class ImmutableIntPair2IntHashTestCase {
     private void verifyHash(final ImmutableIntPair2IntHash hash, final int[][] keyPairs) {
         final int[][] nonKeyPairs = nonKeyPairs(keyPairs);
         for (int i = 0; i < keyPairs[0].length; i++) {
-            assertTrue(hash.hashcode(keyPairs[0][i], keyPairs[1][i]) >= 0);
+            assertTrue("Expected to find " + keyPairs[0][i] + "," + keyPairs[1][i], hash.hashcode(
+                keyPairs[0][i], keyPairs[1][i]) >= 0);
         }
 
         for (int i = 0; i < nonKeyPairs[0].length; i++) {
-            assertEquals(Integer.MIN_VALUE, hash.hashcode(nonKeyPairs[0][i], nonKeyPairs[1][i]));
+            assertEquals("Did not expect to find " + nonKeyPairs[0][i] + "," + nonKeyPairs[1][i],
+                Integer.MIN_VALUE, hash.hashcode(nonKeyPairs[0][i], nonKeyPairs[1][i]));
         }
     }
 

@@ -4,7 +4,7 @@ public class TestSegmentedPerfectIntPair2IntHash extends ImmutableIntPair2IntHas
 
     @Override
     protected ImmutableIntPair2IntHash hash(final int[][] keyPairs, final int modulus) {
-        return new SegmentedPerfectIntPair2IntHash(keyPairs, modulus);
+        return new SegmentedPerfectIntPair2IntHash(keyPairs);
     }
 
 }
