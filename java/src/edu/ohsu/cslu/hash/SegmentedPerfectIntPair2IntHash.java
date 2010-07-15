@@ -115,7 +115,6 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
         System.arraycopy(tmpHashtable, 0, this.hashtable, 0, this.hashtable.length);
         this.displacementTable = new int[displacementTableOffsets[parallelArraySize]];
         System.arraycopy(tmpDisplacementTable, 0, this.displacementTable, 0, this.displacementTable.length);
-
     }
 
     private int findDisplacement(final short[] target, final short[] merge) {
@@ -138,9 +137,10 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
 
         // Compute the size of the square matrix (m)
         final int m = Math.nextPowerOf2((int) java.lang.Math.sqrt(Math.max(k2s)) + 1);
+        final int n = m;
 
         // Allocate a temporary hashtable of the maximum possible size
-        final short[] hashtableSegment = new short[m * m];
+        final short[] hashtableSegment = new short[m * n];
         Arrays.fill(hashtableSegment, Short.MIN_VALUE);
 
         // Allocate the displacement table (r in Getty's notation)
@@ -157,7 +157,7 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
         // Initialize the matrix
         final int[] rowIndices = new int[m];
         final int[] rowCounts = new int[m];
-        final short[][] tmpMatrix = new short[m][m];
+        final short[][] tmpMatrix = new short[m][n];
         for (int i = 0; i < m; i++) {
             rowIndices[i] = i;
             Arrays.fill(tmpMatrix[i], Short.MIN_VALUE);
@@ -172,10 +172,8 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
             rowCounts[x]++;
         }
 
-        // Sort rows in descending order by population
+        // Sort rows in ascending order by population (we'll iterate through the array in reverse order)
         edu.ohsu.cslu.util.Arrays.sort(rowCounts, rowIndices);
-        edu.ohsu.cslu.util.Arrays.reverse(rowIndices);
-        edu.ohsu.cslu.util.Arrays.reverse(rowCounts);
 
         /*
          * Store matrix rows in a single array, using the first-fit descending method. For each non-empty row:
@@ -186,7 +184,8 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
          * 
          * 3. Insert this row into hashtableSegment.
          */
-        for (int row = 0; row < m; row++) {
+        for (int i = m - 1; i >= 0; i--) {
+            final int row = rowIndices[i];
             displacementTableSegment[row] = findDisplacement(hashtableSegment, tmpMatrix[row]);
             for (int col = 0; col < m; col++) {
                 if (tmpMatrix[row][col] != Short.MIN_VALUE) {
@@ -195,14 +194,14 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
             }
         }
 
-        // Find the length of the segment (highestpopulated index in tmpHashtable + m)
+        // Find the length of the segment (highest populated index in tmpHashtable + n)
         int maxPopulatedIndex = 0;
         for (int i = 0; i < hashtableSegment.length; i++) {
             if (hashtableSegment[i] != Short.MIN_VALUE) {
                 maxPopulatedIndex = i;
             }
         }
-        final int segmentLength = maxPopulatedIndex + m;
+        final int segmentLength = maxPopulatedIndex + n;
 
         return new HashtableSegment(hashtableSegment, segmentLength, displacementTableSegment, m,
             hashBitShift, hashMask, tmpMatrix);
