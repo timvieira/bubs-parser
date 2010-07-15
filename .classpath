@@ -2,13 +2,14 @@
 <classpath>
 	<classpathentry kind="src" path="java/src"/>
 	<classpathentry kind="src" path="unit-test-data"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/cltool"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/fastutil.jar" sourcepath="java/bsd-lib/fastutil-src.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/jsr166y.jar" sourcepath="java/bsd-lib/jsr166y_src.jar"/>
 	<classpathentry kind="lib" path="java/lgpl-lib/javacl.jar"/>
 	<classpathentry kind="lib" path="java/lgpl-lib/jnaerator.jar"/>
 	<classpathentry kind="lib" path="java/lgpl-lib/opencl4java.jar"/>
-	<classpathentry kind="lib" path="java/gpl-lib/junit.jar" sourcepath="java/gpl-lib/junit_src.jar"/>
+	<classpathentry exported="true" kind="lib" path="java/gpl-lib/junit.jar" sourcepath="java/gpl-lib/junit_src.jar"/>
+	<classpathentry exported="true" kind="lib" path="java/bsd-lib/args4j.jar" sourcepath="java/bsd-lib/args4j-src.jar"/>
+	<classpathentry exported="true" kind="lib" path="java/bsd-lib/cltool.jar" sourcepath="java/bsd-lib/cltool-src.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
