@@ -3,6 +3,7 @@ package edu.ohsu.cslu.tools;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -37,13 +38,12 @@ public class Encode extends LinewiseCommandlineTool {
     }
 
     @Override
-    protected Callable<String> lineTask(final String line) {
-        return new Callable<String>() {
-
+    protected FutureTask<String> lineTask(final String line) {
+        return new FutureTask<String>(new Callable<String>() {
             @Override
             public String call() {
                 return line;
             }
-        };
+        });
     }
 }

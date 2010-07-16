@@ -8,16 +8,13 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.util.concurrent.Callable;
-import java.util.concurrent.FutureTask;
 import java.util.zip.GZIPInputStream;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
-import cltool.ThreadLocalLinewiseClTool;
-import cltool.Threadable;
+import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
@@ -37,7 +34,9 @@ import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.ParserOptions.ParserType;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
+import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
@@ -52,18 +51,9 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SortAndScanCsrSpmvParser;
-import edu.ohsu.cslu.parser.util.StringToMD5;
+import edu.ohsu.cslu.parser.util.Log;
 
-/**
- * Driver class for all parser implementations.
- * 
- * @author Nathan Bodenstab
- * @since 2009
- * 
- * @version $Revision$ $Date$ $Author$
- */
-@Threadable(defaultThreads = 1)
-public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
+public class ParserTrainer extends BaseCommandlineTool {
 
     @Option(name = "-gp", aliases = { "--grammar-file-prefix" }, metaVar = "prefix", usage = "Grammar file prefix")
     private String grammarPrefix;
@@ -136,15 +126,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-x2", usage = "Tuning param #2")
     public float param2 = -1;
 
-    private Grammar grammar;
-
-    private ParserOptions parserOptions;
-
-    private long parseStartTime;
-
-    private volatile int sentencesParsed;
-    private volatile float totalInsideProbability;
-
     private BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
     private BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
@@ -196,11 +177,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             throw new CmdLineException(cmdlineParser,
                 "Perceptron span selection must specify -cslutSpanScores");
         }
-
-        // Initialize grammar and parser
-        grammar = createGrammar();
-        parserOptions = createOptions();
-        parseStartTime = System.currentTimeMillis();
     }
 
     public ParserOptions createOptions() {
@@ -340,62 +316,59 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         }
     }
 
-    @Override
-    public Parser<?> createLocal() {
+    public static Parser<?> createParser(final ParserOptions opts, final Grammar grammar) throws Exception {
 
-        switch (parserOptions.parserType) {
+        switch (opts.parserType) {
             case ECPCellCrossList:
-                return new ECPCellCrossList(parserOptions, (LeftListGrammar) grammar);
+                return new ECPCellCrossList(opts, (LeftListGrammar) grammar);
             case ECPCellCrossHash:
-                return new ECPCellCrossHash(parserOptions, (LeftHashGrammar) grammar);
+                return new ECPCellCrossHash(opts, (LeftHashGrammar) grammar);
             case ECPCellCrossMatrix:
-                return new ECPCellCrossMatrix(parserOptions, (ChildMatrixGrammar) grammar);
+                return new ECPCellCrossMatrix(opts, (ChildMatrixGrammar) grammar);
             case ECPGrammarLoop:
-                return new ECPGrammarLoop(parserOptions, (GrammarByChild) grammar);
+                return new ECPGrammarLoop(opts, (GrammarByChild) grammar);
             case ECPGrammarLoopBerkeleyFilter:
-                return new ECPGrammarLoopBerkFilter(parserOptions, (GrammarByChild) grammar);
+                return new ECPGrammarLoopBerkFilter(opts, (GrammarByChild) grammar);
             case ECPInsideOutside:
-                return new ECPInsideOutside(parserOptions, (LeftListGrammar) grammar);
+                return new ECPInsideOutside(opts, (LeftListGrammar) grammar);
 
             case AgendaChartParser:
-                return new AgendaChartParser(parserOptions, (LeftRightListsGrammar) grammar);
+                return new AgendaChartParser(opts, (LeftRightListsGrammar) grammar);
             case ACPWithMemory:
-                return new ACPWithMemory(parserOptions, (LeftRightListsGrammar) grammar);
+                return new ACPWithMemory(opts, (LeftRightListsGrammar) grammar);
             case ACPGhostEdges:
-                return new ACPGhostEdges(parserOptions, (LeftRightListsGrammar) grammar);
+                return new ACPGhostEdges(opts, (LeftRightListsGrammar) grammar);
 
             case LocalBestFirst:
-                return new LocalBestFirstChartParser(parserOptions, (LeftHashGrammar) grammar);
+                return new LocalBestFirstChartParser(opts, (LeftHashGrammar) grammar);
             case LBFPruneViterbi:
-                return new LBFPruneViterbi(parserOptions, (LeftHashGrammar) grammar);
+                return new LBFPruneViterbi(opts, (LeftHashGrammar) grammar);
             case LBFOnlineBeam:
-                return new LBFWeakThresh(parserOptions, (LeftHashGrammar) grammar);
+                return new LBFWeakThresh(opts, (LeftHashGrammar) grammar);
             case LBFBoundedHeap:
-                return new LBFBoundedHeap(parserOptions, (LeftHashGrammar) grammar);
+                return new LBFBoundedHeap(opts, (LeftHashGrammar) grammar);
             case LBFExpDecay:
-                return new LBFExpDecay(parserOptions, (LeftHashGrammar) grammar);
+                return new LBFExpDecay(opts, (LeftHashGrammar) grammar);
             case LBFPerceptronCell:
-                return new LBFSkipBaseCells(parserOptions, (LeftHashGrammar) grammar);
+                return new LBFSkipBaseCells(opts, (LeftHashGrammar) grammar);
 
             case CoarseCellAgenda:
-                return new CoarseCellAgendaParser(parserOptions, (LeftHashGrammar) grammar);
+                return new CoarseCellAgendaParser(opts, (LeftHashGrammar) grammar);
             case CoarseCellAgendaCSLUT:
                 final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(
-                    parserOptions.cellSelectorType, parserOptions.cellModelStream,
-                    parserOptions.cslutScoresStream);
-                return new CoarseCellAgendaParserWithCSLUT(parserOptions, (LeftHashGrammar) grammar,
-                    cslutScores);
+                    opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+                return new CoarseCellAgendaParserWithCSLUT(opts, (LeftHashGrammar) grammar, cslutScores);
 
             case CsrSpmv:
-                return new CsrSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
+                return new CsrSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case CsrSpmvPerMidpoint:
-                return new CsrSpmvPerMidpointParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
+                return new CsrSpmvPerMidpointParser(opts, (CsrSparseMatrixGrammar) grammar);
             case CscSpmv:
-                return new CscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
+                return new CscSpmvParser(opts, (LeftCscSparseMatrixGrammar) grammar);
             case DenseVectorOpenClSparseMatrixVector:
-                return new DenseVectorOpenClSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
+                return new DenseVectorOpenClSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case PackedOpenClSparseMatrixVector:
-                return new PackedOpenClSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
+                return new PackedOpenClSpmvParser(opts, (CsrSparseMatrixGrammar) grammar);
             case SortAndScanSpmv:
                 return new SortAndScanCsrSpmvParser((CsrSparseMatrixGrammar) grammar);
 
@@ -421,40 +394,47 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     }
 
     @Override
-    protected FutureTask<String> lineTask(final String sentence) {
-
-        return new FutureTask<String>(new Callable<String>() {
-            final int sentenceNumber = ++sentencesParsed;
-
-            @Override
-            public String call() throws Exception {
-                final StringBuilder sb = new StringBuilder(2048);
-
-                final Parser<?> parser = getLocal();
-
-                final long startTime = System.currentTimeMillis();
-                sb.append(parser.parseSentence(sentence, grammarFormat));
-                final float parseTime = (System.currentTimeMillis() - startTime) / 1000f;
-                final float insideProbability = parser.getInside(0, parser.tokenCount, grammar.startSymbol);
-                totalInsideProbability += insideProbability;
-
-                sb.append(String.format("\nSTAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f",
-                    sentenceNumber, parser.tokenCount, StringToMD5.computeMD5(sentence), parseTime,
-                    insideProbability, parser.getStats()));
-                return sb.toString();
-            }
-        });
+    public void run() throws Exception {
+        runParser(createOptions());
     }
 
-    @Override
-    protected void cleanup() {
-        final float parseTime = (System.currentTimeMillis() - parseStartTime) / 1000f;
-        final float cpuTime = parseTime * maxThreads;
+    public void runParser(final ParserOptions opts) throws Exception {
+        Log.info(0, opts.toString());
+        final Grammar grammar = createGrammar();
 
-        logger
-            .info(String
-                .format(
-                    "INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f totalInside=%.5f",
-                    sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed, totalInsideProbability));
+        // TODO: this whole FOM setup is pretty ugly. It needs to be changed
+        // TODO: the program should know which FOM to use given the model file
+        // final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream,
+        // grammar);
+        // final CellSelector cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream,
+        // opts.cslutScoresStream);
+
+        if (opts.fomTrain == true) {
+            final EdgeSelector edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream,
+                grammar);
+            edgeSelector.train(opts.inputStream);
+            edgeSelector.writeModel(opts.outputStream);
+        } else if (opts.cellTrain == true) {
+            // TODO: need to follow a similar train/writeModel method like edgeSelector
+            final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) CellSelector
+                .create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+            final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer(opts,
+                (LeftHashGrammar) grammar);
+            perceptronCellSelector.train(opts.inputStream, parser);
+        } else {
+            // run parser
+            final Parser<?> parser = createParser(opts, grammar);
+
+            final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            for (String sentence = br.readLine(); sentence != null; sentence = br.readLine()) {
+                parser.parseSentence(sentence, grammarFormat);
+                logger.fine(parser.getStats());
+            }
+
+            logger.info("INFO: numSentences=" + parser.sentenceNumber + " totalSeconds="
+                    + parser.totalParseTimeSec + " avgSecondsPerSent="
+                    + (parser.totalParseTimeSec / parser.sentenceNumber) + " totalInsideScore="
+                    + parser.totalInsideScore);
+        }
     }
 }

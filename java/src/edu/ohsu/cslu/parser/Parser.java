@@ -1,17 +1,13 @@
 package edu.ohsu.cslu.parser;
 
-import java.io.BufferedWriter;
-
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
-import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
-import edu.ohsu.cslu.parser.util.StringToMD5;
 
 // TODO: allow gold trees as input and report F-score
 // TODO: write our own eval or make external call to EVALB
@@ -23,11 +19,15 @@ public abstract class Parser<G extends Grammar> {
     public EdgeSelector edgeSelector;
     public CellSelector cellSelector;
 
+    // TODO Remove a bunch of these fields once we trim down ParserTrainer (which is currently the only
+    // consumer)
+
     protected int sentenceNumber = 0;
     public String currentSentence;
     protected float totalParseTimeSec = 0;
     protected float totalInsideScore = 0;
     protected long totalMaxMemoryMB = 0;
+    public int tokenCount;
 
     public Parser(final ParserOptions opts, final G grammar) {
         this.grammar = grammar;
@@ -46,14 +46,8 @@ public abstract class Parser<G extends Grammar> {
 
     protected abstract ParseTree findBestParse(String sentence) throws Exception;
 
-    public void parseSentence(String sentence, final BufferedWriter outputStream,
-            final GrammarFormatType grammarFormatType) throws Exception {
+    public String parseSentence(String sentence, final GrammarFormatType grammarFormatType) throws Exception {
         ParseTree inputTree = null, bestParseTree = null;
-        long sentStartTimeMS;
-        final long sentMaxMemoryMB = 0;
-        double sentParseTimeSec;
-        // String insideProbStr;
-        float insideScore;
 
         currentSentence = sentence;
         sentenceNumber++;
@@ -66,47 +60,23 @@ public abstract class Parser<G extends Grammar> {
 
         final String[] tokens = ParserUtil.tokenize(sentence);
         if (tokens.length > opts.maxLength) {
-            Log.info(1, "INFO: Skipping sentence. Length of " + tokens.length
-                    + " is greater than maxLength (" + opts.maxLength + ")");
-            return;
+            return "INFO: Skipping sentence. Length of " + tokens.length + " is greater than maxLength ("
+                    + opts.maxLength + ")";
         }
-
-        // System.gc(); sentStartMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        sentStartTimeMS = System.currentTimeMillis();
+        tokenCount = tokens.length;
 
         bestParseTree = this.findBestParse(sentence.trim());
 
-        sentParseTimeSec = (System.currentTimeMillis() - sentStartTimeMS) / 1000.0;
-        totalParseTimeSec += sentParseTimeSec;
-        // System.gc(); totalParseMemMB = (Runtime.getRuntime().totalMemory() -
-        // Runtime.getRuntime().freeMemory() - sentStartMem) / 1024.0 / 1024.0;
-
         if (bestParseTree == null) {
-            outputStream.write("No parse found.\n");
-            insideScore = Float.NEGATIVE_INFINITY;
-            // insideProbStr = "-inf";
-        } else {
-            if (opts.printUnkLabels == false) {
-                bestParseTree.replaceLeafNodes(tokens);
-            }
-            final String parse = bestParseTree.toString(opts.printInsideProbs);
-            outputStream.write(opts.unfactor() ? unfactor(parse, grammarFormatType) : parse);
-            outputStream.write('\n');
-
-            insideScore = getInside(0, tokens.length, grammar.startSymbol);
-            // insideProbStr = Float.toString(insideScore);
-            // printTreeEdgeStats(findChartEdgesForTree(inputTree, (ChartParser)parser), parser);
-            // printTreeEdgeStats(bestParseTree, parser);
+            return "No parse found.";
         }
 
-        totalInsideScore += insideScore;
+        if (opts.printUnkLabels == false) {
+            bestParseTree.replaceLeafNodes(tokens);
+        }
+        final String parse = bestParseTree.toString(opts.printInsideProbs);
 
-        // TODO Use Log4J so this output can be suppressed
-        final String stats = " sentNum=" + sentenceNumber + " sentLen=" + tokens.length + " md5="
-                + StringToMD5.computeMD5(sentence) + " seconds=" + sentParseTimeSec + " mem="
-                + sentMaxMemoryMB + " inside=" + insideScore + " " + this.getStats();
-        outputStream.write("STAT:" + stats + "\n");
-        outputStream.flush();
+        return opts.unfactor() ? unfactor(parse, grammarFormatType) : parse;
     }
 
     public void printTreeEdgeStats(final ParseTree tree, final Parser<?> parser) {

@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -27,8 +28,8 @@ import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
 
 /**
- * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse trees, parenthesis-bracketed flat structures, and Stanford's slash-delimited
- * tagged representation).
+ * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse trees,
+ * parenthesis-bracketed flat structures, and Stanford's slash-delimited tagged representation).
  * 
  * Outputs flat structures in bracketed or Stanford formats.
  * 
@@ -39,7 +40,8 @@ import edu.ohsu.cslu.util.Strings;
  * <li>before_head / head_verb / after_head</li>
  * </ul>
  * 
- * From flat bracketed input, arbitrary features can be selected in any order (e.g. features 1, 6, and 3 output in that order).
+ * From flat bracketed input, arbitrary features can be selected in any order (e.g. features 1, 6, and 3
+ * output in that order).
  * 
  * @author Aaron Dunlop
  * @since Nov 17, 2008
@@ -194,7 +196,8 @@ public class SelectFeatures extends LinewiseCommandlineTool {
                 case SquarePosTagged:
                     break;
                 default:
-                    throw new CmdLineException(parser, "POS features not supported for un-formatted flat input");
+                    throw new CmdLineException(parser,
+                        "POS features not supported for un-formatted flat input");
             }
         }
 
@@ -206,7 +209,8 @@ public class SelectFeatures extends LinewiseCommandlineTool {
                 case SquarePosTagged:
                     break;
                 default:
-                    throw new CmdLineException(parser, "Word features not supported for un-formatted flat input");
+                    throw new CmdLineException(parser,
+                        "Word features not supported for un-formatted flat input");
             }
         }
 
@@ -294,22 +298,26 @@ public class SelectFeatures extends LinewiseCommandlineTool {
 
                 // Previous words
                 for (int j = 1; ((j <= previousWords) && (i - j >= 0)); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousWord, j, wordList.get(i - j), featureDelimiter));
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousWord, j, wordList.get(i - j),
+                        featureDelimiter));
                 }
 
                 // Subsequent words
                 for (int j = 1; ((j <= subsequentWords) && (i + j < wordList.size())); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentWord, j, wordList.get(i + j), featureDelimiter));
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentWord, j, wordList.get(i + j),
+                        featureDelimiter));
                 }
 
                 // Previous POS
                 for (int j = 1; ((j <= previousPos) && (i - j >= 0)); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousPos, j, posList.get(i - j), featureDelimiter));
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousPos, j, posList.get(i - j),
+                        featureDelimiter));
                 }
 
                 // Subsequent POS
                 for (int j = 1; ((j <= subsequentPos) && (i + j < posList.size())); j++) {
-                    sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentPos, j, posList.get(i + j), featureDelimiter));
+                    sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentPos, j, posList.get(i + j),
+                        featureDelimiter));
                 }
 
                 if (node.isHeadOfTreeRoot(ruleset)) {
@@ -354,7 +362,8 @@ public class SelectFeatures extends LinewiseCommandlineTool {
         return sb.toString();
     }
 
-    private void appendIndicatorFeature(final StringBuilder sb, final boolean enabled, final boolean fired, final FeatureClass featureClass) {
+    private void appendIndicatorFeature(final StringBuilder sb, final boolean enabled, final boolean fired,
+            final FeatureClass featureClass) {
         if (enabled) {
 
             if (fired) {
@@ -371,9 +380,11 @@ public class SelectFeatures extends LinewiseCommandlineTool {
         final char initialChar = label.charAt(0);
 
         appendIndicatorFeature(sb, capitalized, Character.isUpperCase(initialChar), FeatureClass.Capitalized);
-        appendIndicatorFeature(sb, allcaps, Character.isUpperCase(initialChar) && label.equals(label.toUpperCase()), FeatureClass.AllCaps);
+        appendIndicatorFeature(sb, allcaps, Character.isUpperCase(initialChar)
+                && label.equals(label.toUpperCase()), FeatureClass.AllCaps);
         appendIndicatorFeature(sb, hyphenated, label.indexOf('-') >= 0, FeatureClass.Hyphenated);
-        appendIndicatorFeature(sb, initialNumeric, Character.isDigit(initialChar), FeatureClass.InitialNumeric);
+        appendIndicatorFeature(sb, initialNumeric, Character.isDigit(initialChar),
+            FeatureClass.InitialNumeric);
 
         if (numeric) {
             if (Character.isDigit(initialChar)) {
@@ -541,22 +552,26 @@ public class SelectFeatures extends LinewiseCommandlineTool {
 
             // Previous words
             for (int j = 1; ((j <= previousWords) && (i - j >= 0)); j++) {
-                sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousWord, j, features[i - j][wordIndex - 1], featureDelimiter));
+                sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousWord, j,
+                    features[i - j][wordIndex - 1], featureDelimiter));
             }
 
             // Subsequent words
             for (int j = 1; ((j <= subsequentWords) && (i + j < features.length)); j++) {
-                sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentWord, j, features[i + j][wordIndex - 1], featureDelimiter));
+                sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentWord, j,
+                    features[i + j][wordIndex - 1], featureDelimiter));
             }
 
             // Previous POS
             for (int j = 1; ((j <= previousPos) && (i - j >= 0)); j++) {
-                sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousPos, j, features[i - j][posIndex - 1], featureDelimiter));
+                sb.append(String.format("%s%d_%s%s", FeatureClass.PreviousPos, j,
+                    features[i - j][posIndex - 1], featureDelimiter));
             }
 
             // Subsequent POS
             for (int j = 1; ((j <= subsequentPos) && (i + j < features.length)); j++) {
-                sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentPos, j, features[i + j][posIndex - 1], featureDelimiter));
+                sb.append(String.format("%s%d_%s%s", FeatureClass.SubsequentPos, j,
+                    features[i + j][posIndex - 1], featureDelimiter));
             }
 
             if (selectedFeatures != null) {
@@ -581,8 +596,8 @@ public class SelectFeatures extends LinewiseCommandlineTool {
     }
 
     @Override
-    protected Callable<String> lineTask(final String line) {
-        return new Callable<String>() {
+    protected FutureTask<String> lineTask(final String line) {
+        return new FutureTask<String>(new Callable<String>() {
 
             @Override
             public String call() {
@@ -594,6 +609,6 @@ public class SelectFeatures extends LinewiseCommandlineTool {
                     return selectFlatFeatures(line);
                 }
             }
-        };
+        });
     }
 }
