@@ -98,6 +98,51 @@ public final class ParserOptions {
         }
     }
 
+    // static public enum ParserType {
+    // ECPCellCrossList(ECPCellCrossList.class, "ecpccl"), //
+    // ECPCellCrossHash(ECPCellCrossHash.class, "ecpcch"), //
+    // ECPCellCrossMatrix(ECPCellCrossMatrix.class, "ecpccm"), //
+    // ECPGrammarLoop(ECPGrammarLoop.class, "ecpgl"), //
+    // ECPGrammarLoopBerkeleyFilter(ECPGrammarLoopBerkFilter.class, "ecpglbf"), //
+    // ECPInsideOutside(ECPInsideOutside.class, "ecpio"), //
+    // AgendaChartParser(AgendaChartParser.class, "acpall"), //
+    // ACPWithMemory(ACPWithMemory.class, "acpwm"), //
+    // ACPGhostEdges(ACPGhostEdges.class, "acpge"), //
+    // // LocalBestFirst(LocalBestFirstChartParser.class, "lbf"), //
+    // LBFPruneViterbi(LBFPruneViterbi.class, "lbfpv"), //
+    // LBFOnlineBeam(LBFOnlineBeam.class, "lbfob"), //
+    // LBFBoundedHeap(LBFBoundedHeap.class, "lbfbh"), //
+    // LBFExpDecay(LBFExpDecay.class, "lbfed"), //
+    // LBFPerceptronCell(LBFPerceptronCell.class, "lbfpc"), //
+    // CoarseCellAgenda(CoarseCellAgendaParser.class, "cc"), //
+    // CoarseCellAgendaCSLUT(CoarseCellAgendaParserWithCSLUT.class, "cccslut"), //
+    // DenseVectorOpenClSparseMatrixVector(DenseVectorOpenClSpmvParser.class, "dvopencl"), //
+    // PackedOpenClSparseMatrixVector(PackedOpenClSpmvParser.class, "popencl"), //
+    // CsrSpmv(CsrSpmvParser.class, "csr"), //
+    // CsrSpmvPerMidpoint(CsrSpmvPerMidpointParser.class, "csrpm"), //
+    // CscSpmv(CscSpmvParser.class, "csc"), //
+    // SortAndScanSpmv(SortAndScanCsrSpmvParser.class, "sort-and-scan"), //
+    // LeftChildMatrixLoop(LeftChildLoopSpmlParser.class, "lcml"), //
+    // RightChildMatrixLoop(RightChildLoopSpmlParser.class, "rcml"), //
+    // GrammarLoopMatrixLoop(GrammarLoopSpmlParser.class, "glml"), //
+    // CartesianProductBinarySearch(CartesianProductBinarySearchSpmlParser.class, "cpbs"), //
+    // CartesianProductBinarySearchLeftChild(CartesianProductBinarySearchLeftChildSpmlParser.class, "cplbs"),
+    // //
+    // CartesianProductHash(CartesianProductHashSpmlParser.class, "cph"), //
+    // CartesianProductLeftChildHash(CartesianProductLeftChildHashSpmlParser.class, "cplch");
+    //
+    // private final Class<? extends Parser<?>> parserClass;
+    //
+    // private ParserType(final Class<? extends Parser<?>> parserClass, final String... aliases) {
+    // this.parserClass = parserClass;
+    // EnumAliasMap.singleton().addAliases(this, aliases);
+    // }
+    //        
+    // public Parser<?> createParser() {
+    // return null;
+    // }
+    // }
+
     static public enum CartesianProductFunctionType {
         Default("d", "default"), Unfiltered("u", "unfiltered"), PosFactoredFiltered("pf"), BitMatrixExactFilter(
                 "bme", "bitmatrixexact"), PerfectHash("ph", "perfecthash"), PerfectHash2("ph2",
