@@ -438,7 +438,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 final float insideProbability = parser.getInside(0, parser.tokenCount, grammar.startSymbol);
                 totalInsideProbability += insideProbability;
 
-                sb.append(String.format("\nSTAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f",
+                sb.append(String.format("\nSTAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f %s",
                     sentenceNumber, parser.tokenCount, StringToMD5.computeMD5(sentence), parseTime,
                     insideProbability, parser.getStats()));
                 return sb.toString();
