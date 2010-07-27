@@ -8,6 +8,7 @@
 	<property name="dir.doc" location="doc" />
 	<property name="dir.bsd.lib" location="java/bsd-lib" />
 	<property name="dir.lgpl.lib" location="java/lgpl-lib" />
+    <property name="dir.gpl.lib" location="java/gpl-lib" />
 	<property name="dir.build.doc" location="build-doc" />
 
     <property name="dir.shared.build" location="${dir.shared.base}/build" />
@@ -27,6 +28,7 @@
 	<path id="classpath.libs">
 		<fileset dir="${dir.bsd.lib}" includes="*.jar" />
 		<fileset dir="${dir.lgpl.lib}" includes="*.jar" />
+        <fileset dir="${dir.gpl.lib}" includes="*.jar" />
 	</path>
 
 	<!--
@@ -95,10 +97,13 @@
          * root-class - Primary root classname (required)
          * additional-root-classes - Additional root classnames, comma-delimited 
              (optional)
-         * additional-libs (optional) List of any additional classes which 
-             should also be considered as root classes
          * additional-libs (optional) List of any additional jars which should
              be included in their entirety
+         * additional-file-root, additional-file-includes (optional) Fileset 
+             specifying any additional files which should be included
+         * heap-size (optional - default=128) Size in megabytes
+         * include-lgpl-libs (optional) Reference LGPL libraries in generated 
+             jar classpath
     ========================================================================
     -->
 	<target name="package-jar" description="Package an executable jar file">
@@ -146,8 +151,8 @@
 			<!-- Include all args4j property files -->
 			<zipfileset src="${dir.shared.bsd.lib}/args4j.jar" includes="**/*.properties" />
 
-			<!-- Include all opencl files -->
-			<fileset dir="${dir.src}" includes="**/*.cl" />
+			<!-- Include any additional files specified -->
+			<fileset dir="${additional-file-root}" includes="${additional-file-includes}" />
 
 			<!-- And any additional jars specified by the caller -->
 			<zipgroupfileset dir="." includes="${additional-libs}" />
@@ -182,6 +187,8 @@
         <property name="additional-libs" value="none" />
         <property name="additional-root-classes" value="" />
         <property name="params" value="" />
+        <property name="additional-file-root" value="" />
+        <property name="additional-file-includes" value="" />
 
         <!-- If 'heap-size' is not specified, default it to 128m -->
         <property name="heap-size" value="128" />
@@ -347,6 +354,8 @@
             <param name="tool-name" value="parse" />
             <param name="heap-size" value="1024" />
             <param name="include-lgpl-libs" value="true" />
+            <param name="additional-file-root" value="${dir.src}" />
+            <param name="additional-file-includes" value="**/*.cl" />
         </antcall>
     </target>
 
