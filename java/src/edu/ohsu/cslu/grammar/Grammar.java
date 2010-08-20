@@ -11,6 +11,35 @@ import java.util.Vector;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.util.Log;
 
+/**
+ * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or
+ * may be inferred from a corpus of data.
+ * 
+ * A PCFG consists of
+ * <ul>
+ * <li>A set of non-terminal symbols V (alternatively referred to as 'categories')</li>
+ * <li>A special start symbol (S-dagger) from V</li>
+ * <li>A set of terminal symbols T</li>
+ * <li>A set of rule productions P mapping from V to (V union T)</li>
+ * </ul>
+ * 
+ * Such grammars are useful in modeling and analyzing the structure of natural language or the (secondary)
+ * structure of many biological sequences.
+ * 
+ * Although branching of arbitrary size is possible in a grammar under this definition, this class models
+ * grammars which have been factored into binary-branching form, enabling much more efficient computational
+ * approaches to be used.
+ * 
+ * Note - there will always be more productions than categories, but all categories except the special
+ * S-dagger category are also productions. The index of a category will be the same when used as a production
+ * as it is when used as a category.
+ * 
+ * @author Nathan Bodenstab
+ * @author Aaron Dunlop
+ * @since 2010
+ * 
+ *        $Id$
+ */
 public class Grammar {
 
     protected Collection<Production> binaryProductions;
@@ -170,10 +199,16 @@ public class Grammar {
         }
     }
 
+    /**
+     * @return The number of nonterminals modeled in this grammar (|V|)
+     */
     public final int numNonTerms() {
         return nonTermSet.numSymbols();
     }
 
+    /**
+     * @return The number terminals modeled in this grammar (|T|)
+     */
     public final int numLexSymbols() {
         return lexSet.size();
     }
@@ -194,6 +229,9 @@ public class Grammar {
         return lexicalProductions.size();
     }
 
+    /**
+     * @return The special start symbol (S-dagger).
+     */
     public final String startSymbol() {
         return nonTermSet.getSymbol(startSymbol);
     }
@@ -254,12 +292,18 @@ public class Grammar {
         return false;
     }
 
+    /**
+     * @return true if this grammar is left-factored
+     */
     public boolean isLeftFactored() {
         return isLeftFactored;
     }
 
+    /**
+     * @return true if this grammar is right-factored
+     */
     public boolean isRightFactored() {
-        return isLeftFactored == false;
+        return !isLeftFactored;
     }
 
     /*
@@ -286,14 +330,31 @@ public class Grammar {
         return null;
     }
 
+    /**
+     * Returns the log probability of a binary rule.
+     * 
+     * @param parent
+     * @param leftChild
+     * @param rightChild
+     * @return Log probability of the specified rule.
+     */
     public float binaryLogProbability(final int parent, final int leftChild, final int rightChild) {
         return getProductionProb(getBinaryProduction(parent, leftChild, rightChild));
     }
 
-    public float binaryLogProbability(final String A, final String B, final String C) {
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
-            return binaryLogProbability(nonTermSet.getIndex(A), nonTermSet.getIndex(B), nonTermSet
-                .getIndex(C));
+    /**
+     * Returns the log probability of a binary rule.
+     * 
+     * @param parent
+     * @param leftChild
+     * @param rightChild
+     * @return Log probability of the specified rule.
+     */
+    public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
+        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild)
+                && nonTermSet.hasSymbol(rightChild)) {
+            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
+                nonTermSet.getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -321,13 +382,27 @@ public class Grammar {
         return null;
     }
 
+    /**
+     * Returns the log probability of a unary rule.
+     * 
+     * @param parent
+     * @param child
+     * @return Log probability of the specified rule.
+     */
     public float unaryLogProbability(final int parent, final int child) {
         return getProductionProb(getUnaryProduction(parent, child));
     }
 
-    public float unaryLogProbability(final String A, final String B) {
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B)) {
-            return unaryLogProbability(nonTermSet.getIndex(A), nonTermSet.getIndex(B));
+    /**
+     * Returns the log probability of a unary rule.
+     * 
+     * @param parent
+     * @param child
+     * @return Log probability of the specified rule.
+     */
+    public float unaryLogProbability(final String parent, final String child) {
+        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(child)) {
+            return unaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(child));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -355,17 +430,37 @@ public class Grammar {
         return null;
     }
 
+    /**
+     * Returns the log probability of a lexical rule.
+     * 
+     * @param parent
+     * @param child
+     * @return Log probability of the specified rule.
+     */
     public float lexicalLogProbability(final int parent, final int child) {
         return getProductionProb(getLexicalProduction(parent, child));
     }
 
-    public float lexicalLogProbability(final String A, final String lex) {
-        if (nonTermSet.hasSymbol(A) && lexSet.hasSymbol(lex)) {
-            return lexicalLogProbability(nonTermSet.getIndex(A), lexSet.getIndex(lex));
+    /**
+     * Returns the log probability of a lexical rule.
+     * 
+     * @param parent
+     * @param child
+     * @return Log probability of the specified rule.
+     */
+    public float lexicalLogProbability(final String parent, final String child) {
+        if (nonTermSet.hasSymbol(parent) && lexSet.hasSymbol(child)) {
+            return lexicalLogProbability(nonTermSet.getIndex(parent), lexSet.getIndex(child));
         }
         return Float.NEGATIVE_INFINITY;
     }
 
+    /**
+     * Returns the log probability of a rule.
+     * 
+     * @param p Production
+     * @return Log probability of the specified rule.
+     */
     protected float getProductionProb(final Production p) {
         if (p != null) {
             return p.prob;
