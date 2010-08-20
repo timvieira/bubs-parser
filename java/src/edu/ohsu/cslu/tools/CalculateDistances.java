@@ -17,13 +17,10 @@ import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
 import cltool.Threadable;
-import edu.ohsu.cslu.alignment.SimpleVocabulary;
-import edu.ohsu.cslu.common.Vocabulary;
 import edu.ohsu.cslu.datastructs.matrices.FixedPointShortMatrix;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
 import edu.ohsu.cslu.datastructs.narytree.BaseNaryTree;
-import edu.ohsu.cslu.datastructs.narytree.ParseTree;
 import edu.ohsu.cslu.datastructs.narytree.BaseNaryTree.PqgramProfile;
 import edu.ohsu.cslu.util.Math;
 
@@ -66,8 +63,7 @@ public class CalculateDistances extends BaseCommandlineTool {
                 break;
 
             case Pqgram:
-                final Vocabulary vocabulary = SimpleVocabulary.induce(new BufferedReader(new StringReader(input)));
-                calculator = new PqgramDistanceCalculator(parameters, vocabulary, maxThreads);
+                calculator = new PqgramDistanceCalculator(parameters, maxThreads);
                 break;
 
             default:
@@ -88,7 +84,8 @@ public class CalculateDistances extends BaseCommandlineTool {
     @Override
     public void setup(final CmdLineParser parser) throws Exception {
         if (calculationMethod == CalculationMethod.Pqgram && parameters == null) {
-            throw new CmdLineException(parser, "P and Q parameters are required for pqgram distance calculation");
+            throw new CmdLineException(parser,
+                "P and Q parameters are required for pqgram distance calculation");
         }
     }
 
@@ -129,29 +126,26 @@ public class CalculateDistances extends BaseCommandlineTool {
         private final int p;
         private final int q;
         private final ArrayList<BaseNaryTree<?>> trees = new ArrayList<BaseNaryTree<?>>();
-        private final Vocabulary vocabulary;
         private Matrix matrix;
         private BaseNaryTree.PqgramProfile[] profiles;
         private final int maxThreads;
 
-        public PqgramDistanceCalculator(final String parameters, final Vocabulary vocabulary, final int maxThreads) {
+        public PqgramDistanceCalculator(final String parameters, final int maxThreads) {
             final String[] s = parameters.split(",");
             this.p = Integer.parseInt(s[0]);
             this.q = Integer.parseInt(s[1]);
-            this.vocabulary = vocabulary;
             this.maxThreads = maxThreads;
         }
 
-        public PqgramDistanceCalculator(final int p, final int q, final Vocabulary vocabulary) {
+        public PqgramDistanceCalculator(final int p, final int q) {
             this.p = p;
             this.q = q;
-            this.vocabulary = vocabulary;
             this.maxThreads = Runtime.getRuntime().availableProcessors();
         }
 
         @Override
         public void addElement(final String element) {
-            trees.add(ParseTree.read(element, vocabulary));
+            trees.add(BaseNaryTree.read(element, String.class));
         }
 
         @Override
@@ -181,11 +175,13 @@ public class CalculateDistances extends BaseCommandlineTool {
             }
 
             /**
-             * Splits distance calculation by rows, executing each row sequentially. This is a pretty simplistic work-splitting algorithm, since the rows aren't of equal length. A
-             * better splitting algorithm would divide the work more equally.
+             * Splits distance calculation by rows, executing each row sequentially. This is a pretty
+             * simplistic work-splitting algorithm, since the rows aren't of equal length. A better splitting
+             * algorithm would divide the work more equally.
              * 
-             * But as long as the number of matrix rows is much larger than the number of CPU cores, this works pretty well. And it seems likely that it'll be some time before that
-             * assumption breaks down for any problem of meaningful size.
+             * But as long as the number of matrix rows is much larger than the number of CPU cores, this
+             * works pretty well. And it seems likely that it'll be some time before that assumption breaks
+             * down for any problem of meaningful size.
              */
             @Override
             protected void compute() {
@@ -199,7 +195,8 @@ public class CalculateDistances extends BaseCommandlineTool {
                 }
 
                 final RowDistanceCalculator rdc1 = new RowDistanceCalculator(begin, begin + (end - begin) / 2);
-                final RowDistanceCalculator rdc2 = new RowDistanceCalculator(begin + (end - begin) / 2 + 1, end);
+                final RowDistanceCalculator rdc2 = new RowDistanceCalculator(begin + (end - begin) / 2 + 1,
+                    end);
                 forkJoin(rdc1, rdc2);
             }
         }

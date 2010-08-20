@@ -1,11 +1,5 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -20,8 +14,10 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
 
+import static junit.framework.Assert.*;
+
 /**
- * Unit tests for {@link CharacterNaryTree}
+ * Unit tests for {@link BaseNaryTree} with characters.
  * 
  * @author Aaron Dunlop
  * @since Sep 24, 2008
@@ -31,7 +27,7 @@ import edu.ohsu.cslu.tests.FilteredRunner;
 @RunWith(FilteredRunner.class)
 public class TestCharacterNaryTree {
 
-    private CharacterNaryTree sampleTree;
+    private BaseNaryTree<Character> sampleTree;
     private String stringSampleTree;
 
     private final static char[] SAMPLE_IN_ORDER_ARRAY = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
@@ -41,22 +37,32 @@ public class TestCharacterNaryTree {
     private final static char[] SAMPLE_POST_ORDER_ARRAY = new char[] { 'a', 'c', 'b', 'e', 'd', 'g', 'h',
             'j', 'k', 'i', 'f' };
 
+    private final static BaseNaryTree.LabelParser<Character> labelParser = new BaseNaryTree.LabelParser<Character>() {
+        @Override
+        public Character parse(final String label) throws Exception {
+            if (label.length() != 1) {
+                throw new IllegalArgumentException("Expected single character but found '" + label + "'");
+            }
+            return label.charAt(0);
+        }
+    };
+
     @Before
     public void setUp() {
-        sampleTree = new CharacterNaryTree('f');
+        sampleTree = new BaseNaryTree<Character>('f');
 
-        CharacterNaryTree tmp1 = new CharacterNaryTree('b');
+        BaseNaryTree<Character> tmp1 = new BaseNaryTree<Character>('b');
         tmp1.addChild('a');
         tmp1.addChild('c');
 
-        CharacterNaryTree tmp2 = new CharacterNaryTree('d');
+        BaseNaryTree<Character> tmp2 = new BaseNaryTree<Character>('d');
         tmp2.addSubtree(tmp1);
         tmp2.addChild('e');
 
         sampleTree.addSubtree(tmp2);
         sampleTree.addChild('g');
 
-        tmp1 = new CharacterNaryTree('i');
+        tmp1 = new BaseNaryTree<Character>('i');
         tmp1.addChild('h');
         tmp2 = tmp1.addChild('k');
         tmp2.addChild('j');
@@ -67,7 +73,7 @@ public class TestCharacterNaryTree {
 
     @Test
     public void testAddChild() throws Exception {
-        CharacterNaryTree tree = new CharacterNaryTree('a');
+        final BaseNaryTree<Character> tree = new BaseNaryTree<Character>('a');
         assertEquals(1, tree.size());
         tree.addChild('b');
         assertEquals(2, tree.size());
@@ -77,9 +83,9 @@ public class TestCharacterNaryTree {
 
     @Test
     public void testAddChildren() throws Exception {
-        CharacterNaryTree tree = new CharacterNaryTree('a');
+        final BaseNaryTree<Character> tree = new BaseNaryTree<Character>('a');
         assertEquals(1, tree.size());
-        tree.addChildren(new int[] { 'b', 'c' });
+        tree.addChildren(new Character[] { 'b', 'c' });
         assertEquals(3, tree.size());
         assertNull(tree.subtree('a'));
         assertNotNull(tree.subtree('b'));
@@ -88,9 +94,9 @@ public class TestCharacterNaryTree {
 
     @Test
     public void testAddSubtree() throws Exception {
-        CharacterNaryTree tree = new CharacterNaryTree('a');
-        CharacterNaryTree tmp = new CharacterNaryTree('b');
-        tmp.addChildren(new char[] { 'c', 'd' });
+        final BaseNaryTree<Character> tree = new BaseNaryTree<Character>('a');
+        final BaseNaryTree<Character> tmp = new BaseNaryTree<Character>('b');
+        tmp.addChildren(new Character[] { 'c', 'd' });
         tree.addSubtree(tmp);
         assertEquals(4, tree.size());
         assertNotNull(tree.subtree('b'));
@@ -125,7 +131,7 @@ public class TestCharacterNaryTree {
         assertNull(sampleTree.subtree('j'));
 
         // Removing the 'i' node should move its children up ('g' has no children)
-        sampleTree.removeChildren(new char[] { 'g', 'i' });
+        sampleTree.removeChildren(new Character[] { 'g', 'i' });
         assertEquals(9, sampleTree.size());
 
         assertNotNull(sampleTree.subtree('h'));
@@ -163,7 +169,7 @@ public class TestCharacterNaryTree {
 
     @Test
     public void testSubtree() throws Exception {
-        BaseNaryTree<Character> subtree = sampleTree.subtree('d');
+        final BaseNaryTree<Character> subtree = sampleTree.subtree('d');
         assertEquals(5, subtree.size());
         assertNotNull(subtree.subtree('b'));
         assertNotNull(subtree.subtree('e'));
@@ -177,7 +183,7 @@ public class TestCharacterNaryTree {
         assertEquals(11, sampleTree.size());
         sampleTree.subtree('i').removeSubtree('k');
         assertEquals(9, sampleTree.size());
-        sampleTree.subtree('g').addChild(1000);
+        sampleTree.subtree('g').addChild('l');
         assertEquals(10, sampleTree.size());
     }
 
@@ -209,16 +215,16 @@ public class TestCharacterNaryTree {
 
     @Test
     public void testInOrderIterator() throws Exception {
-        Iterator<NaryTree<Character>> iter = sampleTree.inOrderIterator();
+        final Iterator<NaryTree<Character>> iter = sampleTree.inOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
-            BaseNaryTree<Character> tree = (BaseNaryTree<Character>) iter.next();
+            final BaseNaryTree<Character> tree = (BaseNaryTree<Character>) iter.next();
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], (char) tree.label);
         }
     }
 
     @Test
     public void testInOrderLabelIterator() throws Exception {
-        Iterator<Character> iter = sampleTree.inOrderLabelIterator();
+        final Iterator<Character> iter = sampleTree.inOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next().charValue());
         }
@@ -226,16 +232,16 @@ public class TestCharacterNaryTree {
 
     @Test
     public void testPreOrderIterator() throws Exception {
-        Iterator<NaryTree<Character>> iter = sampleTree.preOrderIterator();
+        final Iterator<NaryTree<Character>> iter = sampleTree.preOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
-            BaseNaryTree<Character> tree = (BaseNaryTree<Character>) iter.next();
+            final BaseNaryTree<Character> tree = (BaseNaryTree<Character>) iter.next();
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], (char) tree.label);
         }
     }
 
     @Test
     public void testPreOrderLabelIterator() throws Exception {
-        Iterator<Character> iter = sampleTree.preOrderLabelIterator();
+        final Iterator<Character> iter = sampleTree.preOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next().charValue());
         }
@@ -243,16 +249,16 @@ public class TestCharacterNaryTree {
 
     @Test
     public void testPostOrderIterator() throws Exception {
-        Iterator<NaryTree<Character>> iter = sampleTree.postOrderIterator();
+        final Iterator<NaryTree<Character>> iter = sampleTree.postOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
-            BaseNaryTree<Character> tree = (BaseNaryTree<Character>) iter.next();
+            final BaseNaryTree<Character> tree = (BaseNaryTree<Character>) iter.next();
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], (char) tree.label);
         }
     }
 
     @Test
     public void testPostOrderLabelIterator() throws Exception {
-        Iterator<Character> iter = sampleTree.postOrderLabelIterator();
+        final Iterator<Character> iter = sampleTree.postOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next().charValue());
         }
@@ -261,37 +267,40 @@ public class TestCharacterNaryTree {
     @Test
     public void testReadFromReader() throws Exception {
 
-        String stringSimpleTree = "(a (b c) d)";
-        CharacterNaryTree simpleTree = CharacterNaryTree.read(new StringReader(stringSimpleTree));
+        final String stringSimpleTree = "(a (b c) d)";
+        final BaseNaryTree<Character> simpleTree = BaseNaryTree.read(new StringReader(stringSimpleTree),
+            labelParser);
         assertEquals(4, simpleTree.size());
         assertEquals(2, simpleTree.subtree('b').size());
 
-        assertEquals('a', (char) simpleTree.intLabel());
-        assertEquals('b', (char) simpleTree.subtree('b').intLabel());
-        assertEquals('c', (char) simpleTree.subtree('b').subtree('c').intLabel());
-        assertEquals('d', (char) simpleTree.subtree('d').intLabel());
+        assertEquals('a', simpleTree.label().charValue());
+        assertEquals('b', simpleTree.subtree('b').label().charValue());
+        assertEquals('c', simpleTree.subtree('b').subtree('c').label().charValue());
+        assertEquals('d', simpleTree.subtree('d').label().charValue());
 
-        String stringTestTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
-        CharacterNaryTree testTree = CharacterNaryTree.read(new StringReader(stringTestTree));
+        final String stringTestTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
+        final BaseNaryTree<Character> testTree = BaseNaryTree.read(new StringReader(stringTestTree),
+            labelParser);
         assertEquals(12, testTree.size());
         assertEquals(8, testTree.subtree('b').subtree('c').size());
 
-        assertEquals('a', testTree.intLabel());
-        assertEquals('b', (char) testTree.subtree('b').intLabel());
-        assertEquals('c', (char) testTree.subtree('b').subtree('c').intLabel());
-        assertEquals('d', (char) testTree.subtree('b').subtree('c').subtree('d').intLabel());
-        assertEquals('e', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('e').intLabel());
-        assertEquals('f', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('e').subtree('f')
-            .intLabel());
-        assertEquals('g', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('g').intLabel());
-        assertEquals('h', (char) testTree.subtree('b').subtree('c').subtree('d').subtree('g').subtree('h')
-            .intLabel());
-        assertEquals('i', (char) testTree.subtree('b').subtree('c').subtree('i').intLabel());
-        assertEquals('j', (char) testTree.subtree('b').subtree('c').subtree('i').subtree('j').intLabel());
-        assertEquals('k', (char) testTree.subtree('b').subtree('k').intLabel());
-        assertEquals('l', (char) testTree.subtree('b').subtree('k').subtree('l').intLabel());
+        assertEquals('a', testTree.label().charValue());
+        assertEquals('b', testTree.subtree('b').label().charValue());
+        assertEquals('c', testTree.subtree('b').subtree('c').label().charValue());
+        assertEquals('d', testTree.subtree('b').subtree('c').subtree('d').label().charValue());
+        assertEquals('e', testTree.subtree('b').subtree('c').subtree('d').subtree('e').label().charValue());
+        assertEquals('f', testTree.subtree('b').subtree('c').subtree('d').subtree('e').subtree('f').label()
+            .charValue());
+        assertEquals('g', testTree.subtree('b').subtree('c').subtree('d').subtree('g').label().charValue());
+        assertEquals('h', testTree.subtree('b').subtree('c').subtree('d').subtree('g').subtree('h').label()
+            .charValue());
+        assertEquals('i', testTree.subtree('b').subtree('c').subtree('i').label().charValue());
+        assertEquals('j', testTree.subtree('b').subtree('c').subtree('i').subtree('j').label().charValue());
+        assertEquals('k', testTree.subtree('b').subtree('k').label().charValue());
+        assertEquals('l', testTree.subtree('b').subtree('k').subtree('l').label().charValue());
 
-        CharacterNaryTree tree = CharacterNaryTree.read(new StringReader(stringSampleTree));
+        final BaseNaryTree<Character> tree = BaseNaryTree.read(new StringReader(stringSampleTree),
+            labelParser);
         assertEquals(sampleTree, tree);
     }
 
@@ -301,8 +310,8 @@ public class TestCharacterNaryTree {
         sampleTree.write(writer);
         assertEquals(stringSampleTree, writer.toString());
 
-        String stringSimpleTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
-        CharacterNaryTree tree = new CharacterNaryTree('a');
+        final String stringSimpleTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
+        final BaseNaryTree<Character> tree = new BaseNaryTree<Character>('a');
         tree.addChild('b').addChild('c').addChild('d').addChild('e').addChild('f');
         tree.subtree('b').subtree('c').subtree('d').addChild('g').addChild('h');
         tree.subtree('b').subtree('c').addChild('i').addChild('j');
@@ -323,14 +332,14 @@ public class TestCharacterNaryTree {
 
     @Test
     public void testEquals() throws Exception {
-        BaseNaryTree<Character> tree1 = new CharacterNaryTree('a');
-        tree1.addChildren(new int[] { 'b', 'c' });
+        final BaseNaryTree<Character> tree1 = new BaseNaryTree<Character>('a');
+        tree1.addChildren(new Character[] { 'b', 'c' });
 
-        BaseNaryTree<Character> tree2 = new CharacterNaryTree('a');
-        tree2.addChildren(new int[] { 'b', 'c' });
+        final BaseNaryTree<Character> tree2 = new BaseNaryTree<Character>('a');
+        tree2.addChildren(new Character[] { 'b', 'c' });
 
-        BaseNaryTree<Character> tree3 = new CharacterNaryTree('a');
-        tree3.addChildren(new int[] { 'b', 'd' });
+        final BaseNaryTree<Character> tree3 = new BaseNaryTree<Character>('a');
+        tree3.addChildren(new Character[] { 'b', 'd' });
 
         assertTrue(tree1.equals(tree2));
         assertFalse(tree1.equals(tree3));
@@ -342,39 +351,37 @@ public class TestCharacterNaryTree {
     /**
      * Tests Java serialization and deserialization of trees
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     @SuppressWarnings("unchecked")
     public void testSerialize() throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final ObjectOutputStream oos = new ObjectOutputStream(bos);
 
         oos.writeObject(sampleTree);
 
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
-        BaseNaryTree<Character> t = (BaseNaryTree<Character>) ois.readObject();
+        final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        final BaseNaryTree<Character> t = (BaseNaryTree<Character>) ois.readObject();
         assertTrue(sampleTree.equals(t));
     }
 
     /**
      * Tests the pq-gram tree-edit-distance approximation between two trees
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     public void testPqGramSimilarity() throws Exception {
         // Example taken from Augsten, Bohlen, Gamper, 2005, page 304
-        CharacterNaryTree t1 = new CharacterNaryTree('a');
-        CharacterNaryTree tmp = t1.addChild('a');
+        final BaseNaryTree<Character> t1 = new BaseNaryTree<Character>('a');
+        BaseNaryTree<Character> tmp = t1.addChild('a');
         tmp.addChild('e');
         tmp.addChild('b');
         t1.addChild('b');
         t1.addChild('c');
 
-        CharacterNaryTree t2 = new CharacterNaryTree('a');
+        final BaseNaryTree<Character> t2 = new BaseNaryTree<Character>('a');
         tmp = t2.addChild('a');
         tmp.addChild('e');
         tmp.addChild('b');
@@ -384,29 +391,29 @@ public class TestCharacterNaryTree {
         assertEquals(.31, t1.pqgramDistance(t2, 2, 3), .01f);
 
         // Example taken from Augsten, Bohlen, Gamper, 2005, page 308
-        CharacterNaryTree t = new CharacterNaryTree('a');
+        final BaseNaryTree<Character> t = new BaseNaryTree<Character>('a');
         t.addChild('b');
         tmp = t.addChild('c');
         tmp.addChild('d');
         tmp.addChild('e');
         tmp.addChild('f');
         tmp.addChild('g');
-        tmp = (CharacterNaryTree) tmp.subtree('e');
+        tmp = tmp.subtree('e');
         tmp.addChild('h');
         tmp.addChild('i');
         tmp.addChild('j');
 
-        CharacterNaryTree tPrime = new CharacterNaryTree('a');
+        final BaseNaryTree<Character> tPrime = new BaseNaryTree<Character>('a');
         tPrime.addChild('b');
         tmp = tPrime.addChild('c');
         tmp.addChild('d');
         tmp.addChild('e');
         tmp.addChild('f');
-        tmp = (CharacterNaryTree) tmp.subtree('e');
+        tmp = tmp.subtree('e');
         tmp.addChild('h');
         tmp.addChild('i');
 
-        CharacterNaryTree tDoublePrime = new CharacterNaryTree('a');
+        final BaseNaryTree<Character> tDoublePrime = new BaseNaryTree<Character>('a');
         tDoublePrime.addChild('b');
         tDoublePrime.addChild('d');
         tDoublePrime.addChild('h');
