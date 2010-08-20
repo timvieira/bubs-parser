@@ -17,8 +17,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * A simple string-only n-ary tree implementation. Does not implement pq-gram or other distance metrics. Useful for reading and writing sentences without regard to the grammar
- * they're represented in (if the grammar is known, see {@link ParseTree} instead.
+ * A simple string-only n-ary tree implementation. Does not implement pq-gram or other distance metrics.
+ * Useful for reading and writing sentences without regard to the grammar they're represented in (if the
+ * grammar is known, see {@link ParseTree} instead.
  * 
  * @author Aaron Dunlop
  * @since Sep 29, 2008
@@ -99,7 +100,7 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
         }
     }
 
-    public void addSubtree(final NaryTree<String> subtree) {
+    public void addSubtree(final Tree<String> subtree) {
         final StringNaryTree typedSubtree = (StringNaryTree) subtree;
         final int leavesAdded = typedSubtree.leaves - (isLeaf() ? 1 : 0);
         childList.add(typedSubtree);
@@ -211,7 +212,8 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
     }
 
     /**
-     * Returns the 'head' descendant of this tree, using a head-percolation rule-set of the standard Charniak/Magerman form.
+     * Returns the 'head' descendant of this tree, using a head-percolation rule-set of the standard
+     * Charniak/Magerman form.
      * 
      * @param ruleset head-percolation ruleset
      * @return head descendant
@@ -477,7 +479,8 @@ public class StringNaryTree implements NaryTree<String>, Serializable {
      * @return subtree
      * @throws IOException if the read fails
      */
-    private static StringNaryTree readSubtree(final Reader reader, final StringNaryTree parent) throws IOException {
+    private static StringNaryTree readSubtree(final Reader reader, final StringNaryTree parent)
+            throws IOException {
         try {
             // Recursively read a tree from the reader.
             // TODO: This could probably be simplified and perhaps optimized

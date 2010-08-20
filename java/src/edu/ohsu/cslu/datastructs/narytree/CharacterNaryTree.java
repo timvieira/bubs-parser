@@ -79,13 +79,13 @@ public final class CharacterNaryTree extends BaseNaryTree<Character> {
     }
 
     public void addChildren(final char[] childLabels) {
-        for (int child : childLabels) {
+        for (final int child : childLabels) {
             addChild(child);
         }
     }
 
     @Override
-    public void addSubtree(final NaryTree<Character> subtree) {
+    public void addSubtree(final Tree<Character> subtree) {
         super.addSubtree((BaseNaryTree<Character>) subtree);
     }
 
@@ -110,7 +110,7 @@ public final class CharacterNaryTree extends BaseNaryTree<Character> {
     }
 
     public void removeChildren(final char[] childLabels) {
-        for (int childLabel : childLabels) {
+        for (final int childLabel : childLabels) {
             removeChild(childLabel);
         }
     }
@@ -127,8 +127,8 @@ public final class CharacterNaryTree extends BaseNaryTree<Character> {
 
     @Override
     public List<Character> childLabels() {
-        ArrayList<Character> list = new ArrayList<Character>(childList.size());
-        for (BaseNaryTree<Character> child : childList) {
+        final ArrayList<Character> list = new ArrayList<Character>(childList.size());
+        for (final BaseNaryTree<Character> child : childList) {
             list.add(new Character((char) child.label));
         }
         return list;
@@ -141,15 +141,13 @@ public final class CharacterNaryTree extends BaseNaryTree<Character> {
      * Overrides BaseNaryTree implementation purely for debugging purposes - uses CharShiftRegister instead of
      * IntShiftRegister
      * 
-     * @param p
-     *            parameter
-     * @param q
-     *            parameter
+     * @param p parameter
+     * @param q parameter
      * @return profile
      */
     @Override
     public PqgramProfile pqgramProfile(final int p, final int q) {
-        PqgramProfile profile = new PqgramProfile();
+        final PqgramProfile profile = new PqgramProfile();
         pqgramProfile(p, q, profile, this, new CharShiftRegister(p));
         return profile;
     }
@@ -161,19 +159,14 @@ public final class CharacterNaryTree extends BaseNaryTree<Character> {
      * Overrides BaseNaryTree implementation purely for debugging purposes - uses CharShiftRegister instead of
      * IntShiftRegister
      * 
-     * @param p
-     *            parameter
-     * @param q
-     *            parameter
-     * @param profile
-     *            Current profile
-     * @param r
-     *            Current tree
-     * @param anc
-     *            Current shift register
+     * @param p parameter
+     * @param q parameter
+     * @param profile Current profile
+     * @param r Current tree
+     * @param anc Current shift register
      */
-    protected void pqgramProfile(final int p, final int q, PqgramProfile profile, final CharacterNaryTree r,
-            CharShiftRegister anc) {
+    protected void pqgramProfile(final int p, final int q, final PqgramProfile profile,
+            final CharacterNaryTree r, CharShiftRegister anc) {
         anc = anc.shift(r.charLabel());
         CharShiftRegister sib = new CharShiftRegister(q);
 
@@ -181,7 +174,7 @@ public final class CharacterNaryTree extends BaseNaryTree<Character> {
             final CharShiftRegister concat = anc.concat(sib);
             profile.add(concat);
         } else {
-            for (BaseNaryTree<Character> c0 : r.childList) {
+            for (final BaseNaryTree<Character> c0 : r.childList) {
                 final CharacterNaryTree c = (CharacterNaryTree) c0;
                 sib = sib.shift(c.charLabel());
                 final CharShiftRegister concat = anc.concat(sib);
@@ -200,37 +193,32 @@ public final class CharacterNaryTree extends BaseNaryTree<Character> {
     /**
      * Reads in an CharacterNaryTree from a standard parenthesis-bracketed representation
      * 
-     * @param inputStream
-     *            The stream to read from
+     * @param inputStream The stream to read from
      * @return the tree
-     * @throws IOException
-     *             if the read fails
+     * @throws IOException if the read fails
      */
-    public static CharacterNaryTree read(InputStream inputStream) throws IOException {
+    public static CharacterNaryTree read(final InputStream inputStream) throws IOException {
         return (CharacterNaryTree) read(new InputStreamReader(inputStream), CharacterNaryTree.class, null);
     }
 
     /**
      * Reads in an CharacterNaryTree from a standard parenthesis-bracketed representation
      * 
-     * @param string
-     *            String representation of the tree
+     * @param string String representation of the tree
      * @return the tree
      */
-    public static CharacterNaryTree read(String string) {
+    public static CharacterNaryTree read(final String string) {
         return (CharacterNaryTree) read(string, CharacterNaryTree.class, null);
     }
 
     /**
      * Reads in an CharacterNaryTree from a standard parenthesis-bracketed representation
      * 
-     * @param reader
-     *            The reader to read from
+     * @param reader The reader to read from
      * @return the tree
-     * @throws IOException
-     *             if the read fails
+     * @throws IOException if the read fails
      */
-    public static CharacterNaryTree read(Reader reader) throws IOException {
+    public static CharacterNaryTree read(final Reader reader) throws IOException {
         return (CharacterNaryTree) read(reader, CharacterNaryTree.class, null);
     }
 

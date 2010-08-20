@@ -28,7 +28,7 @@ public final class IntegerNaryTree extends BaseNaryTree<Integer> {
         super(label);
     }
 
-    public IntegerNaryTree(final String label, Vocabulary vocabulary) {
+    public IntegerNaryTree(final String label, final Vocabulary vocabulary) {
         super(Integer.parseInt(label));
     }
 
@@ -65,7 +65,7 @@ public final class IntegerNaryTree extends BaseNaryTree<Integer> {
     }
 
     @Override
-    public void addSubtree(final NaryTree<Integer> subtree) {
+    public void addSubtree(final Tree<Integer> subtree) {
         super.addSubtree((BaseNaryTree<Integer>) subtree);
     }
 
@@ -105,7 +105,7 @@ public final class IntegerNaryTree extends BaseNaryTree<Integer> {
     @Override
     public List<Integer> childLabels() {
         final ArrayList<Integer> list = new ArrayList<Integer>(childList.size());
-        for (BaseNaryTree<Integer> child : childList) {
+        for (final BaseNaryTree<Integer> child : childList) {
             list.add(new Integer(child.label));
         }
         return list;
@@ -114,37 +114,32 @@ public final class IntegerNaryTree extends BaseNaryTree<Integer> {
     /**
      * Reads in an IntegerNaryTree from a standard parenthesis-bracketed representation
      * 
-     * @param inputStream
-     *            The stream to read from
+     * @param inputStream The stream to read from
      * @return the tree
-     * @throws IOException
-     *             if the read fails
+     * @throws IOException if the read fails
      */
-    public static IntegerNaryTree read(InputStream inputStream) throws IOException {
+    public static IntegerNaryTree read(final InputStream inputStream) throws IOException {
         return (IntegerNaryTree) read(new InputStreamReader(inputStream), IntegerNaryTree.class, null);
     }
 
     /**
      * Reads in an IntegerNaryTree from a standard parenthesis-bracketed representation
      * 
-     * @param string
-     *            String representation of the tree
+     * @param string String representation of the tree
      * @return the tree
      */
-    public static IntegerNaryTree read(String string) {
+    public static IntegerNaryTree read(final String string) {
         return (IntegerNaryTree) read(string, IntegerNaryTree.class, null);
     }
 
     /**
      * Reads in an IntegerNaryTree from a standard parenthesis-bracketed representation
      * 
-     * @param reader
-     *            The reader to read from
+     * @param reader The reader to read from
      * @return the tree
-     * @throws IOException
-     *             if the read fails
+     * @throws IOException if the read fails
      */
-    public static IntegerNaryTree read(Reader reader) throws IOException {
+    public static IntegerNaryTree read(final Reader reader) throws IOException {
         return (IntegerNaryTree) read(reader, IntegerNaryTree.class, null);
     }
 }
