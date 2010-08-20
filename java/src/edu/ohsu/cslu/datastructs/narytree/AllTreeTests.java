@@ -13,6 +13,7 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses( { TestIntegerNaryTree.class, TestCharacterNaryTree.class, TestParseTree.class,
-        TestStringNaryTree.class, TestIntShiftRegister.class, TestCharShiftRegister.class })
+        TestStringNaryTree.class, TestIntShiftRegister.class, TestCharShiftRegister.class,
+        TestStringBinaryTree.class })
 public class AllTreeTests {
 }
