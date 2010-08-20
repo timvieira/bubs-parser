@@ -18,8 +18,7 @@ import java.util.List;
 
 /**
  * A simple string-only n-ary tree implementation. Does not implement pq-gram or other distance metrics.
- * Useful for reading and writing sentences without regard to the grammar they're represented in (if the
- * grammar is known, see {@link ParseTree} instead.
+ * Useful for reading and writing sentences without regard to the grammar they're represented in.
  * 
  * @author Aaron Dunlop
  * @since Sep 29, 2008

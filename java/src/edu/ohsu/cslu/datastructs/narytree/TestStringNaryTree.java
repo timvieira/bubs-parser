@@ -27,16 +27,19 @@ import static junit.framework.Assert.*;
 @RunWith(FilteredRunner.class)
 public class TestStringNaryTree {
 
-    private StringNaryTree sampleTree;
+    private BaseNaryTree<String> sampleTree;
     private String stringSampleTree;
 
-    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k" };
-    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] { "f", "d", "b", "a", "c", "e", "g", "i", "h", "k", "j" };
-    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "a", "c", "b", "e", "d", "g", "h", "j", "k", "i", "f" };
+    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "a", "b", "c", "d", "e", "f", "g",
+            "h", "i", "j", "k" };
+    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] { "f", "d", "b", "a", "c", "e", "g",
+            "i", "h", "k", "j" };
+    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "a", "c", "b", "e", "d", "g", "h",
+            "j", "k", "i", "f" };
 
     @Before
     public void setUp() {
-        sampleTree = new StringNaryTree("f");
+        sampleTree = new BaseNaryTree<String>("f");
 
         StringNaryTree tmp1 = new StringNaryTree("b");
         tmp1.addChild("a");
@@ -158,7 +161,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testSubtree() throws Exception {
-        final StringNaryTree subtree = sampleTree.subtree("d");
+        final BaseNaryTree<String> subtree = sampleTree.subtree("d");
         assertEquals(5, subtree.size());
         assertNotNull(subtree.subtree("b"));
         assertNotNull(subtree.subtree("e"));

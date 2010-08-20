@@ -19,27 +19,23 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.ohsu.cslu.common.Vocabulary;
-
 /**
- * NaryTree implementation which stores integers as labels.
- * 
- * TODO: This implementation needs tuning for performance and memory footprint.
+ * NaryTree implementation
  * 
  * @author Aaron Dunlop
  * @since Sep 19, 2008
  * 
  *        $Id$
  */
-public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
+public class BaseNaryTree<E> implements Serializable, NaryTree<E> {
 
     private final static long serialVersionUID = 369752896212698723L;
 
     /** Label of the root node */
-    protected final int label;
+    protected final E label;
 
     /** Parent node (if any) */
-    protected BaseNaryTree<?> parent;
+    protected BaseNaryTree<E> parent;
 
     /**
      * All the children of this tree
@@ -54,75 +50,54 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
     /** Number of leaf nodes in this tree */
     protected int leaves;
 
-    public BaseNaryTree(final int label, final BaseNaryTree<E> parent) {
+    public BaseNaryTree(final E label, final BaseNaryTree<E> parent) {
         this.label = label;
         size = 1;
         leaves = 1;
         this.parent = parent;
     }
 
-    public BaseNaryTree(final int label) {
+    public BaseNaryTree(final E label) {
         this(label, null);
     }
 
     /**
-     * @return the label of the root node
+     * Adds a child to the tree
+     * 
+     * @param childLabel label of the child
+     * @return The newly added subtree
      */
-    public int intLabel() {
+    public BaseNaryTree<E> addChild(final E childLabel) {
+        return addChild(new BaseNaryTree<E>(childLabel));
+    }
+
+    @Override
+    public E label() {
         return label;
     }
 
-    /**
-     * Adds a child to the tree
-     * 
-     * @param childLabel
-     *            label of the child
-     * @return The newly added subtree
-     */
-    public abstract BaseNaryTree<E> addChild(final String childLabel);
-
-    /**
-     * Adds a child to the tree
-     * 
-     * @param childLabel
-     *            label of the child
-     * @return The newly added subtree
-     */
-    @SuppressWarnings("unchecked")
-    public BaseNaryTree<E> addChild(final int childLabel) {
-        try {
-            Class<?> c = getClass();
-            BaseNaryTree<E> child = (BaseNaryTree<E>) c.getConstructor(
-                new Class[] { int.class, BaseNaryTree.class }).newInstance(new Object[] { childLabel, this });
-            addChild(child);
-            return child;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @Override
+    public String stringLabel() {
+        return label.toString();
     }
 
     protected BaseNaryTree<E> addChild(final BaseNaryTree<E> child) {
+        child.parent = this;
         updateSize(1, isLeaf() ? 0 : 1);
         childList.add(child);
         return child;
     }
 
-    public void addChildren(final int[] childLabels) {
-        for (int child : childLabels) {
-            addChild(child);
-        }
-    }
-
     @Override
     public void addChildren(final Collection<E> childLabels) {
-        for (E child : childLabels) {
+        for (final E child : childLabels) {
             addChild(child);
         }
     }
 
     @Override
     public void addChildren(final E[] childLabels) {
-        for (E child : childLabels) {
+        for (final E child : childLabels) {
             addChild(child);
         }
     }
@@ -134,28 +109,37 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         updateSize(subtree.size, leavesAdded);
     }
 
+    @Override
+    public void addSubtree(final Tree<E> subtree) {
+        addSubtree((BaseNaryTree<E>) subtree);
+    }
+
+    @Override
+    public List<E> childLabels() {
+        return inOrderLabelList(new LinkedList<E>());
+    }
+
     /**
      * Used just for static parsing routines
      * 
-     * @param subtree
-     *            tree to add
+     * @param subtree tree to add
      */
     @SuppressWarnings("unchecked")
     private void internalAddSubtree(final BaseNaryTree<?> subtree) {
         addSubtree((BaseNaryTree<E>) subtree);
     }
 
-    public boolean removeChild(final int childLabel) {
+    public boolean removeChild(final E childLabel) {
         int i = 0;
-        for (Iterator<BaseNaryTree<E>> iter = childList.iterator(); iter.hasNext();) {
-            BaseNaryTree<E> child = iter.next();
-            if (child.label == childLabel) {
+        for (final Iterator<BaseNaryTree<E>> iter = childList.iterator(); iter.hasNext();) {
+            final BaseNaryTree<E> child = iter.next();
+            if (child.label.equals(childLabel)) {
                 final int leavesRemoved = (childList.size() == 1 || !child.isLeaf()) ? 0 : 1;
 
                 iter.remove();
                 child.parent = null;
                 childList.addAll(i, child.childList);
-                for (BaseNaryTree<E> t : child.childList) {
+                for (final BaseNaryTree<E> t : child.childList) {
                     t.parent = this;
                 }
                 updateSize(-1, -leavesRemoved);
@@ -168,27 +152,21 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
 
     @Override
     public void removeChildren(final Collection<E> childLabels) {
-        for (E childLabel : childLabels) {
+        for (final E childLabel : childLabels) {
             removeChild(childLabel);
         }
     }
 
     @Override
     public void removeChildren(final E[] childLabels) {
-        for (E childLabel : childLabels) {
+        for (final E childLabel : childLabels) {
             removeChild(childLabel);
         }
     }
 
-    public void removeChildren(final int[] childLabels) {
-        for (int childLabel : childLabels) {
-            removeChild(childLabel);
-        }
-    }
-
-    public boolean removeSubtree(final int childLabel) {
-        for (Iterator<BaseNaryTree<E>> i = childList.iterator(); i.hasNext();) {
-            BaseNaryTree<E> child = i.next();
+    public boolean removeSubtree(final E childLabel) {
+        for (final Iterator<BaseNaryTree<E>> i = childList.iterator(); i.hasNext();) {
+            final BaseNaryTree<E> child = i.next();
             if (child.label == childLabel) {
                 final int leavesRemoved = (childList.size() == 1) ? 0 : child.leaves;
                 i.remove();
@@ -197,15 +175,6 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
             }
         }
         return false;
-    }
-
-    public int[] childArray() {
-        int[] childArray = new int[childList.size()];
-        int i = 0;
-        for (BaseNaryTree<E> child : childList) {
-            childArray[i++] = child.label;
-        }
-        return childArray;
     }
 
     public List<NaryTree<E>> children() {
@@ -221,18 +190,13 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
      * 
      * @return 'in-order' {@link Iterator}
      */
-    public Iterator<Integer> inOrderIntegerIterator() {
-        // A simple and stupid implementation, but we can tune for performance if needed
-        return inOrderLabelList(this, new ArrayList<Integer>(size)).iterator();
-    }
-
     public Iterator<NaryTree<E>> inOrderIterator() {
         // A simple and stupid implementation, but we can tune for performance if needed
         return inOrderList(this, new ArrayList<NaryTree<E>>(size)).iterator();
     }
 
-    private List<NaryTree<E>> inOrderList(BaseNaryTree<E> tree, List<NaryTree<E>> list) {
-        Iterator<BaseNaryTree<E>> i = tree.childList.iterator();
+    private List<NaryTree<E>> inOrderList(final BaseNaryTree<E> tree, final List<NaryTree<E>> list) {
+        final Iterator<BaseNaryTree<E>> i = tree.childList.iterator();
         if (i.hasNext()) {
             inOrderList(i.next(), list);
         }
@@ -246,95 +210,80 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         return list;
     }
 
-    private List<Integer> inOrderLabelList(BaseNaryTree<E> tree, List<Integer> list) {
-        Iterator<BaseNaryTree<E>> i = tree.childList.iterator();
+    private List<E> inOrderLabelList(final List<E> list) {
+        final Iterator<BaseNaryTree<E>> i = childList.iterator();
         if (i.hasNext()) {
-            inOrderLabelList(i.next(), list);
+            i.next().inOrderLabelList(list);
         }
 
-        list.add(new Integer(tree.label));
+        list.add(label);
 
         while (i.hasNext()) {
-            inOrderLabelList(i.next(), list);
+            i.next().inOrderLabelList(list);
         }
 
         return list;
     }
 
-    public int[] inOrderArray() {
-        return toIntArray(inOrderIntegerIterator());
-    }
-
-    public Iterator<Integer> preOrderIntegerIterator() {
-        // A simple and stupid implementation, but we can tune for performance if needed
-        return preOrderLabelList(this, new ArrayList<Integer>(size)).iterator();
+    @Override
+    public Iterator<E> inOrderLabelIterator() {
+        return inOrderLabelList(new LinkedList<E>()).iterator();
     }
 
     public Iterator<NaryTree<E>> preOrderIterator() {
         // A simple and stupid implementation, but we can tune for performance if needed
-        return preOrderList(this, new ArrayList<NaryTree<E>>(size)).iterator();
+        return preOrderList(new ArrayList<NaryTree<E>>(size)).iterator();
     }
 
-    private List<NaryTree<E>> preOrderList(final BaseNaryTree<E> tree, final List<NaryTree<E>> list) {
-        list.add(tree);
-        for (BaseNaryTree<E> child : tree.childList) {
-            preOrderList(child, list);
+    private List<NaryTree<E>> preOrderList(final List<NaryTree<E>> list) {
+        list.add(this);
+        for (final BaseNaryTree<E> child : childList) {
+            child.preOrderList(list);
         }
 
         return list;
     }
 
-    private List<Integer> preOrderLabelList(final BaseNaryTree<E> tree, final List<Integer> list) {
-        list.add(new Integer(tree.label));
-        for (BaseNaryTree<E> child : tree.childList) {
-            preOrderLabelList(child, list);
+    private List<E> preOrderLabelList(final List<E> list) {
+        list.add(label);
+        for (final BaseNaryTree<E> child : childList) {
+            child.preOrderLabelList(list);
         }
 
         return list;
     }
 
-    public int[] preOrderArray() {
-        return toIntArray(preOrderIntegerIterator());
-    }
-
-    public Iterator<Integer> postOrderIntegerIterator() {
-        // A simple and stupid implementation, but we can tune for performance if needed
-        return postOrderLabelList(this, new ArrayList<Integer>(size)).iterator();
+    @Override
+    public Iterator<E> preOrderLabelIterator() {
+        return preOrderLabelList(new ArrayList<E>(size)).iterator();
     }
 
     public Iterator<NaryTree<E>> postOrderIterator() {
         // A simple and stupid implementation, but we can tune for performance if needed
-        return postOrderList(this, new ArrayList<NaryTree<E>>(size)).iterator();
+        return postOrderList(new ArrayList<NaryTree<E>>(size)).iterator();
     }
 
-    private List<NaryTree<E>> postOrderList(final BaseNaryTree<E> tree, final List<NaryTree<E>> list) {
-        for (BaseNaryTree<E> child : tree.childList) {
-            postOrderList(child, list);
+    private List<NaryTree<E>> postOrderList(final List<NaryTree<E>> list) {
+        for (final BaseNaryTree<E> child : childList) {
+            child.postOrderList(list);
         }
-        list.add(tree);
+        list.add(this);
 
         return list;
     }
 
-    private List<Integer> postOrderLabelList(final BaseNaryTree<E> tree, final List<Integer> list) {
-        for (BaseNaryTree<E> child : tree.childList) {
-            postOrderLabelList(child, list);
+    private List<E> postOrderLabelList(final List<E> list) {
+        for (final BaseNaryTree<E> child : childList) {
+            child.postOrderLabelList(list);
         }
-        list.add(new Integer(tree.label));
+        list.add(label);
 
         return list;
     }
 
-    public int[] postOrderArray() {
-        return toIntArray(postOrderIntegerIterator());
-    }
-
-    private int[] toIntArray(final Iterator<Integer> iter) {
-        int[] array = new int[size];
-        for (int i = 0; i < size; i++) {
-            array[i] = iter.next().intValue();
-        }
-        return array;
+    @Override
+    public Iterator<E> postOrderLabelIterator() {
+        return postOrderLabelList(new LinkedList<E>()).iterator();
     }
 
     public boolean isLeaf() {
@@ -358,14 +307,13 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         return leaves;
     }
 
-    @SuppressWarnings("unchecked")
     public BaseNaryTree<E> parent() {
-        return (BaseNaryTree<E>) parent;
+        return parent;
     }
 
-    public BaseNaryTree<E> subtree(final int childLabel) {
-        for (BaseNaryTree<E> child : childList) {
-            if (child.label == childLabel) {
+    public BaseNaryTree<E> subtree(final E childLabel) {
+        for (final BaseNaryTree<E> child : childList) {
+            if (child.label.equals(childLabel)) {
                 return child;
             }
         }
@@ -383,29 +331,38 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
     /**
      * Reads in an n-ary tree from a standard parenthesis-bracketed representation
      * 
-     * @param inputStream
-     *            The stream to read from
+     * @param inputStream The stream to read from
      * @return the tree
-     * @throws IOException
-     *             if the read fails
+     * @throws IOException if the read fails
      */
-    public static BaseNaryTree<?> read(final InputStream inputStream,
-            final Class<? extends BaseNaryTree<?>> treeClass, Vocabulary vocabulary) throws IOException {
-        return read(new InputStreamReader(inputStream), treeClass, vocabulary);
+    public static <T> BaseNaryTree<T> read(final InputStream inputStream, final Class<T> type)
+            throws IOException {
+        return read(new InputStreamReader(inputStream), type);
     }
 
     /**
      * Reads in an n-ary tree from a standard parenthesis-bracketed representation
      * 
-     * @param string
-     *            String representation of the tree
+     * @param inputStream The stream to read from
+     * @param labelParser Parser appropriate for the labels contained in the tree
+     * @return the tree
+     * @throws IOException if the read fails
+     */
+    public static <T> BaseNaryTree<T> read(final InputStream inputStream, final LabelParser<T> labelParser)
+            throws IOException {
+        return read(new InputStreamReader(inputStream), labelParser);
+    }
+
+    /**
+     * Reads in an n-ary tree from a standard parenthesis-bracketed representation
+     * 
+     * @param string String representation of the tree
      * @return the tree
      */
-    public static BaseNaryTree<?> read(final String string, final Class<? extends BaseNaryTree<?>> treeClass,
-            Vocabulary vocabulary) {
+    public static <T> BaseNaryTree<T> read(final String string, final Class<T> type) {
         try {
-            return read(new StringReader(string), treeClass, vocabulary);
-        } catch (IOException e) {
+            return read(new StringReader(string), type);
+        } catch (final IOException e) {
             // A StringReader shouldn't ever throw an IOException
             throw new RuntimeException(e);
         }
@@ -414,14 +371,52 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
     /**
      * Reads in an n-ary tree from a standard parenthesis-bracketed representation
      * 
-     * @param reader
-     *            The reader to read from
+     * @param string String representation of the tree
+     * @param labelParser Parser appropriate for the labels contained in the tree
      * @return the tree
-     * @throws IOException
-     *             if the read fails
      */
-    public static BaseNaryTree<?> read(final Reader reader, final Class<? extends BaseNaryTree<?>> treeClass,
-            Vocabulary vocabulary) throws IOException {
+    public static <T> BaseNaryTree<T> read(final String string, final LabelParser<T> labelParser) {
+        try {
+            return read(new StringReader(string), labelParser);
+        } catch (final IOException e) {
+            // A StringReader shouldn't ever throw an IOException
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Reads in an n-ary tree from a standard parenthesis-bracketed representation
+     * 
+     * @param reader The reader to read from
+     * @return the tree
+     * @throws IOException if the read fails
+     */
+    public static <T> BaseNaryTree<T> read(final Reader reader, final Class<T> type) throws IOException {
+
+        try {
+            final Constructor<T> labelConstructor = type.getConstructor(new Class[] { String.class });
+            final LabelParser<T> labelParser = new LabelParser<T>() {
+                @Override
+                public T parse(final String label) throws Exception {
+                    return labelConstructor.newInstance(new Object[] { label });
+                }
+            };
+            return read(reader, labelParser);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Recursively reads a subtree from a Reader
+     * 
+     * @param reader source
+     * @param labelParser Parser appropriate for the labels contained in the tree
+     * @return the tree
+     * @throws IOException if the read fails
+     */
+    public static <T> BaseNaryTree<T> read(final Reader reader, final LabelParser<T> labelParser)
+            throws IOException {
         char c;
 
         // Discard any spaces or end-of-line characters
@@ -432,43 +427,32 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         if (c != '(') {
             throw new IllegalArgumentException("Bad tree format. Expected '(' but found '" + c + "'");
         }
-
-        Constructor<? extends BaseNaryTree<?>> treeConstructor = null;
-
-        try {
-            treeConstructor = treeClass.getConstructor(new Class[] { String.class, Vocabulary.class });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        return readSubtree(reader, null, treeConstructor, vocabulary);
+        return readSubtree(reader, null, labelParser);
     }
 
     /**
      * Recursively reads a subtree from a Reader
      * 
-     * @param reader
-     *            source
-     * @param parent
-     *            parent tree (if any)
+     * @param reader source
+     * @param parent parent tree (if any)
+     * @param labelParser Parser appropriate for the labels contained in the tree
      * @return subtree
-     * @throws IOException
-     *             if the read fails
+     * @throws IOException if the read fails
      */
-    private static BaseNaryTree<?> readSubtree(final Reader reader, final BaseNaryTree<?> parent,
-            final Constructor<? extends BaseNaryTree<?>> treeConstructor, final Vocabulary labelMap)
-            throws IOException {
+    private static <T> BaseNaryTree<T> readSubtree(final Reader reader, final BaseNaryTree<T> parent,
+            final LabelParser<T> labelParser) throws IOException {
+
         try {
             // Recursively read a tree from the reader.
             // TODO: This could probably be simplified and perhaps optimized
-            StringBuilder rootToken = new StringBuilder();
+            final StringBuilder rootToken = new StringBuilder();
 
             // Read the root token
             for (char c = (char) reader.read(); c != ' ' && c != ')'; c = (char) reader.read()) {
                 rootToken.append(c);
             }
-            BaseNaryTree<?> tree = treeConstructor
-                .newInstance(new Object[] { rootToken.toString(), labelMap });
+
+            final BaseNaryTree<T> tree = new BaseNaryTree<T>(labelParser.parse(rootToken.toString()));
 
             StringBuilder childToken = new StringBuilder();
 
@@ -476,12 +460,12 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
             for (char c = (char) reader.read(); c != ')'; c = (char) reader.read()) {
                 // Parse any subtrees we find
                 if (c == '(') {
-                    tree.internalAddSubtree(readSubtree(reader, tree, treeConstructor, labelMap));
+                    tree.internalAddSubtree(readSubtree(reader, tree, labelParser));
                 }
                 // Add any tokens we find
                 else if (c == ' ') {
                     if (childToken.length() > 0) {
-                        tree.addChild(childToken.toString());
+                        tree.addChild(new BaseNaryTree<T>(labelParser.parse(childToken.toString())));
                         childToken = new StringBuilder();
                     }
                 } else {
@@ -490,12 +474,12 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
             }
 
             if (childToken.length() > 0) {
-                tree.addChild(childToken.toString());
+                tree.addChild(new BaseNaryTree<T>(labelParser.parse(childToken.toString())));
             }
 
             tree.parent = parent;
             return tree;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -503,10 +487,8 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param outputStream
-     *            The {@link OutputStream} to write to
-     * @throws IOException
-     *             if the write fails
+     * @param outputStream The {@link OutputStream} to write to
+     * @throws IOException if the write fails
      */
     public void write(final OutputStream outputStream) throws IOException {
         write(new OutputStreamWriter(outputStream));
@@ -515,10 +497,8 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
     /**
      * Writes the tree to a standard parenthesis-bracketed representation
      * 
-     * @param writer
-     *            The {@link Writer} to write to
-     * @throws IOException
-     *             if the write fails
+     * @param writer The {@link Writer} to write to
+     * @throws IOException if the write fails
      */
     public void write(final Writer writer) throws IOException {
         writeSubtree(writer, this);
@@ -528,7 +508,7 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         if (tree.size > 1) {
             writer.write('(');
             writer.write(tree.stringLabel());
-            for (Iterator<BaseNaryTree<E>> i = tree.childList.iterator(); i.hasNext();) {
+            for (final Iterator<BaseNaryTree<E>> i = tree.childList.iterator(); i.hasNext();) {
                 writer.write(' ');
                 writeSubtree(writer, i.next());
             }
@@ -541,10 +521,8 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
     /**
      * Calculates the pq-gram tree similarity metric between two trees. See Augsten, Bohlen, Gamper, 2005.
      * 
-     * @param p
-     *            parameter
-     * @param q
-     *            parameter
+     * @param p parameter
+     * @param q parameter
      * @return tree similarity
      */
     public float pqgramDistance(final BaseNaryTree<E> other, final int p, final int q) {
@@ -552,33 +530,16 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
     }
 
     /**
-     * Calculates the pq-gram tree similarity metric between two trees. See Augsten, Bohlen, Gamper, 2005.
-     * 
-     * @param profile
-     *            The bag profile of the other tree
-     * @param p
-     *            parameter
-     * @param q
-     *            parameter
-     * @return tree similarity
-     */
-    public float pqgramDistance(final PqgramProfile profile, final int p, final int q) {
-        return PqgramProfile.pqgramDistance(profile, pqgramProfile(p, q));
-    }
-
-    /**
      * Implements pq-gram profile as per Augsten, Bohlen, Gamper 2005, page 306 (used to calculate pq-gram
      * distance)
      * 
-     * @param p
-     *            parameter
-     * @param q
-     *            parameter
+     * @param p parameter
+     * @param q parameter
      * @return profile
      */
-    public PqgramProfile pqgramProfile(final int p, final int q) {
-        PqgramProfile profile = new PqgramProfile();
-        pqgramProfile(p, q, profile, this, new IntShiftRegister(p));
+    public PqgramProfile<E> pqgramProfile(final int p, final int q) {
+        final PqgramProfile<E> profile = new PqgramProfile<E>();
+        pqgramProfile(p, q, profile, this, new ShiftRegister<E>(p));
         return profile;
     }
 
@@ -586,26 +547,21 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
      * Implements pq-gram profile as per Augsten, Bohlen, Gamper 2005, page 306 (used to calculate pq-gram
      * distance)
      * 
-     * @param p
-     *            parameter
-     * @param q
-     *            parameter
-     * @param profile
-     *            Current profile
-     * @param r
-     *            Current tree
-     * @param anc
-     *            Current shift register
+     * @param p parameter
+     * @param q parameter
+     * @param profile Current profile
+     * @param r Current tree
+     * @param anc Current shift register
      */
-    private void pqgramProfile(final int p, final int q, final PqgramProfile profile,
-            final BaseNaryTree<E> r, IntShiftRegister anc) {
+    private void pqgramProfile(final int p, final int q, final PqgramProfile<E> profile,
+            final BaseNaryTree<E> r, ShiftRegister<E> anc) {
         anc = anc.shift(r.label);
-        IntShiftRegister sib = new IntShiftRegister(q);
+        ShiftRegister<E> sib = new ShiftRegister<E>(q);
 
         if (r.isLeaf()) {
             profile.add(anc.concat(sib));
         } else {
-            for (BaseNaryTree<E> c : r.childList) {
+            for (final BaseNaryTree<E> c : r.childList) {
                 sib = sib.shift(c.label);
                 profile.add(anc.concat(sib));
                 pqgramProfile(p, q, profile, c, anc);
@@ -625,9 +581,9 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
             return false;
         }
 
-        BaseNaryTree<E> other = (BaseNaryTree<E>) o;
+        final BaseNaryTree<E> other = (BaseNaryTree<E>) o;
 
-        if ((other.label != label) || (other.childList.size() != childList.size())) {
+        if (!other.label.equals(label) || (other.childList.size() != childList.size())) {
             return false;
         }
 
@@ -645,10 +601,10 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
     @Override
     public String toString() {
         try {
-            Writer writer = new StringWriter();
+            final Writer writer = new StringWriter();
             write(writer);
             return writer.toString();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             return "Exception in toString(): " + e.getMessage();
         }
     }
@@ -657,7 +613,7 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
 
         protected Iterator<Integer> intIterator;
 
-        public BaseLabelIterator(Iterator<Integer> intIterator) {
+        public BaseLabelIterator(final Iterator<Integer> intIterator) {
             this.intIterator = intIterator;
         }
 
@@ -670,26 +626,26 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         }
     }
 
-    public static class PqgramProfile implements Cloneable {
+    public static class PqgramProfile<E> implements Cloneable {
 
-        private final Object2IntOpenHashMap<ShiftRegister> map;
+        private final Object2IntOpenHashMap<ShiftRegister<E>> map;
         private int size;
 
         public PqgramProfile() {
-            map = new Object2IntOpenHashMap<ShiftRegister>();
+            map = new Object2IntOpenHashMap<ShiftRegister<E>>();
         }
 
-        private PqgramProfile(Object2IntOpenHashMap<ShiftRegister> map) {
+        private PqgramProfile(final Object2IntOpenHashMap<ShiftRegister<E>> map) {
             this.map = map;
         }
 
-        public void add(ShiftRegister register) {
+        public void add(final ShiftRegister<E> register) {
             size++;
             map.put(register, map.getInt(register) + 1);
         }
 
-        public void addAll(Collection<? extends ShiftRegister> c) {
-            for (ShiftRegister register : c) {
+        public void addAll(final Collection<? extends ShiftRegister<E>> c) {
+            for (final ShiftRegister<E> register : c) {
                 add(register);
             }
         }
@@ -699,7 +655,7 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
             size = 0;
         }
 
-        public boolean contains(ShiftRegister register) {
+        public boolean contains(final ShiftRegister<E> register) {
             return map.containsKey(register);
         }
 
@@ -707,10 +663,10 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
             return map.isEmpty();
         }
 
-        public PqgramProfile intersection(PqgramProfile o) {
-            PqgramProfile intersection = new PqgramProfile();
+        public PqgramProfile<E> intersection(final PqgramProfile<E> o) {
+            final PqgramProfile<E> intersection = new PqgramProfile<E>();
 
-            for (ShiftRegister r : map.keySet()) {
+            for (final ShiftRegister<E> r : map.keySet()) {
                 final int count = Math.min(map.getInt(r), o.map.getInt(r));
 
                 if (count > 0) {
@@ -722,10 +678,10 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
             return intersection;
         }
 
-        public int intersectionSize(PqgramProfile o) {
+        public int intersectionSize(final PqgramProfile<E> o) {
             int intersectionSize = 0;
 
-            for (ShiftRegister r : map.keySet()) {
+            for (final ShiftRegister<E> r : map.keySet()) {
                 intersectionSize += Math.min(map.getInt(r), o.map.getInt(r));
             }
 
@@ -736,15 +692,16 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
             return size;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof PqgramProfile)) {
+        public boolean equals(final Object o) {
+            if (!(o instanceof PqgramProfile<?>)) {
                 return false;
             }
 
-            PqgramProfile bag = (PqgramProfile) o;
+            final PqgramProfile<E> bag = (PqgramProfile<E>) o;
 
-            for (ShiftRegister r : map.keySet()) {
+            for (final ShiftRegister<E> r : map.keySet()) {
                 if (map.getInt(r) != bag.map.getInt(r)) {
                     return false;
                 }
@@ -767,17 +724,20 @@ public abstract class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         /**
          * Calculates the pq-gram tree similarity metric between two trees. See Augsten, Bohlen, Gamper, 2005.
          * 
-         * @param profile1
-         *            Bag profile of a tree
-         * @param profile2
-         *            Bag profile of a tree
+         * @param profile1 Bag profile of a tree
+         * @param profile2 Bag profile of a tree
          * @return tree similarity
          */
-        public final static float pqgramDistance(final PqgramProfile profile1, final PqgramProfile profile2) {
+        public final static <E> float pqgramDistance(final PqgramProfile<E> profile1,
+                final PqgramProfile<E> profile2) {
             final int bagUnionCardinality = profile1.size() + profile2.size();
             final int bagIntersectionCardinality = profile1.intersectionSize(profile2);
 
             return 1f - 2f * bagIntersectionCardinality / bagUnionCardinality;
         }
+    }
+
+    public static interface LabelParser<T extends Object> {
+        public T parse(String label) throws Exception;
     }
 }
