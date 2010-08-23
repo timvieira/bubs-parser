@@ -23,41 +23,42 @@ public class HeadPercolationRuleset {
 
     Map<String, List<CategorySet>> rules = new HashMap<String, List<CategorySet>>();
 
-    public HeadPercolationRuleset(Reader rulesetReader) throws IOException {
+    public HeadPercolationRuleset(final Reader rulesetReader) throws IOException {
         init(rulesetReader);
     }
 
-    protected HeadPercolationRuleset(String ruleset) {
+    protected HeadPercolationRuleset(final String ruleset) {
         try {
             init(new StringReader(ruleset));
-        } catch (IOException ignore) {
+        } catch (final IOException ignore) {
             // StringReader won't IOException
         }
     }
 
-    private void init(Reader rulesetReader) throws IOException {
-        BufferedReader br = new BufferedReader(rulesetReader);
+    private void init(final Reader rulesetReader) throws IOException {
+        final BufferedReader br = new BufferedReader(rulesetReader);
 
         // The first line is the 'default'
-        String defaultLine = br.readLine();
-        LinkedList<CategorySet> defaultCategorySets = parse(defaultLine.substring(defaultLine.indexOf(' ')));
+        final String defaultLine = br.readLine();
+        final LinkedList<CategorySet> defaultCategorySets = parse(defaultLine.substring(defaultLine
+            .indexOf(' ')));
 
         for (String line = br.readLine(); line != null; line = br.readLine()) {
-            int split = line.indexOf(' ');
-            String category = line.substring(0, split);
-            LinkedList<CategorySet> categorySets = parse(line.substring(split));
+            final int split = line.indexOf(' ');
+            final String category = line.substring(0, split);
+            final LinkedList<CategorySet> categorySets = parse(line.substring(split));
             categorySets.addAll(defaultCategorySets);
             rules.put(category, categorySets);
         }
     }
 
-    private LinkedList<CategorySet> parse(String line) {
-        LinkedList<CategorySet> categorySets = new LinkedList<CategorySet>();
+    private LinkedList<CategorySet> parse(final String line) {
+        final LinkedList<CategorySet> categorySets = new LinkedList<CategorySet>();
 
-        String s = line.replaceAll("\\)", "");
-        String[] split = s.split(" *\\(");
+        final String s = line.replaceAll("\\)", "");
+        final String[] split = s.split(" *\\(");
         for (int i = 1; i < split.length; i++) {
-            CategorySet cs = new CategorySet(split[i].split(" +"));
+            final CategorySet cs = new CategorySet(split[i].split(" +"));
             categorySets.add(cs);
         }
 
@@ -71,24 +72,24 @@ public class HeadPercolationRuleset {
      * @param childProductions
      * @return the index of the head child
      */
-    public int headChild(String parentProduction, String[] childProductions) {
-        List<CategorySet> preferences = rules.get(parentProduction);
-        for (CategorySet preference : preferences) {
+    public int headChild(final String parentProduction, final List<String> childProductions) {
+        final List<CategorySet> preferences = rules.get(parentProduction);
+        for (final CategorySet preference : preferences) {
             switch (preference.direction) {
-            case Rightmost:
-                for (int i = childProductions.length - 1; i >= 0; i--) {
-                    if (preference.categories.contains(childProductions[i])) {
-                        return i;
+                case Rightmost:
+                    for (int i = childProductions.size() - 1; i >= 0; i--) {
+                        if (preference.categories.contains(childProductions.get(i))) {
+                            return i;
+                        }
                     }
-                }
-                break;
-            case Leftmost:
-                for (int i = 0; i < childProductions.length; i++) {
-                    if (preference.categories.contains(childProductions[i])) {
-                        return i;
+                    break;
+                case Leftmost:
+                    for (int i = 0; i < childProductions.size(); i++) {
+                        if (preference.categories.contains(childProductions.get(i))) {
+                            return i;
+                        }
                     }
-                }
-                break;
+                    break;
             }
         }
         throw new IllegalArgumentException("Unable to find head child for " + parentProduction);
@@ -99,7 +100,7 @@ public class HeadPercolationRuleset {
         private final Preference direction;
         private final Set<String> categories = new HashSet<String>();
 
-        public CategorySet(String[] split) {
+        public CategorySet(final String[] split) {
             direction = Preference.forString(split[0]);
             for (int i = 1; i < split.length; i++) {
                 categories.add(split[i]);
@@ -108,10 +109,10 @@ public class HeadPercolationRuleset {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(128);
+            final StringBuilder sb = new StringBuilder(128);
             sb.append(direction.toString());
             sb.append(" : ");
-            for (String category : categories) {
+            for (final String category : categories) {
                 sb.append(category);
                 sb.append(", ");
             }
@@ -124,7 +125,7 @@ public class HeadPercolationRuleset {
     private enum Preference {
         Rightmost, Leftmost;
 
-        public static Preference forString(String s) {
+        public static Preference forString(final String s) {
             if (s.equals("r")) {
                 return Rightmost;
             } else if (s.equals("l")) {
@@ -137,14 +138,14 @@ public class HeadPercolationRuleset {
         @Override
         public String toString() {
             switch (this) {
-            case Rightmost:
-                return "Rightmost";
+                case Rightmost:
+                    return "Rightmost";
 
-            case Leftmost:
-                return "Leftmost";
+                case Leftmost:
+                    return "Leftmost";
 
-            default:
-                return "Unknown";
+                default:
+                    return "Unknown";
             }
         }
     }

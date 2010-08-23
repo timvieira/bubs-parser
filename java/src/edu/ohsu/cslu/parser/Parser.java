@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
@@ -100,41 +100,7 @@ public abstract class Parser<G extends Grammar> {
      * @return Bracketed string representation of the un-factored tree
      */
     public static String unfactor(final String bracketedTree, final GrammarFormatType grammarFormatType) {
-        final StringNaryTree factoredTree = StringNaryTree.read(bracketedTree);
-        return unfactor(factoredTree, grammarFormatType).toString();
-    }
-
-    /**
-     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening
-     * binary-factored subtrees.
-     * 
-     * @param factoredTree Factored tree
-     * @param grammarFormatType Grammar format
-     * @return Un-factored tree
-     */
-    public static StringNaryTree unfactor(final StringNaryTree factoredTree,
-            final GrammarFormatType grammarFormatType) {
-
-        // Remove split category labels
-        final String label = grammarFormatType.unsplitNonTerminal(factoredTree.label());
-
-        final StringNaryTree unfactoredTree = new StringNaryTree(label);
-
-        for (final StringNaryTree factoredChild : factoredTree.children()) {
-
-            if (grammarFormatType.isFactored(factoredChild.label())) {
-                // If the child is a factored non-terminal, add each (unfactored) child tree individually to
-                // the unfactored tree
-                for (final StringNaryTree unfactoredChild : unfactor(factoredChild, grammarFormatType)
-                    .children()) {
-                    unfactoredTree.addSubtree(unfactor(unfactoredChild, grammarFormatType));
-                }
-            } else {
-                // Otherwise, add unfactor the child and add it as a subtree
-                unfactoredTree.addSubtree(unfactor(factoredChild, grammarFormatType));
-            }
-        }
-
-        return unfactoredTree;
+        final BinaryTree<String> factoredTree = BinaryTree.read(bracketedTree, String.class);
+        return factoredTree.unfactor(grammarFormatType).toString();
     }
 }

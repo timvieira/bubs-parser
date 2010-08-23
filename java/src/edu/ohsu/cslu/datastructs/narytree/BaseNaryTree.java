@@ -18,6 +18,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 /**
  * NaryTree implementation
@@ -76,11 +79,6 @@ public class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         return label;
     }
 
-    @Override
-    public String stringLabel() {
-        return label.toString();
-    }
-
     protected BaseNaryTree<E> addChild(final BaseNaryTree<E> child) {
         child.parent = this;
         updateSize(1, isLeaf() ? 0 : 1);
@@ -116,7 +114,11 @@ public class BaseNaryTree<E> implements Serializable, NaryTree<E> {
 
     @Override
     public List<E> childLabels() {
-        return inOrderLabelList(new LinkedList<E>());
+        final LinkedList<E> childLabels = new LinkedList<E>();
+        for (final BaseNaryTree<E> child : childList) {
+            childLabels.add(child.label);
+        }
+        return childLabels;
     }
 
     /**
@@ -328,6 +330,189 @@ public class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         }
     }
 
+    public BinaryTree<String> leftFactor(final GrammarFormatType grammarFormatType) {
+
+        final BinaryTree<String> binaryTreeRoot = new BinaryTree<String>(label.toString());
+        BinaryTree<String> binaryTree = binaryTreeRoot;
+
+        if (childList.size() > 0) {
+            final Queue<BaseNaryTree<E>> queue = new LinkedList<BaseNaryTree<E>>(childList);
+
+            // Add the first child as the left child of the binary tree
+            binaryTree.addSubtree(queue.remove().leftFactor(grammarFormatType));
+
+            // If there are 2 or more subsequent children, create factored child trees for them
+            while (queue.size() > 1) {
+                final BinaryTree<String> factoredTree = new BinaryTree<String>(
+                    grammarFormatType.factoredNonTerminal(label.toString()));
+                factoredTree.addSubtree(queue.remove().leftFactor(grammarFormatType));
+                binaryTree.addSubtree(factoredTree);
+                binaryTree = factoredTree;
+            }
+
+            // Add the last child
+            if (queue.size() > 0) {
+                binaryTree.addSubtree(queue.remove().leftFactor(grammarFormatType));
+            }
+        }
+
+        return binaryTreeRoot;
+    }
+
+    public BinaryTree<String> rightFactor(final GrammarFormatType grammarFormatType) {
+
+        final BinaryTree<String> binaryTreeRoot = new BinaryTree<String>(label.toString());
+        BinaryTree<String> binaryTree = binaryTreeRoot;
+
+        if (childList.size() > 0) {
+            final Queue<BaseNaryTree<E>> queue = new LinkedList<BaseNaryTree<E>>(childList);
+
+            // If there are 3 or more subsequent children, create factored child trees for them
+            while (queue.size() > 2) {
+                final BinaryTree<String> factoredTree = new BinaryTree<String>(
+                    grammarFormatType.factoredNonTerminal(label.toString()));
+                factoredTree.addSubtree(queue.remove().rightFactor(grammarFormatType));
+                binaryTree.addSubtree(factoredTree);
+                binaryTree = factoredTree;
+            }
+
+            // Add the next-to-last child as the right child of the factored tree
+            if (queue.size() > 1) {
+                binaryTree.addSubtree(queue.remove().rightFactor(grammarFormatType));
+            }
+
+            // And the last child as the right child of the root tree
+            binaryTreeRoot.addSubtree(queue.remove().rightFactor(grammarFormatType));
+        }
+
+        return binaryTreeRoot;
+    }
+
+    /**
+     * Writes the tree to a standard parenthesis-bracketed representation
+     * 
+     * @param outputStream The {@link OutputStream} to write to
+     * @throws IOException if the write fails
+     */
+    public void write(final OutputStream outputStream) throws IOException {
+        write(new OutputStreamWriter(outputStream));
+    }
+
+    /**
+     * Writes the tree to a standard parenthesis-bracketed representation
+     * 
+     * @param writer The {@link Writer} to write to
+     * @throws IOException if the write fails
+     */
+    public void write(final Writer writer) throws IOException {
+        writeSubtree(writer);
+    }
+
+    protected void writeSubtree(final Writer writer) throws IOException {
+        if (size > 1) {
+            writer.write('(');
+            writer.write(label.toString());
+            for (final Iterator<BaseNaryTree<E>> i = childList.iterator(); i.hasNext();) {
+                writer.write(' ');
+                i.next().writeSubtree(writer);
+            }
+            writer.write(')');
+        } else {
+            writer.write(label.toString());
+        }
+    }
+
+    /**
+     * Calculates the pq-gram tree similarity metric between two trees. See Augsten, Bohlen, Gamper, 2005.
+     * 
+     * @param p parameter
+     * @param q parameter
+     * @return tree similarity
+     */
+    public float pqgramDistance(final BaseNaryTree<E> other, final int p, final int q) {
+        return PqgramProfile.pqgramDistance(pqgramProfile(p, q), other.pqgramProfile(p, q));
+    }
+
+    /**
+     * Implements pq-gram profile as per Augsten, Bohlen, Gamper 2005, page 306 (used to calculate pq-gram
+     * distance)
+     * 
+     * @param p parameter
+     * @param q parameter
+     * @return profile
+     */
+    public PqgramProfile<E> pqgramProfile(final int p, final int q) {
+        final PqgramProfile<E> profile = new PqgramProfile<E>();
+        pqgramProfile(p, q, profile, this, new ShiftRegister<E>(p));
+        return profile;
+    }
+
+    /**
+     * Implements pq-gram profile as per Augsten, Bohlen, Gamper 2005, page 306 (used to calculate pq-gram
+     * distance)
+     * 
+     * @param p parameter
+     * @param q parameter
+     * @param profile Current profile
+     * @param r Current tree
+     * @param anc Current shift register
+     */
+    private void pqgramProfile(final int p, final int q, final PqgramProfile<E> profile,
+            final BaseNaryTree<E> r, ShiftRegister<E> anc) {
+        anc = anc.shift(r.label);
+        ShiftRegister<E> sib = new ShiftRegister<E>(q);
+
+        if (r.isLeaf()) {
+            profile.add(anc.concat(sib));
+        } else {
+            for (final BaseNaryTree<E> c : r.childList) {
+                sib = sib.shift(c.label);
+                profile.add(anc.concat(sib));
+                pqgramProfile(p, q, profile, c, anc);
+            }
+
+            for (int k = 1; k < q; k++) {
+                sib = sib.shift();
+                profile.add(anc.concat(sib));
+            }
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean equals(final Object o) {
+        if (!(o instanceof BaseNaryTree)) {
+            return false;
+        }
+
+        final BaseNaryTree<E> other = (BaseNaryTree<E>) o;
+
+        if (!other.label.equals(label) || (other.childList.size() != childList.size())) {
+            return false;
+        }
+
+        final Iterator<BaseNaryTree<E>> i1 = childList.iterator();
+        final Iterator<BaseNaryTree<E>> i2 = other.childList.iterator();
+        while (i1.hasNext()) {
+            if (!(i1.next().equals(i2.next()))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            final Writer writer = new StringWriter();
+            write(writer);
+            return writer.toString();
+        } catch (final IOException e) {
+            return "Exception in toString(): " + e.getMessage();
+        }
+    }
+
     /**
      * Reads in an n-ary tree from a standard parenthesis-bracketed representation
      * 
@@ -484,148 +669,6 @@ public class BaseNaryTree<E> implements Serializable, NaryTree<E> {
         }
     }
 
-    /**
-     * Writes the tree to a standard parenthesis-bracketed representation
-     * 
-     * @param outputStream The {@link OutputStream} to write to
-     * @throws IOException if the write fails
-     */
-    public void write(final OutputStream outputStream) throws IOException {
-        write(new OutputStreamWriter(outputStream));
-    }
-
-    /**
-     * Writes the tree to a standard parenthesis-bracketed representation
-     * 
-     * @param writer The {@link Writer} to write to
-     * @throws IOException if the write fails
-     */
-    public void write(final Writer writer) throws IOException {
-        writeSubtree(writer, this);
-    }
-
-    protected void writeSubtree(final Writer writer, final BaseNaryTree<E> tree) throws IOException {
-        if (tree.size > 1) {
-            writer.write('(');
-            writer.write(tree.stringLabel());
-            for (final Iterator<BaseNaryTree<E>> i = tree.childList.iterator(); i.hasNext();) {
-                writer.write(' ');
-                writeSubtree(writer, i.next());
-            }
-            writer.write(')');
-        } else {
-            writer.write(tree.stringLabel());
-        }
-    }
-
-    /**
-     * Calculates the pq-gram tree similarity metric between two trees. See Augsten, Bohlen, Gamper, 2005.
-     * 
-     * @param p parameter
-     * @param q parameter
-     * @return tree similarity
-     */
-    public float pqgramDistance(final BaseNaryTree<E> other, final int p, final int q) {
-        return PqgramProfile.pqgramDistance(pqgramProfile(p, q), other.pqgramProfile(p, q));
-    }
-
-    /**
-     * Implements pq-gram profile as per Augsten, Bohlen, Gamper 2005, page 306 (used to calculate pq-gram
-     * distance)
-     * 
-     * @param p parameter
-     * @param q parameter
-     * @return profile
-     */
-    public PqgramProfile<E> pqgramProfile(final int p, final int q) {
-        final PqgramProfile<E> profile = new PqgramProfile<E>();
-        pqgramProfile(p, q, profile, this, new ShiftRegister<E>(p));
-        return profile;
-    }
-
-    /**
-     * Implements pq-gram profile as per Augsten, Bohlen, Gamper 2005, page 306 (used to calculate pq-gram
-     * distance)
-     * 
-     * @param p parameter
-     * @param q parameter
-     * @param profile Current profile
-     * @param r Current tree
-     * @param anc Current shift register
-     */
-    private void pqgramProfile(final int p, final int q, final PqgramProfile<E> profile,
-            final BaseNaryTree<E> r, ShiftRegister<E> anc) {
-        anc = anc.shift(r.label);
-        ShiftRegister<E> sib = new ShiftRegister<E>(q);
-
-        if (r.isLeaf()) {
-            profile.add(anc.concat(sib));
-        } else {
-            for (final BaseNaryTree<E> c : r.childList) {
-                sib = sib.shift(c.label);
-                profile.add(anc.concat(sib));
-                pqgramProfile(p, q, profile, c, anc);
-            }
-
-            for (int k = 1; k < q; k++) {
-                sib = sib.shift();
-                profile.add(anc.concat(sib));
-            }
-        }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public boolean equals(final Object o) {
-        if (!(o instanceof BaseNaryTree)) {
-            return false;
-        }
-
-        final BaseNaryTree<E> other = (BaseNaryTree<E>) o;
-
-        if (!other.label.equals(label) || (other.childList.size() != childList.size())) {
-            return false;
-        }
-
-        final Iterator<BaseNaryTree<E>> i1 = childList.iterator();
-        final Iterator<BaseNaryTree<E>> i2 = other.childList.iterator();
-        while (i1.hasNext()) {
-            if (!(i1.next().equals(i2.next()))) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        try {
-            final Writer writer = new StringWriter();
-            write(writer);
-            return writer.toString();
-        } catch (final IOException e) {
-            return "Exception in toString(): " + e.getMessage();
-        }
-    }
-
-    protected abstract static class BaseLabelIterator {
-
-        protected Iterator<Integer> intIterator;
-
-        public BaseLabelIterator(final Iterator<Integer> intIterator) {
-            this.intIterator = intIterator;
-        }
-
-        public boolean hasNext() {
-            return intIterator.hasNext();
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
     public static class PqgramProfile<E> implements Cloneable {
 
         private final Object2IntOpenHashMap<ShiftRegister<E>> map;
@@ -712,8 +755,8 @@ public class BaseNaryTree<E> implements Serializable, NaryTree<E> {
 
         @Override
         @SuppressWarnings("unchecked")
-        public PqgramProfile clone() {
-            return new PqgramProfile((Object2IntOpenHashMap<ShiftRegister>) map.clone());
+        public PqgramProfile<E> clone() {
+            return new PqgramProfile<E>((Object2IntOpenHashMap<ShiftRegister<E>>) map.clone());
         }
 
         @Override

@@ -1,12 +1,5 @@
 package edu.ohsu.cslu.tools;
 
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_AFTER_HEAD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_BEFORE_HEAD;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HEAD_VERB;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_POS;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_POS;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,6 +19,7 @@ import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 import edu.ohsu.cslu.util.Strings;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.*;
 
 /**
  * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse trees,
@@ -277,24 +271,22 @@ public class SelectFeatures extends LinewiseCommandlineTool {
             final StringNaryTree node = (StringNaryTree) iter.next();
 
             if (node.isLeaf()) {
-                wordList.add(node.stringLabel().toLowerCase());
-                posList.add(node.parent().stringLabel());
+                wordList.add(node.label().toLowerCase());
+                posList.add(node.parent().label());
             }
         }
 
         int i = 0;
         for (final Iterator<NaryTree<String>> iter = tree.inOrderIterator(); iter.hasNext();) {
             final StringNaryTree node = (StringNaryTree) iter.next();
-            final String posLabel = node.parent() != null ? node.parent().stringLabel() : null;
+            final String posLabel = node.parent() != null ? node.parent().label() : null;
 
             if (node.isLeaf()) {
                 sb.append(beginBracket);
 
-                final String label = node.stringLabel();
-
-                appendWord(sb, label);
+                appendWord(sb, node.label());
                 appendPos(sb, posLabel);
-                appendWordFeatures(sb, label);
+                appendWordFeatures(sb, node.label());
 
                 // Previous words
                 for (int j = 1; ((j <= previousWords) && (i - j >= 0)); j++) {
@@ -380,8 +372,8 @@ public class SelectFeatures extends LinewiseCommandlineTool {
         final char initialChar = label.charAt(0);
 
         appendIndicatorFeature(sb, capitalized, Character.isUpperCase(initialChar), FeatureClass.Capitalized);
-        appendIndicatorFeature(sb, allcaps, Character.isUpperCase(initialChar)
-                && label.equals(label.toUpperCase()), FeatureClass.AllCaps);
+        appendIndicatorFeature(sb, allcaps,
+            Character.isUpperCase(initialChar) && label.equals(label.toUpperCase()), FeatureClass.AllCaps);
         appendIndicatorFeature(sb, hyphenated, label.indexOf('-') >= 0, FeatureClass.Hyphenated);
         appendIndicatorFeature(sb, initialNumeric, Character.isDigit(initialChar),
             FeatureClass.InitialNumeric);

@@ -1,11 +1,5 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -18,12 +12,25 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.tests.FilteredRunner;
 
+import static junit.framework.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * Tests {@link BinaryTree} parameterized with strings.
+ * 
+ * @author Aaron Dunlop
+ * @since Aug 23, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 @RunWith(FilteredRunner.class)
 public class TestStringBinaryTree {
 
-    private StringBinaryTree sampleTree;
+    private BinaryTree<String> sampleTree;
     private String stringSampleTree;
 
     private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "a", "b", "c", "d", "e", "f", "g",
@@ -35,20 +42,20 @@ public class TestStringBinaryTree {
 
     @Before
     public void setUp() {
-        sampleTree = new StringBinaryTree("f");
+        sampleTree = new BinaryTree<String>("f");
 
-        final StringBinaryTree d = sampleTree.addChild("d");
-        final StringBinaryTree b = d.addChild("b");
+        final BinaryTree<String> d = sampleTree.addChild("d");
+        final BinaryTree<String> b = d.addChild("b");
         b.addChild("a");
         b.addChild("c");
 
         d.addChild("e");
 
-        final StringBinaryTree i = sampleTree.addChild("i");
-        final StringBinaryTree h = i.addChild("h");
+        final BinaryTree<String> i = sampleTree.addChild("i");
+        final BinaryTree<String> h = i.addChild("h");
         h.addChild("g");
 
-        final StringBinaryTree k = i.addChild("k");
+        final BinaryTree<String> k = i.addChild("k");
         k.addChild("j");
 
         /**
@@ -73,7 +80,7 @@ public class TestStringBinaryTree {
 
     @Test
     public void testAddChild() throws Exception {
-        final StringBinaryTree tree = new StringBinaryTree("a");
+        final BinaryTree<String> tree = new BinaryTree<String>("a");
         assertEquals(1, tree.size());
         tree.addChild("b");
         assertEquals(2, tree.size());
@@ -83,7 +90,7 @@ public class TestStringBinaryTree {
 
     @Test
     public void testAddChildren() throws Exception {
-        final StringBinaryTree tree = new StringBinaryTree("a");
+        final BinaryTree<String> tree = new BinaryTree<String>("a");
         assertEquals(1, tree.size());
         tree.addChildren(new String[] { "b", "c" });
         assertEquals(3, tree.size());
@@ -94,8 +101,8 @@ public class TestStringBinaryTree {
 
     @Test
     public void testAddSubtree() throws Exception {
-        final StringBinaryTree tree = new StringBinaryTree("a");
-        final StringBinaryTree tmp = new StringBinaryTree("b");
+        final BinaryTree<String> tree = new BinaryTree<String>("a");
+        final BinaryTree<String> tmp = new BinaryTree<String>("b");
         tmp.addChildren(new String[] { "c", "d" });
         tree.addSubtree(tmp);
         assertEquals(4, tree.size());
@@ -150,7 +157,7 @@ public class TestStringBinaryTree {
 
     @Test
     public void testSubtree() throws Exception {
-        final StringBinaryTree subtree = sampleTree.subtree("d");
+        final BinaryTree<String> subtree = sampleTree.subtree("d");
         assertEquals(5, subtree.size());
         assertNotNull(subtree.subtree("b"));
         assertNotNull(subtree.subtree("e"));
@@ -193,9 +200,9 @@ public class TestStringBinaryTree {
 
     @Test
     public void testInOrderIterator() throws Exception {
-        final Iterator<StringBinaryTree> iter = sampleTree.inOrderIterator();
+        final Iterator<BinaryTree<String>> iter = sampleTree.inOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
-            assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next().stringLabel());
+            assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next().label().toString());
         }
     }
 
@@ -209,9 +216,9 @@ public class TestStringBinaryTree {
 
     @Test
     public void testPreOrderIterator() throws Exception {
-        final Iterator<StringBinaryTree> iter = sampleTree.preOrderIterator();
+        final Iterator<BinaryTree<String>> iter = sampleTree.preOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
-            assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next().stringLabel());
+            assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next().label().toString());
         }
     }
 
@@ -225,9 +232,9 @@ public class TestStringBinaryTree {
 
     @Test
     public void testPostOrderIterator() throws Exception {
-        final Iterator<StringBinaryTree> iter = sampleTree.postOrderIterator();
+        final Iterator<BinaryTree<String>> iter = sampleTree.postOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
-            assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next().stringLabel());
+            assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next().label().toString());
         }
     }
 
@@ -240,17 +247,11 @@ public class TestStringBinaryTree {
     }
 
     @Test
-    public void testSetStringLabel() throws Exception {
-        final StringBinaryTree simpleTree = StringBinaryTree.read(new StringReader("(a (b c) d)"));
-        simpleTree.children().get(0).setStringLabel("e");
-        assertEquals("(a (e c) d)", simpleTree.toString());
-    }
-
-    @Test
     public void testReadFromReader() throws Exception {
 
         final String stringSimpleTree = "(a (b c) d)";
-        final StringBinaryTree simpleTree = StringBinaryTree.read(new StringReader(stringSimpleTree));
+        final BinaryTree<String> simpleTree = BinaryTree.read(new StringReader(stringSimpleTree),
+            String.class);
         assertEquals(4, simpleTree.size());
         assertEquals(2, simpleTree.subtree("b").size());
 
@@ -260,7 +261,7 @@ public class TestStringBinaryTree {
         assertEquals("d", simpleTree.subtree("d").label());
 
         final String stringTestTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
-        final StringBinaryTree testTree = StringBinaryTree.read(new StringReader(stringTestTree));
+        final BinaryTree<String> testTree = BinaryTree.read(new StringReader(stringTestTree), String.class);
         assertEquals(12, testTree.size());
         assertEquals(8, testTree.subtree("b").subtree("c").size());
 
@@ -277,7 +278,7 @@ public class TestStringBinaryTree {
         assertEquals("k", testTree.subtree("b").subtree("k").label());
         assertEquals("l", testTree.subtree("b").subtree("k").subtree("l").label());
 
-        final StringBinaryTree tree = StringBinaryTree.read(new StringReader(stringSampleTree));
+        final BinaryTree<String> tree = BinaryTree.read(new StringReader(stringSampleTree), String.class);
         assertEquals(sampleTree, tree);
     }
 
@@ -288,7 +289,7 @@ public class TestStringBinaryTree {
         assertEquals(stringSampleTree, writer.toString());
 
         final String stringSimpleTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
-        final StringBinaryTree tree = new StringBinaryTree("a");
+        final BinaryTree<String> tree = new BinaryTree<String>("a");
         tree.addChild("b").addChild("c").addChild("d").addChild("e").addChild("f");
         tree.subtree("b").subtree("c").subtree("d").addChild("g").addChild("h");
         tree.subtree("b").subtree("c").addChild("i").addChild("j");
@@ -308,13 +309,13 @@ public class TestStringBinaryTree {
 
     @Test
     public void testEquals() throws Exception {
-        final StringBinaryTree tree1 = new StringBinaryTree("a");
+        final BinaryTree<String> tree1 = new BinaryTree<String>("a");
         tree1.addChildren(new String[] { "b", "c" });
 
-        final StringBinaryTree tree2 = new StringBinaryTree("a");
+        final BinaryTree<String> tree2 = new BinaryTree<String>("a");
         tree2.addChildren(new String[] { "b", "c" });
 
-        final StringBinaryTree tree3 = new StringBinaryTree("a");
+        final BinaryTree<String> tree3 = new BinaryTree<String>("a");
         tree3.addChildren(new String[] { "b", "d" });
 
         assertTrue(tree1.equals(tree2));
@@ -329,6 +330,7 @@ public class TestStringBinaryTree {
      * 
      * @throws Exception if something bad happens
      */
+    @SuppressWarnings("unchecked")
     @Test
     public void testSerialize() throws Exception {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -337,7 +339,49 @@ public class TestStringBinaryTree {
         oos.writeObject(sampleTree);
 
         final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
-        final StringBinaryTree t = (StringBinaryTree) ois.readObject();
+        final BinaryTree<String> t = (BinaryTree<String>) ois.readObject();
         assertTrue(sampleTree.equals(t));
+    }
+
+    @Test
+    public void testUnfactor() throws Exception {
+        BinaryTree<String> binaryTree = BinaryTree.read("(A B C)", String.class);
+        assertEquals(BaseNaryTree.read("(A B C)", String.class),
+            binaryTree.unfactor(GrammarFormatType.Berkeley));
+
+        binaryTree = BinaryTree.read("(A B (@A C D))", String.class);
+        assertEquals(BaseNaryTree.read("(A B C D)", String.class),
+            binaryTree.unfactor(GrammarFormatType.Berkeley));
+
+        binaryTree = BinaryTree.read("(A (@A B C) D)", String.class);
+        assertEquals(BaseNaryTree.read("(A B C D)", String.class),
+            binaryTree.unfactor(GrammarFormatType.Berkeley));
+
+        binaryTree = BinaryTree
+            .read("(ROOT_0 (NP_31 (@NP_29 (@NP_40 (:_3 --) (NNP_0 C.E.)) (NNP_9 Friedman)) (._3 .)))",
+                String.class);
+        assertEquals(BaseNaryTree.read("(ROOT (NP (: --) (NNP C.E.) (NNP Friedman) (. .)))", String.class),
+            binaryTree.unfactor(GrammarFormatType.Berkeley));
+
+        binaryTree = BinaryTree.read(
+            "(ROOT_0 (S_0 (@S_24 (NP_23 (NN_26 Trouble)) (VP_32 (@VP_10 (VBZ_17 is) (,_0 ,))"
+                    + " (SBAR_1 (S_5 (NP_36 (PRP_2 she)) (VP_34 (VBZ_16 has) (VP_11 (@VP_28"
+                    + " (VBN_23 lost) (NP_37 (PRP_1 it))) (ADVP_1 (@ADVP_0 (RB_31 just)"
+                    + " (RB_32 as)) (RB_2 quickly)))))))) (._3 .)))", String.class);
+        assertEquals(BaseNaryTree.read(
+            "(ROOT (S (NP (NN Trouble)) (VP (VBZ is) (, ,) (SBAR (S (NP (PRP she)) (VP (VBZ has) (VP (VBN lost) ("
+                    + "NP (PRP it)) (ADVP (RB just) (RB as) (RB quickly))))))) (. .)))", String.class),
+            binaryTree.unfactor(GrammarFormatType.Berkeley));
+
+        binaryTree = BinaryTree.read(
+            "(TOP (S^<TOP> (S|<NP-VP>^<TOP> (NP^<S> (NP^<NP> (JJ Little) (NN chance))"
+                    + " (PP^<NP> (IN that) (NP^<PP> (NNP Shane) (NNP Longman))))"
+                    + " (VP^<S> (AUX is) (VP^<VP> (VBG going) (S^<VP> (VP^<S> (TO to)"
+                    + " (VP^<VP> (VB recoup) (NP^<VP> (NN today)))))))) (. .)))", String.class);
+        assertEquals(BaseNaryTree.read(
+            "(TOP (S (NP (NP (JJ Little) (NN chance)) (PP (IN that) (NP (NNP Shane)"
+                    + " (NNP Longman)))) (VP (AUX is) (VP (VBG going) (S (VP (TO to) (VP (VB recoup) "
+                    + "(NP (NN today))))))) (. .)))", String.class),
+            binaryTree.unfactor(GrammarFormatType.CSLU));
     }
 }
