@@ -53,9 +53,8 @@ public class ShiftRegister<E> implements Comparable<ShiftRegister<E>> {
      * 
      * @param newValue The new value to enqueue
      */
-    @SuppressWarnings("unchecked")
     public final ShiftRegister<E> shift(final E newValue) {
-        return new ShiftRegister(register, newValue);
+        return new ShiftRegister<E>(register, newValue);
     }
 
     /**

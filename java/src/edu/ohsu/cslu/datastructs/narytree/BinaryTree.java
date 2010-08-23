@@ -17,7 +17,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.ohsu.cslu.datastructs.narytree.BaseNaryTree.LabelParser;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.LabelParser;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 public class BinaryTree<E> implements Tree<E>, Serializable {
@@ -378,9 +378,9 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      * @param grammarFormatType Grammar format
      * @return Unfactored tree
      */
-    public BaseNaryTree<String> unfactor(final GrammarFormatType grammarFormatType) {
+    public NaryTree<String> unfactor(final GrammarFormatType grammarFormatType) {
 
-        final BaseNaryTree<String> rootTree = new BaseNaryTree<String>(
+        final NaryTree<String> rootTree = new NaryTree<String>(
             grammarFormatType.unsplitNonTerminal(label.toString()));
 
         if (leftChild != null) {
@@ -393,7 +393,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         return rootTree;
     }
 
-    private void unfactorChildren(final BaseNaryTree<String> rootTree,
+    private void unfactorChildren(final NaryTree<String> rootTree,
             final GrammarFormatType grammarFormatType) {
         // Descend through factored categories
         if (grammarFormatType.isFactored(label.toString())) {
