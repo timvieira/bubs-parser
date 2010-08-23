@@ -12,12 +12,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.tests.FilteredRunner;
 
 import static junit.framework.Assert.*;
 
+import static org.junit.Assert.assertArrayEquals;
+
 /**
- * Unit tests for {@link StringNaryTree}
+ * Unit tests for {@link BaseNaryTree} using Strings
  * 
  * @author Aaron Dunlop
  * @since Sep 29, 2008
@@ -41,18 +44,18 @@ public class TestStringNaryTree {
     public void setUp() {
         sampleTree = new BaseNaryTree<String>("f");
 
-        StringNaryTree tmp1 = new StringNaryTree("b");
+        BaseNaryTree<String> tmp1 = new BaseNaryTree<String>("b");
         tmp1.addChild("a");
         tmp1.addChild("c");
 
-        StringNaryTree tmp2 = new StringNaryTree("d");
+        BaseNaryTree<String> tmp2 = new BaseNaryTree<String>("d");
         tmp2.addSubtree(tmp1);
         tmp2.addChild("e");
 
         sampleTree.addSubtree(tmp2);
         sampleTree.addChild("g");
 
-        tmp1 = new StringNaryTree("i");
+        tmp1 = new BaseNaryTree<String>("i");
         tmp1.addChild("h");
         tmp2 = tmp1.addChild("k");
         tmp2.addChild("j");
@@ -80,7 +83,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testAddChild() throws Exception {
-        final StringNaryTree tree = new StringNaryTree("a");
+        final BaseNaryTree<String> tree = new BaseNaryTree<String>("a");
         assertEquals(1, tree.size());
         tree.addChild("b");
         assertEquals(2, tree.size());
@@ -90,7 +93,7 @@ public class TestStringNaryTree {
 
     @Test
     public void testAddChildren() throws Exception {
-        final StringNaryTree tree = new StringNaryTree("a");
+        final BaseNaryTree<String> tree = new BaseNaryTree<String>("a");
         assertEquals(1, tree.size());
         tree.addChildren(new String[] { "b", "c" });
         assertEquals(3, tree.size());
@@ -101,8 +104,8 @@ public class TestStringNaryTree {
 
     @Test
     public void testAddSubtree() throws Exception {
-        final StringNaryTree tree = new StringNaryTree("a");
-        final StringNaryTree tmp = new StringNaryTree("b");
+        final BaseNaryTree<String> tree = new BaseNaryTree<String>("a");
+        final BaseNaryTree<String> tmp = new BaseNaryTree<String>("b");
         tmp.addChildren(new String[] { "c", "d" });
         tree.addSubtree(tmp);
         assertEquals(4, tree.size());
@@ -188,6 +191,11 @@ public class TestStringNaryTree {
     }
 
     @Test
+    public void testChildLabels() throws Exception {
+        assertArrayEquals(new String[] { "d", "g", "i" }, sampleTree.childLabels().toArray(new String[0]));
+    }
+
+    @Test
     public void testLeaves() throws Exception {
         assertEquals(6, sampleTree.leaves());
         assertEquals(3, sampleTree.subtree("d").leaves());
@@ -215,7 +223,7 @@ public class TestStringNaryTree {
     public void testInOrderIterator() throws Exception {
         final Iterator<NaryTree<String>> iter = sampleTree.inOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
-            assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next().stringLabel());
+            assertEquals(SAMPLE_IN_ORDER_ARRAY[i], iter.next().label().toString());
         }
     }
 
@@ -231,7 +239,7 @@ public class TestStringNaryTree {
     public void testPreOrderIterator() throws Exception {
         final Iterator<? extends NaryTree<String>> iter = sampleTree.preOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
-            assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next().stringLabel());
+            assertEquals(SAMPLE_PRE_ORDER_ARRAY[i], iter.next().label().toString());
         }
     }
 
@@ -247,7 +255,7 @@ public class TestStringNaryTree {
     public void testPostOrderIterator() throws Exception {
         final Iterator<? extends NaryTree<String>> iter = sampleTree.postOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
-            assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next().stringLabel());
+            assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next().label().toString());
         }
     }
 
@@ -260,17 +268,11 @@ public class TestStringNaryTree {
     }
 
     @Test
-    public void testSetStringLabel() throws Exception {
-        final StringNaryTree simpleTree = StringNaryTree.read(new StringReader("(a (b c) d)"));
-        simpleTree.children().get(0).setStringLabel("e");
-        assertEquals("(a (e c) d)", simpleTree.toString());
-    }
-
-    @Test
     public void testReadFromReader() throws Exception {
 
         final String stringSimpleTree = "(a (b c) d)";
-        final StringNaryTree simpleTree = StringNaryTree.read(new StringReader(stringSimpleTree));
+        final BaseNaryTree<String> simpleTree = BaseNaryTree.read(new StringReader(stringSimpleTree),
+            String.class);
         assertEquals(4, simpleTree.size());
         assertEquals(2, simpleTree.subtree("b").size());
 
@@ -280,7 +282,8 @@ public class TestStringNaryTree {
         assertEquals("d", simpleTree.subtree("d").label());
 
         final String stringTestTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
-        final StringNaryTree testTree = StringNaryTree.read(new StringReader(stringTestTree));
+        final BaseNaryTree<String> testTree = BaseNaryTree.read(new StringReader(stringTestTree),
+            String.class);
         assertEquals(12, testTree.size());
         assertEquals(8, testTree.subtree("b").subtree("c").size());
 
@@ -297,7 +300,7 @@ public class TestStringNaryTree {
         assertEquals("k", testTree.subtree("b").subtree("k").label());
         assertEquals("l", testTree.subtree("b").subtree("k").subtree("l").label());
 
-        final StringNaryTree tree = StringNaryTree.read(new StringReader(stringSampleTree));
+        final BaseNaryTree<String> tree = BaseNaryTree.read(new StringReader(stringSampleTree), String.class);
         assertEquals(sampleTree, tree);
     }
 
@@ -308,7 +311,7 @@ public class TestStringNaryTree {
         assertEquals(stringSampleTree, writer.toString());
 
         final String stringSimpleTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
-        final StringNaryTree tree = new StringNaryTree("a");
+        final BaseNaryTree<String> tree = new BaseNaryTree<String>("a");
         tree.addChild("b").addChild("c").addChild("d").addChild("e").addChild("f");
         tree.subtree("b").subtree("c").subtree("d").addChild("g").addChild("h");
         tree.subtree("b").subtree("c").addChild("i").addChild("j");
@@ -329,13 +332,13 @@ public class TestStringNaryTree {
 
     @Test
     public void testEquals() throws Exception {
-        final StringNaryTree tree1 = new StringNaryTree("a");
+        final BaseNaryTree<String> tree1 = new BaseNaryTree<String>("a");
         tree1.addChildren(new String[] { "b", "c" });
 
-        final StringNaryTree tree2 = new StringNaryTree("a");
+        final BaseNaryTree<String> tree2 = new BaseNaryTree<String>("a");
         tree2.addChildren(new String[] { "b", "c" });
 
-        final StringNaryTree tree3 = new StringNaryTree("a");
+        final BaseNaryTree<String> tree3 = new BaseNaryTree<String>("a");
         tree3.addChildren(new String[] { "b", "d" });
 
         assertTrue(tree1.equals(tree2));
@@ -350,6 +353,7 @@ public class TestStringNaryTree {
      * 
      * @throws Exception if something bad happens
      */
+    @SuppressWarnings("unchecked")
     @Test
     public void testSerialize() throws Exception {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -358,7 +362,25 @@ public class TestStringNaryTree {
         oos.writeObject(sampleTree);
 
         final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
-        final StringNaryTree t = (StringNaryTree) ois.readObject();
+        final BaseNaryTree<String> t = (BaseNaryTree<String>) ois.readObject();
         assertTrue(sampleTree.equals(t));
+    }
+
+    @Test
+    public void testLeftFactor() {
+        assertEquals(BinaryTree.read("(S (NP C0 C1))", String.class),
+            BaseNaryTree.read("(S (NP C0 C1))", String.class).leftFactor(GrammarFormatType.Berkeley));
+
+        assertEquals(BinaryTree.read("(S (NP C0 (@NP C1 C2)))", String.class),
+            BaseNaryTree.read("(S (NP C0 C1 C2))", String.class).leftFactor(GrammarFormatType.Berkeley));
+    }
+
+    @Test
+    public void testRightFactor() {
+        assertEquals(BinaryTree.read("(S (NP C0 C1))", String.class),
+            BaseNaryTree.read("(S (NP C0 C1))", String.class).rightFactor(GrammarFormatType.Berkeley));
+
+        assertEquals(BinaryTree.read("(S (NP (@NP C0 C1) C2))", String.class),
+            BaseNaryTree.read("(S (NP C0 C1 C2))", String.class).rightFactor(GrammarFormatType.Berkeley));
     }
 }

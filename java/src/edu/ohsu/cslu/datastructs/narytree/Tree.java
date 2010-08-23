@@ -10,8 +10,6 @@ import java.util.List;
 public interface Tree<E extends Object> {
     public E label();
 
-    public String stringLabel();
-
     /**
      * Adds a child to this tree as the rightmost child
      * 

@@ -137,7 +137,7 @@ public final class ParserOptions {
     // this.parserClass = parserClass;
     // EnumAliasMap.singleton().addAliases(this, aliases);
     // }
-    //        
+    //
     // public Parser<?> createParser() {
     // return null;
     // }
@@ -162,6 +162,22 @@ public final class ParserOptions {
                     return nonTerminal.replaceFirst("_[0-9]+$", "");
                 case CSLU:
                     return nonTerminal.replaceFirst("[|^]<([A-Z]+)?>$", "");
+                case Roark:
+                    // TODO Support Roark format
+
+                default:
+                    throw new IllegalArgumentException("Unsupported format");
+
+            }
+
+        }
+
+        public String factoredNonTerminal(final String nonTerminal) {
+            switch (this) {
+                case Berkeley:
+                    return "@" + nonTerminal;
+                case CSLU:
+                    return nonTerminal + "|";
                 case Roark:
                     // TODO Support Roark format
 
