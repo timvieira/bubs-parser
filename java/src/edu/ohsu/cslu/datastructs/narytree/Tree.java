@@ -7,7 +7,19 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Generic interface for binary and n-ary trees.
+ * 
+ * @author Aaron Dunlop
+ * @since Aug 23, 2010
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public interface Tree<E extends Object> {
+
+    /**
+     * @return the label of the root node
+     */
     public E label();
 
     /**
@@ -17,23 +29,58 @@ public interface Tree<E extends Object> {
      */
     public Tree<E> addChild(final E childLabel);
 
+    /**
+     * Adds children to the root node, in a left-to-right order.
+     * 
+     * @param childLabels labels of the children to be added
+     */
     public void addChildren(final Collection<E> childLabels);
 
-    public void addChildren(final E[] children);
+    /**
+     * Adds children to the root node, in a left-to-right order.
+     * 
+     * @param childLabels labels of the children to be added
+     */
+    public void addChildren(final E[] childLabels);
 
+    /**
+     * Adds a subtree as the right-most child of the root node.
+     * 
+     * @param subtree the child tree to be added
+     */
     public void addSubtree(Tree<E> subtree);
 
+    /**
+     * Removes a child.
+     * 
+     * @param childLabel the label of the child to be removed.
+     * @return true if the child was found and removed.
+     */
     public boolean removeChild(final E childLabel);
 
+    /**
+     * Removes all children matching the specified child labels.
+     * 
+     * @param childLabels the labels of the children to be removed.
+     */
     public void removeChildren(final Collection<E> childLabels);
 
+    /**
+     * Removes all children matching the specified child labels.
+     * 
+     * @param childLabels the labels of the children to be removed.
+     */
     public void removeChildren(final E[] childLabels);
 
-    public boolean removeSubtree(final E childLabel);
-
-    public List<E> childLabels();
-
+    /**
+     * @return children of the root node
+     */
     public List<? extends Tree<E>> children();
+
+    /**
+     * @return labels of all children of the root node
+     */
+    public List<E> childLabels();
 
     /**
      * @return the parent of this tree (or null if this tree is the root)
@@ -99,6 +146,9 @@ public interface Tree<E extends Object> {
      */
     public Iterator<E> postOrderLabelIterator();
 
+    /**
+     * @return True if the root node is a leaf
+     */
     public boolean isLeaf();
 
     /**

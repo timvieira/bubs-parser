@@ -16,7 +16,7 @@ import java.util.List;
  * 
  *        $Id$
  */
-public class StringNaryTree extends BaseNaryTree<String> {
+public class StringNaryTree extends NaryTree<String> {
 
     private final static long serialVersionUID = 369752896212698723L;
 

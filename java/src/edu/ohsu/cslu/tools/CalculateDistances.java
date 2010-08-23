@@ -20,8 +20,8 @@ import cltool.Threadable;
 import edu.ohsu.cslu.datastructs.matrices.FixedPointShortMatrix;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;
-import edu.ohsu.cslu.datastructs.narytree.BaseNaryTree;
-import edu.ohsu.cslu.datastructs.narytree.BaseNaryTree.PqgramProfile;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.PqgramProfile;
 import edu.ohsu.cslu.util.Math;
 
 /**
@@ -125,9 +125,9 @@ public class CalculateDistances extends BaseCommandlineTool {
 
         private final int p;
         private final int q;
-        private final ArrayList<BaseNaryTree<?>> trees = new ArrayList<BaseNaryTree<?>>();
+        private final ArrayList<NaryTree<?>> trees = new ArrayList<NaryTree<?>>();
         private Matrix matrix;
-        private BaseNaryTree.PqgramProfile[] profiles;
+        private NaryTree.PqgramProfile[] profiles;
         private final int maxThreads;
 
         public PqgramDistanceCalculator(final String parameters, final int maxThreads) {
@@ -145,7 +145,7 @@ public class CalculateDistances extends BaseCommandlineTool {
 
         @Override
         public void addElement(final String element) {
-            trees.add(BaseNaryTree.read(element, String.class));
+            trees.add(NaryTree.read(element, String.class));
         }
 
         @Override
@@ -153,7 +153,7 @@ public class CalculateDistances extends BaseCommandlineTool {
             matrix = new FixedPointShortMatrix(trees.size(), trees.size(), 3, true);
 
             // Pre-calculate all pq-gram profiles to save time during distance calculations
-            profiles = new BaseNaryTree.PqgramProfile[trees.size()];
+            profiles = new NaryTree.PqgramProfile[trees.size()];
             for (int i = 0; i < trees.size(); i++) {
                 profiles[i] = trees.get(i).pqgramProfile(p, q);
             }
@@ -189,7 +189,7 @@ public class CalculateDistances extends BaseCommandlineTool {
                     final int i = begin;
                     final PqgramProfile profileI = profiles[i];
                     for (int j = 0; j < i; j++) {
-                        matrix.set(i, j, BaseNaryTree.PqgramProfile.pqgramDistance(profileI, profiles[j]));
+                        matrix.set(i, j, NaryTree.PqgramProfile.pqgramDistance(profileI, profiles[j]));
                     }
                     return;
                 }

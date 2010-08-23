@@ -346,21 +346,21 @@ public class TestStringBinaryTree {
     @Test
     public void testUnfactor() throws Exception {
         BinaryTree<String> binaryTree = BinaryTree.read("(A B C)", String.class);
-        assertEquals(BaseNaryTree.read("(A B C)", String.class),
+        assertEquals(NaryTree.read("(A B C)", String.class),
             binaryTree.unfactor(GrammarFormatType.Berkeley));
 
         binaryTree = BinaryTree.read("(A B (@A C D))", String.class);
-        assertEquals(BaseNaryTree.read("(A B C D)", String.class),
+        assertEquals(NaryTree.read("(A B C D)", String.class),
             binaryTree.unfactor(GrammarFormatType.Berkeley));
 
         binaryTree = BinaryTree.read("(A (@A B C) D)", String.class);
-        assertEquals(BaseNaryTree.read("(A B C D)", String.class),
+        assertEquals(NaryTree.read("(A B C D)", String.class),
             binaryTree.unfactor(GrammarFormatType.Berkeley));
 
         binaryTree = BinaryTree
             .read("(ROOT_0 (NP_31 (@NP_29 (@NP_40 (:_3 --) (NNP_0 C.E.)) (NNP_9 Friedman)) (._3 .)))",
                 String.class);
-        assertEquals(BaseNaryTree.read("(ROOT (NP (: --) (NNP C.E.) (NNP Friedman) (. .)))", String.class),
+        assertEquals(NaryTree.read("(ROOT (NP (: --) (NNP C.E.) (NNP Friedman) (. .)))", String.class),
             binaryTree.unfactor(GrammarFormatType.Berkeley));
 
         binaryTree = BinaryTree.read(
@@ -368,7 +368,7 @@ public class TestStringBinaryTree {
                     + " (SBAR_1 (S_5 (NP_36 (PRP_2 she)) (VP_34 (VBZ_16 has) (VP_11 (@VP_28"
                     + " (VBN_23 lost) (NP_37 (PRP_1 it))) (ADVP_1 (@ADVP_0 (RB_31 just)"
                     + " (RB_32 as)) (RB_2 quickly)))))))) (._3 .)))", String.class);
-        assertEquals(BaseNaryTree.read(
+        assertEquals(NaryTree.read(
             "(ROOT (S (NP (NN Trouble)) (VP (VBZ is) (, ,) (SBAR (S (NP (PRP she)) (VP (VBZ has) (VP (VBN lost) ("
                     + "NP (PRP it)) (ADVP (RB just) (RB as) (RB quickly))))))) (. .)))", String.class),
             binaryTree.unfactor(GrammarFormatType.Berkeley));
@@ -378,7 +378,7 @@ public class TestStringBinaryTree {
                     + " (PP^<NP> (IN that) (NP^<PP> (NNP Shane) (NNP Longman))))"
                     + " (VP^<S> (AUX is) (VP^<VP> (VBG going) (S^<VP> (VP^<S> (TO to)"
                     + " (VP^<VP> (VB recoup) (NP^<VP> (NN today)))))))) (. .)))", String.class);
-        assertEquals(BaseNaryTree.read(
+        assertEquals(NaryTree.read(
             "(TOP (S (NP (NP (JJ Little) (NN chance)) (PP (IN that) (NP (NNP Shane)"
                     + " (NNP Longman)))) (VP (AUX is) (VP (VBG going) (S (VP (TO to) (VP (VB recoup) "
                     + "(NP (NN today))))))) (. .)))", String.class),
