@@ -59,6 +59,14 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         return label;
     }
 
+    public BinaryTree<E> leftChild() {
+        return leftChild;
+    }
+
+    public BinaryTree<E> rightChild() {
+        return rightChild;
+    }
+
     /**
      * Adds a child to the tree
      * 
@@ -380,8 +388,8 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      */
     public NaryTree<String> unfactor(final GrammarFormatType grammarFormatType) {
 
-        final NaryTree<String> rootTree = new NaryTree<String>(
-            grammarFormatType.unsplitNonTerminal(label.toString()));
+        final NaryTree<String> rootTree = new NaryTree<String>(grammarFormatType.unsplitNonTerminal(label
+            .toString()));
 
         if (leftChild != null) {
             leftChild.unfactorChildren(rootTree, grammarFormatType);
@@ -393,8 +401,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         return rootTree;
     }
 
-    private void unfactorChildren(final NaryTree<String> rootTree,
-            final GrammarFormatType grammarFormatType) {
+    private void unfactorChildren(final NaryTree<String> rootTree, final GrammarFormatType grammarFormatType) {
         // Descend through factored categories
         if (grammarFormatType.isFactored(label.toString())) {
             leftChild.unfactorChildren(rootTree, grammarFormatType);

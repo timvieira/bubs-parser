@@ -1,5 +1,11 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -14,8 +20,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.*;
 
 /**
  * Unit tests for {@link NaryTree} class with integers. Also tests the static inner class
@@ -125,16 +129,8 @@ public class TestIntegerNaryTree {
         sampleTree.removeChild(7);
         assertEquals(10, sampleTree.size());
 
-        // Removing the '4' node should move its children up
-        assertNull(sampleTree.subtree(2));
-        assertNull(sampleTree.subtree(5));
-
         sampleTree.removeChild(4);
-        assertEquals(9, sampleTree.size());
-        assertNotNull(sampleTree.subtree(2));
-        assertNotNull(sampleTree.subtree(5));
-
-        // TODO: Validate that the children were inserted at the proper place with iteration order
+        assertEquals(5, sampleTree.size());
     }
 
     @Test
@@ -146,10 +142,7 @@ public class TestIntegerNaryTree {
 
         // Removing the '9' node should move its children up ('7' has no children)
         sampleTree.removeChildren(new Integer[] { new Integer(7), new Integer(9) });
-        assertEquals(9, sampleTree.size());
-
-        assertNotNull(sampleTree.subtree(8));
-        assertNotNull(sampleTree.subtree(11));
+        assertEquals(6, sampleTree.size());
     }
 
     @Test
@@ -253,8 +246,7 @@ public class TestIntegerNaryTree {
     public void testReadFromReader() throws Exception {
 
         final String stringSimpleTree = "(1 (2 3) 4)";
-        final NaryTree<Integer> simpleTree = NaryTree.read(new StringReader(stringSimpleTree),
-            Integer.class);
+        final NaryTree<Integer> simpleTree = NaryTree.read(new StringReader(stringSimpleTree), Integer.class);
         assertEquals(4, simpleTree.size());
         assertEquals(2, simpleTree.subtree(2).size());
 
@@ -264,8 +256,7 @@ public class TestIntegerNaryTree {
         assertEquals(4, simpleTree.subtree(4).label().intValue());
 
         final String stringTestTree = "(1 (2 (3 (4 (5 6) (7 8)) (9 10)) (11 12)))";
-        final NaryTree<Integer> testTree = NaryTree.read(new StringReader(stringTestTree),
-            Integer.class);
+        final NaryTree<Integer> testTree = NaryTree.read(new StringReader(stringTestTree), Integer.class);
         assertEquals(12, testTree.size());
         assertEquals(8, testTree.subtree(2).subtree(3).size());
 
@@ -282,8 +273,7 @@ public class TestIntegerNaryTree {
         assertEquals(11, testTree.subtree(2).subtree(11).label().intValue());
         assertEquals(12, testTree.subtree(2).subtree(11).subtree(12).label().intValue());
 
-        final NaryTree<Integer> tree = NaryTree.read(new StringReader(stringSampleTree),
-            Integer.class);
+        final NaryTree<Integer> tree = NaryTree.read(new StringReader(stringSampleTree), Integer.class);
         assertEquals(sampleTree, tree);
     }
 

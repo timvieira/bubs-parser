@@ -142,15 +142,11 @@ public class NaryTree<E> implements Tree<E>, Serializable {
         for (final Iterator<NaryTree<E>> iter = childList.iterator(); iter.hasNext();) {
             final NaryTree<E> child = iter.next();
             if (child.label.equals(childLabel)) {
-                final int leavesRemoved = (childList.size() == 1 || !child.isLeaf()) ? 0 : 1;
+                final int leavesRemoved = child.leaves - (childList.size() == 1 ? 1 : 0);
 
                 iter.remove();
                 child.parent = null;
-                childList.addAll(i, child.childList);
-                for (final NaryTree<E> t : child.childList) {
-                    t.parent = this;
-                }
-                updateSize(-1, -leavesRemoved);
+                updateSize(-child.size, -leavesRemoved);
                 return true;
             }
             i++;
@@ -416,6 +412,63 @@ public class NaryTree<E> implements Tree<E>, Serializable {
         }
 
         return binaryTreeRoot;
+    }
+
+    /**
+     * Returns the 'head' descendant of this tree, using a head-percolation rule-set of the standard
+     * Charniak/Magerman form.
+     * 
+     * @param ruleset head-percolation ruleset
+     * @return head descendant
+     */
+    public NaryTree<E> headDescendant(final HeadPercolationRuleset ruleset) {
+        if (isLeaf()) {
+            return this;
+        }
+
+        final List<E> childLabels = childLabels();
+
+        // Special-case for unary productions
+        if (children().size() == 1) {
+            return (childList.get(0)).headDescendant(ruleset);
+        }
+
+        // TODO: This is terribly inefficient - it requires mapping each child (O(n) and iterating
+        // through childList (O(n)) for each node. A total of O(n^2)...)
+        @SuppressWarnings("unchecked")
+        final int index = ruleset.headChild((String) label(), (List<String>) childLabels);
+        return (childList.get(index)).headDescendant(ruleset);
+    }
+
+    /**
+     * TODO: This probably isn't the best way to model head percolation
+     * 
+     * @param ruleset head-percolation ruleset
+     * @return true if this tree is the head of the tree it is rooted in
+     */
+    public boolean isHeadOfTreeRoot(final HeadPercolationRuleset ruleset) {
+        return headLevel(ruleset) == 0;
+    }
+
+    /**
+     * TODO: This probably isn't the best way to model head percolation
+     * 
+     * @param ruleset head-percolation ruleset
+     * @return the depth in the tree for which this node is the head (possibly its own depth)
+     */
+    public int headLevel(final HeadPercolationRuleset ruleset) {
+        if (!isLeaf()) {
+            return -1;
+        }
+
+        // TODO: Terribly, horribly inefficient. But (again), we can tune later
+        int level = depthFromRoot();
+        for (@SuppressWarnings("unchecked")
+        NaryTree<String> tree = (NaryTree<String>) parent; tree != null
+                && tree.headDescendant(ruleset) == this; tree = tree.parent) {
+            level--;
+        }
+        return level;
     }
 
     /**

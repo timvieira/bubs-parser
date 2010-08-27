@@ -51,7 +51,7 @@ public interface Tree<E extends Object> {
     public void addSubtree(Tree<E> subtree);
 
     /**
-     * Removes a child.
+     * Removes a child subtree.
      * 
      * @param childLabel the label of the child to be removed.
      * @return true if the child was found and removed.
