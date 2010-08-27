@@ -5,15 +5,15 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class LBFBoundedHeap2 extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
+public class BSCPBoundedHeap2 extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
     ChartEdge worstEdge;
     ChartEdge[] edgesInAgenda;
 
-    public LBFBoundedHeap2(final ParserOptions opts, final LeftHashGrammar grammar) {
+    public BSCPBoundedHeap2(final ParserOptions opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
     }
 
@@ -42,7 +42,7 @@ public class LBFBoundedHeap2 extends LocalBestFirstChartParser<LeftHashGrammar, 
                 resetWorstEdge();
             }
         } else {
-            if (agenda.size() < maxEdgesToAdd) {
+            if (agenda.size() < beamWidth) {
                 agenda.add(edge);
                 edgesInAgenda[edge.prod.parent] = edge;
                 nAgendaPush++;
@@ -83,9 +83,9 @@ public class LBFBoundedHeap2 extends LocalBestFirstChartParser<LeftHashGrammar, 
             bestFOM = agenda.peek().fom;
         }
 
-        while (agenda.isEmpty() == false && numAdded <= maxEdgesToAdd && !edgeBelowThresh) {
+        while (agenda.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh) {
             edge = agenda.poll();
-            if (edge.fom < bestFOM - logBeamDeltaThresh) {
+            if (edge.fom < bestFOM - beamDeltaThresh) {
                 edgeBelowThresh = true;
             } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
@@ -94,7 +94,7 @@ public class LBFBoundedHeap2 extends LocalBestFirstChartParser<LeftHashGrammar, 
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
                     unaryEdge = chart.new ChartEdge(p, cell);
-                    if (unaryEdge.fom > bestFOM - logBeamDeltaThresh) {
+                    if (unaryEdge.fom > bestFOM - beamDeltaThresh) {
                         addEdgeToCollection(unaryEdge);
                     }
                 }

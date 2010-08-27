@@ -7,15 +7,15 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class LBFOnlineBeam extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
+public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
     float bestFOM, onlineBeam;
     int numEdgesAdded;
 
-    public LBFOnlineBeam(final ParserOptions opts, final LeftHashGrammar grammar) {
+    public BSCPOnlineBeam(final ParserOptions opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
     }
 
@@ -75,7 +75,7 @@ public class LBFOnlineBeam extends LocalBestFirstChartParser<LeftHashGrammar, Ce
     }
 
     protected boolean addEdgeToChart(final ChartEdge edge, final HashSetChartCell cell) {
-        if (edge.fom < bestFOM - logBeamDeltaThresh) {
+        if (edge.fom < bestFOM - beamDeltaThresh) {
             return false;
         }
         // if (cell.addEdge(edge) == false) {

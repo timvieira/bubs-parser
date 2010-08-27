@@ -2,12 +2,12 @@ package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class LBFBoundedHeap extends LBFPruneViterbi {
+public class BSCPBoundedHeap extends BSCPPruneViterbi {
 
-    public LBFBoundedHeap(final ParserOptions opts, final LeftHashGrammar grammar) {
+    public BSCPBoundedHeap(final ParserOptions opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
     }
 
@@ -18,7 +18,7 @@ public class LBFBoundedHeap extends LBFPruneViterbi {
         boolean edgeBelowThresh = false;
         int numAdded = 0;
         // final BoundedHeap boundedHeap = new BoundedHeap(maxEdgesToAdd, 3);
-        final CircularBoundedHeap boundedHeap = new CircularBoundedHeap(maxEdgesToAdd);
+        final CircularBoundedHeap boundedHeap = new CircularBoundedHeap(beamWidth);
 
         for (int i = 0; i < grammar.numNonTerms(); i++) {
             if (bestEdges[i] != null) {
@@ -26,9 +26,9 @@ public class LBFBoundedHeap extends LBFPruneViterbi {
             }
         }
 
-        while (boundedHeap.isEmpty() == false && numAdded <= maxEdgesToAdd && !edgeBelowThresh) {
+        while (boundedHeap.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh) {
             edge = boundedHeap.poll();
-            if (edge.fom < bestFOM - logBeamDeltaThresh) {
+            if (edge.fom < bestFOM - beamDeltaThresh) {
                 edgeBelowThresh = true;
             } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
@@ -37,7 +37,8 @@ public class LBFBoundedHeap extends LBFPruneViterbi {
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
                     unaryEdge = chart.new ChartEdge(p, cell);
-                    if ((bestEdges[p.parent] == null || bestEdges[p.parent].fom < unaryEdge.fom) && unaryEdge.fom > bestFOM - logBeamDeltaThresh) {
+                    if ((bestEdges[p.parent] == null || bestEdges[p.parent].fom < unaryEdge.fom)
+                            && unaryEdge.fom > bestFOM - beamDeltaThresh) {
                         boundedHeap.add(unaryEdge);
                     }
                 }
@@ -99,7 +100,8 @@ public class LBFBoundedHeap extends LBFPruneViterbi {
                     nextEdge = prevIndex(newEdgeIndex);
                 }
 
-                // System.out.println("PUSH: s=" + startIndex + " e=" + endIndex + " size=" + size() + " i=" + newEdgeIndex + " edge=" + edge);
+                // System.out.println("PUSH: s=" + startIndex + " e=" + endIndex + " size=" + size() + " i=" +
+                // newEdgeIndex + " edge=" + edge);
             }
         }
 
