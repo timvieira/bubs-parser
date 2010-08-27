@@ -12,19 +12,19 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
-public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
+public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
     private CSLUTBlockedCells cslutScores;
     private Vector<Float> cslutStartScore, cslutEndScore;
     Perceptron perceptron = null;
 
-    public LBFPerceptronCell(final ParserOptions opts, final LeftHashGrammar grammar, final CSLUTBlockedCells cslutScores) {
+    public BSCPPerceptronCell(final ParserOptions opts, final LeftHashGrammar grammar, final CSLUTBlockedCells cslutScores) {
         super(opts, grammar);
         this.cslutScores = cslutScores;
     }
@@ -42,7 +42,7 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
         }
 
         // read in gold tree
-        for (int ittr = 0; ittr < opts.param2; ittr++) {
+        for (int ittr = 0; ittr < ParserOptions.param2; ittr++) {
             System.out.println(" == ittr " + ittr + " ==");
             for (final String bracketString : inputData) {
                 tree = ParseTree.readBracketFormat(bracketString);
@@ -60,38 +60,36 @@ public class LBFPerceptronCell extends LocalBestFirstChartParser<LeftHashGrammar
                 cslutEndScore = cslutScores.allEndScore.get(sentence);
 
                 tree.tokenizeLeaves(grammar);
-                final CellChart goldChart = tree.convertToChart(grammar);
+                // final CellChart goldChart = tree.convertToChart(grammar);
+                final CellChart goldChart = new CellChart(tree, false, null);
 
-                if (goldChart != null) {
+                final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
+                initParser(sent.length);
+                addLexicalProductions(sent);
+                addUnaryExtensionsToLexProds();
+                cellSelector.init(this);
 
-                    final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
-                    initParser(sent.length);
-                    addLexicalProductions(sent);
-                    addUnaryExtensionsToLexProds();
-                    cellSelector.init(this);
+                if (perceptron == null) {
+                    // run this to figure out how many features the current implementation is using,
+                    // which will also create a new Perceptron model
+                    extractFeatures(chart.getCell(0, 1), new PriorityQueue<ChartEdge>());
+                }
 
-                    if (perceptron == null) {
-                        // run this to figure out how many features the current implementation is using,
-                        // which will also create a new Perceptron model
-                        extractFeatures(chart.getCell(0, 1), new PriorityQueue<ChartEdge>());
+                while (cellSelector.hasNext() && !hasCompleteParse()) {
+                    final short[] startAndEnd = cellSelector.next();
+                    cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
+                    goldEdgeList = new LinkedList<ChartEdge>();
+                    final HashSetChartCell goldCell = goldChart.getCell(cell.start(), cell.end());
+                    for (final int nt : goldCell.getNTs()) {
+                        final ChartEdge goldEdge = goldCell.getBestEdge(nt);
+                        // for (final ChartEdge goldEdge : goldChart.getCell(cell.start(), cell.end()).getEdges()) {
+                        if (goldEdge.prod.isLexProd() == false) {
+                            goldEdgeList.add(goldEdge);
+                        }
                     }
 
-                    while (cellSelector.hasNext() && !hasCompleteParse()) {
-                        final short[] startAndEnd = cellSelector.next();
-                        cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
-                        goldEdgeList = new LinkedList<ChartEdge>();
-                        final HashSetChartCell goldCell = goldChart.getCell(cell.start(), cell.end());
-                        for (final int nt : goldCell.getNTs()) {
-                            final ChartEdge goldEdge = goldCell.getBestEdge(nt);
-                            // for (final ChartEdge goldEdge : goldChart.getCell(cell.start(), cell.end()).getEdges()) {
-                            if (goldEdge.prod.isLexProd() == false) {
-                                goldEdgeList.add(goldEdge);
-                            }
-                        }
-
-                        if (cell.width() > 1) {
-                            trainVisitCell(cell, goldEdgeList);
-                        }
+                    if (cell.width() > 1) {
+                        trainVisitCell(cell, goldEdgeList);
                     }
                 }
             }

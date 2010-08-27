@@ -4,11 +4,11 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
 import edu.ohsu.cslu.parser.chart.EdgeCellChart;
 
-public class LBFPerceptronCellTrainer extends LocalBestFirstChartParser<LeftHashGrammar, EdgeCellChart> {
+public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGrammar, EdgeCellChart> {
 
     PerceptronCellSelector perceptronCellSelector;
 
-    public LBFPerceptronCellTrainer(final ParserOptions opts, final LeftHashGrammar grammar) {
+    public BSCPPerceptronCellTrainer(final ParserOptions opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
         perceptronCellSelector = (PerceptronCellSelector) cellSelector;
     }

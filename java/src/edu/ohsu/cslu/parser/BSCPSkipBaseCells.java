@@ -6,12 +6,12 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar, CellChart> {
+public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
-    public LBFSkipBaseCells(final ParserOptions opts, final LeftHashGrammar grammar) {
+    public BSCPSkipBaseCells(final ParserOptions opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
     }
 
@@ -89,7 +89,7 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar,
             }
         }
 
-        while (agenda.isEmpty() == false && numAdded <= maxEdgesToAdd) {
+        while (agenda.isEmpty() == false && numAdded <= beamWidth) {
             edge = agenda.poll();
             if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
@@ -121,7 +121,8 @@ public class LBFSkipBaseCells extends LocalBestFirstChartParser<LeftHashGrammar,
             }
         }
 
-        return super.getStats() + " agendaPush=" + nAgendaPush + " fomInitSec=" + fomInitSeconds + " #cells=" + cells + " #visited=" + cellsVisited + " #skipped=" + cellsSkipped
-                + " #totalVisits=" + cellVisits;
+        return super.getStats() + " agendaPush=" + nAgendaPush + " fomInitSec=" + fomInitSeconds + " #cells="
+                + cells + " #visited=" + cellsVisited + " #skipped=" + cellsSkipped + " #totalVisits="
+                + cellVisits;
     }
 }

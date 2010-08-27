@@ -136,6 +136,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-x2", usage = "Tuning param #2")
     public float param2 = -1;
 
+    @Option(name = "-x3", usage = "Tuning param #3")
+    public float param3 = -1;
+
     private Grammar grammar;
 
     private ParserOptions parserOptions;
@@ -234,6 +237,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         opts.viterbiMax = !inOutSum;
         ParserOptions.param1 = param1;
         ParserOptions.param2 = param2;
+        ParserOptions.param3 = param3;
 
         opts.outputStream = outputStream;
         opts.inputStream = inputStream;
@@ -365,17 +369,17 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 return new ACPGhostEdges(parserOptions, (LeftRightListsGrammar) grammar);
 
             case LocalBestFirst:
-                return new LocalBestFirstChartParser(parserOptions, (LeftHashGrammar) grammar);
+                return new BeamSearchChartParser(parserOptions, (LeftHashGrammar) grammar);
             case LBFPruneViterbi:
-                return new LBFPruneViterbi(parserOptions, (LeftHashGrammar) grammar);
+                return new BSCPPruneViterbi(parserOptions, (LeftHashGrammar) grammar);
             case LBFOnlineBeam:
-                return new LBFWeakThresh(parserOptions, (LeftHashGrammar) grammar);
+                return new BSCPWeakThresh(parserOptions, (LeftHashGrammar) grammar);
             case LBFBoundedHeap:
-                return new LBFBoundedHeap(parserOptions, (LeftHashGrammar) grammar);
+                return new BSCPBoundedHeap(parserOptions, (LeftHashGrammar) grammar);
             case LBFExpDecay:
-                return new LBFExpDecay(parserOptions, (LeftHashGrammar) grammar);
+                return new BSCPExpDecay(parserOptions, (LeftHashGrammar) grammar);
             case LBFPerceptronCell:
-                return new LBFSkipBaseCells(parserOptions, (LeftHashGrammar) grammar);
+                return new BSCPSkipBaseCells(parserOptions, (LeftHashGrammar) grammar);
 
             case CoarseCellAgenda:
                 return new CoarseCellAgendaParser(parserOptions, (LeftHashGrammar) grammar);

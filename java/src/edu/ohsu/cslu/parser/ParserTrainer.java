@@ -340,17 +340,17 @@ public class ParserTrainer extends BaseCommandlineTool {
                 return new ACPGhostEdges(opts, (LeftRightListsGrammar) grammar);
 
             case LocalBestFirst:
-                return new LocalBestFirstChartParser(opts, (LeftHashGrammar) grammar);
+                return new BeamSearchChartParser(opts, (LeftHashGrammar) grammar);
             case LBFPruneViterbi:
-                return new LBFPruneViterbi(opts, (LeftHashGrammar) grammar);
+                return new BSCPPruneViterbi(opts, (LeftHashGrammar) grammar);
             case LBFOnlineBeam:
-                return new LBFWeakThresh(opts, (LeftHashGrammar) grammar);
+                return new BSCPWeakThresh(opts, (LeftHashGrammar) grammar);
             case LBFBoundedHeap:
-                return new LBFBoundedHeap(opts, (LeftHashGrammar) grammar);
+                return new BSCPBoundedHeap(opts, (LeftHashGrammar) grammar);
             case LBFExpDecay:
-                return new LBFExpDecay(opts, (LeftHashGrammar) grammar);
+                return new BSCPExpDecay(opts, (LeftHashGrammar) grammar);
             case LBFPerceptronCell:
-                return new LBFSkipBaseCells(opts, (LeftHashGrammar) grammar);
+                return new BSCPSkipBaseCells(opts, (LeftHashGrammar) grammar);
 
             case CoarseCellAgenda:
                 return new CoarseCellAgendaParser(opts, (LeftHashGrammar) grammar);
@@ -418,7 +418,7 @@ public class ParserTrainer extends BaseCommandlineTool {
             // TODO: need to follow a similar train/writeModel method like edgeSelector
             final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) CellSelector
                 .create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
-            final LBFPerceptronCellTrainer parser = new LBFPerceptronCellTrainer(opts,
+            final BSCPPerceptronCellTrainer parser = new BSCPPerceptronCellTrainer(opts,
                 (LeftHashGrammar) grammar);
             perceptronCellSelector.train(opts.inputStream, parser);
         } else {

@@ -7,30 +7,31 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends CellChart> extends ChartParser<LeftHashGrammar, CellChart> {
+public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChart> extends
+        ChartParser<LeftHashGrammar, CellChart> {
 
     int nAgendaPush;
     float fomInitSeconds;
     PriorityQueue<ChartEdge> agenda;
 
-    int maxEdgesToAdd;
-    float logBeamDeltaThresh;
+    int beamWidth;
+    float beamDeltaThresh;
 
-    public LocalBestFirstChartParser(final ParserOptions opts, final LeftHashGrammar grammar) {
+    public BeamSearchChartParser(final ParserOptions opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
 
-        maxEdgesToAdd = (int) ParserOptions.param1;
-        if (maxEdgesToAdd < 0)
-            maxEdgesToAdd = 10;
+        beamWidth = (int) ParserOptions.param1;
+        if (beamWidth < 0)
+            beamWidth = 10;
 
         // logBeamDeltaThresh = ParserDriver.param2;
-        logBeamDeltaThresh = 9999;
-        if (logBeamDeltaThresh < 0)
-            logBeamDeltaThresh = 30;
+        beamDeltaThresh = 9999;
+        if (beamDeltaThresh < 0)
+            beamDeltaThresh = 30;
     }
 
     @Override
@@ -102,7 +103,8 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
                     for (final int rightNT : rightCell.getRightChildNTs()) {
                         for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
                             if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
-                                // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                                // final float prob = p.prob + leftCell.getInside(leftNT) +
+                                // rightCell.getInside(rightNT);
                                 edge = chart.new ChartEdge(p, leftCell, rightCell);
                                 addEdgeToCollection(edge);
                             }
@@ -133,9 +135,9 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
             bestFOM = agenda.peek().fom;
         }
 
-        while (agenda.isEmpty() == false && numAdded <= maxEdgesToAdd && !edgeBelowThresh) {
+        while (agenda.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh) {
             edge = agenda.poll();
-            if (edge.fom < bestFOM - logBeamDeltaThresh) {
+            if (edge.fom < bestFOM - beamDeltaThresh) {
                 edgeBelowThresh = true;
             } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
@@ -144,7 +146,7 @@ public class LocalBestFirstChartParser<G extends LeftHashGrammar, C extends Cell
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
                     unaryEdge = chart.new ChartEdge(p, cell);
-                    if (unaryEdge.fom > bestFOM - logBeamDeltaThresh) {
+                    if (unaryEdge.fom > bestFOM - beamDeltaThresh) {
                         addEdgeToCollection(unaryEdge);
                     }
                 }
