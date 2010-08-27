@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Vector;
 
+import edu.ohsu.cslu.parser.BSCPPerceptronCellTrainer;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.LBFPerceptronCellTrainer;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.Log;
@@ -36,7 +36,8 @@ public class PerceptronCellSelector extends CellSelector {
     // We should also try to predict the number of pops as well as the span
     // Based on all of our features, I'm guessing we could learn the deficiencies
     // of our FOM function and really speed things up
-    // public PerceptronSpanSelection(final BaseGrammar grammar, final CSLUTBlockedCellsTraversal cslutScores) {
+    // public PerceptronSpanSelection(final BaseGrammar grammar, final CSLUTBlockedCellsTraversal cslutScores)
+    // {
     // public PerceptronSpanSelection(final CSLUTBlockedCellsTraversal cslutScores) {
     public PerceptronCellSelector(final BufferedReader modelStream, final BufferedReader cslutScoresStream) {
         cslutScores = new CSLUTBlockedCells(cslutScoresStream);
@@ -269,8 +270,10 @@ public class PerceptronCellSelector extends CellSelector {
     // public ChartCell nextWithGoldCorrection(final ChartCell goldSpan) {
     // final ChartCell guessSpan = spanAgenda.poll();
     //
-    // // System.out.print("[" + goldSpan.start() + "][" + goldSpan.end() + "]-[" + guessSpan.start() + "][" + guessSpan.end() + "] ");
-    // System.out.println("[" + goldSpan.start() + "][" + goldSpan.end() + "]=" + calcFOM(goldSpan) + "\t[" + guessSpan.start() + "][" + guessSpan.end() + "]="
+    // // System.out.print("[" + goldSpan.start() + "][" + goldSpan.end() + "]-[" + guessSpan.start() + "][" +
+    // guessSpan.end() + "] ");
+    // System.out.println("[" + goldSpan.start() + "][" + goldSpan.end() + "]=" + calcFOM(goldSpan) + "\t[" +
+    // guessSpan.start() + "][" + guessSpan.end() + "]="
     // + calcFOM(guessSpan));
     //
     // if (guessSpan != goldSpan) {
@@ -358,8 +361,10 @@ public class PerceptronCellSelector extends CellSelector {
             final Boolean[] guessFeats = extractFeatures(guessSpan, parser);
             final Boolean[] goldFeats = extractFeatures(goldSpan, parser);
 
-            // System.out.println("GUES: span[" + guessSpan.start() + "][" + guessSpan.end() + "] \t" + boolListToString(guessFeats));
-            // System.out.println("GOLD: span[" + goldSpan.start() + "][" + goldSpan.end() + "] \t" + boolListToString(goldFeats));
+            // System.out.println("GUES: span[" + guessSpan.start() + "][" + guessSpan.end() + "] \t" +
+            // boolListToString(guessFeats));
+            // System.out.println("GOLD: span[" + goldSpan.start() + "][" + goldSpan.end() + "] \t" +
+            // boolListToString(goldFeats));
             // System.out.println("OLD: " + floatListToString(weights));
             // final float[] oldWeights = weights.clone();
 
@@ -440,12 +445,14 @@ public class PerceptronCellSelector extends CellSelector {
 
         if (featList.size() != numFeats) {
             if (trainingMode == true) {
-                Log.info(0, "WARNING: len(featureList)=" + featList.size() + " but numFeats=" + numFeats + ".  Resizing...");
+                Log.info(0, "WARNING: len(featureList)=" + featList.size() + " but numFeats=" + numFeats
+                        + ".  Resizing...");
                 numFeats = featList.size();
                 weights = new float[numFeats];
                 initWeights();
             } else {
-                Log.info(0, "ERROR: len(featureList)=" + featList.size() + " but number features in model files is numFeats=" + numFeats);
+                Log.info(0, "ERROR: len(featureList)=" + featList.size()
+                        + " but number features in model files is numFeats=" + numFeats);
                 System.exit(1);
             }
         }
@@ -469,12 +476,14 @@ public class PerceptronCellSelector extends CellSelector {
             }
         }
 
-        // System.out.println("binValue() value=" + value + " min=" + min + " max=" + max + " numBins=" + numBins + " step=" + step + " bin=" + boolListToString(bins));
+        // System.out.println("binValue() value=" + value + " min=" + min + " max=" + max + " numBins=" +
+        // numBins + " step=" + step + " bin=" + boolListToString(bins));
 
         return bins;
     }
 
-    public void train(final BufferedReader inStream, final LBFPerceptronCellTrainer parserToTrain) throws Exception {
+    public void train(final BufferedReader inStream, final BSCPPerceptronCellTrainer parserToTrain)
+            throws Exception {
         learningRate = (float) 1.0;
         initWeights();
         // parserToTrain.train(inStream);

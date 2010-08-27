@@ -2,10 +2,13 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.util.Log;
+import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class CellChart extends Chart {
@@ -30,6 +33,65 @@ public class CellChart extends Chart {
     @Override
     public HashSetChartCell getCell(final int start, final int end) {
         return chart[start][end];
+    }
+
+    public CellChart(final ParseTree tree, final boolean viterbiMax, final Parser<?> parser) {
+        super(tree.getLeafNodes().size(), viterbiMax, parser);
+
+        addParseTreeToChart(tree);
+    }
+
+    private void addParseTreeToChart(final ParseTree tree) {
+
+        assert tree.isBinaryTree() == true;
+        assert tree.parent == null; // must be root so start/end indicies make sense
+        assert tree.getLeafNodes().size() == this.size; // tree width/span must be same as chart
+
+        final List<ParseTree> leafNodes = tree.getLeafNodes();
+        int start, end, midpt, numChildren;
+        Production prod = null;
+        ChartEdge edge;
+        String A, B, C;
+
+        for (final ParseTree node : tree.preOrderTraversal()) {
+            // TODO: could make this O(1) instead of O(n) ...
+            start = leafNodes.indexOf(node.leftMostLeaf());
+            end = leafNodes.indexOf(node.rightMostLeaf()) + 1;
+            numChildren = node.children.size();
+            // System.out.println("convertToChart: node=" + node.contents + " start=" + start + " end=" + end
+            // + " numChildren=" + numChildren);
+
+            if (numChildren > 0) {
+                A = node.contents;
+                if (numChildren == 2) {
+                    B = node.children.get(0).contents;
+                    C = node.children.get(1).contents;
+                    prod = parser.grammar.getBinaryProduction(A, B, C);
+                    midpt = leafNodes.indexOf(node.children.get(0).rightMostLeaf()) + 1;
+                    edge = new ChartEdge(prod, getCell(start, midpt), getCell(midpt, end));
+                } else if (numChildren == 1) {
+                    B = node.children.get(0).contents;
+                    if (node.isPOS()) {
+                        prod = parser.grammar.getLexicalProduction(A, B);
+                    } else {
+                        prod = parser.grammar.getUnaryProduction(A, B);
+                    }
+                    edge = new ChartEdge(prod, getCell(start, end));
+                } else {
+                    throw new RuntimeException("ERROR: Number of node children is " + node.children.size()
+                            + ".  Expecting <= 2.");
+                }
+
+                // Log.info(0, "WARNING: Production " + prod.toString() +
+                // " not found in grammar.  Adding...");
+                if (prod == null) {
+                    Log.info(0, "WARNING: production does not exist in grammar for node: " + A + " -> "
+                            + node.childrenToString());
+                } else {
+                    chart[start][end].updateInside(edge);
+                }
+            }
+        }
     }
 
     @Override
@@ -250,6 +312,16 @@ public class CellChart extends Chart {
                     "Do not use midpt() with unary productions.  They do not have midpoints.");
             }
             return leftCell.end();
+        }
+
+        @Override
+        public float inside() {
+            if (prod.isBinaryProd()) {
+                return prod.prob + leftCell.getInside(prod.leftChild) + rightCell.getInside(prod.rightChild);
+            } else if (prod.isUnaryProd()) {
+                return prod.prob + leftCell.getInside(prod.child());
+            }
+            return prod.prob;
         }
 
         public ChartEdge copy() {

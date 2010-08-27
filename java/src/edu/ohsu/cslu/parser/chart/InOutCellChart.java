@@ -34,6 +34,7 @@ public class InOutCellChart extends CellChart {
 
             if (start == 0 && end == size()) {
                 outside[parser.grammar.startSymbol] = 0; // log(1)
+                // System.out.println(" *** setting " + parser.grammar.startSymbol() + " index=" + parser.grammar.startSymbol + " to 0");
             }
         }
 
