@@ -1,5 +1,12 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -14,10 +21,6 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.*;
-
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Unit tests for {@link NaryTree} using Strings
@@ -126,11 +129,7 @@ public class TestStringNaryTree {
         assertNull(sampleTree.subtree("e"));
 
         sampleTree.removeChild("d");
-        assertEquals(9, sampleTree.size());
-        assertNotNull(sampleTree.subtree("b"));
-        assertNotNull(sampleTree.subtree("e"));
-
-        // TODO: Validate that the children were inserted at the proper place with iteration order
+        assertEquals(5, sampleTree.size());
     }
 
     @Test
@@ -142,10 +141,7 @@ public class TestStringNaryTree {
 
         // Removing the "i" node should move its children up ("g" has no children)
         sampleTree.removeChildren(new String[] { "g", "i" });
-        assertEquals(9, sampleTree.size());
-
-        assertNotNull(sampleTree.subtree("h"));
-        assertNotNull(sampleTree.subtree("k"));
+        assertEquals(6, sampleTree.size());
     }
 
     @Test
@@ -199,9 +195,9 @@ public class TestStringNaryTree {
         assertEquals(2, sampleTree.leaves());
 
         sampleTree.removeChild("g");
-        assertEquals(2, sampleTree.leaves());
+        assertEquals(1, sampleTree.leaves());
 
-        sampleTree.removeChild("g2");
+        sampleTree.removeChild("i");
         assertEquals(1, sampleTree.leaves());
     }
 
@@ -257,8 +253,7 @@ public class TestStringNaryTree {
     public void testReadFromReader() throws Exception {
 
         final String stringSimpleTree = "(a (b c) d)";
-        final NaryTree<String> simpleTree = NaryTree.read(new StringReader(stringSimpleTree),
-            String.class);
+        final NaryTree<String> simpleTree = NaryTree.read(new StringReader(stringSimpleTree), String.class);
         assertEquals(4, simpleTree.size());
         assertEquals(2, simpleTree.subtree("b").size());
 
@@ -268,8 +263,7 @@ public class TestStringNaryTree {
         assertEquals("d", simpleTree.subtree("d").label());
 
         final String stringTestTree = "(a (b (c (d (e f) (g h)) (i j)) (k l)))";
-        final NaryTree<String> testTree = NaryTree.read(new StringReader(stringTestTree),
-            String.class);
+        final NaryTree<String> testTree = NaryTree.read(new StringReader(stringTestTree), String.class);
         assertEquals(12, testTree.size());
         assertEquals(8, testTree.subtree("b").subtree("c").size());
 

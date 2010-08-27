@@ -8,7 +8,7 @@ import java.util.Collections;
 import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
-import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 
 /**
  * Selects sentences out of a corpus, filtering by the supplied criteria.
@@ -43,7 +43,7 @@ public class FilterSentences extends BaseCommandlineTool {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             switch (inputFormat) {
                 case BracketedTree:
-                    final StringNaryTree parseTree = StringNaryTree.read(line);
+                    final NaryTree<String> parseTree = NaryTree.read(line, String.class);
                     // Skip sentences which do not meet the size criteria
                     if (parseTree.leaves() < minLength || parseTree.leaves() > maxLength) {
                         continue;

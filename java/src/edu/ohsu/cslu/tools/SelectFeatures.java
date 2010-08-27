@@ -1,5 +1,12 @@
 package edu.ohsu.cslu.tools;
 
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_AFTER_HEAD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_BEFORE_HEAD;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_HEAD_VERB;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_PREVIOUS_POS;
+import static edu.ohsu.cslu.tools.LinguisticToolOptions.OPTION_SUBSEQUENT_POS;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,12 +21,10 @@ import org.kohsuke.args4j.Option;
 import cltool.LinewiseCommandlineTool;
 import edu.ohsu.cslu.common.FeatureClass;
 import edu.ohsu.cslu.common.PorterStemmer;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.MsaHeadPercolationRuleset;
-import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.util.Strings;
-import static edu.ohsu.cslu.tools.LinguisticToolOptions.*;
 
 /**
  * Selects and formats features from a variously formatted sentences (including Penn-Treebank parse trees,
@@ -257,7 +262,7 @@ public class SelectFeatures extends LinewiseCommandlineTool {
     }
 
     private String selectTreeFeatures(final String parsedSentence) {
-        final StringNaryTree tree = StringNaryTree.read(parsedSentence);
+        final NaryTree<String> tree = NaryTree.read(parsedSentence, String.class);
         final StringBuilder sb = new StringBuilder(parsedSentence.length());
 
         // Start with before_head
@@ -268,7 +273,7 @@ public class SelectFeatures extends LinewiseCommandlineTool {
         final ArrayList<String> wordList = new ArrayList<String>(64);
         final ArrayList<String> posList = new ArrayList<String>(64);
         for (final Iterator<NaryTree<String>> iter = tree.inOrderIterator(); iter.hasNext();) {
-            final StringNaryTree node = (StringNaryTree) iter.next();
+            final NaryTree<String> node = iter.next();
 
             if (node.isLeaf()) {
                 wordList.add(node.label().toLowerCase());
@@ -278,7 +283,7 @@ public class SelectFeatures extends LinewiseCommandlineTool {
 
         int i = 0;
         for (final Iterator<NaryTree<String>> iter = tree.inOrderIterator(); iter.hasNext();) {
-            final StringNaryTree node = (StringNaryTree) iter.next();
+            final NaryTree<String> node = iter.next();
             final String posLabel = node.parent() != null ? node.parent().label() : null;
 
             if (node.isLeaf()) {

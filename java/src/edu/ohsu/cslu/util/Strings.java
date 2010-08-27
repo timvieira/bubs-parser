@@ -15,7 +15,6 @@ import java.util.Set;
 
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.datastructs.narytree.StringNaryTree;
 
 public class Strings {
 
@@ -78,16 +77,16 @@ public class Strings {
      * @return POS-tagged words without any other parse structure
      */
     public static String extractPos(final String parsedSentence) {
-        final StringNaryTree tree = StringNaryTree.read(parsedSentence);
+        final NaryTree<String> tree = NaryTree.read(parsedSentence, String.class);
         final StringBuilder sb = new StringBuilder(parsedSentence.length());
 
         for (final Iterator<NaryTree<String>> i = tree.inOrderIterator(); i.hasNext();) {
             final NaryTree<String> node = i.next();
             if (node.isLeaf()) {
                 sb.append('(');
-                sb.append(node.parent().stringLabel());
+                sb.append(node.parent().label().toString());
                 sb.append(' ');
-                sb.append(node.stringLabel());
+                sb.append(node.label().toString());
                 sb.append(") ");
             }
         }
@@ -98,7 +97,8 @@ public class Strings {
     }
 
     /**
-     * Extracts POS-tags, words, and an additional feature indicating whether a word is the head verb from a Penn Treebank formatted parse structure.
+     * Extracts POS-tags, words, and an additional feature indicating whether a word is the head verb from a
+     * Penn Treebank formatted parse structure.
      * 
      * e.g.: "(JJ fruit NONHEAD) (NN flies NONHEAD) (VBD fast HEAD) (. . NONHEAD)"
      * 
@@ -107,18 +107,18 @@ public class Strings {
      * @return POS-tagged words without any other parse structure
      */
     public static String extractPosAndHead(final String parsedSentence, final HeadPercolationRuleset ruleset) {
-        final StringNaryTree tree = StringNaryTree.read(parsedSentence);
+        final NaryTree<String> tree = NaryTree.read(parsedSentence, String.class);
         final StringBuilder sb = new StringBuilder(parsedSentence.length());
 
         for (final Iterator<NaryTree<String>> i = tree.inOrderIterator(); i.hasNext();) {
             final NaryTree<String> node = i.next();
             if (node.isLeaf()) {
                 sb.append('(');
-                sb.append(node.parent().stringLabel());
+                sb.append(node.parent().label().toString());
                 sb.append(' ');
-                sb.append(node.stringLabel());
+                sb.append(node.label().toString());
                 sb.append(' ');
-                sb.append(((StringNaryTree) node).isHeadOfTreeRoot(ruleset) ? "HEAD" : "NONHEAD");
+                sb.append(node.isHeadOfTreeRoot(ruleset) ? "HEAD" : "NONHEAD");
                 sb.append(") ");
             }
         }
@@ -129,12 +129,14 @@ public class Strings {
     }
 
     /**
-     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence, further split up into its constituent features.
+     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence,
+     * further split up into its constituent features.
      * 
      * @param sequence
      * @return
      */
-    private static String[][] bracketedTags(String sequence, final char closeBracket, final String endBracketPattern, final String beginBracketPattern) {
+    private static String[][] bracketedTags(String sequence, final char closeBracket,
+            final String endBracketPattern, final String beginBracketPattern) {
         // Remove newlines and leading and trailing whitespace
         sequence = sequence.replaceAll("\n|\r", " ").trim();
         final int firstCloseBracket = sequence.indexOf(closeBracket);
@@ -154,7 +156,8 @@ public class Strings {
     }
 
     /**
-     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence, further split up into its constituent features.
+     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence,
+     * further split up into its constituent features.
      * 
      * @param sequence
      * @return string tokens
@@ -164,7 +167,8 @@ public class Strings {
     }
 
     /**
-     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence, further split up into its constituent features.
+     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence,
+     * further split up into its constituent features.
      * 
      * @param sequence
      * @return string tokens
@@ -174,7 +178,8 @@ public class Strings {
     }
 
     /**
-     * Returns a two-dimensional array of Strings, representing each of the slash-delimited tokens in the supplied sequence, further split up into its constituent features.
+     * Returns a two-dimensional array of Strings, representing each of the slash-delimited tokens in the
+     * supplied sequence, further split up into its constituent features.
      * 
      * @param sequence
      * @return string tokens
@@ -193,7 +198,8 @@ public class Strings {
     }
 
     /**
-     * Parses a header line from a persisted type (Matrix, SimpleVocabulary, etc.) and returns the attributes represented therein.
+     * Parses a header line from a persisted type (Matrix, SimpleVocabulary, etc.) and returns the attributes
+     * represented therein.
      * 
      * @param line
      * @return Map of attributes
@@ -245,7 +251,8 @@ public class Strings {
      * @param suffix
      * @return All permutations of the specified suffix
      */
-    private static Set<String> recursivePermute(final Set<String> permutations, final String prefix, final String[] suffix) {
+    private static Set<String> recursivePermute(final Set<String> permutations, final String prefix,
+            final String[] suffix) {
         // Base case of length 1
         if (suffix.length == 1) {
             permutations.add(prefix.length() == 0 ? suffix[0] : prefix + " " + suffix[0]);
@@ -258,7 +265,8 @@ public class Strings {
             System.arraycopy(suffix, 0, newSuffix, 0, i);
             System.arraycopy(suffix, i + 1, newSuffix, i, newSuffix.length - i);
 
-            permutations.addAll(recursivePermute(permutations, prefix.length() == 0 ? suffix[i] : prefix + " " + suffix[i], newSuffix));
+            permutations.addAll(recursivePermute(permutations, prefix.length() == 0 ? suffix[i] : prefix
+                    + " " + suffix[i], newSuffix));
         }
 
         return permutations;
@@ -319,9 +327,11 @@ public class Strings {
     }
 
     /**
-     * Splits the string by bracketed features, and returns all words, assuming the word is the first feature in each bracketing
+     * Splits the string by bracketed features, and returns all words, assuming the word is the first feature
+     * in each bracketing
      * 
-     * @param bracketedFeatures Bracketed representation of a sequence. (e.g., "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
+     * @param bracketedFeatures Bracketed representation of a sequence. (e.g.,
+     *            "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
      * @return words
      */
     public static String[] words(final String bracketedFeatures) {
