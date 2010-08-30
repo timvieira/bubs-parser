@@ -19,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.tests.FilteredRunner;
 
@@ -348,19 +349,27 @@ public class TestStringNaryTree {
 
     @Test
     public void testLeftFactor() {
-        assertEquals(BinaryTree.read("(S (NP C0 C1))", String.class),
-            NaryTree.read("(S (NP C0 C1))", String.class).leftFactor(GrammarFormatType.Berkeley));
+        assertEquals(
+            BinaryTree.read("(S (NP C0 C1))", String.class),
+            NaryTree.read("(S (NP C0 C1))", String.class).factor(GrammarFormatType.Berkeley,
+                Factorization.LEFT));
 
-        assertEquals(BinaryTree.read("(S (NP C0 (@NP C1 C2)))", String.class),
-            NaryTree.read("(S (NP C0 C1 C2))", String.class).leftFactor(GrammarFormatType.Berkeley));
+        assertEquals(
+            BinaryTree.read("(S (NP C0 (@NP C1 C2)))", String.class),
+            NaryTree.read("(S (NP C0 C1 C2))", String.class).factor(GrammarFormatType.Berkeley,
+                Factorization.LEFT));
     }
 
     @Test
     public void testRightFactor() {
-        assertEquals(BinaryTree.read("(S (NP C0 C1))", String.class),
-            NaryTree.read("(S (NP C0 C1))", String.class).rightFactor(GrammarFormatType.Berkeley));
+        assertEquals(
+            BinaryTree.read("(S (NP C0 C1))", String.class),
+            NaryTree.read("(S (NP C0 C1))", String.class).factor(GrammarFormatType.Berkeley,
+                Factorization.RIGHT));
 
-        assertEquals(BinaryTree.read("(S (NP (@NP C0 C1) C2))", String.class),
-            NaryTree.read("(S (NP C0 C1 C2))", String.class).rightFactor(GrammarFormatType.Berkeley));
+        assertEquals(
+            BinaryTree.read("(S (NP (@NP C0 C1) C2))", String.class),
+            NaryTree.read("(S (NP C0 C1 C2))", String.class).factor(GrammarFormatType.Berkeley,
+                Factorization.RIGHT));
     }
 }

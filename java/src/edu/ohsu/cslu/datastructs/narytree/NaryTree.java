@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 
 /**
@@ -356,59 +357,54 @@ public class NaryTree<E> implements Tree<E>, Serializable {
         }
     }
 
-    public BinaryTree<String> leftFactor(final GrammarFormatType grammarFormatType) {
+    public BinaryTree<String> factor(final GrammarFormatType grammarFormatType,
+            final Factorization factorization) {
 
-        final BinaryTree<String> binaryTreeRoot = new BinaryTree<String>(label.toString());
+        final BinaryTree<String> binaryTreeRoot = new BinaryTree<String>(label.toString(), factorization);
         BinaryTree<String> binaryTree = binaryTreeRoot;
 
         if (childList.size() > 0) {
             final Queue<NaryTree<E>> queue = new LinkedList<NaryTree<E>>(childList);
 
-            // Add the first child as the left child of the binary tree
-            binaryTree.addSubtree(queue.remove().leftFactor(grammarFormatType));
+            switch (factorization) {
+                case LEFT:
+                    // Add the first child as the left child of the binary tree
+                    binaryTree.addSubtree(queue.remove().factor(grammarFormatType, factorization));
 
-            // If there are 2 or more subsequent children, create factored child trees for them
-            while (queue.size() > 1) {
-                final BinaryTree<String> factoredTree = new BinaryTree<String>(
-                    grammarFormatType.factoredNonTerminal(label.toString()));
-                factoredTree.addSubtree(queue.remove().leftFactor(grammarFormatType));
-                binaryTree.addSubtree(factoredTree);
-                binaryTree = factoredTree;
+                    // If there are 2 or more subsequent children, create factored child trees for them
+                    while (queue.size() > 1) {
+                        final BinaryTree<String> factoredTree = new BinaryTree<String>(
+                            grammarFormatType.factoredNonTerminal(label.toString()), factorization);
+                        factoredTree.addSubtree(queue.remove().factor(grammarFormatType, factorization));
+                        binaryTree.addSubtree(factoredTree);
+                        binaryTree = factoredTree;
+                    }
+
+                    // Add the last child
+                    if (queue.size() > 0) {
+                        binaryTree.addSubtree(queue.remove().factor(grammarFormatType, factorization));
+                    }
+                    break;
+
+                case RIGHT:
+                    // If there are 3 or more subsequent children, create factored child trees for them
+                    while (queue.size() > 2) {
+                        final BinaryTree<String> factoredTree = new BinaryTree<String>(
+                            grammarFormatType.factoredNonTerminal(label.toString()), factorization);
+                        factoredTree.addSubtree(queue.remove().factor(grammarFormatType, factorization));
+                        binaryTree.addSubtree(factoredTree);
+                        binaryTree = factoredTree;
+                    }
+
+                    // Add the next-to-last child as the right child of the factored tree
+                    if (queue.size() > 1) {
+                        binaryTree.addSubtree(queue.remove().factor(grammarFormatType, factorization));
+                    }
+
+                    // And the last child as the right child of the root tree
+                    binaryTreeRoot.addSubtree(queue.remove().factor(grammarFormatType, factorization));
+                    break;
             }
-
-            // Add the last child
-            if (queue.size() > 0) {
-                binaryTree.addSubtree(queue.remove().leftFactor(grammarFormatType));
-            }
-        }
-
-        return binaryTreeRoot;
-    }
-
-    public BinaryTree<String> rightFactor(final GrammarFormatType grammarFormatType) {
-
-        final BinaryTree<String> binaryTreeRoot = new BinaryTree<String>(label.toString());
-        BinaryTree<String> binaryTree = binaryTreeRoot;
-
-        if (childList.size() > 0) {
-            final Queue<NaryTree<E>> queue = new LinkedList<NaryTree<E>>(childList);
-
-            // If there are 3 or more subsequent children, create factored child trees for them
-            while (queue.size() > 2) {
-                final BinaryTree<String> factoredTree = new BinaryTree<String>(
-                    grammarFormatType.factoredNonTerminal(label.toString()));
-                factoredTree.addSubtree(queue.remove().rightFactor(grammarFormatType));
-                binaryTree.addSubtree(factoredTree);
-                binaryTree = factoredTree;
-            }
-
-            // Add the next-to-last child as the right child of the factored tree
-            if (queue.size() > 1) {
-                binaryTree.addSubtree(queue.remove().rightFactor(grammarFormatType));
-            }
-
-            // And the last child as the right child of the root tree
-            binaryTreeRoot.addSubtree(queue.remove().rightFactor(grammarFormatType));
         }
 
         return binaryTreeRoot;

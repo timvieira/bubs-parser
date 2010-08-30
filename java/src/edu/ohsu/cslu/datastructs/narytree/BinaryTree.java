@@ -25,34 +25,37 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
     private final static long serialVersionUID = 369752896212698723L;
 
     /** Label of the root node */
-    protected final E label;
+    private final E label;
 
     /** Parent node (if any) */
-    protected BinaryTree<E> parent;
+    private BinaryTree<E> parent;
+
+    private final Factorization factorization;
 
     private boolean visited;
 
     /**
      * The children of this tree
      */
-    protected BinaryTree<E> leftChild;
-    protected BinaryTree<E> rightChild;
+    private BinaryTree<E> leftChild;
+    private BinaryTree<E> rightChild;
 
     /** Number of nodes in this tree, including this node and any subtrees */
-    protected int size;
+    private int size;
 
     /** Number of leaves in this tree */
-    protected int leaves;
+    private int leaves;
 
-    public BinaryTree(final E label, final BinaryTree<E> parent) {
+    public BinaryTree(final E label, final BinaryTree<E> parent, final Factorization factorization) {
         this.label = label;
         size = 1;
         leaves = 1;
         this.parent = parent;
+        this.factorization = factorization;
     }
 
-    public BinaryTree(final E label) {
-        this(label, null);
+    public BinaryTree(final E label, final Factorization factorization) {
+        this(label, null, factorization);
     }
 
     public E label() {
@@ -74,7 +77,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      * @return The newly added subtree
      */
     public BinaryTree<E> addChild(final E childLabel) {
-        return addChild(new BinaryTree<E>(childLabel, this));
+        return addChild(new BinaryTree<E>(childLabel, this, factorization));
     }
 
     /**
@@ -495,12 +498,41 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      * Reads in an binary tree from a standard parenthesis-bracketed representation
      * 
      * @param inputStream The stream to read from
+     * @param type The node label class
+     * @param factorization The binary factorization method
+     * @return the tree
+     * @throws IOException if the read fails
+     */
+    public static <T> BinaryTree<T> read(final InputStream inputStream, final Class<T> type,
+            final Factorization factorization) throws IOException {
+        return read(new InputStreamReader(inputStream), type, factorization);
+    }
+
+    /**
+     * Reads in an binary tree from a standard parenthesis-bracketed representation
+     * 
+     * @param inputStream The stream to read from
+     * @param type The node label class
      * @return the tree
      * @throws IOException if the read fails
      */
     public static <T> BinaryTree<T> read(final InputStream inputStream, final Class<T> type)
             throws IOException {
-        return read(new InputStreamReader(inputStream), type);
+        return read(new InputStreamReader(inputStream), type, null);
+    }
+
+    /**
+     * Reads in an binary tree from a standard parenthesis-bracketed representation
+     * 
+     * @param inputStream The stream to read from
+     * @param labelParser Parser appropriate for the labels contained in the tree
+     * @return the tree
+     * @param factorization The binary factorization method
+     * @throws IOException if the read fails
+     */
+    public static <T> BinaryTree<T> read(final InputStream inputStream, final LabelParser<T> labelParser,
+            final Factorization factorization) throws IOException {
+        return read(new InputStreamReader(inputStream), labelParser, factorization);
     }
 
     /**
@@ -513,7 +545,25 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      */
     public static <T> BinaryTree<T> read(final InputStream inputStream, final LabelParser<T> labelParser)
             throws IOException {
-        return read(new InputStreamReader(inputStream), labelParser);
+        return read(new InputStreamReader(inputStream), labelParser, null);
+    }
+
+    /**
+     * Reads in an binary tree from a standard parenthesis-bracketed representation
+     * 
+     * @param string String representation of the tree
+     * @param type The node label class
+     * @param factorization The binary factorization method
+     * @return the tree
+     */
+    public static <T> BinaryTree<T> read(final String string, final Class<T> type,
+            final Factorization factorization) {
+        try {
+            return read(new StringReader(string), type, factorization);
+        } catch (final IOException e) {
+            // A StringReader shouldn't ever throw an IOException
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -524,7 +574,25 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      */
     public static <T> BinaryTree<T> read(final String string, final Class<T> type) {
         try {
-            return read(new StringReader(string), type);
+            return read(new StringReader(string), type, null);
+        } catch (final IOException e) {
+            // A StringReader shouldn't ever throw an IOException
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Reads in an binary tree from a standard parenthesis-bracketed representation
+     * 
+     * @param string String representation of the tree
+     * @param labelParser Parser appropriate for the labels contained in the tree
+     * @param factorization The binary factorization method
+     * @return the tree
+     */
+    public static <T> BinaryTree<T> read(final String string, final LabelParser<T> labelParser,
+            final Factorization factorization) {
+        try {
+            return read(new StringReader(string), labelParser, factorization);
         } catch (final IOException e) {
             // A StringReader shouldn't ever throw an IOException
             throw new RuntimeException(e);
@@ -540,7 +608,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      */
     public static <T> BinaryTree<T> read(final String string, final LabelParser<T> labelParser) {
         try {
-            return read(new StringReader(string), labelParser);
+            return read(new StringReader(string), labelParser, null);
         } catch (final IOException e) {
             // A StringReader shouldn't ever throw an IOException
             throw new RuntimeException(e);
@@ -554,7 +622,8 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      * @return the tree
      * @throws IOException if the read fails
      */
-    public static <T> BinaryTree<T> read(final Reader reader, final Class<T> type) throws IOException {
+    public static <T> BinaryTree<T> read(final Reader reader, final Class<T> type,
+            final Factorization factorization) throws IOException {
 
         try {
             final Constructor<T> labelConstructor = type.getConstructor(new Class[] { String.class });
@@ -564,7 +633,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
                     return labelConstructor.newInstance(new Object[] { label });
                 }
             };
-            return read(reader, labelParser);
+            return read(reader, labelParser, factorization);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -578,8 +647,8 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      * @return the tree
      * @throws IOException if the read fails
      */
-    public static <T> BinaryTree<T> read(final Reader reader, final LabelParser<T> labelParser)
-            throws IOException {
+    public static <T> BinaryTree<T> read(final Reader reader, final LabelParser<T> labelParser,
+            final Factorization factorization) throws IOException {
         char c;
 
         // Discard any spaces or end-of-line characters
@@ -590,7 +659,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         if (c != '(') {
             throw new IllegalArgumentException("Bad tree format. Expected '(' but found '" + c + "'");
         }
-        return readSubtree(reader, null, labelParser);
+        return readSubtree(reader, null, labelParser, factorization);
     }
 
     /**
@@ -603,7 +672,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      * @throws IOException if the read fails
      */
     private static <T> BinaryTree<T> readSubtree(final Reader reader, final BinaryTree<T> parent,
-            final LabelParser<T> labelParser) throws IOException {
+            final LabelParser<T> labelParser, final Factorization factorization) throws IOException {
 
         try {
             // Recursively read a tree from the reader.
@@ -615,7 +684,8 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
                 rootToken.append(c);
             }
 
-            final BinaryTree<T> tree = new BinaryTree<T>(labelParser.parse(rootToken.toString()));
+            final BinaryTree<T> tree = new BinaryTree<T>(labelParser.parse(rootToken.toString()),
+                factorization);
 
             StringBuilder childToken = new StringBuilder();
 
@@ -623,12 +693,13 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
             for (char c = (char) reader.read(); c != ')'; c = (char) reader.read()) {
                 // Parse any subtrees we find
                 if (c == '(') {
-                    tree.internalAddSubtree(readSubtree(reader, tree, labelParser));
+                    tree.internalAddSubtree(readSubtree(reader, tree, labelParser, factorization));
                 }
                 // Add any tokens we find
                 else if (c == ' ') {
                     if (childToken.length() > 0) {
-                        tree.addChild(new BinaryTree<T>(labelParser.parse(childToken.toString())));
+                        tree.addChild(new BinaryTree<T>(labelParser.parse(childToken.toString()),
+                            factorization));
                         childToken = new StringBuilder();
                     }
                 } else {
@@ -637,7 +708,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
             }
 
             if (childToken.length() > 0) {
-                tree.addChild(new BinaryTree<T>(labelParser.parse(childToken.toString())));
+                tree.addChild(new BinaryTree<T>(labelParser.parse(childToken.toString()), factorization));
             }
 
             tree.parent = parent;
@@ -645,5 +716,9 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static enum Factorization {
+        LEFT, RIGHT
     }
 }
