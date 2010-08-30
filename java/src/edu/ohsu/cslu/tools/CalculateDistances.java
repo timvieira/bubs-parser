@@ -125,9 +125,9 @@ public class CalculateDistances extends BaseCommandlineTool {
 
         private final int p;
         private final int q;
-        private final ArrayList<NaryTree<?>> trees = new ArrayList<NaryTree<?>>();
+        private final ArrayList<NaryTree<String>> trees = new ArrayList<NaryTree<String>>();
         private Matrix matrix;
-        private NaryTree.PqgramProfile[] profiles;
+        private NaryTree.PqgramProfile<String>[] profiles;
         private final int maxThreads;
 
         public PqgramDistanceCalculator(final String parameters, final int maxThreads) {
@@ -148,6 +148,7 @@ public class CalculateDistances extends BaseCommandlineTool {
             trees.add(NaryTree.read(element, String.class));
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Matrix distance() {
             matrix = new FixedPointShortMatrix(trees.size(), trees.size(), 3, true);
@@ -187,7 +188,7 @@ public class CalculateDistances extends BaseCommandlineTool {
             protected void compute() {
                 if (end == begin) {
                     final int i = begin;
-                    final PqgramProfile profileI = profiles[i];
+                    final PqgramProfile<String> profileI = profiles[i];
                     for (int j = 0; j < i; j++) {
                         matrix.set(i, j, NaryTree.PqgramProfile.pqgramDistance(profileI, profiles[j]));
                     }
