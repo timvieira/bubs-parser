@@ -178,7 +178,10 @@
          * heap-size (optional - default=128) Size in megabytes
          * additional-libs (optional) List of any additional jars which should
              be included in their entirety
-         * params (optional) Parameter list to pass to the grid engine script.
+         * additional-file-root / additional-file-includes (optional) Specifies 
+             any other files which should be included in the jar. Root directory
+             and file includes in the normal ant 'fileset' style
+         * grid-params (optional) Parameter list to pass to the grid engine script.
     ========================================================================
     -->
     <target name="package-tool" description="Package an executable jar file">
@@ -186,9 +189,9 @@
         <!-- Default unspecified parameters -->
         <property name="additional-libs" value="none" />
         <property name="additional-root-classes" value="" />
-        <property name="params" value="" />
+        <property name="grid-params" value="" />
         <property name="additional-file-root" value="" />
-        <property name="additional-file-includes" value="" />
+        <property name="additional-file-includes" value="none" />
 
         <!-- If 'heap-size' is not specified, default it to 128m -->
         <property name="heap-size" value="128" />
@@ -198,7 +201,7 @@
             <param name="additional-root-classes" value="${additional-root-classes}" />
             <param name="heap-size" value="${heap-size}" />
             <param name="additional-libs" value="${additional-libs}" />
-            <param name="params" value="${params}" />
+            <param name="grid-params" value="${grid-params}" />
         </antcall>
 
         <!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
@@ -221,7 +224,7 @@
             <replacefilter token="%ROOT-CLASS%" value="${root-class}" />
             <replacefilter token="%CP_JARS%" value="${cp-jars}" />
             <replacefilter token="%MEM%" value="${heap-size}" />
-            <replacefilter token="%PARAMS%" value="${params}" />
+            <replacefilter token="%PARAMS%" value="${grid-params}" />
 		</replace>
 
 	</target>
@@ -237,7 +240,7 @@
         <!-- Default unspecified parameters -->
         <property name="additional-libs" value="none" />
         <property name="additional-root-classes" value="" />
-        <property name="params" value="" />
+        <property name="grid-params" value="" />
 
         <!-- If 'heap-size' is not specified, default it to 128m -->
         <property name="heap-size" value="128" />
@@ -247,7 +250,7 @@
             <param name="additional-root-classes" value="${additional-root-classes}" />
             <param name="heap-size" value="${heap-size}" />
             <param name="additional-libs" value="${additional-libs}" />
-            <param name="params" value="${params}" />
+            <param name="grid-params" value="${grid-params}" />
         </antcall>
 
         <!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
@@ -310,33 +313,10 @@
 		</antcall>
 	</target>
 
-	<target name="encode" depends="compile-java" description="Package Encoding Tool">
-		<antcall target="package-tool">
-			<param name="root-class" value="edu.ohsu.cslu.tools.Encode" />
-			<param name="tool-name" value="encode" />
-		</antcall>
-	</target>
-
 	<target name="induce-vocabularies" depends="compile-java" description="Package Vocabulary Induction Tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.InduceMappedVocabularies" />
 			<param name="tool-name" value="induce-vocabularies" />
-		</antcall>
-	</target>
-
-	<target name="align-sentences" depends="compile-java" description="Package Sentence MSA Tool">
-		<antcall target="package-tool">
-			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.AlignSentences" />
-			<param name="tool-name" value="align-sentences" />
-			<param name="heap-size" value="512" />
-		</antcall>
-	</target>
-
-	<target name="train-and-align" depends="compile-java" description="Package Full Sentence MSA Tool">
-		<antcall target="package-tool">
-			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.TrainHmmAndAlignSequences" />
-			<param name="tool-name" value="train-and-align" />
-			<param name="heap-size" value="512" />
 		</antcall>
 	</target>
 
@@ -359,22 +339,6 @@
         </antcall>
     </target>
 
-    <target name="create-perfect-hash" depends="compile-java" description="Package perfect-hash test tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.hash.CreatePerfectHash" />
-            <param name="tool-name" value="create-perfect-hash" />
-            <param name="heap-size" value="512" />
-        </antcall>
-    </target>
-
-    <target name="create-perfect-hash2" depends="compile-java" description="Package perfect-hash test tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.hash.CreatePerfectIntPair2IntHash" />
-            <param name="tool-name" value="create-perfect-hash2" />
-            <param name="heap-size" value="512" />
-        </antcall>
-    </target>
-
     <!-- 
     ========================================================================
        Package all NLP applications
@@ -382,7 +346,7 @@
     -->
     <!-- TODO: Re-add compile-native -->
 	<target name="dist"
-	        depends="filter-sentences,split-corpus,select-features,calculate-distances,encode,induce-vocabularies,align-sentences,train-and-align,create-vector,summarize-grammar,parse,create-perfect-hash2"
+	        depends="filter-sentences,split-corpus,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,parse"
 	        description="Package all NLP application">
 	</target>
 
