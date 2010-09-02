@@ -5,28 +5,28 @@ import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class ACPWithMemory extends AgendaChartParser {
 
-    private ChartEdge agendaMemory[][][];
+	private ChartEdge agendaMemory[][][];
 
-    public ACPWithMemory(final ParserOptions opts, final LeftRightListsGrammar grammar) {
-        super(opts, grammar);
-    }
+	public ACPWithMemory(final ParserDriver opts, final LeftRightListsGrammar grammar) {
+		super(opts, grammar);
+	}
 
-    @Override
-    protected void initParser(final int sentLength) {
-        super.initParser(sentLength);
+	@Override
+	protected void initParser(final int sentLength) {
+		super.initParser(sentLength);
 
-        // TODO: this can be half the size since we only need to allocate space for chart cells that exist
-        agendaMemory = new ChartEdge[sentLength + 1][sentLength + 1][grammar.numNonTerms()];
-    }
+		// TODO: this can be half the size since we only need to allocate space for chart cells that exist
+		agendaMemory = new ChartEdge[sentLength + 1][sentLength + 1][grammar.numNonTerms()];
+	}
 
-    @Override
-    protected void addEdgeToFrontier(final ChartEdge edge) {
-        final ChartEdge bestAgendaEdge = agendaMemory[edge.start()][edge.end()][edge.prod.parent];
-        if (bestAgendaEdge == null || edge.fom > bestAgendaEdge.fom) {
-            nAgendaPush += 1;
-            agenda.add(edge);
-            agendaMemory[edge.start()][edge.end()][edge.prod.parent] = edge;
-        }
-    }
+	@Override
+	protected void addEdgeToFrontier(final ChartEdge edge) {
+		final ChartEdge bestAgendaEdge = agendaMemory[edge.start()][edge.end()][edge.prod.parent];
+		if (bestAgendaEdge == null || edge.fom > bestAgendaEdge.fom) {
+			nAgendaPush += 1;
+			agenda.add(edge);
+			agendaMemory[edge.start()][edge.end()][edge.prod.parent] = edge;
+		}
+	}
 
 }
