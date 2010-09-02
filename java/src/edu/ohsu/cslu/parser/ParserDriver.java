@@ -371,6 +371,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             case LocalBestFirst:
                 return new BeamSearchChartParser(parserOptions, (LeftHashGrammar) grammar);
             case LBFPruneViterbi:
+                if (collectDetailedStatistics) {
+                    return new BSCPPruneViterbiStats(parserOptions, (LeftHashGrammar) grammar);
+                }
                 return new BSCPPruneViterbi(parserOptions, (LeftHashGrammar) grammar);
             case LBFOnlineBeam:
                 return new BSCPWeakThresh(parserOptions, (LeftHashGrammar) grammar);
