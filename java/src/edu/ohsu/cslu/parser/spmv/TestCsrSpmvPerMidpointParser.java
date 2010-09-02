@@ -4,11 +4,9 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
-public class TestCsrSpmvPerMidpointParser extends SparseMatrixVectorParserTestCase {
+public class TestCsrSpmvPerMidpointParser extends SparseMatrixVectorParserTestCase<CsrSpmvPerMidpointParser> {
 
     @Override
     protected Class<? extends Grammar> grammarClass() {
@@ -16,13 +14,8 @@ public class TestCsrSpmvPerMidpointParser extends SparseMatrixVectorParserTestCa
     }
 
     @Override
-    protected Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new CsrSpmvPerMidpointParser((CsrSparseMatrixGrammar) grammar);
-    }
-
-    @Override
     @Test
-    @PerformanceTest( { "mbp", "33306", "d820", "71017" })
+    @PerformanceTest({ "mbp", "33306", "d820", "71017" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
