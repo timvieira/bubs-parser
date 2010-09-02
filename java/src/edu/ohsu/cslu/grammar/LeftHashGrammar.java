@@ -12,16 +12,19 @@ public class LeftHashGrammar extends GrammarByChild {
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
-    public LeftHashGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public LeftHashGrammar(final String grammarFile, final String lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
     }
 
-    public LeftHashGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    public LeftHashGrammar(final Reader grammarFile, final Reader lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         super(grammarFile, lexiconFile, grammarFormat);
     }
 
     @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat) throws Exception {
+    protected void init(final Reader grammarFile, final Reader lexiconFile,
+            final GrammarFormatType grammarFormat) throws Exception {
         readGrammarAndLexicon(grammarFile, lexiconFile, grammarFormat);
 
         binaryProdHash = new ArrayList<HashMap<Integer, LinkedList<Production>>>(this.numNonTerms());
@@ -57,5 +60,22 @@ public class LeftHashGrammar extends GrammarByChild {
             return new LinkedList<Production>();
         }
         return productions;
+    }
+
+    @Override
+    public Production getBinaryProduction(final String A, final String B, final String C) {
+        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
+            final int parent = nonTermSet.getIndex(A);
+            final int leftChild = nonTermSet.getIndex(B);
+            final int rightChild = nonTermSet.getIndex(C);
+            // System.out.println("A=" + parent + "(" + A + ") B=" + leftChild + "(" + B + ") C=" + rightChild
+            // + "(" + C + ")");
+            for (final Production p : getBinaryProductionsWithChildren(leftChild, rightChild)) {
+                if (p.parent == parent) {
+                    return p;
+                }
+            }
+        }
+        return null;
     }
 }
