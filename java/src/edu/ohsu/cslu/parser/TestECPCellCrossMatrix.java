@@ -4,7 +4,6 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -15,7 +14,7 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestECPCellCrossMatrix extends ExhaustiveChartParserTestCase {
+public class TestECPCellCrossMatrix extends ExhaustiveChartParserTestCase<ECPCellCrossMatrix> {
 
     @Override
     protected Class<? extends Grammar> grammarClass() {
@@ -23,13 +22,8 @@ public class TestECPCellCrossMatrix extends ExhaustiveChartParserTestCase {
     }
 
     @Override
-    protected Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new ECPCellCrossMatrix(new ParserOptions(), (ChildMatrixGrammar) grammar);
-    }
-
-    @Override
     @Test
-    @PerformanceTest( { "mbp", "131841", "d820", "183065" })
+    @PerformanceTest({ "mbp", "131841", "d820", "183065" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

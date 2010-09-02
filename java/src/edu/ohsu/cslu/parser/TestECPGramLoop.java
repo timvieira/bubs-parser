@@ -4,7 +4,6 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarByChild;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -15,7 +14,7 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestECPGramLoop extends ExhaustiveChartParserTestCase {
+public class TestECPGramLoop extends ExhaustiveChartParserTestCase<ECPGrammarLoop> {
 
     @Override
     protected Class<? extends Grammar> grammarClass() {
@@ -23,13 +22,8 @@ public class TestECPGramLoop extends ExhaustiveChartParserTestCase {
     }
 
     @Override
-    protected Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
-        return new ECPGrammarLoop(new ParserOptions(), (GrammarByChild) grammar);
-    }
-
-    @Override
     @Test
-    @PerformanceTest( { "mbp", "22485", "d820", "31297" })
+    @PerformanceTest({ "mbp", "22485", "d820", "31297" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
