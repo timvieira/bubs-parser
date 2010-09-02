@@ -403,14 +403,36 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     }
 
     static public enum ParserType {
-        ECPCellCrossList("ecpccl"), ECPCellCrossHash("ecpcch"), ECPCellCrossMatrix("ecpccm"), ECPGrammarLoop("ecpgl"), ECPGrammarLoopBerkeleyFilter(
-                "ecpglbf"), ECPInsideOutside("ecpio"), AgendaChartParser("acpall"), ACPWithMemory("acpwm"), ACPGhostEdges(
-                "acpge"), LocalBestFirst("lbf"), LBFPruneViterbi("lbfpv"), LBFOnlineBeam("lbfob"), LBFBoundedHeap(
-                "lbfbh"), LBFExpDecay("lbfed"), LBFPerceptronCell("lbfpc"), CoarseCellAgenda("cc"), CoarseCellAgendaCSLUT(
-                "cccslut"), JsaSparseMatrixVector("jsa"), DenseVectorOpenClSparseMatrixVector("dvopencl"), PackedOpenClSparseMatrixVector(
-                "popencl"), CsrSpmv("csr"), CsrSpmvPerMidpoint("csrpm"), CscSpmv("csc"), LeftChildMatrixLoop("lcml"), RightChildMatrixLoop(
-                "rcml"), GrammarLoopMatrixLoop("glml"), CartesianProductBinarySearch("cpbs"), CartesianProductBinarySearchLeftChild(
-                "cplbs"), CartesianProductHash("cph"), CartesianProductLeftChildHash("cplch");
+        ECPCellCrossList("ecpccl"),
+        ECPCellCrossHash("ecpcch"),
+        ECPCellCrossMatrix("ecpccm"),
+        ECPGrammarLoop("ecpgl"),
+        ECPGrammarLoopBerkeleyFilter("ecpglbf"),
+        ECPInsideOutside("ecpio"),
+        AgendaChartParser("acpall"),
+        ACPWithMemory("acpwm"),
+        ACPGhostEdges("acpge"),
+        LocalBestFirst("lbf"),
+        LBFPruneViterbi("lbfpv"),
+        LBFOnlineBeam("lbfob"),
+        LBFBoundedHeap("lbfbh"),
+        LBFExpDecay("lbfed"),
+        LBFPerceptronCell("lbfpc"),
+        CoarseCellAgenda("cc"),
+        CoarseCellAgendaCSLUT("cccslut"),
+        JsaSparseMatrixVector("jsa"),
+        DenseVectorOpenClSparseMatrixVector("dvopencl"),
+        PackedOpenClSparseMatrixVector("popencl"),
+        CsrSpmv("csr"),
+        CsrSpmvPerMidpoint("csrpm"),
+        CscSpmv("csc"),
+        LeftChildMatrixLoop("lcml"),
+        RightChildMatrixLoop("rcml"),
+        GrammarLoopMatrixLoop("glml"),
+        CartesianProductBinarySearch("cpbs"),
+        CartesianProductBinarySearchLeftChild("cplbs"),
+        CartesianProductHash("cph"),
+        CartesianProductLeftChildHash("cplch");
 
         private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
