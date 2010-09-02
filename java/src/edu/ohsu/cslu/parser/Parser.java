@@ -4,6 +4,7 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
+import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
@@ -29,6 +30,10 @@ public abstract class Parser<G extends Grammar> {
     protected long totalMaxMemoryMB = 0;
     public int tokenCount;
 
+    public String inputSentence; // should replace currentSentence
+    public ParseTree inputTree; // only available when input is given as tree format
+    public CellChart inputTreeChart;
+
     public Parser(final ParserOptions opts, final G grammar) {
         this.grammar = grammar;
         this.opts = opts;
@@ -46,37 +51,41 @@ public abstract class Parser<G extends Grammar> {
 
     protected abstract ParseTree findBestParse(String sentence) throws Exception;
 
-    public String parseSentence(String sentence, final GrammarFormatType grammarFormatType) throws Exception {
-        ParseTree inputTree = null, bestParseTree = null;
+    public String parseSentence(final String sentence, final GrammarFormatType grammarFormatType)
+            throws Exception {
+        ParseTree bestParseTree = null;
+        String parse;
+        inputSentence = sentence;
+        inputTree = null;
 
         currentSentence = sentence;
         sentenceNumber++;
 
-        // if input are trees, extract sentence from tree
-        if (ParseTree.isBracketFormat(sentence)) {
-            inputTree = ParseTree.readBracketFormat(sentence);
-            sentence = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
+        // if input is a tree, extract sentence from tree
+        if (ParseTree.isBracketFormat(inputSentence)) {
+            inputTree = ParseTree.readBracketFormat(inputSentence);
+            inputTreeChart = new CellChart(inputTree, opts.viterbiMax, this);
+            inputSentence = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
         }
 
-        final String[] tokens = ParserUtil.tokenize(sentence);
-        if (tokens.length > opts.maxLength) {
+        final String[] tokens = ParserUtil.tokenize(inputSentence);
+        tokenCount = tokens.length;
+        if (tokenCount > opts.maxLength) {
             return "INFO: Skipping sentence. Length of " + tokens.length + " is greater than maxLength ("
                     + opts.maxLength + ")";
         }
-        tokenCount = tokens.length;
 
-        bestParseTree = this.findBestParse(sentence.trim());
+        bestParseTree = this.findBestParse(inputSentence.trim());
 
-        if (bestParseTree == null) {
+        if (bestParseTree == null)
             return "No parse found.";
-        }
-
-        if (opts.printUnkLabels == false) {
+        if (!opts.printUnkLabels)
             bestParseTree.replaceLeafNodes(tokens);
-        }
-        final String parse = bestParseTree.toString(opts.printInsideProbs);
+        parse = bestParseTree.toString(opts.printInsideProbs);
+        if (opts.unfactor())
+            parse = unfactor(parse, grammarFormatType);
 
-        return opts.unfactor() ? unfactor(parse, grammarFormatType) : parse;
+        return parse;
     }
 
     public void printTreeEdgeStats(final ParseTree tree, final Parser<?> parser) {

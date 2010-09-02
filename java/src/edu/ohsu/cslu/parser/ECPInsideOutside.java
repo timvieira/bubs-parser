@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import com.aliasi.util.Collections;
-
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.ProjectedGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
@@ -83,16 +81,20 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
                     for (final int leftNT : leftCell.getLeftChildNTs()) {
                         for (final Production p : grammar.getBinaryProductionsWithLeftChild(leftNT)) {
                             if (rightCell.hasNT(p.rightChild)) {
-                                // System.out.println(" considering: " + p + " in=" + cell.getInside(p.parent) + " out=" + cell.getOutside(p.parent));
-                                ruleScore = cell.getOutside(p.parent) + p.prob + leftCell.getInside(leftNT) + rightCell.getInside(p.rightChild);
+                                // System.out.println(" considering: " + p + " in=" + cell.getInside(p.parent)
+                                // + " out=" + cell.getOutside(p.parent));
+                                ruleScore = cell.getOutside(p.parent) + p.prob + leftCell.getInside(leftNT)
+                                        + rightCell.getInside(p.rightChild);
                                 final int A = evalGrammar.projectNonTerm(p.parent);
                                 final int B = evalGrammar.projectNonTerm(p.leftChild);
                                 final int C = evalGrammar.projectNonTerm(p.rightChild);
 
                                 evalProd = evalGrammar.new Production(A, B, C, Float.NEGATIVE_INFINITY);
                                 if (evalProdSet.containsKey(evalProd)) {
-                                    ruleScore = (float) ParserUtil.logSum(ruleScore, evalProdSet.get(evalProd));
-                                    // System.out.println("inc rule score=" + ruleScore + " p=" + p + " evalProd=" + evalProd);
+                                    ruleScore = (float) ParserUtil.logSum(ruleScore, evalProdSet
+                                        .get(evalProd));
+                                    // System.out.println("inc rule score=" + ruleScore + " p=" + p +
+                                    // " evalProd=" + evalProd);
                                 }
                                 evalProdSet.put(evalProd, ruleScore);
 
@@ -127,9 +129,10 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
                     }
                 }
 
-                for (final int childNT : Collections.toIntArray(cell.getNTs())) {
+                for (final int childNT : cell.getNTs()) {
                     for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
-                        // System.out.println(" considering: " + p + " in=" + cell.getInside(p.parent) + " out=" + cell.getOutside(p.parent));
+                        // System.out.println(" considering: " + p + " in=" + cell.getInside(p.parent) +
+                        // " out=" + cell.getOutside(p.parent));
                         ruleScore = cell.getOutside(p.parent) + p.prob + cell.getInside(p.child());
                         final int A = evalGrammar.projectNonTerm(p.parent);
                         final int B = evalGrammar.projectNonTerm(p.child());
@@ -150,7 +153,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
         }
     }
 
-    private void addRuleScore(int A, int B, int C, float ruleScore, final HashMap<int[], Float> rules, final float maxScore[], final ChartCell cell) {
+    private void addRuleScore(int A, int B, int C, float ruleScore, final HashMap<int[], Float> rules,
+            final float maxScore[], final ChartCell cell) {
         A = evalGrammar.projectNonTerm(A);
         B = evalGrammar.projectNonTerm(A);
         if (C >= 0) {
@@ -165,7 +169,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
 
         if (ruleScore > maxScore[A]) {
             maxScore[A] = ruleScore;
-            cell.bestEdge[A] = chart.new ChartEdge(evalGrammar.new Production(A, B, Float.NEGATIVE_INFINITY, false), cell);
+            cell.bestEdge[A] = chart.new ChartEdge(evalGrammar.new Production(A, B, Float.NEGATIVE_INFINITY,
+                false), cell);
             // System.out.println(maxScore[start][end][A] + "\t" + cell.bestEdge[A]);
         }
 
@@ -218,8 +223,10 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
 
                 maxc[start][end] = maxInOut + maxSplit;
                 // maxc[start][end] = (float) ParserUtil.logSum(maxInOut, maxSplit);
-                final Production p = grammar.new Production(bestNT[start][end], bestNT[start][maxSplitMid], bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
-                cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid), chart.getCell(maxSplitMid, end));
+                final Production p = grammar.new Production(bestNT[start][end], bestNT[start][maxSplitMid],
+                    bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
+                cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid),
+                    chart.getCell(maxSplitMid, end));
             }
         }
     }
@@ -247,7 +254,7 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
             }
         }
 
-        for (final int childNT : Collections.toIntArray(cell.getNTs())) {
+        for (final int childNT : cell.getNTs()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                 // cell.updateInside(p, p.prob + cell.getInside(childNT));
                 cell.updateInside(p.parent, p.prob + cell.getInside(childNT));
@@ -271,7 +278,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
                 }
             }
 
-            // System.out.println("  " + grammar.mapNonterminal(nt) + " = " + (cell.getInside(nt) + cell.getOutside(nt)) + " in=" + cell.getInside(nt) + " out=" +
+            // System.out.println("  " + grammar.mapNonterminal(nt) + " = " + (cell.getInside(nt) +
+            // cell.getOutside(nt)) + " in=" + cell.getInside(nt) + " out=" +
             // cell.getOutside(nt));
         }
 
@@ -308,8 +316,10 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
         // leftCell.updateOutside(edge.prod.leftChild, rightInside + parentOutside + edge.prod.prob);
         // rightCell.updateOutside(edge.prod.rightChild, leftInside + parentOutside + edge.prod.prob);
         //
-        // // System.out.println("binary: " + edge + "\n\tpOut=" + parentOutside + " lIn=" + leftInside + " rIn=" + rightInside + " prod=" + edge.prod.prob + " lOut="
-        // // + outside[start][midpt][edge.prod.leftChild] + " rOut=" + outside[midpt][end][edge.prod.rightChild]);
+        // // System.out.println("binary: " + edge + "\n\tpOut=" + parentOutside + " lIn=" + leftInside +
+        // " rIn=" + rightInside + " prod=" + edge.prod.prob + " lOut="
+        // // + outside[start][midpt][edge.prod.leftChild] + " rOut=" +
+        // outside[midpt][end][edge.prod.rightChild]);
         // }
         // }
 
@@ -338,7 +348,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
     // // TODO: inside is max, not sum.
     // leftInside = leftCell.getBestEdge(parentEdge.prod.leftChild).inside;
     // logProb = parentOutside + parentEdge.prod.prob + leftInside;
-    // cellOut[parentEdge.prod.rightChild] = (float) ParserUtil.logSum(cellOut[parentEdge.prod.rightChild], logProb);
+    // cellOut[parentEdge.prod.rightChild] = (float) ParserUtil.logSum(cellOut[parentEdge.prod.rightChild],
+    // logProb);
     // }
     // }
     // }
@@ -353,7 +364,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
     // parentOutside = outside[cell.start()][end][parentEdge.prod.parent];
     // rightInside = rightCell.getBestEdge(parentEdge.prod.rightChild).inside;
     // logProb = parentOutside + parentEdge.prod.prob + rightInside;
-    // cellOut[parentEdge.prod.rightChild] = (float) ParserUtil.logSum(cellOut[parentEdge.prod.rightChild], logProb);
+    // cellOut[parentEdge.prod.rightChild] = (float) ParserUtil.logSum(cellOut[parentEdge.prod.rightChild],
+    // logProb);
     // }
     // }
     // }
@@ -394,7 +406,9 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
     //
     // maxc[start][end] = maxInOut + maxSplit;
     // // maxc[start][end] = (float) ParserUtil.logSum(maxInOut, maxSplit);
-    // final Production p = grammar.new Production(bestNT[start][end], bestNT[start][maxSplitMid], bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
-    // cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid), chart.getCell(maxSplitMid, end));
+    // final Production p = grammar.new Production(bestNT[start][end], bestNT[start][maxSplitMid],
+    // bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
+    // cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid),
+    // chart.getCell(maxSplitMid, end));
     //  
 }

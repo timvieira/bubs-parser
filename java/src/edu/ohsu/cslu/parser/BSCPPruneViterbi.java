@@ -59,7 +59,6 @@ public class BSCPPruneViterbi extends BeamSearchChartParser<LeftHashGrammar, Cel
             } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
                 numAdded++;
-                // cell.numEdgesAdded++;
 
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
@@ -67,7 +66,6 @@ public class BSCPPruneViterbi extends BeamSearchChartParser<LeftHashGrammar, Cel
                     final int nt = p.parent;
                     if ((bestEdges[nt] == null || unaryEdge.fom > bestEdges[nt].fom)
                             && (unaryEdge.fom > bestFOM - beamDeltaThresh)) {
-                        // if (unaryEdge.fom > bestFOM - logBeamDeltaThresh) {
                         agenda.add(unaryEdge);
                     }
                 }

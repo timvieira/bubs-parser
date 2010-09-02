@@ -44,6 +44,7 @@ public final class ParserOptions {
 
     public static float param1 = -1;
     public static float param2 = -1;
+    public static float param3 = -1;
 
     public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
     public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
@@ -72,11 +73,10 @@ public final class ParserOptions {
         String s = "";
         s += prefix + "ParserType=" + parserType + "\n";
         s += prefix + "CellSelector=" + cellSelectorType + "\n";
-        // s += prefix + "CellProcess=" + chartCellProcessingType + "\n";
         s += prefix + "FOM=" + edgeFOMType + "\n";
         s += prefix + "x1=" + param1 + "\n";
         s += prefix + "x2=" + param2;
-        // Log.info(0, s);
+        s += prefix + "x3=" + param3;
 
         return s;
     }
@@ -137,12 +137,13 @@ public final class ParserOptions {
     // this.parserClass = parserClass;
     // EnumAliasMap.singleton().addAliases(this, aliases);
     // }
-    //
+    //        
     // public Parser<?> createParser() {
     // return null;
     // }
     // }
 
+    // TODO: we should probably move this into the Grammar class
     static public enum CartesianProductFunctionType {
         Default("d", "default"), Unfiltered("u", "unfiltered"), PosFactoredFiltered("pf"), BitMatrixExactFilter(
                 "bme", "bitmatrixexact"), PerfectHash("ph", "perfecthash"), PerfectHash2("ph2",
