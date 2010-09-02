@@ -2,11 +2,13 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -30,28 +32,41 @@ public class CellChart extends Chart {
         }
     }
 
+    public CellChart(final ParseTree tree, final boolean viterbiMax, final Parser<?> parser) {
+        this(tree.getLeafNodes().size(), viterbiMax, parser);
+
+        addParseTreeToChart(tree);
+    }
+
     @Override
     public HashSetChartCell getCell(final int start, final int end) {
         return chart[start][end];
     }
 
-    public CellChart(final ParseTree tree, final boolean viterbiMax, final Parser<?> parser) {
-        super(tree.getLeafNodes().size(), viterbiMax, parser);
-
-        addParseTreeToChart(tree);
-    }
-
     private void addParseTreeToChart(final ParseTree tree) {
 
-        assert tree.isBinaryTree() == true;
-        assert tree.parent == null; // must be root so start/end indicies make sense
-        assert tree.getLeafNodes().size() == this.size; // tree width/span must be same as chart
+        // NOTE: the purpose of this function is that I need to be able
+        // to reference the constituents of a gold tree by reference to
+        // a <start,end> position. I was hoping to reuse the chart class
+        // since this is exactly what it does, but am running into problems
+        // of just instantiating a "basic" version (edgeSelector, inside prob,
+        // etc). Maybe it would be easier just to create an 2-dim array of
+        // lists of ChartEdges (list because there can be gold unary AND binary
+        // edges in each cell)
 
         final List<ParseTree> leafNodes = tree.getLeafNodes();
         int start, end, midpt, numChildren;
         Production prod = null;
         ChartEdge edge;
         String A, B, C;
+
+        assert tree.isBinaryTree() == true;
+        assert tree.parent == null; // must be root so start/end indicies make sense
+        assert leafNodes.size() == this.size; // tree width/span must be same as chart
+
+        // bad hack so that the FOM isn't computed for the new ChartEdges created below.
+        final EdgeSelector saveEdgeSelector = parser.edgeSelector;
+        parser.edgeSelector = null;
 
         for (final ParseTree node : tree.preOrderTraversal()) {
             // TODO: could make this O(1) instead of O(n) ...
@@ -82,16 +97,18 @@ public class CellChart extends Chart {
                             + ".  Expecting <= 2.");
                 }
 
-                // Log.info(0, "WARNING: Production " + prod.toString() +
-                // " not found in grammar.  Adding...");
                 if (prod == null) {
                     Log.info(0, "WARNING: production does not exist in grammar for node: " + A + " -> "
                             + node.childrenToString());
                 } else {
-                    chart[start][end].updateInside(edge);
+                    // chart[start][end].updateInside(edge);
+                    chart[start][end].bestEdge[edge.prod.parent] = edge;
+                    // System.out.println("updateInside: " + edge);
                 }
             }
         }
+
+        parser.edgeSelector = saveEdgeSelector;
     }
 
     @Override
@@ -110,6 +127,7 @@ public class CellChart extends Chart {
         getCell(start, end).updateInside(nt, insideProb);
     }
 
+    // TODO: why is this not its own class in its own file?
     public class HashSetChartCell extends ChartCell implements Comparable<HashSetChartCell> {
         public float fom = Float.NEGATIVE_INFINITY;
         protected boolean isLexCell;
@@ -192,6 +210,16 @@ public class CellChart extends Chart {
         @Override
         public ChartEdge getBestEdge(final int nt) {
             return bestEdge[nt];
+        }
+
+        public List<ChartEdge> getBestEdgeList() {
+            final List<ChartEdge> bestEdges = new LinkedList<ChartEdge>();
+            for (int i = 0; i < bestEdge.length; i++) {
+                if (bestEdge[i] != null) {
+                    bestEdges.add(bestEdge[i]);
+                }
+            }
+            return bestEdges;
         }
 
         public boolean hasNT(final int nt) {
