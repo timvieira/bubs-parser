@@ -1,6 +1,7 @@
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.beam;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.PerceptronCellSelector;
 import edu.ohsu.cslu.parser.chart.EdgeCellChart;
 
