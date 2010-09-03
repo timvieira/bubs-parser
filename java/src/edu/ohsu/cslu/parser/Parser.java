@@ -2,9 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import org.kohsuke.args4j.EnumAliasMap;
 
-import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.parser.agenda.ACPWithMemory;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -57,7 +55,7 @@ public abstract class Parser<G extends Grammar> {
 
     protected abstract ParseTree findBestParse(String sentence) throws Exception;
 
-    public String parseSentence(final String sentence, final GrammarFormatType grammarFormatType) throws Exception {
+    public String parseSentence(final String sentence) throws Exception {
         ParseTree bestParseTree = null;
         String parse;
         inputSentence = sentence;
@@ -86,9 +84,12 @@ public abstract class Parser<G extends Grammar> {
             return "No parse found.";
         if (!opts.printUnkLabels)
             bestParseTree.replaceLeafNodes(tokens);
+
+        // TODO: we should be converting the tree in tree form, not
+        // in bracket string form
         parse = bestParseTree.toString(opts.printInsideProbs);
         if (opts.unfactor)
-            parse = unfactor(parse, grammarFormatType);
+            parse = ParseTree.unfactor(parse, grammar.grammarFormat);
 
         return parse;
     }
@@ -103,18 +104,6 @@ public abstract class Parser<G extends Grammar> {
                 throw new RuntimeException("Doesn't work right now");
             }
         }
-    }
-
-    /**
-     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening binary-factored subtrees.
-     * 
-     * @param bracketedTree Bracketed string parse tree
-     * @param grammarFormatType Grammar format
-     * @return Bracketed string representation of the un-factored tree
-     */
-    public static String unfactor(final String bracketedTree, final GrammarFormatType grammarFormatType) {
-        final BinaryTree<String> factoredTree = BinaryTree.read(bracketedTree, String.class);
-        return factoredTree.unfactor(grammarFormatType).toString();
     }
 
     static public enum ParserType {
