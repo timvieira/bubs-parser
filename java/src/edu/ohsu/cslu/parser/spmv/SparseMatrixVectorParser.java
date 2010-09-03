@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser.spmv;
 
+import org.kohsuke.args4j.EnumAliasMap;
+
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ExhaustiveChartParser;
@@ -166,6 +168,19 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 				}
 			}
 			return sb.toString();
+		}
+	}
+
+	static public enum CartesianProductFunctionType {
+		Default("d", "default"),
+		Unfiltered("u", "unfiltered"),
+		PosFactoredFiltered("pf"),
+		BitMatrixExactFilter("bme", "bitmatrixexact"),
+		PerfectHash("ph", "perfecthash"),
+		PerfectHash2("ph2", "perfecthash2");
+
+		private CartesianProductFunctionType(final String... aliases) {
+			EnumAliasMap.singleton().addAliases(this, aliases);
 		}
 	}
 }

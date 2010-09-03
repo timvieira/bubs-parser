@@ -1,8 +1,11 @@
 package edu.ohsu.cslu.parser;
 
+import org.kohsuke.args4j.EnumAliasMap;
+
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
+import edu.ohsu.cslu.parser.agenda.ACPWithMemory;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
@@ -38,8 +41,12 @@ public abstract class Parser<G extends Grammar> {
 		this.grammar = grammar;
 		this.opts = opts;
 
-		edgeSelector = EdgeSelector.create(opts.edgeFOMType, opts.fomModelStream, grammar);
-		cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+		try {
+			edgeSelector = EdgeSelector.create(opts.edgeFOMType, grammar, opts.fomModelStream);
+			cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public abstract float getInside(int start, int end, int nt);
@@ -109,5 +116,43 @@ public abstract class Parser<G extends Grammar> {
 	public static String unfactor(final String bracketedTree, final GrammarFormatType grammarFormatType) {
 		final BinaryTree<String> factoredTree = BinaryTree.read(bracketedTree, String.class);
 		return factoredTree.unfactor(grammarFormatType).toString();
+	}
+
+	static public enum ParserType {
+		ECPCellCrossList("ecpccl"),
+		ECPCellCrossHash("ecpcch"),
+		ECPCellCrossMatrix("ecpccm"),
+		ECPGrammarLoop("ecpgl"),
+		ECPGrammarLoopBerkeleyFilter("ecpglbf"),
+		ECPInsideOutside("ecpio"),
+		AgendaChartParser("acpall"),
+		ACPWithMemory("acpwm"),
+		ACPGhostEdges("acpge"),
+		LocalBestFirst("lbf"),
+		LBFPruneViterbi("lbfpv"),
+		LBFOnlineBeam("lbfob"),
+		LBFBoundedHeap("lbfbh"),
+		LBFExpDecay("lbfed"),
+		LBFPerceptronCell("lbfpc"),
+		CoarseCellAgenda("cc"),
+		CoarseCellAgendaCSLUT("cccslut"),
+		JsaSparseMatrixVector("jsa"),
+		DenseVectorOpenClSparseMatrixVector("dvopencl"),
+		PackedOpenClSparseMatrixVector("popencl"),
+		CsrSpmv("csr"),
+		CsrSpmvPerMidpoint("csrpm"),
+		CscSpmv("csc"),
+		SortAndScanSpmv("sort-and-scan"),
+		LeftChildMatrixLoop("lcml"),
+		RightChildMatrixLoop("rcml"),
+		GrammarLoopMatrixLoop("glml"),
+		CartesianProductBinarySearch("cpbs"),
+		CartesianProductBinarySearchLeftChild("cplbs"),
+		CartesianProductHash("cph"),
+		CartesianProductLeftChildHash("cplch");
+
+		private ParserType(final String... aliases) {
+			EnumAliasMap.singleton().addAliases(this, aliases);
+		}
 	}
 }
