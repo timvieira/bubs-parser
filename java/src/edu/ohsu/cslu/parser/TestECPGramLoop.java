@@ -2,8 +2,6 @@ package edu.ohsu.cslu.parser;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -15,11 +13,6 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * @version $Revision$ $Date$ $Author$
  */
 public class TestECPGramLoop extends ExhaustiveChartParserTestCase<ECPGrammarLoop> {
-
-    @Override
-    protected Class<? extends Grammar> grammarClass() {
-        return GrammarByChild.class;
-    }
 
     @Override
     @Test

@@ -2,15 +2,11 @@ package edu.ohsu.cslu.parser.spmv;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.Reader;
 import java.util.Arrays;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
@@ -32,16 +28,6 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVectorParser<? extends SparseMatrixGrammar, ? extends ParallelArrayChart>>
         extends ExhaustiveChartParserTestCase<P> {
 
-    // TODO: Use JUnit Theories to test all CartesianProductFunction implementations
-
-    @Override
-    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
-        return grammarClass().getConstructor(
-                new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
-                new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
-                        PerfectIntPairHashFilterFunction.class });
-    }
-
     /**
      * Tests an imagined example cartesian-product vector (based very loosely on the computation of the top cell in the 'systems analyst arbitration chef' example)
      * 
@@ -52,8 +38,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
         final Chart chart = p.chart;
 
@@ -118,14 +103,12 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
      * 
      * @throws Exception if something bad happens
      */
-    @SuppressWarnings("unchecked")
     @Test
     public void testBinarySpMVMultiplyExample() throws Exception {
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
         final Chart chart = p.chart;
 
@@ -184,7 +167,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final SparseMatrixVectorParser<?, ?> p = (SparseMatrixVectorParser<?, ?>) createParser(g,
+        final SparseMatrixVectorParser<?, ?> p = createParser(g,
                 CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(4);
 
@@ -292,15 +275,13 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
      * 
      * @throws Exception if something bad happens
      */
-    @SuppressWarnings("unchecked")
     @Test
     public void testUnfilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
 
         // Create the parser
-        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
         final Chart chart = p.chart;
 
@@ -391,7 +372,6 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
      * 
      * @throws Exception if something bad happens
      */
-    @SuppressWarnings("unchecked")
     @Test
     public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
@@ -399,8 +379,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
                 SparseMatrixGrammar.BitVectorExactFilterFunction.class);
 
         // Create the parser
-        final SparseMatrixVectorParser p = (SparseMatrixVectorParser) createParser(g,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
         final Chart chart = p.chart;
 
@@ -454,7 +433,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = (SparseMatrixVectorParser<?, ?>) createParser(g,
+        final SparseMatrixVectorParser<?, ?> p = createParser(g,
                 CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
         final Chart chart = p.chart;
@@ -563,7 +542,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = (SparseMatrixVectorParser<?, ?>) createParser(g,
+        final SparseMatrixVectorParser<?, ?> p = createParser(g,
                 CellSelector.create(CellSelectorType.LeftRightBottomTop));
         p.initParser(5);
 
