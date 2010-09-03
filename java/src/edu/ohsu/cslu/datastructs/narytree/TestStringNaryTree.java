@@ -20,7 +20,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
-import edu.ohsu.cslu.parser.ParserOptions.GrammarFormatType;
+import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
@@ -37,12 +37,12 @@ public class TestStringNaryTree {
     private NaryTree<String> sampleTree;
     private String stringSampleTree;
 
-    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "a", "b", "c", "d", "e", "f", "g",
-            "h", "i", "j", "k" };
-    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] { "f", "d", "b", "a", "c", "e", "g",
-            "i", "h", "k", "j" };
-    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "a", "c", "b", "e", "d", "g", "h",
-            "j", "k", "i", "f" };
+    private final static String[] SAMPLE_IN_ORDER_ARRAY = new String[] { "a", "b", "c", "d", "e", "f", "g", "h", "i",
+            "j", "k" };
+    private final static String[] SAMPLE_PRE_ORDER_ARRAY = new String[] { "f", "d", "b", "a", "c", "e", "g", "i", "h",
+            "k", "j" };
+    private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "a", "c", "b", "e", "d", "g", "h", "j", "k",
+            "i", "f" };
 
     @Before
     public void setUp() {
@@ -349,27 +349,20 @@ public class TestStringNaryTree {
 
     @Test
     public void testLeftFactor() {
-        assertEquals(
-            BinaryTree.read("(S (NP C0 C1))", String.class),
-            NaryTree.read("(S (NP C0 C1))", String.class).factor(GrammarFormatType.Berkeley,
-                Factorization.LEFT));
+        assertEquals(BinaryTree.read("(S (NP C0 C1))", String.class), NaryTree.read("(S (NP C0 C1))", String.class)
+                .factor(GrammarFormatType.Berkeley, Factorization.LEFT));
 
-        assertEquals(
-            BinaryTree.read("(S (NP C0 (@NP C1 C2)))", String.class),
-            NaryTree.read("(S (NP C0 C1 C2))", String.class).factor(GrammarFormatType.Berkeley,
-                Factorization.LEFT));
+        assertEquals(BinaryTree.read("(S (NP C0 (@NP C1 C2)))", String.class),
+                NaryTree.read("(S (NP C0 C1 C2))", String.class).factor(GrammarFormatType.Berkeley, Factorization.LEFT));
     }
 
     @Test
     public void testRightFactor() {
-        assertEquals(
-            BinaryTree.read("(S (NP C0 C1))", String.class),
-            NaryTree.read("(S (NP C0 C1))", String.class).factor(GrammarFormatType.Berkeley,
-                Factorization.RIGHT));
+        assertEquals(BinaryTree.read("(S (NP C0 C1))", String.class), NaryTree.read("(S (NP C0 C1))", String.class)
+                .factor(GrammarFormatType.Berkeley, Factorization.RIGHT));
 
-        assertEquals(
-            BinaryTree.read("(S (NP (@NP C0 C1) C2))", String.class),
-            NaryTree.read("(S (NP C0 C1 C2))", String.class).factor(GrammarFormatType.Berkeley,
-                Factorization.RIGHT));
+        assertEquals(BinaryTree.read("(S (NP (@NP C0 C1) C2))", String.class),
+                NaryTree.read("(S (NP C0 C1 C2))", String.class)
+                        .factor(GrammarFormatType.Berkeley, Factorization.RIGHT));
     }
 }
