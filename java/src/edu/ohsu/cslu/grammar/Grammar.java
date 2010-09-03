@@ -51,13 +51,14 @@ public class Grammar {
     public int startSymbol = -1;
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
     public int numPosSymbols;
+    public GrammarFormatType grammarFormat;
 
     // Default to left-factored
     private boolean isLeftFactored = true;
 
-    protected final SymbolSet<String> nonTermSet = new SymbolSet<String>();
-    protected final SymbolSet<String> lexSet = new SymbolSet<String>();
-    protected final Vector<NonTerminal> nonTermInfo = new Vector<NonTerminal>();
+    protected SymbolSet<String> nonTermSet = new SymbolSet<String>();
+    protected SymbolSet<String> lexSet = new SymbolSet<String>();
+    protected Vector<NonTerminal> nonTermInfo = new Vector<NonTerminal>();
 
     public Tokenizer tokenizer;
 
@@ -69,6 +70,7 @@ public class Grammar {
             throws Exception {
         init(grammarFile, lexiconFile, grammarFormat);
         tokenizer = new Tokenizer(lexSet);
+        this.grammarFormat = grammarFormat;
     }
 
     public Grammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat)
@@ -76,6 +78,51 @@ public class Grammar {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
+    static public enum GrammarFormatType {
+        CSLU, Roark, Berkeley;
+
+        public String unsplitNonTerminal(final String nonTerminal) {
+            switch (this) {
+            case Berkeley:
+                return nonTerminal.replaceFirst("_[0-9]+$", "");
+            case CSLU:
+                return nonTerminal.replaceFirst("[|^]<([A-Z]+)?>$", "");
+            case Roark:
+                // TODO Support Roark format
+            default:
+                throw new IllegalArgumentException("Unsupported format");
+
+            }
+        }
+
+        public String factoredNonTerminal(final String nonTerminal) {
+            switch (this) {
+            case Berkeley:
+                return "@" + nonTerminal;
+            case CSLU:
+                return nonTerminal + "|";
+            case Roark:
+                // TODO Support Roark format
+            default:
+                throw new IllegalArgumentException("Unsupported format");
+            }
+
+        }
+
+        public boolean isFactored(final String nonTerminal) {
+            switch (this) {
+            case CSLU:
+                return nonTerminal.contains("|");
+            case Berkeley:
+                return nonTerminal.startsWith("@");
+            case Roark:
+                // TODO Support Roark format
+            default:
+                throw new IllegalArgumentException("Unsupported format");
+            }
+        }
+    }
+    
     /**
      * Read in and intialize the grammar
      * 
@@ -609,55 +656,5 @@ public class Grammar {
             return parentToString() + " -> " + childrenToString() + " (p=" + Double.toString(prob) + ")";
         }
 
-    }
-
-    static public enum GrammarFormatType {
-        CSLU, Roark, Berkeley;
-
-        public String unsplitNonTerminal(final String nonTerminal) {
-            switch (this) {
-            case Berkeley:
-                return nonTerminal.replaceFirst("_[0-9]+$", "");
-            case CSLU:
-                return nonTerminal.replaceFirst("[|^]<([A-Z]+)?>$", "");
-            case Roark:
-                // TODO Support Roark format
-
-            default:
-                throw new IllegalArgumentException("Unsupported format");
-
-            }
-
-        }
-
-        public String factoredNonTerminal(final String nonTerminal) {
-            switch (this) {
-            case Berkeley:
-                return "@" + nonTerminal;
-            case CSLU:
-                return nonTerminal + "|";
-            case Roark:
-                // TODO Support Roark format
-
-            default:
-                throw new IllegalArgumentException("Unsupported format");
-
-            }
-
-        }
-
-        public boolean isFactored(final String nonTerminal) {
-            switch (this) {
-            case CSLU:
-                return nonTerminal.contains("|");
-            case Berkeley:
-                return nonTerminal.startsWith("@");
-            case Roark:
-                // TODO Support Roark format
-
-            default:
-                throw new IllegalArgumentException("Unsupported format");
-            }
-        }
     }
 }
