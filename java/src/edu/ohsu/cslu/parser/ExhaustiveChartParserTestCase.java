@@ -63,14 +63,14 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
     private static boolean headerLinePrinted = false;
 
     /**
-     * Creates the appropriate parser for each test class.
+     * Creates the appropriate parser for each test class. Ugly reflection code, but at least it's all localized here.
      * 
      * @param grammar The grammar to use when parsing
      * @param cellSelector Selector controlling chart traversal
      * @return Parser instance
      */
     @SuppressWarnings("unchecked")
-    protected final Parser<?> createParser(final Grammar grammar, final CellSelector cellSelector) {
+    protected final P createParser(final Grammar grammar, final CellSelector cellSelector) {
         try {
             final ParserDriver parserDriver = new ParserDriver();
             parserDriver.collectDetailedStatistics = true;
@@ -85,11 +85,37 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
     }
 
     /**
+     * Find the appropriate grammar class for the parser under test. Even more ugly reflection code. Dragons be here...
+     * 
      * @return the grammar class appropriate for the parser under test
      */
-    protected abstract Class<? extends Grammar> grammarClass();
+    @SuppressWarnings("unchecked")
+    protected final Class<? extends Grammar> grammarClass() {
+        Class<P> parserClass = ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass())
+                .getActualTypeArguments()[0]);
+        try {
+            final Class<? extends Grammar> grammarClass = ((Class<? extends Grammar>) ((ParameterizedType) parserClass
+                    .getGenericSuperclass()).getActualTypeArguments()[0]);
 
-    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
+            // If the grammar class is not annotated on this parser class, look up one level
+            if (!GrammarByChild.class.isAssignableFrom(grammarClass)) {
+                throw new ClassCastException();
+            }
+
+            return grammarClass;
+
+        } catch (final ClassCastException e) {
+
+            // Look up one level in the parser hierarchy
+            parserClass = (Class<P>) parserClass.getSuperclass();
+            final Class<? extends Grammar> grammarClass = ((Class<? extends Grammar>) ((ParameterizedType) parserClass
+                    .getGenericSuperclass()).getActualTypeArguments()[0]);
+            return grammarClass;
+        }
+
+    }
+
+    protected final Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class, Reader.class, GrammarFormatType.class })
                 .newInstance(new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
     }
@@ -135,8 +161,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
             simpleGrammar2 = createSimpleGrammar2(grammarClass(), null);
         }
 
-        parser = (ExhaustiveChartParser<?, ?>) createParser(f2_21_grammar,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
         if (!headerLinePrinted) {
             System.out.println(parser.getStatHeader());
@@ -191,8 +216,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
     public void testSimpleGrammar1() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        parser = (ExhaustiveChartParser<?, ?>) createParser(simpleGrammar1,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        parser = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
         final ParseTree bestParseTree = parser.findBestParse(sentence);
         assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))",
@@ -208,8 +232,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
     public void testSimpleGrammar2() throws Exception {
         final String sentence = "The fish market stands last";
 
-        parser = (ExhaustiveChartParser<?, ?>) createParser(simpleGrammar2,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        parser = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
         final ParseTree bestParseTree = parser.findBestParse(sentence);
         assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))",

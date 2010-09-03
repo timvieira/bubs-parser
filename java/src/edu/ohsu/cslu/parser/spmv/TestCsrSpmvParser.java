@@ -2,8 +2,6 @@ package edu.ohsu.cslu.parser.spmv;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -15,11 +13,6 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * @version $Revision$ $Date$ $Author$
  */
 public class TestCsrSpmvParser extends SparseMatrixVectorParserTestCase<CsrSpmvParser> {
-
-    @Override
-    protected Class<? extends Grammar> grammarClass() {
-        return CsrSparseMatrixGrammar.class;
-    }
 
     @Override
     @Test

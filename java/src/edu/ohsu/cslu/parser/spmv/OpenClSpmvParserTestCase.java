@@ -2,15 +2,9 @@ package edu.ohsu.cslu.parser.spmv;
 
 import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 
-import java.io.Reader;
-
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 
-import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 
 /**
@@ -23,18 +17,6 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
  */
 public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? extends ParallelArrayChart>> extends
         SparseMatrixVectorParserTestCase<P> {
-
-    @Override
-    protected Class<? extends Grammar> grammarClass() {
-        return CsrSparseMatrixGrammar.class;
-    }
-
-    @Override
-    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
-        return grammarClass().getConstructor(
-                new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
-                new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU, DefaultFunction.class });
-    }
 
     @BeforeClass
     public static void checkOpenCL() throws Exception {

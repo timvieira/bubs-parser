@@ -2,8 +2,6 @@ package edu.ohsu.cslu.parser;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -15,11 +13,6 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * @version $Revision$ $Date$ $Author$
  */
 public class TestECPCellCrossHash extends ExhaustiveChartParserTestCase<ECPCellCrossHash> {
-
-    @Override
-    protected Class<? extends Grammar> grammarClass() {
-        return LeftHashGrammar.class;
-    }
 
     @Override
     @Test

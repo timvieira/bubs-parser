@@ -2,8 +2,6 @@ package edu.ohsu.cslu.parser;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -15,11 +13,6 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * @version $Revision$ $Date$ $Author$
  */
 public class TestECPCellCrossMatrix extends ExhaustiveChartParserTestCase<ECPCellCrossMatrix> {
-
-    @Override
-    protected Class<? extends Grammar> grammarClass() {
-        return ChildMatrixGrammar.class;
-    }
 
     @Override
     @Test

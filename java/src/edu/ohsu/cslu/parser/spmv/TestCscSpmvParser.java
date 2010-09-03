@@ -1,13 +1,7 @@
 package edu.ohsu.cslu.parser.spmv;
 
-import java.io.Reader;
-
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -19,19 +13,6 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * @version $Revision$ $Date$ $Author$
  */
 public class TestCscSpmvParser extends SparseMatrixVectorParserTestCase<CscSpmvParser> {
-
-    @Override
-    protected Class<? extends Grammar> grammarClass() {
-        return LeftCscSparseMatrixGrammar.class;
-    }
-
-    @Override
-    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
-        return grammarClass().getConstructor(
-                new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
-                new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
-                        PerfectIntPairHashFilterFunction.class });
-    }
 
     @Override
     @Test
