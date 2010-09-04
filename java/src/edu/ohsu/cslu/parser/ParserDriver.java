@@ -21,13 +21,13 @@ import cltool.Threadable;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectHashFilterFunction;
@@ -287,7 +287,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         return createParser(parserType, grammar, this);
     }
 
-    @SuppressWarnings("unchecked")
     public static Parser<?> createParser(final ParserType parserType, final Grammar grammar,
             final ParserDriver parserOptions) {
         switch (parserType) {
@@ -384,12 +383,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 final float insideProbability = parser.getInside(0, parser.tokenCount, grammar.startSymbol);
                 totalInsideProbability += insideProbability;
 
-                // sb.append(String.format("\nSTAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f %s", sentenceNumber, parser.tokenCount, StringToMD5.computeMD5(sentence),
+                // sb.append(String.format("\nSTAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f %s",
+                // sentenceNumber, parser.tokenCount, StringToMD5.computeMD5(sentence),
                 // parseTime, insideProbability, parser.getStats()));
                 final String parseStats = String.format(
                         "\nSTAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f %s", sentenceNumber,
-                        parser.tokenCount, StringToMD5.computeMD5(sentence), parseTime, insideProbability, parser
-                                .getStats());
+                        parser.tokenCount, StringToMD5.computeMD5(sentence), parseTime, insideProbability,
+                        parser.getStats());
                 // return sb.toString();
                 return parseResultStr + parseStats;
 

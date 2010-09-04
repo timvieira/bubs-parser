@@ -73,6 +73,8 @@ public abstract class SortedGrammar extends GrammarByChild {
     protected SortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat)
             throws Exception {
 
+        this.grammarFormat = grammarFormat;
+
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
@@ -88,7 +90,7 @@ public abstract class SortedGrammar extends GrammarByChild {
 
         // Now read in the grammar file.
         Log.info(1, "INFO: Reading grammar");
-        final List<StringRule> grammarRules = readGrammar(grammarFile, grammarFormat);
+        final List<StringRule> grammarRules = readGrammar(grammarFile);
 
         // All non-terminals
         final HashSet<String> nonPosSet = new HashSet<String>();
@@ -208,8 +210,7 @@ public abstract class SortedGrammar extends GrammarByChild {
         return rules;
     }
 
-    private List<StringRule> readGrammar(final Reader gramFile, final GrammarFormatType grammarFormat)
-            throws IOException {
+    private List<StringRule> readGrammar(final Reader gramFile) throws IOException {
 
         if (grammarFormat == GrammarFormatType.Roark) {
             startSymbolStr = "TOP";
