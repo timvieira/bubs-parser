@@ -68,9 +68,9 @@ public class Grammar {
 
     public Grammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat)
             throws Exception {
-        init(grammarFile, lexiconFile, grammarFormat);
-        tokenizer = new Tokenizer(lexSet);
         this.grammarFormat = grammarFormat;
+        init(grammarFile, lexiconFile);
+        tokenizer = new Tokenizer(lexSet);
     }
 
     public Grammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat)
@@ -122,22 +122,19 @@ public class Grammar {
             }
         }
     }
-    
+
     /**
-     * Read in and intialize the grammar
+     * Read in and initialize the grammar
      * 
      * @param grammarFile
      * @param lexiconFile
-     * @param grammarFormat
      * @throws Exception
      */
-    protected void init(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        readGrammarAndLexicon(grammarFile, lexiconFile, grammarFormat);
+    protected void init(final Reader grammarFile, final Reader lexiconFile) throws Exception {
+        readGrammarAndLexicon(grammarFile, lexiconFile);
     }
 
-    public void readGrammarAndLexicon(final Reader grammarFile, final Reader lexiconFile,
-            final GrammarFormatType grammarFormat) throws Exception {
+    public void readGrammarAndLexicon(final Reader grammarFile, final Reader lexiconFile) throws Exception {
         // the nullSymbol is used for start/end of sentence markers and dummy non-terminals
         nullSymbol = addNonTerm(nullSymbolStr);
         getNonterminal(nullSymbol).isPOS = true;
@@ -150,7 +147,7 @@ public class Grammar {
         readLexProds(lexiconFile);
 
         Log.info(1, "INFO: Reading grammar ...");
-        readGrammar(grammarFile, grammarFormat);
+        readGrammar(grammarFile);
 
         if (startSymbol == -1) {
             throw new IllegalArgumentException(
@@ -183,7 +180,7 @@ public class Grammar {
         }
     }
 
-    private void readGrammar(final Reader gramFile, final GrammarFormatType grammarFormat) throws Exception {
+    private void readGrammar(final Reader gramFile) throws Exception {
         String line;
         String[] tokens;
         Production prod;
