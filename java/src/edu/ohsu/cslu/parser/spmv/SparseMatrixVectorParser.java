@@ -172,7 +172,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 	}
 
 	static public enum CartesianProductFunctionType {
-		Default("d", "default"),
+		Simple("d", "default"),
 		Unfiltered("u", "unfiltered"),
 		PosFactoredFiltered("pf"),
 		BitMatrixExactFilter("bme", "bitmatrixexact"),

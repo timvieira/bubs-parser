@@ -78,19 +78,20 @@ public abstract class SortedGrammar extends GrammarByChild {
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
-        // Read in the lexical productions first. Label any non-terminals found in the lexicon as POS tags. We
-        // assume that pre-terminals (POS) will only occur as parents in span-1 rows and as children in span-2
-        // rows
         Log.info(1, "INFO: Reading lexical productions");
         final List<StringRule> lexicalRules = readLexProds(lexiconFile);
-        for (final StringRule lexicalRule : lexicalRules) {
-            nonTerminals.add(lexicalRule.parent);
-            pos.add(lexicalRule.parent);
-        }
 
         // Now read in the grammar file.
         Log.info(1, "INFO: Reading grammar");
         final List<StringRule> grammarRules = readGrammar(grammarFile);
+
+        // Process the lexical productions first. Label any non-terminals found in the lexicon as POS tags. We
+        // assume that pre-terminals (POS) will only occur as parents in span-1 rows and as children in span-2
+        // rows
+        for (final StringRule lexicalRule : lexicalRules) {
+            nonTerminals.add(lexicalRule.parent);
+            pos.add(lexicalRule.parent);
+        }
 
         // All non-terminals
         final HashSet<String> nonPosSet = new HashSet<String>();

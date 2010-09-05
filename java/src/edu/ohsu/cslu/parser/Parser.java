@@ -1,5 +1,8 @@
 package edu.ohsu.cslu.parser;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+
 import org.kohsuke.args4j.EnumAliasMap;
 
 import edu.ohsu.cslu.grammar.Grammar;
@@ -40,7 +43,8 @@ public abstract class Parser<G extends Grammar> {
         this.opts = opts;
 
         try {
-            edgeSelector = EdgeSelector.create(opts.edgeFOMType, grammar, opts.fomModelStream);
+            edgeSelector = EdgeSelector.create(opts.edgeFOMType, grammar,
+                    opts.fomModelFileName != null ? new BufferedReader(new FileReader(opts.fomModelFileName)) : null);
             cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
         } catch (final Exception e) {
             e.printStackTrace();

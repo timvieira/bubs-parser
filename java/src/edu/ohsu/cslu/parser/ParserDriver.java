@@ -1,12 +1,10 @@
 package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -29,9 +27,9 @@ import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.DefaultFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectHashFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.agenda.ACPGhostEdges;
@@ -91,9 +89,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-p", aliases = { "--parser", "--parser-implementation" }, metaVar = "parser", usage = "Parser implementation")
     private ParserType parserType = ParserType.ECPCellCrossList;
 
-    // TODO Implement class name mappings in cltool and replace this with a class name
     @Option(name = "-cpf", aliases = { "--cartesian-product-function" }, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
-    private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.Default;
+    private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash2;
 
     // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage =
     // "Chart cell processing type")
@@ -106,8 +103,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     EdgeSelectorType edgeFOMType = EdgeSelectorType.Inside;
 
     @Option(name = "-fomModel", metaVar = "file", usage = "FOM model file")
-    private String fomModelFileName = null;
-    BufferedReader fomModelStream = null;
+    String fomModelFileName = null;
 
     // Nate: I don't think we need to expose this to the user. Instead
     // there should be different possible parsers since changing the
@@ -141,9 +137,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-x3", usage = "Tuning param #3")
     public static float param3 = -1;
 
-    public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
-    public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
-
+    /** Global state is maintained in ParserDriver, since we will instantiate multiple Parser objects */
     private Grammar grammar;
     private long parseStartTime;
     private volatile int sentencesParsed;
@@ -167,10 +161,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         }
         if (!new File(lexFileName).exists() && new File(lexFileName + ".gz").exists()) {
             lexFileName = lexFileName + ".gz";
-        }
-
-        if (fomModelFileName != null) {
-            fomModelStream = new BufferedReader(new FileReader(fomModelFileName));
         }
 
         if (cellModelFileName != null) {
@@ -251,8 +241,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             switch (cartesianProductFunctionType) {
             case Unfiltered:
                 return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, UnfilteredFunction.class);
-            case Default:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, DefaultFunction.class);
+            case Simple:
+                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, SimpleShiftFunction.class);
             case BitMatrixExactFilter:
                 return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
                         BitVectorExactFilterFunction.class);
@@ -271,11 +261,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case CartesianProductBinarySearchLeftChild:
         case CartesianProductHash:
         case CartesianProductLeftChildHash:
-            return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, DefaultFunction.class);
+            return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, SimpleShiftFunction.class);
         case RightChildMatrixLoop:
             return new RightCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat);
         case GrammarLoopMatrixLoop:
-            return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, DefaultFunction.class);
+            return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, SimpleShiftFunction.class);
 
         default:
             throw new Exception("Unsupported parser type: " + parserType);

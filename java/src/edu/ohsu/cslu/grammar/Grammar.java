@@ -140,14 +140,14 @@ public class Grammar {
         getNonterminal(nullSymbol).isPOS = true;
         nullProduction = new Production(nullSymbol, nullSymbol, nullSymbol, Float.NEGATIVE_INFINITY);
 
+        Log.info(1, "INFO: Reading grammar ...");
+        readGrammar(grammarFile);
+
         // read lexical productions first so that POS tags will all be concentrated
         // at the beginning of the nonTermSet list thus decreasing the maximum index
         // for a POS tag and saving a good deal of space for array creation
         Log.info(1, "INFO: Reading lexical productions ...");
         readLexProds(lexiconFile);
-
-        Log.info(1, "INFO: Reading grammar ...");
-        readGrammar(grammarFile);
 
         if (startSymbol == -1) {
             throw new IllegalArgumentException(
