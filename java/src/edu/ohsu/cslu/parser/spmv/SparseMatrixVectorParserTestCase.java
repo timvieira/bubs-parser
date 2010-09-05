@@ -2,11 +2,16 @@ package edu.ohsu.cslu.parser.spmv;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.Reader;
+import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 
 import org.junit.Test;
 
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
@@ -25,11 +30,22 @@ import edu.ohsu.cslu.parser.util.ParseTree;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVectorParser<? extends SparseMatrixGrammar, ? extends ParallelArrayChart>>
+public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVectorParser<? extends SparseMatrixGrammar, ? extends ParallelArrayChart>, C extends CartesianProductFunction>
         extends ExhaustiveChartParserTestCase<P> {
 
+    @Override
+    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
+        @SuppressWarnings("unchecked")
+        final Class<C> cpfClass = ((Class<C>) ((ParameterizedType) getClass().getGenericSuperclass())
+                .getActualTypeArguments()[1]);
+        return grammarClass().getConstructor(
+                new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
+                new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU, cpfClass });
+    }
+
     /**
-     * Tests an imagined example cartesian-product vector (based very loosely on the computation of the top cell in the 'systems analyst arbitration chef' example)
+     * Tests an imagined example cartesian-product vector (based very loosely on the computation of the top cell in the
+     * 'systems analyst arbitration chef' example)
      * 
      * @throws Exception if something bad happens
      */
@@ -158,7 +174,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     }
 
     /**
-     * Tests the unary SpMV multiplication of the top cell population computed by {@link #testBinarySpMVMultiplyExample()} with simple grammar 1.
+     * Tests the unary SpMV multiplication of the top cell population computed by
+     * {@link #testBinarySpMVMultiplyExample()} with simple grammar 1.
      * 
      * @throws Exception if something bad happens
      */
@@ -278,7 +295,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     @Test
     public void testUnfilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
-        final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) createSimpleGrammar2(grammarClass(),
+                SparseMatrixGrammar.UnfilteredFunction.class);
 
         // Create the parser
         final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop));
@@ -424,7 +442,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     }
 
     /**
-     * Tests the binary SpMV multiplication of the cartesian-product computed in {@link #testUnfilteredCartesianProductVectorSimpleGrammar2()} with simple grammar 2.
+     * Tests the binary SpMV multiplication of the cartesian-product computed in
+     * {@link #testUnfilteredCartesianProductVectorSimpleGrammar2()} with simple grammar 2.
      * 
      * @throws Exception if something bad happens
      */
@@ -533,7 +552,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     }
 
     /**
-     * Tests the unary SpMV multiplication of the top cell population computed by {@link #testBinarySpMVMultiplySimpleGrammar2()} with simple grammar 2.
+     * Tests the unary SpMV multiplication of the top cell population computed by
+     * {@link #testBinarySpMVMultiplySimpleGrammar2()} with simple grammar 2.
      * 
      * @throws Exception if something bad happens
      */

@@ -2,6 +2,7 @@ package edu.ohsu.cslu.parser.spmv;
 
 import org.junit.Test;
 
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -12,7 +13,7 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestPackedOpenClSpmvParser extends OpenClSpmvParserTestCase<PackedOpenClSpmvParser> {
+public class TestPackedOpenClSpmvParser extends OpenClSpmvParserTestCase<PackedOpenClSpmvParser, SimpleShiftFunction> {
     @Override
     @Test
     @PerformanceTest({ "mbp", "667853" })

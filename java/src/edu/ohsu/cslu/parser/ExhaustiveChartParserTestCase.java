@@ -19,6 +19,7 @@ import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -29,8 +30,9 @@ import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
- * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial sentences using very simple grammars and the first 10 sentences of
- * WSJ section 24 using a slightly more reasonable PCFG. Profiles sentences 11-20 to aid in performance tuning and prevent performance regressions.
+ * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial
+ * sentences using very simple grammars and the first 10 sentences of WSJ section 24 using a slightly more reasonable
+ * PCFG. Profiles sentences 11-20 to aid in performance tuning and prevent performance regressions.
  * 
  * @author Aaron Dunlop
  * @since Dec 23, 2009
@@ -76,12 +78,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
             parserDriver.collectDetailedStatistics = true;
 
             return ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0])
-                    .getConstructor(new Class[] { ParserDriver.class, grammar.getClass() }).newInstance(
+                    .getConstructor(new Class[] { ParserDriver.class, grammarClass() }).newInstance(
                             new Object[] { parserDriver, grammar });
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     /**
@@ -115,13 +116,14 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
 
     }
 
-    protected final Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
+    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class, Reader.class, GrammarFormatType.class })
                 .newInstance(new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
     }
 
     /**
-     * Reads in the first 20 sentences of WSJ section 24. Run once for the class, prior to execution of the first test method.
+     * Reads in the first 20 sentences of WSJ section 24. Run once for the class, prior to execution of the first test
+     * method.
      * 
      * @throws Exception if unable to read
      */
@@ -154,11 +156,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
         }
 
         if (simpleGrammar1 == null || simpleGrammar1.getClass() != grammarClass()) {
-            simpleGrammar1 = GrammarTestCase.createSimpleGrammar(grammarClass());
+            simpleGrammar1 = GrammarTestCase.createSimpleGrammar(grammarClass(), SimpleShiftFunction.class);
         }
 
         if (simpleGrammar2 == null || simpleGrammar2.getClass() != grammarClass()) {
-            simpleGrammar2 = createSimpleGrammar2(grammarClass(), null);
+            simpleGrammar2 = createSimpleGrammar2(grammarClass(), SimpleShiftFunction.class);
         }
 
         parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop));
@@ -298,8 +300,9 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
     }
 
     /**
-     * Profiles parsing sentences 11-20 of WSJ section 24. This method must be overridden (calling {@link #internalProfileSentences11Through20()}) in each subclass, simply to allow
-     * re-annotating the {@link PerformanceTest} annotation with the expected performance for that implementation.
+     * Profiles parsing sentences 11-20 of WSJ section 24. This method must be overridden (calling
+     * {@link #internalProfileSentences11Through20()}) in each subclass, simply to allow re-annotating the
+     * {@link PerformanceTest} annotation with the expected performance for that implementation.
      * 
      * @throws Exception
      */
