@@ -17,74 +17,82 @@ import cltool.BaseCommandlineTool;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.parser.Parser.ParserType;
+import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 
 public class ParserTrainer extends BaseCommandlineTool {
 
-	@Option(name = "-gp", aliases = { "--grammar-file-prefix" }, metaVar = "prefix", usage = "Grammar file prefix")
-	public String grammarPrefix;
+    // == Parser options ==
+    @Option(name = "-p", aliases = { "--parser" }, metaVar = "parser", usage = "Parser implementation")
+    public ParserType parserType = ParserType.CKY;
 
-	@Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of grammar file")
-	public GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
+    @Option(name = "-rp", aliases = { "--research-parser" }, metaVar = "parser", usage = "Research Parser implementation")
+    private ResearchParserType researchParserType = null;
 
-	@Option(name = "-p", aliases = { "--parser", "--parser-implementation" }, metaVar = "parser", usage = "Parser implementation")
-	public ParserType parserType = ParserType.ECPCellCrossList;
+    @Option(name = "-fom", metaVar = "fom", usage = "Figure of Merit")
+    public EdgeSelectorType edgeFOMType = null;
 
-	@Option(name = "-fom", aliases = { "--figure-of-merit", "-FOM" }, metaVar = "fom", usage = "Figure of Merit")
-	public EdgeSelectorType edgeFOMType = null;
+    @Option(name = "-cellSelect", usage = "Train the specified Cell Selection model")
+    public boolean cellTrain = false;
 
-	@Option(name = "-cellSelect", usage = "Train the specified Cell Selection model")
-	public boolean cellTrain = false;
+    @Option(name = "-cellConstraints", usage = "Train a Cell Constraints model")
+    public boolean cellConstraints = false;
 
-	@Option(name = "-cellConstraints", usage = "Train a Cell Constraints model")
-	public boolean cellConstraints = false;
+    // == Grammar options ==
+    @Option(name = "-gp", aliases = { "--grammar-file-prefix" }, metaVar = "prefix", usage = "Grammar file prefix")
+    public String grammarPrefix;
 
-	public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
-	public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
+    @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of grammar file")
+    public GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
 
-	private Grammar grammar;
+    public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
+    public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
-	public static void main(final String[] args) throws Exception {
-		run(args);
-	}
+    private Grammar grammar;
 
-	@Override
-	public void setup(final CmdLineParser cmdlineParser) throws Exception {
+    public static void main(final String[] args) throws Exception {
+        run(args);
+    }
 
-		// Handle prefixes with or without trailing periods.
-		String pcfgFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "pcfg";
-		String lexFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "lex";
+    @Override
+    public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
-		// Handle gzipped grammar files
-		if (!new File(pcfgFileName).exists() && new File(pcfgFileName + ".gz").exists()) {
-			pcfgFileName = pcfgFileName + ".gz";
-		}
-		if (!new File(lexFileName).exists() && new File(lexFileName + ".gz").exists()) {
-			lexFileName = lexFileName + ".gz";
-		}
+        // Handle prefixes with or without trailing periods.
+        String pcfgFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "pcfg";
+        String lexFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "lex";
 
-		final Reader pcfgReader = pcfgFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(pcfgFileName))) : new FileReader(pcfgFileName);
-		final Reader lexReader = lexFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(lexFileName))) : new FileReader(lexFileName);
-		grammar = ParserDriver.createGrammar(parserType, pcfgReader, lexReader, grammarFormat);
+        // Handle gzipped grammar files
+        if (!new File(pcfgFileName).exists() && new File(pcfgFileName + ".gz").exists()) {
+            pcfgFileName = pcfgFileName + ".gz";
+        }
+        if (!new File(lexFileName).exists() && new File(lexFileName + ".gz").exists()) {
+            lexFileName = lexFileName + ".gz";
+        }
 
-	}
+        final Reader pcfgReader = pcfgFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
+                new FileInputStream(pcfgFileName))) : new FileReader(pcfgFileName);
+        final Reader lexReader = lexFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
+                new FileInputStream(lexFileName))) : new FileReader(lexFileName);
+        grammar = ParserDriver.createGrammar(researchParserType, pcfgReader, lexReader, grammarFormat);
 
-	@Override
-	public void run() throws Exception {
+    }
 
-		if (edgeFOMType != null) {
-			// To train a BoundaryInOut FOM model we need a grammar and
-			// binarized gold input trees with NTs from same grammar
-			final EdgeSelector edgeSelector = EdgeSelector.create(edgeFOMType, grammar, null);
-			edgeSelector.train(inputStream);
-			edgeSelector.writeModel(outputStream);
-		} else if (cellTrain == true) {
-			// final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
-			// final BSCPPerceptronCellTrainer parser = new BSCPPerceptronCellTrainer(opts, (LeftHashGrammar) grammar);
-			// perceptronCellSelector.train(inputStream, parser);
-		} else {
-			System.out.println("ERROR.");
-		}
-	}
+    @Override
+    public void run() throws Exception {
+
+        if (edgeFOMType != null) {
+            // To train a BoundaryInOut FOM model we need a grammar and
+            // binarized gold input trees with NTs from same grammar
+            final EdgeSelector edgeSelector = EdgeSelector.create(edgeFOMType, grammar, null);
+            edgeSelector.train(inputStream);
+            edgeSelector.writeModel(outputStream);
+        } else if (cellTrain == true) {
+            // final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
+            // final BSCPPerceptronCellTrainer parser = new BSCPPerceptronCellTrainer(opts, (LeftHashGrammar) grammar);
+            // perceptronCellSelector.train(inputStream, parser);
+        } else {
+            System.out.println("ERROR.");
+        }
+    }
 }
