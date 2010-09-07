@@ -13,7 +13,7 @@ import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
-public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGrammar, InOutCellChart> {
+public class ECPInsideOutside extends ExhaustiveChartParser<LeftListGrammar, InOutCellChart> {
 
     ProjectedGrammar evalGrammar;
 
@@ -40,9 +40,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
         final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
         while (cellSelector.hasNext()) {
             final short[] startEnd = cellSelector.next();
-            final ChartCell cell = chart.getCell(startEnd[0], startEnd[1]);
-            visitCell(cell);
-            topDownTraversal.addFirst(cell);
+            visitCell(startEnd[0], startEnd[1]);
+            topDownTraversal.addFirst(chart.getCell(startEnd[0], startEnd[1]));
         }
 
         for (final ChartCell cell : topDownTraversal) {
@@ -231,8 +230,8 @@ public class ECPInsideOutside extends CellwiseExhaustiveChartParser<LeftListGram
     }
 
     @Override
-    protected void visitCell(final edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell cell) {
-        computeInsideProbsInCell((ChartCell) cell);
+    protected void visitCell(final short start, final short end) {
+        computeInsideProbsInCell(chart.getCell(start, end));
     }
 
     protected void computeInsideProbsInCell(final ChartCell cell) {
