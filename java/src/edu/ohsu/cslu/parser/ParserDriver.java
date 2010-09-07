@@ -21,13 +21,13 @@ import cltool.Threadable;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectHashFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
@@ -86,8 +86,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-inOutSum", usage = "Use sum instead of max for inside and outside calculations")
     public boolean viterbiMax = true;
 
-    // TODO Implement class name mappings in cltool and replace this with a class name
-    @Option(name = "-cpf", metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
+    @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
     private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash2;
 
     // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage =
@@ -139,13 +138,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     boolean unfactor = false;
 
     // == Other options ==
-    @Option(name = "-x1", usage = "Tuning param #1")
+    // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance passed in
+    @Option(name = "-x1", hidden = true, usage = "Tuning param #1")
     public static float param1 = -1;
 
-    @Option(name = "-x2", usage = "Tuning param #2")
+    @Option(name = "-x2", hidden = true, usage = "Tuning param #2")
     public static float param2 = -1;
 
-    @Option(name = "-x3", usage = "Tuning param #3")
+    @Option(name = "-x3", hidden = true, usage = "Tuning param #3")
     public static float param3 = -1;
 
     public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));

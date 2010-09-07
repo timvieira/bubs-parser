@@ -23,7 +23,10 @@
     <taskdef classpath="${dir.shared.build.lib}/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
     <taskdef classpath="${dir.shared.build.lib}/cpptasks.jar" resource="cpptasks.tasks" />
     <taskdef classpath="${dir.shared.build.lib}/genjar.jar" resource="genjar.properties" />
-
+    <path id="path.svn">
+        <fileset dir="${dir.shared.build.lib}" includes="svnant.jar,svnkit.jar,svnClientAdapter.jar,svnjavahl.jar" />
+    </path>
+    <typedef classpathref="path.svn" resource="org/tigris/subversion/svnant/svnantlib.xml" /> 
 
 	<path id="classpath.libs">
 		<fileset dir="${dir.bsd.lib}" includes="*.jar" />
@@ -71,7 +74,7 @@
 		<delete dir="${dir.dist}" includes="*.o,dependencies.xml,history.xml" />
 	</target>
 
-	<!-- 
+    <!-- 
     ========================================================================
        Package documentation 
     ========================================================================
@@ -104,12 +107,21 @@
          * heap-size (optional - default=128) Size in megabytes
          * include-lgpl-libs (optional) Reference LGPL libraries in generated 
              jar classpath
+         * version (options) Version number to include in jar file MANIFEST
     ========================================================================
     -->
 	<target name="package-jar" description="Package an executable jar file">
 
 	    <!-- Create the distribution directory if it doesn't already exist -->
 		<mkdir dir="${dir.dist}" />
+
+	    <!-- We'll label the SVN revision and build time in the jar manifest -->
+        <svn svnkit="true">
+            <wcVersion path="." />
+        </svn>
+        <tstamp>
+            <format property="build.timestamp" pattern="MM-dd-yyyy HH:mm:ss" locale="en,US"/>
+        </tstamp>
 
 	    <!-- Generate manifest classpath for LGPL libraries -->
         <if>
@@ -146,6 +158,9 @@
 			<manifest>
 				<attribute name="Main-Class" value="${root-class}" />
                 <attribute name="Class-Path" value="${path.lgpl.libs}" />
+                <attribute name="Source-Revision" value="${revision.max}" />
+                <attribute name="Build-Time" value="${build.timestamp}" />
+                <attribute name="Version" value="${version}" />
 			</manifest>
 
 			<!-- Include all args4j property files -->
@@ -182,6 +197,7 @@
              any other files which should be included in the jar. Root directory
              and file includes in the normal ant 'fileset' style
          * grid-params (optional) Parameter list to pass to the grid engine script.
+         * version (options) Version number to include in jar file MANIFEST
     ========================================================================
     -->
     <target name="package-tool" description="Package an executable jar file">
@@ -192,6 +208,7 @@
         <property name="grid-params" value="" />
         <property name="additional-file-root" value="" />
         <property name="additional-file-includes" value="none" />
+        <property name="version" value="" />
 
         <!-- If 'heap-size' is not specified, default it to 128m -->
         <property name="heap-size" value="128" />
@@ -336,6 +353,28 @@
             <param name="include-lgpl-libs" value="true" />
             <param name="additional-file-root" value="${dir.src}" />
             <param name="additional-file-includes" value="**/*.cl" />
+        </antcall>
+    </target>
+
+    <target name="factor-trees" depends="compile-java" description="Package tree-factorization tool">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.FactorTrees" />
+            <param name="tool-name" value="factor-trees" />
+        </antcall>
+    </target>
+
+    <target name="induce-grammar" depends="compile-java" description="Package grammar induction tool">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.elvi.InduceGrammar" />
+            <param name="tool-name" value="induce-grammar" />
+        </antcall>
+    </target>
+
+    <target name="print-version">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.PrintVersion" />
+            <param name="tool-name" value="print-version" />
+            <param name="version" value="2.6" />
         </antcall>
     </target>
 
