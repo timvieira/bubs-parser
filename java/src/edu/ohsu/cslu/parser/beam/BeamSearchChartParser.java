@@ -13,150 +13,150 @@ import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChart> extends ChartParser<LeftHashGrammar, CellChart> {
+public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChart> extends
+        ChartParser<LeftHashGrammar, CellChart> {
 
-	int nAgendaPush;
-	float fomInitSeconds;
-	PriorityQueue<ChartEdge> agenda;
+    int nAgendaPush;
+    float fomInitSeconds;
+    PriorityQueue<ChartEdge> agenda;
 
-	int beamWidth;
-	float beamDeltaThresh;
+    int beamWidth;
+    float beamDeltaThresh;
 
-	public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
-		super(opts, grammar);
+    public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
+        super(opts, grammar);
 
-		beamWidth = (int) ParserDriver.param1;
-		if (beamWidth < 0)
-			beamWidth = 10;
+        beamWidth = (int) ParserDriver.param1;
+        if (beamWidth < 0)
+            beamWidth = 9999;
 
-		// logBeamDeltaThresh = ParserDriver.param2;
-		beamDeltaThresh = 9999;
-		if (beamDeltaThresh < 0)
-			beamDeltaThresh = 30;
-	}
+        // logBeamDeltaThresh = ParserDriver.param2;
+        beamDeltaThresh = 9999;
+        if (beamDeltaThresh < 0)
+            beamDeltaThresh = 30;
+    }
 
-	@Override
-	protected void initParser(final int sentLength) {
-		chart = new CellChart(sentLength, opts.viterbiMax, this);
-	}
+    @Override
+    protected void initParser(final int sentLength) {
+        chart = new CellChart(sentLength, opts.viterbiMax, this);
+    }
 
-	@Override
-	public ParseTree findBestParse(final String sentence) throws Exception {
-		HashSetChartCell cell;
-		final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
-		currentSentence = sentence;
+    @Override
+    public ParseTree findBestParse(final String sentence) throws Exception {
+        HashSetChartCell cell;
+        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
 
-		initParser(sent.length);
-		cellSelector.init(this);
-		addLexicalProductions(sent);
+        initParser(sent.length);
+        cellSelector.init(this);
+        addLexicalProductions(sent);
 
-		final double startTimeMS = System.currentTimeMillis();
-		edgeSelector.init(this);
-		fomInitSeconds = (float) ((System.currentTimeMillis() - startTimeMS) / 1000.0);
+        final double startTimeMS = System.currentTimeMillis();
+        edgeSelector.init(this);
+        fomInitSeconds = (float) ((System.currentTimeMillis() - startTimeMS) / 1000.0);
 
-		nAgendaPush = 0;
-		while (cellSelector.hasNext() && !hasCompleteParse()) {
-			final short[] startAndEnd = cellSelector.next();
-			cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
-			visitCell(cell);
-		}
+        nAgendaPush = 0;
+        while (cellSelector.hasNext() && !hasCompleteParse()) {
+            final short[] startAndEnd = cellSelector.next();
+            cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
+            visitCell(cell);
+        }
 
-		return extractBestParse();
-	}
+        return extractBestParse();
+    }
 
-	@Override
-	protected void addLexicalProductions(final int sent[]) throws Exception {
-		HashSetChartCell cell;
+    @Override
+    protected void addLexicalProductions(final int sent[]) throws Exception {
+        HashSetChartCell cell;
 
-		// add lexical productions to the base cells of the chart
-		for (int i = 0; i < chart.size(); i++) {
-			cell = chart.getCell(i, i + 1);
-			for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
-				cell.updateInside(chart.new ChartEdge(lexProd, cell));
-			}
-		}
-	}
+        // add lexical productions to the base cells of the chart
+        for (int i = 0; i < chart.size(); i++) {
+            cell = chart.getCell(i, i + 1);
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
+                cell.updateInside(chart.new ChartEdge(lexProd, cell));
+            }
+        }
+    }
 
-	protected void visitCell(final HashSetChartCell cell) {
-		final int start = cell.start(), end = cell.end();
-		ChartEdge edge;
+    protected void visitCell(final HashSetChartCell cell) {
+        final int start = cell.start(), end = cell.end();
+        ChartEdge edge;
 
-		boolean onlyFactored = false;
-		if (cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
-			onlyFactored = ((CSLUTBlockedCells) cellSelector).isCellOpenOnlyToFactored(start, end);
-		}
+        boolean onlyFactored = false;
+        if (cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
+            onlyFactored = ((CSLUTBlockedCells) cellSelector).isCellOpenOnlyToFactored(start, end);
+        }
 
-		edgeCollectionInit();
+        edgeCollectionInit();
 
-		if (end - start == 1) {
-			for (final int pos : cell.getPosNTs()) {
-				for (final Production p : grammar.getUnaryProductionsWithChild(pos)) {
-					// final float prob = p.prob + cell.getBestEdge(pos).inside;
-					edge = chart.new ChartEdge(p, cell);
-					addEdgeToCollection(edge);
-				}
-			}
-		} else {
-			for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
-				final HashSetChartCell leftCell = chart.getCell(start, mid);
-				final HashSetChartCell rightCell = chart.getCell(mid, end);
-				for (final int leftNT : leftCell.getLeftChildNTs()) {
-					for (final int rightNT : rightCell.getRightChildNTs()) {
-						for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
-							if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
-								// final float prob = p.prob + leftCell.getInside(leftNT) +
-								// rightCell.getInside(rightNT);
-								edge = chart.new ChartEdge(p, leftCell, rightCell);
-								addEdgeToCollection(edge);
-							}
-						}
-					}
-				}
-			}
-		}
+        if (end - start == 1) {
+            for (final int pos : cell.getPosNTs()) {
+                for (final Production p : grammar.getUnaryProductionsWithChild(pos)) {
+                    // final float prob = p.prob + cell.getBestEdge(pos).inside;
+                    edge = chart.new ChartEdge(p, cell);
+                    addEdgeToCollection(edge);
+                }
+            }
+        } else {
+            for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
+                final HashSetChartCell leftCell = chart.getCell(start, mid);
+                final HashSetChartCell rightCell = chart.getCell(mid, end);
+                for (final int leftNT : leftCell.getLeftChildNTs()) {
+                    for (final int rightNT : rightCell.getRightChildNTs()) {
+                        for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
+                            if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
+                                // final float prob = p.prob + leftCell.getInside(leftNT) +
+                                // rightCell.getInside(rightNT);
+                                edge = chart.new ChartEdge(p, leftCell, rightCell);
+                                addEdgeToCollection(edge);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-		addEdgeCollectionToChart(cell);
-	}
+        addEdgeCollectionToChart(cell);
+    }
 
-	protected void edgeCollectionInit() {
-		agenda = new PriorityQueue<ChartEdge>();
-	}
+    protected void edgeCollectionInit() {
+        agenda = new PriorityQueue<ChartEdge>();
+    }
 
-	protected void addEdgeToCollection(final ChartEdge edge) {
-		agenda.add(edge);
-		nAgendaPush++;
-	}
+    protected void addEdgeToCollection(final ChartEdge edge) {
+        agenda.add(edge);
+        nAgendaPush++;
+    }
 
-	protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
-		ChartEdge edge, unaryEdge;
-		boolean edgeBelowThresh = false;
-		int numAdded = 0;
-		float bestFOM = Float.NEGATIVE_INFINITY;
-		if (!agenda.isEmpty()) {
-			bestFOM = agenda.peek().fom;
-		}
+    protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
+        ChartEdge edge, unaryEdge;
+        boolean edgeBelowThresh = false;
+        int numAdded = 0;
+        float bestFOM = Float.NEGATIVE_INFINITY;
+        if (!agenda.isEmpty()) {
+            bestFOM = agenda.peek().fom;
+        }
 
-		while (agenda.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh) {
-			edge = agenda.poll();
-			if (edge.fom < bestFOM - beamDeltaThresh) {
-				edgeBelowThresh = true;
-			} else if (edge.inside() > cell.getInside(edge.prod.parent)) {
-				cell.updateInside(edge);
-				numAdded++;
+        while (agenda.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh) {
+            edge = agenda.poll();
+            if (edge.fom < bestFOM - beamDeltaThresh) {
+                edgeBelowThresh = true;
+            } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
+                cell.updateInside(edge);
+                numAdded++;
 
-				// Add unary productions to agenda so they can compete with binary productions
-				for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-					unaryEdge = chart.new ChartEdge(p, cell);
-					if (unaryEdge.fom > bestFOM - beamDeltaThresh) {
-						addEdgeToCollection(unaryEdge);
-					}
-				}
-			}
-		}
-	}
+                // Add unary productions to agenda so they can compete with binary productions
+                for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
+                    unaryEdge = chart.new ChartEdge(p, cell);
+                    if (unaryEdge.fom > bestFOM - beamDeltaThresh) {
+                        addEdgeToCollection(unaryEdge);
+                    }
+                }
+            }
+        }
+    }
 
-	@Override
-	public String getStats() {
-		return super.getStats() + " agendaPush=" + nAgendaPush + " fomInitSec=" + fomInitSeconds;
-	}
+    @Override
+    public String getStats() {
+        return super.getStats() + " agendaPush=" + nAgendaPush + " fomInitSec=" + fomInitSeconds;
+    }
 }

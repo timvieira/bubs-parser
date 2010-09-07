@@ -1,18 +1,12 @@
 package edu.ohsu.cslu.parser;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-
 import org.kohsuke.args4j.EnumAliasMap;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.agenda.ACPWithMemory;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
+import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
-import edu.ohsu.cslu.parser.util.ParserUtil;
 
 // TODO: allow gold trees as input and report F-score
 // TODO: write our own eval or make external call to EVALB
@@ -23,28 +17,19 @@ public abstract class Parser<G extends Grammar> {
     public ParserDriver opts;
     public EdgeSelector edgeSelector;
     public CellSelector cellSelector;
+    public ParseStats currentInput; // temporary so I don't break too much stuff at once
 
-    // TODO Remove a bunch of these fields once we trim down ParserTrainer (which is currently the only
-    // consumer)
-
-    protected int sentenceNumber = 0;
-    public String currentSentence;
+    static protected int sentenceNumber = 0;
     protected float totalParseTimeSec = 0;
     protected float totalInsideScore = 0;
     protected long totalMaxMemoryMB = 0;
-    public int tokenCount;
-
-    public String inputSentence; // should replace currentSentence
-    public ParseTree inputTree; // only available when input is given as tree format
-    public CellChart inputTreeChart;
 
     public Parser(final ParserDriver opts, final G grammar) {
         this.grammar = grammar;
         this.opts = opts;
 
         try {
-            edgeSelector = EdgeSelector.create(opts.edgeFOMType, grammar,
-                    opts.fomModelFileName != null ? new BufferedReader(new FileReader(opts.fomModelFileName)) : null);
+            edgeSelector = EdgeSelector.create(opts.edgeFOMType, grammar, opts.fomModelStream);
             cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
         } catch (final Exception e) {
             e.printStackTrace();
@@ -59,58 +44,58 @@ public abstract class Parser<G extends Grammar> {
 
     protected abstract ParseTree findBestParse(String sentence) throws Exception;
 
-    public String parseSentence(final String sentence) throws Exception {
-        ParseTree bestParseTree = null;
-        String parse;
-        inputSentence = sentence;
-        inputTree = null;
+    // wraps parse tree from findBestParse() with additional stats and
+    // cleans up output for consumption
+    public ParseStats parseSentence(final String sentence) throws Exception {
+        final ParseStats stats = new ParseStats(sentence);
+        currentInput = stats; // get ride of this
+        stats.sentenceNumber = sentenceNumber++;
 
-        currentSentence = sentence;
-        sentenceNumber++;
+        if (stats.sentenceLength > opts.maxLength) {
+            Log.info(0, "INFO: Skipping sentence. Length of " + stats.sentenceLength + " is greater than maxLength ("
+                    + opts.maxLength + ")");
+        } else {
+            stats.startTime();
+            stats.parse = findBestParse(sentence.trim());
+            stats.stopTime();
 
-        // if input is a tree, extract sentence from tree
-        if (ParseTree.isBracketFormat(inputSentence)) {
-            inputTree = ParseTree.readBracketFormat(inputSentence);
-            inputTreeChart = new CellChart(inputTree, opts.viterbiMax, this);
-            inputSentence = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
-        }
+            if (stats.parse == null) {
+                stats.parseBracketString = "()";
+            } else {
+                if (!opts.printUnkLabels) {
+                    stats.parse.replaceLeafNodes(stats.tokens);
+                }
 
-        final String[] tokens = ParserUtil.tokenize(inputSentence);
-        tokenCount = tokens.length;
-        if (tokenCount > opts.maxLength) {
-            return "INFO: Skipping sentence. Length of " + tokens.length + " is greater than maxLength ("
-                    + opts.maxLength + ")";
-        }
+                stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
+                stats.insideProbability = getInside(0, stats.sentenceLength, grammar.startSymbol);
 
-        bestParseTree = this.findBestParse(inputSentence.trim());
+                if (grammar.grammarFormat == Grammar.GrammarFormatType.Berkeley) {
+                    stats.parseBracketString = stats.parseBracketString.replace("(ROOT ", "(TOP ");
+                    // TODO: replace with good decoding
+                    stats.parseBracketString = stats.parseBracketString.replaceAll("_[0-9]+ ", " ");
+                }
 
-        if (bestParseTree == null)
-            return "No parse found.";
-        if (!opts.printUnkLabels)
-            bestParseTree.replaceLeafNodes(tokens);
+                // TODO: we should be converting the tree in tree form, not in bracket string form
+                if (opts.unfactor) {
+                    stats.parseBracketString = ParseTree.unfactor(stats.parseBracketString, grammar.grammarFormat);
+                }
 
-        // TODO: we should be converting the tree in tree form, not
-        // in bracket string form
-        parse = bestParseTree.toString(opts.printInsideProbs);
-        if (opts.unfactor)
-            parse = ParseTree.unfactor(parse, grammar.grammarFormat);
-
-        return parse;
-    }
-
-    public void printTreeEdgeStats(final ParseTree tree, final Parser<?> parser) {
-
-        assert this instanceof ACPWithMemory;
-        assert ((ACPWithMemory) this).edgeSelector instanceof BoundaryInOut;
-
-        for (final ParseTree node : tree.preOrderTraversal()) {
-            if (node.isNonTerminal()) {
-                throw new RuntimeException("Doesn't work right now");
+                // TODO: could evaluate accuracy here if input is a gold tree
             }
         }
+
+        return stats;
     }
 
     static public enum ParserType {
+        CKY, Agenda, Beam;
+
+        private ParserType(final String... aliases) {
+            EnumAliasMap.singleton().addAliases(this, aliases);
+        }
+    }
+
+    static public enum ResearchParserType {
         ECPCellCrossList("ecpccl"),
         ECPCellCrossHash("ecpcch"),
         ECPCellCrossMatrix("ecpccm"),
@@ -142,7 +127,7 @@ public abstract class Parser<G extends Grammar> {
         CartesianProductHash("cph"),
         CartesianProductLeftChildHash("cplch");
 
-        private ParserType(final String... aliases) {
+        private ResearchParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
         }
     }

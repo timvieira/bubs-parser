@@ -32,25 +32,26 @@ public abstract class CellSelector implements Iterator<short[]> {
         return create(type, null, null);
     }
 
-    public static CellSelector create(final CellSelectorType type, final BufferedReader modelStream, final BufferedReader cslutScoresStream) {
+    public static CellSelector create(final CellSelectorType type, final BufferedReader modelStream,
+            final BufferedReader cslutScoresStream) {
         CellSelector spanSelection;
         switch (type) {
-            case LeftRightBottomTop:
-                spanSelection = new LeftRightBottomTopTraversal();
-                break;
-            case LeftCorner:
-                spanSelection = new LeftCornerTraversal();
-                break;
-            case CSLUT:
-                spanSelection = new CSLUTBlockedCells(modelStream);
-                break;
-            case Perceptron:
-                spanSelection = new PerceptronCellSelector(modelStream, cslutScoresStream);
-                break;
-            default:
-                Log.info(0, "ERROR: CellSelectorType " + type + " not supported.");
-                System.exit(1);
-                return null;
+        case LeftRightBottomTop:
+            spanSelection = new LeftRightBottomTopTraversal();
+            break;
+        case LeftCorner:
+            spanSelection = new LeftCornerTraversal();
+            break;
+        case CSLUT:
+            spanSelection = new CSLUTBlockedCells(modelStream);
+            break;
+        case Perceptron:
+            spanSelection = new PerceptronCellSelector(modelStream, cslutScoresStream);
+            break;
+        default:
+            Log.info(0, "ERROR: CellSelectorType " + type + " not supported.");
+            System.exit(1);
+            return null;
         }
         spanSelection.type = type;
         return spanSelection;

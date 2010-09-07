@@ -1,10 +1,12 @@
 package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -19,19 +21,20 @@ import cltool.Threadable;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectHashFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
 import edu.ohsu.cslu.parser.Parser.ParserType;
+import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.agenda.ACPGhostEdges;
 import edu.ohsu.cslu.parser.agenda.ACPWithMemory;
 import edu.ohsu.cslu.parser.agenda.AgendaChartParser;
@@ -61,7 +64,6 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
-import edu.ohsu.cslu.parser.util.StringToMD5;
 
 /**
  * Driver class for all parser implementations.
@@ -74,36 +76,30 @@ import edu.ohsu.cslu.parser.util.StringToMD5;
 @Threadable(defaultThreads = 1)
 public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
-    @Option(name = "-gp", aliases = { "--grammar-file-prefix" }, metaVar = "prefix", usage = "Grammar file prefix")
-    private String grammarPrefix;
+    // == Parser options ==
+    @Option(name = "-p", aliases = { "--parser" }, metaVar = "parser", usage = "Parser implementation")
+    private ParserType parserType = ParserType.CKY;
 
-    @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of grammar file")
-    private GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
+    @Option(name = "-rp", aliases = { "--research-parser" }, metaVar = "parser", usage = "Research Parser implementation")
+    private ResearchParserType researchParserType = null;
 
-    @Option(name = "-scores", aliases = { "--print-inside-scores" }, usage = "Print inside probabilities")
-    boolean printInsideProbs = false;
+    @Option(name = "-inOutSum", usage = "Use sum instead of max for inside and outside calculations")
+    public boolean viterbiMax = true;
 
-    @Option(name = "-unk", aliases = { "--print-unk-labels" }, usage = "Print unknown labels")
-    boolean printUnkLabels = false;
-
-    @Option(name = "-p", aliases = { "--parser", "--parser-implementation" }, metaVar = "parser", usage = "Parser implementation")
-    private ParserType parserType = ParserType.ECPCellCrossList;
-
-    @Option(name = "-cpf", aliases = { "--cartesian-product-function" }, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
+    // TODO Implement class name mappings in cltool and replace this with a class name
+    @Option(name = "-cpf", metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
     private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash2;
 
     // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage =
     // "Chart cell processing type")
     // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
 
-    @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
-    int maxLength = 200;
-
-    @Option(name = "-fom", aliases = { "--figure-of-merit", "-FOM" }, metaVar = "fom", usage = "Figure of Merit")
+    @Option(name = "-fom", metaVar = "fom", usage = "Figure of Merit to use for parser")
     EdgeSelectorType edgeFOMType = EdgeSelectorType.Inside;
 
     @Option(name = "-fomModel", metaVar = "file", usage = "FOM model file")
-    String fomModelFileName = null;
+    private String fomModelFileName = null;
+    BufferedReader fomModelStream = null;
 
     // Nate: I don't think we need to expose this to the user. Instead
     // there should be different possible parsers since changing the
@@ -119,15 +115,30 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     private String cslutScoresFileName = null;
     BufferedReader cslutScoresStream = null;
 
-    @Option(name = "-inOutSum", usage = "Use sum instead of max for inside and outside calculations")
-    public boolean viterbiMax = true;
+    // == Grammar options ==
+    @Option(name = "-gp", metaVar = "prefix", usage = "Grammar file prefix")
+    private String grammarPrefix;
 
-    @Option(name = "-ds", aliases = { "--detailed-stats" }, usage = "Collect detailed counts and statistics (e.g., non-terminals per cell, cartesian-product size, etc.)")
+    @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of input grammar")
+    private GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
+
+    // == Output options ==
+    @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
+    int maxLength = 200;
+
+    @Option(name = "-scores", usage = "Print inside scores for each non-term in result tree")
+    boolean printInsideProbs = false;
+
+    @Option(name = "-unk", usage = "Print unknown words as their UNK replacement class")
+    boolean printUnkLabels = false;
+
+    @Option(name = "-stats", usage = "Collect detailed counts and statistics (e.g., non-terminals per cell, cartesian-product size, etc.)")
     public boolean collectDetailedStatistics = false;
 
     @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees")
     boolean unfactor = false;
 
+    // == Other options ==
     @Option(name = "-x1", usage = "Tuning param #1")
     public static float param1 = -1;
 
@@ -137,11 +148,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-x3", usage = "Tuning param #3")
     public static float param3 = -1;
 
-    /** Global state is maintained in ParserDriver, since we will instantiate multiple Parser objects */
+    public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
+    public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
+
     private Grammar grammar;
     private long parseStartTime;
-    private volatile int sentencesParsed;
-    private volatile float totalInsideProbability;
 
     public static void main(final String[] args) throws Exception {
         run(args);
@@ -161,6 +172,27 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         }
         if (!new File(lexFileName).exists() && new File(lexFileName + ".gz").exists()) {
             lexFileName = lexFileName + ".gz";
+        }
+
+        // map simplified parser choices to the specific research version
+        if (researchParserType == null) {
+            switch (parserType) {
+            case CKY:
+                researchParserType = ResearchParserType.ECPCellCrossList;
+                break;
+            case Agenda:
+                researchParserType = ResearchParserType.ACPWithMemory;
+                break;
+            case Beam:
+                researchParserType = ResearchParserType.LBFPruneViterbi;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported parser type");
+            }
+        }
+
+        if (fomModelFileName != null) {
+            fomModelStream = new BufferedReader(new FileReader(fomModelFileName));
         }
 
         if (cellModelFileName != null) {
@@ -188,21 +220,24 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 new FileInputStream(pcfgFileName))) : new FileReader(pcfgFileName);
         final Reader lexReader = lexFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
                 new FileInputStream(lexFileName))) : new FileReader(lexFileName);
-        grammar = createGrammar(parserType, pcfgReader, lexReader, grammarFormat, cartesianProductFunctionType);
 
+        if (this.collectDetailedStatistics) {
+            logger.info(optionsToString());
+        }
+        grammar = createGrammar(researchParserType, pcfgReader, lexReader, grammarFormat, cartesianProductFunctionType);
         parseStartTime = System.currentTimeMillis();
     }
 
-    public static Grammar createGrammar(final ParserType parserType, final Reader pcfgReader, final Reader lexReader,
-            final GrammarFormatType grammarFormat) throws Exception {
-        return createGrammar(parserType, pcfgReader, lexReader, null);
+    public static Grammar createGrammar(final ResearchParserType researchParserType, final Reader pcfgReader,
+            final Reader lexReader, final GrammarFormatType grammarFormat) throws Exception {
+        return createGrammar(researchParserType, pcfgReader, lexReader, null);
     }
 
-    public static Grammar createGrammar(final ParserType parserType, final Reader pcfgReader, final Reader lexReader,
-            final GrammarFormatType grammarFormat, final CartesianProductFunctionType cartesianProductFunctionType)
-            throws Exception {
+    public static Grammar createGrammar(final ResearchParserType researchParserType, final Reader pcfgReader,
+            final Reader lexReader, final GrammarFormatType grammarFormat,
+            final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
 
-        switch (parserType) {
+        switch (researchParserType) {
         case ECPInsideOutside:
         case ECPCellCrossList:
             return new LeftListGrammar(pcfgReader, lexReader, grammarFormat);
@@ -268,18 +303,19 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, SimpleShiftFunction.class);
 
         default:
-            throw new Exception("Unsupported parser type: " + parserType);
+            throw new Exception("Unsupported parser type: " + researchParserType);
         }
     }
 
     @Override
     public Parser<?> createLocal() {
-        return createParser(parserType, grammar, this);
+        return createParser(researchParserType, grammar, this);
     }
 
-    public static Parser<?> createParser(final ParserType parserType, final Grammar grammar,
+    @SuppressWarnings("unchecked")
+    public static Parser<?> createParser(final ResearchParserType researchParserType, final Grammar grammar,
             final ParserDriver parserOptions) {
-        switch (parserType) {
+        switch (researchParserType) {
         case ECPCellCrossList:
             return new ECPCellCrossList(parserOptions, (LeftListGrammar) grammar);
         case ECPCellCrossHash:
@@ -357,34 +393,15 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Override
     protected FutureTask<String> lineTask(final String sentence) {
-
         return new FutureTask<String>(new Callable<String>() {
-            final int sentenceNumber = ++sentencesParsed;
-
             @Override
             public String call() throws Exception {
-                // final StringBuilder sb = new StringBuilder(2048);
                 final Parser<?> parser = getLocal();
-
-                final long startTime = System.currentTimeMillis();
-                // sb.append(parser.parseSentence(sentence, grammarFormat));
-                final String parseResultStr = parser.parseSentence(sentence);
-                final float parseTime = (System.currentTimeMillis() - startTime) / 1000f;
-                final float insideProbability = parser.getInside(0, parser.tokenCount, grammar.startSymbol);
-                totalInsideProbability += insideProbability;
-
-                // sb.append(String.format("\nSTAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f %s",
-                // sentenceNumber, parser.tokenCount, StringToMD5.computeMD5(sentence),
-                // parseTime, insideProbability, parser.getStats()));
-                final String parseStats = String.format(
-                        "\nSTAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f %s", sentenceNumber,
-                        parser.tokenCount, StringToMD5.computeMD5(sentence), parseTime, insideProbability,
-                        parser.getStats());
-                // return sb.toString();
-                return parseResultStr + parseStats;
-
-                // TODO: I'm not sure we want to be working with strings here. Maybe we
-                // should have ParseTree and a ParseStats objects to pass around
+                final ParseStats parseStats = parser.parseSentence(sentence);
+                if (collectDetailedStatistics) {
+                    return parseStats.parseBracketString + "\n" + parseStats.toString();
+                }
+                return parseStats.parseBracketString;
             }
         });
     }
@@ -393,10 +410,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     protected void cleanup() {
         final float parseTime = (System.currentTimeMillis() - parseStartTime) / 1000f;
         final float cpuTime = parseTime * maxThreads;
+        final int sentencesParsed = Parser.sentenceNumber;
 
-        logger.info(String.format(
-                "INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f totalInside=%.5f",
-                sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed, totalInsideProbability));
+        logger.info(String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
+                sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
     }
 
     public String optionsToString() {
@@ -406,7 +423,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         s += prefix + "CellSelector=" + cellSelectorType + "\n";
         s += prefix + "FOM=" + edgeFOMType + "\n";
         s += prefix + "x1=" + param1 + "\n";
-        s += prefix + "x2=" + param2;
+        s += prefix + "x2=" + param2 + "\n";
         s += prefix + "x3=" + param3;
 
         return s;

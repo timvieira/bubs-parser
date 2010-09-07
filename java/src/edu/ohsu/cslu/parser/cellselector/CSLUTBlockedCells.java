@@ -35,7 +35,7 @@ public class CSLUTBlockedCells extends CellSelector {
     @Override
     public void init(final ChartParser<?, ?> parser) throws Exception {
         // throw new Exception("should use init(parser, sentLen, pctBlock) instead.");
-        init(parser, parser.currentSentence);
+        init(parser, parser.currentInput.sentence);
     }
 
     private float getThresh(final Vector<Float> scores, final float pctToPrune) {
@@ -100,9 +100,8 @@ public class CSLUTBlockedCells extends CellSelector {
 
             }
         }
-        Log
-                .info(2, "INFO: CSLUT cell stats: total=" + totalCells + " open=" + openCells + " openFactored=" + factoredCells + " closed="
-                        + (totalCells - openCells - factoredCells));
+        Log.info(2, "INFO: CSLUT cell stats: total=" + totalCells + " open=" + openCells + " openFactored="
+                + factoredCells + " closed=" + (totalCells - openCells - factoredCells));
     }
 
     public boolean isCellOpen(final int start, final int end) {
