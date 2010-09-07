@@ -117,7 +117,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     // == Grammar options ==
     @Option(name = "-gp", metaVar = "prefix", usage = "Grammar file prefix")
-    private String grammarPrefix;
+    private String grammarPrefix = null;
 
     @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of input grammar")
     private GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
@@ -162,6 +162,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // run once at initialization despite number of threads
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
+        if (grammarPrefix == null) {
+            throw new CmdLineException(cmdlineParser, "Grammar prefix (-gp) is required.");
+        }
+
         // Handle prefixes with or without trailing periods.
         String pcfgFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "pcfg";
         String lexFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "lex";
@@ -184,7 +188,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 researchParserType = ResearchParserType.ACPWithMemory;
                 break;
             case Beam:
-                researchParserType = ResearchParserType.LBFPruneViterbi;
+                researchParserType = ResearchParserType.BSCPPruneViterbi;
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported parser type");
@@ -257,12 +261,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case ACPGhostEdges:
             return new LeftRightListsGrammar(pcfgReader, lexReader, grammarFormat);
 
-        case LocalBestFirst:
-        case LBFPruneViterbi:
-        case LBFOnlineBeam:
-        case LBFBoundedHeap:
-        case LBFExpDecay:
-        case LBFPerceptronCell:
+        case BeamSearchChartParser:
+        case BSCPPruneViterbi:
+        case BSCPOnlineBeam:
+        case BSCPBoundedHeap:
+        case BSCPExpDecay:
+        case BSCPPerceptronCell:
         case CoarseCellAgenda:
         case CoarseCellAgendaCSLUT:
             return new LeftHashGrammar(pcfgReader, lexReader, grammarFormat);
@@ -336,20 +340,20 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case ACPGhostEdges:
             return new ACPGhostEdges(parserOptions, (LeftRightListsGrammar) grammar);
 
-        case LocalBestFirst:
+        case BeamSearchChartParser:
             return new BeamSearchChartParser(parserOptions, (LeftHashGrammar) grammar);
-        case LBFPruneViterbi:
+        case BSCPPruneViterbi:
             if (parserOptions.collectDetailedStatistics) {
                 return new BSCPPruneViterbiStats(parserOptions, (LeftHashGrammar) grammar);
             }
             return new BSCPPruneViterbi(parserOptions, (LeftHashGrammar) grammar);
-        case LBFOnlineBeam:
+        case BSCPOnlineBeam:
             return new BSCPWeakThresh(parserOptions, (LeftHashGrammar) grammar);
-        case LBFBoundedHeap:
+        case BSCPBoundedHeap:
             return new BSCPBoundedHeap(parserOptions, (LeftHashGrammar) grammar);
-        case LBFExpDecay:
+        case BSCPExpDecay:
             return new BSCPExpDecay(parserOptions, (LeftHashGrammar) grammar);
-        case LBFPerceptronCell:
+        case BSCPPerceptronCell:
             return new BSCPSkipBaseCells(parserOptions, (LeftHashGrammar) grammar);
 
         case CoarseCellAgenda:
