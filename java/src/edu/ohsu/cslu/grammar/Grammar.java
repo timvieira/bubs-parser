@@ -78,51 +78,6 @@ public class Grammar {
         this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
     }
 
-    static public enum GrammarFormatType {
-        CSLU, Roark, Berkeley;
-
-        public String unsplitNonTerminal(final String nonTerminal) {
-            switch (this) {
-            case Berkeley:
-                return nonTerminal.replaceFirst("_[0-9]+$", "");
-            case CSLU:
-                return nonTerminal.replaceFirst("[|^]<([A-Z]+)?>$", "");
-            case Roark:
-                // TODO Support Roark format
-            default:
-                throw new IllegalArgumentException("Unsupported format");
-
-            }
-        }
-
-        public String factoredNonTerminal(final String nonTerminal) {
-            switch (this) {
-            case Berkeley:
-                return "@" + nonTerminal;
-            case CSLU:
-                return nonTerminal + "|";
-            case Roark:
-                // TODO Support Roark format
-            default:
-                throw new IllegalArgumentException("Unsupported format");
-            }
-
-        }
-
-        public boolean isFactored(final String nonTerminal) {
-            switch (this) {
-            case CSLU:
-                return nonTerminal.contains("|");
-            case Berkeley:
-                return nonTerminal.startsWith("@");
-            case Roark:
-                // TODO Support Roark format
-            default:
-                throw new IllegalArgumentException("Unsupported format");
-            }
-        }
-    }
-
     /**
      * Read in and initialize the grammar
      * 
@@ -143,9 +98,6 @@ public class Grammar {
         Log.info(1, "INFO: Reading grammar ...");
         readGrammar(grammarFile);
 
-        // read lexical productions first so that POS tags will all be concentrated
-        // at the beginning of the nonTermSet list thus decreasing the maximum index
-        // for a POS tag and saving a good deal of space for array creation
         Log.info(1, "INFO: Reading lexical productions ...");
         readLexProds(lexiconFile);
 
@@ -653,5 +605,50 @@ public class Grammar {
             return parentToString() + " -> " + childrenToString() + " (p=" + Double.toString(prob) + ")";
         }
 
+    }
+
+    static public enum GrammarFormatType {
+        CSLU, Roark, Berkeley;
+
+        public String unsplitNonTerminal(final String nonTerminal) {
+            switch (this) {
+            case Berkeley:
+                return nonTerminal.replaceFirst("_[0-9]+$", "");
+            case CSLU:
+                return nonTerminal.replaceFirst("[|^]<([A-Z]+)?>$", "");
+            case Roark:
+                // TODO Support Roark format
+            default:
+                throw new IllegalArgumentException("Unsupported format");
+
+            }
+        }
+
+        public String factoredNonTerminal(final String nonTerminal) {
+            switch (this) {
+            case Berkeley:
+                return "@" + nonTerminal;
+            case CSLU:
+                return nonTerminal + "|";
+            case Roark:
+                // TODO Support Roark format
+            default:
+                throw new IllegalArgumentException("Unsupported format");
+            }
+
+        }
+
+        public boolean isFactored(final String nonTerminal) {
+            switch (this) {
+            case CSLU:
+                return nonTerminal.contains("|");
+            case Berkeley:
+                return nonTerminal.startsWith("@");
+            case Roark:
+                // TODO Support Roark format
+            default:
+                throw new IllegalArgumentException("Unsupported format");
+            }
+        }
     }
 }
