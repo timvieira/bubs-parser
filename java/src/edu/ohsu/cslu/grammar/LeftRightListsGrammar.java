@@ -7,20 +7,18 @@ public class LeftRightListsGrammar extends LeftListGrammar {
 
     private LinkedList<Production>[] binaryProdsByRightNonTerm;
 
-    public LeftRightListsGrammar(final String grammarFile, final String lexiconFile,
-            final GrammarFormatType grammarFormat) throws Exception {
-        super(grammarFile, lexiconFile, grammarFormat);
+    public LeftRightListsGrammar(final String grammarFile) throws Exception {
+        super(grammarFile);
     }
 
-    public LeftRightListsGrammar(final Reader grammarFile, final Reader lexiconFile,
-            final GrammarFormatType grammarFormat) throws Exception {
-        super(grammarFile, lexiconFile, grammarFormat);
+    public LeftRightListsGrammar(final Reader grammarFile) throws Exception {
+        super(grammarFile);
     }
 
     @SuppressWarnings({ "cast", "unchecked" })
     @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile) throws Exception {
-        readGrammarAndLexicon(grammarFile, lexiconFile);
+    protected GrammarFormatType init(final Reader grammarFile) throws Exception {
+        final GrammarFormatType gf = readGrammarAndLexicon(grammarFile);
 
         binaryProdsByLeftNonTerm = (LinkedList<Production>[]) new LinkedList[this.numNonTerms()];
         binaryProdsByRightNonTerm = (LinkedList<Production>[]) new LinkedList[this.numNonTerms()];
@@ -39,6 +37,7 @@ public class LeftRightListsGrammar extends LeftListGrammar {
 
         // delete the original binary prods since we're storing them by left child now
         this.binaryProductions = null;
+        return gf;
     }
 
     public LinkedList<Production> getBinaryProductionsWithRightChild(final int rightChild) {

@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser.spmv;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.Reader;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
@@ -9,7 +7,6 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
@@ -21,6 +18,7 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector;
 import edu.ohsu.cslu.parser.util.ParseTree;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test class for all sparse-matrix-vector parsers
@@ -34,13 +32,12 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         extends ExhaustiveChartParserTestCase<P> {
 
     @Override
-    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
+    protected Grammar createGrammar(final Reader grammarReader) throws Exception {
         @SuppressWarnings("unchecked")
         final Class<C> cpfClass = ((Class<C>) ((ParameterizedType) getClass().getGenericSuperclass())
                 .getActualTypeArguments()[1]);
-        return grammarClass().getConstructor(
-                new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class }).newInstance(
-                new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU, cpfClass });
+        return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
+                new Object[] { grammarReader, cpfClass });
     }
 
     /**

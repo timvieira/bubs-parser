@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.grammar;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.Reader;
 import java.io.StringReader;
 
@@ -9,6 +7,7 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import static org.junit.Assert.assertEquals;
 
 public abstract class GrammarTestCase {
 
@@ -17,50 +16,48 @@ public abstract class GrammarTestCase {
      */
     protected abstract Class<? extends Grammar> grammarClass();
 
-    public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader,
-            final Reader lexiconReader) throws Exception {
+    public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader)
+            throws Exception {
         return grammarClass.getConstructor(new Class[] { Reader.class, Reader.class, GrammarFormatType.class })
-                .newInstance(new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
+                .newInstance(new Object[] { grammarReader, GrammarFormatType.CSLU });
     }
 
     public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader,
-            final Reader lexiconReader,
             final Class<? extends SparseMatrixGrammar.CartesianProductFunction> cartesianProductFunctionClass)
             throws Exception {
 
         try {
-            return grammarClass.getConstructor(
-                    new Class[] { Reader.class, Reader.class, GrammarFormatType.class, Class.class })
-                    .newInstance(
-                            new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU,
-                                    cartesianProductFunctionClass });
+            return grammarClass.getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
+                    new Object[] { grammarReader, cartesianProductFunctionClass });
         } catch (final NoSuchMethodException e) {
-            return grammarClass.getConstructor(new Class[] { Reader.class, Reader.class, GrammarFormatType.class })
-                    .newInstance(new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
+            return grammarClass.getConstructor(new Class[] { Reader.class })
+                    .newInstance(new Object[] { grammarReader });
         }
     }
 
     public static Grammar createSimpleGrammar(final Class<? extends Grammar> grammarClass,
             final Class<? extends CartesianProductFunction> cartesionProductFunctionClass) throws Exception {
-        final StringBuilder lexiconSb = new StringBuilder(256);
-        lexiconSb.append("NN => systems 0\n");
-        lexiconSb.append("NN => analyst 0\n");
-        lexiconSb.append("NN => arbitration 0\n");
-        lexiconSb.append("NN => chef 0\n");
-        lexiconSb.append("NN => UNK 0\n");
+        final StringBuilder sb = new StringBuilder(256);
 
-        final StringBuilder grammarSb = new StringBuilder(256);
-        grammarSb.append("TOP\n");
-        grammarSb.append("TOP => NP 0\n");
-        grammarSb.append("NP => NN NN -0.693147\n");
-        grammarSb.append("NP => NP NN -1.203972\n");
-        grammarSb.append("NP => NN NP -2.302585\n");
-        grammarSb.append("NP => NP NP -2.302585\n");
+        sb.append("TOP\n");
+        sb.append("TOP => NP 0\n");
+        sb.append("NP => NN NN -0.693147\n");
+        sb.append("NP => NP NN -1.203972\n");
+        sb.append("NP => NN NP -2.302585\n");
+        sb.append("NP => NP NP -2.302585\n");
         // Add a fake factored category just to keep Grammar happy
-        grammarSb.append("NP => NP|NN NP -Infinity\n");
+        sb.append("NP => NP|NN NP -Infinity\n");
 
-        return createGrammar(grammarClass, new StringReader(grammarSb.toString()),
-                new StringReader(lexiconSb.toString()), cartesionProductFunctionClass);
+        sb.append(Grammar.DELIMITER);
+        sb.append('\n');
+
+        sb.append("NN => systems 0\n");
+        sb.append("NN => analyst 0\n");
+        sb.append("NN => arbitration 0\n");
+        sb.append("NN => chef 0\n");
+        sb.append("NN => UNK 0\n");
+
+        return createGrammar(grammarClass, new StringReader(sb.toString()), cartesionProductFunctionClass);
     }
 
     public static Grammar createSimpleGrammar(final Class<? extends Grammar> grammarClass) throws Exception {

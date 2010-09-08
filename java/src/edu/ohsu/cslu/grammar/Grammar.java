@@ -40,6 +40,9 @@ import edu.ohsu.cslu.parser.util.Log;
  */
 public class Grammar {
 
+    /** Marks the switch from PCFG to lexicon entries in the grammar file */
+    public final static String DELIMITER = "===== LEXICON =====";
+
     protected Collection<Production> binaryProductions;
     protected Collection<Production> unaryProductions;
     protected Collection<Production> lexicalProductions;
@@ -66,40 +69,40 @@ public class Grammar {
         tokenizer = new Tokenizer(lexSet);
     }
 
-    public Grammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        this.grammarFormat = grammarFormat;
-        init(grammarFile, lexiconFile);
+    public Grammar(final Reader grammarFile) throws Exception {
+        this.grammarFormat = init(grammarFile);
         tokenizer = new Tokenizer(lexSet);
     }
 
-    public Grammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    public Grammar(final String grammarFile) throws Exception {
+        this(new FileReader(grammarFile));
     }
 
     /**
-     * Read in and initialize the grammar
+     * Read in and initialize the grammar. This implementation simply reads in the grammar file. Subclasses may override
+     * this method to do additional initialization.
      * 
      * @param grammarFile
-     * @param lexiconFile
+     * @return Detected grammar format
      * @throws Exception
      */
-    protected void init(final Reader grammarFile, final Reader lexiconFile) throws Exception {
-        readGrammarAndLexicon(grammarFile, lexiconFile);
+    protected GrammarFormatType init(final Reader grammarFile) throws Exception {
+        return readGrammarAndLexicon(grammarFile);
     }
 
-    public void readGrammarAndLexicon(final Reader grammarFile, final Reader lexiconFile) throws Exception {
+    public GrammarFormatType readGrammarAndLexicon(final Reader grammarFile) throws Exception {
+
+        unaryProductions = new LinkedList<Production>();
+        binaryProductions = new LinkedList<Production>();
+        lexicalProductions = new LinkedList<Production>();
+
         // the nullSymbol is used for start/end of sentence markers and dummy non-terminals
         nullSymbol = addNonTerm(nullSymbolStr);
         getNonterminal(nullSymbol).isPOS = true;
         nullProduction = new Production(nullSymbol, nullSymbol, nullSymbol, Float.NEGATIVE_INFINITY);
 
         Log.info(1, "INFO: Reading grammar ...");
-        readGrammar(grammarFile);
-
-        Log.info(1, "INFO: Reading lexical productions ...");
-        readLexProds(lexiconFile);
+        final GrammarFormatType gf = readGrammar(grammarFile);
 
         if (startSymbol == -1) {
             throw new IllegalArgumentException(
@@ -110,63 +113,58 @@ public class Grammar {
         lexSet.finalize();
 
         Log.info(1, "INFO: " + getStats());
+        return gf;
     }
 
-    private void readLexProds(final Reader lexFile) throws NumberFormatException, Exception {
-        String line;
-        String[] tokens;
-        Production lexProd;
+    private GrammarFormatType readGrammar(final Reader gramFile) throws Exception {
 
-        lexicalProductions = new LinkedList<Production>();
-
-        final BufferedReader br = new BufferedReader(lexFile);
-        while ((line = br.readLine()) != null) {
-            tokens = line.split("\\s");
-            if (tokens.length == 4) {
-                // expecting: A -> B prob
-                lexProd = new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), true);
-                lexicalProductions.add(lexProd);
-            } else {
-                throw new IllegalArgumentException("Unexpected line in lexical file\n\t" + line);
-            }
-        }
-    }
-
-    private void readGrammar(final Reader gramFile) throws Exception {
-        String line;
-        String[] tokens;
-        Production prod;
-
-        unaryProductions = new LinkedList<Production>();
-        binaryProductions = new LinkedList<Production>();
-
-        if (grammarFormat == GrammarFormatType.Roark) {
-            startSymbol = addNonTerm("TOP");
-        }
+        GrammarFormatType gf = null;
 
         final BufferedReader br = new BufferedReader(gramFile);
-        while ((line = br.readLine()) != null) {
-            tokens = line.split("\\s");
+        br.mark(50);
+
+        // Read the first line and try to induce the grammar format from it
+        final String sDagger = br.readLine();
+
+        if (sDagger.matches("[A-Z]+_[0-9]+")) {
+            gf = GrammarFormatType.Berkeley;
+            startSymbol = addNonTerm(sDagger);
+        } else if (sDagger.split(" ").length > 1) {
+            gf = GrammarFormatType.Roark;
+            // The first line was not a start symbol; reset the reader and re-process that line
+            br.reset();
+            startSymbol = addNonTerm("TOP");
+        } else {
+            gf = GrammarFormatType.CSLU;
+            startSymbol = addNonTerm(sDagger);
+        }
+
+        for (String line = br.readLine(); line != null && !line.equals(DELIMITER); line = br.readLine()) {
+            final String[] tokens = line.split("\\s");
+
             if (tokens.length == 1) {
-
-                if (startSymbol != -1) {
-                    throw new IllegalArgumentException(
-                            "Grammar file must contain a single line with a single string representing the START SYMBOL.\n"
-                                    + "More than one entry was found.  Last line: " + line);
-                }
-
-                startSymbol = addNonTerm(tokens[0]);
+                throw new IllegalArgumentException(
+                        "Grammar file must contain a single line with a single string representing the START SYMBOL.\n"
+                                + "More than one entry was found.  Last line: " + line);
             } else if (tokens.length == 4) {
-                // expecting: A -> B prob
-                prod = new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), false);
+                // Unary production: expecting: A -> B prob
                 // should we make sure there aren't any duplicates?
-                unaryProductions.add(prod);
+                unaryProductions.add(new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), false));
             } else if (tokens.length == 5) {
-                // expecting: A -> B C prob
-                prod = new Production(tokens[0], tokens[2], tokens[3], Float.valueOf(tokens[4]));
-                binaryProductions.add(prod);
+                // Binary production: expecting: A -> B C prob
+                binaryProductions.add(new Production(tokens[0], tokens[2], tokens[3], Float.valueOf(tokens[4])));
             } else {
-                throw new IllegalArgumentException("Unexpected line in grammar file\n\t" + line);
+                throw new IllegalArgumentException("Unexpected line in grammar PCFG\n\t" + line);
+            }
+        }
+
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
+            final String[] tokens = line.split("\\s");
+            if (tokens.length == 4) {
+                // expecting: A -> B prob
+                lexicalProductions.add(new Production(tokens[0], tokens[2], Float.valueOf(tokens[3]), true));
+            } else {
+                throw new IllegalArgumentException("Unexpected line in grammar lexicon\n\t" + line);
             }
         }
 
@@ -199,6 +197,8 @@ public class Grammar {
         if (numRightFactored > 0 && numLeftFactored == 0) {
             isLeftFactored = false;
         }
+
+        return gf;
     }
 
     /**
@@ -325,6 +325,7 @@ public class Grammar {
     }
 
     // TODO: do we really need a String interface for getBinaryProduction *and* binaryLogProb?
+    // It's only reference is from CellChart#addParseTreeToChart(ParseTree)
     public Production getBinaryProduction(final String A, final String B, final String C) {
         if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
             return getBinaryProduction(nonTermSet.getIndex(A), nonTermSet.getIndex(B), nonTermSet.getIndex(C));
@@ -492,9 +493,9 @@ public class Grammar {
 
     public String getStats() {
         String s = "";
-        s += "numBinaryProds=" + binaryProductions.size();
-        s += " numUnaryProds=" + unaryProductions.size();
-        s += " numLexicalProds=" + lexicalProductions.size();
+        s += "numBinaryProds=" + numBinaryProds();
+        s += " numUnaryProds=" + numUnaryProds();
+        s += " numLexicalProds=" + numLexProds();
         s += " numNonTerms=" + numNonTerms();
         s += " numPosSymbols=" + numPosSymbols();
         // s += " numFactoredSymbols=" + factoredNonTermSet.size();

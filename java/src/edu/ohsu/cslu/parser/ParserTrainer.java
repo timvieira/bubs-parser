@@ -40,8 +40,8 @@ public class ParserTrainer extends BaseCommandlineTool {
     public boolean cellConstraints = false;
 
     // == Grammar options ==
-    @Option(name = "-gp", aliases = { "--grammar-file-prefix" }, metaVar = "prefix", usage = "Grammar file prefix")
-    public String grammarPrefix;
+    @Option(name = "-g", required = true, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
+    private String grammarFile = null;
 
     @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of grammar file")
     public GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
@@ -59,22 +59,16 @@ public class ParserTrainer extends BaseCommandlineTool {
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
         // Handle prefixes with or without trailing periods.
-        String pcfgFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "pcfg";
-        String lexFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "lex";
+        String grammarFileName = grammarFile + (grammarFile.endsWith(".") ? "" : ".") + "pcfg";
 
         // Handle gzipped grammar files
-        if (!new File(pcfgFileName).exists() && new File(pcfgFileName + ".gz").exists()) {
-            pcfgFileName = pcfgFileName + ".gz";
-        }
-        if (!new File(lexFileName).exists() && new File(lexFileName + ".gz").exists()) {
-            lexFileName = lexFileName + ".gz";
+        if (!new File(grammarFileName).exists() && new File(grammarFileName + ".gz").exists()) {
+            grammarFileName = grammarFileName + ".gz";
         }
 
-        final Reader pcfgReader = pcfgFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
-                new FileInputStream(pcfgFileName))) : new FileReader(pcfgFileName);
-        final Reader lexReader = lexFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
-                new FileInputStream(lexFileName))) : new FileReader(lexFileName);
-        grammar = ParserDriver.createGrammar(researchParserType, pcfgReader, lexReader, grammarFormat);
+        final Reader grammarReader = grammarFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
+                new FileInputStream(grammarFileName))) : new FileReader(grammarFileName);
+        grammar = ParserDriver.createGrammar(researchParserType, grammarReader);
 
     }
 
@@ -88,7 +82,8 @@ public class ParserTrainer extends BaseCommandlineTool {
             edgeSelector.train(inputStream);
             edgeSelector.writeModel(outputStream);
         } else if (cellTrain == true) {
-            // final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector) CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
+            // final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector)
+            // CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
             // final BSCPPerceptronCellTrainer parser = new BSCPPerceptronCellTrainer(opts, (LeftHashGrammar) grammar);
             // perceptronCellSelector.train(inputStream, parser);
         } else {
