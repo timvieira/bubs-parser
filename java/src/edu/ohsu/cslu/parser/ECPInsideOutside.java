@@ -32,12 +32,12 @@ public class ECPInsideOutside extends ExhaustiveChartParser<LeftListGrammar, InO
     public ParseTree findBestParse(final String sentence) throws Exception {
 
         final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
+        final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
 
         initParser(sent.length);
         addLexicalProductions(sent);
         cellSelector.init(this);
 
-        final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
         while (cellSelector.hasNext()) {
             final short[] startEnd = cellSelector.next();
             visitCell(startEnd[0], startEnd[1]);
@@ -54,6 +54,9 @@ public class ECPInsideOutside extends ExhaustiveChartParser<LeftListGrammar, InO
         return extractBestParse(chart.getRootCell(), evalGrammar.startSymbol);
     }
 
+    // find latent grammar max rule score for theoretical
+    // grammar rule A => B C by summing over all A_x => B_y C_z
+    // for all x, y, and z. Label constituent with A.
     protected void berkeleyMaxRule(final int sent[]) {
 
         // create a new chart? A new parser with in/out FOM?
@@ -127,7 +130,7 @@ public class ECPInsideOutside extends ExhaustiveChartParser<LeftListGrammar, InO
                     }
                 }
 
-                for (final int childNT : cell.getNTs()) {
+                for (final int childNT : cell.getNtArray()) {
                     for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                         // System.out.println(" considering: " + p + " in=" + cell.getInside(p.parent) +
                         // " out=" + cell.getOutside(p.parent));
@@ -194,7 +197,7 @@ public class ECPInsideOutside extends ExhaustiveChartParser<LeftListGrammar, InO
                 final ChartCell cell = chart.getCell(start, end);
 
                 float maxInOut = Float.NEGATIVE_INFINITY;
-                for (final int nt : cell.getNTs()) {
+                for (final int nt : cell.getNtArray()) {
                     final float inOut = cell.getInside(nt) + cell.getOutside(nt);
                     if (inOut > maxInOut) {
                         maxInOut = inOut;
@@ -252,7 +255,7 @@ public class ECPInsideOutside extends ExhaustiveChartParser<LeftListGrammar, InO
             }
         }
 
-        for (final int childNT : cell.getNTs()) {
+        for (final int childNT : cell.getNtArray()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                 // cell.updateInside(p, p.prob + cell.getInside(childNT));
                 cell.updateInside(p.parent, p.prob + cell.getInside(childNT));
@@ -268,7 +271,7 @@ public class ECPInsideOutside extends ExhaustiveChartParser<LeftListGrammar, InO
         // on the order the unary edges are traversed. What we really need to do is visit
         // the highest unary entry first, and then work our way down.
         // System.out.println("== cell [" + start + "," + end + "] ==");
-        for (final int nt : cell.getNTs()) {
+        for (final int nt : cell.getNtArray()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(nt)) {
                 if (p.isUnaryProd() && cell.hasNT(p.parent)) {
                     parentOutside = cell.getOutside(p.parent);

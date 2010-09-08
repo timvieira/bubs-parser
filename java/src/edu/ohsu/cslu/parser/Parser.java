@@ -8,9 +8,6 @@ import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-// TODO: allow gold trees as input and report F-score
-// TODO: write our own eval or make external call to EVALB
-
 public abstract class Parser<G extends Grammar> {
 
     public G grammar;
