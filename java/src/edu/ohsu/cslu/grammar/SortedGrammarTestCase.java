@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.grammar;
 
-import static junit.framework.Assert.assertEquals;
-
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.Theories;
@@ -11,6 +9,8 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+
+import static junit.framework.Assert.assertEquals;
 
 @RunWith(Theories.class)
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
@@ -43,8 +43,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
         // And a couple tests with a larger grammar
         final SparseMatrixGrammar g2 = (SparseMatrixGrammar) createGrammar(grammarClass(),
-                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"),
-                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.lex.gz"));
+                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"));
         final CartesianProductFunction f2 = g2.cartesianProductFunction;
         assertEquals(2, f2.unpackLeftChild(f2.pack(2, 0)));
         assertEquals(0, f2.unpackRightChild(f2.pack(2, 0)));
@@ -113,8 +112,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     @Test
     public void testF2_21_R2_unk() throws Exception {
         final SortedGrammar g = (SortedGrammar) createGrammar(grammarClass(),
-                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-unk.pcfg.gz"),
-                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-unk.lex.gz"));
+                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-unk.gz"));
         assertEquals(11793, g.numBinaryRules());
         assertEquals(242, g.numUnaryRules());
         assertEquals(52000, g.numLexProds());
@@ -138,8 +136,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     @Test
     public void testF2_21_R2_p1_unk() throws Exception {
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(grammarClass(),
-                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.pcfg.gz"),
-                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.lex.gz"));
+                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"));
         assertEquals(22299, g.numBinaryRules());
         assertEquals(745, g.numUnaryRules());
         assertEquals(52000, g.numLexProds());

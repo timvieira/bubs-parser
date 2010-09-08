@@ -1,12 +1,10 @@
 package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -21,7 +19,6 @@ import cltool.Threadable;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
@@ -115,11 +112,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     BufferedReader cslutScoresStream = null;
 
     // == Grammar options ==
-    @Option(name = "-gp", metaVar = "prefix", usage = "Grammar file prefix")
-    private String grammarPrefix = null;
-
-    @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Format of input grammar")
-    private GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
+    @Option(name = "-g", required = true, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
+    private String grammarFile = null;
 
     // == Output options ==
     @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
@@ -134,7 +128,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-stats", usage = "Collect detailed counts and statistics (e.g., non-terminals per cell, cartesian-product size, etc.)")
     public boolean collectDetailedStatistics = false;
 
-    @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees")
+    @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees and remove latent annotations")
     boolean unfactor = false;
 
     // == Other options ==
@@ -148,9 +142,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-x3", hidden = true, usage = "Tuning param #3")
     public static float param3 = -1;
 
-    public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
-    public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
-
     private Grammar grammar;
     private long parseStartTime;
 
@@ -162,20 +153,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // run once at initialization despite number of threads
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
-        if (grammarPrefix == null) {
-            throw new CmdLineException(cmdlineParser, "Grammar prefix (-gp) is required.");
-        }
-
-        // Handle prefixes with or without trailing periods.
-        String pcfgFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "pcfg";
-        String lexFileName = grammarPrefix + (grammarPrefix.endsWith(".") ? "" : ".") + "lex";
-
         // Handle gzipped grammar files
-        if (!new File(pcfgFileName).exists() && new File(pcfgFileName + ".gz").exists()) {
-            pcfgFileName = pcfgFileName + ".gz";
-        }
-        if (!new File(lexFileName).exists() && new File(lexFileName + ".gz").exists()) {
-            lexFileName = lexFileName + ".gz";
+        if (!new File(grammarFile).exists() && new File(grammarFile + ".gz").exists()) {
+            grammarFile = grammarFile + ".gz";
         }
 
         // map simplified parser choices to the specific research version
@@ -220,46 +200,61 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
         }
 
-        final Reader pcfgReader = pcfgFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
-                new FileInputStream(pcfgFileName))) : new FileReader(pcfgFileName);
-        final Reader lexReader = lexFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
-                new FileInputStream(lexFileName))) : new FileReader(lexFileName);
+        // TODO Determine if grammar is in text or binary format. Something close to this code snippet will do the trick
+        // FileInputStream fis = new FileInputStream(f);
+        // BufferedInputStream bis = new BufferedInputStream(fis);
+        // bis.mark(2);
+        // DataInputStream dis = new DataInputStream(bis);
+        // int signature = dis.readShort();
+        // bis.reset();
+        // if (signature == OBJECT_SIGNATURE) {
+        // ObjectInputStream ois = new ObjectInputStream(bis);
+        // Object o = ois.readObject();
+        // System.out.println(f + " : " + o.toString());
+        // } else {
+        // BufferedReader br = new BufferedReader(new InputStreamReader(bis));
+        // for (String line = br.readLine(); line != null; line = br.readLine()) {
+        // System.out.println(line);
+        // }
+        // }
+
+        final Reader grammarReader = grammarFile.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
+                new FileInputStream(grammarFile))) : new FileReader(grammarFile);
 
         if (this.collectDetailedStatistics) {
             logger.info(optionsToString());
         }
-        grammar = createGrammar(researchParserType, pcfgReader, lexReader, grammarFormat, cartesianProductFunctionType);
+        grammar = createGrammar(researchParserType, grammarReader, cartesianProductFunctionType);
         parseStartTime = System.currentTimeMillis();
     }
 
-    public static Grammar createGrammar(final ResearchParserType researchParserType, final Reader pcfgReader,
-            final Reader lexReader, final GrammarFormatType grammarFormat) throws Exception {
-        return createGrammar(researchParserType, pcfgReader, lexReader, null);
+    public static Grammar createGrammar(final ResearchParserType researchParserType, final Reader pcfgReader)
+            throws Exception {
+        return createGrammar(researchParserType, pcfgReader, null);
     }
 
     public static Grammar createGrammar(final ResearchParserType researchParserType, final Reader pcfgReader,
-            final Reader lexReader, final GrammarFormatType grammarFormat,
             final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
 
         switch (researchParserType) {
         case ECPInsideOutside:
         case ECPCellCrossList:
-            return new LeftListGrammar(pcfgReader, lexReader, grammarFormat);
+            return new LeftListGrammar(pcfgReader);
 
         case ECPCellCrossHash:
-            return new LeftHashGrammar(pcfgReader, lexReader, grammarFormat);
+            return new LeftHashGrammar(pcfgReader);
 
         case ECPCellCrossMatrix:
-            return new ChildMatrixGrammar(pcfgReader, lexReader, grammarFormat);
+            return new ChildMatrixGrammar(pcfgReader);
 
         case ECPGrammarLoop:
         case ECPGrammarLoopBerkeleyFilter:
-            return new GrammarByChild(pcfgReader, lexReader, grammarFormat);
+            return new GrammarByChild(pcfgReader);
 
         case AgendaChartParser:
         case ACPWithMemory:
         case ACPGhostEdges:
-            return new LeftRightListsGrammar(pcfgReader, lexReader, grammarFormat);
+            return new LeftRightListsGrammar(pcfgReader);
 
         case BeamSearchChartParser:
         case BSCPPruneViterbi:
@@ -269,7 +264,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case BSCPPerceptronCell:
         case CoarseCellAgenda:
         case CoarseCellAgendaCSLUT:
-            return new LeftHashGrammar(pcfgReader, lexReader, grammarFormat);
+            return new LeftHashGrammar(pcfgReader);
 
         case CsrSpmv:
         case CsrSpmvPerMidpoint:
@@ -279,18 +274,15 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case CscSpmv:
             switch (cartesianProductFunctionType) {
             case Unfiltered:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, UnfilteredFunction.class);
+                return new LeftCscSparseMatrixGrammar(pcfgReader, UnfilteredFunction.class);
             case Simple:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, SimpleShiftFunction.class);
+                return new LeftCscSparseMatrixGrammar(pcfgReader, SimpleShiftFunction.class);
             case BitMatrixExactFilter:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
-                        BitVectorExactFilterFunction.class);
+                return new LeftCscSparseMatrixGrammar(pcfgReader, BitVectorExactFilterFunction.class);
             case PerfectHash:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
-                        PerfectHashFilterFunction.class);
+                return new LeftCscSparseMatrixGrammar(pcfgReader, PerfectHashFilterFunction.class);
             case PerfectHash2:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat,
-                        PerfectIntPairHashFilterFunction.class);
+                return new LeftCscSparseMatrixGrammar(pcfgReader, PerfectIntPairHashFilterFunction.class);
             default:
                 throw new Exception("Unsupported filter type: " + cartesianProductFunctionType);
             }
@@ -300,11 +292,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case CartesianProductBinarySearchLeftChild:
         case CartesianProductHash:
         case CartesianProductLeftChildHash:
-            return new LeftCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, SimpleShiftFunction.class);
+            return new LeftCscSparseMatrixGrammar(pcfgReader, SimpleShiftFunction.class);
         case RightChildMatrixLoop:
-            return new RightCscSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat);
+            return new RightCscSparseMatrixGrammar(pcfgReader);
         case GrammarLoopMatrixLoop:
-            return new CsrSparseMatrixGrammar(pcfgReader, lexReader, grammarFormat, SimpleShiftFunction.class);
+            return new CsrSparseMatrixGrammar(pcfgReader, SimpleShiftFunction.class);
 
         default:
             throw new Exception("Unsupported parser type: " + researchParserType);

@@ -56,10 +56,9 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     public final float[] csrUnaryProbabilities;
 
     @SuppressWarnings("unchecked")
-    public SparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile,
-            final GrammarFormatType grammarFormat, Class<? extends CartesianProductFunction> functionClass)
+    public SparseMatrixGrammar(final Reader grammarFile, Class<? extends CartesianProductFunction> functionClass)
             throws Exception {
-        super(grammarFile, lexiconFile, grammarFormat);
+        super(grammarFile);
 
         try {
             if (functionClass == null) {
@@ -92,14 +91,12 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         storeUnaryRulesAsCsrMatrix();
     }
 
-    public SparseMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        this(grammarFile, lexiconFile, grammarFormat, PerfectIntPairHashFilterFunction.class);
+    public SparseMatrixGrammar(final Reader grammarFile) throws Exception {
+        this(grammarFile, PerfectIntPairHashFilterFunction.class);
     }
 
-    public SparseMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    public SparseMatrixGrammar(final String grammarFile) throws Exception {
+        this(new FileReader(grammarFile));
     }
 
     /**

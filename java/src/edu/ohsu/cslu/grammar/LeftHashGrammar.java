@@ -10,19 +10,17 @@ public class LeftHashGrammar extends GrammarByChild {
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
-    public LeftHashGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        super(grammarFile, lexiconFile, grammarFormat);
+    public LeftHashGrammar(final String grammarFile) throws Exception {
+        super(grammarFile);
     }
 
-    public LeftHashGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        super(grammarFile, lexiconFile, grammarFormat);
+    public LeftHashGrammar(final Reader grammarFile) throws Exception {
+        super(grammarFile);
     }
 
     @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile) throws Exception {
-        readGrammarAndLexicon(grammarFile, lexiconFile);
+    protected GrammarFormatType init(final Reader grammarFile) throws Exception {
+        final GrammarFormatType gf = readGrammarAndLexicon(grammarFile);
 
         binaryProdHash = new ArrayList<HashMap<Integer, LinkedList<Production>>>(this.numNonTerms());
         for (int i = 0; i < this.numNonTerms(); i++) {
@@ -45,6 +43,7 @@ public class LeftHashGrammar extends GrammarByChild {
 
         // delete the original binary prods since we're storing them by left child now
         this.binaryProductions = null;
+        return gf;
     }
 
     public Collection<Production> getBinaryProductionsWithChildren(final int leftChild, final int rightChild) {

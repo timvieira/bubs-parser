@@ -2,7 +2,6 @@ package edu.ohsu.cslu.grammar;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.Reader;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -60,9 +59,8 @@ public abstract class SortedGrammar extends GrammarByChild {
     /**
      * Constructor
      */
-    protected SortedGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        this(new FileReader(grammarFile), new FileReader(lexiconFile), grammarFormat);
+    protected SortedGrammar(final String grammarFile) throws Exception {
+        this(new FileReader(grammarFile));
     }
 
     /**
@@ -70,20 +68,65 @@ public abstract class SortedGrammar extends GrammarByChild {
      * so we can initialize final instance variables. Making the instance vars final allows the JIT to inline them
      * everywhere we use them, improving runtime efficiency considerably.
      */
-    protected SortedGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-
-        this.grammarFormat = grammarFormat;
+    protected SortedGrammar(final Reader grammarFile) throws Exception {
 
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
-        // Now read in the grammar file.
+        // Read in the grammar file.
         Log.info(1, "INFO: Reading grammar");
-        final List<StringRule> grammarRules = readGrammar(grammarFile);
 
-        Log.info(1, "INFO: Reading lexical productions");
-        final List<StringRule> lexicalRules = readLexProds(lexiconFile);
+        final BufferedReader br = new BufferedReader(grammarFile);
+        br.mark(50);
+
+        // Read the first line and try to induce the grammar format from it
+        final String sDagger = br.readLine();
+
+        if (sDagger.matches("[A-Z]+_[0-9]+")) {
+            grammarFormat = GrammarFormatType.Berkeley;
+            startSymbolStr = sDagger;
+        } else if (sDagger.split(" ").length > 1) {
+            // The first line was not a start symbol.
+            // Roark-format assumes 'TOP'. Reset the reader and re-process that line
+            grammarFormat = GrammarFormatType.Roark;
+            startSymbolStr = "TOP";
+            br.reset();
+        } else {
+            grammarFormat = GrammarFormatType.CSLU;
+            startSymbolStr = sDagger;
+        }
+
+        final List<StringRule> pcfgRules = new LinkedList<StringRule>();
+
+        for (String line = br.readLine(); line != null && !line.equals(DELIMITER); line = br.readLine()) {
+            final String[] tokens = line.split("\\s");
+
+            if (tokens.length == 1) {
+                throw new IllegalArgumentException(
+                        "Grammar file must contain a single line with a single string representing the START SYMBOL.\n"
+                                + "More than one entry was found.  Last line: " + line);
+            } else if (tokens.length == 4) {
+                // Unary production: expecting: A -> B prob
+                // Should we make sure there aren't any duplicates?
+                pcfgRules.add(new StringRule(tokens[0], tokens[2], Float.valueOf(tokens[3])));
+            } else if (tokens.length == 5) {
+                // Binary production: expecting: A -> B C prob
+                pcfgRules.add(new BinaryStringRule(tokens[0], tokens[2], tokens[3], Float.valueOf(tokens[4])));
+            } else {
+                throw new IllegalArgumentException("Unexpected line in grammar PCFG\n\t" + line);
+            }
+        }
+
+        final List<StringRule> lexicalRules = new LinkedList<StringRule>();
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
+            final String[] tokens = line.split("\\s");
+            if (tokens.length == 4) {
+                // expecting: A -> B prob
+                lexicalRules.add(new StringRule(tokens[0], tokens[2], Float.valueOf(tokens[3])));
+            } else {
+                throw new IllegalArgumentException("Unexpected line in grammar lexicon\n\t" + line);
+            }
+        }
 
         // Process the lexical productions first. Label any non-terminals found in the lexicon as POS tags. We
         // assume that pre-terminals (POS) will only occur as parents in span-1 rows and as children in span-2
@@ -99,7 +142,7 @@ public abstract class SortedGrammar extends GrammarByChild {
         final HashSet<String> leftChildrenSet = new HashSet<String>();
 
         // Iterate through grammar rules, populating temporary non-terminal sets
-        for (final StringRule grammarRule : grammarRules) {
+        for (final StringRule grammarRule : pcfgRules) {
 
             nonTerminals.add(grammarRule.parent);
             nonTerminals.add(grammarRule.leftChild);
@@ -117,8 +160,7 @@ public abstract class SortedGrammar extends GrammarByChild {
         }
 
         // Special cases for the start symbol and the null symbol (used for start/end of sentence markers and
-        // dummy non-terminals). Label them as POS. I'm not sure that's right, but it seems to
-        // work.
+        // dummy non-terminals). Label them as POS. I'm not sure that's right, but it seems to work.
         nonTerminals.add(startSymbolStr);
         pos.add(startSymbolStr);
         nonTerminals.add(nullSymbolStr);
@@ -178,7 +220,7 @@ public abstract class SortedGrammar extends GrammarByChild {
         unaryProductions = new LinkedList<Production>();
         binaryProductions = new LinkedList<Production>();
 
-        for (final StringRule grammarRule : grammarRules) {
+        for (final StringRule grammarRule : pcfgRules) {
             if (grammarRule instanceof BinaryStringRule) {
                 binaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
                         ((BinaryStringRule) grammarRule).rightChild, grammarRule.probability));
@@ -192,66 +234,6 @@ public abstract class SortedGrammar extends GrammarByChild {
         unaryProdsByChild = storeProductionByChild(unaryProductions);
 
         internMap = null; // We no longer need the String intern map, so let it be GC'd
-    }
-
-    private List<StringRule> readLexProds(final Reader lexFile) throws IOException {
-
-        final List<StringRule> rules = new LinkedList<StringRule>();
-        final BufferedReader br = new BufferedReader(lexFile);
-
-        for (String line = br.readLine(); line != null; line = br.readLine()) {
-            final String[] tokens = line.split("\\s");
-            if (tokens.length == 4) {
-                // expecting: A -> B prob
-                rules.add(new StringRule(tokens[0], tokens[2], Float.valueOf(tokens[3])));
-            } else {
-                throw new IllegalArgumentException("Unexpected line in lexical file\n\t" + line);
-            }
-        }
-        return rules;
-    }
-
-    private List<StringRule> readGrammar(final Reader gramFile) throws IOException {
-
-        if (grammarFormat == GrammarFormatType.Roark) {
-            startSymbolStr = "TOP";
-        }
-
-        final List<StringRule> rules = new LinkedList<StringRule>();
-        final BufferedReader br = new BufferedReader(gramFile);
-
-        for (String line = br.readLine(); line != null; line = br.readLine()) {
-            final String[] tokens = line.split("\\s");
-            if (tokens.length == 1) {
-
-                if (startSymbolStr != null) {
-                    throw new IllegalArgumentException(
-                            "Grammar file must contain a single line with a single string representing the START SYMBOL.\nMore than one entry was found.  Last line: "
-                                    + line);
-                }
-
-                startSymbolStr = tokens[0];
-
-            } else if (tokens.length == 4) {
-                // expecting: A -> B prob
-                // should we make sure there aren't any duplicates?
-                rules.add(new StringRule(tokens[0], tokens[2], Float.valueOf(tokens[3])));
-
-            } else if (tokens.length == 5) {
-                // expecting: A -> B C prob
-                rules.add(new BinaryStringRule(tokens[0], tokens[2], tokens[3], Float.valueOf(tokens[4])));
-
-            } else {
-                throw new IllegalArgumentException("Unexpected line in grammar file\n\t" + line);
-            }
-        }
-
-        if (startSymbolStr == null) {
-            throw new IllegalArgumentException(
-                    "No start symbol found in grammar file.  Expecting a single non-terminal on the first line.");
-        }
-
-        return rules;
     }
 
     public final int numBinaryRules() {

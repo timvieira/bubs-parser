@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -15,7 +13,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -28,6 +25,7 @@ import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial
@@ -43,8 +41,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
 public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartParser<? extends GrammarByChild, ? extends Chart>> {
 
     // Grammar file paths, relative to unit test data root directory
-    private final static String PCFG_FILE = "grammars/f2-21-R2-p1-unk.pcfg.gz";
-    private final static String LEX_FILE = "grammars/f2-21-R2-p1-unk.lex.gz";
+    private final static String PCFG_FILE = "grammars/f2-21-R2-p1-unk.gz";
 
     /** Very simple grammar for parsing 'systems analyst arbitration chef' */
     protected static Grammar simpleGrammar1;
@@ -116,9 +113,8 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
 
     }
 
-    protected Grammar createGrammar(final Reader grammarReader, final Reader lexiconReader) throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class, Reader.class, GrammarFormatType.class })
-                .newInstance(new Object[] { grammarReader, lexiconReader, GrammarFormatType.CSLU });
+    protected Grammar createGrammar(final Reader grammarReader) throws Exception {
+        return grammarClass().getConstructor(new Class[] { Reader.class }).newInstance(new Object[] { grammarReader });
     }
 
     /**
@@ -151,8 +147,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
     @Before
     public void setUp() throws Exception {
         if (f2_21_grammar == null || f2_21_grammar.getClass() != grammarClass()) {
-            f2_21_grammar = createGrammar(SharedNlpTests.unitTestDataAsReader(PCFG_FILE),
-                    SharedNlpTests.unitTestDataAsReader(LEX_FILE));
+            f2_21_grammar = createGrammar(SharedNlpTests.unitTestDataAsReader(PCFG_FILE));
         }
 
         if (simpleGrammar1 == null || simpleGrammar1.getClass() != grammarClass()) {
@@ -174,39 +169,40 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
     public static <C extends Grammar> C createSimpleGrammar2(final Class<C> grammarClass,
             final Class<? extends SparseMatrixGrammar.CartesianProductFunction> cartesianProductFunctionClass)
             throws Exception {
-        final StringBuilder lexiconSb = new StringBuilder(256);
-        lexiconSb.append("DT => The 0\n");
-        lexiconSb.append("NN => fish 0\n");
-        lexiconSb.append("NN => market -0.405465108\n");
-        lexiconSb.append("VB => market -1.098612289\n");
-        lexiconSb.append("NN => stands -0.693147181\n");
-        lexiconSb.append("VB => stands -0.693147181\n");
-        lexiconSb.append("RB => last -0.405465108\n");
-        lexiconSb.append("VB => last -1.098612289\n");
-        lexiconSb.append("NN => UNK 0\n");
+        final StringBuilder sb = new StringBuilder(256);
+        sb.append("TOP\n");
+        sb.append("S => NP VP 0\n");
+        sb.append("TOP => S 0\n");
+        sb.append("NP => DT NP -1.386294361\n");
+        sb.append("NP => DT NN -1.386294361\n");
+        sb.append("NP => NN NN -1.791759469\n");
+        sb.append("NP => NN NP|NN -1.791759469\n");
+        sb.append("NP => NN RB -1.791759469\n");
+        sb.append("NP|NN => NN NN 0\n");
+        sb.append("VP => VB RB -0.693147181\n");
+        sb.append("VP => VB VP|VB -1.386294361\n");
+        sb.append("VP => VB -1.386294361\n");
+        sb.append("VP|VB => NP 0\n");
 
-        final StringBuilder grammarSb = new StringBuilder(256);
-        grammarSb.append("TOP\n");
-        grammarSb.append("S => NP VP 0\n");
-        grammarSb.append("TOP => S 0\n");
-        grammarSb.append("NP => DT NP -1.386294361\n");
-        grammarSb.append("NP => DT NN -1.386294361\n");
-        grammarSb.append("NP => NN NN -1.791759469\n");
-        grammarSb.append("NP => NN NP|NN -1.791759469\n");
-        grammarSb.append("NP => NN RB -1.791759469\n");
-        grammarSb.append("NP|NN => NN NN 0\n");
-        grammarSb.append("VP => VB RB -0.693147181\n");
-        grammarSb.append("VP => VB VP|VB -1.386294361\n");
-        grammarSb.append("VP => VB -1.386294361\n");
-        grammarSb.append("VP|VB => NP 0\n");
+        sb.append(Grammar.DELIMITER);
+        sb.append('\n');
+
+        sb.append("DT => The 0\n");
+        sb.append("NN => fish 0\n");
+        sb.append("NN => market -0.405465108\n");
+        sb.append("VB => market -1.098612289\n");
+        sb.append("NN => stands -0.693147181\n");
+        sb.append("VB => stands -0.693147181\n");
+        sb.append("RB => last -0.405465108\n");
+        sb.append("VB => last -1.098612289\n");
+        sb.append("NN => UNK 0\n");
 
         if (cartesianProductFunctionClass != null) {
-            return GrammarTestCase.createGrammar(grammarClass, new StringReader(grammarSb.toString()),
-                    new StringReader(lexiconSb.toString()), cartesianProductFunctionClass);
+            return GrammarTestCase.createGrammar(grammarClass, new StringReader(sb.toString()),
+                    cartesianProductFunctionClass);
         }
 
-        return GrammarTestCase.createGrammar(grammarClass, new StringReader(grammarSb.toString()), new StringReader(
-                lexiconSb.toString()));
+        return GrammarTestCase.createGrammar(grammarClass, new StringReader(sb.toString()));
     }
 
     /**

@@ -7,20 +7,18 @@ public class ChildMatrixGrammar extends GrammarByChild {
 
     public LinkedList<Production>[][] binaryProdMatrix;
 
-    public ChildMatrixGrammar(final String grammarFile, final String lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        super(grammarFile, lexiconFile, grammarFormat);
+    public ChildMatrixGrammar(final String grammarFile) throws Exception {
+        super(grammarFile);
     }
 
-    public ChildMatrixGrammar(final Reader grammarFile, final Reader lexiconFile, final GrammarFormatType grammarFormat)
-            throws Exception {
-        super(grammarFile, lexiconFile, grammarFormat);
+    public ChildMatrixGrammar(final Reader grammarFile) throws Exception {
+        super(grammarFile);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void init(final Reader grammarFile, final Reader lexiconFile) throws Exception {
-        super.init(grammarFile, lexiconFile);
+    protected GrammarFormatType init(final Reader grammarFile) throws Exception {
+        final GrammarFormatType gf = super.init(grammarFile);
 
         binaryProdMatrix = new LinkedList[this.numNonTerms()][this.numNonTerms()];
 
@@ -33,6 +31,7 @@ public class ChildMatrixGrammar extends GrammarByChild {
 
         // delete the original binary prods since we're storing them by left child now
         this.binaryProductions = null;
+        return gf;
     }
 
 }
