@@ -3,10 +3,9 @@ package edu.ohsu.cslu.parser.edgeselector;
 import java.io.BufferedReader;
 import java.util.Arrays;
 
-import edu.ohsu.cslu.classifier.Perceptron;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.parser.ExhaustiveChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
@@ -21,7 +20,6 @@ public class WeightedFeatures extends EdgeSelector {
 
     private Grammar grammar;
     private int numFeatures;
-    private Perceptron model;
     private CellChart goldChart;
 
     public WeightedFeatures(final Grammar grammar) {

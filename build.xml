@@ -370,14 +370,6 @@
         </antcall>
     </target>
 
-    <target name="print-version">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.PrintVersion" />
-            <param name="tool-name" value="print-version" />
-            <param name="version" value="2.6" />
-        </antcall>
-    </target>
-
     <!-- 
     ========================================================================
        Package all NLP applications
