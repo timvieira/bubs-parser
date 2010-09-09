@@ -22,7 +22,7 @@ public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChar
             final HashSetChartCell leftCell = chart.getCell(start, mid);
             final HashSetChartCell rightCell = chart.getCell(mid, end);
             for (final int leftNT : leftCell.getLeftChildNTs()) {
-                // gramByLeft = grammarByChildMatrix.binaryProdMatrix.get(leftEdge.p.parent);
+                // gramByLeft = GrammarMatrix.binaryProdMatrix.get(leftEdge.p.parent);
                 final LinkedList<Production>[] gramByLeft = grammar.binaryProdMatrix[leftNT];
                 for (final int rightNT : rightCell.getRightChildNTs()) {
                     // validProductions = gramByLeft.get(rightEdge.p.parent);

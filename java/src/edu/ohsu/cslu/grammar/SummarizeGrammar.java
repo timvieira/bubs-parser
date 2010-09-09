@@ -41,13 +41,21 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         System.out.print(grammar.getStats());
     }
 
-    private class SummaryGrammar extends SortedGrammar {
+    private class SummaryGrammar extends Grammar {
 
-        private final int V_l, V_r;
+        private int V_l, V_r;
 
         public SummaryGrammar(final Reader grammarFile) throws Exception {
             super(grammarFile);
+            init();
+        }
 
+        public SummaryGrammar(final Grammar g) {
+            super(g);
+            init();
+        }
+
+        private void init() {
             final IntSet vlSet = new IntOpenHashSet();
             final IntSet vrSet = new IntOpenHashSet();
             for (final Production p : binaryProductions) {

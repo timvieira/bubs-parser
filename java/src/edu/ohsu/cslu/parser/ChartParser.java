@@ -1,13 +1,13 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.GrammarByChild;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public abstract class ChartParser<G extends GrammarByChild, C extends Chart> extends Parser<G> {
+public abstract class ChartParser<G extends Grammar, C extends Chart> extends Parser<G> {
 
     public C chart;
 

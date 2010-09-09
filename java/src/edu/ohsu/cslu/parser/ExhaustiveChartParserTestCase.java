@@ -15,7 +15,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
@@ -39,7 +38,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? extends GrammarByChild, ? extends Chart>> {
+public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? extends Grammar, ? extends Chart>> {
 
     // Grammar file paths, relative to unit test data root directory
     private final static String PCFG_FILE = "grammars/f2-21-R2-p1-unk.gz";
@@ -97,7 +96,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
                     .getGenericSuperclass()).getActualTypeArguments()[0]);
 
             // If the grammar class is not annotated on this parser class, look up one level
-            if (!GrammarByChild.class.isAssignableFrom(grammarClass)) {
+            if (!Grammar.class.isAssignableFrom(grammarClass)) {
                 throw new ClassCastException();
             }
 

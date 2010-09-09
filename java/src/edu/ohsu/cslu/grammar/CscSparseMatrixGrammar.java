@@ -27,8 +27,6 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     /**
      * Row indices of each matrix entry in {@link #cscBinaryProbabilities}. One entry for each binary rule; the same
      * size as {@link #cscBinaryProbabilities}.
-     * 
-     * TODO Make this a short[]?
      */
     public final short[] cscBinaryRowIndices;
 
@@ -41,30 +39,16 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws Exception {
         super(grammarFile, cartesianProductFunctionClass);
 
-        final IntSet populatedBinaryColumnIndices = new IntOpenHashSet(binaryProductions.size() / 10);
-        for (final Production p : binaryProductions) {
-            populatedBinaryColumnIndices.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
-        }
-        final int[] sortedPopulatedBinaryColumnIndices = populatedBinaryColumnIndices.toIntArray();
-        Arrays.sort(sortedPopulatedBinaryColumnIndices);
+        final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices();
 
         // Bin all binary rules by child pair, mapping parent -> probability
-        cscBinaryPopulatedColumns = new int[populatedBinaryColumnIndices.size()];
+        cscBinaryPopulatedColumns = new int[populatedBinaryColumnIndices.length];
         cscBinaryPopulatedColumnOffsets = new int[cscBinaryPopulatedColumns.length + 1];
-        cscBinaryRowIndices = new short[numBinaryRules()];
-        cscBinaryProbabilities = new float[numBinaryRules()];
+        cscBinaryRowIndices = new short[numBinaryProds()];
+        cscBinaryProbabilities = new float[numBinaryProds()];
 
-        storeRulesAsMatrix(binaryProductions, sortedPopulatedBinaryColumnIndices, cscBinaryPopulatedColumns,
+        storeRulesAsMatrix(binaryProductions, populatedBinaryColumnIndices, cscBinaryPopulatedColumns,
                 cscBinaryPopulatedColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
-
-        final IntSet populatedUnaryColumnIndices = new IntOpenHashSet(unaryProductions.size() / 10);
-        for (final Production p : unaryProductions) {
-            populatedUnaryColumnIndices.add(cartesianProductFunction.packUnary(p.leftChild));
-        }
-        final int[] sortedPopulatedUnaryColumnIndices = populatedUnaryColumnIndices.toIntArray();
-        Arrays.sort(sortedPopulatedUnaryColumnIndices);
-
-        tokenizer = new Tokenizer(lexSet);
     }
 
     protected CscSparseMatrixGrammar(final Reader grammarFile) throws Exception {
@@ -73,6 +57,33 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
     protected CscSparseMatrixGrammar(final String grammarFile) throws Exception {
         this(new FileReader(grammarFile));
+    }
+
+    public CscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
+            throws Exception {
+        super(g, functionClass);
+
+        // Initialization code duplicated from constructor above to allow these fields to be final
+        final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices();
+
+        // Bin all binary rules by child pair, mapping parent -> probability
+        cscBinaryPopulatedColumns = new int[populatedBinaryColumnIndices.length];
+        cscBinaryPopulatedColumnOffsets = new int[cscBinaryPopulatedColumns.length + 1];
+        cscBinaryRowIndices = new short[numBinaryProds()];
+        cscBinaryProbabilities = new float[numBinaryProds()];
+
+        storeRulesAsMatrix(binaryProductions, populatedBinaryColumnIndices, cscBinaryPopulatedColumns,
+                cscBinaryPopulatedColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
+    }
+
+    private int[] populatedBinaryColumnIndices() {
+        final IntSet populatedBinaryColumnIndices = new IntOpenHashSet(binaryProductions.size() / 10);
+        for (final Production p : binaryProductions) {
+            populatedBinaryColumnIndices.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
+        }
+        final int[] sortedPopulatedBinaryColumnIndices = populatedBinaryColumnIndices.toIntArray();
+        Arrays.sort(sortedPopulatedBinaryColumnIndices);
+        return sortedPopulatedBinaryColumnIndices;
     }
 
     /**

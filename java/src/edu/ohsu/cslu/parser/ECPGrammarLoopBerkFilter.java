@@ -3,13 +3,13 @@ package edu.ohsu.cslu.parser;
 import java.util.Arrays;
 import java.util.Collection;
 
-import edu.ohsu.cslu.grammar.GrammarByChild;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class ECPGrammarLoopBerkFilter extends ChartParser<GrammarByChild, CellChart> {
+public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
 
     // tracks the spans of nonTerms in the chart so we don't have to consider them
     // in the inner loop of fillChart()
@@ -25,7 +25,7 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<GrammarByChild, CellCh
 
     private int tmpNL, tmpNR, tmpWR;
 
-    public ECPGrammarLoopBerkFilter(final ParserDriver opts, final GrammarByChild grammar) {
+    public ECPGrammarLoopBerkFilter(final ParserDriver opts, final Grammar grammar) {
         super(opts, grammar);
     }
 

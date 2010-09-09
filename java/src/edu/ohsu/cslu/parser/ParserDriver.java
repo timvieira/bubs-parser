@@ -22,7 +22,6 @@ import cltool.Threadable;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.GrammarByChild;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
@@ -151,6 +150,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     private Grammar grammar;
     private long parseStartTime;
 
+    /**
+     * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same command-line option
+     * for serialized and text grammars and auto-detect the format
+     */
     private final static short OBJECT_SIGNATURE = (short) 0xACED;
 
     public static void main(final String[] args) throws Exception {
@@ -218,7 +221,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
         if (signature == OBJECT_SIGNATURE) {
             final ObjectInputStream ois = new ObjectInputStream(bis);
-            grammar = (Grammar) ois.readObject();
+            final Grammar genericGrammar = (Grammar) ois.readObject();
+            grammar = createGrammar(genericGrammar);
         } else {
             grammar = createGrammar(researchParserType, new BufferedReader(new InputStreamReader(bis)),
                     cartesianProductFunctionType);
@@ -252,7 +256,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
         case ECPGrammarLoop:
         case ECPGrammarLoopBerkeleyFilter:
-            return new GrammarByChild(pcfgReader);
+            return new Grammar(pcfgReader);
 
         case AgendaParser:
         case APWithMemory:
@@ -306,12 +310,80 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         }
     }
 
+    private Grammar createGrammar(final Grammar genericGrammar) throws Exception {
+
+        switch (researchParserType) {
+        case ECPInsideOutside:
+        case ECPCellCrossList:
+            return new LeftListGrammar(genericGrammar);
+
+        case ECPCellCrossHash:
+            return new LeftHashGrammar(genericGrammar);
+
+        case ECPCellCrossMatrix:
+            return new ChildMatrixGrammar(genericGrammar);
+
+        case ECPGrammarLoop:
+        case ECPGrammarLoopBerkeleyFilter:
+            return genericGrammar;
+
+        case AgendaParser:
+        case APWithMemory:
+        case APGhostEdges:
+            return new LeftRightListsGrammar(genericGrammar);
+
+        case BeamSearchChartParser:
+        case BSCPPruneViterbi:
+        case BSCPOnlineBeam:
+        case BSCPBoundedHeap:
+        case BSCPExpDecay:
+        case BSCPPerceptronCell:
+        case CoarseCellAgenda:
+        case CoarseCellAgendaCSLUT:
+            return new LeftHashGrammar(genericGrammar);
+
+        case CsrSpmv:
+        case CsrSpmvPerMidpoint:
+        case PackedOpenClSparseMatrixVector:
+        case DenseVectorOpenClSparseMatrixVector:
+
+        case CscSpmv:
+            switch (cartesianProductFunctionType) {
+            case Unfiltered:
+                return new LeftCscSparseMatrixGrammar(genericGrammar, UnfilteredFunction.class);
+            case Simple:
+                return new LeftCscSparseMatrixGrammar(genericGrammar, SimpleShiftFunction.class);
+            case BitMatrixExactFilter:
+                return new LeftCscSparseMatrixGrammar(genericGrammar, BitVectorExactFilterFunction.class);
+            case PerfectHash:
+                return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectHashFilterFunction.class);
+            case PerfectHash2:
+                return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashFilterFunction.class);
+            default:
+                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
+            }
+
+        case LeftChildMatrixLoop:
+        case CartesianProductBinarySearch:
+        case CartesianProductBinarySearchLeftChild:
+        case CartesianProductHash:
+        case CartesianProductLeftChildHash:
+            return new LeftCscSparseMatrixGrammar(genericGrammar, SimpleShiftFunction.class);
+        case RightChildMatrixLoop:
+            return new RightCscSparseMatrixGrammar(genericGrammar, SimpleShiftFunction.class);
+        case GrammarLoopMatrixLoop:
+            return new CsrSparseMatrixGrammar(genericGrammar, SimpleShiftFunction.class);
+
+        default:
+            throw new Exception("Unsupported parser type: " + researchParserType);
+        }
+    }
+
     @Override
     public Parser<?> createLocal() {
         return createParser(researchParserType, grammar, this);
     }
 
-    @SuppressWarnings("unchecked")
     public static Parser<?> createParser(final ResearchParserType researchParserType, final Grammar grammar,
             final ParserDriver parserOptions) {
         switch (researchParserType) {
@@ -322,9 +394,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case ECPCellCrossMatrix:
             return new ECPCellCrossMatrix(parserOptions, (ChildMatrixGrammar) grammar);
         case ECPGrammarLoop:
-            return new ECPGrammarLoop(parserOptions, (GrammarByChild) grammar);
+            return new ECPGrammarLoop(parserOptions, grammar);
         case ECPGrammarLoopBerkeleyFilter:
-            return new ECPGrammarLoopBerkFilter(parserOptions, (GrammarByChild) grammar);
+            return new ECPGrammarLoopBerkFilter(parserOptions, grammar);
         case ECPInsideOutside:
             return new ECPInsideOutside(parserOptions, (LeftListGrammar) grammar);
 
