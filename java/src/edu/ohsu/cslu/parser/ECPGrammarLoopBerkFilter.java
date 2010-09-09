@@ -9,7 +9,7 @@ import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class ECPGrammarLoopBerkFilter extends ExhaustiveChartParser<GrammarByChild, CellChart> {
+public class ECPGrammarLoopBerkFilter extends ChartParser<GrammarByChild, CellChart> {
 
     // tracks the spans of nonTerms in the chart so we don't have to consider them
     // in the inner loop of fillChart()

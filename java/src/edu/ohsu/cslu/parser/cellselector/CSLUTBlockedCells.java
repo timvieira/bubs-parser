@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -35,7 +37,7 @@ public class CSLUTBlockedCells extends CellSelector {
     @Override
     public void init(final ChartParser<?, ?> parser) throws Exception {
         // throw new Exception("should use init(parser, sentLen, pctBlock) instead.");
-        init(parser, parser.currentInput.sentence);
+        init(parser.chart, parser.currentInput.sentence);
     }
 
     private float getThresh(final Vector<Float> scores, final float pctToPrune) {
@@ -64,19 +66,19 @@ public class CSLUTBlockedCells extends CellSelector {
         return tmpSet.get(threshIndex);
     }
 
-    public void init(final ChartParser<?, ?> parser, final String sentence) {
+    public void init(final Chart chart, final String sentence) {
         curStartScore = allStartScore.get(sentence);
         curEndScore = allEndScore.get(sentence);
         float spanStartScore, spanEndScore;
         int totalCells = 0, openCells = 0, factoredCells = 0;
-        final int chartSize = parser.chart.size();
+        final int chartSize = chart.size();
 
         isOpen = new boolean[chartSize][chartSize + 1];
         onlyFactored = new boolean[chartSize][chartSize + 1];
         cellList = new LinkedList<ChartCell>();
 
-        final float startThresh = getThresh(curStartScore, parser.opts.param2);
-        final float endThresh = getThresh(curEndScore, parser.opts.param2);
+        final float startThresh = getThresh(curStartScore, ParserDriver.param1);
+        final float endThresh = getThresh(curEndScore, ParserDriver.param2);
 
         for (int span = 1; span <= chartSize; span++) {
             for (int beg = 0; beg < chartSize - span + 1; beg++) { // beginning
@@ -88,7 +90,7 @@ public class CSLUTBlockedCells extends CellSelector {
 
                 // special case for span == 1 since the CSLUT model isn't made for these.
                 if (spanStartScore <= startThresh || span == 1) {
-                    cellList.add(parser.chart.getCell(beg, beg + span));
+                    cellList.add(chart.getCell(beg, beg + span));
                     isOpen[beg][beg + span] = true;
                     if (spanEndScore <= endThresh || span == 1) {
                         openCells++;

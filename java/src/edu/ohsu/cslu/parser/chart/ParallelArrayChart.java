@@ -25,8 +25,7 @@ public abstract class ParallelArrayChart extends Chart {
     public final SparseMatrixGrammar sparseMatrixGrammar;
 
     /**
-     * Start indices for each cell. Computed from cell start and end indices and stored in the chart for
-     * convenience
+     * Start indices for each cell. Computed from cell start and end indices and stored in the chart for convenience
      */
     protected final int[] cellOffsets;
 
@@ -36,8 +35,8 @@ public abstract class ParallelArrayChart extends Chart {
     protected final int chartArraySize;
 
     /**
-     * Parallel arrays storing non-terminals, inside probabilities, and the grammar rules and midpoints which
-     * produced them. Entries for each cell begin at indices from {@link #cellOffsets}.
+     * Parallel arrays storing non-terminals, inside probabilities, and the grammar rules and midpoints which produced
+     * them. Entries for each cell begin at indices from {@link #cellOffsets}.
      */
     public final float[] insideProbabilities;
     public final int[] packedChildren;
@@ -50,7 +49,7 @@ public abstract class ParallelArrayChart extends Chart {
      * @param sparseMatrixGrammar Grammar
      */
     protected ParallelArrayChart(final int size, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(size, true, null);
+        super(size, true);
         this.sparseMatrixGrammar = sparseMatrixGrammar;
 
         cells = cellIndex(0, size) + 1;
@@ -147,25 +146,21 @@ public abstract class ParallelArrayChart extends Chart {
 
         protected String formatCellEntry(final int nonterminal, final int childProductions,
                 final float insideProbability, final int midpoint) {
-            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
-                childProductions);
-            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
-                childProductions);
+            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
+            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
 
             if (rightChild == Production.UNARY_PRODUCTION) {
                 // Unary Production
-                return String.format("%s -> %s (%.5f, %d)\n",
-                    sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar
-                        .mapNonterminal(leftChild), insideProbability, midpoint);
+                return String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                        sparseMatrixGrammar.mapNonterminal(leftChild), insideProbability, midpoint);
             } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                 // Lexical Production
-                return String.format("%s -> %s (%.5f, %d)\n",
-                    sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar
-                        .mapLexicalEntry(leftChild), insideProbability, midpoint);
+                return String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                        sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint);
             } else {
-                return String.format("%s -> %s %s (%.5f, %d)\n", sparseMatrixGrammar
-                    .mapNonterminal(nonterminal), sparseMatrixGrammar.mapNonterminal(leftChild),
-                    sparseMatrixGrammar.mapNonterminal(rightChild), insideProbability, midpoint);
+                return String.format("%s -> %s %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                        sparseMatrixGrammar.mapNonterminal(leftChild), sparseMatrixGrammar.mapNonterminal(rightChild),
+                        insideProbability, midpoint);
             }
         }
     }

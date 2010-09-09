@@ -8,7 +8,7 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class ECPCellCrossMatrix extends ExhaustiveChartParser<ChildMatrixGrammar, CellChart> {
+public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChart> {
 
     public ECPCellCrossMatrix(final ParserDriver opts, final ChildMatrixGrammar grammar) {
         super(opts, grammar);

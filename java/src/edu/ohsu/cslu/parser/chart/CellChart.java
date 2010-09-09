@@ -15,6 +15,7 @@ import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class CellChart extends Chart {
 
+    protected Parser<?> parser;
     protected HashSetChartCell chart[][];
 
     protected CellChart() {
@@ -22,7 +23,8 @@ public class CellChart extends Chart {
     }
 
     public CellChart(final int size, final boolean viterbiMax, final Parser<?> parser) {
-        super(size, viterbiMax, parser);
+        super(size, viterbiMax);
+        this.parser = parser;
 
         chart = new HashSetChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
@@ -333,11 +335,9 @@ public class CellChart extends Chart {
         public final int midpt() {
             if (rightCell == null) {
                 if (leftCell == null) {
-                    throw new RuntimeException(
-                        "right/leftCell must be set to use start(), end(), and midpt()");
+                    throw new RuntimeException("right/leftCell must be set to use start(), end(), and midpt()");
                 }
-                throw new RuntimeException(
-                    "Do not use midpt() with unary productions.  They do not have midpoints.");
+                throw new RuntimeException("Do not use midpt() with unary productions.  They do not have midpoints.");
             }
             return leftCell.end();
         }

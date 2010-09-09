@@ -76,7 +76,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
                     extractFeatures(chart.getCell(0, 1), new PriorityQueue<ChartEdge>());
                 }
 
-                while (cellSelector.hasNext() && !hasCompleteParse()) {
+                while (cellSelector.hasNext() && !chart.hasCompleteParse(grammar.startSymbol)) {
                     final short[] startAndEnd = cellSelector.next();
                     cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
                     goldEdgeList = new LinkedList<ChartEdge>();
@@ -142,7 +142,8 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
                         possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                         if (possibleProds != null) {
                             for (final Production p : possibleProds) {
-                                // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                                // final float prob = p.prob + leftCell.getInside(leftNT) +
+                                // rightCell.getInside(rightNT);
                                 edge = chart.new ChartEdge(p, leftCell, rightCell);
                                 addEdgeToArray(edge, bestEdges);
                             }
@@ -311,7 +312,8 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
         // if (perceptron == null) {
         // perceptron = new Perceptron(featList.size());
         // } else if (featList.size() != perceptron.numFeatures()) {
-        // Log.info(0, "ERROR: len(featureList)=" + featList.size() + " but number features in model files is numFeats=" + numFeats);
+        // Log.info(0, "ERROR: len(featureList)=" + featList.size() + " but number features in model files is numFeats="
+        // + numFeats);
         // System.exit(1);
         // }
 

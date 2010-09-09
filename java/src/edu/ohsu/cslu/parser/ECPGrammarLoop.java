@@ -5,7 +5,7 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class ECPGrammarLoop extends ExhaustiveChartParser<GrammarByChild, CellChart> {
+public class ECPGrammarLoop extends ChartParser<GrammarByChild, CellChart> {
 
     public ECPGrammarLoop(final ParserDriver opts, final GrammarByChild grammar) {
         super(opts, grammar);

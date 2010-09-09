@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ExhaustiveChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;

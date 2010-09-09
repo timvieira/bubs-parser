@@ -43,7 +43,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     @Override
     public ParseTree findBestParse(final String sentence) throws Exception {
-        HashSetChartCell cell;
         final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
 
         initParser(sent.length);
@@ -51,17 +50,16 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         addLexicalProductions(sent);
 
         final double startTimeMS = System.currentTimeMillis();
-        edgeSelector.init(this);
+        edgeSelector.init(chart);
         fomInitSeconds = (float) ((System.currentTimeMillis() - startTimeMS) / 1000.0);
 
         nAgendaPush = 0;
-        while (cellSelector.hasNext() && !hasCompleteParse()) {
+        while (cellSelector.hasNext() && !chart.hasCompleteParse(grammar.startSymbol)) {
             final short[] startAndEnd = cellSelector.next();
-            cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
-            visitCell(cell);
+            visitCell(startAndEnd[0], startAndEnd[1]);
         }
 
-        return extractBestParse();
+        return chart.extractBestParse(grammar.startSymbol);
     }
 
     @Override
@@ -77,8 +75,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         }
     }
 
-    protected void visitCell(final HashSetChartCell cell) {
-        final int start = cell.start(), end = cell.end();
+    @Override
+    protected void visitCell(final short start, final short end) {
+        final HashSetChartCell cell = chart.getCell(start, end);
         ChartEdge edge;
 
         boolean onlyFactored = false;
