@@ -35,9 +35,9 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
-import edu.ohsu.cslu.parser.agenda.ACPGhostEdges;
-import edu.ohsu.cslu.parser.agenda.ACPWithMemory;
-import edu.ohsu.cslu.parser.agenda.AgendaChartParser;
+import edu.ohsu.cslu.parser.agenda.APGhostEdges;
+import edu.ohsu.cslu.parser.agenda.APWithMemory;
+import edu.ohsu.cslu.parser.agenda.AgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParserWithCSLUT;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
@@ -103,7 +103,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // Nate: I don't think we need to expose this to the user. Instead
     // there should be different possible parsers since changing the
     // cell selection strategy only matters for a few of them
-    // @Option(name = "-cellSelect", metaVar = "TYPE", usage = "Method for cell selection")
+    @Option(name = "-cellSelect", hidden = true, metaVar = "TYPE", usage = "Method for cell selection")
     public CellSelectorType cellSelectorType = CellSelectorType.LeftRightBottomTop;
 
     @Option(name = "-cellModel", metaVar = "file", usage = "Model for span selection")
@@ -133,6 +133,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees and remove latent annotations")
     boolean unfactor = false;
+
+    @Option(name = ".")
+    boolean blurbSpacer1;
 
     // == Other options ==
     // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance passed in
@@ -165,7 +168,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 researchParserType = ResearchParserType.ECPCellCrossList;
                 break;
             case Agenda:
-                researchParserType = ResearchParserType.ACPWithMemory;
+                researchParserType = ResearchParserType.APWithMemory;
                 break;
             case Beam:
                 researchParserType = ResearchParserType.BSCPPruneViterbi;
@@ -251,9 +254,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case ECPGrammarLoopBerkeleyFilter:
             return new GrammarByChild(pcfgReader);
 
-        case AgendaChartParser:
-        case ACPWithMemory:
-        case ACPGhostEdges:
+        case AgendaParser:
+        case APWithMemory:
+        case APGhostEdges:
             return new LeftRightListsGrammar(pcfgReader);
 
         case BeamSearchChartParser:
@@ -325,12 +328,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case ECPInsideOutside:
             return new ECPInsideOutside(parserOptions, (LeftListGrammar) grammar);
 
-        case AgendaChartParser:
-            return new AgendaChartParser(parserOptions, (LeftRightListsGrammar) grammar);
-        case ACPWithMemory:
-            return new ACPWithMemory(parserOptions, (LeftRightListsGrammar) grammar);
-        case ACPGhostEdges:
-            return new ACPGhostEdges(parserOptions, (LeftRightListsGrammar) grammar);
+        case AgendaParser:
+            return new AgendaParser(parserOptions, (LeftRightListsGrammar) grammar);
+        case APWithMemory:
+            return new APWithMemory(parserOptions, (LeftRightListsGrammar) grammar);
+        case APGhostEdges:
+            return new APGhostEdges(parserOptions, (LeftRightListsGrammar) grammar);
 
         case BeamSearchChartParser:
             return new BeamSearchChartParser(parserOptions, (LeftHashGrammar) grammar);
