@@ -33,7 +33,7 @@ public class Perceptron {
     }
 
     public void decreaseLearningRate() {
-        decreaseLearningRate((float) 0.95);
+        decreaseLearningRate(0.95f);
     }
 
     public static float kernelDotProduct(final float[] a, final float[] b) {
