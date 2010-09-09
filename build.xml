@@ -345,6 +345,14 @@
         </antcall>
     </target>
 
+    <target name="serialize-grammar" depends="compile-java" description="Package grammar serialization tool">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeGrammar" />
+            <param name="tool-name" value="serialize-grammar" />
+            <param name="heap-size" value="768" />
+        </antcall>
+    </target>
+
 	<target name="parse" depends="compile-java" description="Package parser driver">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.ParserDriver" />
@@ -363,7 +371,7 @@
         </antcall>
     </target>
 
-    <target name="induce-grammar" depends="compile-java" description="Package grammar induction tool">
+	<target name="induce-grammar" depends="compile-java" description="Package grammar induction tool">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.elvi.InduceGrammar" />
             <param name="tool-name" value="induce-grammar" />
@@ -377,7 +385,7 @@
     -->
     <!-- TODO: Re-add compile-native -->
 	<target name="dist"
-	        depends="filter-sentences,split-corpus,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,parse"
+	        depends="filter-sentences,split-corpus,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,serialize-grammar,parse"
 	        description="Package all NLP application">
 	</target>
 
