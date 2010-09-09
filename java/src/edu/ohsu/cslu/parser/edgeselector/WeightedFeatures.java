@@ -4,9 +4,9 @@ import java.io.BufferedReader;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
-import edu.ohsu.cslu.parser.ExhaustiveChartParser;
+import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -87,7 +87,7 @@ public class WeightedFeatures extends EdgeSelector {
     // return true;
     // }
 
-    protected class TrainingParser extends ExhaustiveChartParser<LeftListGrammar, CellChart> {
+    protected class TrainingParser extends ChartParser<LeftListGrammar, CellChart> {
 
         public TrainingParser(final ParserDriver opts, final LeftListGrammar grammar) {
             super(opts, grammar);

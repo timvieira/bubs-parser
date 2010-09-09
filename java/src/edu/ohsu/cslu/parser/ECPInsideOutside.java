@@ -13,7 +13,7 @@ import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
-public class ECPInsideOutside extends ExhaustiveChartParser<LeftListGrammar, InOutCellChart> {
+public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChart> {
 
     ProjectedGrammar evalGrammar;
 
@@ -51,7 +51,7 @@ public class ECPInsideOutside extends ExhaustiveChartParser<LeftListGrammar, InO
         // goodmanMaximizeLabelRecall();
         berkeleyMaxRule(sent);
 
-        return extractBestParse(chart.getRootCell(), evalGrammar.startSymbol);
+        return chart.extractBestParse(chart.getRootCell(), evalGrammar.startSymbol);
     }
 
     // find latent grammar max rule score for theoretical

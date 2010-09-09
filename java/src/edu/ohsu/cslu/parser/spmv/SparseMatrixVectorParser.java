@@ -2,14 +2,14 @@ package edu.ohsu.cslu.parser.spmv;
 
 import org.kohsuke.args4j.EnumAliasMap;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ExhaustiveChartParser;
+import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
-import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
 
 /**
@@ -43,7 +43,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      * {@link ParserDriver}, but duplicated here as a final variable, so that the JIT can eliminate
      * potentially-expensive counting code when we don't need it.
      * 
-     * TODO Move up to {@link ExhaustiveChartParser} (or even higher) and share with {@link SparseMatrixLoopParser}
+     * TODO Move up to {@link ChartParser} (or even higher) and share with {@link SparseMatrixLoopParser}
      */
     protected final boolean collectDetailedStatistics;
 
@@ -101,7 +101,6 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      */
     protected abstract CartesianProductVector cartesianProductUnion(final int start, final int end);
 
-    @Override
     public String getStatHeader() {
         return String.format("%8s, %10s, %8s, %8s", "Total", "X-product", "X-union", "SpMV");
     }

@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -25,7 +27,6 @@ import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertEquals;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
-public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartParser<? extends GrammarByChild, ? extends Chart>> {
+public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? extends GrammarByChild, ? extends Chart>> {
 
     // Grammar file paths, relative to unit test data root directory
     private final static String PCFG_FILE = "grammars/f2-21-R2-p1-unk.gz";
@@ -56,7 +57,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
     protected static ArrayList<String[]> sentences = new ArrayList<String[]>();
 
     /** The parser under test */
-    protected ExhaustiveChartParser<?, ?> parser;
+    protected ChartParser<?, ?> parser;
 
     /** TODO We can eliminate this if we reuse the parser and print the header in suiteSetUp() */
     private static boolean headerLinePrinted = false;
@@ -127,11 +128,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
     public static void suiteSetUp() throws Exception {
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
-        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
+                .unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
+        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
+                .unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
 
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
@@ -160,10 +161,10 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
 
         parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
-        if (!headerLinePrinted) {
-            System.out.println(parser.getStatHeader());
-            headerLinePrinted = true;
-        }
+        // if (!headerLinePrinted) {
+        // System.out.println(parser.getStatHeader());
+        // headerLinePrinted = true;
+        // }
     }
 
     public static <C extends Grammar> C createSimpleGrammar2(final Class<C> grammarClass,
@@ -217,8 +218,8 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
         parser = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
         final ParseTree bestParseTree = parser.findBestParse(sentence);
-        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))",
-                bestParseTree.toString());
+        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree
+                .toString());
     }
 
     /**
@@ -233,8 +234,8 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
         parser = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
         final ParseTree bestParseTree = parser.findBestParse(sentence);
-        assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))",
-                bestParseTree.toString());
+        assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree
+                .toString());
     }
 
     @Test
@@ -303,7 +304,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ExhaustiveChartPar
      * @throws Exception
      */
     @Test
-    @PerformanceTest({ "mbp", "0" })
+    @PerformanceTest( { "mbp", "0" })
     public abstract void profileSentences11Through20() throws Exception;
 
     protected void internalProfileSentences11Through20() throws Exception {

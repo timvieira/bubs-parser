@@ -5,86 +5,69 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class ChartParser<G extends GrammarByChild, C extends Chart> extends Parser<G> {
 
-	public C chart;
+    public C chart;
 
-	public ChartParser(final ParserDriver opts, final G grammar) {
-		super(opts, grammar);
-	}
+    public ChartParser(final ParserDriver opts, final G grammar) {
+        super(opts, grammar);
+    }
 
-	@Override
-	public float getInside(final int start, final int end, final int nt) {
-		return chart.getInside(start, end, nt);
-	}
+    @Override
+    public ParseTree findBestParse(final String sentence) throws Exception {
 
-	@Override
-	public float getOutside(final int start, final int end, final int nt) {
-		return chart.getInside(start, end, nt);
-	}
+        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
 
-	@SuppressWarnings("unchecked")
-	protected void initParser(final int sentLength) {
-		chart = (C) new CellChart(sentLength, opts.viterbiMax, this);
-	}
+        initParser(sent.length);
+        addLexicalProductions(sent);
+        cellSelector.init(this);
 
-	protected void addLexicalProductions(final int sent[]) throws Exception {
-		// add lexical productions to the base cells of the chart
-		for (int i = 0; i < chart.size(); i++) {
-			final ChartCell cell = chart.getCell(i, i + 1);
-			for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
-				cell.updateInside(lexProd, cell, null, lexProd.prob);
-			}
-			cell.finalizeCell();
-		}
-	}
+        while (cellSelector.hasNext()) {
+            final short[] startAndEnd = cellSelector.next();
+            visitCell(startAndEnd[0], startAndEnd[1]);
+        }
 
-	public boolean hasCompleteParse() {
-		return chart.getRootCell().getBestEdge(grammar.startSymbol) != null;
-	}
+        return chart.extractBestParse(grammar.startSymbol);
+    }
 
-	protected ParseTree extractBestParse() {
-		return extractBestParse(chart.getRootCell(), this.grammar.startSymbol);
-	}
+    /**
+     * Each subclass will implement this method to perform the inner-loop grammar intersection.
+     * 
+     * @param start
+     * @param end
+     */
+    protected abstract void visitCell(short start, short end);
 
-	protected ParseTree extractBestParse(final ChartCell cell, final int nonTermIndex) {
-		ChartEdge bestEdge;
-		ParseTree curNode = null;
+    @SuppressWarnings("unchecked")
+    protected void initParser(final int sentLength) {
+        chart = (C) new CellChart(sentLength, opts.viterbiMax, this);
+    }
 
-		if (cell != null) {
-			bestEdge = cell.getBestEdge(nonTermIndex);
-			if (bestEdge != null) {
-				curNode = new ParseTree(bestEdge.prod.parentToString());
-				if (bestEdge.prod.isUnaryProd()) {
-					curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
-				} else if (bestEdge.prod.isLexProd()) {
-					curNode.addChild(new ParseTree(bestEdge.prod.childrenToString()));
-				} else { // binary production
-					curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
-					curNode.children.add(extractBestParse(bestEdge.rightCell, bestEdge.prod.rightChild));
-				}
-			}
-		}
+    protected void addLexicalProductions(final int sent[]) throws Exception {
+        // add lexical productions to the base cells of the chart
+        for (int i = 0; i < chart.size(); i++) {
+            final ChartCell cell = chart.getCell(i, i + 1);
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
+                cell.updateInside(lexProd, cell, null, lexProd.prob);
+            }
+            cell.finalizeCell();
+        }
+    }
 
-		return curNode;
-	}
+    @Override
+    public float getInside(final int start, final int end, final int nt) {
+        return chart.getInside(start, end, nt);
+    }
 
-	@Override
-	public String getStats() {
-		String result = "";
-		int con = 0, add = 0;
+    @Override
+    public float getOutside(final int start, final int end, final int nt) {
+        return chart.getInside(start, end, nt);
+    }
 
-		for (int start = 0; start < chart.size(); start++) {
-			for (int end = start + 1; end < chart.size() + 1; end++) {
-				con += chart.getCell(start, end).numEdgesConsidered;
-				add += chart.getCell(start, end).numEdgesAdded;
-			}
-		}
-
-		result += " chartEdges=" + add + " processedEdges=" + con;
-		return result;
-	}
+    @Override
+    public String getStats() {
+        return chart.getStats();
+    }
 }

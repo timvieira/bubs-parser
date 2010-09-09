@@ -1,21 +1,19 @@
 package edu.ohsu.cslu.parser.chart;
 
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class Chart {
 
     protected int size;
     protected boolean viterbiMax;
-    protected Parser<?> parser;
 
     protected Chart() {
     }
 
-    public Chart(final int size, final boolean viterbiMax, final Parser<?> parser) {
+    public Chart(final int size, final boolean viterbiMax) {
         this.size = size;
         this.viterbiMax = viterbiMax;
-        this.parser = parser;
     }
 
     public final int size() {
@@ -60,6 +58,51 @@ public abstract class Chart {
      */
     public abstract float getInside(int start, int end, int nonTerminal);
 
+    public boolean hasCompleteParse(final int startSymbol) {
+        return getRootCell().getBestEdge(startSymbol) != null;
+    }
+
+    public ParseTree extractBestParse(final int startSymbol) {
+        return extractBestParse(getRootCell(), startSymbol);
+    }
+
+    public ParseTree extractBestParse(final ChartCell cell, final int nonTermIndex) {
+        ChartEdge bestEdge;
+        ParseTree curNode = null;
+
+        if (cell != null) {
+            bestEdge = cell.getBestEdge(nonTermIndex);
+            if (bestEdge != null) {
+                curNode = new ParseTree(bestEdge.prod.parentToString());
+                if (bestEdge.prod.isUnaryProd()) {
+                    curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
+                } else if (bestEdge.prod.isLexProd()) {
+                    curNode.addChild(new ParseTree(bestEdge.prod.childrenToString()));
+                } else { // binary production
+                    curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
+                    curNode.children.add(extractBestParse(bestEdge.rightCell, bestEdge.prod.rightChild));
+                }
+            }
+        }
+
+        return curNode;
+    }
+
+    public String getStats() {
+        String result = "";
+        int con = 0, add = 0;
+
+        for (int start = 0; start < size(); start++) {
+            for (int end = start + 1; end < size() + 1; end++) {
+                con += getCell(start, end).numEdgesConsidered;
+                add += getCell(start, end).numEdgesAdded;
+            }
+        }
+
+        result += " chartEdges=" + add + " processedEdges=" + con;
+        return result;
+    }
+
     public static abstract class ChartCell {
         protected final int start, end;
         public int numEdgesConsidered = 0, numEdgesAdded = 0, numSpanVisits = 0;
@@ -78,9 +121,9 @@ public abstract class Chart {
         public abstract float getInside(final int nonTerminal);
 
         /**
-         * Returns the most probable edge producing the specified non-terminal. Most {@link ChartCell}
-         * implementations will only maintain one edge per non-terminal, but some implementations may maintain
-         * multiple edges (e.g., for k-best parsing).
+         * Returns the most probable edge producing the specified non-terminal. Most {@link ChartCell} implementations
+         * will only maintain one edge per non-terminal, but some implementations may maintain multiple edges (e.g., for
+         * k-best parsing).
          * 
          * @param nonTerminal
          * @return the most probable populated edge producing the specified non-terminal
@@ -89,8 +132,8 @@ public abstract class Chart {
 
         public abstract void updateInside(final ChartEdge edge);
 
-        public abstract void updateInside(final Production p, final ChartCell leftCell,
-                final ChartCell rightCell, final float insideProb);
+        public abstract void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell,
+                final float insideProb);
 
         /**
          * @return the word index of the first word covered by this cell
