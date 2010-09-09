@@ -9,12 +9,12 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class ACPGhostEdges extends AgendaChartParser {
+public class APGhostEdges extends AgendaParser {
 
 	protected LinkedList<ChartEdge>[][] needLeftGhostEdges, needRightGhostEdges;
 	int nGhostEdges;
 
-	public ACPGhostEdges(final ParserDriver opts, final LeftRightListsGrammar grammar) {
+	public APGhostEdges(final ParserDriver opts, final LeftRightListsGrammar grammar) {
 		super(opts, grammar);
 	}
 
