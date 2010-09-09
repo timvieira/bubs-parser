@@ -16,10 +16,12 @@ import com.nativelibs4java.opencl.CLShortBuffer;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
+import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
+import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.util.OpenClUtils;
 
 /**
@@ -89,8 +91,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             prefix.write(grammar.cartesianProductFunction().openClUnpackLeftChild() + '\n');
 
             // Compile kernels shared by all implementing classes
-            final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class, prefix
-                    .toString());
+            final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class,
+                    prefix.toString());
             fillFloatKernel = clSharedProgram.createKernel("fillFloat");
             cartesianProductUnionKernel = clSharedProgram.createKernel("cartesianProductUnion");
 
@@ -139,6 +141,28 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     /**
+     * Duplicated here from {@link ChartParser} so we can copy the parse chart from the GPU to main memory after
+     * parsing.
+     */
+    @Override
+    public ParseTree findBestParse(final String sentence) throws Exception {
+
+        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
+
+        initParser(sent.length);
+        addLexicalProductions(sent);
+        cellSelector.init(this);
+
+        while (cellSelector.hasNext()) {
+            final short[] startAndEnd = cellSelector.next();
+            visitCell(startAndEnd[0], startAndEnd[1]);
+        }
+
+        copyChartFromDevice();
+        return chart.extractBestParse(grammar.startSymbol);
+    }
+
+    /**
      * De-allocates current OpenCL chart storage (if any) and allocates storage adequate for the current sentence
      * length.
      */
@@ -167,13 +191,6 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         super.addLexicalProductions(sent);
         copyChartToDevice();
     }
-
-    // @Override
-    // protected ParseTree extractBestParse() {
-    // Copy the chart back from device space to main memory before back-tracing for the parse tree.
-    // copyChartFromDevice();
-    // return super.extractBestParse();
-    // }
 
     @Override
     protected void visitCell(final short start, final short end) {
