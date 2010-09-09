@@ -1,10 +1,13 @@
 package edu.ohsu.cslu.parser;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -145,6 +148,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     private Grammar grammar;
     private long parseStartTime;
 
+    private final static short OBJECT_SIGNATURE = (short) 0xACED;
+
     public static void main(final String[] args) throws Exception {
         run(args);
     }
@@ -152,11 +157,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Override
     // run once at initialization despite number of threads
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
-
-        // Handle gzipped grammar files
-        if (!new File(grammarFile).exists() && new File(grammarFile + ".gz").exists()) {
-            grammarFile = grammarFile + ".gz";
-        }
 
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
@@ -200,31 +200,31 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
         }
 
-        // TODO Determine if grammar is in text or binary format. Something close to this code snippet will do the trick
-        // FileInputStream fis = new FileInputStream(f);
-        // BufferedInputStream bis = new BufferedInputStream(fis);
-        // bis.mark(2);
-        // DataInputStream dis = new DataInputStream(bis);
-        // int signature = dis.readShort();
-        // bis.reset();
-        // if (signature == OBJECT_SIGNATURE) {
-        // ObjectInputStream ois = new ObjectInputStream(bis);
-        // Object o = ois.readObject();
-        // System.out.println(f + " : " + o.toString());
-        // } else {
-        // BufferedReader br = new BufferedReader(new InputStreamReader(bis));
-        // for (String line = br.readLine(); line != null; line = br.readLine()) {
-        // System.out.println(line);
-        // }
-        // }
+        // Handle gzipped and non-gzipped grammar files
+        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
+                grammarFile)) : new FileInputStream(grammarFile);
 
-        final Reader grammarReader = grammarFile.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
-                new FileInputStream(grammarFile))) : new FileReader(grammarFile);
+        // Read the grammar in either text or binary-serialized format.
+        final BufferedInputStream bis = new BufferedInputStream(grammarInputStream);
+        bis.mark(2);
+        final DataInputStream dis = new DataInputStream(bis);
+
+        // Look at the first 2 bytes of the file for the signature of a serialized java object
+        final int signature = dis.readShort();
+        bis.reset();
+
+        if (signature == OBJECT_SIGNATURE) {
+            final ObjectInputStream ois = new ObjectInputStream(bis);
+            grammar = (Grammar) ois.readObject();
+        } else {
+            grammar = createGrammar(researchParserType, new BufferedReader(new InputStreamReader(bis)),
+                    cartesianProductFunctionType);
+        }
 
         if (this.collectDetailedStatistics) {
             logger.info(optionsToString());
         }
-        grammar = createGrammar(researchParserType, grammarReader, cartesianProductFunctionType);
+
         parseStartTime = System.currentTimeMillis();
     }
 
@@ -284,7 +284,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             case PerfectHash2:
                 return new LeftCscSparseMatrixGrammar(pcfgReader, PerfectIntPairHashFilterFunction.class);
             default:
-                throw new Exception("Unsupported filter type: " + cartesianProductFunctionType);
+                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
             }
 
         case LeftChildMatrixLoop:

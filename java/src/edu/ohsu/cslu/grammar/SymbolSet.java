@@ -2,10 +2,11 @@ package edu.ohsu.cslu.grammar;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class SymbolSet<E> implements Iterable<E> {
+public class SymbolSet<E> implements Iterable<E>, Serializable {
 
     private ArrayList<E> symbolVector;
     private Object2IntOpenHashMap<E> symbolHash;
