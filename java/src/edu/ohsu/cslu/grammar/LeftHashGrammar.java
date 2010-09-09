@@ -1,27 +1,31 @@
 package edu.ohsu.cslu.grammar;
 
+import java.io.FileReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-public class LeftHashGrammar extends GrammarByChild {
+public class LeftHashGrammar extends Grammar {
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
-    public LeftHashGrammar(final String grammarFile) throws Exception {
-        super(grammarFile);
-    }
-
     public LeftHashGrammar(final Reader grammarFile) throws Exception {
         super(grammarFile);
+        init();
     }
 
-    @Override
-    protected GrammarFormatType init(final Reader grammarFile) throws Exception {
-        final GrammarFormatType gf = readGrammarAndLexicon(grammarFile);
+    public LeftHashGrammar(final String grammarFile) throws Exception {
+        this(new FileReader(grammarFile));
+    }
 
+    public LeftHashGrammar(final Grammar g) throws Exception {
+        super(g);
+        init();
+    }
+
+    private void init() {
         binaryProdHash = new ArrayList<HashMap<Integer, LinkedList<Production>>>(this.numNonTerms());
         for (int i = 0; i < this.numNonTerms(); i++) {
             binaryProdHash.add(i, null);
@@ -40,10 +44,6 @@ public class LeftHashGrammar extends GrammarByChild {
 
             binaryProdHash.get(p.leftChild).get(p.rightChild).add(p);
         }
-
-        // delete the original binary prods since we're storing them by left child now
-        this.binaryProductions = null;
-        return gf;
     }
 
     public Collection<Production> getBinaryProductionsWithChildren(final int leftChild, final int rightChild) {

@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 
 /**
  * Represents a parse chart as a parallel array including:
@@ -23,6 +23,7 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 public abstract class ParallelArrayChart extends Chart {
 
     public final SparseMatrixGrammar sparseMatrixGrammar;
+    protected final int maxEntriesPerCell;
 
     /**
      * Start indices for each cell. Computed from cell start and end indices and stored in the chart for convenience
@@ -47,14 +48,17 @@ public abstract class ParallelArrayChart extends Chart {
      * 
      * @param size Sentence length
      * @param sparseMatrixGrammar Grammar
+     * @param maxEntriesPerCell The maximum number of entries allowed in a chart cell
      */
-    protected ParallelArrayChart(final int size, final SparseMatrixGrammar sparseMatrixGrammar) {
+    protected ParallelArrayChart(final int size, final SparseMatrixGrammar sparseMatrixGrammar,
+            final int maxEntriesPerCell) {
         super(size, true);
         this.sparseMatrixGrammar = sparseMatrixGrammar;
+        this.maxEntriesPerCell = maxEntriesPerCell;
 
         cells = cellIndex(0, size) + 1;
 
-        chartArraySize = cells * sparseMatrixGrammar.numNonTerms();
+        chartArraySize = cells * maxEntriesPerCell;
         insideProbabilities = new float[chartArraySize];
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         packedChildren = new int[chartArraySize];
@@ -65,9 +69,13 @@ public abstract class ParallelArrayChart extends Chart {
         for (int start = 0; start < size; start++) {
             for (int end = start + 1; end < size + 1; end++) {
                 final int cellIndex = cellIndex(start, end);
-                cellOffsets[cellIndex] = cellIndex * sparseMatrixGrammar.numNonTerms();
+                cellOffsets[cellIndex] = cellIndex * maxEntriesPerCell;
             }
         }
+    }
+
+    protected ParallelArrayChart(final int size, final SparseMatrixGrammar sparseMatrixGrammar) {
+        this(size, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms());
     }
 
     /**
@@ -132,7 +140,7 @@ public abstract class ParallelArrayChart extends Chart {
             super(start, end);
 
             cellIndex = cellIndex(start, end);
-            offset = cellIndex * sparseMatrixGrammar.numNonTerms();
+            offset = cellIndex * maxEntriesPerCell;
         }
 
         /**

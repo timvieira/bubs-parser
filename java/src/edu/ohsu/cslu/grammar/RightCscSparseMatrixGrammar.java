@@ -31,8 +31,26 @@ public class RightCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
     public RightCscSparseMatrixGrammar(final Reader grammarFile) throws Exception {
         super(grammarFile, RightShiftFunction.class);
 
-        cscBinaryRightChildStartIndices = new int[numNonTerms() + 1];
-        cscBinaryRightChildEndIndices = new int[numNonTerms() + 1];
+        this.cscBinaryRightChildStartIndices = new int[numNonTerms() + 1];
+        this.cscBinaryRightChildEndIndices = new int[numNonTerms() + 1];
+        init();
+    }
+
+    public RightCscSparseMatrixGrammar(final String grammarFile) throws Exception {
+        this(new FileReader(grammarFile));
+    }
+
+    public RightCscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
+            throws Exception {
+        super(g, functionClass);
+
+        // Initialization code duplicated from constructor above to allow these fields to be final
+        this.cscBinaryRightChildStartIndices = new int[numNonTerms() + 1];
+        this.cscBinaryRightChildEndIndices = new int[numNonTerms() + 1];
+        init();
+    }
+
+    private void init() {
         Arrays.fill(cscBinaryRightChildStartIndices, -1);
         Arrays.fill(cscBinaryRightChildEndIndices, -1);
 
@@ -45,7 +63,4 @@ public class RightCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         }
     }
 
-    public RightCscSparseMatrixGrammar(final String grammarFile) throws Exception {
-        this(new FileReader(grammarFile));
-    }
 }

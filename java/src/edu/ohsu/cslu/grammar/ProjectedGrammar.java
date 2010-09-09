@@ -6,6 +6,8 @@ public class ProjectedGrammar extends Grammar {
     int ntProjection[];
 
     public ProjectedGrammar(final Grammar parentGrammar) {
+        super(parentGrammar);
+
         this.parentGrammar = parentGrammar;
         this.lexSet = parentGrammar.lexSet;
         this.grammarFormat = parentGrammar.grammarFormat;
@@ -33,7 +35,8 @@ public class ProjectedGrammar extends Grammar {
         switch (parentGrammar.grammarFormat) {
         case Berkeley:
             if (parentGrammarNT.contains("_")) {
-                // System.out.println("nt=" + nt + " index=" + mapNonterminal(nt) + " eval=" + nt.substring(0, nt.indexOf("_")));
+                // System.out.println("nt=" + nt + " index=" + mapNonterminal(nt) + " eval=" + nt.substring(0,
+                // nt.indexOf("_")));
                 // NP_12 => NP ; @S_5 => @S
                 return parentGrammarNT.substring(0, parentGrammarNT.indexOf("_"));
             }

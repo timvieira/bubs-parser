@@ -1,13 +1,13 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.GrammarByChild;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class ECPGrammarLoop extends ChartParser<GrammarByChild, CellChart> {
+public class ECPGrammarLoop extends ChartParser<Grammar, CellChart> {
 
-    public ECPGrammarLoop(final ParserDriver opts, final GrammarByChild grammar) {
+    public ECPGrammarLoop(final ParserDriver opts, final Grammar grammar) {
         super(opts, grammar);
     }
 

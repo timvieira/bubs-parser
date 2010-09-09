@@ -40,13 +40,11 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         super(grammarFile, cartesianProductFunctionClass);
 
         // Bin all binary rules by parent, mapping packed children -> probability
-        csrBinaryRowIndices = new int[numNonTerms() + 1];
-        csrBinaryColumnIndices = new int[numBinaryRules()];
-        csrBinaryProbabilities = new float[numBinaryRules()];
+        this.csrBinaryRowIndices = new int[numNonTerms() + 1];
+        this.csrBinaryColumnIndices = new int[numBinaryProds()];
+        this.csrBinaryProbabilities = new float[numBinaryProds()];
 
         storeBinaryRulesAsCsrMatrix(csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
-
-        tokenizer = new Tokenizer(lexSet);
     }
 
     public CsrSparseMatrixGrammar(final Reader grammarFile) throws Exception {
@@ -55,6 +53,18 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
     public CsrSparseMatrixGrammar(final String grammarFile) throws Exception {
         this(new FileReader(grammarFile));
+    }
+
+    public CsrSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
+            throws Exception {
+        super(g, functionClass);
+
+        // Initialization code duplicated from constructor above to allow these fields to be final
+        this.csrBinaryRowIndices = new int[numNonTerms() + 1];
+        this.csrBinaryColumnIndices = new int[numBinaryProds()];
+        this.csrBinaryProbabilities = new float[numBinaryProds()];
+
+        storeBinaryRulesAsCsrMatrix(csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
     }
 
     protected void storeBinaryRulesAsCsrMatrix(final int[] csrRowIndices, final int[] csrColumnIndices,

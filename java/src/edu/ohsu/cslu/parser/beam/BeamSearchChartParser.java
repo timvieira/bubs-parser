@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.beam;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
@@ -62,6 +62,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         return chart.extractBestParse(grammar.startSymbol);
     }
 
+    // TODO AJD: Is this any different than the version in ChartParser? I think it duplicates that code, but there
+    // aren't any test cases for this code, and I don't want to risk breaking something without asking Nate.
     @Override
     protected void addLexicalProductions(final int sent[]) throws Exception {
         HashSetChartCell cell;

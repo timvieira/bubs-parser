@@ -36,7 +36,7 @@ import edu.ohsu.cslu.util.Math;
  * @version $Revision$ $Date$ $Author$
  */
 
-public abstract class SparseMatrixGrammar extends SortedGrammar {
+public abstract class SparseMatrixGrammar extends Grammar {
 
     protected final int validProductionPairs;
 
@@ -56,11 +56,57 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
     /** Unary rule probabilities */
     public final float[] csrUnaryProbabilities;
 
-    @SuppressWarnings("unchecked")
-    public SparseMatrixGrammar(final Reader grammarFile, Class<? extends CartesianProductFunction> functionClass)
+    public SparseMatrixGrammar(final Reader grammarFile, final Class<? extends CartesianProductFunction> functionClass)
             throws Exception {
         super(grammarFile);
 
+        this.cartesianProductFunction = createCartesianProductFunction(functionClass);
+        this.validProductionPairs = countValidProductionPairs();
+
+        // Store all unary rules
+        this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
+        this.csrUnaryColumnIndices = new short[numUnaryProds()];
+        this.csrUnaryProbabilities = new float[numUnaryProds()];
+
+        storeUnaryRulesAsCsrMatrix();
+    }
+
+    public SparseMatrixGrammar(final Reader grammarFile) throws Exception {
+        this(grammarFile, PerfectIntPairHashFilterFunction.class);
+    }
+
+    public SparseMatrixGrammar(final String grammarFile) throws Exception {
+        this(new FileReader(grammarFile));
+    }
+
+    public SparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
+            throws Exception {
+        super(g);
+
+        // Initialization code duplicated from constructor above to allow these fields to be final
+        this.cartesianProductFunction = createCartesianProductFunction(functionClass);
+        this.validProductionPairs = countValidProductionPairs();
+
+        // Store all unary rules
+        this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
+        this.csrUnaryColumnIndices = new short[numUnaryProds()];
+        this.csrUnaryProbabilities = new float[numUnaryProds()];
+
+        storeUnaryRulesAsCsrMatrix();
+    }
+
+    private int countValidProductionPairs() {
+        // Some CartesianProductFunction implementation will duplicate this count, but it's not that expensive
+        final IntOpenHashSet productionPairs = new IntOpenHashSet(50000);
+        for (final Production p : binaryProductions) {
+            productionPairs.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
+        }
+        return productionPairs.size();
+    }
+
+    @SuppressWarnings("unchecked")
+    private CartesianProductFunction createCartesianProductFunction(
+            Class<? extends CartesianProductFunction> functionClass) {
         try {
             if (functionClass == null) {
                 functionClass = PerfectIntPairHashFilterFunction.class;
@@ -72,32 +118,11 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
             } catch (final NoSuchMethodException e) {
                 c = (Constructor<CartesianProductFunction>) functionClass.getConstructor(getClass());
             }
-            this.cartesianProductFunction = c.newInstance(this);
+            return c.newInstance(this);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
 
-        // Some CartesianProductFunction implementation will duplicate this count, but it's not that expensive
-        final IntOpenHashSet productionPairs = new IntOpenHashSet(50000);
-        for (final Production p : binaryProductions) {
-            productionPairs.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
-        }
-        validProductionPairs = productionPairs.size();
-
-        // And all unary rules
-        csrUnaryRowStartIndices = new int[numNonTerms() + 1];
-        csrUnaryColumnIndices = new short[numUnaryRules()];
-        csrUnaryProbabilities = new float[numUnaryRules()];
-
-        storeUnaryRulesAsCsrMatrix();
-    }
-
-    public SparseMatrixGrammar(final Reader grammarFile) throws Exception {
-        this(grammarFile, PerfectIntPairHashFilterFunction.class);
-    }
-
-    public SparseMatrixGrammar(final String grammarFile) throws Exception {
-        this(new FileReader(grammarFile));
     }
 
     /**
