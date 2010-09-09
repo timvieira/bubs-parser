@@ -3,6 +3,7 @@ package edu.ohsu.cslu.grammar;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.Reader;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -38,7 +39,7 @@ import edu.ohsu.cslu.parser.util.Log;
  * 
  *        $Id$
  */
-public class Grammar {
+public class Grammar implements Serializable {
 
     /** Marks the switch from PCFG to lexicon entries in the grammar file */
     public final static String DELIMITER = "===== LEXICON =====";
@@ -508,7 +509,7 @@ public class Grammar {
         return s;
     }
 
-    public final class Production {
+    public final class Production implements Serializable {
 
         // if rightChild == -1, it's a unary prod, if -2, it's a lexical prod
         public final static int UNARY_PRODUCTION = -1;

@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
 
 import java.io.FileReader;
 import java.io.Reader;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
@@ -214,7 +215,7 @@ public abstract class SparseMatrixGrammar extends SortedGrammar {
         return sb.toString();
     }
 
-    public interface CartesianProductFunction {
+    public interface CartesianProductFunction extends Serializable {
 
         /**
          * Returns the array size required to store all possible child combinations.

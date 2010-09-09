@@ -1,8 +1,10 @@
 package edu.ohsu.cslu.grammar;
 
+import java.io.Serializable;
+
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
-public class Tokenizer {
+public class Tokenizer implements Serializable {
 
     private SymbolSet<String> lexSet;
 
@@ -50,44 +52,62 @@ public class Tokenizer {
         String unkStr = "UNK";
 
         // word case
-        if (ParserUtil.isLowerCase(word))
+        if (isLowerCase(word)) {
             unkStr += "-LC";
-        else if (ParserUtil.isUpperCase(word))
+        } else if (isUpperCase(word)) {
             unkStr += "-CAPS";
-        else if (ParserUtil.isUpperCase(word.substring(0, 1)) && ParserUtil.isLowerCase(word.substring(1)))
+        } else if (isUpperCase(word.substring(0, 1)) && isLowerCase(word.substring(1))) {
             unkStr += "-INITC";
+        }
 
         // if (lexSet.hasLabel(word.toLowerCase())) unkStr += "-KNOWNLC";
-        if (ParserUtil.containsDigit(word))
+        if (containsDigit(word)) {
             unkStr += "-DIGIT";
-        if (word.contains("-"))
+        } else if (word.contains("-")) {
             unkStr += "-DASH";
+        }
 
         final String lcWord = word.toLowerCase();
 
-        if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us") && !lcWord.endsWith("is"))
+        if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us") && !lcWord.endsWith("is")) {
             unkStr += "-s";
-        if (lcWord.endsWith("ed"))
+        } else if (lcWord.endsWith("ed")) {
             unkStr += "-ed";
-        if (lcWord.endsWith("ing"))
+        } else if (lcWord.endsWith("ing")) {
             unkStr += "-ing";
-        if (lcWord.endsWith("ion"))
+        } else if (lcWord.endsWith("ion")) {
             unkStr += "-ion";
-        if (lcWord.endsWith("er"))
+        } else if (lcWord.endsWith("er")) {
             unkStr += "-er";
-        if (lcWord.endsWith("est"))
+        } else if (lcWord.endsWith("est")) {
             unkStr += "-est";
-        if (lcWord.endsWith("al"))
+        } else if (lcWord.endsWith("al")) {
             unkStr += "-al";
-
-        if (lcWord.endsWith("ity"))
+        } else if (lcWord.endsWith("ity")) {
             unkStr += "-ity";
-        else if (lcWord.endsWith("ly"))
+        } else if (lcWord.endsWith("ly")) {
             unkStr += "-ly";
-        else if (lcWord.endsWith("y"))
+        } else if (lcWord.endsWith("y")) {
             unkStr += "-y";
+        }
 
         return unkStr;
+    }
+
+    private static boolean isUpperCase(final String s) {
+        return s == s.toUpperCase();
+    }
+
+    private static boolean isLowerCase(final String s) {
+        return s == s.toLowerCase();
+    }
+
+    private static boolean containsDigit(final String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isDigit(s.charAt(i)))
+                return true;
+        }
+        return false;
     }
 
     // public Token[] tokenize(final String sentence) throws Exception {

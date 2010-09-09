@@ -1,6 +1,8 @@
 package edu.ohsu.cslu.hash;
 
-public interface ImmutableIntPair2IntHash {
+import java.io.Serializable;
+
+public interface ImmutableIntPair2IntHash extends Serializable {
     public int hashcode(int key1, int key2);
 
     public int unsafeHashcode(int key1, int key2);
