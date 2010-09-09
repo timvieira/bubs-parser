@@ -27,22 +27,22 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
         initParser(sent.length);
         addLexicalProductions(sent);
-        edgeSelector.init(this);
-        cslutScores.init(this, sentence);
+        edgeSelector.init(chart);
+        cslutScores.init(chart, sentence);
         addUnaryExtensionsToLexProds();
 
         for (int i = 0; i < chart.size(); i++) {
             expandFrontier(chart.getCell(i, i + 1));
         }
 
-        while (hasNext() && !hasCompleteParse()) {
+        while (hasNext() && !chart.hasCompleteParse(grammar.startSymbol)) {
             cell = next();
             // System.out.println(" nextCell: " + cell);
             visitCell(cell);
             expandFrontier(cell);
         }
 
-        return extractBestParse();
+        return chart.extractBestParse(grammar.startSymbol);
     }
 
     @Override
@@ -64,7 +64,8 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
                             if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
-                                // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                                // final float prob = p.prob + leftCell.getInside(leftNT) +
+                                // rightCell.getInside(rightNT);
                                 edge = chart.new ChartEdge(p, leftCell, rightCell);
                                 addEdgeToArray(edge, bestEdges);
                             }

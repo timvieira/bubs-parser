@@ -7,11 +7,11 @@ import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
-public class ACPWithMemory extends AgendaChartParser {
+public class APWithMemory extends AgendaParser {
 
     private ChartEdge agendaMemory[][][];
 
-    public ACPWithMemory(final ParserDriver opts, final LeftRightListsGrammar grammar) {
+    public APWithMemory(final ParserDriver opts, final LeftRightListsGrammar grammar) {
         super(opts, grammar);
     }
 
