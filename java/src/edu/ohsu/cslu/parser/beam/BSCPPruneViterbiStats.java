@@ -22,7 +22,7 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
     protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
         ChartEdge edge, unaryEdge;
         boolean edgeBelowThresh = false;
-        int numAdded = 0, goldRank = -1;
+        int goldRank = -1;
         cell.numEdgesAdded = 0;
 
         nPopBinary = 0;
@@ -33,7 +33,7 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
         for (final ChartEdge viterbiEdge : bestEdges) {
             if (viterbiEdge != null && viterbiEdge.fom > bestFOM - beamDeltaThresh) {
                 agenda.add(viterbiEdge);
-                nAgendaPush++;
+                cellPushed++;
             }
         }
 
@@ -54,7 +54,7 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
         // I think a more fair comparison is when we don't stop once we reach the gold edge
         // since this effects the population of cells down stream.
         // while (agenda.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh && !addedGoldEdges) {
-        while (agenda.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh) {
+        while (agenda.isEmpty() == false && cellPopped <= beamWidth && !edgeBelowThresh) {
             edge = agenda.poll();
 
             if (hasGoldEdge) {
@@ -67,7 +67,7 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
                 if (goldEdgeAdded != null) {
                     goldEdges.remove(goldEdgeAdded);
                     if (goldEdges.size() == 0) {
-                        goldRank = numAdded + 1;
+                        goldRank = cellPopped + 1;
                     }
                 }
             }
@@ -76,7 +76,7 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
                 edgeBelowThresh = true;
             } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
-                numAdded++;
+                cellPopped++;
 
                 if (edge.prod.isBinaryProd())
                     nPopBinary++;
@@ -94,8 +94,6 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
                 }
             }
         }
-        cell.numEdgesConsidered = numEdgesConsidered;
-        numEdgesConsidered = 0;
 
         if (nGoldEdges > 0) {
             System.out.println("DSTAT: " + this.chart.size() + " " + cell.width() + " " + nGoldEdges + " " + goldRank
