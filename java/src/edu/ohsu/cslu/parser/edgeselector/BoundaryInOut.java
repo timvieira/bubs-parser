@@ -13,7 +13,6 @@ import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -118,8 +117,7 @@ public class BoundaryInOut extends EdgeSelector {
         prevBkwScores[grammar.nullSymbol] = (float) 0.0;
 
         for (int fwdIndex = 0; fwdIndex < fbSize; fwdIndex++) {
-            final int fwdChartIndex = fwdIndex - 1; // minus 1 because the fbChart is one off from the parser
-            // chart
+            final int fwdChartIndex = fwdIndex - 1; // -1 because the fbChart is one off from the parser chart
             final int bkwIndex = fbSize - fwdIndex - 1;
             final int bkwChartIndex = bkwIndex - 1;
 
@@ -186,14 +184,26 @@ public class BoundaryInOut extends EdgeSelector {
         }
     }
 
+    // can re-write this so we don't need to have the cells populated first
+    // private HashSet<Integer> getPOSListFromChart(final Chart chart, final int startIndex) {
+    // final int endIndex = startIndex + 1;
+    // if (startIndex < 0 || endIndex > chart.size()) {
+    // final HashSet<Integer> tmpPosSet = new HashSet<Integer>();
+    // tmpPosSet.add(grammar.nullSymbol);
+    // return tmpPosSet;
+    // }
+    // return ((HashSetChartCell) chart.getCell(startIndex, endIndex)).getPosNTs();
+    // }
+
     private HashSet<Integer> getPOSListFromChart(final Chart chart, final int startIndex) {
+        final HashSet<Integer> tmpPosSet = new HashSet<Integer>();
         final int endIndex = startIndex + 1;
         if (startIndex < 0 || endIndex > chart.size()) {
-            final HashSet<Integer> tmpPosSet = new HashSet<Integer>();
             tmpPosSet.add(grammar.nullSymbol);
-            return tmpPosSet;
+        } else {
+
         }
-        return ((HashSetChartCell) chart.getCell(startIndex, endIndex)).getPosNTs();
+        return tmpPosSet;
     }
 
     public float leftBoundaryLogProb(final int nonTerm, final int pos) {

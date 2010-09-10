@@ -4,11 +4,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.ProjectedGrammar;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -24,18 +24,16 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     @Override
-    protected void initParser(final int sentLength) {
-        chart = new InOutCellChart(sentLength, opts.viterbiMax, this);
+    protected void initParser(final int[] tokens) {
+        chart = new InOutCellChart(tokens, opts.viterbiMax, this);
     }
 
     @Override
-    public ParseTree findBestParse(final String sentence) throws Exception {
-
-        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
+    public ParseTree findBestParse(final int[] tokens) throws Exception {
         final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
 
-        initParser(sent.length);
-        addLexicalProductions(sent);
+        initParser(tokens);
+        addLexicalProductions(tokens);
         cellSelector.init(this);
 
         while (cellSelector.hasNext()) {
@@ -49,7 +47,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
         }
 
         // goodmanMaximizeLabelRecall();
-        berkeleyMaxRule(sent);
+        berkeleyMaxRule(tokens);
 
         return chart.extractBestParse(chart.getRootCell(), evalGrammar.startSymbol);
     }

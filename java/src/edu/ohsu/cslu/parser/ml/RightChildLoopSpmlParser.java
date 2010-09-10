@@ -6,7 +6,8 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
- * Right-child loop exhaustive parser using a sparse-matrix grammar representation ( {@link RightCscSparseMatrixGrammar}).
+ * Right-child loop exhaustive parser using a sparse-matrix grammar representation ( {@link RightCscSparseMatrixGrammar}
+ * ).
  * 
  * @author Aaron Dunlop
  * @since Jun 13, 2010
@@ -15,77 +16,79 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
  */
 public class RightChildLoopSpmlParser extends SparseMatrixLoopParser<RightCscSparseMatrixGrammar, DenseVectorChart> {
 
-	public RightChildLoopSpmlParser(final ParserDriver opts, final RightCscSparseMatrixGrammar grammar) {
-		super(opts, grammar);
-	}
+    public RightChildLoopSpmlParser(final ParserDriver opts, final RightCscSparseMatrixGrammar grammar) {
+        super(opts, grammar);
+    }
 
-	@Override
-	protected void initParser(final int sentLength) {
-		if (chart != null && chart.size() >= sentLength) {
-			chart.clear(sentLength);
-		} else {
-			chart = new DenseVectorChart(sentLength, grammar);
-		}
-		super.initParser(sentLength);
-	}
+    @Override
+    protected void initParser(final int[] tokens) {
+        final int sentLength = tokens.length;
+        if (chart != null && chart.size() >= sentLength) {
+            chart.clear(sentLength);
+        } else {
+            chart = new DenseVectorChart(tokens, grammar);
+        }
+        super.initParser(tokens);
+    }
 
-	@Override
-	protected void visitCell(final short start, final short end) {
+    @Override
+    protected void visitCell(final short start, final short end) {
 
-		final DenseVectorChartCell targetCell = chart.getCell(start, end);
-		final int targetCellOffset = targetCell.offset();
+        final DenseVectorChartCell targetCell = chart.getCell(start, end);
+        final int targetCellOffset = targetCell.offset();
 
-		final int v = grammar.numNonTerms();
+        final int v = grammar.numNonTerms();
 
-		// Iterate over all possible midpoints
-		for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
-			final DenseVectorChartCell leftChildCell = chart.getCell(start, midpoint);
-			final DenseVectorChartCell rightChildCell = chart.getCell(midpoint, end);
+        // Iterate over all possible midpoints
+        for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
+            final DenseVectorChartCell leftChildCell = chart.getCell(start, midpoint);
+            final DenseVectorChartCell rightChildCell = chart.getCell(midpoint, end);
 
-			final int leftCellOffset = leftChildCell.offset();
-			final int rightCellOffset = rightChildCell.offset();
+            final int leftCellOffset = leftChildCell.offset();
+            final int rightCellOffset = rightChildCell.offset();
 
-			// Iterate over children in the right child cell
-			for (int rightChild = 0; rightChild < v; rightChild++) {
-				final float rightInsideProbability = chart.insideProbabilities[rightCellOffset + rightChild];
-				if (rightInsideProbability == Float.NEGATIVE_INFINITY) {
-					continue;
-				}
+            // Iterate over children in the right child cell
+            for (int rightChild = 0; rightChild < v; rightChild++) {
+                final float rightInsideProbability = chart.insideProbabilities[rightCellOffset + rightChild];
+                if (rightInsideProbability == Float.NEGATIVE_INFINITY) {
+                    continue;
+                }
 
-				// Iterate over all grammar rules with `leftChild' as the left child
-				for (int j = grammar.cscBinaryRightChildStartIndices[rightChild]; j <= grammar.cscBinaryRightChildEndIndices[rightChild] && j >= 0; j++) {
+                // Iterate over all grammar rules with `leftChild' as the left child
+                for (int j = grammar.cscBinaryRightChildStartIndices[rightChild]; j <= grammar.cscBinaryRightChildEndIndices[rightChild]
+                        && j >= 0; j++) {
 
-					// Unpack the grammar rule's right child
-					final int packedChildPair = grammar.cscBinaryPopulatedColumns[j];
-					final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(packedChildPair);
+                    // Unpack the grammar rule's right child
+                    final int packedChildPair = grammar.cscBinaryPopulatedColumns[j];
+                    final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(packedChildPair);
 
-					// Look up the right child NT's probability in the right child cell
-					final float leftInsideProbability = chart.insideProbabilities[leftCellOffset + leftChild];
+                    // Look up the right child NT's probability in the right child cell
+                    final float leftInsideProbability = chart.insideProbabilities[leftCellOffset + leftChild];
 
-					if (leftInsideProbability == Float.NEGATIVE_INFINITY) {
-						continue;
-					}
-					final float childProbability = leftInsideProbability + rightInsideProbability;
+                    if (leftInsideProbability == Float.NEGATIVE_INFINITY) {
+                        continue;
+                    }
+                    final float childProbability = leftInsideProbability + rightInsideProbability;
 
-					for (int entryIndex = grammar.cscBinaryPopulatedColumnOffsets[j]; entryIndex < grammar.cscBinaryPopulatedColumnOffsets[j + 1]; entryIndex++) {
-						final float jointProbability = childProbability + grammar.cscBinaryProbabilities[entryIndex];
-						final int parent = grammar.cscBinaryRowIndices[entryIndex];
+                    for (int entryIndex = grammar.cscBinaryPopulatedColumnOffsets[j]; entryIndex < grammar.cscBinaryPopulatedColumnOffsets[j + 1]; entryIndex++) {
+                        final float jointProbability = childProbability + grammar.cscBinaryProbabilities[entryIndex];
+                        final int parent = grammar.cscBinaryRowIndices[entryIndex];
 
-						final int targetCellParentIndex = targetCellOffset + parent;
+                        final int targetCellParentIndex = targetCellOffset + parent;
 
-						if (jointProbability > chart.insideProbabilities[targetCellParentIndex]) {
-							chart.insideProbabilities[targetCellParentIndex] = jointProbability;
-							chart.packedChildren[targetCellParentIndex] = packedChildPair;
-							chart.midpoints[targetCellParentIndex] = midpoint;
-						}
-					}
-				}
-			}
-		}
+                        if (jointProbability > chart.insideProbabilities[targetCellParentIndex]) {
+                            chart.insideProbabilities[targetCellParentIndex] = jointProbability;
+                            chart.packedChildren[targetCellParentIndex] = packedChildPair;
+                            chart.midpoints[targetCellParentIndex] = midpoint;
+                        }
+                    }
+                }
+            }
+        }
 
-		// Apply unary rules
-		unarySpmv(targetCell);
+        // Apply unary rules
+        unarySpmv(targetCell);
 
-		targetCell.finalizeCell();
-	}
+        targetCell.finalizeCell();
+    }
 }

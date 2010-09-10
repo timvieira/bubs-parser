@@ -21,14 +21,13 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
     }
 
     @Override
-    public ParseTree findBestParse(final String sentence) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) throws Exception {
         HashSetChartCell cell;
-        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
 
-        initParser(sent.length);
-        addLexicalProductions(sent);
+        initParser(tokens);
+        addLexicalProductions(tokens);
         edgeSelector.init(chart);
-        cslutScores.init(chart, sentence);
+        cslutScores.init(chart, currentInput.sentence);
         addUnaryExtensionsToLexProds();
 
         for (int i = 0; i < chart.size(); i++) {

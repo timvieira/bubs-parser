@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.beam;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
@@ -37,17 +37,15 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     }
 
     @Override
-    protected void initParser(final int sentLength) {
-        chart = new CellChart(sentLength, opts.viterbiMax, this);
+    protected void initParser(final int[] tokens) {
+        chart = new CellChart(tokens, opts.viterbiMax, this);
     }
 
     @Override
-    public ParseTree findBestParse(final String sentence) throws Exception {
-        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
-
-        initParser(sent.length);
+    public ParseTree findBestParse(final int[] tokens) throws Exception {
+        initParser(tokens);
         cellSelector.init(this);
-        addLexicalProductions(sent);
+        addLexicalProductions(tokens);
 
         final double startTimeMS = System.currentTimeMillis();
         edgeSelector.init(chart);

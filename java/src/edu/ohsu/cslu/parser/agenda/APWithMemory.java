@@ -16,11 +16,11 @@ public class APWithMemory extends AgendaParser {
     }
 
     @Override
-    protected void initParser(final int sentLength) {
-        super.initParser(sentLength);
+    protected void initParser(final int[] tokens) {
+        super.initParser(tokens);
 
         // TODO: this can be half the size since we only need to allocate space for chart cells that exist
-        agendaMemory = new ChartEdge[sentLength + 1][sentLength + 1][grammar.numNonTerms()];
+        agendaMemory = new ChartEdge[tokens.length + 1][tokens.length + 1][grammar.numNonTerms()];
     }
 
     @Override

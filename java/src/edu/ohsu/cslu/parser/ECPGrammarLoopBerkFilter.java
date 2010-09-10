@@ -30,9 +30,10 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
     }
 
     @Override
-    public void initParser(final int sentLength) {
-        super.initParser(sentLength);
+    public void initParser(final int[] tokens) {
+        super.initParser(tokens);
 
+        final int sentLength = tokens.length;
         narrowRExtent = new int[sentLength + 1][grammar.numNonTerms()];
         wideRExtent = new int[sentLength + 1][grammar.numNonTerms()];
         narrowLExtent = new int[sentLength + 1][grammar.numNonTerms()];

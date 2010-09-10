@@ -84,7 +84,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     }
 
     @Override
-    protected void initParser(final int sentLength) {
+    protected void initParser(final int[] tokens) {
         startTime = System.currentTimeMillis();
         totalSpMVTime = 0;
         totalCartesianProductTime = 0;

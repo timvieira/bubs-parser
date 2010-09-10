@@ -5,8 +5,8 @@ import java.util.Arrays;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
@@ -31,18 +31,19 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
     }
 
     @Override
-    protected void initParser(final int sentLength) {
+    protected void initParser(final int[] tokens) {
+        final int sentLength = tokens.length;
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
         } else {
-            chart = new PackedArrayChart(sentLength, grammar);
+            chart = new PackedArrayChart(tokens, grammar);
         }
         if (collectDetailedStatistics) {
             totalCartesianProductSize = 0;
             totalCartesianProductEntriesExamined = 0;
             totalValidCartesianProductEntries = 0;
         }
-        super.initParser(sentLength);
+        super.initParser(tokens);
     }
 
     @Override

@@ -39,7 +39,7 @@ public abstract class Parser<G extends Grammar> {
 
     public abstract String getStats();
 
-    protected abstract ParseTree findBestParse(String sentence) throws Exception;
+    protected abstract ParseTree findBestParse(int[] tokens) throws Exception;
 
     // wraps parse tree from findBestParse() with additional stats and
     // cleans up output for consumption
@@ -47,20 +47,21 @@ public abstract class Parser<G extends Grammar> {
         final ParseStats stats = new ParseStats(sentence);
         currentInput = stats; // get ride of this
         stats.sentenceNumber = sentenceNumber++;
+        stats.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
 
         if (stats.sentenceLength > opts.maxLength) {
             Log.info(0, "INFO: Skipping sentence. Length of " + stats.sentenceLength + " is greater than maxLength ("
                     + opts.maxLength + ")");
         } else {
             stats.startTime();
-            stats.parse = findBestParse(sentence.trim());
+            stats.parse = findBestParse(stats.tokens);
             stats.stopTime();
 
             if (stats.parse == null) {
                 stats.parseBracketString = "()";
             } else {
                 if (!opts.printUnkLabels) {
-                    stats.parse.replaceLeafNodes(stats.tokens);
+                    stats.parse.replaceLeafNodes(stats.strTokens);
                 }
 
                 stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
@@ -100,8 +101,9 @@ public abstract class Parser<G extends Grammar> {
         ECPGrammarLoopBerkeleyFilter("ecpglbf"),
         ECPInsideOutside("ecpio"),
         AgendaParser("apall"),
-        APWithMemory("acpwm"),
-        APGhostEdges("acpge"),
+        APWithMemory("apwm"),
+        APGhostEdges("apge"),
+        APDecodeFOM("apfom"),
         BeamSearchChartParser("beam"),
         BSCPPruneViterbi("beampv"),
         BSCPOnlineBeam("beamob"),

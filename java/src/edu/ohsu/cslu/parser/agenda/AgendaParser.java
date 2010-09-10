@@ -22,28 +22,26 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
         super(opts, grammar);
     }
 
-    protected void initParser(final int sentLength) {
-        // super.initParser(sentLength);
-        chart = new CellChart(sentLength, opts.viterbiMax, this);
+    protected void initParser(final int[] tokens) {
+        chart = new CellChart(tokens, opts.viterbiMax, this);
 
         agenda = new PriorityQueue<ChartEdge>();
         nAgendaPush = nAgendaPop = nChartEdges = 0;
     }
 
     @Override
-    public ParseTree findBestParse(final String sentence) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) throws Exception {
         ChartEdge edge;
         HashSetChartCell cell;
-        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
 
-        initParser(sent.length);
-        addLexicalProductions(sent);
+        initParser(tokens);
+        addLexicalProductions(tokens);
         edgeSelector.init(chart);
 
         // for (final ChartEdge lexEdge : edgesToExpand) {
         // expandFrontier(lexEdge, chart.getCell(lexEdge.start(), lexEdge.end()));
         // }
-        for (int i = 0; i < sent.length; i++) {
+        for (int i = 0; i < tokens.length; i++) {
             cell = chart.getCell(i, i + 1);
             for (final int nt : cell.getPosNTs()) {
                 expandFrontier(nt, cell);

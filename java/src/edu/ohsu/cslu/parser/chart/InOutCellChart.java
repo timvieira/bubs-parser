@@ -7,8 +7,8 @@ import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class InOutCellChart extends CellChart {
 
-    public InOutCellChart(final int size, final boolean viterbiMax, final Parser<?> parser) {
-        super(size, viterbiMax, parser);
+    public InOutCellChart(final int[] tokens, final boolean viterbiMax, final Parser<?> parser) {
+        super(tokens, viterbiMax, parser);
 
         chart = new ChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
@@ -34,7 +34,8 @@ public class InOutCellChart extends CellChart {
 
             if (start == 0 && end == size()) {
                 outside[parser.grammar.startSymbol] = 0; // log(1)
-                // System.out.println(" *** setting " + parser.grammar.startSymbol() + " index=" + parser.grammar.startSymbol + " to 0");
+                // System.out.println(" *** setting " + parser.grammar.startSymbol() + " index=" +
+                // parser.grammar.startSymbol + " to 0");
             }
         }
 
@@ -48,7 +49,8 @@ public class InOutCellChart extends CellChart {
                     outside[nt] = outsideProb;
                 }
             } else {
-                // System.out.println("Adding: " + start + "," + end + "," + parser.grammar.mapNonterminal(nt) + " : " + outside[nt] + " + " + outsideProb + " = "+
+                // System.out.println("Adding: " + start + "," + end + "," + parser.grammar.mapNonterminal(nt) + " : " +
+                // outside[nt] + " + " + outsideProb + " = "+
                 // ParserUtil.logSum(outside[nt], outsideProb));
                 outside[nt] = (float) ParserUtil.logSum(outside[nt], outsideProb);
             }

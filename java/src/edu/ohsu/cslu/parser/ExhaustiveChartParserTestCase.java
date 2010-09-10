@@ -21,7 +21,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
@@ -216,9 +215,8 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
 
         parser = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
-        final ParseTree bestParseTree = parser.findBestParse(sentence);
-        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree
-                .toString());
+        final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
+        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree);
     }
 
     /**
@@ -232,9 +230,9 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
 
         parser = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop));
 
-        final ParseTree bestParseTree = parser.findBestParse(sentence);
-        assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree
-                .toString());
+        final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
+        ;
+        assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);
     }
 
     @Test
@@ -313,7 +311,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     }
 
     protected void parseTreebankSentence(final int index) throws Exception {
-        final ParseTree bestParseTree = parser.findBestParse(sentences.get(index)[0]);
+        final String bestParseTree = parser.parseSentence(sentences.get(index)[0]).parseBracketString;
         assertEquals(sentences.get(index)[1], bestParseTree.toString());
     }
 

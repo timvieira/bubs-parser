@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
@@ -22,22 +23,36 @@ public class CellChart extends Chart {
 
     }
 
-    public CellChart(final int size, final boolean viterbiMax, final Parser<?> parser) {
-        super(size, viterbiMax);
+    public CellChart(final int[] tokens, final boolean viterbiMax, final Parser<?> parser) {
+        super(tokens, viterbiMax);
         this.parser = parser;
+        allocateChart(tokens.length);
+    }
 
-        chart = new HashSetChartCell[size][size + 1];
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end < size + 1; end++) {
+    public CellChart(final ParseTree tree, final boolean viterbiMax, final Parser<?> parser) {
+        this.viterbiMax = viterbiMax;
+        this.tokens = extractTokensFromParseTree(tree, parser.grammar);
+        this.size = tokens.length;
+        this.parser = parser;
+        allocateChart(size);
+        addParseTreeToChart(tree);
+    }
+
+    private void allocateChart(final int n) {
+        chart = new HashSetChartCell[n][n + 1];
+        for (int start = 0; start < n; start++) {
+            for (int end = start + 1; end < n + 1; end++) {
                 chart[start][end] = new HashSetChartCell(start, end);
             }
         }
     }
 
-    public CellChart(final ParseTree tree, final boolean viterbiMax, final Parser<?> parser) {
-        this(tree.getLeafNodes().size(), viterbiMax, parser);
-
-        addParseTreeToChart(tree);
+    private int[] extractTokensFromParseTree(final ParseTree tree, final Grammar grammar) {
+        String sentence = "";
+        for (final ParseTree node : tree.getLeafNodes()) {
+            sentence += node.contents + " ";
+        }
+        return grammar.tokenizer.tokenizeToIndex(sentence.trim());
     }
 
     @Override

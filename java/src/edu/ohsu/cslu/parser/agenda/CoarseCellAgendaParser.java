@@ -22,8 +22,8 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
         super(opts, grammar);
     }
 
-    protected void initParser(final int n) {
-        chart = new CellChart(n, opts.viterbiMax, this);
+    protected void initParser(final int[] tokens) {
+        chart = new CellChart(tokens, opts.viterbiMax, this);
         this.maxEdgeFOM = new float[chart.size()][chart.size() + 1];
         this.spanAgenda = new PriorityQueue<HashSetChartCell>();
 
@@ -36,12 +36,11 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
     }
 
     @Override
-    public ParseTree findBestParse(final String sentence) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) throws Exception {
         HashSetChartCell cell;
-        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
 
-        initParser(sent.length);
-        addLexicalProductions(sent);
+        initParser(tokens);
+        addLexicalProductions(tokens);
         edgeSelector.init(chart);
         addUnaryExtensionsToLexProds();
 

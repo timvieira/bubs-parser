@@ -18,8 +18,8 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.util.OpenClUtils;
@@ -91,8 +91,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             prefix.write(grammar.cartesianProductFunction().openClUnpackLeftChild() + '\n');
 
             // Compile kernels shared by all implementing classes
-            final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class,
-                    prefix.toString());
+            final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class, prefix
+                    .toString());
             fillFloatKernel = clSharedProgram.createKernel("fillFloat");
             cartesianProductUnionKernel = clSharedProgram.createKernel("cartesianProductUnion");
 
@@ -132,10 +132,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     @Override
-    protected void initParser(final int sentLength) {
-        super.initParser(sentLength);
+    protected void initParser(final int[] tokens) {
+        super.initParser(tokens);
 
-        if (clChartInsideProbabilities == null || sentLength > chartSize) {
+        if (clChartInsideProbabilities == null || tokens.length > chartSize) {
             allocateOpenClChart();
         }
     }
@@ -145,12 +145,9 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
      * parsing.
      */
     @Override
-    public ParseTree findBestParse(final String sentence) throws Exception {
-
-        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
-
-        initParser(sent.length);
-        addLexicalProductions(sent);
+    public ParseTree findBestParse(final int[] tokens) throws Exception {
+        initParser(tokens);
+        addLexicalProductions(tokens);
         cellSelector.init(this);
 
         while (cellSelector.hasNext()) {
