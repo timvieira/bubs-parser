@@ -34,6 +34,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
+import edu.ohsu.cslu.parser.agenda.APDecodeFOM;
 import edu.ohsu.cslu.parser.agenda.APGhostEdges;
 import edu.ohsu.cslu.parser.agenda.APWithMemory;
 import edu.ohsu.cslu.parser.agenda.AgendaParser;
@@ -132,9 +133,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees and remove latent annotations")
     boolean unfactor = false;
-
-    @Option(name = ".")
-    boolean blurbSpacer1;
 
     // == Other options ==
     // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance passed in
@@ -261,6 +259,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case AgendaParser:
         case APWithMemory:
         case APGhostEdges:
+        case APDecodeFOM:
             return new LeftRightListsGrammar(pcfgReader);
 
         case BeamSearchChartParser:
@@ -406,6 +405,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new APWithMemory(parserOptions, (LeftRightListsGrammar) grammar);
         case APGhostEdges:
             return new APGhostEdges(parserOptions, (LeftRightListsGrammar) grammar);
+        case APDecodeFOM:
+            return new APDecodeFOM(parserOptions, (LeftRightListsGrammar) grammar);
 
         case BeamSearchChartParser:
             return new BeamSearchChartParser(parserOptions, (LeftHashGrammar) grammar);

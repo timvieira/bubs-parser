@@ -18,67 +18,74 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
  */
 public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorChart> {
 
-	public DenseVectorOpenClSpmvParser(final ParserDriver opts, final CsrSparseMatrixGrammar grammar) {
-		super(opts, grammar);
-	}
+    public DenseVectorOpenClSpmvParser(final ParserDriver opts, final CsrSparseMatrixGrammar grammar) {
+        super(opts, grammar);
+    }
 
-	@Override
-	protected void initParser(final int sentLength) {
+    @Override
+    protected void initParser(final int[] tokens) {
+        final int sentLength = tokens.length;
+        if (chart == null || chart.size() < sentLength) {
+            chart = new DenseVectorChart(tokens, grammar);
+        } else {
+            chart.clear(sentLength);
+        }
 
-		if (chart == null || chart.size() < sentLength) {
-			chart = new DenseVectorChart(sentLength, grammar);
-		} else {
-			chart.clear(sentLength);
-		}
+        super.initParser(tokens);
+    }
 
-		super.initParser(sentLength);
-	}
+    @Override
+    protected void internalCartesianProduct(final ParallelArrayChartCell leftCell,
+            final ParallelArrayChartCell rightCell, final CLFloatBuffer tmpClCrossProductProbabilities,
+            final CLShortBuffer tmpClCrossProductMidpoints) {
 
-	@Override
-	protected void internalCartesianProduct(final ParallelArrayChartCell leftCell, final ParallelArrayChartCell rightCell, final CLFloatBuffer tmpClCrossProductProbabilities,
-			final CLShortBuffer tmpClCrossProductMidpoints) {
+        final int leftChildrenStart = grammar.leftChildrenStart;
+        final int validLeftChildren = grammar.leftChildrenEnd - leftChildrenStart + 1;
+        final int rightChildrenStart = grammar.rightChildrenStart;
+        final int validRightChildren = grammar.rightChildrenEnd - grammar.rightChildrenStart + 1;
 
-		final int leftChildrenStart = grammar.leftChildrenStart;
-		final int validLeftChildren = grammar.leftChildrenEnd - leftChildrenStart + 1;
-		final int rightChildrenStart = grammar.rightChildrenStart;
-		final int validRightChildren = grammar.rightChildrenEnd - grammar.rightChildrenStart + 1;
+        // Bind the arguments of the OpenCL kernel
+        cartesianProductKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints, leftCell
+                .offset(), leftChildrenStart, validLeftChildren, rightCell.offset(), rightChildrenStart,
+                validRightChildren, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints, (short) rightCell
+                        .start());
 
-		// Bind the arguments of the OpenCL kernel
-		cartesianProductKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints, leftCell.offset(), leftChildrenStart, validLeftChildren, rightCell
-				.offset(), rightChildrenStart, validRightChildren, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints, (short) rightCell.start());
+        // Call the cartesian-product kernel with |V_r| X |V_l| threads (rounded up to the next multiple of
+        // LOCAL_WORK_SIZE)
+        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp((validLeftChildren * validRightChildren),
+                LOCAL_WORK_SIZE);
+        cartesianProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
 
-		// Call the cartesian-product kernel with |V_r| X |V_l| threads (rounded up to the next multiple of
-		// LOCAL_WORK_SIZE)
-		final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp((validLeftChildren * validRightChildren), LOCAL_WORK_SIZE);
-		cartesianProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
+        clQueue.finish();
+    }
 
-		clQueue.finish();
-	}
+    @Override
+    protected void internalBinarySpmvMultiply(final ParallelArrayChartCell chartCell) {
 
-	@Override
-	protected void internalBinarySpmvMultiply(final ParallelArrayChartCell chartCell) {
+        // Bind the arguments of the OpenCL kernel
+        binarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints, chartCell
+                .offset(), clCartesianProductProbabilities0, clCartesianProductMidpoints0,
+                clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities, grammar
+                        .numNonTerms());
 
-		// Bind the arguments of the OpenCL kernel
-		binarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints, chartCell.offset(), clCartesianProductProbabilities0,
-				clCartesianProductMidpoints0, clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities, grammar.numNonTerms());
+        // Call the binary SpMV kernel with |V| threads (rounded up to the nearest multiple of
+        // LOCAL_WORK_SIZE)
+        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
+        binarySpmvKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
+        clQueue.finish();
+    }
 
-		// Call the binary SpMV kernel with |V| threads (rounded up to the nearest multiple of
-		// LOCAL_WORK_SIZE)
-		final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
-		binarySpmvKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
-		clQueue.finish();
-	}
+    @Override
+    protected void internalUnarySpmvMultiply(final ParallelArrayChartCell chartCell) {
 
-	@Override
-	protected void internalUnarySpmvMultiply(final ParallelArrayChartCell chartCell) {
+        // Bind the arguments of the OpenCL kernel
+        unarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
+                chartCell.offset(), clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices, clCsrUnaryProbabilities,
+                grammar.numNonTerms(), (short) chartCell.end());
 
-		// Bind the arguments of the OpenCL kernel
-		unarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints, chartCell.offset(), clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices,
-				clCsrUnaryProbabilities, grammar.numNonTerms(), (short) chartCell.end());
-
-		// Call the unary SpMV kernel with |V| threads (rounded up to the nearest multiple of LOCAL_WORK_SIZE)
-		final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
-		unarySpmvKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
-		clQueue.finish();
-	}
+        // Call the unary SpMV kernel with |V| threads (rounded up to the nearest multiple of LOCAL_WORK_SIZE)
+        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
+        unarySpmvKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
+        clQueue.finish();
+    }
 }

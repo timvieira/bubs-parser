@@ -16,12 +16,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     }
 
     @Override
-    public ParseTree findBestParse(final String sentence) throws Exception {
-
-        final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
-
-        initParser(sent.length);
-        addLexicalProductions(sent);
+    public ParseTree findBestParse(final int[] tokens) throws Exception {
+        initParser(tokens);
+        addLexicalProductions(tokens);
         cellSelector.init(this);
 
         while (cellSelector.hasNext()) {
@@ -41,8 +38,8 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     protected abstract void visitCell(short start, short end);
 
     @SuppressWarnings("unchecked")
-    protected void initParser(final int sentLength) {
-        chart = (C) new CellChart(sentLength, opts.viterbiMax, this);
+    protected void initParser(final int[] tokens) {
+        chart = (C) new CellChart(tokens, opts.viterbiMax, this);
     }
 
     protected void addLexicalProductions(final int sent[]) throws Exception {

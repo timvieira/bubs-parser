@@ -60,7 +60,7 @@ public class WeightedFeatures extends EdgeSelector {
 
             // fill chart
             final String sentence = ParserUtil.join(goldTree.getLeafNodesContent(), " ");
-            parser.findBestParse(sentence);
+            parser.parseSentence(sentence);
 
         }
     }

@@ -3,9 +3,8 @@ package edu.ohsu.cslu.parser.chart;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 
 /**
  * Stores a chart in a 4-way parallel array of:
@@ -83,8 +82,8 @@ public class PackedArrayChart extends ParallelArrayChart {
      * @param size Sentence length
      * @param sparseMatrixGrammar Grammar
      */
-    public PackedArrayChart(final int size, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(size, sparseMatrixGrammar);
+    public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
+        super(tokens, sparseMatrixGrammar);
 
         numNonTerminals = new int[cells];
         minLeftChildIndex = new int[cells];

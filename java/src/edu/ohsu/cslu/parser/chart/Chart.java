@@ -7,14 +7,21 @@ public abstract class Chart {
 
     protected int size;
     protected boolean viterbiMax;
+    public int[] tokens;
 
     protected Chart() {
     }
 
-    public Chart(final int size, final boolean viterbiMax) {
-        this.size = size;
+    public Chart(final int[] tokens, final boolean viterbiMax) {
+        this.tokens = tokens;
+        this.size = tokens.length;
         this.viterbiMax = viterbiMax;
     }
+
+    // public Chart(final int size, final boolean viterbiMax) {
+    // this.size = size;
+    // this.viterbiMax = viterbiMax;
+    // }
 
     public final int size() {
         return size;

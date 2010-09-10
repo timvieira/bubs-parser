@@ -65,7 +65,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
                 final CellChart goldChart = new CellChart(tree, false, null);
 
                 final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
-                initParser(sent.length);
+                initParser(sent);
                 addLexicalProductions(sent);
                 addUnaryExtensionsToLexProds();
                 cellSelector.init(this);

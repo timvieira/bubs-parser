@@ -8,10 +8,12 @@ import edu.ohsu.cslu.parser.util.StringToMD5;
 public class ParseStats {
 
     public String sentence;
+    public String[] strTokens;
+    public int[] tokens;
+
     public String sentenceMD5;
     public ParseTree inputTree = null;
     public CellChart inputTreeChart = null;
-    public String[] tokens;
     public int sentenceNumber = -1;
     public int sentenceLength = -1;
     public ParseTree parse = null;
@@ -34,10 +36,10 @@ public class ParseStats {
                 sentence = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
             }
 
-            this.sentence = sentence;
+            this.sentence = sentence.trim();
             this.sentenceMD5 = StringToMD5.computeMD5(sentence);
-            this.tokens = ParserUtil.tokenize(sentence);
-            this.sentenceLength = tokens.length;
+            this.strTokens = ParserUtil.tokenize(sentence);
+            this.sentenceLength = strTokens.length;
 
         } catch (final Exception e) {
             e.printStackTrace();
