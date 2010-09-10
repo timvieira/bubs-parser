@@ -43,13 +43,13 @@ import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParserWithCSLUT;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
 import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
-import edu.ohsu.cslu.parser.beam.BSCPPruneViterbiStats;
 import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
+import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
@@ -409,11 +409,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new APDecodeFOM(parserOptions, (LeftRightListsGrammar) grammar);
 
         case BeamSearchChartParser:
-            return new BeamSearchChartParser(parserOptions, (LeftHashGrammar) grammar);
+            return new BeamSearchChartParser<LeftHashGrammar, CellChart>(parserOptions, (LeftHashGrammar) grammar);
         case BSCPPruneViterbi:
-            if (parserOptions.collectDetailedStatistics) {
-                return new BSCPPruneViterbiStats(parserOptions, (LeftHashGrammar) grammar);
-            }
+            // if (parserOptions.collectDetailedStatistics) {
+            // return new BSCPPruneViterbiStats(parserOptions, (LeftHashGrammar) grammar);
+            // }
             return new BSCPPruneViterbi(parserOptions, (LeftHashGrammar) grammar);
         case BSCPOnlineBeam:
             return new BSCPWeakThresh(parserOptions, (LeftHashGrammar) grammar);
@@ -491,7 +491,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     public String optionsToString() {
         final String prefix = "OPTS: ";
         String s = "";
-        s += prefix + "ParserType=" + parserType + "\n";
+        s += prefix + "ParserType=" + researchParserType + "\n";
         s += prefix + "CellSelector=" + cellSelectorType + "\n";
         s += prefix + "FOM=" + edgeFOMType + "\n";
         s += prefix + "x1=" + param1 + "\n";

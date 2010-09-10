@@ -165,7 +165,8 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
 
     private void addEdgeToAgenda(final ChartEdge edge, final PriorityQueue<ChartEdge> agenda) {
         agenda.add(edge);
-        nAgendaPush++;
+        cellPushed++;
+        cellConsidered++;
     }
 
     private void addBestEdgesToChart(final HashSetChartCell cell, final ChartEdge[] bestEdges,

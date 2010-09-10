@@ -16,12 +16,10 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChart> extends
         ChartParser<LeftHashGrammar, CellChart> {
 
-    int nAgendaPush;
-    float fomInitSeconds;
     PriorityQueue<ChartEdge> agenda;
-
-    int beamWidth;
-    float beamDeltaThresh;
+    int beamWidth, totalPushed = 0, totalPopped = 0, totalConsidered = 0;
+    int cellPushed, cellPopped, cellConsidered;
+    float fomInitSeconds, beamDeltaThresh;
 
     public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
@@ -45,34 +43,28 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     public ParseTree findBestParse(final int[] tokens) throws Exception {
         initParser(tokens);
         cellSelector.init(this);
-        addLexicalProductions(tokens);
 
         final double startTimeMS = System.currentTimeMillis();
         edgeSelector.init(chart);
         fomInitSeconds = (float) ((System.currentTimeMillis() - startTimeMS) / 1000.0);
 
-        nAgendaPush = 0;
+        // Lexical productions are done during the main loop now
+        // addLexicalProductions(tokens);
+
         while (cellSelector.hasNext() && !chart.hasCompleteParse(grammar.startSymbol)) {
+            cellPushed = 0;
+            cellPopped = 0;
+            cellConsidered = 0;
+
             final short[] startAndEnd = cellSelector.next();
             visitCell(startAndEnd[0], startAndEnd[1]);
+
+            totalPushed += cellPushed;
+            totalPopped += cellPopped;
+            totalConsidered += cellConsidered;
         }
 
         return chart.extractBestParse(grammar.startSymbol);
-    }
-
-    // TODO AJD: Is this any different than the version in ChartParser? I think it duplicates that code, but there
-    // aren't any test cases for this code, and I don't want to risk breaking something without asking Nate.
-    @Override
-    protected void addLexicalProductions(final int sent[]) throws Exception {
-        HashSetChartCell cell;
-
-        // add lexical productions to the base cells of the chart
-        for (int i = 0; i < chart.size(); i++) {
-            cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
-                cell.updateInside(chart.new ChartEdge(lexProd, cell));
-            }
-        }
     }
 
     @Override
@@ -88,12 +80,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         edgeCollectionInit();
 
         if (end - start == 1) {
-            for (final int pos : cell.getPosNTs()) {
-                for (final Production p : grammar.getUnaryProductionsWithChild(pos)) {
-                    // final float prob = p.prob + cell.getBestEdge(pos).inside;
-                    edge = chart.new ChartEdge(p, cell);
-                    addEdgeToCollection(edge);
-                }
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
+                edge = chart.new ChartEdge(lexProd, cell);
+                addEdgeToCollection(edge);
             }
         } else {
             for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
@@ -103,8 +92,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                     for (final int rightNT : rightCell.getRightChildNTs()) {
                         for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
                             if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
-                                // final float prob = p.prob + leftCell.getInside(leftNT) +
-                                // rightCell.getInside(rightNT);
                                 edge = chart.new ChartEdge(p, leftCell, rightCell);
                                 addEdgeToCollection(edge);
                             }
@@ -123,25 +110,25 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     protected void addEdgeToCollection(final ChartEdge edge) {
         agenda.add(edge);
-        nAgendaPush++;
+        cellPushed++;
+        cellConsidered++;
     }
 
     protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
         ChartEdge edge, unaryEdge;
         boolean edgeBelowThresh = false;
-        int numAdded = 0;
         float bestFOM = Float.NEGATIVE_INFINITY;
         if (!agenda.isEmpty()) {
             bestFOM = agenda.peek().fom;
         }
 
-        while (agenda.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh) {
+        while (agenda.isEmpty() == false && cellPopped < beamWidth && !edgeBelowThresh) {
             edge = agenda.poll();
             if (edge.fom < bestFOM - beamDeltaThresh) {
                 edgeBelowThresh = true;
             } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
-                numAdded++;
+                cellPopped++;
 
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
@@ -156,6 +143,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     @Override
     public String getStats() {
-        return super.getStats() + " agendaPush=" + nAgendaPush + " fomInitSec=" + fomInitSeconds;
+        return super.getStats() + " agendaPop=" + totalPopped + " agendaPush=" + totalPushed + " fomInitSec="
+                + fomInitSeconds;
     }
 }

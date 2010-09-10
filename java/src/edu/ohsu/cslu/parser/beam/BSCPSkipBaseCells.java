@@ -76,7 +76,8 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
 
     private void addEdgeToAgenda(final ChartEdge edge) {
         agenda.add(edge);
-        nAgendaPush++;
+        cellPushed++;
+        cellConsidered++;
     }
 
     private void addBestEdgesToChart(final HashSetChartCell cell, final ChartEdge[] bestEdges) {
@@ -122,7 +123,7 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
             }
         }
 
-        return super.getStats() + " agendaPush=" + nAgendaPush + " fomInitSec=" + fomInitSeconds + " #cells=" + cells
+        return super.getStats() + " agendaPush=" + cellPushed + " fomInitSec=" + fomInitSeconds + " #cells=" + cells
                 + " #visited=" + cellsVisited + " #skipped=" + cellsSkipped + " #totalVisits=" + cellVisits;
     }
 }

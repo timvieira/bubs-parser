@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import edu.ohsu.cslu.counters.SimpleCounter;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.util.Log;
@@ -28,6 +29,7 @@ public class BoundaryInOut extends EdgeSelector {
 
     public BoundaryInOut(final Grammar grammar, final BufferedReader modelStream) {
         this.grammar = grammar;
+        // TODO: should we record this in Grammar instead?
         for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
             if (grammar.getNonterminal(ntIndex).isPOS()) {
                 posSet.add(ntIndex);
@@ -184,24 +186,16 @@ public class BoundaryInOut extends EdgeSelector {
         }
     }
 
-    // can re-write this so we don't need to have the cells populated first
-    // private HashSet<Integer> getPOSListFromChart(final Chart chart, final int startIndex) {
-    // final int endIndex = startIndex + 1;
-    // if (startIndex < 0 || endIndex > chart.size()) {
-    // final HashSet<Integer> tmpPosSet = new HashSet<Integer>();
-    // tmpPosSet.add(grammar.nullSymbol);
-    // return tmpPosSet;
-    // }
-    // return ((HashSetChartCell) chart.getCell(startIndex, endIndex)).getPosNTs();
-    // }
-
     private HashSet<Integer> getPOSListFromChart(final Chart chart, final int startIndex) {
         final HashSet<Integer> tmpPosSet = new HashSet<Integer>();
         final int endIndex = startIndex + 1;
         if (startIndex < 0 || endIndex > chart.size()) {
             tmpPosSet.add(grammar.nullSymbol);
         } else {
-
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[startIndex])) {
+                tmpPosSet.add(lexProd.parent);
+            }
+            // return ((HashSetChartCell) chart.getCell(startIndex, endIndex)).getPosNTs();
         }
         return tmpPosSet;
     }
@@ -223,7 +217,13 @@ public class BoundaryInOut extends EdgeSelector {
         if (pos == grammar.nullSymbol && (start < 0 || end > chart.size())) {
             return 0; // log(1.0)
         }
-        return chart.getInside(start, end, pos);
+        // TODO: make faster. This is much slower than it needs to be
+        for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
+            if (lexProd.parent == pos)
+                return lexProd.prob;
+        }
+        return Float.NEGATIVE_INFINITY;
+        // return chart.getInside(start, end, pos);
     }
 
     @Override
