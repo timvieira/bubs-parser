@@ -329,6 +329,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case AgendaParser:
         case APWithMemory:
         case APGhostEdges:
+        case APDecodeFOM:
             return new LeftRightListsGrammar(genericGrammar);
 
         case BeamSearchChartParser:

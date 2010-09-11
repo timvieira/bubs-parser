@@ -20,7 +20,12 @@ public class ParseStats {
     public String parseBracketString;
     public float insideProbability = -1 * Float.MAX_VALUE;
 
+    public int totalPops = 0;
+    public int totalPushes = 0;
+    public int totalConsidered = 0;
+
     public float parseTimeSec = 0;
+    public float fomInitSec = 0;
     public float insideScore = 0;
     public long maxMemoryMB = 0;
 
@@ -48,8 +53,19 @@ public class ParseStats {
 
     @Override
     public String toString() {
-        return String.format("STAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f", sentenceNumber,
+        String result = String.format("STAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f", sentenceNumber,
                 sentenceLength, sentenceMD5, parseTimeSec, insideProbability);
+        if (totalPops > 0)
+            result += " pops=" + totalPops;
+        if (totalPushes > 0)
+            result += " pushes=" + totalPushes;
+        if (totalConsidered > 0)
+            result += " considered=" + totalConsidered;
+        if (fomInitSec > 0) {
+            result += " fomInit=" + fomInitSec;
+        }
+
+        return result;
     }
 
     public String toStringWithParse() {
