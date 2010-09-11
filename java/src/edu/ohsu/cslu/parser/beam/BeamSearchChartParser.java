@@ -17,9 +17,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         ChartParser<LeftHashGrammar, CellChart> {
 
     PriorityQueue<ChartEdge> agenda;
-    int beamWidth, totalPushed = 0, totalPopped = 0, totalConsidered = 0;
-    int cellPushed, cellPopped, cellConsidered;
-    float fomInitSeconds, beamDeltaThresh;
+    int beamWidth, cellPushed, cellPopped, cellConsidered;
+    float beamDeltaThresh;
 
     public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
@@ -46,7 +45,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
         final double startTimeMS = System.currentTimeMillis();
         edgeSelector.init(chart);
-        fomInitSeconds = (float) ((System.currentTimeMillis() - startTimeMS) / 1000.0);
+        currentInput.fomInitSec = (float) ((System.currentTimeMillis() - startTimeMS) / 1000.0);
 
         // Lexical productions are done during the main loop now
         // addLexicalProductions(tokens);
@@ -59,9 +58,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             final short[] startAndEnd = cellSelector.next();
             visitCell(startAndEnd[0], startAndEnd[1]);
 
-            totalPushed += cellPushed;
-            totalPopped += cellPopped;
-            totalConsidered += cellConsidered;
+            currentInput.totalPushes += cellPushed;
+            currentInput.totalPops += cellPopped;
+            currentInput.totalConsidered += cellConsidered;
         }
 
         return chart.extractBestParse(grammar.startSymbol);
@@ -139,11 +138,5 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 }
             }
         }
-    }
-
-    @Override
-    public String getStats() {
-        return super.getStats() + " agendaPop=" + totalPopped + " agendaPush=" + totalPushed + " fomInitSec="
-                + fomInitSeconds;
     }
 }

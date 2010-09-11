@@ -67,12 +67,6 @@ public abstract class Parser<G extends Grammar> {
                 stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
                 stats.insideProbability = getInside(0, stats.sentenceLength, grammar.startSymbol);
 
-                if (grammar.grammarFormat == Grammar.GrammarFormatType.Berkeley) {
-                    stats.parseBracketString = stats.parseBracketString.replace("(ROOT ", "(TOP ");
-                    // TODO: replace with good decoding
-                    stats.parseBracketString = stats.parseBracketString.replaceAll("_[0-9]+ ", " ");
-                }
-
                 // TODO: we should be converting the tree in tree form, not in bracket string form
                 if (opts.unfactor) {
                     stats.parseBracketString = ParseTree.unfactor(stats.parseBracketString, grammar.grammarFormat);
