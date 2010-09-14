@@ -1,8 +1,13 @@
 package edu.ohsu.cslu.grammar;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -14,7 +19,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.Vector;
 
 import edu.ohsu.cslu.parser.util.Log;
 
@@ -47,6 +51,8 @@ import edu.ohsu.cslu.parser.util.Log;
  *        $Id$
  */
 public class Grammar implements Serializable {
+
+    private final static long serialVersionUID = 1L;
 
     /** Marks the switch from PCFG to lexicon entries in the grammar file */
     public final static String DELIMITER = "===== LEXICON =====";
@@ -105,7 +111,7 @@ public class Grammar implements Serializable {
 
     protected SymbolSet<String> nonTermSet = new SymbolSet<String>();
     protected SymbolSet<String> lexSet = new SymbolSet<String>();
-    private Vector<NonTerminal> nonTermInfo = new Vector<NonTerminal>();
+    private ArrayList<NonTerminal> nonTermInfo = new ArrayList<NonTerminal>();
 
     public final Tokenizer tokenizer;
 
@@ -117,6 +123,12 @@ public class Grammar implements Serializable {
     private HashMap<String, String> internMap = new HashMap<String, String>();
 
     /**
+     * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same command-line option
+     * for serialized and text grammars and auto-detect the format
+     */
+    private final static short OBJECT_SIGNATURE = (short) 0xACED;
+
+    /**
      * Default Constructor. This constructor does an inordinate amount of work directly in the constructor specifically
      * so we can initialize final instance variables. Making the instance variables final allows the JIT to inline them
      * everywhere we use them, improving runtime efficiency considerably.
@@ -125,7 +137,7 @@ public class Grammar implements Serializable {
      * allow more efficient iteration in grammar intersection (e.g., skipping NTs only valid as left children in the
      * right cell) and more efficient chart storage (e.g., omitting storage for POS NTs in chart rows >= 2).
      */
-    public Grammar(final Reader grammarFile) throws Exception {
+    public Grammar(final Reader grammarFile) throws IOException {
 
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
@@ -289,6 +301,10 @@ public class Grammar implements Serializable {
 
     }
 
+    public Grammar(final String grammarFile) throws IOException {
+        this(new FileReader(grammarFile));
+    }
+
     private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile, final List<StringProduction> pcfgRules,
             final List<StringProduction> lexicalRules) throws IOException {
         // Read in the grammar file.
@@ -347,8 +363,22 @@ public class Grammar implements Serializable {
         return gf;
     }
 
-    public Grammar(final String grammarFile) throws Exception {
-        this(new FileReader(grammarFile));
+    public static Grammar read(final InputStream inputStream) throws IOException, ClassNotFoundException {
+        // Read the grammar in either text or binary-serialized format.
+        final BufferedInputStream bis = new BufferedInputStream(inputStream);
+        bis.mark(2);
+        final DataInputStream dis = new DataInputStream(bis);
+
+        // Look at the first 2 bytes of the file for the signature of a serialized java object
+        final int signature = dis.readShort();
+        bis.reset();
+
+        if (signature == OBJECT_SIGNATURE) {
+            final ObjectInputStream ois = new ObjectInputStream(bis);
+            return (Grammar) ois.readObject();
+        }
+
+        return new Grammar(new InputStreamReader(bis));
     }
 
     /**
@@ -758,7 +788,7 @@ public class Grammar implements Serializable {
             this(addNonTerm(parent), isLex ? lexSet.addSymbol(child) : addNonTerm(child), prob, isLex);
         }
 
-        public final Production copy() throws Exception {
+        public final Production copy() {
             return new Production(parent, leftChild, rightChild, prob);
         }
 

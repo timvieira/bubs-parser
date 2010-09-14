@@ -1,14 +1,9 @@
 package edu.ohsu.cslu.parser;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.Reader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.zip.GZIPInputStream;
@@ -148,12 +143,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     private Grammar grammar;
     private long parseStartTime;
 
-    /**
-     * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same command-line option
-     * for serialized and text grammars and auto-detect the format
-     */
-    private final static short OBJECT_SIGNATURE = (short) 0xACED;
-
     public static void main(final String[] args) throws Exception {
         run(args);
     }
@@ -204,27 +193,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
         }
 
-        // Handle gzipped and non-gzipped grammar files
-        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
-                grammarFile)) : new FileInputStream(grammarFile);
-
-        // Read the grammar in either text or binary-serialized format.
-        final BufferedInputStream bis = new BufferedInputStream(grammarInputStream);
-        bis.mark(2);
-        final DataInputStream dis = new DataInputStream(bis);
-
-        // Look at the first 2 bytes of the file for the signature of a serialized java object
-        final int signature = dis.readShort();
-        bis.reset();
-
-        if (signature == OBJECT_SIGNATURE) {
-            final ObjectInputStream ois = new ObjectInputStream(bis);
-            final Grammar genericGrammar = (Grammar) ois.readObject();
-            grammar = createGrammar(genericGrammar);
-        } else {
-            grammar = createGrammar(researchParserType, new BufferedReader(new InputStreamReader(bis)),
-                    cartesianProductFunctionType);
-        }
+        // Read in the grammar
+        grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
 
         if (this.collectDetailedStatistics) {
             logger.info(optionsToString());
@@ -233,83 +203,30 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         parseStartTime = System.currentTimeMillis();
     }
 
-    public static Grammar createGrammar(final ResearchParserType researchParserType, final Reader pcfgReader)
-            throws Exception {
-        return createGrammar(researchParserType, pcfgReader, null);
-    }
-
-    public static Grammar createGrammar(final ResearchParserType researchParserType, final Reader pcfgReader,
+    public static Grammar readGrammar(final String grammarFile, final ResearchParserType researchParserType,
             final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
 
-        switch (researchParserType) {
-        case ECPInsideOutside:
-        case ECPCellCrossList:
-            return new LeftListGrammar(pcfgReader);
+        // Handle gzipped and non-gzipped grammar files
+        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
+                grammarFile)) : new FileInputStream(grammarFile);
 
-        case ECPCellCrossHash:
-            return new LeftHashGrammar(pcfgReader);
+        // Read the generic grammar in either text or binary-serialized format.
+        final Grammar genericGrammar = Grammar.read(grammarInputStream);
 
-        case ECPCellCrossMatrix:
-            return new ChildMatrixGrammar(pcfgReader);
-
-        case ECPGrammarLoop:
-        case ECPGrammarLoopBerkeleyFilter:
-            return new Grammar(pcfgReader);
-
-        case AgendaParser:
-        case APWithMemory:
-        case APGhostEdges:
-        case APDecodeFOM:
-            return new LeftRightListsGrammar(pcfgReader);
-
-        case BeamSearchChartParser:
-        case BSCPPruneViterbi:
-        case BSCPOnlineBeam:
-        case BSCPBoundedHeap:
-        case BSCPExpDecay:
-        case BSCPPerceptronCell:
-        case CoarseCellAgenda:
-        case CoarseCellAgendaCSLUT:
-            return new LeftHashGrammar(pcfgReader);
-
-        case CsrSpmv:
-        case CsrSpmvPerMidpoint:
-        case PackedOpenClSparseMatrixVector:
-        case DenseVectorOpenClSparseMatrixVector:
-
-        case CscSpmv:
-            switch (cartesianProductFunctionType) {
-            case Unfiltered:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, UnfilteredFunction.class);
-            case Simple:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, SimpleShiftFunction.class);
-            case BitMatrixExactFilter:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, BitVectorExactFilterFunction.class);
-            case PerfectHash:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, PerfectHashFilterFunction.class);
-            case PerfectHash2:
-                return new LeftCscSparseMatrixGrammar(pcfgReader, PerfectIntPairHashFilterFunction.class);
-            default:
-                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
-            }
-
-        case LeftChildMatrixLoop:
-        case CartesianProductBinarySearch:
-        case CartesianProductBinarySearchLeftChild:
-        case CartesianProductHash:
-        case CartesianProductLeftChildHash:
-            return new LeftCscSparseMatrixGrammar(pcfgReader, SimpleShiftFunction.class);
-        case RightChildMatrixLoop:
-            return new RightCscSparseMatrixGrammar(pcfgReader);
-        case GrammarLoopMatrixLoop:
-            return new CsrSparseMatrixGrammar(pcfgReader, SimpleShiftFunction.class);
-
-        default:
-            throw new Exception("Unsupported parser type: " + researchParserType);
-        }
+        // Construct the requested grammar type from the genric grammar
+        return createGrammar(genericGrammar, researchParserType, cartesianProductFunctionType);
     }
 
-    private Grammar createGrammar(final Grammar genericGrammar) throws Exception {
+    /**
+     * Creates a specific {@link Grammar} subclass, based on the generic instance passed in.
+     * 
+     * @param genericGrammar
+     * @param researchParserType
+     * @return a Grammar instance
+     * @throws Exception
+     */
+    public static Grammar createGrammar(final Grammar genericGrammar, final ResearchParserType researchParserType,
+            final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
 
         switch (researchParserType) {
         case ECPInsideOutside:

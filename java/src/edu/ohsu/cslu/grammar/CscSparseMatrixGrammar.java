@@ -59,7 +59,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         this(new FileReader(grammarFile));
     }
 
-    public CscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
+    protected CscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
             throws Exception {
         super(g, functionClass);
 

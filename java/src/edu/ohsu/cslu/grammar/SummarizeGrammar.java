@@ -4,8 +4,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.Reader;
 import java.util.zip.GZIPInputStream;
 
@@ -25,19 +24,14 @@ public class SummarizeGrammar extends BaseCommandlineTool {
     @Override
     protected void run() throws Exception {
 
-        Reader grammarReader;
+        // Handle gzipped and non-gzipped grammar files
+        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
+                grammarFile)) : new FileInputStream(grammarFile);
 
-        if (grammarFile != null) {
-            if (grammarFile.endsWith(".gz")) {
-                grammarReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(grammarFile)));
-            } else {
-                grammarReader = new FileReader(grammarFile);
-            }
-        } else {
-            grammarReader = new InputStreamReader(System.in);
-        }
+        // Read the generic grammar in either text or binary-serialized format.
+        final Grammar genericGrammar = Grammar.read(grammarInputStream);
 
-        final SummaryGrammar grammar = new SummaryGrammar(grammarReader);
+        final SummaryGrammar grammar = new SummaryGrammar(genericGrammar);
         System.out.print(grammar.getStats());
     }
 
