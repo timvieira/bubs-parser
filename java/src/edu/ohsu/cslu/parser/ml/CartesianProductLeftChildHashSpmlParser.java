@@ -77,8 +77,6 @@ public class CartesianProductLeftChildHashSpmlParser extends
             for (int i = leftStart; i <= leftEnd; i++) {
                 final int leftChild = chart.nonTerminalIndices[i];
 
-                // TODO Skip non-terminals which never occur as left children
-
                 final float leftProbability = chart.insideProbabilities[i];
 
                 // And over children in the right child cell
