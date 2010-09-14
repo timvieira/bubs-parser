@@ -3,12 +3,8 @@ package edu.ohsu.cslu.parser;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.util.zip.GZIPInputStream;
 
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -66,10 +62,8 @@ public class ParserTrainer extends BaseCommandlineTool {
             grammarFileName = grammarFileName + ".gz";
         }
 
-        final Reader grammarReader = grammarFileName.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(
-                new FileInputStream(grammarFileName))) : new FileReader(grammarFileName);
-        grammar = ParserDriver.createGrammar(researchParserType, grammarReader);
-
+        // Read in the grammar
+        grammar = ParserDriver.readGrammar(grammarFile, researchParserType, null);
     }
 
     @Override
@@ -90,4 +84,5 @@ public class ParserTrainer extends BaseCommandlineTool {
             System.out.println("ERROR.");
         }
     }
+
 }
