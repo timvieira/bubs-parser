@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -25,6 +23,7 @@ import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial
@@ -236,7 +235,6 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         parser = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
-        ;
         assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);
     }
 
