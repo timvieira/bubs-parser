@@ -6,6 +6,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.util.ParseTree;
 
 /**
  * Stores a chart in a 4-way parallel array of:
@@ -113,6 +114,41 @@ public class PackedArrayChart extends ParallelArrayChart {
     public void clear(final int sentenceLength) {
         this.size = sentenceLength;
         Arrays.fill(numNonTerminals, 0, cellIndex(0, sentenceLength) + 1, 0);
+    }
+
+    @Override
+    public ParseTree extractBestParse(final ChartCell cell, final int parent) {
+        final PackedArrayChartCell packedCell = (PackedArrayChartCell) cell;
+
+        if (packedCell == null) {
+            return null;
+        }
+
+        // Find the index of the non-terminal in the chart storage
+        final int i = Arrays.binarySearch(nonTerminalIndices, packedCell.offset, packedCell.offset
+                + numNonTerminals[packedCell.cellIndex], (short) parent);
+        if (i < 0) {
+            return null;
+        }
+        final int edgeChildren = packedChildren[i];
+        final short edgeMidpoint = midpoints[i];
+
+        final ParseTree subtree = new ParseTree(sparseMatrixGrammar.nonTermSet.getSymbol(parent));
+        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(edgeChildren);
+        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(edgeChildren);
+
+        if (rightChild == Production.UNARY_PRODUCTION) {
+            subtree.children.add(extractBestParse(cell, leftChild));
+
+        } else if (rightChild == Production.LEXICAL_PRODUCTION) {
+            subtree.addChild(new ParseTree(sparseMatrixGrammar.lexSet.getSymbol(leftChild)));
+
+        } else {
+            // binary production
+            subtree.children.add(extractBestParse(getCell(packedCell.start, edgeMidpoint), leftChild));
+            subtree.children.add(extractBestParse(getCell(edgeMidpoint, packedCell.end), rightChild));
+        }
+        return subtree;
     }
 
     @Override

@@ -109,8 +109,8 @@ public class Grammar implements Serializable {
     // Default to left-factored
     private boolean isLeftFactored = true;
 
-    protected SymbolSet<String> nonTermSet = new SymbolSet<String>();
-    protected SymbolSet<String> lexSet = new SymbolSet<String>();
+    public final SymbolSet<String> nonTermSet;
+    public final SymbolSet<String> lexSet;
     private ArrayList<NonTerminal> nonTermInfo = new ArrayList<NonTerminal>();
 
     public final Tokenizer tokenizer;
@@ -138,6 +138,9 @@ public class Grammar implements Serializable {
      * right cell) and more efficient chart storage (e.g., omitting storage for POS NTs in chart rows >= 2).
      */
     public Grammar(final Reader grammarFile) throws IOException {
+
+        nonTermSet = new SymbolSet<String>();
+        lexSet = new SymbolSet<String>();
 
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
