@@ -54,7 +54,7 @@ public class PerceptronCellSelector extends CellSelector {
     }
 
     @Override
-    public void init(final ChartParser<?, ?> p) throws Exception {
+    public void init(final ChartParser<?, ?> p) {
         // run at the beginning of each sentence
         this.parser = p;
         DEBUG = (p.opts.param1 == -1);

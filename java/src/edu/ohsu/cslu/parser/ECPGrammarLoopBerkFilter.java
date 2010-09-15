@@ -50,7 +50,7 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
     }
 
     @Override
-    protected void addLexicalProductions(final int sent[]) throws Exception {
+    protected void addLexicalProductions(final int sent[]) {
         Collection<Production> validProductions;
         HashSetChartCell cell;
 
