@@ -388,9 +388,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             public String call() throws Exception {
                 final Parser<?> parser = getLocal();
                 final ParseStats parseStats = parser.parseSentence(sentence);
-                if (collectDetailedStatistics) {
-                    return parseStats.parseBracketString + "\n" + parseStats.toString();
-                }
+
+                // TODO Return an instance of ParseStats instead of String so we can log this after the parse?
+                logger.fine(parseStats.toString() + " " + parser.getStats());
+
                 return parseStats.parseBracketString;
             }
         });
