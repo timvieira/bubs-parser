@@ -1,6 +1,7 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
 
@@ -29,7 +30,7 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
     public final int[] cscBinaryLeftChildEndIndices;
 
     public LeftCscSparseMatrixGrammar(final Reader grammarFile,
-            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws Exception {
+            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws IOException {
         super(grammarFile, cartesianProductFunctionClass);
 
         this.cscBinaryLeftChildStartIndices = new int[numNonTerms() + 1];
@@ -37,16 +38,15 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         init();
     }
 
-    public LeftCscSparseMatrixGrammar(final Reader grammarFile) throws Exception {
+    public LeftCscSparseMatrixGrammar(final Reader grammarFile) throws IOException {
         this(grammarFile, null);
     }
 
-    public LeftCscSparseMatrixGrammar(final String grammarFile) throws Exception {
+    public LeftCscSparseMatrixGrammar(final String grammarFile) throws IOException {
         this(new FileReader(grammarFile));
     }
 
-    public LeftCscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
-            throws Exception {
+    public LeftCscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass) {
         super(g, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final

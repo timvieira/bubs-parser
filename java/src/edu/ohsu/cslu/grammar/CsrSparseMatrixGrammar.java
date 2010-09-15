@@ -3,6 +3,7 @@ package edu.ohsu.cslu.grammar;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
 
@@ -36,7 +37,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     public final float[] csrBinaryProbabilities;
 
     public CsrSparseMatrixGrammar(final Reader grammarFile,
-            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws Exception {
+            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws IOException {
         super(grammarFile, cartesianProductFunctionClass);
 
         // Bin all binary rules by parent, mapping packed children -> probability
@@ -47,16 +48,15 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         storeBinaryRulesAsCsrMatrix(csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
     }
 
-    public CsrSparseMatrixGrammar(final Reader grammarFile) throws Exception {
+    public CsrSparseMatrixGrammar(final Reader grammarFile) throws IOException {
         this(grammarFile, null);
     }
 
-    public CsrSparseMatrixGrammar(final String grammarFile) throws Exception {
+    public CsrSparseMatrixGrammar(final String grammarFile) throws IOException {
         this(new FileReader(grammarFile));
     }
 
-    public CsrSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
-            throws Exception {
+    public CsrSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass) {
         super(g, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
