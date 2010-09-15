@@ -62,7 +62,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
 
         final long t0 = System.currentTimeMillis();
         long t1 = t0;
-        long cartesianProductTime = 0;
+        long t2 = t0;
 
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
@@ -70,17 +70,19 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
 
             if (collectDetailedStatistics) {
                 totalCartesianProductSize += cartesianProductVector.size();
+                t1 = System.currentTimeMillis();
+                totalCartesianProductTime += (t1 - t0);
             }
-
-            t1 = System.currentTimeMillis();
-            cartesianProductTime = t1 - t0;
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
             binarySpmv(cartesianProductVector, spvChartCell);
         }
-        final long t2 = System.currentTimeMillis();
-        final long binarySpmvTime = t2 - t1;
+
+        if (collectDetailedStatistics) {
+            t2 = System.currentTimeMillis();
+            totalBinarySpMVTime += (t2 - t1);
+        }
 
         // Handle unary productions
         // TODO: This only goes through unary rules one time, so it can't create unary chains unless such
@@ -88,19 +90,22 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
         // work, although it's a big-time hack.
         unarySpmv(spvChartCell);
 
-        final long t3 = System.currentTimeMillis();
-        final long unarySpmvTime = t3 - t2;
-
         if (collectDetailedStatistics) {
+            totalUnarySpMVTime += (System.currentTimeMillis() - t2);
+
             totalCellPopulation += spvChartCell.getNumNTs();
             totalLeftChildPopulation += spvChartCell.leftChildren();
             totalRightChildPopulation += spvChartCell.rightChildren();
         }
-        // Pack the temporary cell storage into the main chart array
-        spvChartCell.finalizeCell();
 
-        totalCartesianProductTime += cartesianProductTime;
-        totalSpMVTime += binarySpmvTime + unarySpmvTime;
+        // Pack the temporary cell storage into the main chart array
+        if (collectDetailedStatistics) {
+            final long t3 = System.currentTimeMillis();
+            spvChartCell.finalizeCell();
+            totalFinalizeTime += (System.currentTimeMillis() - t3);
+        } else {
+            spvChartCell.finalizeCell();
+        }
     }
 
     /**

@@ -18,8 +18,8 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.util.OpenClUtils;
@@ -91,8 +91,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             prefix.write(grammar.cartesianProductFunction().openClUnpackLeftChild() + '\n');
 
             // Compile kernels shared by all implementing classes
-            final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class, prefix
-                    .toString());
+            final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class,
+                    prefix.toString());
             fillFloatKernel = clSharedProgram.createKernel("fillFloat");
             cartesianProductUnionKernel = clSharedProgram.createKernel("cartesianProductUnion");
 
@@ -195,7 +195,6 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
 
         long t2;
-        long binarySpmvTime = 0;
 
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
@@ -209,7 +208,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             internalBinarySpmvMultiply(spvChartCell);
 
             t2 = System.currentTimeMillis();
-            binarySpmvTime = t2 - t1;
+            totalBinarySpMVTime += (t2 - t1);
 
         } else {
             t2 = System.currentTimeMillis();
@@ -222,11 +221,11 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         internalUnarySpmvMultiply(spvChartCell);
 
         final long t3 = System.currentTimeMillis();
-        final long unarySpmvTime = t3 - t2;
+        totalUnarySpMVTime += (t3 - t2);
 
         finalizeCell(spvChartCell);
+        totalFinalizeTime += (System.currentTimeMillis() - t3);
 
-        totalSpMVTime += binarySpmvTime + unarySpmvTime;
     }
 
     /**
