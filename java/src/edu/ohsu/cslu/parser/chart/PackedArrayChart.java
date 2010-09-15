@@ -3,8 +3,9 @@ package edu.ohsu.cslu.parser.chart;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
  * Stores a chart in a 4-way parallel array of:
@@ -79,11 +80,13 @@ public class PackedArrayChart extends ParallelArrayChart {
     /**
      * Constructs a chart
      * 
-     * @param size Sentence length
+     * @param tokens Sentence tokens, mapped to integer indices
      * @param sparseMatrixGrammar Grammar
+     * @param maxEntriesPerCell
      */
-    public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(tokens, sparseMatrixGrammar);
+    public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar,
+            final int maxEntriesPerCell) {
+        super(tokens, sparseMatrixGrammar, maxEntriesPerCell);
 
         numNonTerminals = new int[cells];
         minLeftChildIndex = new int[cells];
@@ -96,6 +99,16 @@ public class PackedArrayChart extends ParallelArrayChart {
         temporaryCells = new PackedArrayChartCell[size][size + 1];
     }
 
+    /**
+     * Constructs a chart
+     * 
+     * @param tokens Sentence tokens, mapped to integer indices
+     * @param sparseMatrixGrammar Grammar
+     */
+    public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
+        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms());
+    }
+
     @Override
     public void clear(final int sentenceLength) {
         this.size = sentenceLength;
@@ -105,7 +118,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     @Override
     public float getInside(final int start, final int end, final int nonTerminal) {
         final int cellIndex = cellIndex(start, end);
-        final int offset = cellIndex * sparseMatrixGrammar.numNonTerms();
+        final int offset = cellIndex * maxEntriesPerCell;
         final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
                 (short) nonTerminal);
         if (index < 0) {
@@ -190,52 +203,121 @@ public class PackedArrayChart extends ParallelArrayChart {
             tmpMidpoints = null;
         }
 
+        /**
+         * Copy and pack entries from temporary array into the main chart array
+         */
         @Override
         public void finalizeCell() {
 
-            // Copy and pack entries from temporary array into the main chart array
             if (tmpPackedChildren == null) {
                 return;
             }
 
-            boolean foundMinLeftChild = false, foundMinRightChild = false;
-            int nonTerminalOffset = offset;
+            if (maxEntriesPerCell == tmpInsideProbabilities.length) {
+                // Copy all populated entries from temporary storage
+                boolean foundMinLeftChild = false, foundMinRightChild = false;
+                int nonTerminalOffset = offset;
 
-            minLeftChildIndex[cellIndex] = offset;
-            maxLeftChildIndex[cellIndex] = offset - 1;
-            minRightChildIndex[cellIndex] = offset;
-            maxRightChildIndex[cellIndex] = offset - 1;
+                minLeftChildIndex[cellIndex] = offset;
+                maxLeftChildIndex[cellIndex] = offset - 1;
+                minRightChildIndex[cellIndex] = offset;
+                maxRightChildIndex[cellIndex] = offset - 1;
 
-            for (short nonTerminal = 0; nonTerminal < tmpInsideProbabilities.length; nonTerminal++) {
+                for (short nonTerminal = 0; nonTerminal < tmpInsideProbabilities.length; nonTerminal++) {
 
-                if (tmpInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
+                    if (tmpInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
 
-                    nonTerminalIndices[nonTerminalOffset] = nonTerminal;
-                    insideProbabilities[nonTerminalOffset] = tmpInsideProbabilities[nonTerminal];
-                    packedChildren[nonTerminalOffset] = tmpPackedChildren[nonTerminal];
-                    midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
+                        nonTerminalIndices[nonTerminalOffset] = nonTerminal;
+                        insideProbabilities[nonTerminalOffset] = tmpInsideProbabilities[nonTerminal];
+                        packedChildren[nonTerminalOffset] = tmpPackedChildren[nonTerminal];
+                        midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
 
-                    if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
-                        if (!foundMinLeftChild) {
-                            minLeftChildIndex[cellIndex] = nonTerminalOffset;
-                            foundMinLeftChild = true;
+                        if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
+                            if (!foundMinLeftChild) {
+                                minLeftChildIndex[cellIndex] = nonTerminalOffset;
+                                foundMinLeftChild = true;
+                            }
+                            maxLeftChildIndex[cellIndex] = nonTerminalOffset;
                         }
-                        maxLeftChildIndex[cellIndex] = nonTerminalOffset;
-                    }
 
-                    if (sparseMatrixGrammar.isValidRightChild(nonTerminal)) {
-                        if (!foundMinRightChild) {
-                            minRightChildIndex[cellIndex] = nonTerminalOffset;
-                            foundMinRightChild = true;
+                        if (sparseMatrixGrammar.isValidRightChild(nonTerminal)) {
+                            if (!foundMinRightChild) {
+                                minRightChildIndex[cellIndex] = nonTerminalOffset;
+                                foundMinRightChild = true;
+                            }
+                            maxRightChildIndex[cellIndex] = nonTerminalOffset;
                         }
-                        maxRightChildIndex[cellIndex] = nonTerminalOffset;
-                    }
 
-                    nonTerminalOffset++;
+                        nonTerminalOffset++;
+                    }
                 }
+
+                numNonTerminals[cellIndex] = nonTerminalOffset - offset;
+
+            } else {
+                // If maxEntriesPerCell < |V|, we're perfoming pruned search; pack only the most probable entries, still
+                // in
+                // numerical order so we can iterate over them normally in subsequent cells.
+                final BoundedPriorityQueue q = new BoundedPriorityQueue(maxEntriesPerCell);
+                for (short nt = 0; nt < tmpInsideProbabilities.length; nt++) {
+                    q.insert(nt, tmpInsideProbabilities[nt], tmpPackedChildren[nt], tmpMidpoints[nt]);
+                }
+                if (start == 0 && end == size) {
+                    q.forceInsert((short) sparseMatrixGrammar.startSymbol,
+                            tmpInsideProbabilities[sparseMatrixGrammar.startSymbol],
+                            tmpPackedChildren[sparseMatrixGrammar.startSymbol],
+                            tmpMidpoints[sparseMatrixGrammar.startSymbol]);
+                }
+                q.sortByNonterminalIndex();
+
+                // Copy all populated entries from temporary storage. Copied nearly verbatim from non-pruned version
+                // above
+                boolean foundMinLeftChild = false, foundMinRightChild = false;
+                int nonTerminalOffset = offset;
+
+                minLeftChildIndex[cellIndex] = offset;
+                maxLeftChildIndex[cellIndex] = offset - 1;
+                minRightChildIndex[cellIndex] = offset;
+                maxRightChildIndex[cellIndex] = offset - 1;
+
+                for (int i = 0; i < q.size; i++) {
+
+                    final short nonTerminal = q.queueParentIndices[i];
+                    if (nonTerminal == Short.MAX_VALUE) {
+                        break;
+                    }
+
+                    if (tmpInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
+
+                        nonTerminalIndices[nonTerminalOffset] = nonTerminal;
+                        insideProbabilities[nonTerminalOffset] = tmpInsideProbabilities[nonTerminal];
+                        packedChildren[nonTerminalOffset] = tmpPackedChildren[nonTerminal];
+                        midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
+
+                        if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
+                            if (!foundMinLeftChild) {
+                                minLeftChildIndex[cellIndex] = nonTerminalOffset;
+                                foundMinLeftChild = true;
+                            }
+                            maxLeftChildIndex[cellIndex] = nonTerminalOffset;
+                        }
+
+                        if (sparseMatrixGrammar.isValidRightChild(nonTerminal)) {
+                            if (!foundMinRightChild) {
+                                minRightChildIndex[cellIndex] = nonTerminalOffset;
+                                foundMinRightChild = true;
+                            }
+                            maxRightChildIndex[cellIndex] = nonTerminalOffset;
+                        }
+
+                        nonTerminalOffset++;
+                    }
+                }
+
+                numNonTerminals[cellIndex] = nonTerminalOffset - offset;
             }
 
-            numNonTerminals[cellIndex] = nonTerminalOffset - offset;
+            clearTemporaryStorage();
             temporaryCells[start][end] = null;
         }
 
@@ -477,6 +559,176 @@ public class PackedArrayChart extends ParallelArrayChart {
                     }
                 }
 
+            }
+            return sb.toString();
+        }
+    }
+
+    /**
+     * Stores a bounded heap of cell entries, ordered by inside probability. This could be stored directly in the main
+     * chart parallel array, but it's easier to test in separate storage during development.
+     * 
+     * @author Aaron Dunlop
+     * @since Sep 10, 2010
+     * 
+     * @version $Revision$ $Date$ $Author$
+     */
+    public static class BoundedPriorityQueue {
+
+        /**
+         * Parallel array storing a bounded cell population (parents, probabilities, packed children, and midpoints).
+         * Analagous to {@link ParallelArrayChart#insideProbabilities}, {@link ParallelArrayChart#packedChildren},
+         * {@link ParallelArrayChart#midpoints}, and {@link #nonTerminalIndices}. The most probable entry should be
+         * stored in index 0.
+         */
+        final short[] queueParentIndices;
+        final float[] queueInsideProbabilities;
+        final int[] queuePackedChildren;
+        final short[] queueMidpoints;
+
+        private int size = 0;
+
+        public BoundedPriorityQueue(final int maxSize) {
+            queueInsideProbabilities = new float[maxSize];
+            Arrays.fill(queueInsideProbabilities, Float.NEGATIVE_INFINITY);
+            queueParentIndices = new short[maxSize];
+            queuePackedChildren = new int[maxSize];
+            queueMidpoints = new short[maxSize];
+        }
+
+        public void insert(final short parentIndex, final float insideProbability, final int packedChildren,
+                final short midpoint) {
+
+            if (size == queueInsideProbabilities.length) {
+                // Ignore entries which are less probable than the minimum-priority entry
+                if (insideProbability <= queueInsideProbabilities[size - 1]) {
+                    return;
+                }
+            } else {
+                size++;
+            }
+
+            int i = size - 1;
+
+            queueInsideProbabilities[i] = insideProbability;
+            queuePackedChildren[i] = packedChildren;
+            queueMidpoints[i] = midpoint;
+            queueParentIndices[i] = parentIndex;
+
+            while (i > 0 && queueInsideProbabilities[i] > queueInsideProbabilities[i - 1]) {
+                swap(i, i - 1);
+                i--;
+            }
+
+            //
+            //
+            //
+            // // Heapify
+            // int childNode = minPriorityEntry;
+            //
+            // while (2 * childNode < queueInsideProbabilities.length - 1) {
+            // // If this node is a right-sibling and the left sibling is of lower priority, swap right and left
+            // siblings
+            //
+            // final int leftChild = 2 * childNode + 1;
+            // final int rightChild = 2 * childNode + 2;
+            // final float parentInsideProbability = queueInsideProbabilities[childNode];
+            // if (parentInsideProbability >= queueInsideProbabilities[leftChild]) {
+            // swap(childNode, leftChild);
+            // childNode = leftChild;
+            // } else if (rightChild < queueInsideProbabilities.length
+            // && parentInsideProbability >= queueInsideProbabilities[rightChild]) {
+            // swap(childNode, rightChild);
+            // childNode = rightChild;
+            // } else {
+            // break;
+            // }
+            // }
+        }
+
+        /**
+         * Replaces the least-probable entry in the queue, regardless of the relative probability of the new entry. Used
+         * to ensure that the top chart cell contains the start symbol.
+         * 
+         * @param parentIndex
+         * @param insideProbability
+         * @param packedChildren
+         * @param midpoint
+         */
+        public void forceInsert(final short parentIndex, final float insideProbability, final int packedChildren,
+                final short midpoint) {
+
+            // First, linear-search for an existing entry
+            for (int i = 0; i < size; i++) {
+                if (queueParentIndices[i] == parentIndex) {
+                    queueInsideProbabilities[i] = insideProbability;
+                    queuePackedChildren[i] = packedChildren;
+                    queueMidpoints[i] = midpoint;
+                    queueParentIndices[i] = parentIndex;
+
+                    return;
+                }
+            }
+
+            if (size != queueInsideProbabilities.length) {
+                size++;
+            }
+
+            int i = size - 1;
+
+            queueInsideProbabilities[i] = insideProbability;
+            queuePackedChildren[i] = packedChildren;
+            queueMidpoints[i] = midpoint;
+            queueParentIndices[i] = parentIndex;
+
+            while (i > 0 && queueInsideProbabilities[i] > queueInsideProbabilities[i - 1]) {
+                swap(i, i - 1);
+                i--;
+            }
+        }
+
+        private void swap(final int i1, final int i2) {
+            final float t1 = queueInsideProbabilities[i1];
+            queueInsideProbabilities[i1] = queueInsideProbabilities[i2];
+            queueInsideProbabilities[i2] = t1;
+
+            final int t2 = queuePackedChildren[i1];
+            queuePackedChildren[i1] = queuePackedChildren[i2];
+            queuePackedChildren[i2] = t2;
+
+            final short t3 = queueParentIndices[i1];
+            queueParentIndices[i1] = queueParentIndices[i2];
+            queueParentIndices[i2] = t3;
+
+            final short t4 = queueMidpoints[i1];
+            queueMidpoints[i1] = queueMidpoints[i2];
+            queueMidpoints[i2] = t4;
+        }
+
+        /**
+         * Sorts parallel array storage by non-terminal index. Note that this invalidates the heap assumption.
+         */
+        public void sortByNonterminalIndex() {
+            // Ensure that any un-populated entries sort to the end of the array
+            for (int i = 0; i < queueInsideProbabilities.length; i++) {
+                if (queueInsideProbabilities[i] == Float.NEGATIVE_INFINITY) {
+                    queueParentIndices[i] = Short.MAX_VALUE;
+                }
+            }
+            edu.ohsu.cslu.util.Arrays.sort(queueParentIndices, queueInsideProbabilities, queuePackedChildren,
+                    queueMidpoints);
+        }
+
+        public int size() {
+            return size;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder(1024);
+            for (int i = 0; i < queueInsideProbabilities.length; i++) {
+                sb.append(String.format("%d -> %d, %.3f, %d\n", queueParentIndices[i], queuePackedChildren[i],
+                        queueInsideProbabilities[i], queueMidpoints[i]));
             }
             return sb.toString();
         }

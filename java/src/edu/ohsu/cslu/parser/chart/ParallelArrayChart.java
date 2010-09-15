@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 
 /**
  * Represents a parse chart as a parallel array including:
@@ -23,6 +23,11 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 public abstract class ParallelArrayChart extends Chart {
 
     public final SparseMatrixGrammar sparseMatrixGrammar;
+
+    /**
+     * The maximum number of entries allowed per cell. For exhaustive search, this must be equal to the size of the
+     * grammar's vocabulary, but for pruned search, we can limit cell population, reducing the chart's memory footprint
+     */
     protected final int maxEntriesPerCell;
 
     /**
@@ -46,7 +51,7 @@ public abstract class ParallelArrayChart extends Chart {
     /**
      * Constructs a chart
      * 
-     * @param size Sentence length
+     * @param tokens Indices of sentence tokens
      * @param sparseMatrixGrammar Grammar
      * @param maxEntriesPerCell The maximum number of entries allowed in a chart cell
      */
@@ -54,7 +59,7 @@ public abstract class ParallelArrayChart extends Chart {
             final int maxEntriesPerCell) {
         super(tokens, true);
         this.sparseMatrixGrammar = sparseMatrixGrammar;
-        this.maxEntriesPerCell = maxEntriesPerCell;
+        this.maxEntriesPerCell = Math.min(maxEntriesPerCell, sparseMatrixGrammar.numNonTerms());
 
         cells = cellIndex(0, size) + 1;
 

@@ -57,8 +57,16 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     /** The parser under test */
     protected ChartParser<?, ?> parser;
 
-    /** TODO We can eliminate this if we reuse the parser and print the header in suiteSetUp() */
-    private static boolean headerLinePrinted = false;
+    /**
+     * Creates the appropriate parser options for each test class.
+     * 
+     * @return options
+     */
+    protected ParserDriver parserOptions() {
+        final ParserDriver options = new ParserDriver();
+        options.collectDetailedStatistics = true;
+        return options;
+    }
 
     /**
      * Creates the appropriate parser for each test class. Ugly reflection code, but at least it's all localized here.
@@ -68,14 +76,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * @return Parser instance
      */
     @SuppressWarnings("unchecked")
-    protected final P createParser(final Grammar grammar, final CellSelector cellSelector) {
+    protected final P createParser(final Grammar grammar, final CellSelector cellSelector, final ParserDriver options) {
         try {
-            final ParserDriver parserDriver = new ParserDriver();
-            parserDriver.collectDetailedStatistics = true;
-
             return ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0])
                     .getConstructor(new Class[] { ParserDriver.class, grammarClass() }).newInstance(
-                            new Object[] { parserDriver, grammar });
+                            new Object[] { options, grammar });
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -126,11 +131,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public static void suiteSetUp() throws Exception {
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
-        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
+                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
+        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
+                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
 
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
@@ -157,7 +162,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
             simpleGrammar2 = createSimpleGrammar2(grammarClass(), SimpleShiftFunction.class);
         }
 
-        parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
 
         // if (!headerLinePrinted) {
         // System.out.println(parser.getStatHeader());
@@ -213,7 +218,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar1() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        parser = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        parser = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
         assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree);
@@ -228,7 +233,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar2() throws Exception {
         final String sentence = "The fish market stands last";
 
-        parser = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop));
+        parser = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
         ;
@@ -301,7 +306,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * @throws Exception
      */
     @Test
-    @PerformanceTest( { "mbp", "0" })
+    @PerformanceTest({ "mbp", "0" })
     public abstract void profileSentences11Through20() throws Exception;
 
     protected void internalProfileSentences11Through20() throws Exception {
