@@ -1,9 +1,8 @@
 package edu.ohsu.cslu.parser.chart;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -11,6 +10,8 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.BoundedPriorityQueue;
+import edu.ohsu.cslu.tests.FilteredRunner;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link PackedArrayChart}
@@ -20,6 +21,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.BoundedPriorityQueue;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@RunWith(FilteredRunner.class)
 public class TestPackedArrayChart {
 
     private PackedArrayChart chart;

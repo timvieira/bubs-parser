@@ -2,8 +2,9 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
  * Stores a chart in a 3-way parallel array indexed by non-terminal:
@@ -39,7 +40,7 @@ public class DenseVectorChart extends ParallelArrayChart {
     /**
      * Constructs a chart
      * 
-     * @param size Sentence length
+     * @param tokens Sentence tokens, mapped to integer indices
      * @param sparseMatrixGrammar Grammar
      */
     public DenseVectorChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
