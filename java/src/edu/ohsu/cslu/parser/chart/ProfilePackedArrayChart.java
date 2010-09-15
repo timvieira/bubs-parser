@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser.chart;
 
-import java.io.IOException;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,7 +20,7 @@ public class ProfilePackedArrayChart {
     private static CscSpmvParser parser;
 
     @BeforeClass
-    public static void suiteSetUp() throws IOException {
+    public static void suiteSetUp() throws Exception {
         if (grammar == null) {
             grammar = new LeftCscSparseMatrixGrammar(
                     SharedNlpTests.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));

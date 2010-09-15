@@ -35,7 +35,7 @@ public class CSLUTBlockedCells extends CellSelector {
     }
 
     @Override
-    public void init(final ChartParser<?, ?> parser) throws Exception {
+    public void init(final ChartParser<?, ?> parser) {
         // throw new Exception("should use init(parser, sentLen, pctBlock) instead.");
         init(parser.chart, parser.currentInput.sentence);
     }

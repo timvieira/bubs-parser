@@ -50,7 +50,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         chart = (C) new CellChart(tokens, opts.viterbiMax, this);
     }
 
-    protected void addLexicalProductions(final int sent[]) throws Exception {
+    protected void addLexicalProductions(final int sent[]) {
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
             final ChartCell cell = chart.getCell(i, i + 1);
