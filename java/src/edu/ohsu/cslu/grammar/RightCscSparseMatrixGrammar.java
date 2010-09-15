@@ -40,8 +40,7 @@ public class RightCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         this(new FileReader(grammarFile));
     }
 
-    public RightCscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
-            throws Exception {
+    public RightCscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass) {
         super(g, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final

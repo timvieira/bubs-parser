@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,7 +37,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     public final float[] cscBinaryProbabilities;
 
     protected CscSparseMatrixGrammar(final Reader grammarFile,
-            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws Exception {
+            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws IOException {
         super(grammarFile, cartesianProductFunctionClass);
 
         final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices();
@@ -51,16 +52,15 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
                 cscBinaryPopulatedColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
     }
 
-    protected CscSparseMatrixGrammar(final Reader grammarFile) throws Exception {
+    protected CscSparseMatrixGrammar(final Reader grammarFile) throws IOException {
         this(grammarFile, null);
     }
 
-    protected CscSparseMatrixGrammar(final String grammarFile) throws Exception {
+    protected CscSparseMatrixGrammar(final String grammarFile) throws IOException {
         this(new FileReader(grammarFile));
     }
 
-    protected CscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
-            throws Exception {
+    protected CscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass) {
         super(g, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final

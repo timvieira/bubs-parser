@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser.spmv;
 
-import static com.nativelibs4java.opencl.JavaCL.createBestContext;
-
 import java.io.StringWriter;
 
 import com.nativelibs4java.opencl.CLContext;
@@ -23,6 +21,7 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.util.OpenClUtils;
+import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ( {@link CsrSparseMatrixGrammar})
@@ -145,7 +144,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
      * parsing.
      */
     @Override
-    public ParseTree findBestParse(final int[] tokens) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) {
         initParser(tokens);
         addLexicalProductions(tokens);
         cellSelector.init(this);
@@ -182,7 +181,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     @Override
-    protected void addLexicalProductions(final int[] sent) throws Exception {
+    protected void addLexicalProductions(final int[] sent) {
         // Populate the lexical productions and part-of-speech tags in CPU space, and then copy the chart to
         // device memory.
         super.addLexicalProductions(sent);

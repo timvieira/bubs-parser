@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -57,7 +58,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     public final float[] csrUnaryProbabilities;
 
     public SparseMatrixGrammar(final Reader grammarFile, final Class<? extends CartesianProductFunction> functionClass)
-            throws Exception {
+            throws IOException {
         super(grammarFile);
 
         this.cartesianProductFunction = createCartesianProductFunction(functionClass);
@@ -71,16 +72,15 @@ public abstract class SparseMatrixGrammar extends Grammar {
         storeUnaryRulesAsCsrMatrix();
     }
 
-    public SparseMatrixGrammar(final Reader grammarFile) throws Exception {
+    public SparseMatrixGrammar(final Reader grammarFile) throws IOException {
         this(grammarFile, PerfectIntPairHashFilterFunction.class);
     }
 
-    public SparseMatrixGrammar(final String grammarFile) throws Exception {
+    public SparseMatrixGrammar(final String grammarFile) throws IOException {
         this(new FileReader(grammarFile));
     }
 
-    public SparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass)
-            throws Exception {
+    public SparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass) {
         super(g);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
