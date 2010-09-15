@@ -9,7 +9,6 @@ public class ProjectedGrammar extends Grammar {
         super(parentGrammar);
 
         this.parentGrammar = parentGrammar;
-        this.lexSet = parentGrammar.lexSet;
         this.grammarFormat = parentGrammar.grammarFormat;
 
         // create mapping from parent grammar non-terms to the non-terms in this grammar
