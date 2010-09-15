@@ -3,6 +3,7 @@ package edu.ohsu.cslu.parser.spmv;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -21,6 +22,14 @@ public class TestCscSpmvParser extends
     @PerformanceTest({ "mbp", "23541", "d820", "48282" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
+    }
+
+    @Override
+    protected ParserDriver parserOptions() {
+        final ParserDriver options = new ParserDriver();
+        options.collectDetailedStatistics = true;
+        options.param1 = 250;
+        return options;
     }
 
 }

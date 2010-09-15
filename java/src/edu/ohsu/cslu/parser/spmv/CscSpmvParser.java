@@ -5,8 +5,8 @@ import java.util.Arrays;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
@@ -30,9 +30,11 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
     protected long totalCellPopulation;
     protected long totalLeftChildPopulation;
     protected long totalRightChildPopulation;
+    private final int beamWidth;
 
     public CscSpmvParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
+        beamWidth = opts.param1 > 0 ? (int) opts.param1 : grammar.numNonTerms();
     }
 
     @Override
@@ -41,7 +43,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
         } else {
-            chart = new PackedArrayChart(tokens, grammar);
+            chart = new PackedArrayChart(tokens, grammar, beamWidth);
         }
 
         if (collectDetailedStatistics) {
