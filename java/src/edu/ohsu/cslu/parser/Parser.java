@@ -5,6 +5,7 @@ import org.kohsuke.args4j.EnumAliasMap;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
+import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
@@ -21,6 +22,15 @@ public abstract class Parser<G extends Grammar> {
     protected float totalInsideScore = 0;
     protected long totalMaxMemoryMB = 0;
 
+    /**
+     * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
+     * {@link ParserDriver}, but duplicated here as a final variable, so that the JIT can eliminate
+     * potentially-expensive counting code when we don't need it.
+     * 
+     * TODO Move up to {@link ChartParser} (or even higher) and share with {@link SparseMatrixLoopParser}
+     */
+    protected final boolean collectDetailedStatistics;
+
     public Parser(final ParserDriver opts, final G grammar) {
         this.grammar = grammar;
         this.opts = opts;
@@ -31,6 +41,7 @@ public abstract class Parser<G extends Grammar> {
         } catch (final Exception e) {
             e.printStackTrace();
         }
+        this.collectDetailedStatistics = opts.collectDetailedStatistics;
     }
 
     public abstract float getInside(int start, int end, int nt);

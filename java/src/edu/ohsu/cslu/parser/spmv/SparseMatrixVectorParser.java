@@ -2,15 +2,13 @@ package edu.ohsu.cslu.parser.spmv;
 
 import org.kohsuke.args4j.EnumAliasMap;
 
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
-import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
-import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 
 /**
  * A class of parser which performs the grammar intersection in each cell by:
@@ -36,22 +34,14 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     public long startTime = 0;
     public long totalCartesianProductTime = 0;
     public long totalCartesianProductUnionTime = 0;
-    public long totalSpMVTime = 0;
-
-    /**
-     * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
-     * {@link ParserDriver}, but duplicated here as a final variable, so that the JIT can eliminate
-     * potentially-expensive counting code when we don't need it.
-     * 
-     * TODO Move up to {@link ChartParser} (or even higher) and share with {@link SparseMatrixLoopParser}
-     */
-    protected final boolean collectDetailedStatistics;
+    public long totalBinarySpMVTime = 0;
+    public long totalUnarySpMVTime = 0;
+    public long totalFinalizeTime = 0;
 
     public SparseMatrixVectorParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
         cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
         cartesianProductMidpoints = new short[cartesianProductProbabilities.length];
-        this.collectDetailedStatistics = opts.collectDetailedStatistics;
     }
 
     /**
@@ -86,9 +76,13 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     @Override
     protected void initParser(final int[] tokens) {
         startTime = System.currentTimeMillis();
-        totalSpMVTime = 0;
-        totalCartesianProductTime = 0;
-        totalCartesianProductUnionTime = 0;
+        if (collectDetailedStatistics) {
+            totalBinarySpMVTime = 0;
+            totalUnarySpMVTime = 0;
+            totalCartesianProductTime = 0;
+            totalCartesianProductUnionTime = 0;
+            totalFinalizeTime = 0;
+        }
     }
 
     /**
@@ -102,14 +96,17 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     protected abstract CartesianProductVector cartesianProductUnion(final int start, final int end);
 
     public String getStatHeader() {
-        return String.format("%8s, %10s, %8s, %8s", "Total", "X-product", "X-union", "SpMV");
+        return String.format("%8s, %10s, %8s, %12s, %11s, %8s, %7s", "Total", "X-product", "X-union", "Bin-SpMV",
+                "Un-SpMV", "Finalize", "Extract");
     }
 
     @Override
     public String getStats() {
         final long totalTime = System.currentTimeMillis() - startTime;
-        return String.format("%8.1f, %10d, %8d, %8d", totalTime / 1000f, totalCartesianProductTime,
-                totalCartesianProductUnionTime, totalSpMVTime);
+        return String
+                .format("%8.1f, %10d, %8d, %12d, %11d, %8d, %7d", totalTime / 1000f, totalCartesianProductTime,
+                        totalCartesianProductUnionTime, totalBinarySpMVTime, totalUnarySpMVTime, totalFinalizeTime,
+                        extractTime);
     }
 
     public final static class CartesianProductVector {

@@ -10,6 +10,7 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 public abstract class ChartParser<G extends Grammar, C extends Chart> extends Parser<G> {
 
     public C chart;
+    protected long extractTime;
 
     public ChartParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -24,6 +25,13 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
             visitCell(startAndEnd[0], startAndEnd[1]);
+        }
+
+        if (collectDetailedStatistics) {
+            final long t0 = System.currentTimeMillis();
+            final ParseTree parseTree = chart.extractBestParse(grammar.startSymbol);
+            extractTime = System.currentTimeMillis() - t0;
+            return parseTree;
         }
 
         return chart.extractBestParse(grammar.startSymbol);
