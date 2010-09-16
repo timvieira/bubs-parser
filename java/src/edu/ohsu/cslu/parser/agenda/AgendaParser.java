@@ -23,7 +23,7 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
     }
 
     protected void initParser(final int[] tokens) {
-        chart = new CellChart(tokens, opts.viterbiMax, this);
+        chart = new CellChart(tokens, opts.viterbiMax(), this);
 
         agenda = new PriorityQueue<ChartEdge>();
         nAgendaPush = nAgendaPop = nChartEdges = 0;

@@ -17,7 +17,7 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
     }
 
     @Override
-    protected void addLexicalProductions(final int sent[]) throws Exception {
+    protected void addLexicalProductions(final int sent[]) {
         HashSetChartCell cell;
 
         // add lexical productions to the base cells of the chart
@@ -123,7 +123,7 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
             }
         }
 
-        return super.getStats() + " agendaPush=" + cellPushed + " fomInitSec=" + fomInitSeconds + " #cells=" + cells
-                + " #visited=" + cellsVisited + " #skipped=" + cellsSkipped + " #totalVisits=" + cellVisits;
+        return super.getStats() + " agendaPush=" + cellPushed + " #cells=" + cells + " #visited=" + cellsVisited
+                + " #skipped=" + cellsSkipped + " #totalVisits=" + cellVisits;
     }
 }

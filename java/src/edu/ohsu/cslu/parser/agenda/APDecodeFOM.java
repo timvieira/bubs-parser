@@ -25,8 +25,9 @@ public class APDecodeFOM extends APWithMemory {
         HashSetChartCell cell;
 
         initParser(tokens);
-        addLexicalProductions(tokens);
         edgeSelector.init(chart);
+
+        addLexicalProductions(tokens);
 
         for (int i = 0; i < tokens.length; i++) {
             cell = chart.getCell(i, i + 1);

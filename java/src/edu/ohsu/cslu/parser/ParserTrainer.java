@@ -2,11 +2,9 @@ package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.zip.GZIPInputStream;
 
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -57,18 +55,15 @@ public class ParserTrainer extends BaseCommandlineTool {
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
         // Handle prefixes with or without trailing periods.
-        // String grammarFileName = grammarFile + (grammarFile.endsWith(".") ? "" : ".") + "pcfg";
+        String grammarFileName = grammarFile + (grammarFile.endsWith(".") ? "" : ".") + "pcfg";
 
         // Handle gzipped grammar files
-        // if (!new File(grammarFileName).exists() && new File(grammarFileName + ".gz").exists()) {
-        // grammarFileName = grammarFileName + ".gz";
-        // }
-        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
-                grammarFile)) : new FileInputStream(grammarFile);
+        if (!new File(grammarFileName).exists() && new File(grammarFileName + ".gz").exists()) {
+            grammarFileName = grammarFileName + ".gz";
+        }
 
         // Read in the grammar
-        grammar = ParserDriver.createGrammar(researchParserType, new BufferedReader(new InputStreamReader(
-                grammarInputStream)));
+        grammar = ParserDriver.readGrammar(grammarFileName, researchParserType, null);
     }
 
     @Override

@@ -35,7 +35,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     @Override
     protected void initParser(final int[] tokens) {
-        chart = new CellChart(tokens, opts.viterbiMax, this);
+        chart = new CellChart(tokens, opts.viterbiMax(), this);
     }
 
     @Override
