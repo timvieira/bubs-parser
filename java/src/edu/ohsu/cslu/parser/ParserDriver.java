@@ -64,6 +64,7 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFuncti
  * Driver class for all parser implementations.
  * 
  * @author Nathan Bodenstab
+ * @author Aaron Dunlop
  * @since 2009
  * 
  * @version $Revision$ $Date$ $Author$

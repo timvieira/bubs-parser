@@ -336,41 +336,6 @@ public class CellChart extends Chart {
             }
         }
 
-        public final int start() {
-            return leftCell.start();
-        }
-
-        public final int end() {
-            if (rightCell == null) {
-                return leftCell.end();
-            }
-            return rightCell.end();
-        }
-
-        public final int midpt() {
-            if (rightCell == null) {
-                if (leftCell == null) {
-                    throw new RuntimeException("right/leftCell must be set to use start(), end(), and midpt()");
-                }
-                throw new RuntimeException("Do not use midpt() with unary productions.  They do not have midpoints.");
-            }
-            return leftCell.end();
-        }
-
-        @Override
-        public float inside() {
-            if (prod.isBinaryProd()) {
-                return prod.prob + leftCell.getInside(prod.leftChild) + rightCell.getInside(prod.rightChild);
-            } else if (prod.isUnaryProd()) {
-                return prod.prob + leftCell.getInside(prod.child());
-            }
-            return prod.prob;
-        }
-
-        public ChartEdge copy() {
-            return new ChartEdge(this.prod, this.leftCell, this.rightCell);
-        }
-
         @Override
         public int compareTo(final ChartEdge otherEdge) {
             if (this.equals(otherEdge)) {
@@ -382,71 +347,9 @@ public class CellChart extends Chart {
             }
         }
 
-        public int spanLength() {
-            return end() - start();
-        }
-
         @Override
         public String toString() {
-            String start = "-", midpt = "-", end = "-", prodStr = "null";
-
-            if (leftCell != null) {
-                start = "" + leftCell.start();
-                if (rightCell != null) {
-                    midpt = "" + leftCell.end();
-                } else {
-                    end = "" + leftCell.end();
-                }
-            }
-            if (rightCell != null) {
-                end = "" + rightCell.end();
-                assert leftCell.end() == rightCell.start();
-            }
-            if (prod != null) {
-                prodStr = prod.toString();
-            }
-
-            return String.format("[%s,%s,%s] %s inside=%f fom=%f", start, midpt, end, prodStr, inside(), fom);
-        }
-
-        @Override
-        public boolean equals(final Object other) {
-            try {
-                if (this == other) {
-                    return true;
-                }
-
-                if (other == null) {
-                    return false;
-                }
-
-                final ChartEdge otherEdge = (ChartEdge) other;
-                if (prod == null && otherEdge.prod != null) {
-                    return false;
-                }
-
-                if (!prod.equals(otherEdge.prod)) {
-                    return false;
-                }
-
-                // not comparing left/right cell object pointers because I want to be able to compare
-                // cells from different charts
-                if (start() != otherEdge.start()) {
-                    return false;
-                }
-
-                if (end() != otherEdge.end()) {
-                    return false;
-                }
-
-                if (prod.isBinaryProd() && (midpt() != otherEdge.midpt())) {
-                    return false;
-                }
-
-                return true;
-            } catch (final Exception e) {
-                return false;
-            }
+            return super.toString() + String.format(" fom=%f", fom);
         }
     }
 }

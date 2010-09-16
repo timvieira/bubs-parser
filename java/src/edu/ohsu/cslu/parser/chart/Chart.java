@@ -70,29 +70,35 @@ public abstract class Chart {
     }
 
     public ParseTree extractBestParse(final int startSymbol) {
-        return extractBestParse(getRootCell(), startSymbol);
+        return extractBestParse(0, size, startSymbol);
     }
 
-    public ParseTree extractBestParse(final ChartCell cell, final int nonTermIndex) {
+    public ParseTree extractBestParse(final int start, final int end, final int nonTermIndex) {
         ChartEdge bestEdge;
         ParseTree curNode = null;
+        final ChartCell cell = getCell(start, end);
 
         if (cell != null) {
             bestEdge = cell.getBestEdge(nonTermIndex);
             if (bestEdge != null) {
                 curNode = new ParseTree(bestEdge.prod.parentToString());
                 if (bestEdge.prod.isUnaryProd()) {
-                    curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
+                    curNode.children.add(extractBestParse(start, end, bestEdge.prod.leftChild));
                 } else if (bestEdge.prod.isLexProd()) {
                     curNode.addChild(new ParseTree(bestEdge.prod.childrenToString()));
                 } else { // binary production
-                    curNode.children.add(extractBestParse(bestEdge.leftCell, bestEdge.prod.leftChild));
-                    curNode.children.add(extractBestParse(bestEdge.rightCell, bestEdge.prod.rightChild));
+                    curNode.children.add(extractBestParse(start, bestEdge.midpt(), bestEdge.prod.leftChild));
+                    curNode.children.add(extractBestParse(bestEdge.midpt(), end, bestEdge.prod.rightChild));
                 }
             }
         }
 
         return curNode;
+    }
+
+    public ParseTree extractBestParseNoBkptrs(final int start, final int end, final int nonTermIndex) {
+
+        return null;
     }
 
     public String getStats() {
@@ -214,6 +220,98 @@ public abstract class Chart {
                 return prod.prob + leftCell.getInside(prod.child());
             }
             return prod.prob;
+        }
+
+        public final int start() {
+            return leftCell.start();
+        }
+
+        public final int end() {
+            if (rightCell == null) {
+                return leftCell.end();
+            }
+            return rightCell.end();
+        }
+
+        public final int midpt() {
+            if (rightCell == null) {
+                if (leftCell == null) {
+                    throw new RuntimeException("right/leftCell must be set to use start(), end(), and midpt()");
+                }
+                throw new RuntimeException("Do not use midpt() with unary productions.  They do not have midpoints.");
+            }
+            return leftCell.end();
+        }
+
+        public ChartEdge copy() {
+            return new ChartEdge(this.prod, this.leftCell, this.rightCell);
+        }
+
+        public int spanLength() {
+            return end() - start();
+        }
+
+        @Override
+        public String toString() {
+            String start = "-", midpt = "-", end = "-", prodStr = "null";
+
+            if (leftCell != null) {
+                start = "" + leftCell.start();
+                if (rightCell != null) {
+                    midpt = "" + leftCell.end();
+                } else {
+                    end = "" + leftCell.end();
+                }
+            }
+            if (rightCell != null) {
+                end = "" + rightCell.end();
+                assert leftCell.end() == rightCell.start();
+            }
+            if (prod != null) {
+                prodStr = prod.toString();
+            }
+
+            return String.format("[%s,%s,%s] %s inside=%f", start, midpt, end, prodStr, inside());
+        }
+
+        @Override
+        public boolean equals(final Object other) {
+            try {
+                if (this == other) {
+                    return true;
+                }
+
+                if (other == null) {
+                    return false;
+                }
+
+                final ChartEdge otherEdge = (ChartEdge) other;
+                if (prod == null && otherEdge.prod != null) {
+                    return false;
+                }
+
+                if (!prod.equals(otherEdge.prod)) {
+                    return false;
+                }
+
+                // not comparing left/right cell object pointers because I want to be able to compare
+                // cells from different charts
+                if (start() != otherEdge.start()) {
+                    return false;
+                }
+
+                if (end() != otherEdge.end()) {
+                    return false;
+                }
+
+                if (prod.isBinaryProd() && (midpt() != otherEdge.midpt())) {
+                    return false;
+                }
+
+                return true;
+            } catch (final Exception e) {
+                return false;
+            }
         }
     }
 }

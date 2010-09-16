@@ -56,7 +56,7 @@ public abstract class Parser<G extends Grammar> {
     // cleans up output for consumption
     public ParseStats parseSentence(final String sentence) throws Exception {
         final ParseStats stats = new ParseStats(sentence);
-        currentInput = stats; // get ride of this
+        currentInput = stats; // get ride of currentInput (and chart?). Just pass these around
         stats.sentenceNumber = sentenceNumber++;
         stats.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
 
