@@ -78,8 +78,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-rp", aliases = { "--research-parser" }, metaVar = "parser", usage = "Research Parser implementation")
     private ResearchParserType researchParserType = null;
 
-    @Option(name = "-inOutSum", usage = "Use sum instead of max for inside and outside calculations")
-    public boolean viterbiMax = true;
+    @Option(name = "-real", usage = "Use real semiring (sum) instead of tropical (max) for inside/outside calculations")
+    public boolean realSemiring = false;
 
     @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
     private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash2;
@@ -191,6 +191,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
         if (cellSelectorType == CellSelectorType.Perceptron && cslutScoresStream == null) {
             throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
+        }
+
+        if (researchParserType == ResearchParserType.ECPInsideOutside) {
+            this.realSemiring = true;
         }
 
         // Read in the grammar
@@ -413,6 +417,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         s += prefix + "ParserType=" + researchParserType + "\n";
         s += prefix + "CellSelector=" + cellSelectorType + "\n";
         s += prefix + "FOM=" + edgeFOMType + "\n";
+        s += prefix + "ViterbiMax=" + viterbiMax() + "\n";
         s += prefix + "x1=" + param1 + "\n";
         s += prefix + "x2=" + param2 + "\n";
         s += prefix + "x3=" + param3;
@@ -424,5 +429,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         final ParserDriver opts = new ParserDriver();
         opts.collectDetailedStatistics = true;
         return opts;
+    }
+
+    public boolean viterbiMax() {
+        return !this.realSemiring;
     }
 }

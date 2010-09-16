@@ -23,7 +23,7 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
     }
 
     protected void initParser(final int[] tokens) {
-        chart = new CellChart(tokens, opts.viterbiMax, this);
+        chart = new CellChart(tokens, opts.viterbiMax(), this);
         this.maxEdgeFOM = new float[chart.size()][chart.size() + 1];
         this.spanAgenda = new PriorityQueue<HashSetChartCell>();
 
