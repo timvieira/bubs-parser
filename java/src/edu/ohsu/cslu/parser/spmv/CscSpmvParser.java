@@ -225,6 +225,37 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
     }
 
     @Override
+    protected void unarySpmv(final int[] chartCellChildren, final float[] chartCellProbabilities,
+            final short[] chartCellMidpoints, final int offset, final short chartCellEnd) {
+
+        final CartesianProductFunction cpf = grammar.cartesianProductFunction();
+
+        // Iterate over populated children (matrix columns)
+        for (int child = 0; child < grammar.numNonTerms(); child++) {
+
+            final int childOffset = offset + child;
+            if (chartCellProbabilities[childOffset] == Float.NEGATIVE_INFINITY) {
+                continue;
+            }
+
+            // Iterate over possible parents of the child (rows with non-zero entries)
+            for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
+
+                final short parent = grammar.cscUnaryRowIndices[i];
+                final int parentOffset = offset + parent;
+                final float grammarProbability = grammar.cscUnaryProbabilities[i];
+
+                final float jointProbability = grammarProbability + chartCellProbabilities[childOffset];
+                if (jointProbability > chartCellProbabilities[parentOffset]) {
+                    chartCellProbabilities[parentOffset] = jointProbability;
+                    chartCellChildren[parentOffset] = cpf.packUnary(child);
+                    chartCellMidpoints[parentOffset] = chartCellEnd;
+                }
+            }
+        }
+    }
+
+    @Override
     public String getStatHeader() {
         return super.getStatHeader()
                 + ", Avg X-prod size, X-prod Entries Examined, Total X-prod Entries, Cells,   Total C, Total C_l, Total C_r";
