@@ -18,7 +18,7 @@ public class ParseStats {
     public int sentenceLength = -1;
     public ParseTree parse = null;
     public String parseBracketString;
-    public float insideProbability = -1 * Float.MAX_VALUE;
+    public float insideProbability = Float.NEGATIVE_INFINITY;
 
     public int totalPops = 0;
     public int totalPushes = 0;

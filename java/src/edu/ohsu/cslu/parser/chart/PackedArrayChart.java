@@ -3,9 +3,8 @@ package edu.ohsu.cslu.parser.chart;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 /**
@@ -117,8 +116,8 @@ public class PackedArrayChart extends ParallelArrayChart {
     }
 
     @Override
-    public ParseTree extractBestParse(final ChartCell cell, final int parent) {
-        final PackedArrayChartCell packedCell = (PackedArrayChartCell) cell;
+    public ParseTree extractBestParse(final int start, final int end, final int parent) {
+        final PackedArrayChartCell packedCell = getCell(start, end);
 
         if (packedCell == null) {
             return null;
@@ -138,15 +137,15 @@ public class PackedArrayChart extends ParallelArrayChart {
         final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(edgeChildren);
 
         if (rightChild == Production.UNARY_PRODUCTION) {
-            subtree.children.add(extractBestParse(cell, leftChild));
+            subtree.children.add(extractBestParse(start, end, leftChild));
 
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
             subtree.addChild(new ParseTree(sparseMatrixGrammar.lexSet.getSymbol(leftChild)));
 
         } else {
             // binary production
-            subtree.children.add(extractBestParse(getCell(packedCell.start, edgeMidpoint), leftChild));
-            subtree.children.add(extractBestParse(getCell(edgeMidpoint, packedCell.end), rightChild));
+            subtree.children.add(extractBestParse(start, edgeMidpoint, leftChild));
+            subtree.children.add(extractBestParse(edgeMidpoint, end, rightChild));
         }
         return subtree;
     }
