@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.zip.GZIPInputStream;
@@ -90,11 +91,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
 
     @Option(name = "-fom", metaVar = "fom", usage = "Figure of Merit to use for parser")
-    EdgeSelectorType edgeFOMType = EdgeSelectorType.Inside;
+    public EdgeSelectorType edgeFOMType = EdgeSelectorType.Inside;
 
     @Option(name = "-fomModel", metaVar = "file", usage = "FOM model file")
     private String fomModelFileName = null;
-    BufferedReader fomModelStream = null;
+    public BufferedReader fomModelStream = null;
 
     // Nate: I don't think we need to expose this to the user. Instead
     // there should be different possible parsers since changing the
@@ -170,7 +171,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         }
 
         if (fomModelFileName != null) {
-            fomModelStream = new BufferedReader(new FileReader(fomModelFileName));
+            // Handle gzipped and non-gzipped model files
+            fomModelStream = fomModelFileName.endsWith(".gz") ? new BufferedReader(new InputStreamReader(
+                    new GZIPInputStream(new FileInputStream(fomModelFileName)))) : new BufferedReader(new FileReader(
+                    fomModelFileName));
         }
 
         if (cellModelFileName != null) {
@@ -268,7 +272,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case CsrSpmvPerMidpoint:
         case PackedOpenClSparseMatrixVector:
         case DenseVectorOpenClSparseMatrixVector:
-
         case CscSpmv:
             switch (cartesianProductFunctionType) {
             case Unfiltered:

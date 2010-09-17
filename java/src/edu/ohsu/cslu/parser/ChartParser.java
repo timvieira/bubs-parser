@@ -21,6 +21,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         initParser(tokens);
         addLexicalProductions(tokens);
         cellSelector.init(this);
+        if (edgeSelector != null) {
+            edgeSelector.init(chart);
+        }
 
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();

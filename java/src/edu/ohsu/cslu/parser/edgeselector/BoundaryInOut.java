@@ -12,8 +12,8 @@ import edu.ohsu.cslu.counters.SimpleCounter;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -61,6 +61,21 @@ public class BoundaryInOut extends EdgeSelector {
         final float outside = outsideLeft[edge.start() - 1 + 1][edge.prod.parent]
                 + outsideRight[edge.end() + 1][edge.prod.parent];
         return edge.inside() + outside;
+    }
+
+    @Override
+    public float calcFOM(final int start, final int end, final short parent, final float insideProbability,
+            final boolean isLexicalProduction) {
+        if (isLexicalProduction) {
+            return insideProbability;
+        }
+
+        // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
+        // are padded with a begin and end <null> value which shifts the entire array to
+        // the right by one
+        // final int spanLength = edge.end() - edge.start();
+        final float outside = outsideLeft[start - 1 + 1][parent] + outsideRight[end + 1][parent];
+        return insideProbability + outside;
     }
 
     public String calcFOMToString(final ChartEdge edge) {

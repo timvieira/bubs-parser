@@ -8,6 +8,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.edgeselector.InsideProb;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSC format (
@@ -24,13 +25,15 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * @version $Revision$ $Date$ $Author$
  */
 public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixGrammar, PackedArrayChart> {
+
+    private final int beamWidth;
+
     protected int totalCartesianProductSize;
     protected long totalCartesianProductEntriesExamined;
     protected long totalValidCartesianProductEntries;
     protected long totalCellPopulation;
     protected long totalLeftChildPopulation;
     protected long totalRightChildPopulation;
-    private final int beamWidth;
 
     public CscSpmvParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -43,7 +46,9 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
         } else {
-            chart = new PackedArrayChart(tokens, grammar, beamWidth);
+            // Don't set the chart's edge selector for the basic inside-probability version.
+            chart = new PackedArrayChart(tokens, grammar, beamWidth, (edgeSelector instanceof InsideProb ? null
+                    : edgeSelector));
         }
 
         if (collectDetailedStatistics) {
