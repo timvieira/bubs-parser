@@ -3,8 +3,8 @@ package edu.ohsu.cslu.parser.agenda;
 import java.util.Collection;
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -64,7 +64,7 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
         ChartEdge edge;
         final ChartEdge[] bestEdges = new ChartEdge[grammar.numNonTerms()]; // inits to null
 
-        final int maxEdgesToAdd = (int) ParserDriver.param2;
+        final int maxEdgesToAdd = (int) opts.param2;
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final HashSetChartCell leftCell = chart.getCell(start, mid);

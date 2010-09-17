@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.agenda;
 
 import java.util.Collection;
 
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -51,7 +51,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         ChartEdge edge;
         final ChartEdge[] bestEdges = new ChartEdge[grammar.numNonTerms()]; // inits to null
 
-        final int maxEdgesToAdd = (int) ParserDriver.param2;
+        final int maxEdgesToAdd = (int) opts.param2;
         final boolean onlyFactored = cslutScores.isCellOpenOnlyToFactored(start, end);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point

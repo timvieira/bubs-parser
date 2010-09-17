@@ -8,8 +8,8 @@ import java.util.PriorityQueue;
 import java.util.Vector;
 
 import edu.ohsu.cslu.classifier.Perceptron;
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -44,7 +44,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
         }
 
         // read in gold tree
-        for (int ittr = 0; ittr < ParserDriver.param2; ittr++) {
+        for (int ittr = 0; ittr < opts.param2; ittr++) {
             System.out.println(" == ittr " + ittr + " ==");
             for (final String bracketString : inputData) {
                 tree = ParseTree.readBracketFormat(bracketString);
