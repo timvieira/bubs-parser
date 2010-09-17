@@ -28,7 +28,7 @@ public abstract class ParallelArrayChart extends Chart {
      * The maximum number of entries allowed per cell. For exhaustive search, this must be equal to the size of the
      * grammar's vocabulary, but for pruned search, we can limit cell population, reducing the chart's memory footprint
      */
-    protected final int maxEntriesPerCell;
+    protected final int beamWidth;
 
     /**
      * Start indices for each cell. Computed from cell start and end indices and stored in the chart for convenience
@@ -53,17 +53,16 @@ public abstract class ParallelArrayChart extends Chart {
      * 
      * @param tokens Indices of sentence tokens
      * @param sparseMatrixGrammar Grammar
-     * @param maxEntriesPerCell The maximum number of entries allowed in a chart cell
+     * @param beamWidth The maximum number of entries allowed in a chart cell
      */
-    protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar,
-            final int maxEntriesPerCell) {
+    protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar, final int beamWidth) {
         super(tokens, true);
         this.sparseMatrixGrammar = sparseMatrixGrammar;
-        this.maxEntriesPerCell = Math.min(maxEntriesPerCell, sparseMatrixGrammar.numNonTerms());
+        this.beamWidth = Math.min(beamWidth, sparseMatrixGrammar.numNonTerms());
 
         cells = cellIndex(0, size) + 1;
 
-        chartArraySize = cells * maxEntriesPerCell;
+        chartArraySize = cells * this.beamWidth;
         insideProbabilities = new float[chartArraySize];
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         packedChildren = new int[chartArraySize];
@@ -74,7 +73,7 @@ public abstract class ParallelArrayChart extends Chart {
         for (int start = 0; start < size; start++) {
             for (int end = start + 1; end < size + 1; end++) {
                 final int cellIndex = cellIndex(start, end);
-                cellOffsets[cellIndex] = cellIndex * maxEntriesPerCell;
+                cellOffsets[cellIndex] = cellIndex * this.beamWidth;
             }
         }
     }
@@ -141,11 +140,11 @@ public abstract class ParallelArrayChart extends Chart {
         protected final int cellIndex;
         protected final int offset;
 
-        public ParallelArrayChartCell(final int start, final int end) {
+        protected ParallelArrayChartCell(final int start, final int end) {
             super(start, end);
 
             cellIndex = cellIndex(start, end);
-            offset = cellIndex * maxEntriesPerCell;
+            offset = cellIndex * beamWidth;
         }
 
         /**

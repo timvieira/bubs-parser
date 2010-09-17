@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.util.Log;
 
 public abstract class EdgeSelector {
@@ -15,6 +15,11 @@ public abstract class EdgeSelector {
     }
 
     public abstract float calcFOM(ChartEdge edge);
+
+    public float calcFOM(final int start, final int end, final short parent, final float insideProbability,
+            final boolean isLexicalProduction) {
+        throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
+    }
 
     public static EdgeSelector create(final EdgeSelectorType type, final Grammar grammar,
             final BufferedReader modelStream) {

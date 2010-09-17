@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser.chart;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,7 +13,6 @@ import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.BoundedPriorityQueue;
 import edu.ohsu.cslu.tests.FilteredRunner;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link PackedArrayChart}
@@ -41,42 +42,42 @@ public class TestPackedArrayChart {
     @Test
     public void testBoundedBinaryHeap() throws Exception {
         final BoundedPriorityQueue h = new BoundedPriorityQueue(5);
-        h.insert((short) 1, -1f, 1, (short) 1);
-        h.insert((short) 2, -2f, 2, (short) 2);
-        h.insert((short) 3, -3f, 3, (short) 3);
+        h.insert((short) 1, -1f, -1f, 1, (short) 1);
+        h.insert((short) 2, -2f, -2f, 2, (short) 2);
+        h.insert((short) 3, -3f, -3f, 3, (short) 3);
         assertEquals(3, h.size());
 
-        h.insert((short) 7, -7f, 7, (short) 7);
+        h.insert((short) 7, -7f, -7f, 7, (short) 7);
         assertEquals(4, h.size());
 
-        h.insert((short) 6, -6f, 6, (short) 6);
-        h.insert((short) 5, -5f, 5, (short) 5);
-        h.insert((short) 4, -4f, 4, (short) 4);
+        h.insert((short) 6, -6f, -6f, 6, (short) 6);
+        h.insert((short) 5, -5f, -5f, 5, (short) 5);
+        h.insert((short) 4, -4f, -4f, 4, (short) 4);
         assertEquals(5, h.size());
 
         h.sortByNonterminalIndex();
         assertEquals(1, h.queueParentIndices[0]);
-        assertEquals(-1f, h.queueInsideProbabilities[0], .001f);
+        assertEquals(-1f, h.queueFom[0], .001f);
         assertEquals(1, h.queuePackedChildren[0]);
         assertEquals(1, h.queueMidpoints[0]);
 
         assertEquals(2, h.queueParentIndices[1]);
-        assertEquals(-2f, h.queueInsideProbabilities[1], .001f);
+        assertEquals(-2f, h.queueFom[1], .001f);
         assertEquals(2, h.queuePackedChildren[1]);
         assertEquals(2, h.queueMidpoints[1]);
 
         assertEquals(3, h.queueParentIndices[2]);
-        assertEquals(-3f, h.queueInsideProbabilities[2], .001f);
+        assertEquals(-3f, h.queueFom[2], .001f);
         assertEquals(3, h.queuePackedChildren[2]);
         assertEquals(3, h.queueMidpoints[2]);
 
         assertEquals(4, h.queueParentIndices[3]);
-        assertEquals(-4f, h.queueInsideProbabilities[3], .001f);
+        assertEquals(-4f, h.queueFom[3], .001f);
         assertEquals(4, h.queuePackedChildren[3]);
         assertEquals(4, h.queueMidpoints[3]);
 
         assertEquals(5, h.queueParentIndices[4]);
-        assertEquals(-5f, h.queueInsideProbabilities[4], .001f);
+        assertEquals(-5f, h.queueFom[4], .001f);
         assertEquals(5, h.queuePackedChildren[4]);
         assertEquals(5, h.queueMidpoints[4]);
     }
@@ -105,7 +106,7 @@ public class TestPackedArrayChart {
 
     @Test
     public void testPrunedFinalizeCell() throws Exception {
-        chart = new PackedArrayChart(new int[] { 1, 2, 3, 4, 5 }, simpleGrammar2, 2);
+        chart = new PackedArrayChart(new int[] { 1, 2, 3, 4, 5 }, simpleGrammar2, 2, null);
         final ChartCell cell_2_3 = chart.getCell(2, 3);
 
         // Three binary productions

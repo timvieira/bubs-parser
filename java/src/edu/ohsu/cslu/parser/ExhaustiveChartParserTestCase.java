@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -23,7 +25,6 @@ import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial
@@ -39,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? extends Grammar, ? extends Chart>> {
 
     // Grammar file paths, relative to unit test data root directory
-    private final static String PCFG_FILE = "grammars/f2-21-R2-p1-unk.gz";
+    private final static String PCFG_FILE = "grammars/wsj.2-21.unk.L2-p1.gz";
 
     /** Very simple grammar for parsing 'systems analyst arbitration chef' */
     protected static Grammar simpleGrammar1;
@@ -60,8 +61,10 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * Creates the appropriate parser options for each test class.
      * 
      * @return options
+     * @throws Exception if something breaks while constructing the options instance (e.g. failing to find a model
+     *             file).
      */
-    protected ParserDriver parserOptions() {
+    protected ParserDriver parserOptions() throws Exception {
         final ParserDriver options = new ParserDriver();
         options.collectDetailedStatistics = true;
         return options;
