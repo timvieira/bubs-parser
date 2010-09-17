@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.beam;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
@@ -23,7 +23,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
 
-        beamWidth = (int) ParserDriver.param1;
+        beamWidth = (int) opts.param1;
         if (beamWidth < 0)
             beamWidth = 9999;
 
