@@ -1045,7 +1045,9 @@ public class Grammar implements Serializable {
             case CSLU:
                 return nonTerminal.contains("|");
             case Berkeley:
-                return nonTerminal.startsWith("@");
+                // TODO We shouldn't really need to check for a single '@' symbol - that should only be a terminal.
+                // Trace back and eliminate calling isFactored() for terminals.
+                return nonTerminal.startsWith("@") && nonTerminal.length() > 1;
             case Roark:
                 // TODO Support Roark format
             default:
