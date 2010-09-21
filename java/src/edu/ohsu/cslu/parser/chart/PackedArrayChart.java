@@ -3,8 +3,9 @@ package edu.ohsu.cslu.parser.chart;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
@@ -296,6 +297,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                 numNonTerminals[cellIndex] = nonTerminalOffset - offset;
 
             } else {
+                final boolean lexical = (end == start + 1);
+
                 // If maxEntriesPerCell < |V|, we're performing pruned search; pack only the most probable entries,
                 // still in numerical order so we can iterate over them normally in subsequent cells.
                 final BoundedPriorityQueue q = new BoundedPriorityQueue(beamWidth);
@@ -304,21 +307,27 @@ public class PackedArrayChart extends ParallelArrayChart {
                     final float insideProbability = tmpInsideProbabilities[nt];
                     if (insideProbability != Float.NEGATIVE_INFINITY) {
                         if (edgeSelector != null) {
-                            q.insert(nt, edgeSelector.calcFOM(start, end, nt, insideProbability, (end == start + 1)),
-                                    insideProbability, tmpPackedChildren[nt], tmpMidpoints[nt]);
+                            if (lexical) {
+                                q.insert(nt, edgeSelector.calcLexicalFOM(start, end, nt, insideProbability));
+                            } else {
+                                q.insert(nt, edgeSelector.calcFOM(start, end, nt, insideProbability));
+                            }
                         } else {
-                            q.insert(nt, insideProbability, insideProbability, tmpPackedChildren[nt], tmpMidpoints[nt]);
+                            q.insert(nt, insideProbability);
                         }
                     }
                 }
 
-                // Force including the start symbol in the top cell, even if it would not meet the probability threshold
+                // Force including the start symbol in the top cell, even if it would not meet the FOM threshold
                 if (start == 0 && end == size) {
-                    q.forceInsert((short) sparseMatrixGrammar.startSymbol,
-                            tmpInsideProbabilities[sparseMatrixGrammar.startSymbol],
-                            tmpInsideProbabilities[sparseMatrixGrammar.startSymbol],
-                            tmpPackedChildren[sparseMatrixGrammar.startSymbol],
-                            tmpMidpoints[sparseMatrixGrammar.startSymbol]);
+                    if (edgeSelector != null) {
+                        q.forceInsert((short) sparseMatrixGrammar.startSymbol, edgeSelector.calcFOM(start, end,
+                                (short) sparseMatrixGrammar.startSymbol,
+                                tmpInsideProbabilities[sparseMatrixGrammar.startSymbol]));
+                    } else {
+                        q.forceInsert((short) sparseMatrixGrammar.startSymbol,
+                                tmpInsideProbabilities[sparseMatrixGrammar.startSymbol]);
+                    }
                 }
 
                 q.sortByNonterminalIndex();
@@ -345,9 +354,9 @@ public class PackedArrayChart extends ParallelArrayChart {
                         nonTerminalIndices[nonTerminalOffset] = nonTerminal;
                         // TODO If we want to accumulate FOM scores instead of inside probabilities in the chart, switch
                         // to using scores from the queue here
-                        insideProbabilities[nonTerminalOffset] = q.queueInsideProbabilities[i];
-                        packedChildren[nonTerminalOffset] = q.queuePackedChildren[i];
-                        midpoints[nonTerminalOffset] = q.queueMidpoints[i];
+                        insideProbabilities[nonTerminalOffset] = tmpInsideProbabilities[nonTerminal];
+                        packedChildren[nonTerminalOffset] = tmpPackedChildren[nonTerminal];
+                        midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
 
                         if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
                             if (!foundMinLeftChild) {
@@ -620,7 +629,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     }
 
     /**
-     * Stores a bounded heap of cell entries, ordered by inside probability. This could be stored directly in the main
+     * Stores a bounded heap of cell entries, ordered by a figure-of-merit. This could be stored directly in the main
      * chart parallel array, but it's easier to test in separate storage during development.
      * 
      * @author Aaron Dunlop
@@ -638,19 +647,13 @@ public class PackedArrayChart extends ParallelArrayChart {
          */
         final short[] queueParentIndices;
         final float[] queueFom;
-        final float[] queueInsideProbabilities;
-        final int[] queuePackedChildren;
-        final short[] queueMidpoints;
 
         private int size = 0;
 
         public BoundedPriorityQueue(final int maxSize) {
             queueFom = new float[maxSize];
-            queueInsideProbabilities = new float[maxSize];
             Arrays.fill(queueFom, Float.NEGATIVE_INFINITY);
             queueParentIndices = new short[maxSize];
-            queuePackedChildren = new int[maxSize];
-            queueMidpoints = new short[maxSize];
         }
 
         /**
@@ -659,12 +662,8 @@ public class PackedArrayChart extends ParallelArrayChart {
          * 
          * @param parentIndex
          * @param fom
-         * @param insideProbability
-         * @param packedChildren
-         * @param midpoint
          */
-        public void insert(final short parentIndex, final float fom, final float insideProbability,
-                final int packedChildren, final short midpoint) {
+        public void insert(final short parentIndex, final float fom) {
 
             if (size == queueFom.length) {
                 // Ignore entries which are less probable than the minimum-priority entry
@@ -678,40 +677,12 @@ public class PackedArrayChart extends ParallelArrayChart {
             int i = size - 1;
 
             queueFom[i] = fom;
-            queueInsideProbabilities[i] = insideProbability;
-            queuePackedChildren[i] = packedChildren;
-            queueMidpoints[i] = midpoint;
             queueParentIndices[i] = parentIndex;
 
             while (i > 0 && queueFom[i] > queueFom[i - 1]) {
                 swap(i, i - 1);
                 i--;
             }
-
-            //
-            //
-            //
-            // // Heapify
-            // int childNode = minPriorityEntry;
-            //
-            // while (2 * childNode < queueInsideProbabilities.length - 1) {
-            // // If this node is a right-sibling and the left sibling is of lower priority, swap right and left
-            // siblings
-            //
-            // final int leftChild = 2 * childNode + 1;
-            // final int rightChild = 2 * childNode + 2;
-            // final float parentInsideProbability = queueInsideProbabilities[childNode];
-            // if (parentInsideProbability >= queueInsideProbabilities[leftChild]) {
-            // swap(childNode, leftChild);
-            // childNode = leftChild;
-            // } else if (rightChild < queueInsideProbabilities.length
-            // && parentInsideProbability >= queueInsideProbabilities[rightChild]) {
-            // swap(childNode, rightChild);
-            // childNode = rightChild;
-            // } else {
-            // break;
-            // }
-            // }
         }
 
         /**
@@ -720,19 +691,13 @@ public class PackedArrayChart extends ParallelArrayChart {
          * 
          * @param parentIndex
          * @param fom
-         * @param insideProbability
-         * @param packedChildren
-         * @param midpoint
          */
-        public void forceInsert(final short parentIndex, final float fom, final float insideProbability,
-                final int packedChildren, final short midpoint) {
+        public void forceInsert(final short parentIndex, final float fom) {
 
             // First, linear-search for an existing entry
             for (int i = 0; i < size; i++) {
                 if (queueParentIndices[i] == parentIndex) {
                     queueFom[i] = fom;
-                    queuePackedChildren[i] = packedChildren;
-                    queueMidpoints[i] = midpoint;
                     queueParentIndices[i] = parentIndex;
 
                     return;
@@ -746,8 +711,6 @@ public class PackedArrayChart extends ParallelArrayChart {
             int i = size - 1;
 
             queueFom[i] = fom;
-            queuePackedChildren[i] = packedChildren;
-            queueMidpoints[i] = midpoint;
             queueParentIndices[i] = parentIndex;
 
             while (i > 0 && queueFom[i] > queueFom[i - 1]) {
@@ -761,21 +724,9 @@ public class PackedArrayChart extends ParallelArrayChart {
             queueFom[i1] = queueFom[i2];
             queueFom[i2] = t1;
 
-            final float t2 = queueInsideProbabilities[i1];
-            queueInsideProbabilities[i1] = queueInsideProbabilities[i2];
-            queueInsideProbabilities[i2] = t2;
-
-            final int t3 = queuePackedChildren[i1];
-            queuePackedChildren[i1] = queuePackedChildren[i2];
-            queuePackedChildren[i2] = t3;
-
-            final short t4 = queueParentIndices[i1];
+            final short t2 = queueParentIndices[i1];
             queueParentIndices[i1] = queueParentIndices[i2];
-            queueParentIndices[i2] = t4;
-
-            final short t5 = queueMidpoints[i1];
-            queueMidpoints[i1] = queueMidpoints[i2];
-            queueMidpoints[i2] = t5;
+            queueParentIndices[i2] = t2;
         }
 
         /**
@@ -788,8 +739,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                     queueParentIndices[i] = Short.MAX_VALUE;
                 }
             }
-            edu.ohsu.cslu.util.Arrays.sort(queueParentIndices, queueFom, queueInsideProbabilities, queuePackedChildren,
-                    queueMidpoints);
+            edu.ohsu.cslu.util.Arrays.sort(queueParentIndices, queueFom);
         }
 
         public int size() {
@@ -800,8 +750,7 @@ public class PackedArrayChart extends ParallelArrayChart {
         public String toString() {
             final StringBuilder sb = new StringBuilder(1024);
             for (int i = 0; i < queueFom.length; i++) {
-                sb.append(String.format("%d -> %d, %.3f, %.3f, %d\n", queueParentIndices[i], queuePackedChildren[i],
-                        queueFom[i], queueInsideProbabilities[i], queueMidpoints[i]));
+                sb.append(String.format("%d %.3f\n", queueParentIndices[i], queueFom[i]));
             }
             return sb.toString();
         }
