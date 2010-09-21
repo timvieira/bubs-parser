@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 
 import org.kohsuke.args4j.CmdLineException;
@@ -125,9 +126,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-unk", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
 
-    @Option(name = "-stats", usage = "Collect detailed counts and statistics (e.g., non-terminals per cell, cartesian-product size, etc.)")
-    public boolean collectDetailedStatistics = false;
-
     @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees and remove latent annotations")
     boolean unfactor = false;
 
@@ -145,6 +143,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     private Grammar grammar;
     private long parseStartTime;
 
+    public boolean collectDetailedStatistics = false;
+
     public static void main(final String[] args) throws Exception {
         run(args);
     }
@@ -152,6 +152,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Override
     // run once at initialization despite number of threads
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
+
+        // Collect detailed statistics for high verbosity levels (e.g., non-terminals per cell, cartesian-product size,
+        // etc.)
+        collectDetailedStatistics = logger.isLoggable(Level.FINER);
 
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
