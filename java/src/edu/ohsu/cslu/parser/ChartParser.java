@@ -11,6 +11,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     public C chart;
     protected long extractTime;
+    private long edgeInitTime;
 
     public ChartParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -22,7 +23,13 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         addLexicalProductions(tokens);
         cellSelector.init(this);
         if (edgeSelector != null) {
-            edgeSelector.init(chart);
+            if (collectDetailedStatistics) {
+                final long startTime = System.nanoTime();
+                edgeSelector.init(chart);
+                edgeInitTime = (System.nanoTime() - startTime) / 1000;
+            } else {
+                edgeSelector.init(chart);
+            }
         }
 
         while (cellSelector.hasNext()) {
@@ -76,6 +83,6 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public String getStats() {
-        return chart.getStats();
+        return chart.getStats() + (collectDetailedStatistics ? (" edgeInitTime=" + edgeInitTime) : "");
     }
 }
