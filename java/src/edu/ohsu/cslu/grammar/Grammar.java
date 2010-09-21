@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.grammar;
 
+import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -52,7 +54,7 @@ import edu.ohsu.cslu.parser.util.Log;
  */
 public class Grammar implements Serializable {
 
-    private final static long serialVersionUID = 1L;
+    private final static long serialVersionUID = 2L;
 
     /** Marks the switch from PCFG to lexicon entries in the grammar file */
     public final static String DELIMITER = "===== LEXICON =====";
@@ -96,6 +98,8 @@ public class Grammar implements Serializable {
 
     protected final Collection<Production>[] unaryProductionsByChild;
     protected final Collection<Production>[] lexicalProdsByChild;
+    protected final short[][] lexicalParents;
+    protected final Short2FloatOpenHashMap[] lexicalLogProbabilities;
 
     public final static String nullSymbolStr = "<null>";
     public static Production nullProduction;
@@ -257,6 +261,18 @@ public class Grammar implements Serializable {
         unaryProductionsByChild = storeProductionByChild(unaryProductions, nonTermSet.size() - 1);
         lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
 
+        lexicalParents = new short[lexicalProdsByChild.length][];
+        lexicalLogProbabilities = new Short2FloatOpenHashMap[lexicalProdsByChild.length];
+        for (int child = 0; child < lexicalProdsByChild.length; child++) {
+            lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
+            lexicalLogProbabilities[child] = new Short2FloatOpenHashMap(lexicalProdsByChild[child].size());
+            int j = 0;
+            for (final Production p : lexicalProdsByChild[child]) {
+                lexicalParents[child][j++] = (short) p.parent;
+                lexicalLogProbabilities[child].put((short) p.parent, p.prob);
+            }
+        }
+
         internMap = null; // We no longer need the String intern map, so let it be GC'd
 
         this.tokenizer = new Tokenizer(lexSet);
@@ -287,6 +303,8 @@ public class Grammar implements Serializable {
 
         this.unaryProductionsByChild = g.unaryProductionsByChild;
         this.lexicalProdsByChild = g.lexicalProdsByChild;
+        this.lexicalParents = g.lexicalParents;
+        this.lexicalLogProbabilities = g.lexicalLogProbabilities;
 
         this.nullSymbol = g.nullSymbol;
         this.startSymbol = g.startSymbol;
@@ -458,6 +476,10 @@ public class Grammar implements Serializable {
             return new LinkedList<Production>();
         }
         return lexicalProdsByChild[child];
+    }
+
+    public final short[] lexicalParents(final int child) {
+        return lexicalParents[child];
     }
 
     public final boolean hasWord(final String s) {
@@ -675,7 +697,8 @@ public class Grammar implements Serializable {
      * @return Log probability of the specified rule.
      */
     public float lexicalLogProbability(final int parent, final int child) {
-        return getProductionProb(getLexicalProduction(parent, child));
+        // return getProductionProb(getLexicalProduction(parent, child));
+        return lexicalLogProbabilities[child].get((short) parent);
     }
 
     /**
