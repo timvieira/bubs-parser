@@ -140,14 +140,12 @@ public class Arrays {
 
     /**
      * Sort parallel int[] and float[] arrays (stolen from java.util.Arrays and modified to sort parallel arrays)
-     * 
-     * TODO Untested (caveat emptor)
      */
-    public static void sort(final int x[], final float f[]) {
+    public static void sort(final int[] x, final float[] f) {
         sort1(x, f, 0, x.length);
     }
 
-    private static void sort1(final int x[], final float f[], final int off, final int len) {
+    private static void sort1(final int[] x, final float[] f, final int off, final int len) {
         // Insertion sort on smallest arrays
         if (len < 7) {
             for (int i = off; i < len + off; i++)
@@ -207,7 +205,7 @@ public class Arrays {
     /**
      * Swaps x[a] with x[b] and f[a] with f[b].
      */
-    private static void swap(final int x[], final float f[], final int a, final int b) {
+    private static void swap(final int[] x, final float[] f, final int a, final int b) {
         final int t = x[a];
         x[a] = x[b];
         x[b] = t;
@@ -220,27 +218,25 @@ public class Arrays {
     /**
      * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)] and f[a .. (a+n-1)] with f[b .. (b+n-1)].
      */
-    private static void vecswap(final int x[], final float f[], int a, int b, final int n) {
+    private static void vecswap(final int[] x, final float[] f, int a, int b, final int n) {
         for (int i = 0; i < n; i++, a++, b++) {
             swap(x, f, a, b);
         }
     }
 
     /**
-     * Sort parallel array of short[], float[], float[], int[], and short[] and float[] by the short[] key. (stolen from
-     * java.util.Arrays and modified to sort parallel arrays)
+     * Sort parallel short[] and float[] arrays (stolen from java.util.Arrays and modified to sort parallel arrays)
      */
-    public static void sort(final short[] k, final float[] fVal1, final float[] fVal2, final int[] iVal, final short[] s) {
-        sort1(k, fVal1, fVal2, iVal, s, 0, k.length);
+    public static void sort(final short[] x, final float[] f) {
+        sort1(x, f, 0, x.length);
     }
 
-    private static void sort1(final short[] k, final float[] fVal1, final float[] fVal2, final int[] iVal,
-            final short[] sVal, final int off, final int len) {
+    private static void sort1(final short[] x, final float[] f, final int off, final int len) {
         // Insertion sort on smallest arrays
         if (len < 7) {
             for (int i = off; i < len + off; i++)
-                for (int j = i; j > off && k[j - 1] > k[j]; j--)
-                    swap(k, fVal1, fVal2, iVal, sVal, j, j - 1);
+                for (int j = i; j > off && x[j - 1] > x[j]; j--)
+                    swap(x, f, j, j - 1);
             return;
         }
 
@@ -251,80 +247,66 @@ public class Arrays {
             int n = off + len - 1;
             if (len > 40) { // Big arrays, pseudomedian of 9
                 final int s = len / 8;
-                l = med3(k, l, l + s, l + 2 * s);
-                m = med3(k, m - s, m, m + s);
-                n = med3(k, n - 2 * s, n - s, n);
+                l = med3(x, l, l + s, l + 2 * s);
+                m = med3(x, m - s, m, m + s);
+                n = med3(x, n - 2 * s, n - s, n);
             }
-            m = med3(k, l, m, n); // Mid-size, med of 3
+            m = med3(x, l, m, n); // Mid-size, med of 3
         }
-        final int val = k[m];
+        final int val = x[m];
 
         // Establish Invariant: v* (<v)* (>v)* v*
         int a = off, b = a, c = off + len - 1, d = c;
         while (true) {
-            while (b <= c && k[b] <= val) {
-                if (k[b] == val)
-                    swap(k, fVal1, fVal2, iVal, sVal, a++, b);
+            while (b <= c && x[b] <= val) {
+                if (x[b] == val)
+                    swap(x, f, a++, b);
                 b++;
             }
-            while (c >= b && k[c] >= val) {
-                if (k[c] == val)
-                    swap(k, fVal1, fVal2, iVal, sVal, c, d--);
+            while (c >= b && x[c] >= val) {
+                if (x[c] == val)
+                    swap(x, f, c, d--);
                 c--;
             }
             if (b > c)
                 break;
-            swap(k, fVal1, fVal2, iVal, sVal, b++, c--);
+            swap(x, f, b++, c--);
         }
 
         // Swap partition elements back to middle
         int s;
         final int n = off + len;
         s = java.lang.Math.min(a - off, b - a);
-        vecswap(k, fVal1, fVal2, iVal, sVal, off, b - s, s);
+        vecswap(x, f, off, b - s, s);
         s = java.lang.Math.min(d - c, n - d - 1);
-        vecswap(k, fVal1, fVal2, iVal, sVal, b, n - s, s);
+        vecswap(x, f, b, n - s, s);
 
         // Recursively sort non-partition-elements
         if ((s = b - a) > 1)
-            sort1(k, fVal1, fVal2, iVal, sVal, off, s);
+            sort1(x, f, off, s);
         if ((s = d - c) > 1)
-            sort1(k, fVal1, fVal2, iVal, sVal, n - s, s);
+            sort1(x, f, n - s, s);
     }
 
     /**
      * Swaps x[a] with x[b] and f[a] with f[b].
      */
-    private static void swap(final short[] k, final float[] fVal1, final float[] fVal2, final int[] iVal,
-            final short[] sVal, final int a, final int b) {
-        final short t = k[a];
-        k[a] = k[b];
-        k[b] = t;
+    private static void swap(final short[] x, final float[] f, final int a, final int b) {
+        final short t = x[a];
+        x[a] = x[b];
+        x[b] = t;
 
-        final float t2 = fVal1[a];
-        fVal1[a] = fVal1[b];
-        fVal1[b] = t2;
-
-        final float t3 = fVal2[a];
-        fVal2[a] = fVal2[b];
-        fVal2[b] = t3;
-
-        final int t4 = iVal[a];
-        iVal[a] = iVal[b];
-        iVal[b] = t4;
-
-        final short t5 = sVal[a];
-        sVal[a] = sVal[b];
-        sVal[b] = t5;
+        final float t2 = f[a];
+        f[a] = f[b];
+        f[b] = t2;
     }
 
     /**
      * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)] and f[a .. (a+n-1)] with f[b .. (b+n-1)].
      */
-    private static void vecswap(final short[] k, final float[] fVal1, final float[] fVal2, final int[] iVal,
-            final short[] sVal, int a, int b, final int n) {
+    private static void vecswap(final short[] x, final float[] f, int a, int b, final int n) {
         for (int i = 0; i < n; i++, a++, b++) {
-            swap(k, fVal1, fVal2, iVal, sVal, a, b);
+            swap(x, f, a, b);
         }
     }
 
