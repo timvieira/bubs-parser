@@ -223,7 +223,7 @@ public class BoundaryInOut extends EdgeSelector {
 
         // Init values to log(0) = -Inf
         for (int i = 0; i < numNT; i++) {
-            Arrays.fill(posTransitionLogProb[i], Float.NEGATIVE_INFINITY);
+            Arrays.fill(leftBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
         }
         for (int i = 0; i < maxPOSIndex + 1; i++) {
             Arrays.fill(rightBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
