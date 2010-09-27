@@ -23,9 +23,13 @@ public class InOutCellChart extends CellChart {
         return (ChartCell) chart[start][end];
     }
 
+    public float getOutside(final int start, final int end, final int nt) {
+        return getCell(start, end).getOutside(nt);
+    }
+
     public class ChartCell extends edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell {
 
-        float outside[];
+        public float outside[];
 
         public ChartCell(final int start, final int end) {
             super(start, end);
@@ -34,8 +38,8 @@ public class InOutCellChart extends CellChart {
 
             if (start == 0 && end == size()) {
                 outside[parser.grammar.startSymbol] = 0; // log(1)
-                // System.out.println(" *** setting " + parser.grammar.startSymbol() + " index=" +
-                // parser.grammar.startSymbol + " to 0");
+                Parser.logger.finest("setting " + parser.grammar.startSymbol() + " index=" + parser.grammar.startSymbol
+                        + " to 0");
             }
         }
 

@@ -57,6 +57,7 @@ public class BSCPPruneViterbi extends BeamSearchChartParser<LeftHashGrammar, Cel
             } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
                 cellPopped++;
+                logger.fine("" + edge);
 
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {

@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser;
 
+import java.util.logging.Logger;
+
 import org.kohsuke.args4j.EnumAliasMap;
 
 import edu.ohsu.cslu.grammar.Grammar;
@@ -16,6 +18,7 @@ public abstract class Parser<G extends Grammar> {
     public EdgeSelector edgeSelector;
     public CellSelector cellSelector;
     public ParseStats currentInput; // temporary so I don't break too much stuff at once
+    public static Logger logger;
 
     static protected int sentenceNumber = 0;
     protected float totalParseTimeSec = 0;
@@ -42,6 +45,7 @@ public abstract class Parser<G extends Grammar> {
             e.printStackTrace();
         }
         this.collectDetailedStatistics = opts.collectDetailedStatistics;
+        logger = ParserDriver.getLogger();
     }
 
     public abstract float getInside(int start, int end, int nt);
@@ -115,6 +119,7 @@ public abstract class Parser<G extends Grammar> {
         BSCPBoundedHeap("beambh"),
         BSCPExpDecay("beamed"),
         BSCPPerceptronCell("beampc"),
+        BSCPFomDecode("beamfom"),
         CoarseCellAgenda("cc"),
         CoarseCellAgendaCSLUT("cccslut"),
         JsaSparseMatrixVector("jsa"),
