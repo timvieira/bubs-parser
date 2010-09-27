@@ -97,7 +97,8 @@ public abstract class Chart {
     }
 
     public ParseTree extractBestParseNoBkptrs(final int start, final int end, final int nonTermIndex) {
-
+        // start at TOP and traverse down. Loop over possible midpoints for each visited cell.
+        // Unaries are a problem, but same as in Goodman/Berkeley decoding.
         return null;
     }
 

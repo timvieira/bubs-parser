@@ -144,7 +144,8 @@ public class CellChart extends Chart {
         getCell(start, end).updateInside(nt, insideProb);
     }
 
-    // TODO: why is this not its own class in its own file?
+    // TODO: why is this not its own class in its own file? Do we actually need
+    // the abstraction of a ChartCell? Can we put this all into Chart?
     public class HashSetChartCell extends ChartCell implements Comparable<HashSetChartCell> {
         public float fom = Float.NEGATIVE_INFINITY;
         protected boolean isLexCell;
@@ -261,6 +262,8 @@ public class CellChart extends Chart {
             return childNTs;
         }
 
+        // TODO: this is called a lot but it is creating a new array for each call!
+        // the whole point was NOT to do this. We need to use getNTs() where ever we can.
         public int[] getNtArray() {
             final int[] array = new int[childNTs.size()];
             int i = 0;
