@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.beam;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
@@ -23,14 +23,13 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
 
-        beamWidth = (int) opts.param1;
+        beamWidth = (int) ParserDriver.param1;
         if (beamWidth < 0)
-            beamWidth = 9999;
+            beamWidth = Integer.MAX_VALUE;
 
-        // logBeamDeltaThresh = ParserDriver.param2;
-        beamDeltaThresh = 9999;
+        beamDeltaThresh = (int) ParserDriver.param2;
         if (beamDeltaThresh < 0)
-            beamDeltaThresh = 30;
+            beamDeltaThresh = Integer.MAX_VALUE;
     }
 
     @Override
@@ -46,9 +45,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final double startTimeMS = System.currentTimeMillis();
         edgeSelector.init(chart);
         currentInput.fomInitSec = (float) ((System.currentTimeMillis() - startTimeMS) / 1000.0);
-
-        // Lexical productions are done during the main loop now
-        // addLexicalProductions(tokens);
 
         while (cellSelector.hasNext() && !chart.hasCompleteParse(grammar.startSymbol)) {
             cellPushed = 0;
@@ -79,9 +75,14 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         edgeCollectionInit();
 
         if (end - start == 1) {
+            // lexical and unary productions can't compete in the same agenda until their FOM
+            // scores are changed to be comparable
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
-                edge = chart.new ChartEdge(lexProd, cell);
-                addEdgeToCollection(edge);
+                cell.updateInside(lexProd, cell, null, lexProd.prob);
+                for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
+                    addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
+                }
+
             }
         } else {
             for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
