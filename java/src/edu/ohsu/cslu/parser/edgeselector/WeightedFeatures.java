@@ -10,6 +10,7 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.Log;
@@ -20,7 +21,7 @@ public class WeightedFeatures extends EdgeSelector {
 
     private Grammar grammar;
     private int numFeatures;
-    private CellChart goldChart;
+    private GoldChart goldChart;
 
     public WeightedFeatures(final Grammar grammar) {
         this.grammar = grammar;
@@ -56,7 +57,7 @@ public class WeightedFeatures extends EdgeSelector {
                 Log.info(0, "ERROR: Training trees must be binarized exactly as used in decoding");
                 System.exit(1);
             }
-            goldChart = new CellChart(goldTree, true, parser);
+            goldChart = new GoldChart(goldTree, grammar);
 
             // fill chart
             final String sentence = ParserUtil.join(goldTree.getLeafNodesContent(), " ");
