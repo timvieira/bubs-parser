@@ -289,7 +289,7 @@ public abstract class Chart {
                     return false;
                 }
 
-                final ChartEdge otherEdge = (ChartEdge) other;
+                final Chart.ChartEdge otherEdge = (Chart.ChartEdge) other;
                 if (prod == null && otherEdge.prod != null) {
                     return false;
                 }
