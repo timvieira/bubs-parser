@@ -403,7 +403,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
                 // TODO Return an instance of ParseStats instead of String so we can log this after the parse?
                 logger.fine(parseStats.toString() + " " + parser.getStats());
-
+                if (parser instanceof ChartParser && logger.isLoggable(Level.FINEST)) {
+                    logger.finest(((ChartParser<?, ?>) parser).chart.toString());
+                }
                 return parseStats.parseBracketString;
             }
         });

@@ -6,7 +6,6 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 /**
@@ -80,8 +79,6 @@ public class PackedArrayChart extends ParallelArrayChart {
     // TODO Remove this large array and share a single temporary cell. Should avoid some object creation and GC
     public final PackedArrayChartCell[][] temporaryCells;
 
-    private final EdgeSelector edgeSelector;
-
     /**
      * Constructs a chart
      * 
@@ -90,8 +87,9 @@ public class PackedArrayChart extends ParallelArrayChart {
      * @param beamWidth
      */
     public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar, final int beamWidth,
-            final EdgeSelector edgeSelector) {
-        super(tokens, sparseMatrixGrammar, Math.min(beamWidth, sparseMatrixGrammar.numNonTerms()));
+            final int lexicalRowBeamWidth) {
+        super(tokens, sparseMatrixGrammar, Math.min(beamWidth, sparseMatrixGrammar.numNonTerms()), Math.min(
+                lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms()));
 
         numNonTerminals = new int[cells];
         minLeftChildIndex = new int[cells];
@@ -102,23 +100,25 @@ public class PackedArrayChart extends ParallelArrayChart {
         nonTerminalIndices = new short[chartArraySize];
 
         temporaryCells = new PackedArrayChartCell[size][size + 1];
-        this.edgeSelector = edgeSelector;
     }
 
     /**
-     * Constructs a chart
+     * Constructs a chart for exhaustive inference.
      * 
      * @param tokens Sentence tokens, mapped to integer indices
      * @param sparseMatrixGrammar Grammar
      */
     public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), null);
+        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms());
     }
 
     @Override
     public void clear(final int sentenceLength) {
         this.size = sentenceLength;
         Arrays.fill(numNonTerminals, 0, cellIndex(0, sentenceLength) + 1, 0);
+        for (int i = 0; i < size; i++) {
+            Arrays.fill(temporaryCells[i], null);
+        }
     }
 
     @Override
@@ -210,7 +210,6 @@ public class PackedArrayChart extends ParallelArrayChart {
          */
         public int[] tmpPackedChildren;
         public float[] tmpInsideProbabilities;
-        public float[] tmpFom;
         public short[] tmpMidpoints;
 
         public PackedArrayChartCell(final int start, final int end) {
@@ -254,133 +253,50 @@ public class PackedArrayChart extends ParallelArrayChart {
             if (tmpPackedChildren == null) {
                 return;
             }
+            finalizeCell(tmpPackedChildren, tmpInsideProbabilities, tmpMidpoints);
+        }
 
-            if (beamWidth == tmpInsideProbabilities.length) {
-                // Copy all populated entries from temporary storage
-                boolean foundMinLeftChild = false, foundMinRightChild = false;
-                int nonTerminalOffset = offset;
+        public void finalizeCell(final int[] newPackedChildren, final float[] newInsideProbabilities,
+                final short[] newMidpoints) {
+            // Copy all populated entries from temporary storage
+            boolean foundMinLeftChild = false, foundMinRightChild = false;
+            int nonTerminalOffset = offset;
 
-                minLeftChildIndex[cellIndex] = offset;
-                maxLeftChildIndex[cellIndex] = offset - 1;
-                minRightChildIndex[cellIndex] = offset;
-                maxRightChildIndex[cellIndex] = offset - 1;
+            minLeftChildIndex[cellIndex] = offset;
+            maxLeftChildIndex[cellIndex] = offset - 1;
+            minRightChildIndex[cellIndex] = offset;
+            maxRightChildIndex[cellIndex] = offset - 1;
 
-                for (short nonTerminal = 0; nonTerminal < tmpInsideProbabilities.length; nonTerminal++) {
+            for (short nonTerminal = 0; nonTerminal < newInsideProbabilities.length; nonTerminal++) {
 
-                    if (tmpInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
+                if (newInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
 
-                        nonTerminalIndices[nonTerminalOffset] = nonTerminal;
-                        insideProbabilities[nonTerminalOffset] = tmpInsideProbabilities[nonTerminal];
-                        packedChildren[nonTerminalOffset] = tmpPackedChildren[nonTerminal];
-                        midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
+                    nonTerminalIndices[nonTerminalOffset] = nonTerminal;
+                    insideProbabilities[nonTerminalOffset] = newInsideProbabilities[nonTerminal];
+                    packedChildren[nonTerminalOffset] = newPackedChildren[nonTerminal];
+                    midpoints[nonTerminalOffset] = newMidpoints[nonTerminal];
 
-                        if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
-                            if (!foundMinLeftChild) {
-                                minLeftChildIndex[cellIndex] = nonTerminalOffset;
-                                foundMinLeftChild = true;
-                            }
-                            maxLeftChildIndex[cellIndex] = nonTerminalOffset;
+                    if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
+                        if (!foundMinLeftChild) {
+                            minLeftChildIndex[cellIndex] = nonTerminalOffset;
+                            foundMinLeftChild = true;
                         }
-
-                        if (sparseMatrixGrammar.isValidRightChild(nonTerminal)) {
-                            if (!foundMinRightChild) {
-                                minRightChildIndex[cellIndex] = nonTerminalOffset;
-                                foundMinRightChild = true;
-                            }
-                            maxRightChildIndex[cellIndex] = nonTerminalOffset;
-                        }
-
-                        nonTerminalOffset++;
+                        maxLeftChildIndex[cellIndex] = nonTerminalOffset;
                     }
+
+                    if (sparseMatrixGrammar.isValidRightChild(nonTerminal)) {
+                        if (!foundMinRightChild) {
+                            minRightChildIndex[cellIndex] = nonTerminalOffset;
+                            foundMinRightChild = true;
+                        }
+                        maxRightChildIndex[cellIndex] = nonTerminalOffset;
+                    }
+
+                    nonTerminalOffset++;
                 }
-
-                numNonTerminals[cellIndex] = nonTerminalOffset - offset;
-
-            } else {
-                final boolean lexical = (end == start + 1);
-
-                // If maxEntriesPerCell < |V|, we're performing pruned search; pack only the most probable entries,
-                // still in numerical order so we can iterate over them normally in subsequent cells.
-                final BoundedPriorityQueue q = new BoundedPriorityQueue(beamWidth);
-                for (short nt = 0; nt < tmpInsideProbabilities.length; nt++) {
-
-                    final float insideProbability = tmpInsideProbabilities[nt];
-                    if (insideProbability != Float.NEGATIVE_INFINITY) {
-                        if (edgeSelector != null) {
-                            if (lexical) {
-                                q.insert(nt, edgeSelector.calcLexicalFOM(start, end, nt, insideProbability));
-                            } else {
-                                q.insert(nt, edgeSelector.calcFOM(start, end, nt, insideProbability));
-                            }
-                        } else {
-                            q.insert(nt, insideProbability);
-                        }
-                    }
-                }
-
-                // Force including the start symbol in the top cell, even if it would not meet the FOM threshold
-                if (start == 0 && end == size) {
-                    if (edgeSelector != null) {
-                        q.forceInsert((short) sparseMatrixGrammar.startSymbol, edgeSelector.calcFOM(start, end,
-                                (short) sparseMatrixGrammar.startSymbol,
-                                tmpInsideProbabilities[sparseMatrixGrammar.startSymbol]));
-                    } else {
-                        q.forceInsert((short) sparseMatrixGrammar.startSymbol,
-                                tmpInsideProbabilities[sparseMatrixGrammar.startSymbol]);
-                    }
-                }
-
-                q.sortByNonterminalIndex();
-
-                // Copy all populated entries from temporary storage. Copied nearly verbatim from non-pruned version
-                // above
-                boolean foundMinLeftChild = false, foundMinRightChild = false;
-                int nonTerminalOffset = offset;
-
-                minLeftChildIndex[cellIndex] = offset;
-                maxLeftChildIndex[cellIndex] = offset - 1;
-                minRightChildIndex[cellIndex] = offset;
-                maxRightChildIndex[cellIndex] = offset - 1;
-
-                for (int i = 0; i < q.size; i++) {
-
-                    final short nonTerminal = q.queueParentIndices[i];
-                    if (nonTerminal == Short.MAX_VALUE) {
-                        break;
-                    }
-
-                    if (tmpInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
-
-                        nonTerminalIndices[nonTerminalOffset] = nonTerminal;
-                        // TODO If we want to accumulate FOM scores instead of inside probabilities in the chart, switch
-                        // to using scores from the queue here
-                        insideProbabilities[nonTerminalOffset] = tmpInsideProbabilities[nonTerminal];
-                        packedChildren[nonTerminalOffset] = tmpPackedChildren[nonTerminal];
-                        midpoints[nonTerminalOffset] = tmpMidpoints[nonTerminal];
-
-                        if (sparseMatrixGrammar.isValidLeftChild(nonTerminal)) {
-                            if (!foundMinLeftChild) {
-                                minLeftChildIndex[cellIndex] = nonTerminalOffset;
-                                foundMinLeftChild = true;
-                            }
-                            maxLeftChildIndex[cellIndex] = nonTerminalOffset;
-                        }
-
-                        if (sparseMatrixGrammar.isValidRightChild(nonTerminal)) {
-                            if (!foundMinRightChild) {
-                                minRightChildIndex[cellIndex] = nonTerminalOffset;
-                                foundMinRightChild = true;
-                            }
-                            maxRightChildIndex[cellIndex] = nonTerminalOffset;
-                        }
-
-                        nonTerminalOffset++;
-                    }
-                }
-
-                numNonTerminals[cellIndex] = nonTerminalOffset - offset;
             }
 
+            numNonTerminals[cellIndex] = nonTerminalOffset - offset;
             clearTemporaryStorage();
             temporaryCells[start][end] = null;
         }
@@ -391,7 +307,6 @@ public class PackedArrayChart extends ParallelArrayChart {
                 return tmpInsideProbabilities[nonTerminal];
             }
 
-            // TODO Use getBestEdge() ?
             final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
                     (short) nonTerminal);
             if (index < 0) {
@@ -623,134 +538,6 @@ public class PackedArrayChart extends ParallelArrayChart {
                     }
                 }
 
-            }
-            return sb.toString();
-        }
-    }
-
-    /**
-     * Stores a bounded heap of cell entries, ordered by a figure-of-merit. This could be stored directly in the main
-     * chart parallel array, but it's easier to test in separate storage during development.
-     * 
-     * @author Aaron Dunlop
-     * @since Sep 10, 2010
-     * 
-     * @version $Revision$ $Date$ $Author$
-     */
-    public static class BoundedPriorityQueue {
-
-        /**
-         * Parallel array storing a bounded cell population (parents, probabilities, packed children, and midpoints).
-         * Analagous to {@link ParallelArrayChart#insideProbabilities}, {@link ParallelArrayChart#packedChildren},
-         * {@link ParallelArrayChart#midpoints}, and {@link #nonTerminalIndices}. The most probable entry should be
-         * stored in index 0.
-         */
-        final short[] queueParentIndices;
-        final float[] queueFom;
-
-        private int size = 0;
-
-        public BoundedPriorityQueue(final int maxSize) {
-            queueFom = new float[maxSize];
-            Arrays.fill(queueFom, Float.NEGATIVE_INFINITY);
-            queueParentIndices = new short[maxSize];
-        }
-
-        /**
-         * Inserts an entry in the priority queue, if its figure-of-merit meets the current threshold (ejecting the
-         * lowest item in the queue if the size bound is exceeded).
-         * 
-         * @param parentIndex
-         * @param fom
-         */
-        public void insert(final short parentIndex, final float fom) {
-
-            if (size == queueFom.length) {
-                // Ignore entries which are less probable than the minimum-priority entry
-                if (fom <= queueFom[size - 1]) {
-                    return;
-                }
-            } else {
-                size++;
-            }
-
-            int i = size - 1;
-
-            queueFom[i] = fom;
-            queueParentIndices[i] = parentIndex;
-
-            while (i > 0 && queueFom[i] > queueFom[i - 1]) {
-                swap(i, i - 1);
-                i--;
-            }
-        }
-
-        /**
-         * Replaces the least-probable entry in the queue, regardless of the relative probability of the new entry. Used
-         * to ensure that the top chart cell contains the start symbol.
-         * 
-         * @param parentIndex
-         * @param fom
-         */
-        public void forceInsert(final short parentIndex, final float fom) {
-
-            // First, linear-search for an existing entry
-            for (int i = 0; i < size; i++) {
-                if (queueParentIndices[i] == parentIndex) {
-                    queueFom[i] = fom;
-                    queueParentIndices[i] = parentIndex;
-
-                    return;
-                }
-            }
-
-            if (size != queueFom.length) {
-                size++;
-            }
-
-            int i = size - 1;
-
-            queueFom[i] = fom;
-            queueParentIndices[i] = parentIndex;
-
-            while (i > 0 && queueFom[i] > queueFom[i - 1]) {
-                swap(i, i - 1);
-                i--;
-            }
-        }
-
-        private void swap(final int i1, final int i2) {
-            final float t1 = queueFom[i1];
-            queueFom[i1] = queueFom[i2];
-            queueFom[i2] = t1;
-
-            final short t2 = queueParentIndices[i1];
-            queueParentIndices[i1] = queueParentIndices[i2];
-            queueParentIndices[i2] = t2;
-        }
-
-        /**
-         * Sorts parallel array storage by non-terminal index. Note that this invalidates the heap assumption.
-         */
-        public void sortByNonterminalIndex() {
-            // Ensure that any un-populated entries sort to the end of the array
-            for (int i = 0; i < queueFom.length; i++) {
-                if (queueFom[i] == Float.NEGATIVE_INFINITY) {
-                    queueParentIndices[i] = Short.MAX_VALUE;
-                }
-            }
-            edu.ohsu.cslu.util.Arrays.sort(queueParentIndices, queueFom);
-        }
-
-        public int size() {
-            return size;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder(1024);
-            for (int i = 0; i < queueFom.length; i++) {
-                sb.append(String.format("%d %.3f\n", queueParentIndices[i], queueFom[i]));
             }
             return sb.toString();
         }

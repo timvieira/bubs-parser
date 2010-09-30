@@ -4,11 +4,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.ProjectedGrammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.InOutCellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.InOutCellChart;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
@@ -25,7 +25,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
     @Override
     protected void initParser(final int[] tokens) {
-        chart = new InOutCellChart(tokens, opts.viterbiMax, this);
+        chart = new InOutCellChart(tokens, false, this);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
         // goodmanMaximizeLabelRecall();
         berkeleyMaxRule(tokens);
 
-        return chart.extractBestParse(chart.getRootCell(), evalGrammar.startSymbol);
+        return chart.extractBestParse(0, chart.size(), evalGrammar.startSymbol);
     }
 
     // find latent grammar max rule score for theoretical
@@ -224,8 +224,8 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                 // maxc[start][end] = (float) ParserUtil.logSum(maxInOut, maxSplit);
                 final Production p = grammar.new Production(bestNT[start][end], bestNT[start][maxSplitMid],
                         bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
-                cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid), chart
-                        .getCell(maxSplitMid, end));
+                cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid),
+                        chart.getCell(maxSplitMid, end));
             }
         }
     }
@@ -377,7 +377,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     // final float inOut = cell.getInside(nt) + cell.getOutside(nt);
     // final int evalNT = grammar.getEvalNonTerm(nt);
     // ruleScores[evalNT] = (float) ParserUtil.logSum(ruleScores[evalNT], inOut);
-    //                    
+    //
     // // find max value
     // if (ruleScores[evalNT] > maxScore[start][end]) {
     // maxScore[start][end] = ruleScores[evalNT];
@@ -409,5 +409,5 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     // bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
     // cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid),
     // chart.getCell(maxSplitMid, end));
-    //  
+    //
 }

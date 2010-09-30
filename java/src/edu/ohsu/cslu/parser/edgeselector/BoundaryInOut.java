@@ -18,10 +18,11 @@ import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
 
-public class BoundaryInOut extends EdgeSelector {
+public final class BoundaryInOut extends EdgeSelector {
 
     private Grammar grammar;
     private float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
+
     private float outsideLeft[][], outsideRight[][];
 
     private IntOpenHashSet posSet = new IntOpenHashSet();
@@ -69,6 +70,7 @@ public class BoundaryInOut extends EdgeSelector {
         // are padded with a begin and end <null> value which shifts the entire array to
         // the right by one
         // final int spanLength = edge.end() - edge.start();
+
         final float outside = outsideLeft[start - 1 + 1][parent] + outsideRight[end + 1][parent];
         return insideProbability + outside;
     }

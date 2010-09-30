@@ -6,8 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.util.Log;
@@ -115,8 +115,10 @@ public class CellChart extends Chart {
                 }
 
                 if (prod == null) {
-                    Log.info(0, "WARNING: production does not exist in grammar for node: " + A + " -> "
-                            + node.childrenToString());
+                    Log.info(
+                            0,
+                            "WARNING: production does not exist in grammar for node: " + A + " -> "
+                                    + node.childrenToString());
                 } else {
                     // chart[start][end].updateInside(edge);
                     chart[start][end].bestEdge[edge.prod.parent] = edge;
@@ -142,6 +144,19 @@ public class CellChart extends Chart {
     @Override
     public void updateInside(final int start, final int end, final int nt, final float insideProb) {
         getCell(start, end).updateInside(nt, insideProb);
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder(10240);
+        for (int span = 1; span <= size; span++) {
+            for (int start = 0; start <= size - span; start++) {
+                final int end = start + span;
+                sb.append(getCell(start, end).toString());
+                sb.append("\n\n");
+            }
+        }
+        return sb.toString();
     }
 
     // TODO: why is this not its own class in its own file? Do we actually need
@@ -302,8 +317,18 @@ public class CellChart extends Chart {
 
         @Override
         public String toString() {
-            return getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
-                    + parser.grammar.numNonTerms() + ") edges";
+            final StringBuilder sb = new StringBuilder(1024);
+            sb.append(getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
+                    + parser.grammar.numNonTerms() + ") edges");
+            sb.append('\n');
+
+            for (int i = 0; i < bestEdge.length; i++) {
+                if (bestEdge[i] != null) {
+                    sb.append(bestEdge[i].toString());
+                    sb.append('\n');
+                }
+            }
+            return sb.toString();
         }
 
         @Override
@@ -352,7 +377,7 @@ public class CellChart extends Chart {
 
         @Override
         public String toString() {
-            return super.toString() + String.format(" fom=%f", fom);
+            return super.toString() + String.format(" fom=%.3f", fom);
         }
     }
 }

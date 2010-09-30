@@ -13,13 +13,15 @@ import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class Parser<G extends Grammar> {
 
-    public G grammar;
+    public final G grammar;
     public ParserDriver opts;
+    // TODO Make this reference final (once we work around the hack in CellChart)
     public EdgeSelector edgeSelector;
-    public CellSelector cellSelector;
+    public final CellSelector cellSelector;
     public ParseStats currentInput; // temporary so I don't break too much stuff at once
     public static Logger logger;
 
+    // TODO Move global state back out of Parser
     static protected int sentenceNumber = 0;
     protected float totalParseTimeSec = 0;
     protected float totalInsideScore = 0;
@@ -38,12 +40,8 @@ public abstract class Parser<G extends Grammar> {
         this.grammar = grammar;
         this.opts = opts;
 
-        try {
-            edgeSelector = EdgeSelector.create(opts.edgeFOMType, grammar, opts.fomModelStream);
-            cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
+        edgeSelector = EdgeSelector.create(opts.edgeFOMType, grammar, opts.fomModelStream);
+        cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
         this.collectDetailedStatistics = opts.collectDetailedStatistics;
         logger = ParserDriver.getLogger();
     }
