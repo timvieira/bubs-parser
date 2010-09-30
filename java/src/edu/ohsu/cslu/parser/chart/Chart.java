@@ -23,6 +23,9 @@ public abstract class Chart {
     // this.viterbiMax = viterbiMax;
     // }
 
+    /**
+     * The number of cells in the bottom (lexical) row of this chart
+     */
     public final int size() {
         return size;
     }
@@ -272,7 +275,7 @@ public abstract class Chart {
                 prodStr = prod.toString();
             }
 
-            return String.format("[%s,%s,%s] %s inside=%f", start, midpt, end, prodStr, inside());
+            return String.format("[%s,%s,%s] %s inside=%.4f", start, midpt, end, prodStr, inside());
         }
 
         @Override

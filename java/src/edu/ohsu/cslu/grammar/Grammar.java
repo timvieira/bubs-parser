@@ -862,7 +862,7 @@ public class Grammar implements Serializable {
 
         @Override
         public String toString() {
-            return parentToString() + " -> " + childrenToString() + " (p=" + Double.toString(prob) + ")";
+            return String.format("%s -> %s (p=%.4f)", parentToString(), childrenToString(), prob);
         }
 
     }

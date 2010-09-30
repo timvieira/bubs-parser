@@ -29,6 +29,7 @@ public abstract class ParallelArrayChart extends Chart {
      * grammar's vocabulary, but for pruned search, we can limit cell population, reducing the chart's memory footprint
      */
     protected final int beamWidth;
+    protected final int lexicalRowBeamWidth;
 
     /**
      * Start indices for each cell. Computed from cell start and end indices and stored in the chart for convenience
@@ -55,14 +56,16 @@ public abstract class ParallelArrayChart extends Chart {
      * @param sparseMatrixGrammar Grammar
      * @param beamWidth The maximum number of entries allowed in a chart cell
      */
-    protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar, final int beamWidth) {
+    protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar,
+            final int beamWidth, final int lexicalRowBeamWidth) {
         super(tokens, true);
         this.sparseMatrixGrammar = sparseMatrixGrammar;
         this.beamWidth = Math.min(beamWidth, sparseMatrixGrammar.numNonTerms());
+        this.lexicalRowBeamWidth = Math.min(lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms());
 
         cells = cellIndex(0, size) + 1;
 
-        chartArraySize = cells * this.beamWidth;
+        chartArraySize = size * this.lexicalRowBeamWidth + (cells - size) * this.beamWidth;
         insideProbabilities = new float[chartArraySize];
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         packedChildren = new int[chartArraySize];
@@ -71,15 +74,19 @@ public abstract class ParallelArrayChart extends Chart {
         // Calculate all cell offsets
         cellOffsets = new int[cells];
         for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end < size + 1; end++) {
+            final int cellIndex = cellIndex(start, start + 1);
+            cellOffsets[cellIndex] = cellIndex * this.lexicalRowBeamWidth;
+        }
+        for (int start = 0; start < size; start++) {
+            for (int end = start + 2; end < size + 1; end++) {
                 final int cellIndex = cellIndex(start, end);
-                cellOffsets[cellIndex] = cellIndex * this.beamWidth;
+                cellOffsets[cellIndex] = size * this.lexicalRowBeamWidth + (cellIndex - size) * this.beamWidth;
             }
         }
     }
 
     protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms());
+        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms());
     }
 
     /**
@@ -144,7 +151,7 @@ public abstract class ParallelArrayChart extends Chart {
             super(start, end);
 
             cellIndex = cellIndex(start, end);
-            offset = cellIndex * beamWidth;
+            offset = cellOffsets[cellIndex];
         }
 
         /**

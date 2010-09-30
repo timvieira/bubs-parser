@@ -83,6 +83,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
             totalCartesianProductUnionTime = 0;
             totalFinalizeTime = 0;
         }
+        chart.tokens = tokens;
     }
 
     /**

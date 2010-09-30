@@ -11,7 +11,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.chart.PackedArrayChart.BoundedPriorityQueue;
 import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
@@ -40,39 +39,6 @@ public class TestPackedArrayChart {
     }
 
     @Test
-    public void testBoundedBinaryHeap() throws Exception {
-        final BoundedPriorityQueue h = new BoundedPriorityQueue(5);
-        h.insert((short) 1, -1f);
-        h.insert((short) 2, -2f);
-        h.insert((short) 3, -3f);
-        assertEquals(3, h.size());
-
-        h.insert((short) 7, -7f);
-        assertEquals(4, h.size());
-
-        h.insert((short) 6, -6f);
-        h.insert((short) 5, -5f);
-        h.insert((short) 4, -4f);
-        assertEquals(5, h.size());
-
-        h.sortByNonterminalIndex();
-        assertEquals(1, h.queueParentIndices[0]);
-        assertEquals(-1f, h.queueFom[0], .001f);
-
-        assertEquals(2, h.queueParentIndices[1]);
-        assertEquals(-2f, h.queueFom[1], .001f);
-
-        assertEquals(3, h.queueParentIndices[2]);
-        assertEquals(-3f, h.queueFom[2], .001f);
-
-        assertEquals(4, h.queueParentIndices[3]);
-        assertEquals(-4f, h.queueFom[3], .001f);
-
-        assertEquals(5, h.queueParentIndices[4]);
-        assertEquals(-5f, h.queueFom[4], .001f);
-    }
-
-    @Test
     public void testUnprunedFinalizeCell() throws Exception {
         chart = new PackedArrayChart(new int[] { 1, 2, 3, 4, 5 }, simpleGrammar2);
         final ChartCell cell_2_3 = chart.getCell(2, 3);
@@ -96,7 +62,7 @@ public class TestPackedArrayChart {
 
     @Test
     public void testPrunedFinalizeCell() throws Exception {
-        chart = new PackedArrayChart(new int[] { 1, 2, 3, 4, 5 }, simpleGrammar2, 2, null);
+        chart = new PackedArrayChart(new int[] { 1, 2, 3, 4, 5 }, simpleGrammar2, 2, 2);
         final ChartCell cell_2_3 = chart.getCell(2, 3);
 
         // Three binary productions
