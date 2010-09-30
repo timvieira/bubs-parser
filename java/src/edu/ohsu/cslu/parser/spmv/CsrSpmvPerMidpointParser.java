@@ -69,7 +69,7 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
         unarySpmv(packedArrayCell);
 
         final long t4 = System.currentTimeMillis();
-        totalUnarySpMVTime += (t4 - t3);
+        totalUnaryTime += (t4 - t3);
 
         // Pack the temporary cell storage into the main chart array
         packedArrayCell.finalizeCell();

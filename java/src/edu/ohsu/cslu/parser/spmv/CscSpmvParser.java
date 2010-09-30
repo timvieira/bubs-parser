@@ -105,7 +105,7 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
             unarySpmv(spvChartCell);
 
             if (collectDetailedStatistics) {
-                totalUnarySpMVTime += (System.currentTimeMillis() - t2);
+                totalUnaryTime += (System.currentTimeMillis() - t2);
 
                 totalCellPopulation += spvChartCell.getNumNTs();
                 totalLeftChildPopulation += spvChartCell.leftChildren();
@@ -140,6 +140,8 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
              * inserting any resulting unary edges to the queue. This insertion replaces the existing queue entry for
              * the parent non-terminal, if greater, and updates the inside probability and backpointer in (A).
              */
+
+            final long t3 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
 
             // Push all binary or lexical edges onto a bounded priority queue
             final int cellBeamWidth = (end - start == 1 ? lexicalRowBeamWidth : beamWidth);
@@ -225,7 +227,14 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
                 }
             }
 
-            spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+            if (collectDetailedStatistics) {
+                totalUnaryTime += (System.currentTimeMillis() - t3);
+                final long t4 = System.currentTimeMillis();
+                spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+                totalFinalizeTime += (System.currentTimeMillis() - t4);
+            } else {
+                spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+            }
         }
     }
 

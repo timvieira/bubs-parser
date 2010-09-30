@@ -11,7 +11,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     public C chart;
     protected long extractTime;
-    private long edgeInitTime;
+    protected long initTime;
 
     public ChartParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -19,14 +19,14 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public ParseTree findBestParse(final int[] tokens) throws Exception {
+        final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
         initParser(tokens);
         addLexicalProductions(tokens);
         cellSelector.init(this);
         if (edgeSelector != null) {
             if (collectDetailedStatistics) {
-                final long startTime = System.nanoTime();
                 edgeSelector.init(chart);
-                edgeInitTime = (System.nanoTime() - startTime) / 1000;
+                initTime = System.currentTimeMillis() - t0;
             } else {
                 edgeSelector.init(chart);
             }
@@ -38,9 +38,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         }
 
         if (collectDetailedStatistics) {
-            final long t0 = System.currentTimeMillis();
+            final long t1 = System.currentTimeMillis();
             final ParseTree parseTree = chart.extractBestParse(grammar.startSymbol);
-            extractTime = System.currentTimeMillis() - t0;
+            extractTime = System.currentTimeMillis() - t1;
             return parseTree;
         }
 
@@ -82,6 +82,6 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public String getStats() {
-        return chart.getStats() + (collectDetailedStatistics ? (" edgeInitTime=" + edgeInitTime) : "");
+        return chart.getStats() + (collectDetailedStatistics ? (" edgeInitTime=" + initTime) : "");
     }
 }
