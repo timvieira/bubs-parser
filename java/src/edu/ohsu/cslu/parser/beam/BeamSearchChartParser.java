@@ -85,7 +85,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
             }
         } else {
-            for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
+            for (int mid = start + 1; mid < end; mid++) { // mid point
                 final HashSetChartCell leftCell = chart.getCell(start, mid);
                 final HashSetChartCell rightCell = chart.getCell(mid, end);
                 for (final int leftNT : leftCell.getLeftChildNTs()) {

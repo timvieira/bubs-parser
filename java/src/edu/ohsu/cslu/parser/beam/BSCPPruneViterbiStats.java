@@ -6,8 +6,10 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.util.Log;
 
 public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
@@ -39,27 +41,26 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
 
         if (currentInput.inputTreeChart == null) {
             Log.info(0, "ERROR: Beam Search parser with stats must provide gold trees as input");
+            System.exit(1);
         }
-        final List<ChartEdge> goldEdges = currentInput.inputTreeChart.getCell(cell.start(), cell.end())
-                .getBestEdgeList();
+
+        final List<Chart.ChartEdge> goldEdges = currentInput.inputTreeChart.getEdgeList(cell.start(), cell.end());
         boolean hasGoldEdge = false;
         nGoldEdges = goldEdges.size();
-        if (nGoldEdges > 0) {
-            hasGoldEdge = true;
-            // for (final ChartEdge x : goldEdges) {
-            // System.out.println("Gold edges: " + x);
-            // }
-        }
+        hasGoldEdge = (nGoldEdges > 0);
+        if (hasGoldEdge)
+            goldRank = 99999;
 
         // I think a more fair comparison is when we don't stop once we reach the gold edge
         // since this effects the population of cells down stream.
         // while (agenda.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh && !addedGoldEdges) {
-        while (agenda.isEmpty() == false && cellPopped <= beamWidth && !edgeBelowThresh) {
+        while (agenda.isEmpty() == false && cellPopped < beamWidth && !edgeBelowThresh) {
             edge = agenda.poll();
 
+            // check if we just popped a gold edge
             if (hasGoldEdge) {
-                ChartEdge goldEdgeAdded = null;
-                for (final ChartEdge goldEdge : goldEdges) {
+                Chart.ChartEdge goldEdgeAdded = null;
+                for (final Chart.ChartEdge goldEdge : goldEdges) {
                     if (edge.equals(goldEdge)) {
                         goldEdgeAdded = goldEdge;
                     }
@@ -72,6 +73,7 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
                 }
             }
 
+            // add edge to chart
             if (edge.fom < bestFOM - beamDeltaThresh) {
                 edgeBelowThresh = true;
             } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
@@ -95,9 +97,36 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
             }
         }
 
-        if (nGoldEdges > 0) {
-            System.out.println("DSTAT: " + this.chart.size() + " " + cell.width() + " " + nGoldEdges + " " + goldRank
-                    + " " + nPopBinary + " " + nPopUnary + " " + (nPopBinary + nPopUnary) + " ");
+        // if (nGoldEdges > 0) {
+        // System.out.println("DSTAT: " + chart.size() + " " + cell.width() + " " + nGoldEdges + " " + goldRank + " "
+        // + nPopBinary + " " + nPopUnary + " " + (nPopBinary + nPopUnary) + " ");
+        // }
+        System.out.println("DSTAT: " + goldRank + " " + getCellFeaturesStr(cell.start(), cell.end()));
+    }
+
+    final int NUM_FEATS = 4;
+
+    public float[] getCellFeatures(final int start, final int end) {
+        final float[] feats = new float[NUM_FEATS];
+        feats[0] = chart.size();
+        feats[1] = end - start;
+        feats[2] = start;
+        feats[3] = end;
+
+        return feats;
+    }
+
+    public String getCellFeaturesStr(final int start, final int end) {
+        final float[] outsideLeftPOS = ((BoundaryInOut) edgeSelector).fwdbkw[start];
+        return chart.size() + " " + (end - start) + " " + start + " " + end + " " + floatArray2Str(outsideLeftPOS);
+    }
+
+    private String floatArray2Str(final float[] data) {
+        String result = "";
+        for (final float val : data) {
+            // result += Math.pow(Math.E, val) + " ";
+            result += val + " ";
         }
+        return result.trim();
     }
 }

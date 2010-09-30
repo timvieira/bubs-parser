@@ -8,11 +8,13 @@ import java.util.PriorityQueue;
 import java.util.Vector;
 
 import edu.ohsu.cslu.classifier.Perceptron;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.util.Log;
@@ -32,7 +34,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
     }
 
     public void train(final BufferedReader inStream) throws Exception {
-        LinkedList<ChartEdge> goldEdgeList;
+        LinkedList<Chart.ChartEdge> goldEdgeList;
         String line, sentence;
         ParseTree tree;
         HashSetChartCell cell;
@@ -62,7 +64,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
 
                 tree.tokenizeLeaves(grammar);
                 // final CellChart goldChart = tree.convertToChart(grammar);
-                final CellChart goldChart = new CellChart(tree, false, null);
+                final GoldChart goldChart = new GoldChart(tree, grammar);
 
                 final int sent[] = grammar.tokenizer.tokenizeToIndex(sentence);
                 initParser(sent);
@@ -79,10 +81,11 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
                 while (cellSelector.hasNext() && !chart.hasCompleteParse(grammar.startSymbol)) {
                     final short[] startAndEnd = cellSelector.next();
                     cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
-                    goldEdgeList = new LinkedList<ChartEdge>();
-                    final HashSetChartCell goldCell = goldChart.getCell(cell.start(), cell.end());
-                    for (final int nt : goldCell.getNTs()) {
-                        final ChartEdge goldEdge = goldCell.getBestEdge(nt);
+                    goldEdgeList = new LinkedList<Chart.ChartEdge>();
+                    // final HashSetChartCell goldCell = goldChart.getCell(cell.start(), cell.end());
+                    // for (final int nt : goldCell.getNTs()) {
+                    // final ChartEdge goldEdge = goldCell.getBestEdge(nt);
+                    for (final Chart.ChartEdge goldEdge : goldChart.getEdgeList(cell.start(), cell.end())) {
                         // for (final ChartEdge goldEdge : goldChart.getCell(cell.start(), cell.end()).getEdges()) {
                         if (goldEdge.prod.isLexProd() == false) {
                             goldEdgeList.add(goldEdge);
@@ -110,7 +113,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
         }
     }
 
-    private void trainVisitCell(final HashSetChartCell cell, final LinkedList<ChartEdge> goldEdges) {
+    private void trainVisitCell(final HashSetChartCell cell, final LinkedList<Chart.ChartEdge> goldEdges) {
         final HashSetChartCell ChartCell = cell;
         final int start = ChartCell.start();
         final int end = ChartCell.end();
@@ -170,7 +173,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
     }
 
     private void addBestEdgesToChart(final HashSetChartCell cell, final ChartEdge[] bestEdges,
-            final LinkedList<ChartEdge> goldEdges) {
+            final LinkedList<Chart.ChartEdge> goldEdges) {
         ChartEdge edge, unaryEdge;
         int numEdgesAdded = 0, maxEdgesAdded;
         final boolean addedEdge;
@@ -197,8 +200,8 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
         // while (!agenda.isEmpty() && numEdgesAdded < maxEdgesAdded && !addedGoldEdges) {
         while (!agenda.isEmpty()) {
             edge = agenda.poll();
-            ChartEdge found = null;
-            for (final ChartEdge goldEdge : goldEdges) {
+            Chart.ChartEdge found = null;
+            for (final Chart.ChartEdge goldEdge : goldEdges) {
                 if (goldEdge.prod.parent == edge.prod.parent) {
                     found = goldEdge;
                 }
