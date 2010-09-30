@@ -8,20 +8,17 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
-import edu.ohsu.cslu.parser.util.Log;
 import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class Parser<G extends Grammar> {
 
     public final G grammar;
     public ParserDriver opts;
-    // TODO Make this reference final (once we work around the hack in CellChart)
     public EdgeSelector edgeSelector;
     public final CellSelector cellSelector;
     public ParseStats currentInput; // temporary so I don't break too much stuff at once
     public static Logger logger;
 
-    // TODO Move global state back out of Parser
     static protected int sentenceNumber = 0;
     protected float totalParseTimeSec = 0;
     protected float totalInsideScore = 0;
@@ -55,15 +52,16 @@ public abstract class Parser<G extends Grammar> {
     protected abstract ParseTree findBestParse(int[] tokens) throws Exception;
 
     // wraps parse tree from findBestParse() with additional stats and
-    // cleans up output for consumption
-    public ParseStats parseSentence(final String sentence) throws Exception {
-        final ParseStats stats = new ParseStats(sentence);
+    // cleans up output for consumption. Input can be a sentence string
+    // or a parse tree
+    public ParseStats parseSentence(final String input) throws Exception {
+        final ParseStats stats = new ParseStats(input, grammar);
         currentInput = stats; // get ride of currentInput (and chart?). Just pass these around
         stats.sentenceNumber = sentenceNumber++;
-        stats.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
+        stats.tokens = grammar.tokenizer.tokenizeToIndex(stats.sentence);
 
         if (stats.sentenceLength > opts.maxLength) {
-            Log.info(0, "INFO: Skipping sentence. Length of " + stats.sentenceLength + " is greater than maxLength ("
+            logger.fine("INFO: Skipping sentence. Length of " + stats.sentenceLength + " is greater than maxLength ("
                     + opts.maxLength + ")");
         } else {
             stats.startTime();
