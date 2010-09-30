@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import edu.ohsu.cslu.parser.util.Log;
+import edu.ohsu.cslu.parser.ParserDriver;
 
 /**
  * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or may be
@@ -114,7 +114,7 @@ public class Grammar implements Serializable {
     private boolean isLeftFactored = true;
 
     public final SymbolSet<String> nonTermSet;
-    public final SymbolSet<String> lexSet;
+    public SymbolSet<String> lexSet;
     private ArrayList<NonTerminal> nonTermInfo = new ArrayList<NonTerminal>();
 
     public final Tokenizer tokenizer;
@@ -131,6 +131,11 @@ public class Grammar implements Serializable {
      * for serialized and text grammars and auto-detect the format
      */
     private final static short OBJECT_SIGNATURE = (short) 0xACED;
+
+    // public Grammar() {
+    // nonTermSet = new SymbolSet<String>();
+    // lexSet = new SymbolSet<String>();
+    // }
 
     /**
      * Default Constructor. This constructor does an inordinate amount of work directly in the constructor specifically
@@ -149,8 +154,10 @@ public class Grammar implements Serializable {
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
 
+        ParserDriver.getLogger().fine("Reading grammar ... ");
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
+        ParserDriver.getLogger().fine("transforming ... ");
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
@@ -276,6 +283,8 @@ public class Grammar implements Serializable {
         internMap = null; // We no longer need the String intern map, so let it be GC'd
 
         this.tokenizer = new Tokenizer(lexSet);
+
+        ParserDriver.getLogger().fine("done.");
     }
 
     /**
@@ -329,7 +338,6 @@ public class Grammar implements Serializable {
     private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile, final List<StringProduction> pcfgRules,
             final List<StringProduction> lexicalRules) throws IOException {
         // Read in the grammar file.
-        Log.info(1, "INFO: Reading grammar");
 
         final BufferedReader br = new BufferedReader(grammarFile);
         br.mark(50);
@@ -353,7 +361,8 @@ public class Grammar implements Serializable {
             startSymbolStr = sDagger;
         }
 
-        for (String line = br.readLine(); line != null && !line.equals(DELIMITER); line = br.readLine()) {
+        // for (String line = br.readLine(); line != null && !line.equals(DELIMITER); line = br.readLine()) {
+        for (String line = br.readLine(); !line.equals(DELIMITER); line = br.readLine()) {
             final String[] tokens = line.split("\\s");
 
             if (tokens.length == 1) {
@@ -362,7 +371,7 @@ public class Grammar implements Serializable {
                                 + "More than one entry was found.  Last line: " + line);
             } else if (tokens.length == 4) {
                 // Unary production: expecting: A -> B prob
-                // Should we make sure there aren't any duplicates?
+                // TODO: Should we make sure there aren't any duplicates?
                 pcfgRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
             } else if (tokens.length == 5) {
                 // Binary production: expecting: A -> B C prob
@@ -372,15 +381,19 @@ public class Grammar implements Serializable {
             }
         }
 
-        for (String line = br.readLine(); line != null; line = br.readLine()) {
-            final String[] tokens = line.split("\\s");
-            if (tokens.length == 4) {
-                // expecting: A -> B prob
-                lexicalRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
-            } else {
-                throw new IllegalArgumentException("Unexpected line in grammar lexicon\n\t" + line);
+        // Read Lexicon after finding DELIMITER
+        for (String line = br.readLine(); line != null || lexicalRules.size() == 0; line = br.readLine()) {
+            if (line != null) {
+                final String[] tokens = line.split("\\s");
+                if (tokens.length == 4) {
+                    // expecting: A -> B prob
+                    lexicalRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
+                } else {
+                    throw new IllegalArgumentException("Unexpected line in grammar lexicon\n\t" + line);
+                }
             }
         }
+
         return gf;
     }
 
@@ -439,7 +452,7 @@ public class Grammar implements Serializable {
         return nonTermSet.getSymbol(startSymbol);
     }
 
-    @SuppressWarnings({ "cast", "unchecked" })
+    @SuppressWarnings( { "cast", "unchecked" })
     public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
@@ -612,8 +625,8 @@ public class Grammar implements Serializable {
      */
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
         if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
-            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
-                    nonTermSet.getIndex(rightChild));
+            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild), nonTermSet
+                    .getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -775,6 +788,8 @@ public class Grammar implements Serializable {
 
         public final int parent, leftChild, rightChild;
         public final float prob;
+
+        // public Production projProd;
 
         // Binary production
         public Production(final int parent, final int leftChild, final int rightChild, final float prob) {
