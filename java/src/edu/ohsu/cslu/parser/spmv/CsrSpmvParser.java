@@ -87,7 +87,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
             final long t3 = System.currentTimeMillis();
             final long unarySpmvTime = t3 - t2;
             totalCartesianProductTime += cartesianProductTime;
-            totalUnarySpMVTime += unarySpmvTime;
+            totalUnaryTime += unarySpmvTime;
         }
 
         // Pack the temporary cell storage into the main chart array

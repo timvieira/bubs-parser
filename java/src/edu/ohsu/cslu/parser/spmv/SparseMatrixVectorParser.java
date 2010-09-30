@@ -35,7 +35,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     public long totalCartesianProductTime = 0;
     public long totalCartesianProductUnionTime = 0;
     public long totalBinarySpMVTime = 0;
-    public long totalUnarySpMVTime = 0;
+    public long totalUnaryTime = 0;
     public long totalFinalizeTime = 0;
 
     public SparseMatrixVectorParser(final ParserDriver opts, final G grammar) {
@@ -78,7 +78,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         startTime = System.currentTimeMillis();
         if (collectDetailedStatistics) {
             totalBinarySpMVTime = 0;
-            totalUnarySpMVTime = 0;
+            totalUnaryTime = 0;
             totalCartesianProductTime = 0;
             totalCartesianProductUnionTime = 0;
             totalFinalizeTime = 0;
@@ -97,17 +97,16 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     protected abstract CartesianProductVector cartesianProductUnion(final int start, final int end);
 
     public String getStatHeader() {
-        return String.format("%8s, %10s, %8s, %12s, %11s, %8s, %7s", "Total", "X-product", "X-union", "Bin-SpMV",
-                "Un-SpMV", "Finalize", "Extract");
+        return String.format("%8s, %5d, %10s, %8s, %12s, %11s, %8s, %7s", "Total", "Init", "X-product", "X-union",
+                "Bin-SpMV", "Unary", "Finalize", "Extract");
     }
 
     @Override
     public String getStats() {
         final long totalTime = System.currentTimeMillis() - startTime;
-        return String
-                .format("%8.1f, %10d, %8d, %12d, %11d, %8d, %7d", totalTime / 1000f, totalCartesianProductTime,
-                        totalCartesianProductUnionTime, totalBinarySpMVTime, totalUnarySpMVTime, totalFinalizeTime,
-                        extractTime);
+        return String.format("%8.1f, %5d, %10d, %8d, %12d, %11d, %8d, %7d", totalTime / 1000f, initTime,
+                totalCartesianProductTime, totalCartesianProductUnionTime, totalBinarySpMVTime, totalUnaryTime,
+                totalFinalizeTime, extractTime);
     }
 
     public final static class CartesianProductVector {

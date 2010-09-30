@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser.spmv;
 
+import static com.nativelibs4java.opencl.JavaCL.createBestContext;
+
 import java.io.StringWriter;
 
 import com.nativelibs4java.opencl.CLContext;
@@ -21,7 +23,6 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.util.OpenClUtils;
-import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ( {@link CsrSparseMatrixGrammar})
@@ -220,7 +221,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         internalUnarySpmvMultiply(spvChartCell);
 
         final long t3 = System.currentTimeMillis();
-        totalUnarySpMVTime += (t3 - t2);
+        totalUnaryTime += (t3 - t2);
 
         finalizeCell(spvChartCell);
         totalFinalizeTime += (System.currentTimeMillis() - t3);

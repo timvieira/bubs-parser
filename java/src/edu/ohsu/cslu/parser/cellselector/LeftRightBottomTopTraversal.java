@@ -1,36 +1,39 @@
 package edu.ohsu.cslu.parser.cellselector;
 
-import java.util.LinkedList;
-
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 public class LeftRightBottomTopTraversal extends CellSelector {
 
-    private LinkedList<ChartCell> cellList;
+    private short[][] cellIndices;
+    private int currentCell = 0;
+    private int cells;
 
     public LeftRightBottomTopTraversal() {
     }
 
     @Override
     public void init(final ChartParser<?, ?> parser) {
-        cellList = new LinkedList<ChartCell>();
-        // for (int span = 2; span <= parser.chartSize; span++) {
-        for (int span = 1; span <= parser.chart.size(); span++) {
-            for (int beg = 0; beg < parser.chart.size() - span + 1; beg++) { // beginning
-                cellList.add(parser.chart.getCell(beg, beg + span));
+        final int n = parser.chart.size();
+        cells = n * (n + 1) / 2;
+        if (cellIndices == null || cellIndices.length < cells) {
+            cellIndices = new short[cells][2];
+        }
+        currentCell = 0;
+        int i = 0;
+        for (short span = 1; span <= n; span++) {
+            for (short start = 0; start < n - span + 1; start++) { // beginning
+                cellIndices[i++] = new short[] { start, (short) (start + span) };
             }
         }
     }
 
     @Override
     public short[] next() {
-        final ChartCell cell = cellList.poll();
-        return new short[] { (short) cell.start(), (short) cell.end() };
+        return cellIndices[currentCell++];
     }
 
     @Override
     public boolean hasNext() {
-        return cellList.isEmpty() == false;
+        return currentCell < cells;
     }
 }
