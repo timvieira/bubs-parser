@@ -1,9 +1,9 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.parser.util.ParseTree;
 import edu.ohsu.cslu.parser.util.ParserUtil;
-import edu.ohsu.cslu.parser.util.StringToMD5;
 
 public class ParseStats {
 
@@ -13,7 +13,7 @@ public class ParseStats {
 
     public String sentenceMD5;
     public ParseTree inputTree = null;
-    public CellChart inputTreeChart = null;
+    public GoldChart inputTreeChart = null;
     public int sentenceNumber = -1;
     public int sentenceLength = -1;
     public ParseTree parse = null;
@@ -31,18 +31,18 @@ public class ParseStats {
 
     long startTime = System.currentTimeMillis();
 
-    public ParseStats(String sentence) {
+    public ParseStats(String input, final Grammar grammar) {
 
         try {
             // if input is a tree, extract sentence from tree
-            if (ParseTree.isBracketFormat(sentence)) {
-                inputTree = ParseTree.readBracketFormat(sentence);
-                inputTreeChart = new CellChart(inputTree, true, null);
-                sentence = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
+            if (ParseTree.isBracketFormat(input)) {
+                inputTree = ParseTree.readBracketFormat(input);
+                inputTreeChart = new GoldChart(inputTree, grammar);
+                input = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
             }
 
-            this.sentence = sentence.trim();
-            this.sentenceMD5 = StringToMD5.computeMD5(sentence);
+            this.sentence = input.trim();
+            // this.sentenceMD5 = StringToMD5.computeMD5(sentence);
             this.strTokens = ParserUtil.tokenize(sentence);
             this.sentenceLength = strTokens.length;
 
@@ -53,8 +53,10 @@ public class ParseStats {
 
     @Override
     public String toString() {
-        String result = String.format("STAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f", sentenceNumber,
-                sentenceLength, sentenceMD5, parseTimeSec, insideProbability);
+        // String result = String.format("STAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f", sentenceNumber,
+        // sentenceLength, sentenceMD5, parseTimeSec, insideProbability);
+        String result = String.format("STAT: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f", sentenceNumber,
+                sentenceLength, parseTimeSec, insideProbability);
         if (totalPops > 0)
             result += " pops=" + totalPops;
         if (totalPushes > 0)

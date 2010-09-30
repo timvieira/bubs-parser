@@ -39,7 +39,9 @@ import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParserWithCSLUT;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
+import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
 import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
+import edu.ohsu.cslu.parser.beam.BSCPPruneViterbiStats;
 import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
@@ -61,6 +63,7 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
+import edu.ohsu.cslu.parser.util.ParserUtil;
 
 /**
  * Driver class for all parser implementations.
@@ -140,6 +143,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-x3", hidden = true, usage = "Tuning param #3")
     public static float param3 = -1;
 
+    @Option(name = "-countSpans", hidden = true, usage = "Count max length of span for each word in input trees that starts or ends at each word")
+    public boolean countSpans = false;
+
     private Grammar grammar;
     private long parseStartTime;
 
@@ -153,8 +159,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // run once at initialization despite number of threads
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
-        // Collect detailed statistics for high verbosity levels (e.g., non-terminals per cell, cartesian-product size,
-        // etc.)
+        if (countSpans) {
+            ParserUtil.constituentSpanCountForKristy();
+            System.exit(0);
+        }
+
+        // Collect detailed statistics for high verbosity levels (e.g., non-terminals per cell, cartesian-product size, etc.)
         collectDetailedStatistics = logger.isLoggable(Level.FINER);
 
         // map simplified parser choices to the specific research version
@@ -209,9 +219,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         // Read in the grammar
         grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
 
-        if (this.collectDetailedStatistics) {
-            logger.info(optionsToString());
-        }
+        logger.fine(grammar.getStats());
+        logger.fine(optionsToString());
 
         parseStartTime = System.currentTimeMillis();
     }
@@ -268,6 +277,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case BSCPBoundedHeap:
         case BSCPExpDecay:
         case BSCPPerceptronCell:
+        case BSCPFomDecode:
         case CoarseCellAgenda:
         case CoarseCellAgendaCSLUT:
             return new LeftHashGrammar(genericGrammar);
@@ -341,9 +351,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case BeamSearchChartParser:
             return new BeamSearchChartParser<LeftHashGrammar, CellChart>(parserOptions, (LeftHashGrammar) grammar);
         case BSCPPruneViterbi:
-            // if (parserOptions.collectDetailedStatistics) {
-            // return new BSCPPruneViterbiStats(parserOptions, (LeftHashGrammar) grammar);
-            // }
+            if (parserOptions.collectDetailedStatistics) {
+                return new BSCPPruneViterbiStats(parserOptions, (LeftHashGrammar) grammar);
+            }
             return new BSCPPruneViterbi(parserOptions, (LeftHashGrammar) grammar);
         case BSCPOnlineBeam:
             return new BSCPWeakThresh(parserOptions, (LeftHashGrammar) grammar);
@@ -353,6 +363,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new BSCPExpDecay(parserOptions, (LeftHashGrammar) grammar);
         case BSCPPerceptronCell:
             return new BSCPSkipBaseCells(parserOptions, (LeftHashGrammar) grammar);
+        case BSCPFomDecode:
+            return new BSCPFomDecode(parserOptions, (LeftHashGrammar) grammar);
 
         case CoarseCellAgenda:
             return new CoarseCellAgendaParser(parserOptions, (LeftHashGrammar) grammar);
