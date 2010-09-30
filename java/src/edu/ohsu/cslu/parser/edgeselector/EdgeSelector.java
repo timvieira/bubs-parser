@@ -2,6 +2,7 @@ package edu.ohsu.cslu.parser.edgeselector;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -25,7 +26,7 @@ public abstract class EdgeSelector {
     }
 
     public static EdgeSelector create(final EdgeSelectorType type, final Grammar grammar,
-            final BufferedReader modelStream) {
+            final BufferedReader modelStream) throws IOException {
         switch (type) {
         case Inside:
             return new InsideProb();

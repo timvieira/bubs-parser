@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.parser;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import org.kohsuke.args4j.EnumAliasMap;
@@ -37,7 +38,11 @@ public abstract class Parser<G extends Grammar> {
         this.grammar = grammar;
         this.opts = opts;
 
-        edgeSelector = EdgeSelector.create(opts.edgeFOMType, grammar, opts.fomModelStream);
+        try {
+            edgeSelector = EdgeSelector.create(opts.edgeFOMType, grammar, opts.fomModelStream);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
         cellSelector = CellSelector.create(opts.cellSelectorType, opts.cellModelStream, opts.cslutScoresStream);
         this.collectDetailedStatistics = opts.collectDetailedStatistics;
         logger = ParserDriver.getLogger();

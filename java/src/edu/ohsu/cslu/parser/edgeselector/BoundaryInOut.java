@@ -21,14 +21,14 @@ import edu.ohsu.cslu.parser.util.ParserUtil;
 public final class BoundaryInOut extends EdgeSelector {
 
     private Grammar grammar;
-    private float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
+    private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
 
     private float outsideLeft[][], outsideRight[][];
 
     private IntOpenHashSet posSet = new IntOpenHashSet();
     private IntOpenHashSet clauseNonTermSet = new IntOpenHashSet();
 
-    public BoundaryInOut(final Grammar grammar, final BufferedReader modelStream) {
+    public BoundaryInOut(final Grammar grammar, final BufferedReader modelStream) throws IOException {
         this.grammar = grammar;
         // TODO: should we record this in Grammar instead?
         for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
@@ -39,13 +39,28 @@ public final class BoundaryInOut extends EdgeSelector {
             }
         }
 
-        if (modelStream != null) {
-            try {
-                readModel(modelStream);
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
+        final int numNT = grammar.numNonTerms();
+        final int maxPOSIndex = grammar.maxPOSIndex();
+        leftBoundaryLogProb = new float[numNT][maxPOSIndex + 1];
+        rightBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
+        posTransitionLogProb = new float[maxPOSIndex + 1][maxPOSIndex + 1];
+
+        // Init values to log(0) = -Inf
+        for (int i = 0; i < numNT; i++) {
+            Arrays.fill(leftBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
         }
+        for (int i = 0; i < maxPOSIndex + 1; i++) {
+            Arrays.fill(rightBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
+            Arrays.fill(posTransitionLogProb[i], Float.NEGATIVE_INFINITY);
+        }
+
+        if (modelStream != null) {
+            readModel(modelStream);
+        }
+    }
+
+    public BoundaryInOut(final Grammar grammar) throws IOException {
+        this(grammar, null);
     }
 
     @Override
@@ -122,61 +137,70 @@ public final class BoundaryInOut extends EdgeSelector {
             Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
         }
 
-        final short[] NULL_LIST = new short[] { (short) grammar.nullSymbol };
+        final short nullSymbol = (short) grammar.nullSymbol;
+        final short[] NULL_LIST = new short[] { nullSymbol };
 
         short[] prevFwdPOSList = NULL_LIST;
         float[] prevFwdScores = new float[posSize];
-        prevFwdScores[grammar.nullSymbol] = 0f;
+        prevFwdScores[nullSymbol] = 0f;
 
         short[] prevBkwPOSList = NULL_LIST;
         float[] prevBkwScores = new float[posSize];
-        prevBkwScores[grammar.nullSymbol] = 0f;
+        prevBkwScores[nullSymbol] = 0f;
 
         for (int fwdIndex = 0; fwdIndex < fbSize; fwdIndex++) {
             final int fwdChartIndex = fwdIndex - 1; // -1 because the fbChart is one off from the parser chart
             final int bkwIndex = fbSize - fwdIndex - 1;
             final int bkwChartIndex = bkwIndex - 1;
 
+            final boolean pastEndOfChart = fwdChartIndex >= chart.size();
             if (fwdIndex > 0) {
                 // moving from left to right =======>>
-                final short[] fwdPOSList = (fwdChartIndex < 0 || fwdChartIndex > (chart.size() - 1)) ? NULL_LIST
-                        : grammar.lexicalParents(chart.tokens[fwdChartIndex]);
+                final short[] fwdPOSList = pastEndOfChart ? NULL_LIST : grammar
+                        .lexicalParents(chart.tokens[fwdChartIndex]);
 
                 final float[] fwdScores = new float[posSize];
                 Arrays.fill(fwdScores, Float.NEGATIVE_INFINITY);
 
-                for (final short prevPOS : prevFwdPOSList) {
-                    final float prevFwdScore = prevFwdScores[prevPOS];
-                    for (final short curPOS : fwdPOSList) {
-                        final float posEmissionLogProb = (curPOS == grammar.nullSymbol && (fwdChartIndex < 0 || fwdChartIndex > chart
-                                .size() - 1)) ? 0f : grammar.lexicalLogProbability(curPOS, chart.tokens[fwdChartIndex]);
-                        final float score = prevFwdScore + posTransitionLogProb(curPOS, prevPOS) + posEmissionLogProb;
+                for (final short curPOS : fwdPOSList) {
+                    final float posEmissionLogProb = pastEndOfChart ? 0f : grammar.lexicalLogProbability(curPOS,
+                            chart.tokens[fwdChartIndex]);
+                    float winningScore = Float.NEGATIVE_INFINITY;
 
-                        if (score > fwdScores[curPOS]) {
-                            fwdScores[curPOS] = score;
+                    for (final short prevPOS : prevFwdPOSList) {
+                        final float score = prevFwdScores[prevPOS] + posTransitionLogProb(curPOS, prevPOS)
+                                + posEmissionLogProb;
+                        if (score > winningScore) {
+                            winningScore = score;
                         }
                     }
+
+                    fwdScores[curPOS] = winningScore;
                 }
                 prevFwdScores = fwdScores;
                 prevFwdPOSList = fwdPOSList;
 
                 // moving from right to left <<=======
-                final short[] bkwPOSList = (bkwChartIndex < 0 || bkwChartIndex > (chart.size() - 1)) ? NULL_LIST
-                        : grammar.lexicalParents(chart.tokens[bkwChartIndex]);
+                final boolean pastBeginningOfChart = bkwChartIndex < 0;
+                final short[] bkwPOSList = pastBeginningOfChart ? NULL_LIST : grammar
+                        .lexicalParents(chart.tokens[bkwChartIndex]);
                 final float[] bkwScores = new float[posSize];
                 Arrays.fill(bkwScores, Float.NEGATIVE_INFINITY);
 
-                for (final short prevPOS : prevBkwPOSList) {
-                    final float prevBkwScore = prevBkwScores[prevPOS];
-                    for (final short curPOS : bkwPOSList) {
+                for (final short curPOS : bkwPOSList) {
+                    final float posEmissionLogProb = pastBeginningOfChart ? 0f : grammar.lexicalLogProbability(curPOS,
+                            chart.tokens[bkwChartIndex]);
+                    float winningScore = Float.NEGATIVE_INFINITY;
 
-                        final float posEmissionLogProb = (curPOS == grammar.nullSymbol && (bkwChartIndex < 0 || bkwChartIndex > chart
-                                .size() - 1)) ? 0f : grammar.lexicalLogProbability(curPOS, chart.tokens[bkwChartIndex]);
-                        final float score = prevBkwScore + posTransitionLogProb(prevPOS, curPOS) + posEmissionLogProb;
-                        if (score > bkwScores[curPOS]) {
-                            bkwScores[curPOS] = score;
+                    for (final short prevPOS : prevBkwPOSList) {
+                        final float score = prevBkwScores[prevPOS] + posTransitionLogProb(prevPOS, curPOS)
+                                + posEmissionLogProb;
+                        if (score > winningScore) {
+                            winningScore = score;
                         }
                     }
+
+                    bkwScores[curPOS] = winningScore;
                 }
                 prevBkwScores = bkwScores;
                 prevBkwPOSList = bkwPOSList;
@@ -216,22 +240,7 @@ public final class BoundaryInOut extends EdgeSelector {
     }
 
     @Override
-    public void readModel(final BufferedReader inStream) throws Exception {
-        final int numNT = grammar.numNonTerms();
-        final int maxPOSIndex = grammar.maxPOSIndex();
-        leftBoundaryLogProb = new float[numNT][maxPOSIndex + 1];
-        rightBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
-        posTransitionLogProb = new float[maxPOSIndex + 1][maxPOSIndex + 1];
-
-        // Init values to log(0) = -Inf
-        for (int i = 0; i < numNT; i++) {
-            Arrays.fill(leftBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
-        }
-        for (int i = 0; i < maxPOSIndex + 1; i++) {
-            Arrays.fill(rightBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
-            Arrays.fill(posTransitionLogProb[i], Float.NEGATIVE_INFINITY);
-        }
-
+    public void readModel(final BufferedReader inStream) throws IOException {
         String line, numStr, denomStr;
         int numIndex, denomIndex;
         float prob;
@@ -374,7 +383,6 @@ public final class BoundaryInOut extends EdgeSelector {
         }
 
         final int numNT = grammar.numNonTerms();
-        final int maxPOSIndex = grammar.maxPOSIndex();
         final int numPOS = posSet.size();
 
         // System.out.println("numNT=" + numNT + " maxPOSIndex=" + maxPOSIndex + " numPOS=" + numPOS);
@@ -385,9 +393,6 @@ public final class BoundaryInOut extends EdgeSelector {
         posTransitionCount.smoothAddConst(0.5, numPOS);
 
         // turn counts into probs
-        leftBoundaryLogProb = new float[numNT][maxPOSIndex + 1];
-        rightBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
-        posTransitionLogProb = new float[maxPOSIndex + 1][maxPOSIndex + 1];
 
         // left boundary = P(NT | POS-1)
         for (final int leftPOSIndex : posSet) {
