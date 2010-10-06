@@ -123,8 +123,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
     int maxLength = 200;
 
-    @Option(name = "-scores", usage = "Print inside scores for each non-term in result tree")
-    boolean printInsideProbs = false;
+    // TODO: option doesn't work anymore
+    // @Option(name = "-scores", usage = "Print inside scores for each non-term in result tree")
+    // boolean printInsideProbs = false;
 
     @Option(name = "-unk", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
