@@ -39,7 +39,6 @@ public class CellChart extends Chart {
         return chart[start][end];
     }
 
-
     @Override
     public HashSetChartCell getRootCell() {
         return getCell(0, size);
