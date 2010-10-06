@@ -57,6 +57,7 @@ import edu.ohsu.cslu.parser.ml.CartesianProductLeftChildHashSpmlParser;
 import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
+import edu.ohsu.cslu.parser.spmv.BeamCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
@@ -181,7 +182,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 researchParserType = ResearchParserType.APWithMemory;
                 break;
             case Beam:
-                researchParserType = ResearchParserType.BSCPPruneViterbi;
+                researchParserType = ResearchParserType.BeamCscSpmv;
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported parser type");
@@ -291,6 +292,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case PackedOpenClSparseMatrixVector:
         case DenseVectorOpenClSparseMatrixVector:
         case CscSpmv:
+        case BeamCscSpmv:
             switch (cartesianProductFunctionType) {
             case Unfiltered:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, UnfilteredFunction.class);
@@ -383,6 +385,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new CsrSpmvPerMidpointParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
         case CscSpmv:
             return new CscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
+        case BeamCscSpmv:
+            return new BeamCscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
         case DenseVectorOpenClSparseMatrixVector:
             return new DenseVectorOpenClSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
         case PackedOpenClSparseMatrixVector:

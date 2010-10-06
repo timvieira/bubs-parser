@@ -14,11 +14,13 @@ public abstract class Parser<G extends Grammar> {
 
     public final G grammar;
     public ParserDriver opts;
+    // TODO Make this reference final (once we work around the hack in CellChart)
     public EdgeSelector edgeSelector;
     public final CellSelector cellSelector;
     public ParseStats currentInput; // temporary so I don't break too much stuff at once
     public static Logger logger;
 
+    // TODO Move global state back out of Parser
     static protected int sentenceNumber = 0;
     protected float totalParseTimeSec = 0;
     protected float totalInsideScore = 0;
@@ -129,6 +131,7 @@ public abstract class Parser<G extends Grammar> {
         CsrSpmv("csr"),
         CsrSpmvPerMidpoint("csrpm"),
         CscSpmv("csc"),
+        BeamCscSpmv("beamcsc"),
         LeftChildMatrixLoop("lcml"),
         RightChildMatrixLoop("rcml"),
         GrammarLoopMatrixLoop("glml"),
