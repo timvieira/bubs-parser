@@ -63,7 +63,7 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
-import edu.ohsu.cslu.parser.util.ParserUtil;
+import edu.ohsu.cslu.parser.util.TreeTools;
 
 /**
  * Driver class for all parser implementations.
@@ -143,8 +143,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-x3", hidden = true, usage = "Tuning param #3")
     public static float param3 = -1;
 
-    @Option(name = "-countSpans", hidden = true, usage = "Count max length of span for each word in input trees that starts or ends at each word")
-    public boolean countSpans = false;
+    @Option(name = "-tools", hidden = true, usage = "Run tools")
+    public boolean runTools = false;
 
     private Grammar grammar;
     private long parseStartTime;
@@ -159,12 +159,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // run once at initialization despite number of threads
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
-        if (countSpans) {
-            ParserUtil.constituentSpanCountForKristy();
+        if (runTools) {
+            TreeTools.main(null);
             System.exit(0);
         }
 
-        // Collect detailed statistics for high verbosity levels (e.g., non-terminals per cell, cartesian-product size, etc.)
+        // Collect detailed statistics for high verbosity levels (e.g., non-terminals per cell, cartesian-product size,
+        // etc.)
         collectDetailedStatistics = logger.isLoggable(Level.FINER);
 
         // map simplified parser choices to the specific research version
