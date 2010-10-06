@@ -96,7 +96,8 @@ public class ParseTree {
     }
 
     /**
-     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening binary-factored subtrees.
+     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening binary-factored
+     * subtrees.
      * 
      * @param bracketedTree Bracketed string parse tree
      * @param grammarFormatType Grammar format
@@ -271,9 +272,7 @@ public class ParseTree {
         }
 
         String s = "(" + contents;
-        // if (printInsideProb == true && chartEdge != null) {
-        // s += " " + Double.toString(chartEdge.inside);
-        // }
+        // TODO: print NT score here if desired
 
         for (final ParseTree child : children) {
             s += " " + child.toString(printInsideProb);

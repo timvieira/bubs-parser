@@ -80,7 +80,8 @@ public abstract class Parser<G extends Grammar> {
                     stats.parse.replaceLeafNodes(stats.strTokens);
                 }
 
-                stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
+                // stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
+                stats.parseBracketString = stats.parse.toString();
                 stats.insideProbability = getInside(0, stats.sentenceLength, grammar.startSymbol);
 
                 // TODO: we should be converting the tree in tree form, not in bracket string form
