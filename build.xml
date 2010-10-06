@@ -314,14 +314,6 @@
 		</antcall>
 	</target>
 
-	<target name="split-corpus" depends="compile-java" description="Package Training/Dev set split tool">
-		<antcall target="package-tool">
-			<param name="root-class" value="edu.ohsu.cslu.tools.SplitCorpus" />
-			<param name="tool-name" value="split-corpus" />
-			<param name="heap-size" value="256" />
-		</antcall>
-	</target>
-
 	<target name="calculate-distances" depends="compile-java" description="Package Distance Calculation Tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.CalculateDistances" />
@@ -345,10 +337,10 @@
         </antcall>
     </target>
 
-    <target name="serialize-grammar" depends="compile-java" description="Package grammar serialization tool">
+    <target name="serialize-model" depends="compile-java" description="Package grammar serialization tool">
         <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeGrammar" />
-            <param name="tool-name" value="serialize-grammar" />
+            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
+            <param name="tool-name" value="serialize-model" />
             <param name="heap-size" value="768" />
         </antcall>
     </target>
@@ -385,7 +377,7 @@
     -->
     <!-- TODO: Re-add compile-native -->
 	<target name="dist"
-	        depends="filter-sentences,split-corpus,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,serialize-grammar,parse"
+	        depends="filter-sentences,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,serialize-model,parse"
 	        description="Package all NLP application">
 	</target>
 

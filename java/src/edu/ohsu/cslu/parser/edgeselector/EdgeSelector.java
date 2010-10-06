@@ -3,13 +3,14 @@ package edu.ohsu.cslu.parser.edgeselector;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Serializable;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.util.Log;
 
-public abstract class EdgeSelector {
+public abstract class EdgeSelector implements Serializable {
 
     static public enum EdgeSelectorType {
         Inside, NormalizedInside, BoundaryInOut, WeightedFeatures
