@@ -10,7 +10,6 @@ import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
-import edu.ohsu.cslu.parser.util.Log;
 
 public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
 
@@ -40,7 +39,7 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
         }
 
         if (currentInput.inputTreeChart == null) {
-            Log.info(0, "ERROR: Beam Search parser with stats must provide gold trees as input");
+            logger.info("ERROR: Beam Search parser with stats must provide gold trees as input");
             System.exit(1);
         }
 

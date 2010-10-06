@@ -5,8 +5,8 @@ import java.util.List;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class GoldChart extends Chart {
 

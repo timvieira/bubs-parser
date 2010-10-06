@@ -10,16 +10,15 @@ import java.util.Vector;
 import edu.ohsu.cslu.classifier.Perceptron;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.util.Log;
-import edu.ohsu.cslu.parser.util.ParseTree;
-import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
@@ -51,7 +50,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
             for (final String bracketString : inputData) {
                 tree = ParseTree.readBracketFormat(bracketString);
                 if (tree.isBinaryTree() == false) {
-                    Log.info(0, "ERROR: Training trees must be binarized exactly as used in decoding");
+                    logger.info("ERROR: Training trees must be binarized exactly as used in decoding");
                     System.exit(1);
                 }
 
@@ -368,8 +367,9 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
         if (perceptron == null) {
             perceptron = new Perceptron(featList.size());
         } else if (featList.size() != perceptron.numFeatures()) {
-            Log.info(0, "ERROR: len(featureList)=" + featList.size()
-                    + " but number features in model files is numFeats=" + perceptron.numFeatures());
+            ParserDriver.getLogger().info(
+                    "ERROR: len(featureList)=" + featList.size() + " but number features in model files is numFeats="
+                            + perceptron.numFeatures());
             System.exit(1);
         }
 

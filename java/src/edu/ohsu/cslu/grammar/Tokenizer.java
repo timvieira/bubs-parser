@@ -2,7 +2,7 @@ package edu.ohsu.cslu.grammar;
 
 import java.io.Serializable;
 
-import edu.ohsu.cslu.parser.util.ParserUtil;
+import edu.ohsu.cslu.parser.ParserUtil;
 
 public class Tokenizer implements Serializable {
 

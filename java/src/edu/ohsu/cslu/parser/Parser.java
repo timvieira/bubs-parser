@@ -9,7 +9,6 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
-import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class Parser<G extends Grammar> {
 

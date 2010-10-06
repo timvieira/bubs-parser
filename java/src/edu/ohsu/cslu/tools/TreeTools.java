@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.parser.util;
+package edu.ohsu.cslu.tools;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -7,6 +7,7 @@ import java.io.OutputStreamWriter;
 import java.util.HashMap;
 
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
+import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 
 public class TreeTools {

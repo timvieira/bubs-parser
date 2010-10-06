@@ -2,8 +2,6 @@ package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.chart.GoldChart;
-import edu.ohsu.cslu.parser.util.ParseTree;
-import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class ParseStats {
 

@@ -63,7 +63,7 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
-import edu.ohsu.cslu.parser.util.TreeTools;
+import edu.ohsu.cslu.tools.TreeTools;
 
 /**
  * Driver class for all parser implementations.

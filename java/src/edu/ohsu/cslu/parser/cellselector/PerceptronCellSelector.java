@@ -8,11 +8,11 @@ import java.util.PriorityQueue;
 import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.beam.BSCPPerceptronCellTrainer;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.util.Log;
-import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class PerceptronCellSelector extends CellSelector {
 
@@ -445,14 +445,17 @@ public class PerceptronCellSelector extends CellSelector {
 
         if (featList.size() != numFeats) {
             if (trainingMode == true) {
-                Log.info(0, "WARNING: len(featureList)=" + featList.size() + " but numFeats=" + numFeats
-                        + ".  Resizing...");
+                ParserDriver.getLogger()
+                        .info(
+                                "WARNING: len(featureList)=" + featList.size() + " but numFeats=" + numFeats
+                                        + ".  Resizing...");
                 numFeats = featList.size();
                 weights = new float[numFeats];
                 initWeights();
             } else {
-                Log.info(0, "ERROR: len(featureList)=" + featList.size()
-                        + " but number features in model files is numFeats=" + numFeats);
+                ParserDriver.getLogger().info(
+                        "ERROR: len(featureList)=" + featList.size()
+                                + " but number features in model files is numFeats=" + numFeats);
                 System.exit(1);
             }
         }
