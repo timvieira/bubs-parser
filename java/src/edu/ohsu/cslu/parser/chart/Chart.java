@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.parser.chart;
 
 import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.util.ParseTree;
+import edu.ohsu.cslu.parser.ParseTree;
 
 public abstract class Chart {
 

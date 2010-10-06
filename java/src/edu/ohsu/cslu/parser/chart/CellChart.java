@@ -8,7 +8,7 @@ import java.util.List;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.util.ParserUtil;
+import edu.ohsu.cslu.parser.ParserUtil;
 
 public class CellChart extends Chart {
 

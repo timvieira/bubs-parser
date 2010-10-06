@@ -5,8 +5,8 @@ import java.util.Arrays;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
-import edu.ohsu.cslu.parser.util.ParseTree;
 
 /**
  * Stores a chart in a 4-way parallel array of:

@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
-import edu.ohsu.cslu.parser.util.ParseTree;
 
 /**
  * Unit tests for {@link Parser} class.

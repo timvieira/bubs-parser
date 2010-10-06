@@ -5,7 +5,6 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.util.ParseTree;
 
 public abstract class ChartParser<G extends Grammar, C extends Chart> extends Parser<G> {
 

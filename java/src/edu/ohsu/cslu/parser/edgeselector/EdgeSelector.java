@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.util.Log;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public abstract class EdgeSelector implements Serializable {
 
@@ -38,7 +38,7 @@ public abstract class EdgeSelector implements Serializable {
         case WeightedFeatures:
             return new WeightedFeatures(grammar);
         default:
-            Log.info(0, "ERROR: EdgeFOM " + type + " not supported.");
+            ParserDriver.getLogger().info("ERROR: EdgeFOM " + type + " not supported.");
             System.exit(1);
             return null;
         }

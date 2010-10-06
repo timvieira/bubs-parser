@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.chart;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.util.ParserUtil;
+import edu.ohsu.cslu.parser.ParserUtil;
 
 public class InOutCellChart extends CellChart {
 

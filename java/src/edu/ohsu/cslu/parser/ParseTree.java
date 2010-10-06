@@ -1,4 +1,4 @@
-package edu.ohsu.cslu.parser.util;
+package edu.ohsu.cslu.parser;
 
 import java.util.LinkedList;
 import java.util.regex.Matcher;

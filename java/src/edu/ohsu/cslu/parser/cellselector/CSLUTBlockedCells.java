@@ -10,10 +10,9 @@ import java.util.Vector;
 
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.util.Log;
-import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public class CSLUTBlockedCells extends CellSelector {
 
@@ -102,8 +101,9 @@ public class CSLUTBlockedCells extends CellSelector {
 
             }
         }
-        Log.info(2, "INFO: CSLUT cell stats: total=" + totalCells + " open=" + openCells + " openFactored="
-                + factoredCells + " closed=" + (totalCells - openCells - factoredCells));
+        ParserDriver.getLogger().fine(
+                "INFO: CSLUT cell stats: total=" + totalCells + " open=" + openCells + " openFactored=" + factoredCells
+                        + " closed=" + (totalCells - openCells - factoredCells));
     }
 
     public boolean isCellOpen(final int start, final int end) {

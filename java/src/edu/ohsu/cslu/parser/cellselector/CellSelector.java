@@ -5,7 +5,7 @@ import java.io.BufferedWriter;
 import java.util.Iterator;
 
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.util.Log;
+import edu.ohsu.cslu.parser.ParserDriver;
 
 public abstract class CellSelector implements Iterator<short[]> {
 
@@ -49,7 +49,7 @@ public abstract class CellSelector implements Iterator<short[]> {
             spanSelection = new PerceptronCellSelector(modelStream, cslutScoresStream);
             break;
         default:
-            Log.info(0, "ERROR: CellSelectorType " + type + " not supported.");
+            ParserDriver.getLogger().info("ERROR: CellSelectorType " + type + " not supported.");
             System.exit(1);
             return null;
         }

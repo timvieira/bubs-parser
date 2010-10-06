@@ -1,11 +1,11 @@
 package edu.ohsu.cslu.parser.agenda;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
-import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class APWithMemory extends AgendaParser {
 

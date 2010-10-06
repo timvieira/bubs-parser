@@ -4,13 +4,12 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.util.Log;
-import edu.ohsu.cslu.parser.util.ParseTree;
 
 public class AgendaParser extends Parser<LeftRightListsGrammar> {
 
@@ -68,7 +67,7 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
         }
 
         if (agenda.isEmpty()) {
-            Log.info(1, "WARNING: Agenda is empty.  All edges have been added to chart.");
+            logger.info("WARNING: Agenda is empty.  All edges have been added to chart.");
         }
 
         return chart.extractBestParse(grammar.startSymbol);
