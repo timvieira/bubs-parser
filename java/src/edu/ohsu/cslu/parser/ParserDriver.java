@@ -129,8 +129,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-unk", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
 
-    @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees and remove latent annotations")
-    boolean unfactor = false;
+    // @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees and remove latent annotations")
+    // boolean unfactor = false;
+    @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
+    boolean binaryTreeOutput = false;
 
     // == Other options ==
     // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance passed in

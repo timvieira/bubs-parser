@@ -84,7 +84,7 @@ public abstract class Parser<G extends Grammar> {
                 stats.insideProbability = getInside(0, stats.sentenceLength, grammar.startSymbol);
 
                 // TODO: we should be converting the tree in tree form, not in bracket string form
-                if (opts.unfactor) {
+                if (opts.binaryTreeOutput == false) {
                     stats.parseBracketString = ParseTree.unfactor(stats.parseBracketString, grammar.grammarFormat);
                 }
 
