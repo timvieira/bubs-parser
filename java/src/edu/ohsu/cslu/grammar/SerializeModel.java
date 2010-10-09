@@ -7,8 +7,6 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -17,6 +15,7 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
+import cltool.GlobalProperties;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
@@ -43,8 +42,8 @@ public class SerializeModel extends BaseCommandlineTool {
     @Option(name = "-fomModel", metaVar = "file", usage = "FOM model file")
     private String fomModelFileName;
 
-    @Option(name = "-o", metaVar = "options", usage = "Default options to be serialized (key=value, comma-separated)")
-    private String options;
+    @Option(name = "-m", metaVar = "metadata", multiValued = true, usage = "Metadata to be serialized into the file (key=value)")
+    private String[] options;
 
     @Option(name = "-ser", required = true, metaVar = "filename", usage = "Serialized output file")
     private String serializedOutputFile;
@@ -70,7 +69,6 @@ public class SerializeModel extends BaseCommandlineTool {
             os = new GZIPOutputStream(os);
         }
         final ObjectOutputStream oos = new ObjectOutputStream(os);
-        final PrintWriter w = new PrintWriter(new OutputStreamWriter(os));
 
         logger.info("Reading grammar...");
         Grammar g = new Grammar(grammarReader);
@@ -98,15 +96,16 @@ public class SerializeModel extends BaseCommandlineTool {
 
         logger.info("Writing serialized model file...");
 
-        // Write a key/value header line
-        final StringBuilder headerLine = new StringBuilder();
-        headerLine.append("grammarClass=" + g.getClass().getName());
+        // Write a key/value metadata line
+        final StringBuilder metadata = new StringBuilder();
+        metadata.append("grammarClass=" + g.getClass().getName());
         if (fom != null) {
-            headerLine.append(",fomClass=" + fom.getClass().getName());
+            metadata.append(",fomClass=" + fom.getClass().getName());
         }
+        oos.writeObject(metadata.toString());
 
-        headerLine.append(options != null ? options : "");
-        oos.writeObject(headerLine.toString());
+        // Write the global properties
+        oos.writeObject(GlobalProperties.singleton());
 
         // Write the grammar
         logger.info("Writing grammar...");

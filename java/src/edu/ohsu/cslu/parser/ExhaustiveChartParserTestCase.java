@@ -14,6 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import cltool.ClToolProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -67,7 +68,19 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     protected ParserDriver parserOptions() throws Exception {
         final ParserDriver options = new ParserDriver();
         options.collectDetailedStatistics = true;
+        options.binaryTreeOutput = true;
         return options;
+    }
+
+    /**
+     * Returns parser configuration options.
+     * 
+     * @return options
+     * @throws Exception if something breaks while constructing the options instance (e.g. failing to find a model
+     *             file).
+     */
+    protected ClToolProperties configProperties() throws Exception {
+        return new ClToolProperties();
     }
 
     /**
@@ -78,11 +91,22 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * @return Parser instance
      */
     @SuppressWarnings("unchecked")
-    protected final P createParser(final Grammar grammar, final CellSelector cellSelector, final ParserDriver options) {
+    protected final P createParser(final Grammar grammar, final CellSelector cellSelector, final ParserDriver options,
+            final ClToolProperties configProperties) {
         try {
-            return ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0])
-                    .getConstructor(new Class[] { ParserDriver.class, grammarClass() }).newInstance(
-                            new Object[] { options, grammar });
+            final Class<P> parserClass = ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass())
+                    .getActualTypeArguments()[0]);
+            try {
+                // First, try for a constructor that takes both ParserDriver (options) and ClToolProperties
+                return parserClass.getConstructor(
+                        new Class[] { ParserDriver.class, ClToolProperties.class, grammarClass() }).newInstance(
+                        new Object[] { options, configProperties, grammar });
+
+            } catch (final NoSuchMethodException e) {
+                // If not found, use a constructor that takes only a ParserDriver instance.
+                return parserClass.getConstructor(new Class[] { ParserDriver.class, grammarClass() }).newInstance(
+                        new Object[] { options, grammar });
+            }
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -164,7 +188,8 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
             simpleGrammar2 = createSimpleGrammar2(grammarClass(), SimpleShiftFunction.class);
         }
 
-        parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+        parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(),
+                configProperties());
 
         // if (!headerLinePrinted) {
         // System.out.println(parser.getStatHeader());
@@ -220,7 +245,8 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar1() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        parser = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+        parser = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop),
+                parserOptions(), configProperties());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
         assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree);
@@ -235,7 +261,8 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar2() throws Exception {
         final String sentence = "The fish market stands last";
 
-        parser = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+        parser = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop),
+                parserOptions(), configProperties());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
         assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);

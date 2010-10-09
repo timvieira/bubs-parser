@@ -11,6 +11,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     public C chart;
     protected long extractTime;
     protected long initTime;
+    protected long edgeSelectorInitTime;
 
     public ChartParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -24,8 +25,10 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         cellSelector.init(this);
         if (edgeSelector != null) {
             if (collectDetailedStatistics) {
+                final long t1 = System.currentTimeMillis();
+                initTime = t1 - t0;
                 edgeSelector.init(chart);
-                initTime = System.currentTimeMillis() - t0;
+                edgeSelectorInitTime = System.currentTimeMillis() - t1;
             } else {
                 edgeSelector.init(chart);
             }
@@ -37,9 +40,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         }
 
         if (collectDetailedStatistics) {
-            final long t1 = System.currentTimeMillis();
+            final long t2 = System.currentTimeMillis();
             final ParseTree parseTree = chart.extractBestParse(grammar.startSymbol);
-            extractTime = System.currentTimeMillis() - t1;
+            extractTime = System.currentTimeMillis() - t2;
             return parseTree;
         }
 

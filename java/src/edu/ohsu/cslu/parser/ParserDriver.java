@@ -1,10 +1,12 @@
 package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
@@ -14,6 +16,8 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import cltool.ClToolProperties;
+import cltool.GlobalProperties;
 import cltool.ThreadLocalLinewiseClTool;
 import cltool.Threadable;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
@@ -49,6 +53,7 @@ import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
@@ -82,7 +87,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-p", aliases = { "--parser" }, metaVar = "parser", usage = "Parser implementation")
     private ParserType parserType = ParserType.CKY;
 
-    @Option(name = "-rp", aliases = { "--research-parser" }, metaVar = "parser", usage = "Research Parser implementation")
+    @Option(name = "-rp", aliases = { "--research-parser" }, hidden = true, metaVar = "parser", usage = "Research Parser implementation")
     private ResearchParserType researchParserType = null;
 
     @Option(name = "-real", usage = "Use real semiring (sum) instead of tropical (max) for inside/outside calculations")
@@ -95,10 +100,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // "Chart cell processing type")
     // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
 
-    @Option(name = "-fom", metaVar = "fom", usage = "Figure of Merit to use for parser")
+    @Option(name = "-fom", metaVar = "fom", hidden = true, usage = "Figure of Merit to use for parser")
     public EdgeSelectorType edgeFOMType = EdgeSelectorType.Inside;
+    public EdgeSelector edgeSelector;
 
-    @Option(name = "-fomModel", metaVar = "file", usage = "FOM model file")
+    @Option(name = "-fomModel", metaVar = "file", hidden = true, usage = "FOM model file")
     private String fomModelFileName = null;
     public BufferedReader fomModelStream = null;
 
@@ -107,18 +113,23 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // cell selection strategy only matters for a few of them
     @Option(name = "-cellSelect", hidden = true, metaVar = "TYPE", usage = "Method for cell selection")
     public CellSelectorType cellSelectorType = CellSelectorType.LeftRightBottomTop;
+    public CellSelector cellSelector;
 
-    @Option(name = "-cellModel", metaVar = "file", usage = "Model for span selection")
+    @Option(name = "-cellModel", metaVar = "file", hidden = true, usage = "Model for span selection")
     private String cellModelFileName = null;
     public BufferedReader cellModelStream = null;
 
-    @Option(name = "-cslutCellScores", metaVar = "file", usage = "CSLUT cell scores used for perceptron training and decoding")
+    @Option(name = "-cslutCellScores", metaVar = "file", hidden = true, usage = "CSLUT cell scores used for perceptron training and decoding")
     private String cslutScoresFileName = null;
     BufferedReader cslutScoresStream = null;
 
     // == Grammar options ==
-    @Option(name = "-g", required = true, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
+    @Option(name = "-g", metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
     private String grammarFile = null;
+
+    // == Grammar options ==
+    @Option(name = "-m", metaVar = "file", usage = "Model file (binary serialized")
+    private File modelFile = null;
 
     // == Output options ==
     @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
@@ -134,7 +145,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees and remove latent annotations")
     // boolean unfactor = false;
     @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
-    boolean binaryTreeOutput = false;
+    public boolean binaryTreeOutput = false;
 
     // == Other options ==
     // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance passed in
@@ -189,40 +200,56 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             }
         }
 
-        if (fomModelFileName != null) {
-            // Handle gzipped and non-gzipped model files
-            fomModelStream = fomModelFileName.endsWith(".gz") ? new BufferedReader(new InputStreamReader(
-                    new GZIPInputStream(new FileInputStream(fomModelFileName)))) : new BufferedReader(new FileReader(
-                    fomModelFileName));
-        }
-
-        if (cellModelFileName != null) {
-            cellModelStream = new BufferedReader(new FileReader(cellModelFileName));
-        }
-
-        if (cslutScoresFileName != null) {
-            cslutScoresStream = new BufferedReader(new FileReader(cslutScoresFileName));
-        }
-
-        // param validation checks
-        if (edgeFOMType == EdgeSelectorType.BoundaryInOut && fomModelFileName == null) {
-            throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomModel param set");
-        }
-
-        if (cellSelectorType == CellSelectorType.CSLUT && cellModelStream == null) {
-            throw new CmdLineException(cmdlineParser, "CSLUT span selection must also have -spanModel");
-        }
-
-        if (cellSelectorType == CellSelectorType.Perceptron && cslutScoresStream == null) {
-            throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
-        }
-
         if (researchParserType == ResearchParserType.ECPInsideOutside) {
             this.realSemiring = true;
         }
 
-        // Read in the grammar
-        grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
+        if (modelFile != null) {
+            final InputStream is = modelFile.getName().endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
+                    modelFile)) : new FileInputStream(modelFile);
+            final ObjectInputStream ois = new ObjectInputStream(is);
+            final String metadata = (String) ois.readObject();
+            final ClToolProperties props = (ClToolProperties) ois.readObject();
+            GlobalProperties.singleton().mergeUnder(props);
+
+            logger.fine("Reading grammar...");
+            this.grammar = (Grammar) ois.readObject();
+
+            logger.fine("Reading FOM...");
+            this.edgeSelector = (EdgeSelector) ois.readObject();
+
+        } else {
+
+            if (fomModelFileName != null) {
+                // Handle gzipped and non-gzipped model files
+                fomModelStream = fomModelFileName.endsWith(".gz") ? new BufferedReader(new InputStreamReader(
+                        new GZIPInputStream(new FileInputStream(fomModelFileName)))) : new BufferedReader(
+                        new FileReader(fomModelFileName));
+            }
+
+            if (cellModelFileName != null) {
+                cellModelStream = new BufferedReader(new FileReader(cellModelFileName));
+            }
+
+            if (cslutScoresFileName != null) {
+                cslutScoresStream = new BufferedReader(new FileReader(cslutScoresFileName));
+            }
+
+            // param validation checks
+            if (edgeFOMType == EdgeSelectorType.BoundaryInOut && fomModelFileName == null) {
+                throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomModel param set");
+            }
+
+            if (cellSelectorType == CellSelectorType.CSLUT && cellModelStream == null) {
+                throw new CmdLineException(cmdlineParser, "CSLUT span selection must also have -spanModel");
+            }
+
+            if (cellSelectorType == CellSelectorType.Perceptron && cslutScoresStream == null) {
+                throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
+            }
+            // Read in the grammar
+            grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
+        }
 
         logger.fine(grammar.getStats());
         logger.fine(optionsToString());
@@ -326,6 +353,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Override
     public Parser<?> createLocal() {
+        this.cellSelector = CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
         return createParser(researchParserType, grammar, this);
     }
 

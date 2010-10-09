@@ -7,6 +7,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import cltool.ClToolProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.PerformanceTest;
@@ -39,7 +40,7 @@ public class TestBeamCscSpmvParser extends
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "5000", "d820", "9589" })
+    @PerformanceTest({ "mbp", "6092", "d820", "9589" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
@@ -48,10 +49,17 @@ public class TestBeamCscSpmvParser extends
     protected ParserDriver parserOptions() {
         final ParserDriver options = new ParserDriver();
         options.collectDetailedStatistics = true;
-        options.param1 = 125;
-        options.param2 = 300;
-        options.param3 = 0.3f;
+        options.binaryTreeOutput = true;
         return options;
+    }
+
+    @Override
+    protected ClToolProperties configProperties() throws Exception {
+        final ClToolProperties props = new ClToolProperties();
+        props.setProperty("beamcsc.beamWidth", "125");
+        props.setProperty("beamcsc.lexicalRowBeamWidth", "300");
+        props.setProperty("beamcsc.lexicalRowUnaries", "90");
+        return props;
     }
 
     // Skip testing the two very simple grammars (they don't work with the pruned parser, and probably aren't worth

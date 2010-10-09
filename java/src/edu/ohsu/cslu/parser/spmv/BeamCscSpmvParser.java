@@ -2,6 +2,8 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 
+import cltool.ClToolProperties;
+import cltool.GlobalProperties;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
@@ -10,18 +12,18 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 public class BeamCscSpmvParser extends CscSpmvParser {
     private final int beamWidth;
     private final int lexicalRowBeamWidth;
-    private final int lexicalRowUnarySlots;
+    private final int lexicalRowUnaries;
+
+    public BeamCscSpmvParser(final ParserDriver opts, final ClToolProperties properties,
+            final LeftCscSparseMatrixGrammar grammar) {
+        super(opts, grammar);
+        beamWidth = properties.getIntProperty("beamcsc.beamWidth");
+        lexicalRowBeamWidth = properties.getIntProperty("beamcsc.lexicalRowBeamWidth");
+        lexicalRowUnaries = properties.getIntProperty("beamcsc.lexicalRowUnaries");
+    }
 
     public BeamCscSpmvParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
-        super(opts, grammar);
-        beamWidth = opts.param1 > 0 ? (int) opts.param1 : grammar.numNonTerms();
-        if (opts.param2 > 0) {
-            lexicalRowBeamWidth = (int) opts.param2;
-            lexicalRowUnarySlots = (int) (lexicalRowBeamWidth * (opts.param3 > 0 ? opts.param3 : 0.3f));
-        } else {
-            lexicalRowBeamWidth = grammar.numNonTerms();
-            lexicalRowUnarySlots = 0;
-        }
+        this(opts, GlobalProperties.singleton(), grammar);
     }
 
     @Override
@@ -94,7 +96,7 @@ public class BeamCscSpmvParser extends CscSpmvParser {
                 }
             }
             // Truncate the tail and reserve a few entries for unary productions
-            q.setMaxSize(lexicalRowBeamWidth - lexicalRowUnarySlots);
+            q.setMaxSize(lexicalRowBeamWidth - lexicalRowUnaries);
             q.setMaxSize(lexicalRowBeamWidth);
 
         } else {
