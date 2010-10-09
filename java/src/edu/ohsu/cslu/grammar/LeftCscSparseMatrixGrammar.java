@@ -55,6 +55,10 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         init();
     }
 
+    public LeftCscSparseMatrixGrammar(final Grammar g) {
+        this(g, PerfectIntPairHashFilterFunction.class);
+    }
+
     private void init() {
         Arrays.fill(cscBinaryLeftChildStartIndices, -1);
         Arrays.fill(cscBinaryLeftChildEndIndices, -1);
