@@ -12,11 +12,10 @@ import java.util.Map.Entry;
 import edu.ohsu.cslu.counters.SimpleCounter;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.ParseTree;
+import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.util.Log;
-import edu.ohsu.cslu.parser.util.ParseTree;
-import edu.ohsu.cslu.parser.util.ParserUtil;
 
 public final class BoundaryInOut extends EdgeSelector {
 
@@ -278,7 +277,7 @@ public final class BoundaryInOut extends EdgeSelector {
                 } else if (tokens[0].equals("PN")) {
                     posTransitionLogProb[numIndex][denomIndex] = prob;
                 } else {
-                    Log.info(5, "WARNING: ignoring line in model file '" + line + "'");
+                    System.err.println("WARNING: ignoring line in model file '" + line + "'");
                 }
             }
         }
@@ -344,7 +343,7 @@ public final class BoundaryInOut extends EdgeSelector {
         while ((line = inStream.readLine()) != null) {
             tree = ParseTree.readBracketFormat(line);
             if (tree.isBinaryTree() == false) {
-                Log.info(0, "ERROR: Training trees must be binarized exactly as used in decoding");
+                System.err.println("ERROR: Training trees must be binarized exactly as used in decoding");
                 System.exit(1);
             }
             tree.linkLeavesLeftRight();
