@@ -7,7 +7,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import cltool.ClToolProperties;
+import cltool.ConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.PerformanceTest;
@@ -54,8 +54,8 @@ public class TestBeamCscSpmvParser extends
     }
 
     @Override
-    protected ClToolProperties configProperties() throws Exception {
-        final ClToolProperties props = new ClToolProperties();
+    protected ConfigProperties configProperties() throws Exception {
+        final ConfigProperties props = new ConfigProperties();
         props.setProperty("beamcsc.beamWidth", "125");
         props.setProperty("beamcsc.lexicalRowBeamWidth", "300");
         props.setProperty("beamcsc.lexicalRowUnaries", "90");

@@ -15,7 +15,7 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
 import cltool.BaseCommandlineTool;
-import cltool.GlobalProperties;
+import cltool.GlobalConfigProperties;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
@@ -105,7 +105,7 @@ public class SerializeModel extends BaseCommandlineTool {
         oos.writeObject(metadata.toString());
 
         // Write the global properties
-        oos.writeObject(GlobalProperties.singleton());
+        oos.writeObject(GlobalConfigProperties.singleton());
 
         // Write the grammar
         logger.info("Writing grammar...");
