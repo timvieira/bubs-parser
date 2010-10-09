@@ -51,7 +51,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(),
+                configProperties());
         p.initParser(new int[4]);
         final Chart chart = p.chart;
 
@@ -121,7 +122,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(),
+                configProperties());
         p.initParser(new int[4]);
         final Chart chart = p.chart;
 
@@ -182,7 +184,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser<?, ?> p = createParser(g,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+                CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(), configProperties());
         p.initParser(new int[4]);
 
         final ChartCell topCell = p.chart.getCell(0, 4);
@@ -296,7 +298,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
                 SparseMatrixGrammar.UnfilteredFunction.class);
 
         // Create the parser
-        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(),
+                configProperties());
         p.initParser(new int[5]);
         final Chart chart = p.chart;
 
@@ -394,7 +397,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
                 SparseMatrixGrammar.BitVectorExactFilterFunction.class);
 
         // Create the parser
-        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+        final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(),
+                configProperties());
         p.initParser(new int[5]);
         final Chart chart = p.chart;
 
@@ -450,7 +454,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser<?, ?> p = createParser(g,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+                CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(), configProperties());
         p.initParser(new int[5]);
         final Chart chart = p.chart;
 
@@ -560,7 +564,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser<?, ?> p = createParser(g,
-                CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions());
+                CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(), configProperties());
         p.initParser(new int[5]);
 
         final Chart chart = p.chart;
