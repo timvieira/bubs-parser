@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 
-import cltool.ClToolProperties;
-import cltool.GlobalProperties;
+import cltool.ConfigProperties;
+import cltool.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
@@ -14,7 +14,7 @@ public class BeamCscSpmvParser extends CscSpmvParser {
     private final int lexicalRowBeamWidth;
     private final int lexicalRowUnaries;
 
-    public BeamCscSpmvParser(final ParserDriver opts, final ClToolProperties properties,
+    public BeamCscSpmvParser(final ParserDriver opts, final ConfigProperties properties,
             final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
         beamWidth = properties.getIntProperty("beamcsc.beamWidth");
@@ -23,7 +23,7 @@ public class BeamCscSpmvParser extends CscSpmvParser {
     }
 
     public BeamCscSpmvParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
-        this(opts, GlobalProperties.singleton(), grammar);
+        this(opts, GlobalConfigProperties.singleton(), grammar);
     }
 
     @Override

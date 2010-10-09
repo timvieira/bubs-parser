@@ -16,8 +16,8 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
-import cltool.ClToolProperties;
-import cltool.GlobalProperties;
+import cltool.ConfigProperties;
+import cltool.GlobalConfigProperties;
 import cltool.ThreadLocalLinewiseClTool;
 import cltool.Threadable;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
@@ -209,8 +209,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                     modelFile)) : new FileInputStream(modelFile);
             final ObjectInputStream ois = new ObjectInputStream(is);
             final String metadata = (String) ois.readObject();
-            final ClToolProperties props = (ClToolProperties) ois.readObject();
-            GlobalProperties.singleton().mergeUnder(props);
+            final ConfigProperties props = (ConfigProperties) ois.readObject();
+            GlobalConfigProperties.singleton().mergeUnder(props);
 
             logger.fine("Reading grammar...");
             this.grammar = (Grammar) ois.readObject();

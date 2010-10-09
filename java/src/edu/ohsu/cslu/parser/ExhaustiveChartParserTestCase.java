@@ -14,7 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import cltool.ClToolProperties;
+import cltool.ConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -79,8 +79,8 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * @throws Exception if something breaks while constructing the options instance (e.g. failing to find a model
      *             file).
      */
-    protected ClToolProperties configProperties() throws Exception {
-        return new ClToolProperties();
+    protected ConfigProperties configProperties() throws Exception {
+        return new ConfigProperties();
     }
 
     /**
@@ -92,14 +92,14 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      */
     @SuppressWarnings("unchecked")
     protected final P createParser(final Grammar grammar, final CellSelector cellSelector, final ParserDriver options,
-            final ClToolProperties configProperties) {
+            final ConfigProperties configProperties) {
         try {
             final Class<P> parserClass = ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass())
                     .getActualTypeArguments()[0]);
             try {
                 // First, try for a constructor that takes both ParserDriver (options) and ClToolProperties
                 return parserClass.getConstructor(
-                        new Class[] { ParserDriver.class, ClToolProperties.class, grammarClass() }).newInstance(
+                        new Class[] { ParserDriver.class, ConfigProperties.class, grammarClass() }).newInstance(
                         new Object[] { options, configProperties, grammar });
 
             } catch (final NoSuchMethodException e) {
