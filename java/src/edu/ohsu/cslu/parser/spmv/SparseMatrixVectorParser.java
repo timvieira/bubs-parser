@@ -97,16 +97,16 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     protected abstract CartesianProductVector cartesianProductUnion(final int start, final int end);
 
     public String getStatHeader() {
-        return String.format("%8s, %5d, %10s, %8s, %12s, %11s, %8s, %7s", "Total", "Init", "X-product", "X-union",
-                "Bin-SpMV", "Unary", "Finalize", "Extract");
+        return String.format("%8s, %5d, %9s, %10s, %8s, %12s, %11s, %8s, %7s", "Total", "Init", "EdgeInit",
+                "X-product", "X-union", "Bin-SpMV", "Unary", "Finalize", "Extract");
     }
 
     @Override
     public String getStats() {
         final long totalTime = System.currentTimeMillis() - startTime;
-        return String.format("%8.1f, %5d, %10d, %8d, %12d, %11d, %8d, %7d", totalTime / 1000f, initTime,
-                totalCartesianProductTime, totalCartesianProductUnionTime, totalBinarySpMVTime, totalUnaryTime,
-                totalFinalizeTime, extractTime);
+        return String.format("%8.1f, %5d, %9d, %10d, %8d, %12d, %11d, %8d, %7d", totalTime / 1000f, initTime,
+                edgeSelectorInitTime, totalCartesianProductTime, totalCartesianProductUnionTime, totalBinarySpMVTime,
+                totalUnaryTime, totalFinalizeTime, extractTime);
     }
 
     public final static class CartesianProductVector {
