@@ -2,11 +2,9 @@ package edu.ohsu.cslu.parser.beam;
 
 import java.util.Collection;
 
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
@@ -27,10 +25,7 @@ public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellC
         Collection<Production> possibleProds;
         ChartEdge edge;
 
-        boolean onlyFactored = false;
-        if (cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
-            onlyFactored = ((CSLUTBlockedCells) cellSelector).isCellOpenOnlyToFactored(start, end);
-        }
+        final boolean onlyFactored = cellSelector.factoredParentsOnly(start, end);
 
         bestFOM = Float.NEGATIVE_INFINITY;
         onlineBeam = Float.NEGATIVE_INFINITY;

@@ -106,11 +106,11 @@ public class CSLUTBlockedCells extends CellSelector {
                         + " closed=" + (totalCells - openCells - factoredCells));
     }
 
-    public boolean isCellOpen(final int start, final int end) {
+    public boolean isOpen(final int start, final int end) {
         return isOpen[start][end];
     }
 
-    public boolean isCellOpenOnlyToFactored(final int start, final int end) {
+    public boolean factoredParentsOnly(final int start, final int end) {
         return onlyFactored[start][end];
     }
 

@@ -2,13 +2,11 @@ package edu.ohsu.cslu.parser.beam;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
@@ -67,10 +65,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final HashSetChartCell cell = chart.getCell(start, end);
         ChartEdge edge;
 
-        boolean onlyFactored = false;
-        if (cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
-            onlyFactored = ((CSLUTBlockedCells) cellSelector).isCellOpenOnlyToFactored(start, end);
-        }
+        final boolean onlyFactored = cellSelector.factoredParentsOnly(start, end);
 
         edgeCollectionInit();
 

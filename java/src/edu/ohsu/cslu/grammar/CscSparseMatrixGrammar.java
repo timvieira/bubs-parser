@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
+
     /**
      * Parallel array with {@link #cscBinaryPopulatedColumnOffsets}, containing indices of populated columns (child
      * pairs) and the offsets into {@link #cscBinaryRowIndices} at which each column starts. Array size is the number of
@@ -39,6 +40,30 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     public final float[] cscBinaryProbabilities;
 
     /**
+     * Parallel array with {@link #cscBinaryPopulatedColumnOffsets}, containing indices of populated columns (child
+     * pairs) and the offsets into {@link #cscBinaryRowIndices} at which each column starts. Array size is the number of
+     * non-empty columns (+1 to simplify loops).
+     */
+    public final int[] factoredCscBinaryPopulatedColumns;
+
+    /**
+     * Parallel array with {@link #cscBinaryPopulatedColumns} containing offsets into {@link #cscBinaryRowIndices} at
+     * which each column starts.
+     */
+    public final int[] factoredCscBinaryPopulatedColumnOffsets;
+
+    /**
+     * Row indices of each matrix entry in {@link #cscBinaryProbabilities}. One entry for each binary rule; the same
+     * size as {@link #cscBinaryProbabilities}.
+     */
+    public final short[] factoredCscBinaryRowIndices;
+
+    /**
+     * Binary rule probabilities One entry for each binary rule; the same size as {@link #cscBinaryRowIndices} .
+     */
+    public final float[] factoredCscBinaryProbabilities;
+
+    /**
      * Offsets into {@link #cscUnaryRowIndices} for the start of each column (child), with one extra entry appended to
      * prevent loops from falling off the end. Indexed by child non-terminal, so the length is 1 greater than |V|.
      */
@@ -57,9 +82,8 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws IOException {
         super(grammarFile, cartesianProductFunctionClass);
 
-        final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices();
-
-        // Bin all binary rules by child pair, mapping parent -> probability
+        // All binary productions
+        final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(binaryProductions);
         cscBinaryPopulatedColumns = new int[populatedBinaryColumnIndices.length];
         cscBinaryPopulatedColumnOffsets = new int[cscBinaryPopulatedColumns.length + 1];
         cscBinaryRowIndices = new short[numBinaryProds()];
@@ -68,7 +92,19 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         storeRulesAsMatrix(binaryProductions, populatedBinaryColumnIndices, cscBinaryPopulatedColumns,
                 cscBinaryPopulatedColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
 
-        // And all unary rules
+        // Factored productions only
+        final Collection<Production> factoredBinaryProductions = getFactoredBinaryProductions();
+        final int[] factoredPopulatedBinaryColumnIndices = populatedBinaryColumnIndices(factoredBinaryProductions);
+        factoredCscBinaryPopulatedColumns = new int[factoredPopulatedBinaryColumnIndices.length];
+        factoredCscBinaryPopulatedColumnOffsets = new int[factoredCscBinaryPopulatedColumns.length + 1];
+        factoredCscBinaryRowIndices = new short[factoredBinaryProductions.size()];
+        factoredCscBinaryProbabilities = new float[factoredBinaryProductions.size()];
+
+        storeRulesAsMatrix(factoredBinaryProductions, factoredPopulatedBinaryColumnIndices,
+                factoredCscBinaryPopulatedColumns, factoredCscBinaryPopulatedColumnOffsets,
+                factoredCscBinaryRowIndices, factoredCscBinaryProbabilities);
+
+        // And all unary productions
         cscUnaryColumnOffsets = new int[numNonTerms() + 1];
         cscUnaryRowIndices = new short[numUnaryProds()];
         cscUnaryProbabilities = new float[numUnaryProds()];
@@ -88,9 +124,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         super(g, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
-        final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices();
-
-        // Bin all binary rules by child pair, mapping parent -> probability
+        final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(binaryProductions);
         cscBinaryPopulatedColumns = new int[populatedBinaryColumnIndices.length];
         cscBinaryPopulatedColumnOffsets = new int[cscBinaryPopulatedColumns.length + 1];
         cscBinaryRowIndices = new short[numBinaryProds()];
@@ -99,7 +133,19 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         storeRulesAsMatrix(binaryProductions, populatedBinaryColumnIndices, cscBinaryPopulatedColumns,
                 cscBinaryPopulatedColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
 
-        // And all unary rules
+        // Factored productions only
+        final Collection<Production> factoredBinaryProductions = getFactoredBinaryProductions();
+        final int[] factoredPopulatedBinaryColumnIndices = populatedBinaryColumnIndices(factoredBinaryProductions);
+        factoredCscBinaryPopulatedColumns = new int[factoredPopulatedBinaryColumnIndices.length];
+        factoredCscBinaryPopulatedColumnOffsets = new int[factoredCscBinaryPopulatedColumns.length + 1];
+        factoredCscBinaryRowIndices = new short[factoredBinaryProductions.size()];
+        factoredCscBinaryProbabilities = new float[factoredBinaryProductions.size()];
+
+        storeRulesAsMatrix(factoredBinaryProductions, factoredPopulatedBinaryColumnIndices,
+                factoredCscBinaryPopulatedColumns, factoredCscBinaryPopulatedColumnOffsets,
+                factoredCscBinaryRowIndices, factoredCscBinaryProbabilities);
+
+        // And all unary productions
         cscUnaryColumnOffsets = new int[numNonTerms() + 1];
         cscUnaryRowIndices = new short[numUnaryProds()];
         cscUnaryProbabilities = new float[numUnaryProds()];
@@ -107,9 +153,9 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
     }
 
-    private int[] populatedBinaryColumnIndices() {
+    private int[] populatedBinaryColumnIndices(final Collection<Production> productions) {
         final IntSet populatedBinaryColumnIndices = new IntOpenHashSet(binaryProductions.size() / 10);
-        for (final Production p : binaryProductions) {
+        for (final Production p : productions) {
             populatedBinaryColumnIndices.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
         }
         final int[] sortedPopulatedBinaryColumnIndices = populatedBinaryColumnIndices.toIntArray();

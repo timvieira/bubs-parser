@@ -93,11 +93,14 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     @SuppressWarnings("unchecked")
     protected final P createParser(final Grammar grammar, final CellSelector cellSelector, final ParserDriver options,
             final ConfigProperties configProperties) {
+        if (options != null) {
+            options.cellSelector = cellSelector;
+        }
         try {
             final Class<P> parserClass = ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass())
                     .getActualTypeArguments()[0]);
             try {
-                // First, try for a constructor that takes both ParserDriver (options) and ClToolProperties
+                // First, try for a constructor that takes both ParserDriver (options) and ConfigProperties
                 return parserClass.getConstructor(
                         new Class[] { ParserDriver.class, ConfigProperties.class, grammarClass() }).newInstance(
                         new Object[] { options, configProperties, grammar });

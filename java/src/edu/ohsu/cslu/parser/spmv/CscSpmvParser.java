@@ -194,17 +194,28 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) chartCell;
         targetCell.allocateTemporaryStorage();
 
-        binarySpmvMultiply(cartesianProductVector, targetCell.tmpPackedChildren, targetCell.tmpInsideProbabilities,
-                targetCell.tmpMidpoints);
+        if (cellSelector.factoredParentsOnly(chartCell.start(), chartCell.end())) {
+            binarySpmvMultiply(cartesianProductVector, grammar.factoredCscBinaryPopulatedColumns,
+                    grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
+                    grammar.factoredCscBinaryProbabilities, targetCell.tmpPackedChildren,
+                    targetCell.tmpInsideProbabilities, targetCell.tmpMidpoints);
+        } else {
+            binarySpmvMultiply(cartesianProductVector, grammar.cscBinaryPopulatedColumns,
+                    grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
+                    grammar.cscBinaryProbabilities, targetCell.tmpPackedChildren, targetCell.tmpInsideProbabilities,
+                    targetCell.tmpMidpoints);
+        }
     }
 
-    protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+    private void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+            final int[] grammarCscBinaryPopulatedColumns, final int[] grammarCscBinaryPopulatedColumnOffsets,
+            final short[] grammarCscBinaryRowIndices, final float[] grammarCscBinaryProbabilities,
             final int[] targetCellChildren, final float[] targetCellProbabilities, final short[] targetCellMidpoints) {
 
         // Iterate over possible populated child pairs (matrix columns)
-        for (int i = 0; i < grammar.cscBinaryPopulatedColumns.length; i++) {
+        for (int i = 0; i < grammarCscBinaryPopulatedColumns.length; i++) {
 
-            final int childPair = grammar.cscBinaryPopulatedColumns[i];
+            final int childPair = grammarCscBinaryPopulatedColumns[i];
             final short cartesianProductMidpoint = cartesianProductVector.midpoints[childPair];
 
             // Skip grammar matrix columns for unpopulated cartesian-product entries
@@ -214,10 +225,10 @@ public class CscSpmvParser extends SparseMatrixVectorParser<LeftCscSparseMatrixG
             final float cartesianProductProbability = cartesianProductVector.probabilities[childPair];
 
             // Iterate over possible parents of the child pair (rows with non-zero entries)
-            for (int j = grammar.cscBinaryPopulatedColumnOffsets[i]; j < grammar.cscBinaryPopulatedColumnOffsets[i + 1]; j++) {
+            for (int j = grammarCscBinaryPopulatedColumnOffsets[i]; j < grammarCscBinaryPopulatedColumnOffsets[i + 1]; j++) {
 
-                final float jointProbability = grammar.cscBinaryProbabilities[j] + cartesianProductProbability;
-                final int parent = grammar.cscBinaryRowIndices[j];
+                final float jointProbability = grammarCscBinaryProbabilities[j] + cartesianProductProbability;
+                final int parent = grammarCscBinaryRowIndices[j];
 
                 if (jointProbability > targetCellProbabilities[parent]) {
                     targetCellChildren[parent] = childPair;
