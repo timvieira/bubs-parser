@@ -452,7 +452,7 @@ public class Grammar implements Serializable {
         return nonTermSet.getSymbol(startSymbol);
     }
 
-    @SuppressWarnings( { "cast", "unchecked" })
+    @SuppressWarnings({ "cast", "unchecked" })
     public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
@@ -585,6 +585,16 @@ public class Grammar implements Serializable {
         return binaryProductions;
     }
 
+    public Collection<Production> getFactoredBinaryProductions() {
+        final List<Production> factoredProductions = new LinkedList<Production>();
+        for (final Production p : binaryProductions) {
+            if (p.isBinaryProd() && grammarFormat.isFactored(mapNonterminal(p.parent))) {
+                factoredProductions.add(p);
+            }
+        }
+        return factoredProductions;
+    }
+
     public Production getBinaryProduction(final int parent, final int leftChild, final int rightChild) {
         for (final Production p : binaryProductions) {
             if (p.parent == parent && p.leftChild == leftChild && p.rightChild == rightChild) {
@@ -625,8 +635,8 @@ public class Grammar implements Serializable {
      */
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
         if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
-            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild), nonTermSet
-                    .getIndex(rightChild));
+            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
+                    nonTermSet.getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }

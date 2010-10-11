@@ -52,7 +52,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         final ChartEdge[] bestEdges = new ChartEdge[grammar.numNonTerms()]; // inits to null
 
         final int maxEdgesToAdd = (int) opts.param2;
-        final boolean onlyFactored = cslutScores.isCellOpenOnlyToFactored(start, end);
+        final boolean onlyFactored = cslutScores.factoredParentsOnly(start, end);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final HashSetChartCell leftCell = chart.getCell(start, mid);
@@ -85,7 +85,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
         // System.out.println(" setSpanMax: " + leftCell + " && " + rightCell);
 
-        if (cslutScores.isCellOpen(start, end)) {
+        if (cslutScores.isOpen(start, end)) {
             Collection<Production> possibleProds;
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {

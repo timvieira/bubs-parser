@@ -19,6 +19,29 @@ public abstract class CellSelector implements Iterator<short[]> {
 
     public abstract short[] next();
 
+    /**
+     * Returns true if the specified cell is 'open' to be populated (i.e., may be visited during cell iteration).
+     * 
+     * @param start
+     * @param end
+     * @return true if the specified cell is 'open' to be populated
+     */
+    public boolean isOpen(final int start, final int end) {
+        return true;
+    }
+
+    /**
+     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
+     * complete constituent).
+     * 
+     * @param start
+     * @param end
+     * @return true if the specified cell is 'open' only to factored parents
+     */
+    public boolean factoredParentsOnly(final int start, final int end) {
+        return false;
+    }
+
     public void init(final ChartParser<?, ?> parser) {
         // default is to do nothing
     }

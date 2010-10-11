@@ -18,14 +18,14 @@ import java.util.Arrays;
 public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
 
     /**
-     * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal, or -1 for non-terminals
-     * which do not occur as left children. Indexed by left non-terminal. Length is 1 greater than V, to simplify loops.
+     * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal. Indexed by left
+     * non-terminal. Length is 1 greater than V, to simplify loops.
      */
     public final int[] cscBinaryLeftChildStartIndices;
 
     /**
-     * Indices in {@link #cscBinaryPopulatedColumns} of final columns for each non-terminal, or -1 for non-terminals
-     * which do not occur as left children. Indexed by left non-terminal. Length is 1 greater than V, to simplify loops.
+     * Indices in {@link #cscBinaryPopulatedColumns} of final columns for each non-terminal. Indexed by left
+     * non-terminal. Length is 1 greater than V, to simplify loops.
      */
     public final int[] cscBinaryLeftChildEndIndices;
 
