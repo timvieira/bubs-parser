@@ -45,8 +45,8 @@ import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
 import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
 import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
-import edu.ohsu.cslu.parser.beam.BSCPPruneViterbiStats;
 import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
+import edu.ohsu.cslu.parser.beam.BSCPTrainFOMConfidence;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
@@ -161,6 +161,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-tools", hidden = true, usage = "Run tools")
     public boolean runTools = false;
 
+    // TODO: embed this info into the grammar file as meta data and remove these options
+    @Option(name = "-hMarkov", hidden = true, usage = "Horizontal Markov order of input Grammar")
+    private int horizontalMarkov = 0;
+
+    @Option(name = "-vMarkov", hidden = true, usage = "Vertical Markov order of input Grammar")
+    private int verticalMarkov = 0;
+
+    @Option(name = "-annotatePOS", hidden = true, usage = "Input Grammar has annotation on POS tags")
+    private boolean annotatePOS = false;
+
     private Grammar grammar;
     private long parseStartTime;
 
@@ -193,7 +203,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 researchParserType = ResearchParserType.APWithMemory;
                 break;
             case Beam:
+                //researchParserType = ResearchParserType.BSCPPruneViterbi;
                 researchParserType = ResearchParserType.BeamCscSpmv;
+                break;
+            case Matrix:
+                researchParserType = ResearchParserType.CscSpmv;
+                cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash2;
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported parser type");
@@ -232,6 +247,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             }
 
             if (cslutScoresFileName != null) {
+                cellSelectorType = CellSelectorType.CSLUT;
+                cellModelFileName = cslutScoresFileName;
+                cslutScoresStream = new BufferedReader(new FileReader(cslutScoresFileName));
+            }
+
+            if (cslutScoresFileName != null) {
                 cslutScoresStream = new BufferedReader(new FileReader(cslutScoresFileName));
             }
 
@@ -253,6 +274,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
         logger.fine(grammar.getStats());
         logger.fine(optionsToString());
+
+        // TODO: until we embed this info into the model itself ... read it from args
+        grammar.annotatePOS = annotatePOS;
+        grammar.isLatentVariableGrammar = true;
+        grammar.horizontalMarkov = horizontalMarkov;
+        grammar.verticalMarkov = verticalMarkov;
 
         parseStartTime = System.currentTimeMillis();
     }
@@ -310,6 +337,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case BSCPExpDecay:
         case BSCPPerceptronCell:
         case BSCPFomDecode:
+        case BSCPTrainFOMConfidence:
         case CoarseCellAgenda:
         case CoarseCellAgendaCSLUT:
             return new LeftHashGrammar(genericGrammar);
@@ -385,9 +413,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case BeamSearchChartParser:
             return new BeamSearchChartParser<LeftHashGrammar, CellChart>(parserOptions, (LeftHashGrammar) grammar);
         case BSCPPruneViterbi:
-            if (parserOptions.collectDetailedStatistics) {
-                return new BSCPPruneViterbiStats(parserOptions, (LeftHashGrammar) grammar);
-            }
             return new BSCPPruneViterbi(parserOptions, (LeftHashGrammar) grammar);
         case BSCPOnlineBeam:
             return new BSCPWeakThresh(parserOptions, (LeftHashGrammar) grammar);
@@ -399,6 +424,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new BSCPSkipBaseCells(parserOptions, (LeftHashGrammar) grammar);
         case BSCPFomDecode:
             return new BSCPFomDecode(parserOptions, (LeftHashGrammar) grammar);
+        case BSCPTrainFOMConfidence:
+            return new BSCPTrainFOMConfidence(parserOptions, (LeftHashGrammar) grammar);
 
         case CoarseCellAgenda:
             return new CoarseCellAgendaParser(parserOptions, (LeftHashGrammar) grammar);
