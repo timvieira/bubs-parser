@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.beam;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -65,8 +65,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final HashSetChartCell cell = chart.getCell(start, end);
         ChartEdge edge;
 
-        final boolean onlyFactored = cellSelector.factoredParentsOnly(start, end);
-
+        final boolean onlyFactored = hasCellConstraints && cellConstraints.factoredParentsOnly(start, end);
         edgeCollectionInit();
 
         if (end - start == 1) {

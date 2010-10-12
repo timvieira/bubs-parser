@@ -57,9 +57,9 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
                 sentence = ParserUtil.join(tree.getLeafNodesContent(), " ");
                 System.out.println("SENT: " + sentence);
 
-                assert cslutScores.allStartScore.containsKey(sentence);
-                cslutStartScore = cslutScores.allStartScore.get(sentence);
-                cslutEndScore = cslutScores.allEndScore.get(sentence);
+                assert cslutScores.allStartScores.containsKey(sentence);
+                cslutStartScore = cslutScores.allStartScores.get(sentence);
+                cslutEndScore = cslutScores.allEndScores.get(sentence);
 
                 tree.tokenizeLeaves(grammar);
                 // final CellChart goldChart = tree.convertToChart(grammar);
