@@ -6,8 +6,8 @@ import java.util.Arrays;
 import java.util.Random;
 
 /**
- * A {@link Vector} implementation which stores 32-bit floats. For most NLP tasks requiring floating-point
- * numbers, a 32-bit float is sufficient, and requires half the memory of a 64-bit double.
+ * A {@link Vector} implementation which stores 32-bit floats. For most NLP tasks requiring floating-point numbers, a
+ * 32-bit float is sufficient, and requires half the memory of a 64-bit double.
  * 
  * @author Aaron Dunlop
  * @since Dec 11, 2008
@@ -28,10 +28,8 @@ public class FloatVector extends BaseNumericVector {
     /**
      * Initializes all elements to a default value.
      * 
-     * @param length
-     *            The size of the vector
-     * @param defaultValue
-     *            The value assigned to all elements
+     * @param length The size of the vector
+     * @param defaultValue The value assigned to all elements
      */
     public FloatVector(final int length, final float defaultValue) {
         super(length);
@@ -42,12 +40,9 @@ public class FloatVector extends BaseNumericVector {
     /**
      * Initializes all elements to random values between minValue and maxValue
      * 
-     * @param length
-     *            The size of the vector
-     * @param minValue
-     *            The lowest value in the initialization range (inclusive)
-     * @param maxValue
-     *            The highest value in the initialization range (exclusive)
+     * @param length The size of the vector
+     * @param minValue The lowest value in the initialization range (inclusive)
+     * @param maxValue The highest value in the initialization range (exclusive)
      */
     public FloatVector(final int length, final float minValue, final float maxValue) {
         super(length);
@@ -80,8 +75,7 @@ public class FloatVector extends BaseNumericVector {
      * 
      * Caution: This method changes the contents of this vector
      * 
-     * @param v
-     *            addend, a vector of the same length.
+     * @param v addend, a vector of the same length.
      * @return a reference to this vector.
      */
     public FloatVector inPlaceAdd(final Vector v) {
@@ -120,12 +114,58 @@ public class FloatVector extends BaseNumericVector {
     }
 
     /**
+     * Adds an addend to the elements of this vector indicated by the populated indices of a bit vector, returning a
+     * reference to this vector
+     * 
+     * Caution: This method changes the contents of this vector
+     * 
+     * @param v a {@link BitVector} of the same length.
+     * @param addend the float to be added to the elements indicated by populated elements in v
+     * @return a reference to this vector.
+     */
+    public FloatVector inPlaceAdd(final BitVector v, final float addend) {
+        // Special-case for SparseBitVector
+        if (v instanceof SparseBitVector) {
+            if (v.length() > length) {
+                throw new IllegalArgumentException("Vector length mismatch");
+            }
+
+            for (final int i : ((SparseBitVector) v).values()) {
+                vector[i] += addend;
+            }
+            return this;
+        }
+
+        // Special-case for MutableSparseBitVector
+        if (v instanceof MutableSparseBitVector) {
+            if (v.length() > length) {
+                throw new IllegalArgumentException("Vector length mismatch");
+            }
+
+            for (final int i : ((MutableSparseBitVector) v).intSet()) {
+                vector[i] += addend;
+            }
+            return this;
+        }
+
+        if (v.length() != length) {
+            throw new IllegalArgumentException("Vector length mismatch");
+        }
+
+        for (int i = 0; i < length; i++) {
+            if (v.getBoolean(i)) {
+                vector[i] += addend;
+            }
+        }
+        return this;
+    }
+
+    /**
      * Multiplies this {@link Vector} by another {@link Vector}, returning a reference to this vector
      * 
      * Caution: This method changes the contents of this vector
      * 
-     * @param v
-     *            multiplicand, a vector of the same length.
+     * @param v multiplicand, a vector of the same length.
      * @return a reference to this vector.
      */
     public FloatVector inPlaceElementwiseMultiply(final Vector v) {
@@ -146,8 +186,7 @@ public class FloatVector extends BaseNumericVector {
      * 
      * Caution: This method changes the contents of this vector
      * 
-     * @param v
-     *            divisor, a vector of the same length.
+     * @param v divisor, a vector of the same length.
      * @return a reference to this vector.
      */
     public FloatVector inPlaceElementwiseDivide(final Vector v) {
@@ -166,8 +205,7 @@ public class FloatVector extends BaseNumericVector {
      * 
      * Caution: This method changes the contents of this vector
      * 
-     * @param addend
-     *            Scalar value.
+     * @param addend Scalar value.
      * @return a reference to this vector.
      */
     public FloatVector inPlaceScalarAdd(final float addend) {
@@ -182,8 +220,7 @@ public class FloatVector extends BaseNumericVector {
      * 
      * Caution: This method changes the contents of this vector
      * 
-     * @param multiplicand
-     *            Scalar value.
+     * @param multiplicand Scalar value.
      * @return a reference to this vector.
      */
     public FloatVector inPlaceScalarMultiply(final float multiplicand) {
@@ -267,12 +304,9 @@ public class FloatVector extends BaseNumericVector {
     /**
      * Performs the standard learning algorithm on the weight vector (w) of a perceptron.
      * 
-     * @param x
-     *            Input vector
-     * @param y
-     *            Expected output
-     * @param alpha
-     *            Learning Rate
+     * @param x Input vector
+     * @param y Expected output
+     * @param alpha Learning Rate
      */
     public void perceptronUpdate(final Vector x, final float y, final float alpha) {
         // For each j:
@@ -289,10 +323,8 @@ public class FloatVector extends BaseNumericVector {
      * 
      * TODO More generic version for classes other than SparseBitVector
      * 
-     * @param example
-     *            Input vector
-     * @param alpha
-     *            Learning Rate (positive for positive examples, negative for negative examples)
+     * @param example Input vector
+     * @param alpha Learning Rate (positive for positive examples, negative for negative examples)
      */
     public void perceptronUpdate(final SparseBitVector example, final float alpha) {
         // For each element j in example:
