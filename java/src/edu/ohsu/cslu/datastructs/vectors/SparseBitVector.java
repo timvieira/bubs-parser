@@ -9,12 +9,11 @@ import java.io.Writer;
 import java.util.Arrays;
 
 /**
- * Immutable implementation of the {@link BitVector} interface which stores the indices of populated bits in
- * an int array.
+ * Immutable implementation of the {@link BitVector} interface which stores the indices of populated bits in an int
+ * array.
  * 
- * This class is generally useful to store binary feature vectors in which a few of the bits will be populated
- * - if a large number of bits are likely to be populated, {@link PackedBitVector} will likely be more
- * efficient.
+ * This class is generally useful to store binary feature vectors in which a few of the bits will be populated - if a
+ * large number of bits are likely to be populated, {@link PackedBitVector} will likely be more efficient.
  * 
  * @author Aaron Dunlop
  * @since Sep 11, 2008
@@ -32,10 +31,9 @@ public class SparseBitVector extends BaseVector implements BitVector {
     }
 
     /**
-     * Constructs a {@link MutableSparseBitVector} from an integer array. Note that the semantics of this
-     * constructor are different from those of most other {@link Vector} constructors with the same signature.
-     * The array should consists of either indices or index, boolean tuples (as specified by the 'tuples'
-     * parameter)
+     * Constructs a {@link SparseBitVector} from an integer array. Note that the semantics of this constructor are
+     * different from those of most other {@link Vector} constructors with the same signature. The array should consists
+     * of either indices or index, boolean tuples (as specified by the 'tuples' parameter)
      * 
      * @param array Index, boolean tuples
      * @param tuples Treat the supplied array as a set of index, value tuples
@@ -71,6 +69,17 @@ public class SparseBitVector extends BaseVector implements BitVector {
     private SparseBitVector(final int length, final int[] elements) {
         super(length);
         this.elements = elements;
+    }
+
+    /**
+     * Returns a clone of the backing store
+     * 
+     * TODO Expose the true backing store? It would be efficient, but unsafe.
+     * 
+     * @return a clone of the backing store
+     */
+    public int[] elements() {
+        return elements.clone();
     }
 
     @Override

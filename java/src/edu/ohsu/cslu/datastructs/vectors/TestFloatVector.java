@@ -26,8 +26,7 @@ public class TestFloatVector extends FloatVectorTestCase {
     public void setUp() throws Exception {
         final StringBuilder sb = new StringBuilder();
         sb.append("vector type=float length=11\n");
-        sb
-            .append("-11.000000 0.000000 11.000000 22.000000 33.000000 44.000000 56.000000 67.000000 78.000000 89.000000 100.000000\n");
+        sb.append("-11.000000 0.000000 11.000000 22.000000 33.000000 44.000000 56.000000 67.000000 78.000000 89.000000 100.000000\n");
         stringSampleVector = sb.toString();
 
         final float[] sampleArray = new float[] { -11, 0, 11, 22, 33, 44, 56, 67, 78, 89, 100 };
@@ -167,6 +166,25 @@ public class TestFloatVector extends FloatVectorTestCase {
     }
 
     @Test
+    public void testInPlaceAddWithBitVector() throws Exception {
+        final Vector v = ((FloatVector) sampleVector).inPlaceAdd(new SparseBitVector(new boolean[] { false, true,
+                false, true, false, true, false, true, false, true, false }), -1f);
+        assertTrue("Vector objects are not the same", v == sampleVector);
+
+        assertEquals("Wrong value", -11f, v.getFloat(0), .001f);
+        assertEquals("Wrong value", -1f, v.getFloat(1), .001f);
+        assertEquals("Wrong value", 11f, v.getFloat(2), .001f);
+        assertEquals("Wrong value", 21f, v.getFloat(3), .001f);
+        assertEquals("Wrong value", 33f, v.getFloat(4), .001f);
+        assertEquals("Wrong value", 43f, v.getFloat(5), .001f);
+        assertEquals("Wrong value", 56f, v.getFloat(6), .001f);
+        assertEquals("Wrong value", 66f, v.getFloat(7), .001f);
+        assertEquals("Wrong value", 78f, v.getFloat(8), .001f);
+        assertEquals("Wrong value", 88f, v.getFloat(9), .001f);
+        assertEquals("Wrong value", 100f, v.getFloat(10), .001f);
+    }
+
+    @Test
     public void testInPlaceScalarMultiply() throws Exception {
         final Vector v = ((FloatVector) sampleVector).inPlaceScalarMultiply(-2.5f);
         assertTrue("Vector objects are not the same", v == sampleVector);
@@ -176,8 +194,7 @@ public class TestFloatVector extends FloatVectorTestCase {
     /**
      * Tests in-place element-wise division
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     public void testInPlaceElementwiseDivide() throws Exception {
@@ -224,8 +241,7 @@ public class TestFloatVector extends FloatVectorTestCase {
     /**
      * Tests in-place element-wise division
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     public void testInPlaceElementwiseLog() throws Exception {
