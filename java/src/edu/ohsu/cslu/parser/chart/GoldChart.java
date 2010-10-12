@@ -77,9 +77,10 @@ public class GoldChart extends Chart {
                     ParserDriver.getLogger().info(
                             "WARNING: production does not exist in grammar for node: " + A + " -> "
                                     + node.childrenToString());
-                    prod = Grammar.nullProduction;
+                    // prod = Grammar.nullProduction;
+                } else {
+                    goldEdges[start][end].add(edge);
                 }
-                goldEdges[start][end].add(edge);
             }
         }
 
@@ -102,7 +103,8 @@ public class GoldChart extends Chart {
 
     @Override
     public float getInside(final int start, final int end, final int nonTerminal) {
-        throw new UnsupportedOperationException("getInside() not implemented for GoldChart");
+        // throw new UnsupportedOperationException("getInside() not implemented for GoldChart");
+        return (float) 1.0;
     }
 
     @Override
@@ -127,7 +129,8 @@ public class GoldChart extends Chart {
 
         @Override
         public float getInside(final int nonTerminal) {
-            throw new UnsupportedOperationException("getInside() not implemented for GoldChart");
+            // throw new UnsupportedOperationException("getInside() not implemented for GoldChart");
+            return (float) 1.0;
         }
 
         @Override
