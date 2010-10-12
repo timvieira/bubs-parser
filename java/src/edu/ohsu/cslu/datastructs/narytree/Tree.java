@@ -89,14 +89,23 @@ public interface Tree<E extends Object> {
 
     /**
      * @param childLabel Label of a child
-     * @return the subtree rooted at the leftmost child labeled with the specified label or null if no such
-     *         child exists.
+     * @return the subtree rooted at the leftmost child labeled with the specified label or null if no such child
+     *         exists.
      */
     public Tree<E> subtree(E childLabel);
 
     /**
-     * @return the depth of this subtree within the entire tree of which it is a part (0 if this tree is the
-     *         root)
+     * @return true if this tree is the leftmost child of its parent or the only (unary) child of a leftmost child.
+     */
+    public boolean isLeftmostChild();
+
+    /**
+     * @return true if this tree is the rightmost child of its parent or the only (unary) child of a rightmost child.
+     */
+    public boolean isRightmostChild();
+
+    /**
+     * @return the depth of this subtree within the entire tree of which it is a part (0 if this tree is the root)
      */
     public int depthFromRoot();
 
@@ -111,37 +120,42 @@ public interface Tree<E extends Object> {
     public int leaves();
 
     /**
-     * @return an Iterator over all nodes in this tree. Iteration order will be leftmost-child, head, other
+     * @return an {@link Iterator} over all nodes in this tree. Iteration order will be leftmost-child, head, other
      *         children (in left-to-right order).
      */
     public Iterator<? extends Tree<E>> inOrderIterator();
 
     /**
-     * @return an Iterator over all nodes in this tree. Iteration order will be head, followed by children (in
+     * @return an {@link Iterator} over all nodes in this tree. Iteration order will be head, followed by children (in
      *         left-to-right order).
      */
     public Iterator<? extends Tree<E>> preOrderIterator();
 
     /**
-     * @return an Iterator over all nodes in this tree. Iteration order will be children (in left-to-right
+     * @return an {@link Iterator} over all nodes in this tree. Iteration order will be children (in left-to-right
      *         order), followed by head.
      */
     public Iterator<? extends Tree<E>> postOrderIterator();
 
     /**
-     * @return an Iterator over all labels in this tree. Iteration order will be leftmost-child, head, other
+     * @return an {@link Iterator} over all leaf nodes in this tree.
+     */
+    public Iterator<? extends Tree<E>> leafIterator();
+
+    /**
+     * @return an {@link Iterator} over all labels in this tree. Iteration order will be leftmost-child, head, other
      *         children (in left-to-right order).
      */
     public Iterator<E> inOrderLabelIterator();
 
     /**
-     * @return an Iterator over all nodes in this tree. Iteration order will be head, followed by children (in
+     * @return an {@link Iterator} over all nodes in this tree. Iteration order will be head, followed by children (in
      *         left-to-right order).
      */
     public Iterator<E> preOrderLabelIterator();
 
     /**
-     * @return an Iterator over all labels in this tree. Iteration order will be children (in left-to-right
+     * @return an {@link Iterator} over all labels in this tree. Iteration order will be children (in left-to-right
      *         order), followed by head.
      */
     public Iterator<E> postOrderLabelIterator();

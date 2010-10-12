@@ -1,10 +1,10 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,6 +41,7 @@ public class TestStringBinaryTree {
             "k", "j" };
     private final static String[] SAMPLE_POST_ORDER_ARRAY = new String[] { "a", "c", "b", "e", "d", "g", "h", "j", "k",
             "i", "f" };
+    private final static String[] SAMPLE_LEAF_ARRAY = new String[] { "a", "c", "e", "g", "j" };
 
     @Before
     public void setUp() {
@@ -201,6 +202,45 @@ public class TestStringBinaryTree {
     }
 
     @Test
+    public void testIsLeaf() throws Exception {
+        assertFalse(sampleTree.isLeaf());
+        assertFalse(sampleTree.subtree("d").isLeaf());
+        assertTrue(sampleTree.subtree("i").subtree("h").subtree("g").isLeaf());
+    }
+
+    @Test
+    public void testIsLeftmostChild() throws Exception {
+        final Iterator<BinaryTree<String>> i = sampleTree.inOrderIterator();
+        assertTrue(i.next().isLeftmostChild()); // a
+        assertTrue(i.next().isLeftmostChild()); // b
+        assertFalse(i.next().isLeftmostChild()); // c
+        assertTrue(i.next().isLeftmostChild()); // d
+        assertFalse(i.next().isLeftmostChild()); // e
+        assertFalse(i.next().isLeftmostChild()); // f
+        assertTrue(i.next().isLeftmostChild()); // g
+        assertTrue(i.next().isLeftmostChild()); // h
+        assertFalse(i.next().isLeftmostChild()); // i
+        assertFalse(i.next().isLeftmostChild()); // j
+        assertFalse(i.next().isLeftmostChild()); // k
+    }
+
+    @Test
+    public void testIsRightmostChild() throws Exception {
+        final Iterator<BinaryTree<String>> i = sampleTree.inOrderIterator();
+        assertFalse(i.next().isRightmostChild()); // a
+        assertFalse(i.next().isRightmostChild()); // b
+        assertTrue(i.next().isRightmostChild()); // c
+        assertFalse(i.next().isRightmostChild()); // d
+        assertTrue(i.next().isRightmostChild()); // e
+        assertFalse(i.next().isRightmostChild()); // f
+        assertFalse(i.next().isRightmostChild()); // g
+        assertFalse(i.next().isRightmostChild()); // h
+        assertTrue(i.next().isRightmostChild()); // i
+        assertTrue(i.next().isRightmostChild()); // j
+        assertTrue(i.next().isRightmostChild()); // k
+    }
+
+    @Test
     public void testInOrderIterator() throws Exception {
         final Iterator<BinaryTree<String>> iter = sampleTree.inOrderIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
@@ -245,6 +285,14 @@ public class TestStringBinaryTree {
         final Iterator<String> iter = sampleTree.postOrderLabelIterator();
         for (int i = 0; i < sampleTree.size(); i++) {
             assertEquals(SAMPLE_POST_ORDER_ARRAY[i], iter.next());
+        }
+    }
+
+    @Test
+    public void testLeafIterator() throws Exception {
+        final Iterator<BinaryTree<String>> iter = sampleTree.leafIterator();
+        for (int i = 0; i < SAMPLE_LEAF_ARRAY.length; i++) {
+            assertEquals(SAMPLE_LEAF_ARRAY[i], iter.next().label());
         }
     }
 
@@ -299,13 +347,6 @@ public class TestStringBinaryTree {
         writer = new StringWriter();
         tree.write(writer);
         assertEquals(stringSimpleTree, writer.toString());
-    }
-
-    @Test
-    public void testIsLeaf() throws Exception {
-        assertFalse(sampleTree.isLeaf());
-        assertFalse(sampleTree.subtree("d").isLeaf());
-        assertTrue(sampleTree.subtree("i").subtree("h").subtree("g").isLeaf());
     }
 
     @Test

@@ -187,10 +187,36 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         return children;
     }
 
+    @Override
     public boolean isLeaf() {
         return leftChild == null;
     }
 
+    @Override
+    public boolean isLeftmostChild() {
+        BinaryTree<E> child = this;
+
+        // Trace unary chains upward
+        while (child.parent != null && child.parent.rightChild == null) {
+            child = child.parent;
+        }
+
+        return child.parent != null && child == child.parent.leftChild;
+    }
+
+    @Override
+    public boolean isRightmostChild() {
+        BinaryTree<E> child = this;
+
+        // Trace unary chains upward
+        while (child.parent != null && child.parent.rightChild == null) {
+            child = child.parent;
+        }
+
+        return child.parent != null && child == child.parent.rightChild;
+    }
+
+    @Override
     public int size() {
         return size;
     }
@@ -232,7 +258,11 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
     @Override
     public Iterator<BinaryTree<E>> inOrderIterator() {
         // A simple and stupid implementation, but we can tune for performance if needed
-        return inOrderList(new ArrayList<BinaryTree<E>>(size)).iterator();
+        return inOrderList().iterator();
+    }
+
+    private List<BinaryTree<E>> inOrderList() {
+        return inOrderList(new ArrayList<BinaryTree<E>>(size));
     }
 
     private List<BinaryTree<E>> inOrderList(final List<BinaryTree<E>> list) {
@@ -302,6 +332,22 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
     public Iterator<E> postOrderLabelIterator() {
         // A simple and stupid implementation, but we can tune for performance if needed
         return postOrderLabelList(new ArrayList<E>(size)).iterator();
+    }
+
+    private List<BinaryTree<E>> leafList(final List<BinaryTree<E>> list) {
+        for (final BinaryTree<E> node : inOrderList()) {
+            if (node.isLeaf()) {
+                list.add(node);
+            }
+        }
+
+        return list;
+    }
+
+    @Override
+    public Iterator<BinaryTree<E>> leafIterator() {
+        // A simple and stupid implementation, but we can tune for performance if needed
+        return leafList(new LinkedList<BinaryTree<E>>()).iterator();
     }
 
     @Override
@@ -411,10 +457,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         } else {
             rootTree.addSubtree(unfactor(grammarFormatType));
         }
-    }
 
-    public NaryTree<String> unbinarize(final GrammarFormatType grammarFormatType) {
-        return this.unfactor(grammarFormatType);
     }
 
     /**
