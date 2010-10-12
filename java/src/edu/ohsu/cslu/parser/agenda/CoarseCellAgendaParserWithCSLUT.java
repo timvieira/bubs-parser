@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.agenda;
 
 import java.util.Collection;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
@@ -27,7 +27,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         initParser(tokens);
         addLexicalProductions(tokens);
         edgeSelector.init(chart);
-        cslutScores.init(chart, currentInput.sentence);
+        cslutScores.init(chart, currentInput.sentence, grammar.isLeftFactored());
         addUnaryExtensionsToLexProds();
 
         for (int i = 0; i < chart.size(); i++) {
@@ -85,7 +85,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
         // System.out.println(" setSpanMax: " + leftCell + " && " + rightCell);
 
-        if (cslutScores.isOpen(start, end)) {
+        if (cslutScores.isCellOpen(start, end)) {
             Collection<Production> possibleProds;
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {
