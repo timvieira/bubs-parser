@@ -2,6 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.chart.GoldChart;
+import edu.ohsu.cslu.tools.TreeTools;
 
 public class ParseStats {
 
@@ -22,6 +23,11 @@ public class ParseStats {
     public int totalPushes = 0;
     public int totalConsidered = 0;
 
+    public int nLex = 0;
+    public int nLexUnary = 0;
+    public int nUnary = 0;
+    public int nBinary = 0;
+
     public float parseTimeSec = 0;
     public float fomInitSec = 0;
     public float insideScore = 0;
@@ -35,6 +41,8 @@ public class ParseStats {
             // if input is a tree, extract sentence from tree
             if (ParseTree.isBracketFormat(input)) {
                 inputTree = ParseTree.readBracketFormat(input);
+                TreeTools.binarizeTree(inputTree, grammar.isRightFactored(), grammar.horizontalMarkov(), grammar
+                        .verticalMarkov(), grammar.annotatePOS(), grammar.grammarFormat);
                 inputTreeChart = new GoldChart(inputTree, grammar);
                 input = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
             }
@@ -61,8 +69,13 @@ public class ParseStats {
             result += " pushes=" + totalPushes;
         if (totalConsidered > 0)
             result += " considered=" + totalConsidered;
-        if (fomInitSec > 0) {
+        if (fomInitSec > 0)
             result += " fomInit=" + fomInitSec;
+        if (nBinary > 0) {
+            result += " nLex=" + nLex;
+            result += " nLexUnary=" + nLexUnary;
+            result += " nUnary=" + nUnary;
+            result += " nBinary=" + nBinary;
         }
 
         return result;
