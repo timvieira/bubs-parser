@@ -2,7 +2,6 @@ package edu.ohsu.cslu.parser.edgeselector;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.Serializable;
 
 import edu.ohsu.cslu.grammar.Grammar;
@@ -27,7 +26,7 @@ public abstract class EdgeSelector implements Serializable {
     }
 
     public static EdgeSelector create(final EdgeSelectorType type, final Grammar grammar,
-            final BufferedReader modelStream) throws IOException {
+            final BufferedReader modelStream) {
         switch (type) {
         case Inside:
             return new InsideProb();
