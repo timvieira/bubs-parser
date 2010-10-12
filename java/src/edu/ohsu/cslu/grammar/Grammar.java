@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.ParserUtil;
 
 /**
  * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or may be
@@ -108,13 +109,21 @@ public class Grammar implements Serializable {
     public int startSymbol = -1;
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
     public int numPosSymbols;
+    public int numFactoredSymbols;
+    public int numNonFactoredSymbols;
     public GrammarFormatType grammarFormat;
 
-    // Default to left-factored
-    private boolean isLeftFactored = true;
+    private boolean isLeftFactored;
+    public boolean annotatePOS;
+    public boolean isLatentVariableGrammar;
+    public int horizontalMarkov;
+    public int verticalMarkov;
 
     public final SymbolSet<String> nonTermSet;
     public SymbolSet<String> lexSet;
+
+    // Nate's way of keeping meta data on each NonTerm; Aaron orders them and returns
+    // info based on range info.
     private ArrayList<NonTerminal> nonTermInfo = new ArrayList<NonTerminal>();
 
     public final Tokenizer tokenizer;
@@ -192,6 +201,17 @@ public class Grammar implements Serializable {
             }
         }
 
+        // NATE: I'm not sure what is going in this Grammar constructor, but somewhere we
+        // lost the function to decide if the grammar is right/left factored. Maybe this code should
+        // go somewhere else?
+        assert leftChildrenSet.size() > 0 && rightChildrenSet.size() > 0;
+        // System.out.println("#left=" + leftChildrenSet.size() + " #right=" + rightChildrenSet.size());
+        if (leftChildrenSet.size() < rightChildrenSet.size()) {
+            this.isLeftFactored = true;
+        } else {
+            this.isLeftFactored = false;
+        }
+
         // Special cases for the start symbol and the null symbol (used for start/end of sentence markers and
         // dummy non-terminals). Label them as POS. I'm not sure that's right, but it seems to work.
         nonTerminals.add(startSymbolStr);
@@ -212,7 +232,10 @@ public class Grammar implements Serializable {
         }
 
         for (final StringNonTerminal nt : sortedNonTerminals) {
-            nonTermSet.addSymbol(nt.label);
+            final int ntIndex = nonTermSet.addSymbol(nt.label);
+
+            // Added by nate to make Cell Constraints work again
+            getNonterminal(ntIndex).isFactored = grammarFormat.isFactored(nt.label);
         }
 
         // TODO Generalize these further for right-factored grammars
@@ -321,7 +344,7 @@ public class Grammar implements Serializable {
         this.numPosSymbols = g.numPosSymbols;
         this.grammarFormat = g.grammarFormat;
 
-        this.isLeftFactored = g.isLeftFactored = true;
+        this.isLeftFactored = g.isLeftFactored;
 
         this.nonTermSet = g.nonTermSet;
         this.lexSet = g.lexSet;
@@ -452,7 +475,7 @@ public class Grammar implements Serializable {
         return nonTermSet.getSymbol(startSymbol);
     }
 
-    @SuppressWarnings({ "cast", "unchecked" })
+    @SuppressWarnings( { "cast", "unchecked" })
     public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
@@ -635,8 +658,8 @@ public class Grammar implements Serializable {
      */
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
         if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
-            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
-                    nonTermSet.getIndex(rightChild));
+            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild), nonTermSet
+                    .getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -773,6 +796,16 @@ public class Grammar implements Serializable {
     }
 
     public String getStats() {
+
+        int nFactored = 0, nUnFactored = 0;
+        for (final String nt : nonTermSet) {
+            if (getNonterminal(mapNonterminal(nt)).isFactored()) {
+                nFactored++;
+            } else {
+                nUnFactored++;
+            }
+        }
+
         final StringBuilder sb = new StringBuilder(256);
         sb.append("Binary rules: " + numBinaryProds() + '\n');
         sb.append("Unary rules: " + numUnaryProds() + '\n');
@@ -782,10 +815,13 @@ public class Grammar implements Serializable {
         sb.append("Lexical symbols: " + lexSet.size() + '\n');
         sb.append("POS symbols: " + numPosSymbols() + '\n');
         sb.append("Max POS index: " + maxPOSIndex + '\n');
+        sb.append("Factored NTs: " + nFactored + '\n');
+        sb.append("UnFactored NTs: " + nUnFactored + '\n');
 
         sb.append("Start symbol: " + nonTermSet.getSymbol(startSymbol) + '\n');
         sb.append("Null symbol: " + nonTermSet.getSymbol(nullSymbol) + '\n');
         sb.append("Factorization: " + (isLeftFactored() ? "left" : "right") + '\n');
+        sb.append("GrammarFormat: " + grammarFormat + '\n');
 
         return sb.toString();
     }
@@ -1102,5 +1138,76 @@ public class Grammar implements Serializable {
                 throw new IllegalArgumentException("Unsupported format");
             }
         }
+
+        public String getBaseNT(String contents) {
+            switch (this) {
+            case CSLU:
+                if (isFactored(contents)) {
+                    contents = contents.substring(0, contents.indexOf("|"));
+                }
+                if (contents.contains("^")) {
+                    contents = contents.substring(0, contents.indexOf("^"));
+                }
+                return contents;
+            case Berkeley:
+                if (isFactored(contents)) {
+                    return contents.substring(1);
+                }
+                return contents;
+            case Roark:
+                // TODO Support Roark format
+            default:
+                throw new IllegalArgumentException("Unsupported format");
+            }
+        }
+
+        public String createFactoredNT(final String unfactoredParent, final LinkedList<String> markovChildrenStr) {
+            switch (this) {
+            case CSLU:
+                return unfactoredParent + "|<" + ParserUtil.join(markovChildrenStr, "-") + ">";
+            case Berkeley:
+                if (markovChildrenStr.size() > 0) {
+                    ParserDriver.getLogger().info(
+                            "ERROR: Berkeley grammar does not support horizontal markov smoothing for factored nodes");
+                    System.exit(1);
+                }
+                return "@" + unfactoredParent;
+            case Roark:
+                // TODO Support Roark format
+            default:
+                throw new IllegalArgumentException("Unsupported format");
+            }
+        }
+
+        public String createParentNT(final String contents, final LinkedList<String> parentsStr) {
+            switch (this) {
+            case CSLU:
+                String base = contents,
+                rest = "";
+
+                if (isFactored(contents)) {
+                    final int i = contents.indexOf("|");
+                    base = contents.substring(0, i);
+                    rest = contents.substring(i);
+                }
+                return base + "^<" + ParserUtil.join(parentsStr, "-") + ">" + rest;
+            case Berkeley:
+            case Roark:
+            default:
+                throw new IllegalArgumentException("Unsupported format");
+            }
+        }
+    }
+
+    public int horizontalMarkov() {
+        return horizontalMarkov;
+    }
+
+    public int verticalMarkov() {
+        return verticalMarkov;
+    }
+
+    public boolean annotatePOS() {
+        return annotatePOS;
     }
 }
