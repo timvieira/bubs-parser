@@ -5,9 +5,11 @@ import java.util.logging.Logger;
 import org.kohsuke.args4j.EnumAliasMap;
 
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
+import edu.ohsu.cslu.tools.TreeTools;
 
 public abstract class Parser<G extends Grammar> {
 
@@ -24,6 +26,9 @@ public abstract class Parser<G extends Grammar> {
     protected float totalParseTimeSec = 0;
     protected float totalInsideScore = 0;
     protected long totalMaxMemoryMB = 0;
+
+    protected boolean hasCellConstraints = false;
+    protected CSLUTBlockedCells cellConstraints = null;
 
     /**
      * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
@@ -42,6 +47,11 @@ public abstract class Parser<G extends Grammar> {
 
         this.collectDetailedStatistics = opts.collectDetailedStatistics;
         logger = ParserDriver.getLogger();
+
+        if (this.cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
+            this.hasCellConstraints = true;
+            cellConstraints = (CSLUTBlockedCells) cellSelector;
+        }
     }
 
     public abstract float getInside(int start, int end, int nt);
@@ -82,7 +92,7 @@ public abstract class Parser<G extends Grammar> {
 
                 // TODO: we should be converting the tree in tree form, not in bracket string form
                 if (opts.binaryTreeOutput == false) {
-                    stats.parseBracketString = ParseTree.unfactor(stats.parseBracketString, grammar.grammarFormat);
+                    stats.parseBracketString = TreeTools.unfactor(stats.parseBracketString, grammar.grammarFormat);
                 }
 
                 // TODO: could evaluate accuracy here if input is a gold tree
@@ -93,7 +103,7 @@ public abstract class Parser<G extends Grammar> {
     }
 
     static public enum ParserType {
-        CKY, Agenda, Beam;
+        CKY, Agenda, Beam, Matrix;
 
         private ParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
@@ -118,6 +128,7 @@ public abstract class Parser<G extends Grammar> {
         BSCPExpDecay("beamed"),
         BSCPPerceptronCell("beampc"),
         BSCPFomDecode("beamfom"),
+        BSCPTrainFOMConfidence("beamconf"),
         CoarseCellAgenda("cc"),
         CoarseCellAgendaCSLUT("cccslut"),
         JsaSparseMatrixVector("jsa"),
