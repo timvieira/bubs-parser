@@ -60,9 +60,9 @@ public class PerceptronCellSelector extends CellSelector {
         DEBUG = (p.opts.param1 == -1);
 
         // cslutScores.init(parser, parser.currentSentence);
-        assert cslutScores.allStartScore.containsKey(p.currentInput.sentence);
-        cslutStartScore = cslutScores.allStartScore.get(p.currentInput.sentence);
-        cslutEndScore = cslutScores.allEndScore.get(p.currentInput.sentence);
+        assert cslutScores.allStartScores.containsKey(p.currentInput.sentence);
+        cslutStartScore = cslutScores.allStartScores.get(p.currentInput.sentence);
+        cslutEndScore = cslutScores.allEndScores.get(p.currentInput.sentence);
         final int chartSize = p.chart.size();
 
         // inits all to false
