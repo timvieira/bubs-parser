@@ -4,7 +4,6 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 
@@ -25,6 +24,14 @@ public class ParseTree {
         this.contents = contents;
         this.parent = parent;
         children = new LinkedList<ParseTree>();
+    }
+
+    public ParseTree(final String contents, final ParseTree parent, final LinkedList<ParseTree> children) {
+        this(contents, parent);
+        this.children = children;
+        for (final ParseTree child : children) {
+            child.parent = this;
+        }
     }
 
     // opposite of toString()
@@ -75,57 +82,8 @@ public class ParseTree {
         throw new Exception();
     }
 
-    public static ParseTree binarizeTree(final ParseTree tree) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    public static void unbinarizeTree(final ParseTree tree, final GrammarFormatType grammarFormatType) {
-        int i = 0;
-        while (i < tree.children.size()) {
-            final ParseTree child = tree.children.get(i);
-            // if (child.contents.contains("|")) {
-            if (grammarFormatType.isFactored(child.contents)) {
-                tree.children.remove(i);
-                tree.children.addAll(i, child.children);
-                // 'i' remains unchanged so we will process the newly moved children next
-            } else {
-                i++;
-                unbinarizeTree(child, grammarFormatType);
-            }
-        }
-    }
-
-    /**
-     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening binary-factored
-     * subtrees.
-     * 
-     * @param bracketedTree Bracketed string parse tree
-     * @param grammarFormatType Grammar format
-     * @return Bracketed string representation of the un-factored tree
-     */
-    public static String unfactor(final String bracketedTree, final GrammarFormatType grammarFormatType) {
-        final BinaryTree<String> factoredTree = BinaryTree.read(bracketedTree, String.class);
-        return factoredTree.unfactor(grammarFormatType).toString();
-    }
-
-    // public static ParseTree unbinarizeTree2(ParseTree tree) {
-    // ParseTree newTree = new ParseTree(tree.contents);
-    // int i=0;
-    // while (i < tree.children.size()) {
-    // ParseTree child = tree.children.get(i);
-    // if (child.contents.contains("|")) {
-    // //tree.children.remove(i);
-    // tree.children.addAll(i, child.children);
-    // } else {
-    // i++;
-    // unbinarizeTree(child);
-    // }
-    // }
-    // return newTree;
-    // }
-
     public void addChild(final String child) {
-        children.add(new ParseTree(child));
+        addChild(new ParseTree(child));
     }
 
     public void addChild(final ParseTree childTree) {
@@ -164,6 +122,14 @@ public class ParseTree {
             return null;
         }
         return parent.getContents();
+    }
+
+    public ParseTree getUnfactoredParent(final GrammarFormatType grammarType) {
+        ParseTree parentNode = this.parent;
+        while (parentNode != null && grammarType.isFactored(parentNode.contents)) {
+            parentNode = parentNode.parent;
+        }
+        return parentNode;
     }
 
     public boolean isLeaf() {
