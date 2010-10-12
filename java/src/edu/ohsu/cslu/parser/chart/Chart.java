@@ -223,7 +223,7 @@ public abstract class Chart {
             } else if (prod.isUnaryProd()) {
                 return prod.prob + leftCell.getInside(prod.child());
             }
-            return prod.prob;
+            return prod.prob; // lexical
         }
 
         public final int start() {

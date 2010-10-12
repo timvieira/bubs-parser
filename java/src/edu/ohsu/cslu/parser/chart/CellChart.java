@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.NonTerminal;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserUtil;
 
@@ -112,6 +112,19 @@ public class CellChart extends Chart {
             }
         }
 
+        private void updateCounts(final Production p) {
+            if (p.isBinaryProd()) {
+                parser.currentInput.nBinary++;
+            } else if (p.isLexProd()) {
+                parser.currentInput.nLex++;
+            } else {
+                parser.currentInput.nUnary++;
+                if (this.width() == 1) {
+                    parser.currentInput.nLexUnary++;
+                }
+            }
+        }
+
         @Override
         public void updateInside(final Chart.ChartEdge edge) {
             final int nt = edge.prod.parent;
@@ -120,6 +133,7 @@ public class CellChart extends Chart {
                 bestEdge[nt] = (ChartEdge) edge;
             }
             updateInside(nt, insideProb);
+            updateCounts(edge.prod);
         }
 
         // unary edges
@@ -129,6 +143,7 @@ public class CellChart extends Chart {
                 bestEdge[nt] = new ChartEdge(p, this);
             }
             updateInside(nt, insideProb);
+            updateCounts(p);
         }
 
         // binary edges
@@ -147,6 +162,7 @@ public class CellChart extends Chart {
                 }
             }
             updateInside(nt, insideProb);
+            updateCounts(p);
         }
 
         @Override
