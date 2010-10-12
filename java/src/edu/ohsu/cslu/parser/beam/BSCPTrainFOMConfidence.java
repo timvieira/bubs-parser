@@ -1,22 +1,66 @@
 package edu.ohsu.cslu.parser.beam;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 
-public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
+public class BSCPTrainFOMConfidence extends BSCPPruneViterbi {
 
     int nPopBinary, nPopUnary, nGoldEdges;
 
-    public BSCPPruneViterbiStats(final ParserDriver opts, final LeftHashGrammar grammar) {
+    public BSCPTrainFOMConfidence(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
+    }
+
+    @Override
+    protected void visitCell(final short start, final short end) {
+        final HashSetChartCell cell = chart.getCell(start, end);
+        ChartEdge edge;
+
+        // NOTE: we want the CSLUT span scores, but we don't want to block the cells
+        // boolean onlyFactored = false;
+        // if (cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
+        // onlyFactored = ((CSLUTBlockedCells) cellSelector).isCellOpenOnlyToFactored(start, end);
+        // }
+
+        edgeCollectionInit();
+
+        if (end - start == 1) {
+            // lexical and unary productions can't compete in the same agenda until their FOM
+            // scores are changed to be comparable
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
+                cell.updateInside(lexProd, cell, null, lexProd.prob);
+                for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
+                    addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
+                }
+
+            }
+        } else {
+            for (int mid = start + 1; mid < end; mid++) { // mid point
+                final HashSetChartCell leftCell = chart.getCell(start, mid);
+                final HashSetChartCell rightCell = chart.getCell(mid, end);
+                for (final int leftNT : leftCell.getLeftChildNTs()) {
+                    for (final int rightNT : rightCell.getRightChildNTs()) {
+                        for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
+                            // if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
+                            edge = chart.new ChartEdge(p, leftCell, rightCell);
+                            addEdgeToCollection(edge);
+                            // }
+                        }
+                    }
+                }
+            }
+        }
+
+        addEdgeCollectionToChart(cell);
     }
 
     @Override
@@ -44,11 +88,25 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
         }
 
         final List<Chart.ChartEdge> goldEdges = currentInput.inputTreeChart.getEdgeList(cell.start(), cell.end());
+
+        // remove lexical entries (we're adding them all by default) but keep unaries in span=1 cells
+        if (cell.width() == 1) {
+            int i = 0;
+            while (i < goldEdges.size()) {
+                if (goldEdges.get(i).prod.isLexProd()) {
+                    goldEdges.remove(i);
+                } else {
+                    i++;
+                }
+            }
+        }
+
         boolean hasGoldEdge = false;
         nGoldEdges = goldEdges.size();
         hasGoldEdge = (nGoldEdges > 0);
-        if (hasGoldEdge)
+        if (hasGoldEdge) {
             goldRank = 99999;
+        }
 
         // I think a more fair comparison is when we don't stop once we reach the gold edge
         // since this effects the population of cells down stream.
@@ -100,32 +158,41 @@ public class BSCPPruneViterbiStats extends BSCPPruneViterbi {
         // System.out.println("DSTAT: " + chart.size() + " " + cell.width() + " " + nGoldEdges + " " + goldRank + " "
         // + nPopBinary + " " + nPopUnary + " " + (nPopBinary + nPopUnary) + " ");
         // }
-        System.out.println("DSTAT: " + goldRank + " " + getCellFeaturesStr(cell.start(), cell.end()));
+        System.out.println("DSTAT: " + goldRank + " " + floatArray2Str(getCellFeatures(cell.start(), cell.end())));
     }
 
-    final int NUM_FEATS = 4;
+    public Float[] getCellFeatures(final int start, final int end) {
+        final List<Float> feats = new LinkedList<Float>();
+        final int span = end - start;
 
-    public float[] getCellFeatures(final int start, final int end) {
-        final float[] feats = new float[NUM_FEATS];
-        feats[0] = chart.size();
-        feats[1] = end - start;
-        feats[2] = start;
-        feats[3] = end;
+        feats.add(((CSLUTBlockedCells) cellSelector).getCurStartScore(start));
+        feats.add(((CSLUTBlockedCells) cellSelector).getCurEndScore(end));
+        feats.add((float) chart.size());
+        feats.add((float) span);
+        feats.add(span / (float) chart.size());
+        feats.add((float) int2bool(span == 1));
 
-        return feats;
+        return feats.toArray(new Float[feats.size()]);
     }
 
-    public String getCellFeaturesStr(final int start, final int end) {
-        final float[] outsideLeftPOS = ((BoundaryInOut) edgeSelector).fwdbkw[start];
-        return chart.size() + " " + (end - start) + " " + start + " " + end + " " + floatArray2Str(outsideLeftPOS);
-    }
+    // public String getCellFeaturesStr(final int start, final int end) {
+    // final float[] outsideLeftPOS = ((BoundaryInOut) edgeSelector).fwdbkw[start];
+    // return chart.size() + " " + (end - start) + " " + start + " " + end + " " + floatArray2Str(outsideLeftPOS);
+    // }
 
-    private String floatArray2Str(final float[] data) {
+    private String floatArray2Str(final Float[] data) {
         String result = "";
         for (final float val : data) {
             // result += Math.pow(Math.E, val) + " ";
             result += val + " ";
         }
         return result.trim();
+    }
+
+    private int int2bool(final boolean val) {
+        if (val == true) {
+            return 1;
+        }
+        return 0;
     }
 }
