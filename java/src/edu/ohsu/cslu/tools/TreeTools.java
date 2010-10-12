@@ -5,7 +5,9 @@ import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
+import java.util.LinkedList;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -15,37 +17,42 @@ public class TreeTools {
     private static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
     private static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
 
-    static public enum ActionType {
-        UnBinarize, TransformOrig, ConstituentSpanCount
-    }
-
     public static void main(final String[] args) throws Exception {
 
         // @Option(name = "-countSpans", hidden = true, usage =
         // "Count max length of span for each word in input trees that starts or ends at each word")
 
         // System.out.println("args:" + args);
-        ActionType action = ActionType.UnBinarize;
-        if (ParserDriver.param1 > -1) {
-            action = ActionType.TransformOrig;
-        }
+        // more comments ...
+        final int action = (int) ParserDriver.param1;
+        boolean rightFactor = false;
 
         for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
 
             final ParseTree tree = ParseTree.readBracketFormat(sentence);
 
             switch (action) {
-            case UnBinarize:
+            case -1:
                 outputStream.write(sentence);
-                ParseTree.unbinarizeTree(tree, GrammarFormatType.CSLU);
+                unbinarizeTree(tree, GrammarFormatType.CSLU);
                 break;
-            case TransformOrig:
+            case 0:
                 // removeTmpLabels(tree);
                 // removeEmptyNodes(tree);
                 // removeSpuriousUnaries(tree);
                 removeTmpLabelsEmptyNodesAndSpuriousUnaries(tree);
                 break;
-            case ConstituentSpanCount:
+            case 1:
+                rightFactor = true;
+                //$FALL-THROUGH$
+            case 2:
+                final int horzMarkov = (int) ParserDriver.param2;
+                final int vertMarkov = (int) ParserDriver.param3;
+                final boolean annotatePOS = false;
+                final GrammarFormatType gramFormat = GrammarFormatType.CSLU;
+                binarizeTree(tree, rightFactor, horzMarkov, vertMarkov, annotatePOS, gramFormat);
+                break;
+            case 5:
                 constituentSpanCountForKristy();
                 break;
             default:
@@ -57,6 +64,93 @@ public class TreeTools {
             // outputStream.write(tree.toString());
             System.out.println(tree.toString());
         }
+    }
+
+    public static void unbinarizeTree(final ParseTree tree, final GrammarFormatType grammarFormatType) {
+        int i = 0;
+        while (i < tree.children.size()) {
+            final ParseTree child = tree.children.get(i);
+            if (grammarFormatType.isFactored(child.contents)) {
+                tree.children.remove(i);
+                tree.children.addAll(i, child.children);
+                // 'i' remains unchanged so we will process the newly moved children next
+            } else {
+                i++;
+                unbinarizeTree(child, grammarFormatType);
+            }
+        }
+    }
+
+    public static void binarizeTree(final ParseTree tree, final boolean rightFactor, final int horzMarkov,
+            final int vertMarkov, final boolean annotatePOS, final GrammarFormatType grammarFormatType) {
+
+        // vertMarkov (parent annotation)
+        if (!tree.isLeaf() && !grammarFormatType.isFactored(tree.contents) && (!tree.isPOS() || annotatePOS)) {
+            ParseTree parent = tree.getUnfactoredParent(grammarFormatType);
+            final LinkedList<String> parentsStr = new LinkedList<String>();
+            for (int i = 0; i < vertMarkov; i++) {
+                if (parent != null) {
+                    parentsStr.addLast(grammarFormatType.getBaseNT(parent.contents));
+                    parent = parent.getUnfactoredParent(grammarFormatType);
+                }
+            }
+            if (parentsStr.size() > 0) {
+                tree.contents = grammarFormatType.createParentNT(tree.contents, parentsStr);
+            }
+        }
+
+        if (tree.children.size() > 2) {
+            // inherit parent annotation from unfactored parent
+            final String unfactoredParent = tree.children.get(0).getUnfactoredParent(grammarFormatType).contents;
+            final LinkedList<ParseTree> remainingChildren = new LinkedList<ParseTree>();
+            final LinkedList<String> markovChildrenStr = new LinkedList<String>();
+
+            while (tree.children.size() > 1) {
+                if (rightFactor) {
+                    // split children into two lists: [a,b,c,d] => [a,b,c] [d]
+                    final int n = tree.children.size();
+                    final ParseTree child = tree.children.get(n - 2);
+                    remainingChildren.addFirst(child);
+                    if (markovChildrenStr.size() < horzMarkov) {
+                        markovChildrenStr.addFirst(child.contents);
+                    }
+                    tree.children.remove(n - 2);
+                } else {
+                    // split children into two lists: [a,b,c,d] => [a] [b,c,d]
+                    final ParseTree child = tree.children.get(1);
+                    remainingChildren.addLast(child);
+                    if (markovChildrenStr.size() < horzMarkov) {
+                        markovChildrenStr.addLast(child.contents);
+                    }
+                    tree.children.remove(1);
+                }
+            }
+
+            final String newChildStr = grammarFormatType.createFactoredNT(unfactoredParent, markovChildrenStr);
+            final ParseTree newNode = new ParseTree(newChildStr, tree, remainingChildren);
+            if (rightFactor) {
+                tree.children.addFirst(newNode);
+            } else {
+                tree.children.addLast(newNode);
+            }
+        }
+
+        for (final ParseTree child : tree.children) {
+            binarizeTree(child, rightFactor, horzMarkov, vertMarkov, annotatePOS, grammarFormatType);
+        }
+    }
+
+    /**
+     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening binary-factored
+     * subtrees.
+     * 
+     * @param bracketedTree Bracketed string parse tree
+     * @param grammarFormatType Grammar format
+     * @return Bracketed string representation of the un-factored tree
+     */
+    public static String unfactor(final String bracketedTree, final GrammarFormatType grammarFormatType) {
+        final BinaryTree<String> factoredTree = BinaryTree.read(bracketedTree, String.class);
+        return factoredTree.unfactor(grammarFormatType).toString();
     }
 
     public static void removeTmpLabelsEmptyNodesAndSpuriousUnaries(final ParseTree tree) {
