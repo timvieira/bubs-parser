@@ -25,7 +25,7 @@ public class CSLUTBlockedCells extends CellSelector {
     // private boolean isGrammarLeftFactored;
 
     public CSLUTBlockedCells(final BufferedReader modelStream) {
-        this(modelStream, ParserDriver.param1, ParserDriver.param2);
+        this(modelStream, ParserDriver.param2, ParserDriver.param3);
     }
 
     public CSLUTBlockedCells(final BufferedReader modelStream, final float cellTune, final float unaryTune) {
@@ -39,7 +39,11 @@ public class CSLUTBlockedCells extends CellSelector {
             this.unaryTune = Float.MIN_VALUE;
 
         try {
+            ParserDriver.getLogger().fine("Reading Cell Constraints Model ...");
             readModel(modelStream);
+            ParserDriver.getLogger().fine(
+                    "done.  #start=" + allStartScores.size() + " #end=" + allEndScores.size() + " #unary="
+                            + allUnaryScores.size());
         } catch (final NumberFormatException e) {
             e.printStackTrace();
         } catch (final IOException e) {
@@ -55,11 +59,14 @@ public class CSLUTBlockedCells extends CellSelector {
     public void init(final Chart chart, final String sentence, final boolean isGrammarLeftFactored) {
         int totalCells = 0, openCells = 0, factoredCells = 0;
         final int chartSize = chart.size();
-        // this.isGrammarLeftFactored = isGrammarLeftFactored;
 
         curStartScore = allStartScores.get(sentence);
         curEndScore = allEndScores.get(sentence);
         curUnaryScore = allUnaryScores.get(sentence);
+
+        if (curStartScore == null || curEndScore == null) {
+            throw new Error("ERROR: Sentence not found in Cell Constraints input: '" + sentence + "'");
+        }
 
         openAll = new boolean[chartSize][chartSize + 1];
         openFactored = new boolean[chartSize][chartSize + 1];
@@ -140,6 +147,7 @@ public class CSLUTBlockedCells extends CellSelector {
         return openAll[start][end];
     }
 
+    @Override
     public boolean factoredParentsOnly(final int start, final int end) {
         return openFactored[start][end] && !openAll[start][end];
     }
@@ -182,20 +190,21 @@ public class CSLUTBlockedCells extends CellSelector {
     @Override
     @SuppressWarnings("unchecked")
     public void readModel(final BufferedReader inStream) throws NumberFormatException, IOException {
-        String line;
-        int sentIndex = 0, wordIndex = 0;
+
+        // HashMap<String, Vector<Vector<Float>>> ccScores = new HashMap<String, Vector<Vector<Float>>>();
 
         allStartScores = new HashMap<String, Vector<Float>>();
         allEndScores = new HashMap<String, Vector<Float>>();
         allUnaryScores = new HashMap<String, Vector<Float>>();
 
+        final LinkedList<String> tmpTokens = new LinkedList<String>();
         final Vector<Float> tmpStart = new Vector<Float>();
         final Vector<Float> tmpEnd = new Vector<Float>();
         final Vector<Float> tmpUnary = new Vector<Float>();
-        final LinkedList<String> tmpTokens = new LinkedList<String>();
 
-        // line format: word startScore endScore
+        // line format: word startScore endScore [unaryScore]
         // blank lines indicate end of sentence
+        String line;
         while ((line = inStream.readLine()) != null) {
             final String[] tokens = ParserUtil.tokenize(line);
             if (tokens.length > 0) {
@@ -207,8 +216,6 @@ public class CSLUTBlockedCells extends CellSelector {
                 } else {
                     tmpUnary.add(Float.MAX_VALUE);
                 }
-
-                wordIndex++;
             } else {
                 // new sentence
                 final String sentence = ParserUtil.join(tmpTokens, " ");
@@ -219,10 +226,6 @@ public class CSLUTBlockedCells extends CellSelector {
                 tmpStart.clear();
                 tmpEnd.clear();
                 tmpUnary.clear();
-
-                wordIndex = 0;
-                sentIndex++;
-
             }
         }
         final String sentence = ParserUtil.join(tmpTokens, " ");

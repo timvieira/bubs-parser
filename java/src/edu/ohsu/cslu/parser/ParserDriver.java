@@ -69,7 +69,6 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
-import edu.ohsu.cslu.tools.TreeTools;
 
 /**
  * Driver class for all parser implementations.
@@ -127,7 +126,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-g", metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
     private String grammarFile = null;
 
-    // == Grammar options ==
     @Option(name = "-m", metaVar = "file", usage = "Model file (binary serialized")
     private File modelFile = null;
 
@@ -142,8 +140,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-unk", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
 
-    // @Option(name = "-u", aliases = { "--unfactor" }, usage = "Unfactor parse trees and remove latent annotations")
-    // boolean unfactor = false;
     @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
     public boolean binaryTreeOutput = false;
 
@@ -158,9 +154,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-x3", hidden = true, usage = "Tuning param #3")
     public static float param3 = -1;
 
-    @Option(name = "-tools", hidden = true, usage = "Run tools")
-    public boolean runTools = false;
-
     // TODO: embed this info into the grammar file as meta data and remove these options
     @Option(name = "-hMarkov", hidden = true, usage = "Horizontal Markov order of input Grammar")
     private int horizontalMarkov = 0;
@@ -173,7 +166,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     private Grammar grammar;
     private long parseStartTime;
-
     public boolean collectDetailedStatistics = false;
 
     public static void main(final String[] args) throws Exception {
@@ -184,13 +176,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // run once at initialization despite number of threads
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
-        if (runTools) {
-            TreeTools.main(null);
-            System.exit(0);
-        }
-
-        // Collect detailed statistics for high verbosity levels (e.g., non-terminals per cell, cartesian-product size,
-        // etc.)
+        // Collect detailed statistics for high verbosity levels (e.g., NTs per cell, cartesian-product size,etc.)
         collectDetailedStatistics = logger.isLoggable(Level.FINER);
 
         // map simplified parser choices to the specific research version
@@ -203,8 +189,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 researchParserType = ResearchParserType.APWithMemory;
                 break;
             case Beam:
-                //researchParserType = ResearchParserType.BSCPPruneViterbi;
-                researchParserType = ResearchParserType.BeamCscSpmv;
+                researchParserType = ResearchParserType.BSCPPruneViterbi;
+                // Using the above beam parser until all the model stuff has been finished
+                // researchParserType = ResearchParserType.BeamCscSpmv;
                 break;
             case Matrix:
                 researchParserType = ResearchParserType.CscSpmv;
@@ -242,18 +229,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                         new FileReader(fomModelFileName));
             }
 
-            if (cellModelFileName != null) {
-                cellModelStream = new BufferedReader(new FileReader(cellModelFileName));
-            }
-
             if (cslutScoresFileName != null) {
                 cellSelectorType = CellSelectorType.CSLUT;
-                cellModelFileName = cslutScoresFileName;
                 cslutScoresStream = new BufferedReader(new FileReader(cslutScoresFileName));
+                cellModelStream = cslutScoresStream;
             }
 
-            if (cslutScoresFileName != null) {
-                cslutScoresStream = new BufferedReader(new FileReader(cslutScoresFileName));
+            if (cellModelFileName != null) {
+                cellModelStream = new BufferedReader(new FileReader(cellModelFileName));
             }
 
             // param validation checks
@@ -270,6 +253,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             }
             // Read in the grammar
             grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
+            edgeSelector = EdgeSelector.create(edgeFOMType, grammar, fomModelStream);
+            cellSelector = CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
+
         }
 
         logger.fine(grammar.getStats());
@@ -381,7 +367,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Override
     public Parser<?> createLocal() {
-        this.cellSelector = CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
+        // TODO: Why do we init the cellSelector here instaed of in setup? -nate
+        // this.cellSelector = CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
         return createParser(researchParserType, grammar, this);
     }
 
