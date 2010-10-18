@@ -34,6 +34,10 @@ public class IntVector extends BaseNumericVector {
         this.vector = vector;
     }
 
+    public final void fill(final int value) {
+        Arrays.fill(vector, value);
+    }
+
     @Override
     public final float getFloat(final int i) {
         return vector[i];
@@ -72,6 +76,53 @@ public class IntVector extends BaseNumericVector {
     @Override
     public final float negativeInfinity() {
         return Integer.MIN_VALUE;
+    }
+
+    /**
+     * Adds an addend to the elements of this vector indicated by the populated indices of a bit vector, returning a
+     * reference to this vector
+     * 
+     * Caution: This method changes the contents of this vector
+     * 
+     * @param v a {@link BitVector} of the same length.
+     * @param addend the float to be added to the elements indicated by populated elements in v
+     * @return a reference to this vector.
+     */
+    public IntVector inPlaceAdd(final BitVector v, final int addend) {
+        // Special-case for SparseBitVector
+        if (v instanceof SparseBitVector) {
+            if (v.length() > length) {
+                throw new IllegalArgumentException("Vector length mismatch");
+            }
+
+            for (final int i : ((SparseBitVector) v).values()) {
+                vector[i] += addend;
+            }
+            return this;
+        }
+
+        // Special-case for MutableSparseBitVector
+        if (v instanceof MutableSparseBitVector) {
+            if (v.length() > length) {
+                throw new IllegalArgumentException("Vector length mismatch");
+            }
+
+            for (final int i : ((MutableSparseBitVector) v).intSet()) {
+                vector[i] += addend;
+            }
+            return this;
+        }
+
+        if (v.length() != length) {
+            throw new IllegalArgumentException("Vector length mismatch");
+        }
+
+        for (int i = 0; i < length; i++) {
+            if (v.getBoolean(i)) {
+                vector[i] += addend;
+            }
+        }
+        return this;
     }
 
     @Override

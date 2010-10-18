@@ -1,7 +1,9 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.Serializable;
+import java.util.Iterator;
 
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.parser.ParserUtil;
 
 public class Tokenizer implements Serializable {
@@ -25,6 +27,15 @@ public class Tokenizer implements Serializable {
         final int tokenIndices[] = new int[tokens.length];
         for (int i = 0; i < tokens.length; i++) {
             tokenIndices[i] = lexSet.getIndex(mapToLexSetEntry(tokens[i], i));
+        }
+        return tokenIndices;
+    }
+
+    public int[] tokenizeToIndex(final NaryTree<String> sentence) {
+        final int tokenIndices[] = new int[sentence.leaves()];
+        int i = 0;
+        for (final Iterator<NaryTree<String>> iter = sentence.leafIterator(); iter.hasNext();) {
+            tokenIndices[i++] = lexSet.getIndex(mapToLexSetEntry(iter.next().label(), i));
         }
         return tokenIndices;
     }
