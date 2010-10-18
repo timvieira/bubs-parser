@@ -21,12 +21,13 @@ import edu.ohsu.cslu.matching.ProfileMatchers;
 import edu.ohsu.cslu.matching.approximate.TestApproximateMatchers;
 import edu.ohsu.cslu.matching.exact.TestExactMatchers;
 import edu.ohsu.cslu.parser.AllParserTests;
+import edu.ohsu.cslu.perceptron.AllPerceptronTests;
 import edu.ohsu.cslu.tools.AllToolTests;
 import edu.ohsu.cslu.util.AllUtilTests;
 
 /**
- * The entire regression suite for shared NLP code. This class also contains a number of static helper methods
- * used by other unit test classes.
+ * The entire regression suite for shared NLP code. This class also contains a number of static helper methods used by
+ * other unit test classes.
  * 
  * @author Aaron Dunlop
  * @since Sep 22, 2008
@@ -34,37 +35,33 @@ import edu.ohsu.cslu.util.AllUtilTests;
  * @version $Revision$ $Date$ $Author$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses( { AllCommonTests.class, TestExactMatchers.class, TestApproximateMatchers.class,
+@Suite.SuiteClasses({ AllCommonTests.class, TestExactMatchers.class, TestApproximateMatchers.class,
         ProfileMatchers.class, AllAlignmentTests.class, AllCounterTests.class, AllDataStructureTests.class,
-        AllToolTests.class, AllUtilTests.class, AllParserTests.class })
+        AllToolTests.class, AllUtilTests.class, AllPerceptronTests.class, AllParserTests.class })
 public class SharedNlpTests {
 
     public final static String UNIT_TEST_DIR = "unit-test-data/";
     public final static String SHARED_UNIT_TEST_DIR = "../shared-nlp-code/" + UNIT_TEST_DIR;
 
     /**
-     * Returns a {@link Reader} reading the specified unit test file (from the shared unit test data
-     * directory). Uncompresses gzip-compressed files transparently.
+     * Returns a {@link Reader} reading the specified unit test file (from the shared unit test data directory).
+     * Uncompresses gzip-compressed files transparently.
      * 
-     * @param filename
-     *            Unit test file
+     * @param filename Unit test file
      * @return a Reader reading the specified unit test file
-     * @throws IOException
-     *             If unable to find or open the file
+     * @throws IOException If unable to find or open the file
      */
     public static Reader unitTestDataAsReader(final String filename) throws IOException {
         return new InputStreamReader(unitTestDataAsStream(filename));
     }
 
     /**
-     * Returns an {@link InputStream} reading the specified unit test file (from the shared unit test data
-     * directory). Uncompresses gzip-compressed files transparently.
+     * Returns an {@link InputStream} reading the specified unit test file (from the shared unit test data directory).
+     * Uncompresses gzip-compressed files transparently.
      * 
-     * @param filename
-     *            Unit test file
+     * @param filename Unit test file
      * @return a InputStream reading the specified unit test file
-     * @throws IOException
-     *             If unable to find or open the file
+     * @throws IOException If unable to find or open the file
      */
     public static InputStream unitTestDataAsStream(final String filename) throws IOException {
         try {
@@ -85,14 +82,12 @@ public class SharedNlpTests {
     }
 
     /**
-     * Returns a {@link String} containing the contents of the specified unit test file (from the shared unit
-     * test data directory). Uncompresses gzip-compressed files transparently.
+     * Returns a {@link String} containing the contents of the specified unit test file (from the shared unit test data
+     * directory). Uncompresses gzip-compressed files transparently.
      * 
-     * @param filename
-     *            Unit test file
+     * @param filename Unit test file
      * @return a String containing the contents of the specified unit test file
-     * @throws IOException
-     *             If unable to find or open the file
+     * @throws IOException If unable to find or open the file
      */
     public static String unitTestDataAsString(final String filename) throws IOException {
         return new String(readUnitTestData(filename));

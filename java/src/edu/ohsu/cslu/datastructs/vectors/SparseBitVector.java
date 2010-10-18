@@ -32,7 +32,7 @@ public class SparseBitVector extends BaseVector implements BitVector {
 
     /**
      * Constructs a {@link SparseBitVector} from an integer array. Note that the semantics of this constructor are
-     * different from those of most other {@link Vector} constructors with the same signature. The array should consists
+     * different from those of most other {@link Vector} constructors with the same signature. The array should consist
      * of either indices or index, boolean tuples (as specified by the 'tuples' parameter)
      * 
      * @param array Index, boolean tuples
