@@ -55,7 +55,7 @@ import edu.ohsu.cslu.parser.ParserUtil;
  */
 public class Grammar implements Serializable {
 
-    private final static long serialVersionUID = 2L;
+    private final static long serialVersionUID = 3L;
 
     /** Marks the switch from PCFG to lexicon entries in the grammar file */
     public final static String DELIMITER = "===== LEXICON =====";
@@ -106,6 +106,7 @@ public class Grammar implements Serializable {
     public static Production nullProduction;
 
     public int nullSymbol = -1;
+    public int lexicalNullSymbol = -1;
     public int startSymbol = -1;
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
     public int numPosSymbols;
@@ -259,6 +260,7 @@ public class Grammar implements Serializable {
 
         startSymbol = nonTermSet.addSymbol(startSymbolStr);
         nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
+        lexicalNullSymbol = lexSet.addSymbol(nullSymbolStr);
 
         // Now that all NTs are mapped, we can create Production instances for lexical rules (we don't care
         // about sort order here)
@@ -475,16 +477,16 @@ public class Grammar implements Serializable {
         return nonTermSet.getSymbol(startSymbol);
     }
 
-    @SuppressWarnings( { "cast", "unchecked" })
+    @SuppressWarnings({ "cast", "unchecked" })
     public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
+        for (int i = 0; i < prodsByChild.length; i++) {
+            prodsByChild[i] = new LinkedList<Production>();
+        }
+
         for (final Production p : prods) {
-            final int child = p.child();
-            if (prodsByChild[child] == null) {
-                prodsByChild[child] = new LinkedList<Production>();
-            }
-            prodsByChild[child].add(p);
+            prodsByChild[p.child()].add(p);
         }
 
         return prodsByChild;
@@ -658,8 +660,8 @@ public class Grammar implements Serializable {
      */
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
         if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
-            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild), nonTermSet
-                    .getIndex(rightChild));
+            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
+                    nonTermSet.getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -1209,5 +1211,17 @@ public class Grammar implements Serializable {
 
     public boolean annotatePOS() {
         return annotatePOS;
+    }
+
+    public String toMappingString() {
+        final StringBuilder sb = new StringBuilder(numNonTerms() * 25);
+        for (int i = 0; i < numNonTerms(); i++) {
+            sb.append(i + " -> " + nonTermSet.getSymbol(i) + '\n');
+        }
+        sb.append("===Lexicon===\n");
+        for (int i = 0; i < numLexSymbols(); i++) {
+            sb.append(i + " -> " + lexSet.getSymbol(i) + '\n');
+        }
+        return sb.toString();
     }
 }
