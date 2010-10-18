@@ -2,12 +2,13 @@ package edu.ohsu.cslu.parser.edgeselector;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.Serializable;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.Chart;
 
 public abstract class EdgeSelector implements Serializable {
 
@@ -27,19 +28,23 @@ public abstract class EdgeSelector implements Serializable {
 
     public static EdgeSelector create(final EdgeSelectorType type, final Grammar grammar,
             final BufferedReader modelStream) {
-        switch (type) {
-        case Inside:
-            return new InsideProb();
-        case NormalizedInside:
-            return new NormalizedInsideProb();
-        case BoundaryInOut:
-            return new BoundaryInOut(grammar, modelStream);
-        case WeightedFeatures:
-            return new WeightedFeatures(grammar);
-        default:
-            ParserDriver.getLogger().info("ERROR: EdgeFOM " + type + " not supported.");
-            System.exit(1);
-            return null;
+        try {
+            switch (type) {
+            case Inside:
+                return new InsideProb();
+            case NormalizedInside:
+                return new NormalizedInsideProb();
+            case BoundaryInOut:
+                return new BoundaryInOut(grammar, modelStream);
+            case WeightedFeatures:
+                return new WeightedFeatures(grammar);
+            default:
+                ParserDriver.getLogger().info("ERROR: EdgeFOM " + type + " not supported.");
+                System.exit(1);
+                return null;
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
