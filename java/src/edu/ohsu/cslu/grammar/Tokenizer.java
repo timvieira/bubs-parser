@@ -60,6 +60,7 @@ public class Tokenizer implements Serializable {
 
     public String wordToUnkString(final String word, final int sentIndex) {
         return berkeleyGetSignature(word, sentIndex);
+        // return wordToUnkString(word);
     }
 
     // // try to match Berkeley UNK mapping so that we can use their grammar
@@ -223,21 +224,21 @@ public class Tokenizer implements Serializable {
         return sb.toString();
     }
 
-    // private static boolean isUpperCase(final String s) {
-    // return s == s.toUpperCase();
-    // }
-    //
-    // private static boolean isLowerCase(final String s) {
-    // return s == s.toLowerCase();
-    // }
-    //
-    // private static boolean containsDigit(final String s) {
-    // for (int i = 0; i < s.length(); i++) {
-    // if (Character.isDigit(s.charAt(i)))
-    // return true;
-    // }
-    // return false;
-    // }
+    private static boolean isUpperCase(final String s) {
+        return s == s.toUpperCase();
+    }
+
+    private static boolean isLowerCase(final String s) {
+        return s == s.toLowerCase();
+    }
+
+    private static boolean containsDigit(final String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isDigit(s.charAt(i)))
+                return true;
+        }
+        return false;
+    }
 
     // public Token[] tokenize(final String sentence) throws Exception {
     // final String tokens[] = ParserUtil.tokenize(sentence);
