@@ -48,6 +48,10 @@ public class SymbolSet<E> implements Iterable<E>, Serializable {
         return symbolHash.containsKey(label);
     }
 
+    public boolean contains(final E label) {
+        return hasSymbol(label);
+    }
+
     public E getSymbol(final int index) {
         return symbolVector.get(index);
     }

@@ -55,11 +55,43 @@ import edu.ohsu.cslu.parser.ParserUtil;
  */
 public class Grammar implements Serializable {
 
-    private final static long serialVersionUID = 3L;
-
     /** Marks the switch from PCFG to lexicon entries in the grammar file */
     public final static String DELIMITER = "===== LEXICON =====";
+    private final static long serialVersionUID = 3L;
 
+    // == Grammar Basics ==
+    public GrammarFormatType grammarFormat;
+    public final SymbolSet<String> nonTermSet;
+    public SymbolSet<String> lexSet;
+    public final Tokenizer tokenizer;
+
+    protected final ArrayList<Production> binaryProductions;
+    protected final ArrayList<Production> unaryProductions;
+    protected final ArrayList<Production> lexicalProductions;
+
+    protected final Collection<Production>[] unaryProductionsByChild;
+    protected final Collection<Production>[] lexicalProdsByChild;
+    protected final short[][] lexicalParents; // [lexIndex][valid parent ntIndex]
+    protected final Short2FloatOpenHashMap[] lexicalLogProbabilities;
+
+    public final static String nullSymbolStr = "<null>";
+    public static Production nullProduction;
+
+    public int nullSymbol = -1;
+    public int lexicalNullSymbol = -1;
+    public int startSymbol = -1;
+
+    // == Grammar stats ==
+    public int numPosSymbols;
+    public int numFactoredSymbols;
+    public int numNonFactoredSymbols;
+    private boolean isLeftFactored;
+    public boolean annotatePOS;
+    public boolean isLatentVariableGrammar;
+    public int horizontalMarkov;
+    public int verticalMarkov;
+
+    // == Aaron's Grammar variables ==
     /** String representation of the start symbol (s-dagger) */
     public String startSymbolStr;
 
@@ -93,41 +125,11 @@ public class Grammar implements Serializable {
     /** The number of lexical productions modeled in this Grammar */
     protected final int numLexProds;
 
-    protected final ArrayList<Production> binaryProductions;
-    protected final ArrayList<Production> unaryProductions;
-    protected final ArrayList<Production> lexicalProductions;
-
-    protected final Collection<Production>[] unaryProductionsByChild;
-    protected final Collection<Production>[] lexicalProdsByChild;
-    protected final short[][] lexicalParents;
-    protected final Short2FloatOpenHashMap[] lexicalLogProbabilities;
-
-    public final static String nullSymbolStr = "<null>";
-    public static Production nullProduction;
-
-    public int nullSymbol = -1;
-    public int lexicalNullSymbol = -1;
-    public int startSymbol = -1;
-    protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
-    public int numPosSymbols;
-    public int numFactoredSymbols;
-    public int numNonFactoredSymbols;
-    public GrammarFormatType grammarFormat;
-
-    private boolean isLeftFactored;
-    public boolean annotatePOS;
-    public boolean isLatentVariableGrammar;
-    public int horizontalMarkov;
-    public int verticalMarkov;
-
-    public final SymbolSet<String> nonTermSet;
-    public SymbolSet<String> lexSet;
-
+    // == Nate's Grammar variables ==
     // Nate's way of keeping meta data on each NonTerm; Aaron orders them and returns
-    // info based on range info.
+    // info based on index range.
     private ArrayList<NonTerminal> nonTermInfo = new ArrayList<NonTerminal>();
-
-    public final Tokenizer tokenizer;
+    protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
 
     /**
      * A temporary String -> String map, used to conserve memory while reading and sorting the grammar. Similar to
@@ -312,6 +314,15 @@ public class Grammar implements Serializable {
         ParserDriver.getLogger().fine("done.");
     }
 
+    public Grammar(final String grammarFile) throws IOException {
+        this(new FileReader(grammarFile));
+    }
+
+    // public Grammar(final ArrayList<BinaryStringProduction> binary, final ArrayList<StringProduction> unary,
+    // final ArrayList<StringProduction> lexical, final String startSymbol) {
+    //
+    // }
+
     /**
      * Construct a {@link Grammar} instance from an existing instance. This is used when constructing a subclass of
      * {@link Grammar} from a binary-serialized {@link Grammar}.
@@ -354,10 +365,6 @@ public class Grammar implements Serializable {
 
         this.tokenizer = g.tokenizer;
 
-    }
-
-    public Grammar(final String grammarFile) throws IOException {
-        this(new FileReader(grammarFile));
     }
 
     private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile, final List<StringProduction> pcfgRules,
