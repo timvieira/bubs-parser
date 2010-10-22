@@ -164,6 +164,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-annotatePOS", hidden = true, usage = "Input Grammar has annotation on POS tags")
     private boolean annotatePOS = false;
 
+    @Option(name = "-oldunk", hidden = true, usage = "Use old method of UNK replacement to match old grammars")
+    public static boolean oldUNK = false;
+
     private Grammar grammar;
     private long parseStartTime;
     public boolean collectDetailedStatistics = false;

@@ -17,7 +17,6 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
         float leftInside, rightInside;
 
         final boolean onlyFactored = (hasCellConstraints && cellConstraints.factoredParentsOnly(start, end));
-        // System.out.println("[" + start + "," + end + "] " + onlyFactored);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final HashSetChartCell leftCell = chart.getCell(start, mid);
@@ -35,7 +34,7 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
             }
         }
 
-        if ((start - end) > 1 || !hasCellConstraints || cellConstraints.unaryOpen(start, end)) {
+        if (!hasCellConstraints || cellConstraints.unaryOpen(start, end)) {
             for (final int childNT : cell.getNtArray()) {
                 for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                     cell.updateInside(p, p.prob + cell.getInside(childNT));
