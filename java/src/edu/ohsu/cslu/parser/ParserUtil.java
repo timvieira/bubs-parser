@@ -1,8 +1,12 @@
 package edu.ohsu.cslu.parser;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.StringTokenizer;
+import java.util.zip.GZIPInputStream;
 
 public class ParserUtil {
 
@@ -48,5 +52,13 @@ public class ParserUtil {
             return a + Math.log(Math.exp(b - a) + 1);
         }
         return b + Math.log(Math.exp(a - b) + 1);
+    }
+
+    public static InputStream file2inputStream(final String fileName) throws IOException {
+        InputStream is = new FileInputStream(fileName);
+        if (fileName.endsWith(".gz")) {
+            is = new GZIPInputStream(is);
+        }
+        return is;
     }
 }
