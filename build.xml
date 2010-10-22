@@ -356,6 +356,22 @@
 		</antcall>
 	</target>
 
+    <target name="grammar-train" depends="compile-java" description="Tools for inducing a CSLU grammar">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.GrammarTrainer" />
+            <param name="tool-name" value="grammar-train" />
+        </antcall>
+    </target>
+
+
+    <target name="tree-tools" depends="compile-java" description="Tools for tree transforms, binarization, and other tree-related things">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.TreeTools" />
+            <param name="tool-name" value="tree-tools" />
+        </antcall>
+    </target>
+
+
 	<target name="factor-trees" depends="compile-java" description="Package tree-factorization tool">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.FactorTrees" />
@@ -382,8 +398,10 @@
        Package all NLP applications
     ========================================================================
     -->
-	<!-- TODO: Re-add compile-native -->
-	<target name="dist" depends="filter-sentences,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,serialize-model,parse,train-perceptron" description="Package all NLP application">
+    <!-- TODO: Re-add compile-native -->
+	<target name="dist"
+	        depends="filter-sentences,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,serialize-model,parse,tree-tools,train-perceptron"
+	        description="Package all NLP application">
 	</target>
 
 </project>
