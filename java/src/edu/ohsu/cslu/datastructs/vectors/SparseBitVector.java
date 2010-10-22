@@ -121,6 +121,7 @@ public class SparseBitVector extends BaseVector implements BitVector {
     @Override
     public boolean contains(final int i) {
         // TODO Since we maintain the elements in sorted order, we could use a binary search here
+        // TODO: (nate) or you could hash the values
         for (final int element : elements) {
             if (element == i) {
                 return true;
