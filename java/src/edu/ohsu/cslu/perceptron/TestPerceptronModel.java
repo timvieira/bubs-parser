@@ -16,6 +16,42 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
  */
 public class TestPerceptronModel {
 
+/*
+
+    It seems that listing a bunch of assertEquals statments is a time 
+    consuming process and takes a lot of manual work to update/change 
+    if code changes.  Instead, what if we create toy problems and 
+    embed the data files in the test file (ie. a string) and then run
+    a number of tests and compare the string output (at different
+    levels).  If code is updated, we can just run the program again
+    and copy the output into the "correct" output field for later tests.
+    
+    Learning the NOR problem
+  
+    Input:
+        gold/bias/x1/x2
+        1 1 0 0
+        1 1 0 1
+        1 1 1 0
+        0 1 1 1
+
+    Output:
+        raw=0.100 0.000 0.000    avg=0.100 0.000 0.000
+        raw=0.100 0.000 0.000    avg=0.100 0.000 0.000
+        raw=0.100 0.000 0.000    avg=0.100 0.000 0.000
+        raw=0.000 -0.100 -0.100  avg=0.075 -0.025 -0.025
+        ittr=0   trainAcc=0.25
+        
+        raw=0.100 -0.100 -0.100  avg=0.080 -0.025 -0.025
+        raw=0.200 -0.100 0.000   avg=0.100 -0.025 -0.033
+        raw=0.200 -0.100 0.000   avg=0.100 -0.025 -0.033
+        raw=0.100 -0.200 -0.100  avg=0.112 -0.075 -0.038
+        ittr=1   trainAcc=0.50 
+
+    
+*/
+        
+    
     @Test
     public void testUpdate() {
         final PerceptronModel p = new PerceptronModel(1, 10f);
