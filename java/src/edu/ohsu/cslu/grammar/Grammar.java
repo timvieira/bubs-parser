@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.zip.GZIPInputStream;
 
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
@@ -429,6 +431,16 @@ public class Grammar implements Serializable {
         return gf;
     }
 
+    public static Grammar read(final String grammarFile) throws IOException, ClassNotFoundException {
+        InputStream is = new FileInputStream(grammarFile);
+        if (grammarFile.endsWith(".gz")) {
+            is = new GZIPInputStream(is);
+        }
+        final Grammar grammar = Grammar.read(is);
+        is.close();
+        return grammar;
+    }
+
     public static Grammar read(final InputStream inputStream) throws IOException, ClassNotFoundException {
         // Read the grammar in either text or binary-serialized format.
         final BufferedInputStream bis = new BufferedInputStream(inputStream);
@@ -484,7 +496,7 @@ public class Grammar implements Serializable {
         return nonTermSet.getSymbol(startSymbol);
     }
 
-    @SuppressWarnings({ "cast", "unchecked" })
+    @SuppressWarnings( { "cast", "unchecked" })
     public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
@@ -667,8 +679,8 @@ public class Grammar implements Serializable {
      */
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
         if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
-            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
-                    nonTermSet.getIndex(rightChild));
+            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild), nonTermSet
+                    .getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -868,14 +880,14 @@ public class Grammar implements Serializable {
             assert parent != -1 && child != -1;
             this.parent = parent;
             this.leftChild = child;
-            if (!isLex) {
-                this.rightChild = UNARY_PRODUCTION;
-            } else {
+            if (isLex) {
                 this.rightChild = LEXICAL_PRODUCTION;
                 getNonterminal(parent).isPOS = true;
                 if (parent > maxPOSIndex) {
                     maxPOSIndex = parent;
                 }
+            } else {
+                this.rightChild = UNARY_PRODUCTION;
             }
             this.prob = prob;
         }
@@ -903,8 +915,6 @@ public class Grammar implements Serializable {
             return leftChild;
         }
 
-        // TODO: a lexical prod IS A unary prod .. this should return true for both but i don't want to change
-        // it now do to potential ramifications
         public final boolean isUnaryProd() {
             return rightChild == UNARY_PRODUCTION;
         }

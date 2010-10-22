@@ -19,6 +19,7 @@ public class Perceptron {
         this.weights = new float[numFeatures];
         this.learningRate = 1;
 
+        // Initialize weights to zero
         for (int i = 0; i < numFeatures; i++) {
             weights[i] = 0;
         }
@@ -59,25 +60,47 @@ public class Perceptron {
         return bestClass;
     }
 
+    // This loss function is used for predicting the beam-width within a
+    // chart cell. If the predicted width is smaller than the gold value,
+    // then we should incur a large loss because the gold tree will be impossible
+    // to construct. If the predicted beam-width is larger than the gold, that
+    // isn't as bad, and should only incur a small loss.
+    public float beamWidthLoss(final int guessClass, final int goldClass) {
+        if (guessClass == goldClass) {
+            return 0;
+        }
+        if (goldClass == 1) {
+            return 10; // cell has gold chart entry but beam-width prediction was 0
+        }
+        return 1;
+    }
+
+    public float zeroOneLoss(final int guessClass, final int goldClass) {
+        if (guessClass == goldClass) {
+            return 0;
+        }
+        return 1;
+    }
+
     public float score(final float[] inputFeatures) {
         return kernelDotProduct(inputFeatures, weights);
     }
 
-    public void learnOnline(final float[] inputFeatures, final int correctClass) {
+    public void learnOnline(final float[] inputFeatures, final int goldClass) {
         final int guessClass = classify(inputFeatures);
-        if (guessClass != correctClass) {
+        final float loss = zeroOneLoss(guessClass, goldClass);
+        if (loss != 0) {
             for (int i = 0; i < numFeatures; i++) {
-                // weights[i] += inputFeatures[i] * learningRate;
-                weights[i] -= inputFeatures[i] * learningRate;
+                weights[i] -= loss * inputFeatures[i] * learningRate;
             }
         }
     }
 
-    public void learnOnline(final float[] gradient) {
-        for (int i = 0; i < numFeatures; i++) {
-            weights[i] -= gradient[i] * learningRate;
-        }
-    }
+    // public void learnOnline(final float[] gradient) {
+    // for (int i = 0; i < numFeatures; i++) {
+    // weights[i] -= gradient[i] * learningRate;
+    // }
+    // }
 
     public int numFeatures() {
         return numFeatures;
@@ -86,9 +109,6 @@ public class Perceptron {
     @Override
     public String toString() {
         String s = "";
-        // for (int i = 0; i < numClasses; i++) {
-        // s += "weights[" + i + "] = " + weights[i] + "\n";
-        // }
         for (int i = 0; i < numFeatures; i++) {
             s += weights[i] + " ";
         }

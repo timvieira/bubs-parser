@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Iterator;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
 
 public class Tokenizer implements Serializable {
@@ -59,61 +60,63 @@ public class Tokenizer implements Serializable {
     }
 
     public String wordToUnkString(final String word, final int sentIndex) {
+        if (ParserDriver.oldUNK == true) {
+            return wordToUnkStringVer1(word);
+        }
         return berkeleyGetSignature(word, sentIndex);
-        // return wordToUnkString(word);
     }
 
-    // // try to match Berkeley UNK mapping so that we can use their grammar
-    // public String wordToUnkString(final String word) {
-    // String unkStr = "UNK";
-    //
-    // // word case
-    // if (isLowerCase(word)) {
-    // unkStr += "-LC";
-    // } else if (isUpperCase(word)) {
-    // unkStr += "-CAPS";
-    // } else if (isUpperCase(word.substring(0, 1)) && isLowerCase(word.substring(1))) {
-    // unkStr += "-INITC";
-    // }
-    //
-    // if (lexSet.hasSymbol(word.toLowerCase())) {
-    // unkStr += "-KNOWNLC";
-    // }
-    //
-    // if (containsDigit(word)) {
-    // unkStr += "-NUM";
-    // }
-    //
-    // if (word.substring(1).contains("-")) { // don't want negative symbol
-    // unkStr += "-DASH";
-    // }
-    //
-    // final String lcWord = word.toLowerCase();
-    //
-    // if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us") && !lcWord.endsWith("is")) {
-    // unkStr += "-s";
-    // } else if (lcWord.endsWith("ed")) {
-    // unkStr += "-ed";
-    // } else if (lcWord.endsWith("ing")) {
-    // unkStr += "-ing";
-    // } else if (lcWord.endsWith("ion")) {
-    // unkStr += "-ion";
-    // } else if (lcWord.endsWith("er")) {
-    // unkStr += "-er";
-    // } else if (lcWord.endsWith("est")) {
-    // unkStr += "-est";
-    // } else if (lcWord.endsWith("al")) {
-    // unkStr += "-al";
-    // } else if (lcWord.endsWith("ity")) {
-    // unkStr += "-ity";
-    // } else if (lcWord.endsWith("ly")) {
-    // unkStr += "-ly";
-    // } else if (lcWord.endsWith("y")) {
-    // unkStr += "-y";
-    // }
-    //
-    // return unkStr;
-    // }
+    // try to match Berkeley UNK mapping so that we can use their grammar
+    private String wordToUnkStringVer1(final String word) {
+        String unkStr = "UNK";
+
+        // word case
+        if (isLowerCase(word)) {
+            unkStr += "-LC";
+        } else if (isUpperCase(word)) {
+            unkStr += "-CAPS";
+        } else if (isUpperCase(word.substring(0, 1)) && isLowerCase(word.substring(1))) {
+            unkStr += "-INITC";
+        }
+
+        if (lexSet.hasSymbol(word.toLowerCase())) {
+            unkStr += "-KNOWNLC";
+        }
+
+        if (containsDigit(word)) {
+            unkStr += "-NUM";
+        }
+
+        if (word.substring(1).contains("-")) { // don't want negative symbol
+            unkStr += "-DASH";
+        }
+
+        final String lcWord = word.toLowerCase();
+
+        if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us") && !lcWord.endsWith("is")) {
+            unkStr += "-s";
+        } else if (lcWord.endsWith("ed")) {
+            unkStr += "-ed";
+        } else if (lcWord.endsWith("ing")) {
+            unkStr += "-ing";
+        } else if (lcWord.endsWith("ion")) {
+            unkStr += "-ion";
+        } else if (lcWord.endsWith("er")) {
+            unkStr += "-er";
+        } else if (lcWord.endsWith("est")) {
+            unkStr += "-est";
+        } else if (lcWord.endsWith("al")) {
+            unkStr += "-al";
+        } else if (lcWord.endsWith("ity")) {
+            unkStr += "-ity";
+        } else if (lcWord.endsWith("ly")) {
+            unkStr += "-ly";
+        } else if (lcWord.endsWith("y")) {
+            unkStr += "-y";
+        }
+
+        return unkStr;
+    }
 
     // taken from Berkeley Parser SimpleLexicon.getNewSignature
 
