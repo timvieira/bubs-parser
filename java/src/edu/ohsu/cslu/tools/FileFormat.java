@@ -4,7 +4,7 @@
  */
 package edu.ohsu.cslu.tools;
 
-import org.kohsuke.args4j.EnumAliasMap;
+import cltool4j.args4j.EnumAliasMap;
 
 /**
  * Enumeration of text input and output formats.

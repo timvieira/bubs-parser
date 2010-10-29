@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.HashSet;
 
-import cltool.BaseCommandlineTool;
+import cltool4j.BaseCommandlineTool;
 
 public class CreatePerfectIntPair2IntHash extends BaseCommandlineTool {
 

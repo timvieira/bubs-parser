@@ -6,10 +6,10 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
 
-import cltool.BaseCommandlineTool;
+import cltool4j.BaseCommandlineTool;
+import cltool4j.args4j.CmdLineParser;
+import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.parser.Parser.ParserType;

@@ -11,12 +11,12 @@ import java.util.HashMap;
 import jsr166y.forkjoin.ForkJoinPool;
 import jsr166y.forkjoin.RecursiveAction;
 
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
 
-import cltool.BaseCommandlineTool;
-import cltool.Threadable;
+import cltool4j.BaseCommandlineTool;
+import cltool4j.Threadable;
+import cltool4j.args4j.CmdLineException;
+import cltool4j.args4j.CmdLineParser;
+import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.matrices.FixedPointShortMatrix;
 import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.matrices.Matrix;

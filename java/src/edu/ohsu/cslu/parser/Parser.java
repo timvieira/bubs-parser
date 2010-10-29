@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import java.util.logging.Logger;
 
-import org.kohsuke.args4j.EnumAliasMap;
+import cltool4j.args4j.EnumAliasMap;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;

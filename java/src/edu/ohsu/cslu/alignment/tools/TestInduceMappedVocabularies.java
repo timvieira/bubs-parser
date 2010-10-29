@@ -5,7 +5,7 @@ import static junit.framework.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import cltool.ToolTestCase;
+import cltool4j.ToolTestCase;
 import edu.ohsu.cslu.alignment.TestSimpleVocabulary;
 import edu.ohsu.cslu.tests.FilteredRunner;
 

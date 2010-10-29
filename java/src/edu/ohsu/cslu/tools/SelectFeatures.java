@@ -14,11 +14,11 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
 
-import cltool.LinewiseCommandlineTool;
+import cltool4j.LinewiseCommandlineTool;
+import cltool4j.args4j.CmdLineException;
+import cltool4j.args4j.CmdLineParser;
+import cltool4j.args4j.Option;
 import edu.ohsu.cslu.common.FeatureClass;
 import edu.ohsu.cslu.common.PorterStemmer;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;

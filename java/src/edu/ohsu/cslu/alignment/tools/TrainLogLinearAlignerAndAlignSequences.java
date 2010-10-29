@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
-import org.kohsuke.args4j.Option;
 
-import cltool.BaseCommandlineTool;
+import cltool4j.BaseCommandlineTool;
+import cltool4j.args4j.Option;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
 import edu.ohsu.cslu.alignment.column.ColumnSequenceAligner;

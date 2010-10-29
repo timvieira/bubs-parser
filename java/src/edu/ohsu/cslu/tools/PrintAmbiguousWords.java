@@ -10,10 +10,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.zip.GZIPInputStream;
 
-import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.Option;
 
-import cltool.BaseCommandlineTool;
+import cltool4j.BaseCommandlineTool;
+import cltool4j.args4j.Argument;
+import cltool4j.args4j.Option;
 
 public class PrintAmbiguousWords extends BaseCommandlineTool {
     @Option(name = "-l", metaVar = "lexicon", usage = "Lexicon file")

@@ -8,9 +8,9 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.zip.GZIPInputStream;
 
-import org.kohsuke.args4j.Argument;
 
-import cltool.BaseCommandlineTool;
+import cltool4j.BaseCommandlineTool;
+import cltool4j.args4j.Argument;
 
 public class SummarizeGrammar extends BaseCommandlineTool {
 

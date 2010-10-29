@@ -1,6 +1,6 @@
 package edu.ohsu.cslu.parser.spmv;
 
-import org.kohsuke.args4j.EnumAliasMap;
+import cltool4j.args4j.EnumAliasMap;
 
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;

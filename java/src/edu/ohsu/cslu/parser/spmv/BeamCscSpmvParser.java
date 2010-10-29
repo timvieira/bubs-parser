@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 
-import cltool.ConfigProperties;
-import cltool.GlobalConfigProperties;
+import cltool4j.ConfigProperties;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
