@@ -2,9 +2,9 @@ package edu.ohsu.cslu.alignment.tools;
 
 import java.io.InputStreamReader;
 
-import org.kohsuke.args4j.Option;
 
-import cltool.BaseCommandlineTool;
+import cltool4j.BaseCommandlineTool;
+import cltool4j.args4j.Option;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;
 import edu.ohsu.cslu.common.FeatureClass;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;

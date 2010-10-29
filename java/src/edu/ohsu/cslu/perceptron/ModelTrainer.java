@@ -9,9 +9,8 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 
-import org.kohsuke.args4j.Option;
-
-import cltool.BaseCommandlineTool;
+import cltool4j.BaseCommandlineTool;
+import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParserUtil;

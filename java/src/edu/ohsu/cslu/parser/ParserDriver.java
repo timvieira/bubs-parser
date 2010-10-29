@@ -12,14 +12,14 @@ import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
 
-import cltool.ConfigProperties;
-import cltool.GlobalConfigProperties;
-import cltool.ThreadLocalLinewiseClTool;
-import cltool.Threadable;
+import cltool4j.ConfigProperties;
+import cltool4j.GlobalConfigProperties;
+import cltool4j.ThreadLocalLinewiseClTool;
+import cltool4j.Threadable;
+import cltool4j.args4j.CmdLineException;
+import cltool4j.args4j.CmdLineParser;
+import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;

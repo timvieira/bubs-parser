@@ -11,11 +11,11 @@ import java.io.Reader;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.Option;
 
-import cltool.BaseCommandlineTool;
-import cltool.GlobalConfigProperties;
+import cltool4j.BaseCommandlineTool;
+import cltool4j.GlobalConfigProperties;
+import cltool4j.args4j.Argument;
+import cltool4j.args4j.Option;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;

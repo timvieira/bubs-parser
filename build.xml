@@ -52,7 +52,7 @@
 	<target name="compile-java" description="Compile Java code and tools">
 		<!-- If the build directory doesn't already exist, create it -->
 		<mkdir dir="${dir.build}" />
-		<javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true">
+		<javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
 			<classpath refid="classpath.libs" />
 		</javac>
 	</target>
@@ -108,6 +108,10 @@
          * include-lgpl-libs (optional) Reference LGPL libraries in generated 
              jar classpath
          * version (options) Version number to include in jar file MANIFEST
+         * readme-file (optional) Location of a README file for the tool. If 
+             the file exists, it will be packaged as META-INF/README.txt 
+         * license-file (optional) Location of a license file for the tool. If
+             the file exists, it will be packaged as META-INF/LICENSE.txt 
     ========================================================================
     -->
 	<target name="package-jar" description="Package an executable jar file">
@@ -137,6 +141,12 @@
 				<property name="path.lgpl.libs" value="" />
 			</else>
 		</if>
+		
+		<!-- Copy specified readme and license files into a temporary directory -->
+        <delete dir="package-jar-tmp" failonerror="false" />
+        <mkdir dir="package-jar-tmp/META-INF" />
+        <copy file="${readme-file}" tofile="package-jar-tmp/META-INF/README.txt" failonerror="false" />
+        <copy file="${license-file}" tofile="package-jar-tmp/META-INF/LICENSE.txt" failonerror="false" />
 
 		<!-- Package the jar -->
 		<genjar jarfile="${dir.dist}/${tool-name}.jar">
@@ -163,15 +173,18 @@
 				<attribute name="Version" value="${version}" />
 			</manifest>
 
-			<!-- Include all args4j property files -->
-			<zipfileset src="${dir.shared.bsd.lib}/args4j.jar" includes="**/*.properties" />
-
 			<!-- Include any additional files specified -->
 			<fileset dir="${additional-file-root}" includes="${additional-file-includes}" />
+
+	         <!-- Include any additional files specified -->
+             <fileset dir="package-jar-tmp" includes="META-INF/*" />
 
 			<!-- And any additional jars specified by the caller -->
 			<zipgroupfileset dir="." includes="${additional-libs}" />
 		</genjar>
+		
+		<!-- Clean up -->
+        <delete dir="package-jar-tmp" />
 	</target>
 
 	<!-- 
@@ -197,7 +210,9 @@
              any other files which should be included in the jar. Root directory
              and file includes in the normal ant 'fileset' style
          * grid-params (optional) Parameter list to pass to the grid engine script.
-         * version (options) Version number to include in jar file MANIFEST
+         * version (optional) Version number to include in jar file MANIFEST
+         * readme-file (optional) Location of a README file for the tool
+         * license-file (optional) Location of a license file for the tool
     ========================================================================
     -->
 	<target name="package-tool" description="Package an executable jar file">
@@ -209,6 +224,8 @@
 		<property name="additional-file-root" value="" />
 		<property name="additional-file-includes" value="none" />
 		<property name="version" value="" />
+        <property name="readme-file" value="none" />
+        <property name="license-file" value="none" />
 
 		<!-- If 'heap-size' is not specified, default it to 128m -->
 		<property name="heap-size" value="128" />
@@ -219,6 +236,8 @@
 			<param name="heap-size" value="${heap-size}" />
 			<param name="additional-libs" value="${additional-libs}" />
 			<param name="grid-params" value="${grid-params}" />
+            <param name="readme-file" value="${readme-file}" />
+            <param name="license-file" value="${license-file}" />
 		</antcall>
 
 		<!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
@@ -258,6 +277,9 @@
 		<property name="additional-libs" value="none" />
 		<property name="additional-root-classes" value="" />
 		<property name="grid-params" value="" />
+        <property name="version" value="" />
+        <property name="readme-file" value="none" />
+        <property name="license-file" value="none" />
 
 		<!-- If 'heap-size' is not specified, default it to 128m -->
 		<property name="heap-size" value="128" />
@@ -353,6 +375,8 @@
 			<param name="include-lgpl-libs" value="true" />
 			<param name="additional-file-root" value="${dir.src}" />
 			<param name="additional-file-includes" value="**/*.cl" />
+            <param name="license-file" value="java/tools/license.txt" />
+            <param name="readme-file" value="java/tools/parser-readme.txt" />
 		</antcall>
 	</target>
 

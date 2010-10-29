@@ -6,8 +6,8 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import cltool.LinewiseCommandlineTool;
-import cltool.ToolTestCase;
+import cltool4j.LinewiseCommandlineTool;
+import cltool4j.ToolTestCase;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 import static junit.framework.Assert.assertEquals;

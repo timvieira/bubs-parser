@@ -7,7 +7,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import cltool.ConfigProperties;
+import cltool4j.ConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.PerformanceTest;
