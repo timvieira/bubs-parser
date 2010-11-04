@@ -417,6 +417,13 @@
 		</antcall>
 	</target>
 
+    <target name="stem" depends="compile-java" description="Package Porter Stemmer">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.common.PorterStemmer" />
+            <param name="tool-name" value="stem" />
+        </antcall>
+    </target>
+	
 	<!-- 
     ========================================================================
        Package all NLP applications
@@ -424,7 +431,7 @@
     -->
     <!-- TODO: Re-add compile-native -->
 	<target name="dist"
-	        depends="filter-sentences,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,serialize-model,parse,tree-tools,train-perceptron"
+	        depends="filter-sentences,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,serialize-model,parse,tree-tools,train-perceptron,stem"
 	        description="Package all NLP application">
 	</target>
 
