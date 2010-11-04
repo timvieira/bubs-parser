@@ -1,13 +1,37 @@
 Unless otherwise noted in the source code, this software is 
-Copyright 2010, Aaron Dunlop and Nathan Bodenstab.
-
-=========================================================================
-
+    Copyright 2010, Aaron Dunlop and Nathan Bodenstab.
 
 This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as 
     published by the Free Software Foundation, either version 3 of 
     the License, or (at your option) any later version.
+
+We anticipate that this program will primarily be used for research 
+    purposes, and the AGPL license should place few restrictions on 
+    research usage. If you wish to make use of this program under a 
+    less restrictive license, including commercial licensing, please 
+    contact:
+    
+    Aaron Dunlop (dunlopa@cslu.ogi.edu)
+    Nathan Bodenstab (bodenstab@csee.ogi.edu)
+    
+=============================================================================
+
+Exceptions and notes:
+
+    The argument-parsing code in the cltool4j.args4j package is descended
+    (distantly) from the Args4J project available at 
+    <https://args4j.dev.java.net/>. The original Args4J code is distributed
+    under the MIT license; if you prefer, you may use code from 
+    cltool4j.args4j under the MIT license in place of the AGPL.
+
+    The fastutil project (the it.unimi.dsi.fastutil package) is distributed 
+    under the LGPL. You are free to use the fastutil code distributed with 
+    this project under the terms of the LGPL, but if you wish to make use of
+    fastutil, we recommend you download it in its entirety directly from 
+    <http://fastutil.dsi.unimi.it/>.
+
+=============================================================================
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,24 +41,8 @@ This program is free software: you can redistribute it and/or modify
     A copy of the GNU Affero General Public License is included below,
     subsequent versions (if any) are available at 
     <http://www.gnu.org/licenses/>.
- 
-=========================================================================
-
-Exceptions and notes:
-
-  The argument-parsing code in the cltool4j.args4j package is descended
-  (distantly) from the Args4J project available at 
-  <https://args4j.dev.java.net/>. The original Args4J code is distributed
-  under the MIT license; if you prefer, you may use code from cltool4j
-  under the MIT license in place of the AGPL.
-
-  The fastutil project (the it.unimi.dsi.fastutil package) is distributed 
-  under the LGPL. You are free to use the fastutil code distributed with 
-  this project under the terms of the LGPL, but if you wish to make use of
-  fastutil, we recommend you download it in its entirety directly from 
-  <http://fastutil.dsi.unimi.it/>.
       
-=========================================================================
+=============================================================================
 
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
