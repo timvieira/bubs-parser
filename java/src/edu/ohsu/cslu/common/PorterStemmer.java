@@ -34,20 +34,23 @@ package edu.ohsu.cslu.common;
 
  */
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+
+import cltool4j.LinewiseCommandlineTool;
+import cltool4j.Threadable;
 
 /**
  * Stemmer, implementing the Porter Stemming Algorithm
  * 
- * The Stemmer class transforms a word into its root form. The input word can be provided a character at time
- * (by calling add()), or at once by calling one of the various stem(something) methods.
+ * The Stemmer class transforms a word into its root form. The input word can be provided a character at time (by
+ * calling add()), or at once by calling one of the various stem(something) methods.
  * 
- * TODO: Ensure thread-safety; perhaps convert into a singleton
+ * TODO: Ensure thread-safety; perhaps convert into a singleton? If we can make it thread-safe for real, remove
+ * 'defaultThreads = 1'
  */
-
-public class PorterStemmer {
+@Threadable(defaultThreads = 1)
+public class PorterStemmer extends LinewiseCommandlineTool {
 
     private char[] b;
     private int offset, /* offset into b */
@@ -62,14 +65,24 @@ public class PorterStemmer {
         endOffset = 0;
     }
 
+    @Override
+    protected FutureTask<String> lineTask(final String line) {
+        return new FutureTask<String>(new Callable<String>() {
+            @Override
+            public String call() {
+                return stemSentence(line);
+            }
+        });
+    }
+
     /**
-     * Add a character to the word being stemmed. When you are finished adding characters, you can call
-     * stem(void) to stem the word.
+     * Add a character to the word being stemmed. When you are finished adding characters, you can call stem(void) to
+     * stem the word.
      */
 
-    public void add(char ch) {
+    public void add(final char ch) {
         if (offset == b.length) {
-            char[] new_b = new char[offset + INC];
+            final char[] new_b = new char[offset + INC];
             for (int c = 0; c < offset; c++)
                 new_b[c] = b[c];
             b = new_b;
@@ -78,13 +91,13 @@ public class PorterStemmer {
     }
 
     /**
-     * Adds wLen characters to the word being stemmed contained in a portion of a char[] array. This is like
-     * repeated calls of add(char ch), but faster.
+     * Adds wLen characters to the word being stemmed contained in a portion of a char[] array. This is like repeated
+     * calls of add(char ch), but faster.
      */
 
-    public void add(char[] w, int wLen) {
+    public void add(final char[] w, final int wLen) {
         if (offset + wLen >= b.length) {
-            char[] new_b = new char[offset + wLen + INC];
+            final char[] new_b = new char[offset + wLen + INC];
             for (int c = 0; c < offset; c++)
                 new_b[c] = b[c];
             b = new_b;
@@ -94,8 +107,8 @@ public class PorterStemmer {
     }
 
     /**
-     * After a word has been stemmed, it can be retrieved by toString(), or a reference to the internal buffer
-     * can be retrieved by getResultBuffer and getResultLength (which is generally more efficient.)
+     * After a word has been stemmed, it can be retrieved by toString(), or a reference to the internal buffer can be
+     * retrieved by getResultBuffer and getResultLength (which is generally more efficient.)
      */
     @Override
     public String toString() {
@@ -110,8 +123,8 @@ public class PorterStemmer {
     }
 
     /**
-     * Returns a reference to a character buffer containing the results of the stemming process. You also need
-     * to consult getResultLength() to determine the length of the result.
+     * Returns a reference to a character buffer containing the results of the stemming process. You also need to
+     * consult getResultLength() to determine the length of the result.
      */
     public char[] getResultBuffer() {
         return b;
@@ -119,7 +132,7 @@ public class PorterStemmer {
 
     /* cons(i) is true <=> b[i] is a consonant. */
 
-    private final boolean cons(int i) {
+    private final boolean cons(final int i) {
         switch (b[i]) {
         case 'a':
         case 'e':
@@ -135,8 +148,8 @@ public class PorterStemmer {
     }
 
     /*
-     * m() measures the number of consonant sequences between 0 and j. if c is a consonant sequence and v a
-     * vowel sequence, and <..> indicates arbitrary presence,
+     * m() measures the number of consonant sequences between 0 and j. if c is a consonant sequence and v a vowel
+     * sequence, and <..> indicates arbitrary presence,
      * 
      * <c><v> gives 0 <c>vc<v> gives 1 <c>vcvc<v> gives 2 <c>vcvcvc<v> gives 3 ....
      */
@@ -185,7 +198,7 @@ public class PorterStemmer {
 
     /* doublec(j) is true <=> j,(j-1) contain a double consonant. */
 
-    private final boolean doublec(int index) {
+    private final boolean doublec(final int index) {
         if (index < 1)
             return false;
         if (b[index] != b[index - 1])
@@ -194,26 +207,26 @@ public class PorterStemmer {
     }
 
     /*
-     * cvc(i) is true <=> i-2,i-1,i has the form consonant - vowel - consonant and also if the second c is not
-     * w,x or y. this is used when trying to restore an e at the end of a short word. e.g.
+     * cvc(i) is true <=> i-2,i-1,i has the form consonant - vowel - consonant and also if the second c is not w,x or y.
+     * this is used when trying to restore an e at the end of a short word. e.g.
      * 
      * cav(e), lov(e), hop(e), crim(e), but snow, box, tray.
      */
 
-    private final boolean cvc(int i) {
+    private final boolean cvc(final int i) {
         if (i < 2 || !cons(i) || cons(i - 1) || !cons(i - 2))
             return false;
         {
-            int ch = b[i];
+            final int ch = b[i];
             if (ch == 'w' || ch == 'x' || ch == 'y')
                 return false;
         }
         return true;
     }
 
-    private final boolean ends(String s) {
-        int l = s.length();
-        int o = k - l + 1;
+    private final boolean ends(final String s) {
+        final int l = s.length();
+        final int o = k - l + 1;
         if (o < 0)
             return false;
         for (int i = 0; i < l; i++)
@@ -227,9 +240,9 @@ public class PorterStemmer {
      * setto(s) sets (j+1),...k to the characters in the string s, readjusting k.
      */
 
-    private final void setto(String s) {
-        int l = s.length();
-        int o = j + 1;
+    private final void setto(final String s) {
+        final int l = s.length();
+        final int o = j + 1;
         for (int i = 0; i < l; i++)
             b[o + i] = s.charAt(i);
         k = j + l;
@@ -237,7 +250,7 @@ public class PorterStemmer {
 
     /* r(s) is used further down. */
 
-    private final void r(String s) {
+    private final void r(final String s) {
         if (m() > 0)
             setto(s);
     }
@@ -277,7 +290,7 @@ public class PorterStemmer {
             else if (doublec(k)) {
                 k--;
                 {
-                    int ch = b[k];
+                    final int ch = b[k];
                     if (ch == 'l' || ch == 's' || ch == 'z')
                         k++;
                 }
@@ -294,8 +307,8 @@ public class PorterStemmer {
     }
 
     /*
-     * step3() maps double suffices to single ones. so -ization ( = -ize plus -ation) maps to -ize etc. note
-     * that the string before the suffix must give m() > 0.
+     * step3() maps double suffices to single ones. so -ization ( = -ize plus -ation) maps to -ize etc. note that the
+     * string before the suffix must give m() > 0.
      */
 
     private final void step3() {
@@ -530,7 +543,7 @@ public class PorterStemmer {
     private final void step6() {
         j = k;
         if (b[k] == 'e') {
-            int a = m();
+            final int a = m();
             if (a > 1 || a == 1 && !cvc(k - 1))
                 k--;
         }
@@ -539,9 +552,9 @@ public class PorterStemmer {
     }
 
     /**
-     * Stem the word placed into the Stemmer buffer through calls to add(). Returns true if the stemming
-     * process resulted in a word different from the input. You can retrieve the result with
-     * getResultLength()/getResultBuffer() or toString().
+     * Stem the word placed into the Stemmer buffer through calls to add(). Returns true if the stemming process
+     * resulted in a word different from the input. You can retrieve the result with getResultLength()/getResultBuffer()
+     * or toString().
      */
     public void stem() {
         k = offset - 1;
@@ -557,17 +570,17 @@ public class PorterStemmer {
         offset = 0;
     }
 
-    public String stemWord(String word) {
+    public String stemWord(final String word) {
         add(word.toCharArray(), word.length());
         stem();
         return toString();
     }
 
-    public String stemSentence(String sentence) {
-        String[] words = sentence.split(" ");
-        StringBuilder sb = new StringBuilder(sentence.length());
+    public String stemSentence(final String sentence) {
+        final String[] words = sentence.split(" ");
+        final StringBuilder sb = new StringBuilder(sentence.length());
         for (int i = 0; i < words.length; i++) {
-            String word = words[i];
+            final String word = words[i];
             add(word.toCharArray(), word.length());
             stem();
             sb.append(toString());
@@ -578,68 +591,7 @@ public class PorterStemmer {
         return sb.toString();
     }
 
-    /**
-     * Test program for demonstrating the Stemmer. It reads text from a a list of files, stems each word, and
-     * writes the result to standard output. Note that the word stemmed is expected to be in lower case:
-     * forcing lower case must be done outside the Stemmer class. Usage: Stemmer file-name file-name ...
-     */
-    public static void main(String[] args) {
-        char[] w = new char[501];
-        PorterStemmer s = new PorterStemmer();
-        for (int i = 0; i < args.length; i++)
-            try {
-                FileInputStream in = new FileInputStream(args[i]);
-
-                try {
-                    while (true)
-
-                    {
-                        int ch = in.read();
-                        if (Character.isLetter((char) ch)) {
-                            int j = 0;
-                            while (true) {
-                                ch = Character.toLowerCase((char) ch);
-                                w[j] = (char) ch;
-                                if (j < 500)
-                                    j++;
-                                ch = in.read();
-                                if (!Character.isLetter((char) ch)) {
-                                    /* to test add(char ch) */
-                                    for (int c = 0; c < j; c++)
-                                        s.add(w[c]);
-
-                                    /* or, to test add(char[] w, int j) */
-                                    /* s.add(w, j); */
-
-                                    s.stem();
-                                    {
-                                        String u;
-
-                                        /* and now, to test toString() : */
-                                        u = s.toString();
-
-                                        /* to test getResultBuffer(), getResultLength() : */
-                                        /*
-                                         * u = new String(s.getResultBuffer(), 0, s.getResultLength());
-                                         */
-
-                                        System.out.print(u);
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                        if (ch < 0)
-                            break;
-                        System.out.print((char) ch);
-                    }
-                } catch (IOException e) {
-                    System.out.println("error reading " + args[i]);
-                    break;
-                }
-            } catch (FileNotFoundException e) {
-                System.out.println("file " + args[i] + " not found");
-                break;
-            }
+    public static void main(final String[] args) {
+        run(args);
     }
 }
