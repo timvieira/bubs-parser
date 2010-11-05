@@ -6,7 +6,6 @@ import java.util.List;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
-import edu.ohsu.cslu.parser.ParserDriver;
 
 public class GoldChart extends Chart {
 
@@ -57,15 +56,21 @@ public class GoldChart extends Chart {
                 if (numChildren == 2) {
                     B = node.children.get(0).contents;
                     C = node.children.get(1).contents;
-                    prod = grammar.getBinaryProduction(A, B, C);
+                    // prod = grammar.getBinaryProduction(A, B, C);
+                    prod = grammar.new Production(A, B, C, Float.NEGATIVE_INFINITY);
                     midpt = leafNodes.indexOf(node.children.get(0).rightMostLeaf()) + 1;
                     edge = new ChartEdge(prod, getCell(start, midpt), getCell(midpt, end));
                 } else if (numChildren == 1) {
                     B = node.children.get(0).contents;
                     if (node.isPOS()) {
-                        prod = grammar.getLexicalProduction(A, B);
+                        // prod = grammar.getLexicalProduction(A, B);
+                        // NOTE: don't want to add new words to the lexicon because they
+                        // won't get mapped to UNK during decoding
+                        B = grammar.tokenizer.mapToLexSetEntry(B, 1);
+                        prod = grammar.new Production(A, B, Float.NEGATIVE_INFINITY, true);
                     } else {
-                        prod = grammar.getUnaryProduction(A, B);
+                        // prod = grammar.getUnaryProduction(A, B);
+                        prod = grammar.new Production(A, B, Float.NEGATIVE_INFINITY, false);
                     }
                     edge = new ChartEdge(prod, getCell(start, end));
                 } else {
@@ -73,14 +78,17 @@ public class GoldChart extends Chart {
                             + ".  Expecting <= 2.");
                 }
 
-                if (prod == null) {
-                    ParserDriver.getLogger().info(
-                            "WARNING: production does not exist in grammar for node: " + A + " -> "
-                                    + node.childrenToString());
-                    // prod = Grammar.nullProduction;
-                } else {
-                    goldEdges[start][end].add(edge);
-                }
+                // System.out.println("Adding: [" + start + "," + end + "] " + edge.prod);
+
+                // if (prod == null) {
+                // ParserDriver.getLogger().info(
+                // "WARNING: production does not exist in grammar for node: " + A + " -> "
+                // + node.childrenToString());
+                // // // prod = Grammar.nullProduction;
+                // // prod = new Production()
+                // } else {
+                goldEdges[start][end].add(edge);
+                // }
             }
         }
 

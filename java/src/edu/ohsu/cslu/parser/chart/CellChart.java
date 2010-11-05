@@ -245,15 +245,17 @@ public class CellChart extends Chart {
             final StringBuilder sb = new StringBuilder(1024);
             sb.append(getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
                     + parser.grammar.numNonTerms() + ") edges");
-            sb.append('\n');
+            return sb.toString();
+        }
 
+        public String toStringDetails() {
+            String result = this.toString() + "\n";
             for (int i = 0; i < bestEdge.length; i++) {
                 if (bestEdge[i] != null) {
-                    sb.append(bestEdge[i].toString());
-                    sb.append('\n');
+                    result += bestEdge[i].toString() + '\n';
                 }
             }
-            return sb.toString();
+            return result;
         }
 
         @Override
