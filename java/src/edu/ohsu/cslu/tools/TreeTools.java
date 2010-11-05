@@ -7,56 +7,67 @@ import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import cltool4j.BaseCommandlineTool;
+import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.parser.ParseTree;
-import edu.ohsu.cslu.parser.ParserDriver;
 
-public class TreeTools {
+public class TreeTools extends BaseCommandlineTool {
+
+    @Option(name = "-binarize", usage = "Binarize input trees")
+    private boolean binarize = false;
+
+    @Option(name = "-rightFactor", usage = "Right factor trees; used with -binarize.  Default=leftFactor")
+    private boolean rightFactor = false;
+
+    @Option(name = "-hMarkov", usage = "Target horizontal Markov order; used with -binarize")
+    private int horizontalMarkov = 0;
+
+    @Option(name = "-vMarkov", usage = "Target vertical Markov order; used with -binarize")
+    private int verticalMarkov = 0;
+
+    @Option(name = "-annotatePOS", usage = "Add vertical markov annotations to POS labels; used with -binarize")
+    private boolean annotatePOS = false;
+
+    @Option(name = "-unbinarize", usage = "Unbinarize input trees")
+    private boolean unbinarize = false;
+
+    @Option(name = "-cleanRawTreebank", usage = "Remove TMP labels, empty nodes, and X=>X unaries")
+    private boolean cleanRawTreebank = false;
+
+    @Option(name = "-countMaxSpans", usage = "Count the longest span that starts and ends at each non-terminal")
+    private boolean countMaxSpans = false;
 
     private static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
     private static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
 
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) {
+        run(args);
+    }
 
-        // @Option(name = "-countSpans", hidden = true, usage =
-        // "Count max length of span for each word in input trees that starts or ends at each word")
-
-        // System.out.println("args:" + args);
-        // more comments ...
-        final int action = (int) ParserDriver.param1;
-        boolean rightFactor = false;
+    @Override
+    protected void run() throws Exception {
 
         for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
 
             final ParseTree tree = ParseTree.readBracketFormat(sentence);
 
-            switch (action) {
-            case -1:
-                outputStream.write(sentence);
+            if (unbinarize) {
+                // outputStream.write(sentence);
                 unbinarizeTree(tree, GrammarFormatType.CSLU);
-                break;
-            case 0:
+            } else if (cleanRawTreebank) {
                 // removeTmpLabels(tree);
                 // removeEmptyNodes(tree);
                 // removeSpuriousUnaries(tree);
                 removeTmpLabelsEmptyNodesAndSpuriousUnaries(tree);
-                break;
-            case 1:
-                rightFactor = true;
-                //$FALL-THROUGH$
-            case 2:
-                final int horzMarkov = (int) ParserDriver.param2;
-                final int vertMarkov = (int) ParserDriver.param3;
-                final boolean annotatePOS = false;
+            } else if (binarize) {
                 final GrammarFormatType gramFormat = GrammarFormatType.CSLU;
-                binarizeTree(tree, rightFactor, horzMarkov, vertMarkov, annotatePOS, gramFormat);
-                break;
-            case 5:
+                binarizeTree(tree, rightFactor, horizontalMarkov, verticalMarkov, annotatePOS, gramFormat);
+            } else if (countMaxSpans) {
                 constituentSpanCountForKristy();
-                break;
-            default:
-                System.err.println("ERROR: action not recognized.");
+            } else {
+                System.err.println("ERROR: action required.  See -h");
                 System.exit(1);
             }
 
