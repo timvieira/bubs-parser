@@ -66,7 +66,7 @@ public class SparseBitVector extends BaseVector implements BitVector {
         this.elements = newElements.toIntArray();
     }
 
-    private SparseBitVector(final int length, final int[] elements) {
+    public SparseBitVector(final int length, final int[] elements) {
         super(length);
         this.elements = elements;
     }
@@ -216,6 +216,12 @@ public class SparseBitVector extends BaseVector implements BitVector {
     public int length() {
         // Return the highest populated index + 1 (or 0 if no elements are populated)
         return elements.length > 0 ? elements[elements.length - 1] + 1 : 0;
+    }
+
+    // TODO: I think this should be called length() to match other classes and the function
+    // above be called numElements() or something.
+    public int vectorLength() {
+        return length;
     }
 
     @Override
