@@ -66,6 +66,8 @@ public class Grammar implements Serializable {
     public final SymbolSet<String> nonTermSet;
     public SymbolSet<String> lexSet;
     public final Tokenizer tokenizer;
+    // maps from 0-based index to entry in nonTermSet. Used to reduce absolute index value for feature extraction
+    public final SymbolSet<Integer> posSet;
 
     protected final ArrayList<Production> binaryProductions;
     protected final ArrayList<Production> unaryProductions;
@@ -80,7 +82,7 @@ public class Grammar implements Serializable {
     public static Production nullProduction;
 
     public int nullSymbol = -1;
-    public int lexicalNullSymbol = -1;
+    public int nullWord = -1;
     public int startSymbol = -1;
 
     // == Grammar stats ==
@@ -164,6 +166,7 @@ public class Grammar implements Serializable {
 
         nonTermSet = new SymbolSet<String>();
         lexSet = new SymbolSet<String>();
+        posSet = new SymbolSet<Integer>();
 
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
@@ -264,7 +267,7 @@ public class Grammar implements Serializable {
 
         startSymbol = nonTermSet.addSymbol(startSymbolStr);
         nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
-        lexicalNullSymbol = lexSet.addSymbol(nullSymbolStr);
+        nullWord = lexSet.addSymbol(nullSymbolStr);
 
         // Now that all NTs are mapped, we can create Production instances for lexical rules (we don't care
         // about sort order here)
@@ -312,6 +315,14 @@ public class Grammar implements Serializable {
         internMap = null; // We no longer need the String intern map, so let it be GC'd
 
         this.tokenizer = new Tokenizer(lexSet);
+
+        // reduce range of POS indicies so we can store the features more efficiently
+        for (int i = 0; i < numNonTerms(); i++) {
+            if (isPos(i)) {
+                posSet.addSymbol(i);
+            }
+        }
+        posSet.addSymbol(nullSymbol);
 
         ParserDriver.getLogger().fine("done.");
     }
@@ -363,6 +374,7 @@ public class Grammar implements Serializable {
 
         this.nonTermSet = g.nonTermSet;
         this.lexSet = g.lexSet;
+        this.posSet = g.posSet;
         this.nonTermInfo = g.nonTermInfo;
 
         this.tokenizer = g.tokenizer;
