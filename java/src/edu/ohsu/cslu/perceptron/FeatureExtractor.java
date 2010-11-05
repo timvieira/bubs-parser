@@ -4,7 +4,7 @@ import edu.ohsu.cslu.datastructs.vectors.NumericVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
- * Extracts features from a training example as a {@link NumericVector} suitable for use with a {@link PerceptronModel}.
+ * Extracts features from a training example as a {@link NumericVector} suitable for use with a {@link Perceptron}.
  * 
  * Subclasses will generally be instantiated with a sequence of tokens (e.g. a sentence), and consumers will call a
  * <code>featureVector</code> method for each token.
@@ -24,25 +24,25 @@ public abstract class FeatureExtractor {
     public abstract int featureCount();
 
     /**
-     * Returns a feature vector suitable for use with a {@link PerceptronModel}. If previous or subsequent tags are
+     * Returns a feature vector suitable for use with a {@link Perceptron}. If previous or subsequent tags are
      * incorporated into the model as features, this method will generally be used during training, when the
      * {@link FeatureExtractor} instance was constructed with gold-standard tagging information. At test time,
      * {@link #featureVector(Object, int, boolean[])} will be used instead.
      * 
      * @param source
      * @param tokenIndex The index of the token for which features should be extracted
-     * @return a feature vector suitable for use with a {@link PerceptronModel}.
+     * @return a feature vector suitable for use with a {@link Perceptron}.
      */
     public abstract Vector featureVector(Object source, int tokenIndex);
 
     /**
-     * Returns a feature vector suitable for use with a {@link PerceptronModel}, incorporating previous or subsequent
-     * tags into the model as features.
+     * Returns a feature vector suitable for use with a {@link Perceptron}, incorporating previous or subsequent tags
+     * into the model as features.
      * 
      * @param source
      * @param tokenIndex The index of the token for which features should be extracted
      * @param tags The estimated tags for previous tokens.
-     * @return a feature vector suitable for use with a {@link PerceptronModel}.
+     * @return a feature vector suitable for use with a {@link Perceptron}.
      */
     public abstract Vector featureVector(Object source, int tokenIndex, boolean[] tags);
 }
