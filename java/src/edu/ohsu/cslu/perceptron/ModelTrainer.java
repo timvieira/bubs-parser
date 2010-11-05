@@ -3,6 +3,7 @@ package edu.ohsu.cslu.perceptron;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -45,26 +46,28 @@ public class ModelTrainer extends BaseCommandlineTool {
     @Option(name = "-s", metaVar = "file", usage = "Output model file (Java Serialized Object)")
     private File outputModelFile;
 
-    @Option(name = "-generic")
-    private boolean generic = false;
+    @Option(name = "-overLoss")
+    private float overPenalty = 1;
 
-    @Option(name = "-fn")
-    private float falseNegative = 0;
+    @Option(name = "-underLoss")
+    private float underPenalty = 1;
 
-    private PerceptronModel model;
+    @Option(name = "-feats", usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    public String featTemplate = null;
 
-    // private int example = 0;
+    @Option(name = "-bins", usage = "Value to Class mapping bins. ex: '0,5,10,30' ")
+    private String binsStr;
+
+    // TODO: This class should take a "feature template" as input and learn a model based on that
+    // example: t t-1 t-2 t+1 t+2 w w-1 w+1 t_w t_t-1 t-1_t-2 ... t=tag w=word _=joint
 
     @Override
     protected void run() throws Exception {
+        natesTraining();
+        // aaronsTraining();
+    }
 
-        if (generic) {
-            final DataSet train = new DataSet(System.in);
-            final InputStream devStream = ParserUtil.file2inputStream(devSet.getAbsolutePath());
-            final DataSet dev = new DataSet(devStream);
-            trainPerceptron(train, dev);
-            System.exit(0);
-        }
+    public void aaronsTraining() throws IOException, ClassNotFoundException {
 
         // Read grammar
         grammar = Grammar.read(grammarFile.getName());
@@ -85,7 +88,7 @@ public class ModelTrainer extends BaseCommandlineTool {
         }
         br.close();
 
-        model = new PerceptronModel(fe.featureCount(), 0f, alpha, new PerceptronModel.ZeroOneLoss());
+        final AveragedPerceptron model = new AveragedPerceptron();
 
         // Iterate over training corpus
         for (int i = 0; i < iterations; i++) {
@@ -99,18 +102,9 @@ public class ModelTrainer extends BaseCommandlineTool {
                     if (logger.isLoggable(Level.FINEST)) {
                         logger.finest(featureVectorToString(featureVector));
                     }
-                    model.train(goldTags[k], featureVector);
 
-                    // final boolean predictedTag = model.rawBinaryOutput(featureVector);
-                    //
-                    // if (predictedTag != goldTags[k]) {
-                    // // Perform (averaged) perceptron update if the predicted tag was incorrect
-                    // if (goldTags[k]) {
-                    // model.update(featureVector, alpha, example);
-                    // } else {
-                    // model.update(featureVector, -alpha, example);
-                    // }
-                    // }
+                    // TODO: fix this to work with ints instead of bools
+                    // model.train(goldTags[k], featureVector);
 
                     if (logger.isLoggable(Level.FINER)) {
                         logger.finer(toString());
@@ -119,9 +113,9 @@ public class ModelTrainer extends BaseCommandlineTool {
             }
 
             if (devSet != null) {
-                model.updateAveragedModel();
                 // Test the development set
-                int total = 0, correct = 0;
+                int total = 0;
+                final int correct = 0;
                 InputStream is = new FileInputStream(devSet);
                 if (devSet.getName().endsWith(".gz")) {
                     is = new GZIPInputStream(is);
@@ -130,13 +124,16 @@ public class ModelTrainer extends BaseCommandlineTool {
                 for (String line = br.readLine(); line != null; line = br.readLine()) {
 
                     final Sentence s = fe.new Sentence(line);
-                    final boolean[] predictedTags = new boolean[s.length()];
+                    final int[] predictedTags = new int[s.length()];
 
                     for (int k = 0; k < predictedTags.length; k++) {
-                        predictedTags[k] = model.classifyAverage(fe.featureVector(s, k, predictedTags));
-                        if (predictedTags[k] == s.goldTags()[k]) {
-                            correct++;
-                        }
+
+                        // TODO: fix this to work with ints instead of bools
+
+                        // predictedTags[k] = model.classify(fe.featureVector(s, k, predictedTags));
+                        // if (predictedTags[k] == s.goldTags()[k]) {
+                        // correct++;
+                        // }
                         total++;
                     }
                 }
@@ -151,44 +148,48 @@ public class ModelTrainer extends BaseCommandlineTool {
         }
     }
 
-    public void trainPerceptron(final DataSet train, final DataSet dev) {
-        if (falseNegative > 0) {
-            model = new PerceptronModel(train.numFeatures, 0f, alpha, new PerceptronModel.BeamPredictLoss(
-                    falseNegative, 1));
-        } else {
-            model = new PerceptronModel(train.numFeatures, 0f, alpha, new PerceptronModel.ZeroOneLoss());
+    public void natesTraining() throws Exception {
+
+        if (featTemplate == null) {
+            logger.info("ERROR: Training a model from pre-computed features requires -feats to be non-empty");
+            System.exit(1);
         }
+        if (binsStr == null) {
+            logger.info("ERROR: Training a model from pre-computed features requires -bins to be non-empty");
+            System.exit(1);
+        }
+
+        final AveragedPerceptron perceptron = new AveragedPerceptron(alpha, new Perceptron.OverUnderLoss(overPenalty,
+                underPenalty), binsStr, featTemplate, null);
+        final DataSet train = new DataSet(System.in, perceptron);
+        final InputStream devStream = ParserUtil.file2inputStream(devSet.getAbsolutePath());
+        final DataSet dev = new DataSet(devStream, perceptron);
+        trainPerceptron(perceptron, train, dev);
+        System.exit(0);
+    }
+
+    // Nate's training method...
+    public void trainPerceptron(final Perceptron perceptron, final DataSet train, final DataSet dev) {
 
         for (int i = 0; i < iterations; i++) {
             for (int j = 0; j < train.numExamples; j++) {
-                final boolean goldClass = train.classification.get(j) == 1f;
-                model.train(goldClass, train.features.get(j));
-
-                // System.out.println("raw=" + floatvec2str(model.rawPerceptron()) + "\t avg="
-                // + floatvec2str(model.averagedPerceptron()));
+                final int goldClass = train.classification.get(j);
+                perceptron.train(goldClass, train.features.get(j));
             }
 
-            model.updateAveragedModel();
-            final float trainLoss = evalDataSetAvgLoss(train, model, false);
-            final float devLoss = evalDataSetAvgLoss(dev, model, false);
+            final float trainLoss = evalDataSetAvgLoss(train, perceptron, false);
+            final float devLoss = evalDataSetAvgLoss(dev, perceptron, false);
 
             System.out.format("ittr=%d\t trainLoss=%.4f\t devLoss=%.4f\n", i, trainLoss, devLoss);
         }
-        System.out.print("avgPerceptron=" + model.averagedPerceptron().toString());
-        evalDataSetAvgLoss(train, model, true);
-        evalDataSetAvgLoss(dev, model, true);
 
+        evalDataSetAvgLoss(train, perceptron, true);
+        evalDataSetAvgLoss(dev, perceptron, true);
+
+        System.out.print(perceptron.toString());
     }
 
-    // private String floatvec2str(final FloatVector v) {
-    // String s = "";
-    // for (int i = 0; i < v.length(); i++) {
-    // s += String.format("%.3f ", v.getFloat(i));
-    // }
-    // return s;
-    // }
-
-    public float evalDataSetAvgLoss(final DataSet data, final PerceptronModel perceptron, final boolean confMatrix) {
+    public float evalDataSetAvgLoss(final DataSet data, final Perceptron perceptron, final boolean confMatrix) {
         final int numClasses = perceptron.numClasses();
         final int counts[][] = new int[numClasses][numClasses];
         for (int i = 0; i < numClasses; i++) {
@@ -199,48 +200,87 @@ public class ModelTrainer extends BaseCommandlineTool {
 
         float loss = 0;
         for (int i = 0; i < data.numExamples; i++) {
-            final boolean goldClass = data.classification.get(i) == 1f;
-            final boolean guessClass = model.classifyAverage(data.features.get(i));
-            // final boolean guessClass = model.classifyRaw(data.features.get(i));
+            final int goldClass = data.classification.get(i);
+            final int guessClass = perceptron.classify(data.features.get(i));
+
+            // System.out.println("gold=" + goldClass + " guess=" + guessClass);
 
             loss += perceptron.computeLoss(goldClass, guessClass);
-
-            counts[bool2int(goldClass)][bool2int(guessClass)] += 1;
+            counts[goldClass][guessClass] += 1;
         }
 
         if (confMatrix) {
-            final int tn = counts[0][0], fp = counts[0][1];
-            final int fn = counts[1][0], tp = counts[1][1];
-            String s = "** Y=gold  X=guess **\n";
-            s += String.format("\t%d\t%d\tacc=%.2f\n", tn, fp, tn / (float) (tn + fp) * 100);
-            s += String.format("\t%d\t%d\tacc=%.2f\n", fn, tp, tp / (float) (fn + tp) * 100);
-            s += String.format("totalAcc=%.2f\n", (tn + tp) / (float) (tn + fp + fn + tp) * 100);
+            String s = "** Y=guess  X=gold **\n";
+            int correct = 0;
+            for (int y = 0; y < numClasses; y++) {
+                int rowTotal = 0;
+                for (int x = 0; x < numClasses; x++) {
+                    s += "\t" + counts[x][y];
+                    rowTotal += counts[x][y];
+                }
+                s += String.format("\tacc=%.2f\n", (float) counts[y][y] / rowTotal);
+                correct += counts[y][y];
+            }
+            s += String.format("totalAcc=%.2f\n", (float) correct / data.numExamples);
             System.out.println(s);
         }
 
         return loss / data.numExamples;
     }
 
-    private int bool2int(final boolean val) {
-        if (val == true) {
-            return 1;
-        }
-        return 0;
-    }
-
     public class DataSet {
+        // parallel ArrayLists: a gold class (classification) for each feature vector (features)
         public ArrayList<SparseBitVector> features = new ArrayList<SparseBitVector>();
         public ArrayList<Integer> classification = new ArrayList<Integer>();
         public int numExamples;
         public int numFeatures = -1;
 
         public DataSet(final InputStream is) throws Exception {
+            readDataSet(is, null);
+            // readOldFormat(is);
+        }
+
+        public DataSet(final InputStream is, final Perceptron perceptron) throws Exception {
+            readDataSet(is, perceptron);
+        }
+
+        /**
+         * 
+         * Expected format (goldClass : featLen posFeat1 posFeat2 ...) 9 : 98695 0 38 68 136 179 237 1067 2684 2714 2782
+         * 2825 2883 7348 30622 55242 95299 0 : 98695 0 19 87 117 185 228 1342 2665 2733 2763 2831 2874 23458 31295
+         * 71352 79105 2 : 98695 0 38 68 136 166 234 430 2684 2714 2782 2812 2880 7264 47405 55158 95299 ....
+         */
+        private void readDataSet(final InputStream is, final Perceptron perceptron) throws Exception {
+            final BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            numExamples = 0;
+            for (String line = br.readLine(); line != null; line = br.readLine()) {
+                final String[] tokens = ParserUtil.tokenize(line);
+                assert numFeatures == tokens.length - 1 || numFeatures == -1;
+                numFeatures = Integer.parseInt(tokens[2]);
+                final int numPosFeats = tokens.length - 3;
+                numExamples++;
+
+                int goldClass = new Integer(tokens[0]);
+                if (perceptron != null) {
+                    goldClass = perceptron.value2class(goldClass);
+                }
+                classification.add(goldClass);
+
+                final int feats[] = new int[numPosFeats];
+                for (int i = 0; i < numPosFeats; i++) {
+                    feats[i] = new Integer(tokens[i + 3]);
+                }
+                features.add(new SparseBitVector(numFeatures, feats));
+            }
+        }
+
+        public void readOldFormat(final InputStream is) throws Exception {
             final BufferedReader br = new BufferedReader(new InputStreamReader(is));
             // Expected format: classification featVal1 featVal2 featVal3 ...
             numExamples = 0;
             for (String line = br.readLine(); line != null; line = br.readLine()) {
                 final String[] tokens = ParserUtil.tokenize(line);
-                assert numFeatures == -1 || numFeatures == tokens.length - 1;
+                assert numFeatures == tokens.length - 1 || numFeatures == -1;
                 numFeatures = tokens.length - 1;
                 numExamples++;
 
@@ -282,36 +322,36 @@ public class ModelTrainer extends BaseCommandlineTool {
         return sb.toString();
     }
 
-    // TODO: I'm guessing this is all temporary? I don't understand a toString() method here
-    // except for debugging ...
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        // Tokens (in markov window)
-        for (int i = 0; i < markovOrder * 2 + 1; i++) {
-            for (int j = 0; j < grammar.numLexSymbols(); j++) {
-                final int feature = grammar.numLexSymbols() * i + j;
-                // final float weight = model.averagedFeatureWeight(feature, example);
-                final float weight = model.averagedPerceptron().getFloat(feature);
-                if (weight != 0) {
-                    sb.append(String.format("_w_%d_%s : %.2f\n", i - markovOrder, grammar.mapLexicalEntry(j), weight));
-                }
-            }
-        }
-        // Previous tags
-        for (int i = 0; i < markovOrder * 2; i = i + 2) {
-            final int trueFeature = grammar.numLexSymbols() * (markovOrder * 2 + 1) + i;
-            // final float trueWeight = model.averagedFeatureWeight(trueFeature, example);
-            final float trueWeight = model.averagedPerceptron().getFloat(trueFeature);
-            sb.append(String.format("_t_%d_T : %.2f\n", i / 2 - markovOrder, trueWeight));
-
-            final int falseFeature = grammar.numLexSymbols() * (markovOrder * 2 + 1) + i + 1;
-            // final float falseWeight = model.averagedFeatureWeight(falseFeature, example);
-            final float falseWeight = model.averagedPerceptron().getFloat(falseFeature);
-            sb.append(String.format("_t_%d_F : %.2f\n", i / 2 - markovOrder, falseWeight));
-        }
-        return sb.toString();
-    }
+    // // TODO: I'm guessing this is all temporary? I don't understand a toString() method here
+    // // except for debugging ...
+    // @Override
+    // public String toString() {
+    // final StringBuilder sb = new StringBuilder();
+    // // Tokens (in markov window)
+    // for (int i = 0; i < markovOrder * 2 + 1; i++) {
+    // for (int j = 0; j < grammar.numLexSymbols(); j++) {
+    // final int feature = grammar.numLexSymbols() * i + j;
+    // // final float weight = model.averagedFeatureWeight(feature, example);
+    // final float weight = model.averagedPerceptron().getFloat(feature);
+    // if (weight != 0) {
+    // sb.append(String.format("_w_%d_%s : %.2f\n", i - markovOrder, grammar.mapLexicalEntry(j), weight));
+    // }
+    // }
+    // }
+    // // Previous tags
+    // for (int i = 0; i < markovOrder * 2; i = i + 2) {
+    // final int trueFeature = grammar.numLexSymbols() * (markovOrder * 2 + 1) + i;
+    // // final float trueWeight = model.averagedFeatureWeight(trueFeature, example);
+    // final float trueWeight = model.averagedPerceptron().getFloat(trueFeature);
+    // sb.append(String.format("_t_%d_T : %.2f\n", i / 2 - markovOrder, trueWeight));
+    //
+    // final int falseFeature = grammar.numLexSymbols() * (markovOrder * 2 + 1) + i + 1;
+    // // final float falseWeight = model.averagedFeatureWeight(falseFeature, example);
+    // final float falseWeight = model.averagedPerceptron().getFloat(falseFeature);
+    // sb.append(String.format("_t_%d_F : %.2f\n", i / 2 - markovOrder, falseWeight));
+    // }
+    // return sb.toString();
+    // }
 
     public static void main(final String[] args) {
         run(args);
