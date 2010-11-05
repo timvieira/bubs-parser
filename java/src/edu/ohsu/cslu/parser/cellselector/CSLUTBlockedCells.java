@@ -2,7 +2,6 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Vector;
@@ -13,37 +12,88 @@ import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
+/*
+
+ Example scores for the first sentence of WSJ section 24.  A low (negative)
+ score is good (meaning it is likely the start of a constituent) while 
+ a high score is bad.  
+
+ beg        end    [unary]
+ The        -535.54     280.54   293.54
+ economy     157.15     150.01   432.67
+ 's          132.81    -125.78   217.10
+ temperature 181.63    -100.70   120.67
+ will       -127.94     181.23   142.86
+ be         -152.23     109.31   143.28
+ taken      -127.17     108.56   104.78
+ from       -177.70     203.97   117.71
+ several    -191.64     125.59   127.31
+ vantage     126.39      70.12   265.25
+ points       75.31     -70.11   150.64
+ this       -190.60     184.84   150.59
+ week        191.55    -171.90   193.59
+ ,           157.11      82.25      Inf
+ with       -158.21     155.34   154.05
+ readings    -88.12      72.08  -147.34
+ on         -191.74     193.42   162.00
+ trade       -73.60      44.42   105.65
+ ,           186.18     163.89      Inf
+ output      103.79     139.51    27.98
+ ,           181.12     130.75      Inf
+ housing      59.41     213.51    32.62
+ and         203.68     180.29   196.51
+ inflation   291.98    -180.37    18.51
+ .              Inf    -242.37      Inf
+
+ */
+
 public class CSLUTBlockedCells extends CellSelector {
 
     private LinkedList<ChartCell> cellList;
     public HashMap<String, Vector<Float>> allStartScores, allEndScores, allUnaryScores;
     public Vector<Float> curStartScore, curEndScore, curUnaryScore;
-    private float cellTune, unaryTune;
+    // private float cellTune, unaryTune;
+    private float startThresh, endThresh, unaryThresh;
 
     private boolean[][] openAll, openFactored;
 
     // private boolean isGrammarLeftFactored;
 
     public CSLUTBlockedCells(final BufferedReader modelStream) {
-        this(modelStream, ParserDriver.param2, ParserDriver.param3);
+        this(modelStream, ParserDriver.param1, ParserDriver.param2, ParserDriver.param3);
     }
 
-    public CSLUTBlockedCells(final BufferedReader modelStream, final float cellTune, final float unaryTune) {
-        this.cellTune = cellTune;
-        this.unaryTune = unaryTune;
+    public CSLUTBlockedCells(final BufferedReader modelStream, final float startThresh, final float endThresh,
+            final float unaryThresh) {
+        // this.cellTune = cellTune;
+        // this.unaryTune = unaryTune;
         // this.isGrammarLeftFactored = isGrammarLeftFactored;
 
-        if (cellTune == -1)
-            this.cellTune = (float) 0.3;
-        if (unaryTune == -1)
-            this.unaryTune = Float.MIN_VALUE;
+        // if (cellTune == -1)
+        // this.cellTune = (float) 0.3; // TODO: re-do thresh .. see computeThresh()
+        // if (unaryTune == -1)
+        // this.unaryTune = Float.MAX_VALUE;
+
+        this.startThresh = startThresh;
+        this.endThresh = endThresh;
+        this.unaryThresh = unaryThresh;
+
+        if (startThresh == -1)
+            this.startThresh = Float.MAX_VALUE;
+        if (endThresh == -1)
+            this.endThresh = Float.MAX_VALUE;
+        if (unaryThresh == -1)
+            this.unaryThresh = Float.MAX_VALUE;
 
         try {
-            ParserDriver.getLogger().fine("Reading Cell Constraints Model ...");
-            readModel(modelStream);
+            // ParserDriver.getLogger()
+            // .fine("CellConstraints: cellTune=" + this.cellTune + " unaryTune=" + this.unaryTune);
             ParserDriver.getLogger().fine(
-                    "done.  #start=" + allStartScores.size() + " #end=" + allEndScores.size() + " #unary="
-                            + allUnaryScores.size());
+                    "CellConstraints: startThresh=" + this.startThresh + " endThresh=" + this.endThresh
+                            + " unaryThresh=" + this.unaryThresh);
+            ParserDriver.getLogger().fine("CellConstraints: Reading model ...");
+            readModel(modelStream);
+            ParserDriver.getLogger().fine("CellConstraints: done.");
         } catch (final NumberFormatException e) {
             e.printStackTrace();
         } catch (final IOException e) {
@@ -74,7 +124,8 @@ public class CSLUTBlockedCells extends CellSelector {
 
         // final float startThresh = getThresh(curStartScore, cellTune);
         // final float endThresh = getThresh(curEndScore, cellTune);
-        final float thresh = computeThresh(curStartScore, curEndScore);
+        // TODO: re-do thresh ... see computeThresh()
+        // final float thresh = computeThresh(curStartScore, curEndScore);
 
         for (int span = 1; span <= chartSize; span++) {
             for (int beg = 0; beg < chartSize - span + 1; beg++) { // beginning
@@ -84,18 +135,18 @@ public class CSLUTBlockedCells extends CellSelector {
                 totalCells++;
 
                 if (isGrammarLeftFactored) {
-                    if (curEndScore.get(end - 1) <= thresh || span == 1) {
+                    if (curEndScore.get(end - 1) <= endThresh || span == 1) {
                         openFactored[beg][end] = true;
                         cellList.add(chart.getCell(beg, end));
-                        if (curStartScore.get(beg) <= thresh || span == 1) {
+                        if (curStartScore.get(beg) <= startThresh || span == 1) {
                             openAll[beg][end] = true;
                         }
                     }
                 } else {
-                    if (curStartScore.get(beg) <= thresh || span == 1) {
+                    if (curStartScore.get(beg) <= startThresh || span == 1) {
                         openFactored[beg][end] = true;
                         cellList.add(chart.getCell(beg, end));
-                        if (curEndScore.get(end - 1) <= thresh || span == 1) {
+                        if (curEndScore.get(end - 1) <= endThresh || span == 1) {
                             openAll[beg][end] = true;
                         }
                     }
@@ -121,27 +172,35 @@ public class CSLUTBlockedCells extends CellSelector {
     /*
      * given two list of floats ranging from -inf to +inf, find the threshold such that only 'pctToPrune' of the
      * *positive* entries are greater than this threshold
+     * 
+     * TODO: I think we could get better results by supplying absolute Start/End thresh values since (1) cells should be
+     * pruned globally relative to the classifier score, not locally ... I think Brian/Kristy did this so they could
+     * guarantee the linear constraint per sentence. (2) Start and End are completely separate classifiers and their
+     * scores probably shouldn't be compared.
+     * 
+     * To implement the above, we don't use this function at all and require the user to specify two thresh values:
+     * startThresh and endThresh
      */
-    private float computeThresh(final Vector<Float> startScores, final Vector<Float> endScores) {
-        final Vector<Float> positiveScores = new Vector<Float>();
-        for (final float value : startScores) {
-            if (value >= 0)
-                positiveScores.add(value);
-        }
-        for (final float value : endScores) {
-            if (value >= 0)
-                positiveScores.add(value);
-        }
-        Collections.sort(positiveScores);
-
-        if (positiveScores.size() == 0 || cellTune <= 0.0) {
-            return 0;
-        } else if (cellTune >= 1.0) {
-            return positiveScores.lastElement();
-        }
-
-        return positiveScores.get((int) (positiveScores.size() * cellTune));
-    }
+    // private float computeThresh(final Vector<Float> startScores, final Vector<Float> endScores) {
+    // final Vector<Float> positiveScores = new Vector<Float>();
+    // for (final float value : startScores) {
+    // if (value >= 0)
+    // positiveScores.add(value);
+    // }
+    // for (final float value : endScores) {
+    // if (value >= 0)
+    // positiveScores.add(value);
+    // }
+    // Collections.sort(positiveScores);
+    //
+    // if (positiveScores.size() == 0 || cellTune <= 0.0) {
+    // return 0;
+    // } else if (cellTune >= 1.0) {
+    // return positiveScores.lastElement();
+    // }
+    //
+    // return positiveScores.get((int) (positiveScores.size() * cellTune));
+    // }
 
     public boolean isCellOpen(final int start, final int end) {
         return openAll[start][end];
@@ -168,7 +227,7 @@ public class CSLUTBlockedCells extends CellSelector {
         if (end - start > 1) {
             return true;
         }
-        if (curUnaryScore.get(start) >= unaryTune) {
+        if (curUnaryScore.get(start) < unaryThresh) {
             return true;
         }
         return false;
