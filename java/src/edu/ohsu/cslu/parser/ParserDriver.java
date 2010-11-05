@@ -41,12 +41,13 @@ import edu.ohsu.cslu.parser.agenda.APWithMemory;
 import edu.ohsu.cslu.parser.agenda.AgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParserWithCSLUT;
+import edu.ohsu.cslu.parser.beam.BSCPBeamConf;
+import edu.ohsu.cslu.parser.beam.BSCPBeamConfTrain;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
 import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
 import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
 import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
-import edu.ohsu.cslu.parser.beam.BSCPTrainFOMConfidence;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
@@ -69,6 +70,7 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
+import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 
 /**
  * Driver class for all parser implementations.
@@ -106,6 +108,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-fomModel", metaVar = "file", hidden = true, usage = "FOM model file")
     private String fomModelFileName = null;
     public BufferedReader fomModelStream = null;
+
+    @Option(name = "-beamConfModel", usage = "required Beam Confidence Model for beamconf Parser")
+    private String beamConfModelFileName = null;
+    private AveragedPerceptron beamConfModel = null;
 
     // Nate: I don't think we need to expose this to the user. Instead
     // there should be different possible parsers since changing the
@@ -153,6 +159,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Option(name = "-x3", hidden = true, usage = "Tuning param #3")
     public static float param3 = -1;
+
+    @Option(name = "-feats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    public static String featTemplate;
 
     // TODO: embed this info into the grammar file as meta data and remove these options
     @Option(name = "-hMarkov", hidden = true, usage = "Horizontal Markov order of input Grammar")
@@ -242,6 +251,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 cellModelStream = new BufferedReader(new FileReader(cellModelFileName));
             }
 
+            if (beamConfModelFileName != null) {
+                beamConfModel = new AveragedPerceptron(new BufferedReader(new FileReader(beamConfModelFileName)));
+            }
+
             // param validation checks
             if (edgeFOMType == EdgeSelectorType.BoundaryInOut && fomModelFileName == null) {
                 throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomModel param set");
@@ -326,7 +339,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case BSCPExpDecay:
         case BSCPPerceptronCell:
         case BSCPFomDecode:
-        case BSCPTrainFOMConfidence:
+        case BSCPBeamConfTrain:
+        case BSCPBeamConf:
         case CoarseCellAgenda:
         case CoarseCellAgendaCSLUT:
             return new LeftHashGrammar(genericGrammar);
@@ -414,8 +428,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new BSCPSkipBaseCells(parserOptions, (LeftHashGrammar) grammar);
         case BSCPFomDecode:
             return new BSCPFomDecode(parserOptions, (LeftHashGrammar) grammar);
-        case BSCPTrainFOMConfidence:
-            return new BSCPTrainFOMConfidence(parserOptions, (LeftHashGrammar) grammar);
+        case BSCPBeamConf:
+            return new BSCPBeamConf(parserOptions, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
+        case BSCPBeamConfTrain:
+            return new BSCPBeamConfTrain(parserOptions, (LeftHashGrammar) grammar);
 
         case CoarseCellAgenda:
             return new CoarseCellAgendaParser(parserOptions, (LeftHashGrammar) grammar);
