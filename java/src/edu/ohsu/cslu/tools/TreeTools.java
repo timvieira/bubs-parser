@@ -33,6 +33,9 @@ public class TreeTools extends BaseCommandlineTool {
     @Option(name = "-unbinarize", usage = "Unbinarize input trees")
     private boolean unbinarize = false;
 
+    @Option(name = "-grammarFormat", usage = "Grammar format of input trees to be unbinarized")
+    private GrammarFormatType grammarFormat = GrammarFormatType.CSLU;
+
     @Option(name = "-cleanRawTreebank", usage = "Remove TMP labels, empty nodes, and X=>X unaries")
     private boolean cleanRawTreebank = false;
 
@@ -55,15 +58,14 @@ public class TreeTools extends BaseCommandlineTool {
 
             if (unbinarize) {
                 // outputStream.write(sentence);
-                unbinarizeTree(tree, GrammarFormatType.CSLU);
+                unbinarizeTree(tree, grammarFormat);
             } else if (cleanRawTreebank) {
                 // removeTmpLabels(tree);
                 // removeEmptyNodes(tree);
                 // removeSpuriousUnaries(tree);
                 removeTmpLabelsEmptyNodesAndSpuriousUnaries(tree);
             } else if (binarize) {
-                final GrammarFormatType gramFormat = GrammarFormatType.CSLU;
-                binarizeTree(tree, rightFactor, horizontalMarkov, verticalMarkov, annotatePOS, gramFormat);
+                binarizeTree(tree, rightFactor, horizontalMarkov, verticalMarkov, annotatePOS, grammarFormat);
             } else if (countMaxSpans) {
                 constituentSpanCountForKristy();
             } else {
