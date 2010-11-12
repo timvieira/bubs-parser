@@ -15,15 +15,15 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         ChartParser<LeftHashGrammar, CellChart> {
 
     PriorityQueue<ChartEdge> agenda;
-    int beamWidth, cellPushed, cellPopped, cellConsidered;
+    int initialBeamWidth, beamWidth, cellPushed, cellPopped, cellConsidered, parseAttempts;
     float beamDeltaThresh;
 
     public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
 
-        beamWidth = (int) ParserDriver.param1;
-        if (beamWidth < 0)
-            beamWidth = Integer.MAX_VALUE;
+        initialBeamWidth = (int) ParserDriver.param1;
+        if (initialBeamWidth < 0)
+            initialBeamWidth = Integer.MAX_VALUE;
 
         beamDeltaThresh = (int) ParserDriver.param2;
         if (beamDeltaThresh < 0)
@@ -44,17 +44,26 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         edgeSelector.init(chart);
         currentInput.fomInitSec = (float) ((System.currentTimeMillis() - startTimeMS) / 1000.0);
 
-        while (cellSelector.hasNext() && !chart.hasCompleteParse(grammar.startSymbol)) {
-            cellPushed = 0;
-            cellPopped = 0;
-            cellConsidered = 0;
+        parseAttempts = 0;
+        while (parseAttempts < 3 && chart.hasCompleteParse(grammar.startSymbol) == false) {
+            // increase beam width after failed parse
+            parseAttempts++;
+            beamWidth = initialBeamWidth * parseAttempts;
+            // beamWidth = minBeamWidth * Math.pow(2,parseAttempts-1) // double beamWidth each parse attempt
 
-            final short[] startAndEnd = cellSelector.next();
-            visitCell(startAndEnd[0], startAndEnd[1]);
+            cellSelector.reset();
+            while (cellSelector.hasNext()) {
+                cellPushed = 0;
+                cellPopped = 0;
+                cellConsidered = 0;
 
-            currentInput.totalPushes += cellPushed;
-            currentInput.totalPops += cellPopped;
-            currentInput.totalConsidered += cellConsidered;
+                final short[] startAndEnd = cellSelector.next();
+                visitCell(startAndEnd[0], startAndEnd[1]);
+
+                currentInput.totalPushes += cellPushed;
+                currentInput.totalPops += cellPopped;
+                currentInput.totalConsidered += cellConsidered;
+            }
         }
 
         return chart.extractBestParse(grammar.startSymbol);
@@ -133,5 +142,10 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 }
             }
         }
+    }
+
+    @Override
+    public String getStats() {
+        return super.getStats() + " parseAttempts=" + parseAttempts;
     }
 }

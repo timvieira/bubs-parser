@@ -36,4 +36,9 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     public boolean hasNext() {
         return currentCell < cells;
     }
+
+    @Override
+    public void reset() {
+        currentCell = 0;
+    }
 }

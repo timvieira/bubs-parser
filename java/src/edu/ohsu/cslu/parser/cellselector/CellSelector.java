@@ -91,4 +91,8 @@ public abstract class CellSelector implements Iterator<short[]> {
     public void writeModel(final BufferedWriter outStream) throws Exception {
         throw new UnsupportedOperationException();
     }
+
+    public void reset() {
+        throw new UnsupportedOperationException();
+    }
 }
