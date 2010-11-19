@@ -49,7 +49,6 @@ public class DenseVectorChart extends ParallelArrayChart {
 
     @Override
     public void clear(final int sentenceLength) {
-        this.size = sentenceLength;
         // TODO We probably don't need to re-initialize all three arrays
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         Arrays.fill(packedChildren, 0);
@@ -93,12 +92,13 @@ public class DenseVectorChart extends ParallelArrayChart {
 
             if (insideProbability > insideProbabilities[index]) {
                 if (p.isBinaryProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
-                            p.rightChild);
+                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().pack((short) p.leftChild,
+                            (short) p.rightChild);
                 } else if (p.isLexProd()) {
                     packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packLexical(p.leftChild);
                 } else {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packUnary(p.leftChild);
+                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
+                            (short) p.leftChild);
                 }
                 insideProbabilities[index] = insideProbability;
 
@@ -118,14 +118,14 @@ public class DenseVectorChart extends ParallelArrayChart {
             if (edge.inside() > insideProbabilities[index]) {
 
                 if (edge.prod.isBinaryProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().pack(edge.prod.leftChild,
-                            edge.prod.rightChild);
+                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().pack(
+                            (short) edge.prod.leftChild, (short) edge.prod.rightChild);
                 } else if (edge.prod.isLexProd()) {
                     packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
                             edge.prod.leftChild);
                 } else {
                     packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
-                            edge.prod.leftChild);
+                            (short) edge.prod.leftChild);
                 }
                 insideProbabilities[index] = edge.inside();
 

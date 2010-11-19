@@ -126,7 +126,7 @@ public class CsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGramm
             final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
 
             for (int i = leftStart; i <= leftEnd; i++) {
-                final int leftChild = nonTerminalIndices[i];
+                final short leftChild = nonTerminalIndices[i];
                 final float leftProbability = insideProbabilities[i];
 
                 for (int j = rightStart; j <= rightEnd; j++) {

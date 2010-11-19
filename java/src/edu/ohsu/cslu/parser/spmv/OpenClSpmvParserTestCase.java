@@ -4,7 +4,6 @@ import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
@@ -47,9 +46,9 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         simpleGrammar2 = null;
     }
 
-    @Override
-    @Ignore("OpenCL Parsers do not currently implement filtering")
-    public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
-    }
+    // @Override
+    // @Ignore("OpenCL Parsers do not currently implement filtering")
+    // public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
+    // }
 
 }

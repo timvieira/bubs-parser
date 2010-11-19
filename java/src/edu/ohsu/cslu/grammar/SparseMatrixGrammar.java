@@ -11,11 +11,8 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
-import edu.ohsu.cslu.datastructs.vectors.BitVector;
-import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
-import edu.ohsu.cslu.hash.PerfectInt2IntHash;
-import edu.ohsu.cslu.hash.SegmentedPerfectIntPair2IntHash;
 import edu.ohsu.cslu.util.Math;
+import edu.ohsu.cslu.util.Strings;
 
 /**
  * Stores a grammar as a sparse matrix of probabilities.
@@ -57,6 +54,13 @@ public abstract class SparseMatrixGrammar extends Grammar {
     /** Unary rule probabilities */
     public final float[] csrUnaryProbabilities;
 
+    /**
+     * Indices of the first and last non-terminals which can combine as the right sibling with each non-terminal
+     * (indexed by left-child index)
+     */
+    public final short[] minRightSiblingIndices;
+    public final short[] maxRightSiblingIndices;
+
     public SparseMatrixGrammar(final Reader grammarFile, final Class<? extends CartesianProductFunction> functionClass)
             throws IOException {
         super(grammarFile);
@@ -70,6 +74,10 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.csrUnaryProbabilities = new float[numUnaryProds()];
 
         storeUnaryRulesAsCsrMatrix();
+
+        minRightSiblingIndices = new short[numNonTerms()];
+        maxRightSiblingIndices = new short[numNonTerms()];
+        storeRightSiblingIndices();
     }
 
     public SparseMatrixGrammar(final Reader grammarFile) throws IOException {
@@ -93,13 +101,17 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.csrUnaryProbabilities = new float[numUnaryProds()];
 
         storeUnaryRulesAsCsrMatrix();
+
+        minRightSiblingIndices = new short[numNonTerms()];
+        maxRightSiblingIndices = new short[numNonTerms()];
+        storeRightSiblingIndices();
     }
 
     private int countValidProductionPairs() {
         // Some CartesianProductFunction implementation will duplicate this count, but it's not that expensive
         final IntOpenHashSet productionPairs = new IntOpenHashSet(50000);
         for (final Production p : binaryProductions) {
-            productionPairs.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
+            productionPairs.add(cartesianProductFunction.pack((short) p.leftChild, (short) p.rightChild));
         }
         return productionPairs.size();
     }
@@ -136,7 +148,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     @Override
     public final float binaryLogProbability(final int parent, final int leftChild, final int rightChild) {
-        return binaryLogProbability(parent, cartesianProductFunction.pack(leftChild, (short) rightChild));
+        return binaryLogProbability(parent, cartesianProductFunction.pack((short) leftChild, (short) rightChild));
     }
 
     /**
@@ -187,6 +199,20 @@ public abstract class SparseMatrixGrammar extends Grammar {
         csrUnaryRowStartIndices[csrUnaryRowStartIndices.length - 1] = i;
     }
 
+    private void storeRightSiblingIndices() {
+        Arrays.fill(minRightSiblingIndices, Short.MAX_VALUE);
+        Arrays.fill(maxRightSiblingIndices, Short.MIN_VALUE);
+
+        for (final Production p : binaryProductions) {
+            if (p.rightChild < minRightSiblingIndices[p.leftChild]) {
+                minRightSiblingIndices[p.leftChild] = (short) p.rightChild;
+            }
+            if (p.rightChild > maxRightSiblingIndices[p.leftChild]) {
+                maxRightSiblingIndices[p.leftChild] = (short) p.rightChild;
+            }
+        }
+    }
+
     /**
      * Returns the cartesian-product function in use
      * 
@@ -216,7 +242,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         final IntSet validChildPairs = new IntOpenHashSet(binaryProductions.size() / 2);
         for (final Production p : binaryProductions) {
-            validChildPairs.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
+            validChildPairs.add(cartesianProductFunction.pack((short) p.leftChild, (short) p.rightChild));
         }
 
         final StringBuilder sb = new StringBuilder(10 * 1024);
@@ -240,24 +266,47 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return sb.toString();
     }
 
-    public interface CartesianProductFunction extends Serializable {
+    public abstract class CartesianProductFunction implements Serializable {
+
+        // Shift lengths and masks for packing and unpacking non-terminals into an int
+        public final int shift;
+        protected final int lowOrderMask;
+        private final int packedArraySize;
+        public final int maxPackedLexicalProduction = -numNonTerms() - 1;
+
+        protected CartesianProductFunction(final int maxUnshiftedNonTerminal) {
+            shift = Math.logBase2(Math.nextPowerOf2(maxUnshiftedNonTerminal + 1));
+            int m = 0;
+            for (int i = 0; i < shift; i++) {
+                m = m << 1 | 1;
+            }
+            lowOrderMask = m;
+
+            packedArraySize = numNonTerms() << shift | lowOrderMask;
+        }
 
         /**
          * Returns the array size required to store all possible child combinations.
          * 
          * @return the array size required to store all possible child combinations.
          */
-        public abstract int packedArraySize();
+        public int packedArraySize() {
+            return packedArraySize;
+        }
 
         /**
          * Returns a single int representing a child pair.
          * 
+         * TODO Refactor to take short parameters instead of ints
+         * 
          * @param leftChild
          * @param rightChild
-         * @return packed representation of the specified child pair or {@link Integer#MIN_VALUE} if the pair is
-         *         invalid.
+         * @return packed representation of the specified child pair or {@link Integer#MIN_VALUE} if the pair is not
+         *         permitted by the grammar.
          */
-        public abstract int pack(final int leftChild, final int rightChild);
+        public int pack(final short leftChild, final short rightChild) {
+            return leftChild << shift | (rightChild & lowOrderMask);
+        }
 
         /**
          * Returns a single int representing a unary production.
@@ -265,7 +314,9 @@ public abstract class SparseMatrixGrammar extends Grammar {
          * @param child
          * @return packed representation of the specified production.
          */
-        public abstract int packUnary(final int child);
+        public final int packUnary(final short child) {
+            return -child - 1;
+        }
 
         /**
          * Returns a single int representing a lexical production.
@@ -273,7 +324,9 @@ public abstract class SparseMatrixGrammar extends Grammar {
          * @param child
          * @return packed representation of the specified production.
          */
-        public abstract int packLexical(final int child);
+        public final int packLexical(final int child) {
+            return maxPackedLexicalProduction - child;
+        }
 
         /**
          * Returns the left child encoded into a packed child pair
@@ -289,85 +342,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
          * @param childPair
          * @return the right child encoded into a packed child pair
          */
-        public abstract int unpackRightChild(final int childPair);
+        public abstract short unpackRightChild(final int childPair);
 
-        public abstract String openClPackDefine();
-
-        public abstract String openClUnpackLeftChild();
-    }
-
-    protected abstract class ShiftFunction implements CartesianProductFunction {
-        // Shift lengths and masks for packing and unpacking non-terminals into an int
-        public final int shift;
-        protected final int lowOrderMask;
-        private final int packedArraySize;
-
-        protected ShiftFunction(final int maxUnshiftedNonTerminal) {
-            shift = Math.logBase2(Math.nextPowerOf2(maxUnshiftedNonTerminal + 1));
-            int m = 0;
-            for (int i = 0; i < shift; i++) {
-                m = m << 1 | 1;
-            }
-            lowOrderMask = m;
-
-            packedArraySize = numNonTerms() << shift | lowOrderMask;
-        }
-
-        @Override
-        public int packedArraySize() {
-            return packedArraySize;
-        }
-    }
-
-    public abstract class LeftShiftFunction extends ShiftFunction {
-        public final int maxPackedLexicalProduction = -numNonTerms() - 1;
-
-        public LeftShiftFunction(final int maxUnshiftedNonTerminal) {
-            super(maxUnshiftedNonTerminal);
-        }
-
-        @Override
-        public int pack(final int leftChild, final int rightChild) {
-            return leftChild << shift | (rightChild & lowOrderMask);
-        }
-
-        public final int packUnary(final int child) {
-            return -child - 1;
-        }
-
-        public final int packLexical(final int child) {
-            return maxPackedLexicalProduction - child;
-        }
-
-        @Override
-        public final int unpackLeftChild(final int childPair) {
-            if (childPair < 0) {
-                // Unary or lexical production
-                if (childPair <= maxPackedLexicalProduction) {
-                    // Lexical production
-                    return -childPair + maxPackedLexicalProduction;
-                }
-                // Unary production
-                return -childPair - 1;
-            }
-            return childPair >> shift;
-        }
-
-        @Override
-        public final int unpackRightChild(final int childPair) {
-            if (childPair < 0) {
-                // Unary or lexical production
-                if (childPair <= maxPackedLexicalProduction) {
-                    // Lexical production
-                    return Production.LEXICAL_PRODUCTION;
-                }
-                // Unary production
-                return Production.UNARY_PRODUCTION;
-            }
-            return childPair & lowOrderMask;
-        }
-
-        @Override
         public final String openClPackDefine() {
             return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask + "))\n"
                     + "#define PACK_UNARY -winningChild - 1\n";
@@ -391,25 +367,54 @@ public abstract class SparseMatrixGrammar extends Grammar {
             sb.append("}\n");
             return sb.toString();
         }
+
     }
 
-    public final class SimpleShiftFunction extends LeftShiftFunction {
+    public final class LeftShiftFunction extends CartesianProductFunction {
 
-        public SimpleShiftFunction() {
+        public LeftShiftFunction() {
             super(rightChildrenEnd);
         }
 
         @Override
-        public final int pack(final int leftChild, final int rightChild) {
+        public final int pack(final short leftChild, final short rightChild) {
             final int childPair = leftChild << shift | (rightChild & lowOrderMask);
             if (childPair > packedArraySize()) {
                 return Integer.MIN_VALUE;
             }
             return childPair;
         }
+
+        @Override
+        public final int unpackLeftChild(final int childPair) {
+            if (childPair < 0) {
+                // Unary or lexical production
+                if (childPair <= maxPackedLexicalProduction) {
+                    // Lexical production
+                    return -childPair + maxPackedLexicalProduction;
+                }
+                // Unary production
+                return -childPair - 1;
+            }
+            return childPair >> shift;
+        }
+
+        @Override
+        public final short unpackRightChild(final int childPair) {
+            if (childPair < 0) {
+                // Unary or lexical production
+                if (childPair <= maxPackedLexicalProduction) {
+                    // Lexical production
+                    return Production.LEXICAL_PRODUCTION;
+                }
+                // Unary production
+                return Production.UNARY_PRODUCTION;
+            }
+            return (short) (childPair & lowOrderMask);
+        }
     }
 
-    public class RightShiftFunction extends ShiftFunction {
+    public class RightShiftFunction extends CartesianProductFunction {
         public final int maxPackedLexicalProduction = -numNonTerms() - 1;
 
         public RightShiftFunction() {
@@ -417,20 +422,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
 
         @Override
-        public final int pack(final int leftChild, final int rightChild) {
+        public final int pack(final short leftChild, final short rightChild) {
             final int childPair = rightChild << shift | (leftChild & lowOrderMask);
             if (childPair > packedArraySize()) {
                 return Integer.MIN_VALUE;
             }
             return childPair;
-        }
-
-        public final int packUnary(final int child) {
-            return -child - 1;
-        }
-
-        public final int packLexical(final int child) {
-            return maxPackedLexicalProduction - child;
         }
 
         @Override
@@ -448,7 +445,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
 
         @Override
-        public final int unpackRightChild(final int childPair) {
+        public final short unpackRightChild(final int childPair) {
             if (childPair < 0) {
                 // Unary or lexical production
                 if (childPair <= maxPackedLexicalProduction) {
@@ -458,198 +455,266 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 // Unary production
                 return Production.UNARY_PRODUCTION;
             }
-            return childPair >> shift;
+            return (short) (childPair >> shift);
         }
 
-        @Override
-        public final String openClPackDefine() {
-            return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask + "))\n"
-                    + "#define PACK_UNARY -winningChild - 1\n";
-        }
-
-        public final String openClUnpackLeftChild() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("int unpackLeftChild(const int childPair) {\n");
-            sb.append("    if (childPair < 0) {\n");
-            sb.append("        // Unary or lexical production\n");
-            sb.append("        if (childPair <= MAX_PACKED_LEXICAL_PRODUCTION) {\n");
-            sb.append("            // Lexical production\n");
-            sb.append("            return -childPair + MAX_PACKED_LEXICAL_PRODUCTION;\n");
-            sb.append("        }\n");
-            sb.append("        // Unary production\n");
-            sb.append("        return -childPair - 1;\n");
-            sb.append("    }\n");
-            sb.append("    \n");
-            sb.append("    // Left child of binary production\n");
-            sb.append("    return childPair & " + lowOrderMask + ";\n");
-            sb.append("}\n");
-            return sb.toString();
-        }
+        // @Override
+        // public final String openClPackDefine() {
+        // return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask + "))\n"
+        // + "#define PACK_UNARY -winningChild - 1\n";
+        // }
+        //
+        // public final String openClUnpackLeftChild() {
+        // final StringBuilder sb = new StringBuilder();
+        // sb.append("int unpackLeftChild(const int childPair) {\n");
+        // sb.append("    if (childPair < 0) {\n");
+        // sb.append("        // Unary or lexical production\n");
+        // sb.append("        if (childPair <= MAX_PACKED_LEXICAL_PRODUCTION) {\n");
+        // sb.append("            // Lexical production\n");
+        // sb.append("            return -childPair + MAX_PACKED_LEXICAL_PRODUCTION;\n");
+        // sb.append("        }\n");
+        // sb.append("        // Unary production\n");
+        // sb.append("        return -childPair - 1;\n");
+        // sb.append("    }\n");
+        // sb.append("    \n");
+        // sb.append("    // Left child of binary production\n");
+        // sb.append("    return childPair & " + lowOrderMask + ";\n");
+        // sb.append("}\n");
+        // return sb.toString();
+        // }
     }
 
-    public final class UnfilteredFunction extends LeftShiftFunction {
-        public UnfilteredFunction() {
-            super(numNonTerms());
-        }
-    }
-
-    public final class BitVectorExactFilterFunction extends LeftShiftFunction {
-
-        /**
-         * {@link BitVector} of child pairs found in binary grammar rules.
-         * 
-         * TODO This should really be implemented as a PackedBitMatrix, if we had such a class
-         */
-        private final PackedBitVector validChildPairs;
-
-        public BitVectorExactFilterFunction() {
-            super(rightChildrenEnd);
-
-            validChildPairs = new PackedBitVector(packedArraySize());
-
-            for (final Production p : binaryProductions) {
-                validChildPairs.add(internalPack(p.leftChild, p.rightChild));
-            }
-        }
-
-        @Override
-        public final int pack(final int leftChild, final int rightChild) {
-            final int childPair = internalPack(leftChild, rightChild);
-            if (!validChildPairs.contains(childPair)) {
-                return Integer.MIN_VALUE;
-            }
-            return childPair;
-        }
-
-        private int internalPack(final int leftChild, final int rightChild) {
-            return leftChild << shift | (rightChild & lowOrderMask);
-        }
-    }
-
-    public final class PerfectHashFilterFunction extends ShiftFunction {
+    public final class PerfectIntPairHashFilterFunction extends CartesianProductFunction {
 
         private final int maxLexicalProduction = -numNonTerms() - 1;
 
-        /** Perfect (collision-free) hash of all observed child pairs. */
-        private final PerfectInt2IntHash perfectHash;
-
         private final int packedArraySize;
 
-        public PerfectHashFilterFunction() {
+        /** Parallel array, indexed by k1 */
+        private final int[] maxKey2;
+        private final int[] k2Shifts;
+        private final int[] k2Masks;
 
-            super(rightChildrenEnd);
+        /** Offsets of each perfect hash `segment' within {@link #hashtable}, indexed by k1. */
+        private final int[] hashtableOffsets;
+        private final short[] hashtable;
 
-            final IntSet childPairs = new IntOpenHashSet(binaryProductions.size());
-            for (final Production p : binaryProductions) {
-                childPairs.add(internalPack(p.leftChild, p.rightChild));
-            }
+        /** Offsets of each perfect hash `segment' within {@link #displacementTableOffsets}, indexed by k1. */
+        private final int[] displacementTable;
+        private final int[] displacementTableOffsets;
 
-            this.perfectHash = new PerfectInt2IntHash(childPairs.toIntArray());
-            System.out.println("Hashed grammar: " + perfectHash.toString());
-            this.packedArraySize = perfectHash.hashtableSize();
-        }
-
-        @Override
-        public final int pack(final int leftChild, final int rightChild) {
-            // TODO Combine shifting and masking here with the shift and mask in unsafeHashcode
-            return perfectHash.unsafeHashcode(leftChild << shift | (rightChild & lowOrderMask));
-        }
-
-        private int internalPack(final int leftChild, final int rightChild) {
-            return leftChild << shift | (rightChild & lowOrderMask);
-        }
-
-        public final int packUnary(final int child) {
-            return -child - 1;
-        }
-
-        public final int packLexical(final int child) {
-            return maxLexicalProduction - child;
-        }
-
-        @Override
-        public final int unpackLeftChild(final int packedChildPair) {
-            if (packedChildPair < 0) {
-                // Unary or lexical production
-                if (packedChildPair <= maxLexicalProduction) {
-                    // Lexical production
-                    return -packedChildPair + maxLexicalProduction;
-                }
-                // Unary production
-                return -packedChildPair - 1;
-            }
-
-            final int childPair = perfectHash.unsafeKey(packedChildPair);
-            return childPair >> shift;
-        }
-
-        @Override
-        public final int unpackRightChild(final int packedChildPair) {
-            if (packedChildPair < 0) {
-                // Unary or lexical production
-                if (packedChildPair <= maxLexicalProduction) {
-                    // Lexical production
-                    return Production.LEXICAL_PRODUCTION;
-                }
-                // Unary production
-                return Production.UNARY_PRODUCTION;
-            }
-
-            final int childPair = perfectHash.unsafeKey(packedChildPair);
-            return childPair & lowOrderMask;
-        }
-
-        @Override
-        public int packedArraySize() {
-            return packedArraySize;
-        }
-
-        @Override
-        public String openClPackDefine() {
-            return "";
-        }
-
-        @Override
-        public String openClUnpackLeftChild() {
-            return "";
-        }
-    }
-
-    public final class PerfectIntPairHashFilterFunction extends ShiftFunction {
-
-        private final int maxLexicalProduction = -numNonTerms() - 1;
-
-        /** Perfect (collision-free) hash of all observed child pairs. */
-        private final SegmentedPerfectIntPair2IntHash perfectHash;
-
-        private final int packedArraySize;
+        private final int size;
 
         public PerfectIntPairHashFilterFunction() {
             super(rightChildrenEnd);
 
             final int[][] childPairs = new int[2][binaryProductions.size()];
-            int i = 0;
+            int k = 0;
             for (final Production p : binaryProductions) {
-                childPairs[0][i] = p.leftChild;
-                childPairs[1][i++] = p.rightChild;
+                childPairs[0][k] = p.leftChild;
+                childPairs[1][k++] = p.rightChild;
             }
 
-            this.perfectHash = new SegmentedPerfectIntPair2IntHash(childPairs);
-            System.out.println("Hashed grammar: " + perfectHash.toString());
-            this.packedArraySize = perfectHash.hashtableSize();
+            // System.out.println("Hashed grammar: " + perfectHash.toString());
+
+            final int parallelArraySize = Math.max(childPairs[0]) + 1;
+
+            // Find unique k2 values for each k1
+            final IntOpenHashSet[] k2Sets = new IntOpenHashSet[parallelArraySize];
+            for (int i = 0; i < k2Sets.length; i++) {
+                k2Sets[i] = new IntOpenHashSet();
+            }
+            for (int i = 0; i < childPairs[0].length; i++) {
+                k2Sets[childPairs[0][i]].add(childPairs[1][i]);
+            }
+
+            // Calculate total key pair count
+            int tmpSize = 0;
+            for (int i = 0; i < k2Sets.length; i++) {
+                tmpSize += k2Sets[i].size();
+            }
+            this.size = tmpSize;
+
+            this.maxKey2 = new int[parallelArraySize];
+
+            // Indexed by k1
+            final int[][] k2s = new int[parallelArraySize][];
+            for (int i = 0; i < k2s.length; i++) {
+                k2s[i] = k2Sets[i].toIntArray();
+                maxKey2[i] = Math.max(k2s[i]);
+            }
+
+            this.k2Shifts = new int[parallelArraySize];
+            this.k2Masks = new int[parallelArraySize];
+            this.hashtableOffsets = new int[parallelArraySize + 1];
+            this.displacementTableOffsets = new int[parallelArraySize + 1];
+
+            final int tmpArraySize = parallelArraySize * Math.max(childPairs[1]) + 1;
+            final short[] tmpHashtable = new short[tmpArraySize];
+            final int[] tmpDisplacementTable = new int[tmpArraySize];
+
+            for (int k1 = 0; k1 < k2s.length; k1++) {
+
+                final HashtableSegment hs = createPerfectHash(k2s[k1]);
+
+                this.k2Masks[k1] = hs.hashMask;
+                this.k2Shifts[k1] = hs.hashShift;
+
+                // Record the offsets
+                hashtableOffsets[k1 + 1] = hashtableOffsets[k1] + hs.hashtableSegment.length;
+                displacementTableOffsets[k1 + 1] = displacementTableOffsets[k1] + hs.displacementTableSegment.length;
+
+                // Copy the segment into the temporary hash and displacement arrays
+                System.arraycopy(hs.hashtableSegment, 0, tmpHashtable, hashtableOffsets[k1], hs.hashtableSegment.length);
+
+                for (int j = 0; j < hs.displacementTableSegment.length; j++) {
+                    tmpDisplacementTable[displacementTableOffsets[k1] + j] = hashtableOffsets[k1]
+                            + hs.displacementTableSegment[j];
+                }
+            }
+
+            this.hashtable = new short[hashtableOffsets[parallelArraySize]];
+            System.arraycopy(tmpHashtable, 0, this.hashtable, 0, this.hashtable.length);
+            this.displacementTable = new int[displacementTableOffsets[parallelArraySize]];
+            System.arraycopy(tmpDisplacementTable, 0, this.displacementTable, 0, this.displacementTable.length);
+
+            this.packedArraySize = hashtableSize();
+        }
+
+        private int findDisplacement(final short[] target, final short[] merge) {
+            for (int s = 0; s <= target.length - merge.length; s++) {
+                if (!shiftCollides(target, merge, s)) {
+                    return s;
+                }
+            }
+            throw new RuntimeException("Unable to find a successful shift");
+        }
+
+        private HashtableSegment createPerfectHash(final int[] k2s) {
+
+            // If there are no k2 entries for this k1, return a single-entry hash segment, with a shift and mask
+            // that will always resolve to the single (empty) entry
+            if (k2s.length == 0) {
+                return new HashtableSegment(new short[] { Short.MIN_VALUE }, 1, new int[] { 0 }, 1, 32, 0x0,
+                        new short[][] { { Short.MIN_VALUE } });
+            }
+
+            // Compute the size of the square matrix (m)
+            final int m = Math.nextPowerOf2((int) java.lang.Math.sqrt(Math.max(k2s)) + 1);
+            final int n = m;
+
+            // Allocate a temporary hashtable of the maximum possible size
+            final short[] hashtableSegment = new short[m * n];
+            Arrays.fill(hashtableSegment, Short.MIN_VALUE);
+
+            // Allocate the displacement table (r in Getty's notation)
+            final int[] displacementTableSegment = new int[m];
+
+            // Compute shift and mask (for hashing k2, prior to displacement)
+            final int hashBitShift = Math.logBase2(m);
+            int tmp = 0;
+            for (int j = 0; j < hashBitShift; j++) {
+                tmp = tmp << 1 | 0x01;
+            }
+            final int hashMask = tmp;
+
+            // Initialize the matrix
+            final int[] rowIndices = new int[m];
+            final int[] rowCounts = new int[m];
+            final short[][] tmpMatrix = new short[m][n];
+            for (int i = 0; i < m; i++) {
+                rowIndices[i] = i;
+                Arrays.fill(tmpMatrix[i], Short.MIN_VALUE);
+            }
+
+            // Populate the matrix, and count population of each row.
+            for (int i = 0; i < k2s.length; i++) {
+                final int k2 = k2s[i];
+                final int x = k2 >> hashBitShift;
+                final int y = k2 & hashMask;
+                tmpMatrix[x][y] = (short) k2;
+                rowCounts[x]++;
+            }
+
+            // Sort rows in ascending order by population (we'll iterate through the array in reverse order)
+            edu.ohsu.cslu.util.Arrays.sort(rowCounts, rowIndices);
+
+            /*
+             * Store matrix rows in a single array, using the first-fit descending method. For each non-empty row:
+             * 
+             * 1. Displace the row right until none of its items collide with any of the items in previous rows.
+             * 
+             * 2. Record the displacement amount in displacementTableSegment.
+             * 
+             * 3. Insert this row into hashtableSegment.
+             */
+            for (int i = m - 1; i >= 0; i--) {
+                final int row = rowIndices[i];
+                displacementTableSegment[row] = findDisplacement(hashtableSegment, tmpMatrix[row]);
+                for (int col = 0; col < m; col++) {
+                    if (tmpMatrix[row][col] != Short.MIN_VALUE) {
+                        hashtableSegment[displacementTableSegment[row] + col] = tmpMatrix[row][col];
+                    }
+                }
+            }
+
+            // Find the length of the segment (highest populated index in tmpHashtable + n)
+            int maxPopulatedIndex = 0;
+            for (int i = 0; i < hashtableSegment.length; i++) {
+                if (hashtableSegment[i] != Short.MIN_VALUE) {
+                    maxPopulatedIndex = i;
+                }
+            }
+            final int segmentLength = maxPopulatedIndex + n;
+
+            return new HashtableSegment(hashtableSegment, segmentLength, displacementTableSegment, m, hashBitShift,
+                    hashMask, tmpMatrix);
+        }
+
+        /**
+         * Returns true if the merged array, when shifted by s, will `collide' with the target array; i.e., if we
+         * right-shift merge by s, are any populated elements of merge also populated elements of target.
+         * 
+         * @param target
+         * @param merge
+         * @param s
+         * @return
+         */
+        private boolean shiftCollides(final short[] target, final short[] merge, final int s) {
+            for (int i = 0; i < merge.length; i++) {
+                if (merge[i] != Short.MIN_VALUE && target[s + i] != Short.MIN_VALUE) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
-        public final int pack(final int leftChild, final int rightChild) {
-            return perfectHash.unsafeHashcode(leftChild, rightChild);
+        public final int pack(final short leftChild, final short rightChild) {
+            final int mask = k2Masks[leftChild];
+            final int x = rightChild >> k2Shifts[leftChild] & mask;
+            final int y = rightChild & mask;
+            final int hashcode = displacementTable[displacementTableOffsets[leftChild] + x] + y;
+            return hashtable[hashcode] == rightChild ? hashcode : Integer.MIN_VALUE;
         }
 
-        public final int packUnary(final int child) {
-            return -child - 1;
+        public final int mask(final short leftChild) {
+            return k2Masks[leftChild];
         }
 
-        public final int packLexical(final int child) {
-            return maxLexicalProduction - child;
+        public final int offset(final short leftChild) {
+            return displacementTableOffsets[leftChild];
+        }
+
+        public final int shift(final short leftChild) {
+            return k2Shifts[leftChild];
+        }
+
+        public final int pack(final short rightChild, final int shift, final int mask, final int offset) {
+            final int x = rightChild >> shift & mask;
+            final int y = rightChild & mask;
+            final int hashcode = displacementTable[offset + x] + y;
+            return hashtable[hashcode] == rightChild ? hashcode : Integer.MIN_VALUE;
         }
 
         @Override
@@ -664,11 +729,18 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 return -childPair - 1;
             }
 
-            return perfectHash.unsafeKey1(childPair);
+            // Linear search hashtable offsets for index of next-lower offset
+            // A binary search might be a bit more efficient, but this shouldn't be a major time consumer
+            for (int k1 = 0; k1 < hashtableOffsets.length - 1; k1++) {
+                if (childPair >= hashtableOffsets[k1] && childPair < hashtableOffsets[k1 + 1]) {
+                    return k1;
+                }
+            }
+            return hashtableOffsets.length - 1;
         }
 
         @Override
-        public final int unpackRightChild(final int childPair) {
+        public final short unpackRightChild(final int childPair) {
             if (childPair < 0) {
                 // Unary or lexical production
                 if (childPair <= maxLexicalProduction) {
@@ -679,22 +751,83 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 return Production.UNARY_PRODUCTION;
             }
 
-            return perfectHash.unsafeKey2(childPair);
+            return hashtable[childPair];
+        }
+
+        public final int hashtableSize() {
+            return hashtable.length;
+        }
+
+        public final int size() {
+            return size;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("keys: %d hashtable size: %d occupancy: %.2f%% shift-table size: %d totalMem: %d",
+                    size, hashtableSize(), size * 100f / hashtableSize(), displacementTable.length, hashtable.length
+                            * 2 + displacementTable.length * 4);
+        }
+
+        private final class HashtableSegment {
+            final short[] hashtableSegment;
+            final int[] displacementTableSegment;
+            final int hashShift;
+            final int hashMask;
+
+            final short[][] squareMatrix;
+
+            public HashtableSegment(final short[] hashtableSegment, final int segmentLength,
+                    final int[] displacementTableSegment, final int displacementTableSegmentLength,
+                    final int hashShift, final int hashMask, final short[][] squareMatrix) {
+
+                this.hashtableSegment = new short[segmentLength];
+                System.arraycopy(hashtableSegment, 0, this.hashtableSegment, 0, segmentLength);
+                this.displacementTableSegment = new int[displacementTableSegmentLength];
+                System.arraycopy(displacementTableSegment, 0, this.displacementTableSegment, 0,
+                        displacementTableSegmentLength);
+                this.hashShift = hashShift;
+                this.hashMask = hashMask;
+                this.squareMatrix = squareMatrix;
+            }
+
+            @Override
+            public String toString() {
+                final StringBuilder sb = new StringBuilder();
+                sb.append("   |");
+                for (int col = 0; col < squareMatrix.length; col++) {
+                    sb.append(String.format(" %2d", col));
+                }
+                sb.append('\n');
+                sb.append(Strings.fill('-', squareMatrix.length * 3 + 4));
+                sb.append('\n');
+                for (int row = 0; row < squareMatrix.length; row++) {
+                    sb.append(String.format("%2d |", row));
+                    for (int col = 0; col < squareMatrix.length; col++) {
+                        sb.append(String.format(
+                                " %2s",
+                                squareMatrix[row][col] == Short.MIN_VALUE ? "-" : Short
+                                        .toString(squareMatrix[row][col])));
+                    }
+                    sb.append('\n');
+                }
+                sb.append("index: ");
+                for (int i = 0; i < hashtableSegment.length; i++) {
+                    sb.append(String.format(" %2d", i));
+                }
+                sb.append("\nkeys : ");
+                for (int i = 0; i < hashtableSegment.length; i++) {
+                    sb.append(String.format(" %2s",
+                            hashtableSegment[i] == Short.MIN_VALUE ? "-" : Short.toString(hashtableSegment[i])));
+                }
+                sb.append('\n');
+                return sb.toString();
+            }
         }
 
         @Override
         public int packedArraySize() {
             return packedArraySize;
-        }
-
-        @Override
-        public String openClPackDefine() {
-            return "";
-        }
-
-        @Override
-        public String openClUnpackLeftChild() {
-            return "";
         }
     }
 }

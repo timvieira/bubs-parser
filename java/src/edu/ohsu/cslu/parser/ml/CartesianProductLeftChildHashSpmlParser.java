@@ -75,7 +75,7 @@ public class CartesianProductLeftChildHashSpmlParser extends
             final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
 
             for (int i = leftStart; i <= leftEnd; i++) {
-                final int leftChild = chart.nonTerminalIndices[i];
+                final short leftChild = chart.nonTerminalIndices[i];
 
                 final float leftProbability = chart.insideProbabilities[i];
 

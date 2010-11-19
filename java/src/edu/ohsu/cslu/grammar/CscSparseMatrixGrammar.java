@@ -156,7 +156,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     private int[] populatedBinaryColumnIndices(final Collection<Production> productions) {
         final IntSet populatedBinaryColumnIndices = new IntOpenHashSet(binaryProductions.size() / 10);
         for (final Production p : productions) {
-            populatedBinaryColumnIndices.add(cartesianProductFunction.pack(p.leftChild, p.rightChild));
+            populatedBinaryColumnIndices.add(cartesianProductFunction.pack((short) p.leftChild, (short) p.rightChild));
         }
         final int[] sortedPopulatedBinaryColumnIndices = populatedBinaryColumnIndices.toIntArray();
         Arrays.sort(sortedPopulatedBinaryColumnIndices);
@@ -181,7 +181,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps1 = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(1000);
 
         for (final Production p : productions) {
-            final int childPair = cartesianProductFunction.pack(p.leftChild, p.rightChild);
+            final int childPair = cartesianProductFunction.pack((short) p.leftChild, (short) p.rightChild);
             Int2FloatOpenHashMap map1 = maps1.get(childPair);
             if (map1 == null) {
                 map1 = new Int2FloatOpenHashMap(20);

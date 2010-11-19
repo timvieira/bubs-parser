@@ -10,6 +10,7 @@ import org.junit.Test;
 import cltool4j.ConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.edgeselector.InsideProb;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
@@ -50,6 +51,7 @@ public class TestBeamCscSpmvParser extends
         final ParserDriver options = new ParserDriver();
         options.collectDetailedStatistics = true;
         options.binaryTreeOutput = true;
+        options.edgeSelector = new InsideProb();
         return options;
     }
 
@@ -78,4 +80,25 @@ public class TestBeamCscSpmvParser extends
     public void testSimpleGrammar2() throws Exception {
         super.testSimpleGrammar2();
     }
+
+    @Override
+    @Ignore
+    public void testCartesianProductVectorExample() {
+    }
+
+    @Override
+    @Ignore
+    public void testUnfilteredCartesianProductVectorSimpleGrammar2() {
+    }
+
+    @Override
+    @Ignore
+    public void testFilteredCartesianProductVectorSimpleGrammar2() {
+    }
+
+    @Override
+    @Ignore
+    public void testBinarySpMVMultiplySimpleGrammar2() {
+    }
+
 }

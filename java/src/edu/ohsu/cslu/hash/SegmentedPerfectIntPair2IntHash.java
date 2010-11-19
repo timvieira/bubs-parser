@@ -8,26 +8,27 @@ import edu.ohsu.cslu.util.Math;
 import edu.ohsu.cslu.util.Strings;
 
 /**
- * Implementation of {@link ImmutableIntPair2IntHash} which creates separate perfect-hashes for each key 1
- * value (generally the left child production in a grammar rule).
+ * Implementation of {@link ImmutableIntPair2IntHash} which creates separate perfect-hashes for each key 1 value
+ * (generally the left child production in a grammar rule).
  * 
  * Generates perfect hashes using the `hash-and-displace' method originally described in Tarjan and Yao, 1979
- * "Storing a sparse table". Displaces using the standard `first-fit decreasing' method (a reasonable
- * heuristic to find appropriate displacements). The resulting hashes are not minimal, but are usually fairly
- * compact.
+ * "Storing a sparse table". Displaces using the standard `first-fit decreasing' method (a reasonable heuristic to find
+ * appropriate displacements). The resulting hashes are not minimal, but are usually fairly compact.
  * 
- * Assumes that key-1 values will be (nearly) fully populated (that is, if k1 ranges from 1..n, |K1| ~= n).
- * Creates a separate perfect hash for each k1 value. Stores all hashes into a single parallel array,
- * recording offsets into that array for each k1.
+ * Assumes that key-1 values will be (nearly) fully populated (that is, if k1 ranges from 1..n, |K1| ~= n). Creates a
+ * separate perfect hash for each k1 value. Stores all hashes into a single parallel array, recording offsets into that
+ * array for each k1.
  * 
  * When creating a perfect hash, hashed k2 values are first stored in a square matrix (see Tarjan and Yao or
- * http://www.drdobbs.com/184404506). We create this matrix as a square of a power-of-two, so that the k2
- * hashes can be computed by bitwise AND with a mask. Subsequent hash queries can then be computed with
- * bitwise shift and AND operations. The matrix sizes (and thus the shifts and masks) vary for each k1, based
- * on the maximum k2 observed for that k1.
+ * http://www.drdobbs.com/184404506). We create this matrix as a square of a power-of-two, so that the k2 hashes can be
+ * computed by bitwise AND with a mask. Subsequent hash queries can then be computed with bitwise shift and AND
+ * operations. The matrix sizes (and thus the shifts and masks) vary for each k1, based on the maximum k2 observed for
+ * that k1.
  * 
- * TODO Try using a non-square matrix (many hashes are fairly sparse, so a narrower matrix often results in a
- * denser hash).
+ * TODO Try using a non-square matrix (many hashes are fairly sparse, so a narrower matrix often results in a denser
+ * hash).
+ * 
+ * TODO Implement {@link ImmutableShortPair2IntHash} instead of {@link ImmutableIntPair2IntHash}
  * 
  * @author Aaron Dunlop
  * @since May 24, 2010
@@ -98,12 +99,10 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
 
             // Record the offsets
             hashtableOffsets[k1 + 1] = hashtableOffsets[k1] + hs.hashtableSegment.length;
-            displacementTableOffsets[k1 + 1] = displacementTableOffsets[k1]
-                    + hs.displacementTableSegment.length;
+            displacementTableOffsets[k1 + 1] = displacementTableOffsets[k1] + hs.displacementTableSegment.length;
 
             // Copy the segment into the temporary hash and displacement arrays
-            System.arraycopy(hs.hashtableSegment, 0, tmpHashtable, hashtableOffsets[k1],
-                hs.hashtableSegment.length);
+            System.arraycopy(hs.hashtableSegment, 0, tmpHashtable, hashtableOffsets[k1], hs.hashtableSegment.length);
 
             for (int j = 0; j < hs.displacementTableSegment.length; j++) {
                 tmpDisplacementTable[displacementTableOffsets[k1] + j] = hashtableOffsets[k1]
@@ -132,7 +131,7 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
         // that will always resolve to the single (empty) entry
         if (k2s.length == 0) {
             return new HashtableSegment(new short[] { Short.MIN_VALUE }, 1, new int[] { 0 }, 1, 32, 0x0,
-                new short[][] { { Short.MIN_VALUE } });
+                    new short[][] { { Short.MIN_VALUE } });
         }
 
         // Compute the size of the square matrix (m)
@@ -203,8 +202,8 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
         }
         final int segmentLength = maxPopulatedIndex + n;
 
-        return new HashtableSegment(hashtableSegment, segmentLength, displacementTableSegment, m,
-            hashBitShift, hashMask, tmpMatrix);
+        return new HashtableSegment(hashtableSegment, segmentLength, displacementTableSegment, m, hashBitShift,
+                hashMask, tmpMatrix);
     }
 
     /**
@@ -284,10 +283,9 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
 
     @Override
     public String toString() {
-        return String.format(
-            "keys: %d hashtable size: %d occupancy: %.2f%% shift-table size: %d totalMem: %d", size,
-            hashtableSize(), size * 100f / hashtableSize(), displacementTable.length, hashtable.length * 2
-                    + displacementTable.length * 4);
+        return String.format("keys: %d hashtable size: %d occupancy: %.2f%% shift-table size: %d totalMem: %d", size,
+                hashtableSize(), size * 100f / hashtableSize(), displacementTable.length, hashtable.length * 2
+                        + displacementTable.length * 4);
     }
 
     private final class HashtableSegment {
@@ -299,14 +297,14 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
         final short[][] squareMatrix;
 
         public HashtableSegment(final short[] hashtableSegment, final int segmentLength,
-                final int[] displacementTableSegment, final int displacementTableSegmentLength,
-                final int hashShift, final int hashMask, final short[][] squareMatrix) {
+                final int[] displacementTableSegment, final int displacementTableSegmentLength, final int hashShift,
+                final int hashMask, final short[][] squareMatrix) {
 
             this.hashtableSegment = new short[segmentLength];
             System.arraycopy(hashtableSegment, 0, this.hashtableSegment, 0, segmentLength);
             this.displacementTableSegment = new int[displacementTableSegmentLength];
             System.arraycopy(displacementTableSegment, 0, this.displacementTableSegment, 0,
-                displacementTableSegmentLength);
+                    displacementTableSegmentLength);
             this.hashShift = hashShift;
             this.hashMask = hashMask;
             this.squareMatrix = squareMatrix;
@@ -325,8 +323,8 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
             for (int row = 0; row < squareMatrix.length; row++) {
                 sb.append(String.format("%2d |", row));
                 for (int col = 0; col < squareMatrix.length; col++) {
-                    sb.append(String.format(" %2s", squareMatrix[row][col] == Short.MIN_VALUE ? "-" : Short
-                        .toString(squareMatrix[row][col])));
+                    sb.append(String.format(" %2s",
+                            squareMatrix[row][col] == Short.MIN_VALUE ? "-" : Short.toString(squareMatrix[row][col])));
                 }
                 sb.append('\n');
             }
@@ -336,8 +334,8 @@ public class SegmentedPerfectIntPair2IntHash implements ImmutableIntPair2IntHash
             }
             sb.append("\nkeys : ");
             for (int i = 0; i < hashtableSegment.length; i++) {
-                sb.append(String.format(" %2s", hashtableSegment[i] == Short.MIN_VALUE ? "-" : Short
-                    .toString(hashtableSegment[i])));
+                sb.append(String.format(" %2s",
+                        hashtableSegment[i] == Short.MIN_VALUE ? "-" : Short.toString(hashtableSegment[i])));
             }
             sb.append('\n');
             return sb.toString();

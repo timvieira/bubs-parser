@@ -103,7 +103,7 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
 
         for (int i = leftCell.minLeftChildIndex(); i <= leftCell.maxLeftChildIndex(); i++) {
 
-            final int leftChild = nonTerminalIndices[i];
+            final short leftChild = nonTerminalIndices[i];
             final float leftProbability = insideProbabilities[i];
 
             for (int j = rightCell.offset(); j <= rightCell.maxRightChildIndex(); j++) {

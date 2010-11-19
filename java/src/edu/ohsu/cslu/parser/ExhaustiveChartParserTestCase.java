@@ -17,8 +17,6 @@ import org.junit.runner.RunWith;
 import cltool4j.ConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -146,7 +144,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
 
     }
 
-    protected Grammar createGrammar(final Reader grammarReader) throws Exception {
+    public Grammar createGrammar(final Reader grammarReader) throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class }).newInstance(new Object[] { grammarReader });
     }
 
@@ -184,11 +182,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         }
 
         if (simpleGrammar1 == null || simpleGrammar1.getClass() != grammarClass()) {
-            simpleGrammar1 = GrammarTestCase.createSimpleGrammar(grammarClass(), SimpleShiftFunction.class);
+            simpleGrammar1 = createGrammar(GrammarTestCase.simpleGrammar());
         }
 
         if (simpleGrammar2 == null || simpleGrammar2.getClass() != grammarClass()) {
-            simpleGrammar2 = createSimpleGrammar2(grammarClass(), SimpleShiftFunction.class);
+            simpleGrammar2 = createGrammar(simpleGrammar2());
         }
 
         parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(),
@@ -200,9 +198,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         // }
     }
 
-    public static <C extends Grammar> C createSimpleGrammar2(final Class<C> grammarClass,
-            final Class<? extends SparseMatrixGrammar.CartesianProductFunction> cartesianProductFunctionClass)
-            throws Exception {
+    public static Reader simpleGrammar2() throws Exception {
         final StringBuilder sb = new StringBuilder(256);
         sb.append("TOP\n");
         sb.append("S => NP VP 0\n");
@@ -231,12 +227,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         sb.append("VB => last -1.098612289\n");
         sb.append("NN => UNK 0\n");
 
-        if (cartesianProductFunctionClass != null) {
-            return GrammarTestCase.createGrammar(grammarClass, new StringReader(sb.toString()),
-                    cartesianProductFunctionClass);
-        }
-
-        return GrammarTestCase.createGrammar(grammarClass, new StringReader(sb.toString()));
+        return new StringReader(sb.toString());
     }
 
     /**

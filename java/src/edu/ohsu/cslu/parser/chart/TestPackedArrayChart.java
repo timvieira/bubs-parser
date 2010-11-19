@@ -6,9 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.tests.FilteredRunner;
@@ -34,8 +34,8 @@ public class TestPackedArrayChart {
      */
     @Before
     public void setUp() throws Exception {
-        simpleGrammar2 = ExhaustiveChartParserTestCase.createSimpleGrammar2(LeftCscSparseMatrixGrammar.class,
-                SimpleShiftFunction.class);
+        simpleGrammar2 = GrammarTestCase.createGrammar(LeftCscSparseMatrixGrammar.class,
+                ExhaustiveChartParserTestCase.simpleGrammar2());
     }
 
     @Test

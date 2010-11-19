@@ -100,6 +100,8 @@ public class PackedArrayChart extends ParallelArrayChart {
         nonTerminalIndices = new short[chartArraySize];
 
         temporaryCells = new PackedArrayChartCell[size][size + 1];
+
+        clear(size);
     }
 
     /**
@@ -115,7 +117,21 @@ public class PackedArrayChart extends ParallelArrayChart {
     @Override
     public void clear(final int sentenceLength) {
         this.size = sentenceLength;
-        Arrays.fill(numNonTerminals, 0, cellIndex(0, sentenceLength) + 1, 0);
+        Arrays.fill(numNonTerminals, 0);
+
+        for (int start = 0; start < size; start++) {
+            for (int end = start + 1; end <= size; end++) {
+                final int cellIndex = cellIndex(start, end);
+                final int offset = cellOffset(start, end);
+
+                cellOffsets[cellIndex] = cellOffset(start, end);
+
+                minLeftChildIndex[cellIndex] = offset;
+                maxLeftChildIndex[cellIndex] = offset - 1;
+                minRightChildIndex[cellIndex] = offset;
+                maxRightChildIndex[cellIndex] = offset - 1;
+            }
+        }
         for (int i = 0; i < size; i++) {
             Arrays.fill(temporaryCells[i], null);
         }
@@ -327,12 +343,13 @@ public class PackedArrayChart extends ParallelArrayChart {
 
             if (insideProbability > tmpInsideProbabilities[p.parent]) {
                 if (p.isBinaryProd()) {
-                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(p.leftChild,
-                            p.rightChild);
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
+                            (short) p.leftChild, (short) p.rightChild);
                 } else if (p.isLexProd()) {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(p.leftChild);
                 } else {
-                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(p.leftChild);
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
+                            (short) p.leftChild);
                 }
                 tmpInsideProbabilities[parent] = insideProbability;
 
@@ -357,13 +374,13 @@ public class PackedArrayChart extends ParallelArrayChart {
 
                 if (edge.prod.isBinaryProd()) {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
-                            edge.prod.leftChild, edge.prod.rightChild);
+                            (short) edge.prod.leftChild, (short) edge.prod.rightChild);
                 } else if (edge.prod.isLexProd()) {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
                             edge.prod.leftChild);
                 } else {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
-                            edge.prod.leftChild);
+                            (short) edge.prod.leftChild);
                 }
                 tmpInsideProbabilities[parent] = edge.inside();
 
