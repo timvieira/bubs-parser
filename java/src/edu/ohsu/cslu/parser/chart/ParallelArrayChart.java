@@ -63,7 +63,7 @@ public abstract class ParallelArrayChart extends Chart {
         this.beamWidth = Math.min(beamWidth, sparseMatrixGrammar.numNonTerms());
         this.lexicalRowBeamWidth = Math.min(lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms());
 
-        cells = cellIndex(0, size) + 1;
+        cells = size * (size + 1) / 2;
 
         chartArraySize = size * this.lexicalRowBeamWidth + (cells - size) * this.beamWidth;
         insideProbabilities = new float[chartArraySize];
@@ -71,16 +71,13 @@ public abstract class ParallelArrayChart extends Chart {
         packedChildren = new int[chartArraySize];
         midpoints = new short[chartArraySize];
 
-        // Calculate all cell offsets
         cellOffsets = new int[cells];
+
+        // Calculate all cell offsets, etc
         for (int start = 0; start < size; start++) {
-            final int cellIndex = cellIndex(start, start + 1);
-            cellOffsets[cellIndex] = cellIndex * this.lexicalRowBeamWidth;
-        }
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 2; end < size + 1; end++) {
+            for (int end = start + 1; end <= size; end++) {
                 final int cellIndex = cellIndex(start, end);
-                cellOffsets[cellIndex] = size * this.lexicalRowBeamWidth + (cellIndex - size) * this.beamWidth;
+                cellOffsets[cellIndex] = cellOffset(start, end);
             }
         }
     }
@@ -100,7 +97,8 @@ public abstract class ParallelArrayChart extends Chart {
     public abstract ParallelArrayChartCell getCell(final int start, final int end);
 
     /**
-     * Returns the index of the specified cell in the parallel chart arrays
+     * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
+     * that of {@link #cellOffset(int, int)}
      * 
      * @param start
      * @param end
@@ -112,12 +110,41 @@ public abstract class ParallelArrayChart extends Chart {
             throw new IllegalArgumentException("Illegal start: " + start);
         }
 
-        if (end < 0 || end > size) {
+        if (end <= start || end > size) {
             throw new IllegalArgumentException("Illegal end: " + end);
         }
 
-        final int row = end - start - 1;
-        return size * row - ((row - 1) * row / 2) + start;
+        // final int row = end - start - 1;
+        // return size * row - ((row - 1) * row / 2) + start;
+        return size * start - ((start - 1) * start / 2) + end - start - 1;
+    }
+
+    /**
+     * Returns the offset of the specified cell in the parallel chart arrays (note that this computation must agree with
+     * that of {@link #cellIndex(int, int)}
+     * 
+     * @param start
+     * @param end
+     * @return the offset of the specified cell in the parallel chart arrays
+     */
+    protected final int cellOffset(final int start, final int end) {
+
+        if (start < 0 || start > size) {
+            throw new IllegalArgumentException("Illegal start: " + start);
+        }
+
+        if (end <= start || end > size) {
+            throw new IllegalArgumentException("Illegal end: " + end);
+        }
+
+        // final int row = end - start - 1;
+        // return row == 0 ? lexicalRowBeamWidth * start : size * this.lexicalRowBeamWidth
+        // + (cellIndex(start, end) - size) * this.beamWidth;
+        final int priorCellBeamWidths = cellIndex(start, end) * this.beamWidth;
+        // If this cell is in the lexical row, we've seen 'start' prior lexical entries; otherwise we've seen the one in
+        // this diagonal too, so 'start + 1'
+        final int priorLexicalCells = (end - start == 1) ? start : start + 1;
+        return priorCellBeamWidths + priorLexicalCells * (this.lexicalRowBeamWidth - this.beamWidth);
     }
 
     public final int offset(final int cellIndex) {

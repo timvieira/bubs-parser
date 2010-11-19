@@ -68,7 +68,7 @@ public class CartesianProductBinarySearchSpmlParser extends
             final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
 
             for (int i = leftStart; i <= leftEnd; i++) {
-                final int leftChild = chart.nonTerminalIndices[i];
+                final short leftChild = chart.nonTerminalIndices[i];
                 final int binarySearchStart = binarySearchStart(leftChild);
 
                 // Skip non-terminals which never occur as left children

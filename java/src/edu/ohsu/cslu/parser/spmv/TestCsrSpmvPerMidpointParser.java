@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.parser.spmv;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
@@ -13,5 +14,30 @@ public class TestCsrSpmvPerMidpointParser extends
     @PerformanceTest({ "mbp", "33306", "d820", "71017" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
+    }
+
+    @Override
+    @Ignore
+    public void testCartesianProductVectorExample() {
+    }
+
+    @Override
+    @Ignore
+    public void testUnfilteredCartesianProductVectorSimpleGrammar2() {
+    }
+
+    @Override
+    @Ignore
+    public void testFilteredCartesianProductVectorSimpleGrammar2() {
+    }
+
+    @Override
+    @Ignore
+    public void testBinarySpMVMultiplySimpleGrammar2() {
+    }
+
+    @Override
+    @Ignore
+    public void testSimpleGrammar2() {
     }
 }

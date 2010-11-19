@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.parser.spmv;
 
 import cltool4j.args4j.EnumAliasMap;
-
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -35,6 +34,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     public long totalCartesianProductTime = 0;
     public long totalCartesianProductUnionTime = 0;
     public long totalBinarySpMVTime = 0;
+    public long totalPruningTime = 0;
     public long totalUnaryTime = 0;
     public long totalFinalizeTime = 0;
 
@@ -78,6 +78,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         startTime = System.currentTimeMillis();
         if (collectDetailedStatistics) {
             totalBinarySpMVTime = 0;
+            totalPruningTime = 0;
             totalUnaryTime = 0;
             totalCartesianProductTime = 0;
             totalCartesianProductUnionTime = 0;
@@ -97,16 +98,16 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     protected abstract CartesianProductVector cartesianProductUnion(final int start, final int end);
 
     public String getStatHeader() {
-        return String.format("%8s, %5d, %9s, %10s, %8s, %12s, %11s, %8s, %7s", "Total", "Init", "EdgeInit",
-                "X-product", "X-union", "Bin-SpMV", "Unary", "Finalize", "Extract");
+        return String.format("%8s, %5d, %9s, %10s, %8s, %12s, %11s, %8s, %7s, %7s", "Total", "Init", "EdgeInit",
+                "X-product", "Bin-SpMV", "Unary", "Finalize", "Extract", "Pruning");
     }
 
     @Override
     public String getStats() {
         final long totalTime = System.currentTimeMillis() - startTime;
-        return String.format("%8.1f, %5d, %9d, %10d, %8d, %12d, %11d, %8d, %7d", totalTime / 1000f, initTime,
-                edgeSelectorInitTime, totalCartesianProductTime, totalCartesianProductUnionTime, totalBinarySpMVTime,
-                totalUnaryTime, totalFinalizeTime, extractTime);
+        return String.format("%8.1f, %5d, %9d, %8d, %12d, %11d, %8d, %7d, %7d", totalTime / 1000f, initTime,
+                edgeSelectorInitTime, totalCartesianProductTime, totalBinarySpMVTime, totalUnaryTime,
+                totalFinalizeTime, extractTime, totalPruningTime);
     }
 
     public final static class CartesianProductVector {

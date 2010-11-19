@@ -1,8 +1,9 @@
 package edu.ohsu.cslu.parser.spmv;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -14,12 +15,17 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * @version $Revision$ $Date$ $Author$
  */
 public class TestDenseVectorOpenClSpmvParser extends
-        OpenClSpmvParserTestCase<DenseVectorOpenClSpmvParser, SimpleShiftFunction> {
+        OpenClSpmvParserTestCase<DenseVectorOpenClSpmvParser, LeftShiftFunction> {
 
     @Override
     @Test
     @PerformanceTest({ "mbp", "667853" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
+    }
+
+    @Override
+    @Ignore
+    public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
     }
 }

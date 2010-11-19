@@ -12,7 +12,6 @@ import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 
-
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import cltool4j.ThreadLocalLinewiseClTool;
@@ -28,11 +27,8 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.BitVectorExactFilterFunction;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectHashFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.SimpleShiftFunction;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.UnfilteredFunction;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.agenda.APDecodeFOM;
@@ -352,14 +348,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case CscSpmv:
         case BeamCscSpmv:
             switch (cartesianProductFunctionType) {
-            case Unfiltered:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, UnfilteredFunction.class);
             case Simple:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, SimpleShiftFunction.class);
-            case BitMatrixExactFilter:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, BitVectorExactFilterFunction.class);
-            case PerfectHash:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectHashFilterFunction.class);
+                return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
             case PerfectHash2:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashFilterFunction.class);
             default:
@@ -371,11 +361,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case CartesianProductBinarySearchLeftChild:
         case CartesianProductHash:
         case CartesianProductLeftChildHash:
-            return new LeftCscSparseMatrixGrammar(genericGrammar, SimpleShiftFunction.class);
+            return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
         case RightChildMatrixLoop:
-            return new RightCscSparseMatrixGrammar(genericGrammar, SimpleShiftFunction.class);
+            return new RightCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
         case GrammarLoopMatrixLoop:
-            return new CsrSparseMatrixGrammar(genericGrammar, SimpleShiftFunction.class);
+            return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
 
         default:
             throw new Exception("Unsupported parser type: " + researchParserType);

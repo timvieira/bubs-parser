@@ -11,6 +11,8 @@ import org.junit.Test;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
@@ -32,10 +34,15 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         extends ExhaustiveChartParserTestCase<P> {
 
     @Override
-    protected Grammar createGrammar(final Reader grammarReader) throws Exception {
+    public Grammar createGrammar(final Reader grammarReader) throws Exception {
         @SuppressWarnings("unchecked")
         final Class<C> cpfClass = ((Class<C>) ((ParameterizedType) getClass().getGenericSuperclass())
                 .getActualTypeArguments()[1]);
+        return createGrammar(grammarReader, cpfClass);
+    }
+
+    protected Grammar createGrammar(final Reader grammarReader, final Class<? extends CartesianProductFunction> cpfClass)
+            throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
                 new Object[] { grammarReader, cpfClass });
     }
@@ -142,8 +149,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         // NP -> DT NP (9/200)
         // S -> NP VP (9/200)
 
-        final int nn = g.mapNonterminal("NN");
-        final int np = g.mapNonterminal("NP");
+        final short nn = (short) g.mapNonterminal("NN");
+        final short np = (short) g.mapNonterminal("NP");
 
         final float[] probabilities = new float[g.cartesianProductFunction().packedArraySize()];
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
@@ -294,8 +301,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     @Test
     public void testUnfilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
-        final SparseMatrixGrammar g = (SparseMatrixGrammar) createSimpleGrammar2(grammarClass(),
-                SparseMatrixGrammar.UnfilteredFunction.class);
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(), LeftShiftFunction.class);
 
         // Create the parser
         final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(),
@@ -393,8 +399,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     @Test
     public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
-        final SparseMatrixGrammar g = (SparseMatrixGrammar) createSimpleGrammar2(grammarClass(),
-                SparseMatrixGrammar.BitVectorExactFilterFunction.class);
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(),
+                PerfectIntPairHashFilterFunction.class);
 
         // Create the parser
         final P p = createParser(g, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(),
@@ -469,8 +475,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         //
 
         // Midpoint 1
-        probabilities[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))] = -2.890f;
-        midpoints[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))] = 1;
+        probabilities[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("S"))] = -2.890f;
+        midpoints[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("S"))] = 1;
 
         probabilities[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))] = -2.890f;
         midpoints[pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))] = 1;
@@ -610,7 +616,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     }
 
     private int pack(final SparseMatrixGrammar grammar, final int leftChild, final int rightChild) {
-        return grammar.cartesianProductFunction().pack(leftChild, rightChild);
+        return grammar.cartesianProductFunction().pack((short) leftChild, (short) rightChild);
     }
 
     @Override

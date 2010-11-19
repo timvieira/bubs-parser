@@ -1,13 +1,13 @@
 package edu.ohsu.cslu.grammar;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.Reader;
 import java.io.StringReader;
 
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
-import static org.junit.Assert.assertEquals;
 
 public abstract class GrammarTestCase {
 
@@ -35,8 +35,7 @@ public abstract class GrammarTestCase {
         }
     }
 
-    public static Grammar createSimpleGrammar(final Class<? extends Grammar> grammarClass,
-            final Class<? extends CartesianProductFunction> cartesionProductFunctionClass) throws Exception {
+    public static Reader simpleGrammar() throws Exception {
         final StringBuilder sb = new StringBuilder(256);
 
         sb.append("TOP\n");
@@ -57,11 +56,7 @@ public abstract class GrammarTestCase {
         sb.append("NN => chef 0\n");
         sb.append("NN => UNK 0\n");
 
-        return createGrammar(grammarClass, new StringReader(sb.toString()), cartesionProductFunctionClass);
-    }
-
-    public static Grammar createSimpleGrammar(final Class<? extends Grammar> grammarClass) throws Exception {
-        return createSimpleGrammar(grammarClass, null);
+        return new StringReader(sb.toString());
     }
 
     /**
@@ -74,7 +69,7 @@ public abstract class GrammarTestCase {
     @Test
     public void testSimpleGrammar() throws Exception {
 
-        final Grammar simpleGrammar = createSimpleGrammar(grammarClass());
+        final Grammar simpleGrammar = createGrammar(grammarClass(), simpleGrammar());
 
         assertEquals(0f, simpleGrammar.lexicalLogProbability("NN", "systems"), .01f);
         assertEquals(0f, simpleGrammar.lexicalLogProbability("NN", "analyst"), .01f);

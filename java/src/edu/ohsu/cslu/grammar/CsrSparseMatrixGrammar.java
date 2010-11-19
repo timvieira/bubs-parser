@@ -77,7 +77,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         }
 
         for (final Production p : binaryProductions) {
-            maps1[p.parent].put(cartesianProductFunction.pack(p.leftChild, p.rightChild), p.prob);
+            maps1[p.parent].put(cartesianProductFunction.pack((short) p.leftChild, (short) p.rightChild), p.prob);
         }
         final Int2FloatOpenHashMap[] maps = maps1;
 

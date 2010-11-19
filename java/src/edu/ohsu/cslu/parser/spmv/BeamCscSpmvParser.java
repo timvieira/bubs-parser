@@ -34,9 +34,10 @@ public class BeamCscSpmvParser extends CscSpmvParser {
     @Override
     protected void visitCell(final short start, final short end) {
 
+        final long t0 = System.currentTimeMillis();
+
         final PackedArrayChartCell spvChartCell = chart.getCell(start, end);
 
-        final long t0 = System.currentTimeMillis();
         long t1 = t0;
         long t2 = t0;
 
@@ -87,6 +88,9 @@ public class BeamCscSpmvParser extends CscSpmvParser {
         Arrays.fill(tmpFoms, Float.NEGATIVE_INFINITY);
 
         if (end - start == 1) {
+            // Limit the queue to the number of non-unary productions allowed
+            q.setMaxSize(lexicalRowBeamWidth - lexicalRowUnaries);
+
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 if (spvChartCell.tmpInsideProbabilities[nt] != Float.NEGATIVE_INFINITY) {
                     final float fom = edgeSelector.calcLexicalFOM(start, end, nt,
@@ -95,8 +99,7 @@ public class BeamCscSpmvParser extends CscSpmvParser {
                     tmpFoms[nt] = fom;
                 }
             }
-            // Truncate the tail and reserve a few entries for unary productions
-            q.setMaxSize(lexicalRowBeamWidth - lexicalRowUnaries);
+            // Expand the queue to allow a few entries for unary productions
             q.setMaxSize(lexicalRowBeamWidth);
 
         } else {
@@ -132,7 +135,7 @@ public class BeamCscSpmvParser extends CscSpmvParser {
                 cellMidpoints[nt] = spvChartCell.tmpMidpoints[nt];
 
                 // Insert all unary edges with the current parent as child into the queue
-                final int child = nt;
+                final short child = nt;
 
                 // Iterate over possible parents of the child (rows with non-zero entries)
                 for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
@@ -160,6 +163,10 @@ public class BeamCscSpmvParser extends CscSpmvParser {
                 cellMidpoints[nt] = end;
                 cellFoms[nt] = fom;
             }
+        }
+
+        if (collectDetailedStatistics) {
+            totalPruningTime += System.currentTimeMillis() - t2;
         }
 
         spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
