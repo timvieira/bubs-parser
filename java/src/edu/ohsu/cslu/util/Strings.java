@@ -97,8 +97,8 @@ public class Strings {
     }
 
     /**
-     * Extracts POS-tags, words, and an additional feature indicating whether a word is the head verb from a
-     * Penn Treebank formatted parse structure.
+     * Extracts POS-tags, words, and an additional feature indicating whether a word is the head verb from a Penn
+     * Treebank formatted parse structure.
      * 
      * e.g.: "(JJ fruit NONHEAD) (NN flies NONHEAD) (VBD fast HEAD) (. . NONHEAD)"
      * 
@@ -129,14 +129,14 @@ public class Strings {
     }
 
     /**
-     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence,
-     * further split up into its constituent features.
+     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence, further
+     * split up into its constituent features.
      * 
      * @param sequence
      * @return
      */
-    private static String[][] bracketedTags(String sequence, final char closeBracket,
-            final String endBracketPattern, final String beginBracketPattern) {
+    private static String[][] bracketedTags(String sequence, final char closeBracket, final String endBracketPattern,
+            final String beginBracketPattern) {
         // Remove newlines and leading and trailing whitespace
         sequence = sequence.replaceAll("\n|\r", " ").trim();
         final int firstCloseBracket = sequence.indexOf(closeBracket);
@@ -156,8 +156,8 @@ public class Strings {
     }
 
     /**
-     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence,
-     * further split up into its constituent features.
+     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence, further
+     * split up into its constituent features.
      * 
      * @param sequence
      * @return string tokens
@@ -167,8 +167,8 @@ public class Strings {
     }
 
     /**
-     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence,
-     * further split up into its constituent features.
+     * Returns a two-dimensional array of Strings, representing each of the brackets in the supplied sequence, further
+     * split up into its constituent features.
      * 
      * @param sequence
      * @return string tokens
@@ -178,8 +178,8 @@ public class Strings {
     }
 
     /**
-     * Returns a two-dimensional array of Strings, representing each of the slash-delimited tokens in the
-     * supplied sequence, further split up into its constituent features.
+     * Returns a two-dimensional array of Strings, representing each of the slash-delimited tokens in the supplied
+     * sequence, further split up into its constituent features.
      * 
      * @param sequence
      * @return string tokens
@@ -234,8 +234,21 @@ public class Strings {
      * @return All possible permutations of the features in the supplied string
      */
     public static Set<String> permuteFeatures(final String s) {
+        return permuteFeatures(s, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Permutes a bracketed feature list
+     * 
+     * @param s a bracketed feature list (e.g., "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
+     * @return All possible permutations of the features in the supplied string
+     */
+    public static Set<String> permuteFeatures(final String s, final int maxLength) {
         final HashSet<String> permutations = new HashSet<String>();
         final String[] split = s.split("\\) *");
+        if (split.length > maxLength) {
+            return null;
+        }
         for (int i = 0; i < split.length; i++) {
             split[i] = split[i] + ")";
         }
@@ -265,8 +278,8 @@ public class Strings {
             System.arraycopy(suffix, 0, newSuffix, 0, i);
             System.arraycopy(suffix, i + 1, newSuffix, i, newSuffix.length - i);
 
-            permutations.addAll(recursivePermute(permutations, prefix.length() == 0 ? suffix[i] : prefix
-                    + " " + suffix[i], newSuffix));
+            permutations.addAll(recursivePermute(permutations, prefix.length() == 0 ? suffix[i] : prefix + " "
+                    + suffix[i], newSuffix));
         }
 
         return permutations;
@@ -311,10 +324,24 @@ public class Strings {
      * @return Ordered pairs of bracketings. (e.g. (The) (cow), (The) (ate), (The .), (cow) (ate) ...)
      */
     public static Set<String> featurePairs(final String s) {
+        return featurePairs(s, Integer.MAX_VALUE - 1);
+    }
+
+    /**
+     * Splits the string by bracketed features, and returns all ordered 2-bracket combinations.
+     * 
+     * @param s Bracketed representation of a sequence. (e.g., "(The) (cow) (ate) (.)")
+     * @return Ordered pairs of bracketings. (e.g. (The) (cow), (The) (ate), (The .), (cow) (ate) ...)
+     */
+    public static Set<String> featurePairs(final String s, final int maxLength) {
         final HashSet<String> pairs = new HashSet<String>();
         final String[] elements = s.split("\\) *");
         if (elements.length == 1) {
             pairs.add(s);
+            return pairs;
+        }
+
+        if (elements.length > maxLength + 1) {
             return pairs;
         }
 
@@ -327,8 +354,8 @@ public class Strings {
     }
 
     /**
-     * Splits the string by bracketed features, and returns all words, assuming the word is the first feature
-     * in each bracketing
+     * Splits the string by bracketed features, and returns all words, assuming the word is the first feature in each
+     * bracketing
      * 
      * @param bracketedFeatures Bracketed representation of a sequence. (e.g.,
      *            "(The DT) (cow NN) (ate VBD _head_verb) (. .)")
