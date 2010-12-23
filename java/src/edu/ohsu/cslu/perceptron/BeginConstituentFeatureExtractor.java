@@ -4,7 +4,9 @@ import java.util.Iterator;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
  * Extracts features for classifying whether a lexical item can begin a multiword constituent. Depends only on lexical
@@ -25,11 +27,20 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
     private final int markovOrder;
     private final int featureCount;
 
+    private final SymbolSet<String> twoCharacterSuffixes = new SymbolSet<String>();
+    private final SymbolSet<String> threeCharacterSuffixes = new SymbolSet<String>();
+
     public BeginConstituentFeatureExtractor(final Grammar grammar, final int markovOrder) {
         this.grammar = grammar;
         this.markovOrder = markovOrder;
         final int windowSize = markovOrder * 2 + 1;
-        this.featureCount = grammar.numLexSymbols() * windowSize + markovOrder * 2;
+        // this.featureCount = grammar.numLexSymbols() * windowSize + markovOrder * 2;
+        for (final String token : grammar.lexSet) {
+            twoCharacterSuffixes.addSymbol(token.substring(token.length() - 2));
+            threeCharacterSuffixes.addSymbol(token.substring(token.length() - 3));
+        }
+        this.featureCount = grammar.numLexSymbols() * windowSize + markovOrder * 2 + twoCharacterSuffixes.size()
+                + threeCharacterSuffixes.size();
     }
 
     @Override
@@ -44,6 +55,17 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
      * <li>n+1..2n : token i - o + 1</li>
      * ...
      * <li>2on+1..(2o+1)n : token i + o</li>
+     * 
+     * <li>bigram suffix i - o</li>
+     * <li>bigram suffix i - o + 1</li>
+     * ...
+     * <li>bigram suffix i + o</li>
+     * 
+     * <li>trigram suffix i - o</li>
+     * <li>trigram suffix i - o + 1</li>
+     * ...
+     * <li>trigram suffix i + o</li>
+     * 
      * <li>tag i - o</li>
      * ...
      * <li>tag i - 1</li>
@@ -55,24 +77,31 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
      * @return a feature vector representing the specified token and tags
      */
     @Override
-    public SparseBitVector featureVector(final Object sentence, final int tokenIndex, final boolean[] tags) {
-        final Sentence s = (Sentence) sentence;
+    public SparseBitVector forwardFeatureVector(final Object source, final int tokenIndex, final float[] tagScores) {
+        final Sentence s = (Sentence) source;
         final int windowSize = markovOrder * 2 + 1;
 
+        int offset = 0;
         // Token features
-        final int[] vector = new int[windowSize + markovOrder];
+        final int[] vector = new int[windowSize * 3 + markovOrder];
         for (int j = 0; j < windowSize; j++) {
-            vector[j] = j * grammar.numLexSymbols() + s.mappedTokens[tokenIndex + j];
+            vector[j] = offset + j * grammar.numLexSymbols() + s.mappedTokens[tokenIndex + j];
         }
+        offset += windowSize * grammar.numLexSymbols();
+
+        // // Suffix features
+        // for (int j = 0; j < windowSize; j++) {
+        // vector[j] = offset + ;
+        // }
 
         // Tag features
-        final int tagFeatureOffset = grammar.numLexSymbols() * windowSize;
+        offset += windowSize * (twoCharacterSuffixes.size() + threeCharacterSuffixes.size());
         for (int j = 0; j < markovOrder; j++) {
             final int tagIndex = j - markovOrder + tokenIndex;
-            if (tagIndex >= 0 && tags[tagIndex]) {
-                vector[windowSize + j] = tagFeatureOffset + j * 2;
+            if (tagIndex >= 0 && tagScores[tagIndex] > 0) { // TODO > 0? > -Infinity?
+                vector[windowSize + j] = offset + j * 2;
             } else {
-                vector[windowSize + j] = tagFeatureOffset + j * 2 + 1;
+                vector[windowSize + j] = offset + j * 2 + 1;
             }
         }
 
@@ -81,8 +110,21 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
     }
 
     @Override
-    public SparseBitVector featureVector(final Object sentence, final int tokenIndex) {
-        return featureVector(sentence, tokenIndex, ((Sentence) sentence).beginsMultiwordConstituent);
+    public Vector forwardFeatureVector(final Object source, final int tokenIndex) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Vector backwardFeatureVector(final Object source, final int tokenIndex) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Vector backwardFeatureVector(final Object source, final int tokenIndex, final float[] tagScores) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     public class Sentence {
@@ -141,7 +183,7 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
         public SparseBitVector[] featureVectors() {
             final SparseBitVector[] featureVectors = new SparseBitVector[tokens.length - 2 * markovOrder];
             for (int i = 0; i < featureVectors.length; i++) {
-                featureVectors[i] = featureVector(this, i);
+                featureVectors[i] = forwardFeatureVector(this, i, null);
             }
             return featureVectors;
         }
