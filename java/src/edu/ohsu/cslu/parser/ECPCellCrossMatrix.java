@@ -7,7 +7,6 @@ import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 
 public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChart> {
 
@@ -40,7 +39,7 @@ public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChar
 
         for (final int childNT : cell.getNtArray()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
-                cell.updateInside(new ChartEdge(p, cell));
+                cell.updateInside(chart.new ChartEdge(p, cell));
             }
         }
     }
