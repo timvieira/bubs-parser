@@ -12,6 +12,12 @@ import java.util.Arrays;
  * 
  * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for details).
  * 
+ * TODO When we get back to CSR (for parallelization?): Store 2 separate matrices; one for span = 2 and one for span >
+ * 2. They might be nearly disjoint, since span = 2 means both children are pre-terminals, and we assume the set of
+ * multi-word constituents is disjoint from the set of pre-terminals, but the span = 2 matrix has to include any
+ * children which occur as unary parents, since those NTs might be found in span-1 cells. It should still shrink the
+ * 'main' chart matrix considerably, and thus save time iterating over the ruleset.
+ * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
  * 
