@@ -61,6 +61,8 @@ public class BeamCscSpmvParser extends CscSpmvParser {
             totalBinarySpMVTime += (t2 - t1);
         }
 
+        final boolean factoredOnly = cellSelector.factoredParentsOnly(start, end);
+
         /*
          * Populate the chart cell with the most probable n edges (n = beamWidth).
          * 
@@ -134,22 +136,26 @@ public class BeamCscSpmvParser extends CscSpmvParser {
                 cellFoms[nt] = fom;
                 cellMidpoints[nt] = spvChartCell.tmpMidpoints[nt];
 
-                // Insert all unary edges with the current parent as child into the queue
-                final short child = nt;
+                // Process unary edges for cells which are open to non-factored parents
+                if (!factoredOnly) {
+                    // Insert all unary edges with the current parent as child into the queue
+                    final short child = nt;
 
-                // Iterate over possible parents of the child (rows with non-zero entries)
-                for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
+                    // Iterate over possible parents of the child (rows with non-zero entries)
+                    for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
 
-                    final short parent = grammar.cscUnaryRowIndices[i];
-                    final float jointProbability = grammar.cscUnaryProbabilities[i]
-                            + spvChartCell.tmpInsideProbabilities[child];
-                    final float parentFom = edgeSelector.calcFOM(start, end, parent, jointProbability);
+                        final short parent = grammar.cscUnaryRowIndices[i];
+                        final float jointProbability = grammar.cscUnaryProbabilities[i]
+                                + spvChartCell.tmpInsideProbabilities[child];
+                        final float parentFom = edgeSelector.calcFOM(start, end, parent, jointProbability);
 
-                    if (parentFom > tmpFoms[parent] && parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
-                        // The FOM was high enough that the edge was added to the queue; update temporary storage
-                        // (A) to reflect the new unary child and probability
-                        spvChartCell.tmpPackedChildren[parent] = grammar.cartesianProductFunction().packUnary(child);
-                        spvChartCell.tmpInsideProbabilities[parent] = jointProbability;
+                        if (parentFom > tmpFoms[parent] && parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
+                            // The FOM was high enough that the edge was added to the queue; update temporary storage
+                            // (A) to reflect the new unary child and probability
+                            spvChartCell.tmpPackedChildren[parent] = grammar.cartesianProductFunction()
+                                    .packUnary(child);
+                            spvChartCell.tmpInsideProbabilities[parent] = jointProbability;
+                        }
                     }
                 }
 
