@@ -43,13 +43,13 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             final float currentProbability = chartCellProbabilities[offset + parent];
             float winningProbability = currentProbability;
             // TODO Change this to a short
-            int winningChild = Integer.MIN_VALUE;
+            short winningChild = Short.MIN_VALUE;
             short winningMidpoint = 0;
 
             // Iterate over possible children of the parent (columns with non-zero entries)
             for (int i = grammar.csrUnaryRowStartIndices[parent]; i < grammar.csrUnaryRowStartIndices[parent + 1]; i++) {
 
-                final int child = grammar.csrUnaryColumnIndices[i];
+                final short child = grammar.csrUnaryColumnIndices[i];
                 final float grammarProbability = grammar.csrUnaryProbabilities[i];
 
                 final float jointProbability = grammarProbability + chartCellProbabilities[offset + child];
@@ -61,9 +61,9 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                 }
             }
 
-            if (winningChild != Integer.MIN_VALUE) {
+            if (winningChild != Short.MIN_VALUE) {
                 final int parentIndex = offset + parent;
-                chartCellChildren[parentIndex] = grammar.cartesianProductFunction().packUnary((short) winningChild);
+                chartCellChildren[parentIndex] = grammar.cartesianProductFunction().packUnary(winningChild);
                 chartCellProbabilities[parentIndex] = winningProbability;
                 chartCellMidpoints[parentIndex] = winningMidpoint;
             }
