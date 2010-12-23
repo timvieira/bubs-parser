@@ -6,8 +6,8 @@ import java.util.Collection;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 
 public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
 
@@ -58,13 +58,13 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
         for (int i = 0; i < chart.size(); i++) {
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
                 cell = chart.getCell(i, i + 1);
-                cell.updateInside(new ChartEdge(lexProd, cell));
+                cell.updateInside(chart.new ChartEdge(lexProd, cell));
                 updateRuleConstraints(lexProd.parent, i, i + 1);
 
                 validProductions = grammar.getUnaryProductionsWithChild(lexProd.parent);
                 if (validProductions != null) {
                     for (final Production unaryProd : validProductions) {
-                        cell.updateInside(new ChartEdge(unaryProd, cell));
+                        cell.updateInside(chart.new ChartEdge(unaryProd, cell));
                         updateRuleConstraints(unaryProd.parent, i, i + 1);
                     }
                 }
@@ -166,7 +166,7 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                 prob = p.prob + cell.getInside(childNT);
                 if (prob > cell.getInside(p.parent)) {
-                    cell.updateInside(new ChartEdge(p, cell));
+                    cell.updateInside(chart.new ChartEdge(p, cell));
                     updateRuleConstraints(p.parent, start, end);
                 }
             }

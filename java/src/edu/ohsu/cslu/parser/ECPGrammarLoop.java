@@ -4,7 +4,6 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 
 public class ECPGrammarLoop extends ChartParser<Grammar, CellChart> {
 
@@ -32,7 +31,7 @@ public class ECPGrammarLoop extends ChartParser<Grammar, CellChart> {
 
         for (final int childNT : cell.getNtArray()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
-                cell.updateInside(new ChartEdge(p, cell));
+                cell.updateInside(chart.new ChartEdge(p, cell));
             }
         }
     }
