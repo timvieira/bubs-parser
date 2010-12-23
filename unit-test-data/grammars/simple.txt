@@ -1,0 +1,13 @@
+TOP
+TOP => NP 0
+NP => NN NN -0.693147
+NP => NP NN -1.203972
+NP => NN NP -2.302585
+NP => NP NP -2.302585
+NP => NP|NN NP -Infinity
+===== LEXICON =====
+NN => systems 0
+NN => analyst 0
+NN => arbitration 0
+NN => chef 0
+NN => UNK 0
