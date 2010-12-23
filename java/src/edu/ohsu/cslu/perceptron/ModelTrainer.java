@@ -91,11 +91,12 @@ public class ModelTrainer extends BaseCommandlineTool {
         final AveragedPerceptron model = new AveragedPerceptron();
 
         // Iterate over training corpus
-        for (int i = 0; i < iterations; i++) {
+        for (int i = 1; i <= iterations; i++) {
             for (int j = 0; j < trainingCorpusFeatures.size(); j++) {
                 final SparseBitVector[] featureVectors = trainingCorpusFeatures.get(j);
                 final boolean[] goldTags = trainingCorpusGoldTags.get(j);
 
+                // TODO Do forward-backward estimation here
                 for (int k = 0; k < featureVectors.length; k++) {
                     // example++;
                     final SparseBitVector featureVector = featureVectors[k];
@@ -127,7 +128,6 @@ public class ModelTrainer extends BaseCommandlineTool {
                     final int[] predictedTags = new int[s.length()];
 
                     for (int k = 0; k < predictedTags.length; k++) {
-
                         // TODO: fix this to work with ints instead of bools
 
                         // predictedTags[k] = model.classify(fe.featureVector(s, k, predictedTags));
@@ -228,10 +228,17 @@ public class ModelTrainer extends BaseCommandlineTool {
         return loss / data.numExamples;
     }
 
+    /**
+     * Represents a set of training examples
+     */
     public class DataSet {
-        // parallel ArrayLists: a gold class (classification) for each feature vector (features)
-        public ArrayList<SparseBitVector> features = new ArrayList<SparseBitVector>();
+        /**
+         * Parallel array of training examples; gold classes (classifications) and the feature vectors associated with
+         * each example
+         */
         public ArrayList<Integer> classification = new ArrayList<Integer>();
+        public ArrayList<SparseBitVector> features = new ArrayList<SparseBitVector>();
+        // TODO Expose this as a size() method
         public int numExamples;
         public int numFeatures = -1;
 
