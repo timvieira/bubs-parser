@@ -8,6 +8,7 @@ import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
+import edu.ohsu.cslu.parser.spmv.PackedArraySpmvParser;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
@@ -17,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class ProfilePackedArrayChart {
 
     private static LeftCscSparseMatrixGrammar grammar;
-    private static CscSpmvParser parser;
+    private static PackedArraySpmvParser<LeftCscSparseMatrixGrammar> parser;
 
     @BeforeClass
     public static void suiteSetUp() throws Exception {
