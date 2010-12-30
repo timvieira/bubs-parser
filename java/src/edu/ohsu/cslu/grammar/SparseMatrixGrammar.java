@@ -38,7 +38,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     protected final int validProductionPairs;
 
-    protected final CartesianProductFunction cartesianProductFunction;
+    public final CartesianProductFunction cartesianProductFunction;
 
     /**
      * Offsets into {@link #csrUnaryColumnIndices} for the start of each row, indexed by row index (non-terminals)
