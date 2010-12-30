@@ -189,9 +189,13 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         copyChartToDevice();
     }
 
+    /**
+     * TODO If possible, merge or share code with {@link SparseMatrixVectorParser#visitCell}
+     */
     @Override
     protected void visitCell(final short start, final short end) {
 
+        // TODO If possible, merge or share code with SparseMat
         final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
 
         long t2;

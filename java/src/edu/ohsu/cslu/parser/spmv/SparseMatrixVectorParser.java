@@ -8,6 +8,7 @@ import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 
 /**
  * A class of parser which performs the grammar intersection in each cell by:
@@ -38,6 +39,11 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     public long totalUnaryTime = 0;
     public long totalFinalizeTime = 0;
 
+    protected int totalCartesianProductSize;
+    protected long totalCellPopulation;
+    protected long totalLeftChildPopulation;
+    protected long totalRightChildPopulation;
+
     public SparseMatrixVectorParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
         cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
@@ -52,6 +58,82 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
      * @param chartCell
      */
     public abstract void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell);
+
+    @Override
+    protected void initParser(final int[] tokens) {
+        startTime = System.currentTimeMillis();
+        if (collectDetailedStatistics) {
+            totalBinarySpMVTime = 0;
+            totalPruningTime = 0;
+            totalUnaryTime = 0;
+            totalCartesianProductTime = 0;
+            totalCartesianProductUnionTime = 0;
+            totalFinalizeTime = 0;
+            totalCartesianProductSize = 0;
+            totalCellPopulation = 0;
+            totalLeftChildPopulation = 0;
+            totalRightChildPopulation = 0;
+        }
+
+        chart.tokens = tokens;
+    }
+
+    @Override
+    protected void visitCell(final short start, final short end) {
+
+        final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
+
+        final long t0 = System.currentTimeMillis();
+        long t1 = t0;
+        long t2 = t0;
+
+        // Skip binary grammar intersection for span-1 cells
+        if (end - start > 1) {
+            final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
+
+            if (collectDetailedStatistics) {
+                totalCartesianProductSize += cartesianProductVector.size();
+                t1 = System.currentTimeMillis();
+                totalCartesianProductTime += (t1 - t0);
+            }
+
+            // Multiply the unioned vector with the grammar matrix and populate the current cell with the
+            // vector resulting from the matrix-vector multiplication
+            binarySpmv(cartesianProductVector, spvChartCell);
+        }
+
+        if (collectDetailedStatistics) {
+            t2 = System.currentTimeMillis();
+            totalBinarySpMVTime += (t2 - t1);
+        }
+
+        // Handle unary productions
+        // This only goes through unary rules one time, so it can't create unary chains unless such
+        // chains are encoded in the grammar. Iterating a few times would probably
+        // work, although it's a big-time hack.
+        if (!cellSelector.factoredParentsOnly(start, end)) {
+            unarySpmv(spvChartCell);
+        }
+
+        if (collectDetailedStatistics) {
+            totalUnaryTime += (System.currentTimeMillis() - t2);
+
+            totalCellPopulation += spvChartCell.getNumNTs();
+            if (spvChartCell instanceof PackedArrayChartCell) {
+                totalLeftChildPopulation += ((PackedArrayChartCell) spvChartCell).leftChildren();
+                totalRightChildPopulation += ((PackedArrayChartCell) spvChartCell).rightChildren();
+            }
+        }
+
+        // Pack the temporary cell storage into the main chart array
+        if (collectDetailedStatistics) {
+            final long t3 = System.currentTimeMillis();
+            spvChartCell.finalizeCell();
+            totalFinalizeTime += (System.currentTimeMillis() - t3);
+        } else {
+            spvChartCell.finalizeCell();
+        }
+    }
 
     /**
      * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and
@@ -71,20 +153,6 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         final short chartCellEnd = (short) chartCell.end();
 
         unarySpmv(chartCellChildren, chartCellProbabilities, chartCellMidpoints, 0, chartCellEnd);
-    }
-
-    @Override
-    protected void initParser(final int[] tokens) {
-        startTime = System.currentTimeMillis();
-        if (collectDetailedStatistics) {
-            totalBinarySpMVTime = 0;
-            totalPruningTime = 0;
-            totalUnaryTime = 0;
-            totalCartesianProductTime = 0;
-            totalCartesianProductUnionTime = 0;
-            totalFinalizeTime = 0;
-        }
-        chart.tokens = tokens;
     }
 
     /**
@@ -113,7 +181,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     public final static class CartesianProductVector {
 
         private final SparseMatrixGrammar grammar;
-        final float[] probabilities;
+        public final float[] probabilities;
         final short[] midpoints;
         final int[] populatedLeftChildren;
         private int size = 0;

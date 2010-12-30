@@ -28,8 +28,8 @@ public abstract class ParallelArrayChart extends Chart {
      * The maximum number of entries allowed per cell. For exhaustive search, this must be equal to the size of the
      * grammar's vocabulary, but for pruned search, we can limit cell population, reducing the chart's memory footprint
      */
-    protected final int beamWidth;
-    protected final int lexicalRowBeamWidth;
+    protected int beamWidth;
+    protected int lexicalRowBeamWidth;
 
     /**
      * Start indices for each cell. Computed from cell start and end indices and stored in the chart for convenience
@@ -86,6 +86,8 @@ public abstract class ParallelArrayChart extends Chart {
         this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms());
     }
 
+    // TODO Add a protected constructor for use by ConstrainedPackedArrayChart
+
     /**
      * Removes existing chart entries and re-initializes chart state.
      * 
@@ -137,9 +139,6 @@ public abstract class ParallelArrayChart extends Chart {
             throw new IllegalArgumentException("Illegal end: " + end);
         }
 
-        // final int row = end - start - 1;
-        // return row == 0 ? lexicalRowBeamWidth * start : size * this.lexicalRowBeamWidth
-        // + (cellIndex(start, end) - size) * this.beamWidth;
         final int priorCellBeamWidths = cellIndex(start, end) * this.beamWidth;
         // If this cell is in the lexical row, we've seen 'start' prior lexical entries; otherwise we've seen the one in
         // this diagonal too, so 'start + 1'
