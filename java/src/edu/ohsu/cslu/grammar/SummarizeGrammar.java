@@ -6,16 +6,22 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
-
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Argument;
+import cltool4j.args4j.EnumAliasMap;
+import cltool4j.args4j.Option;
 
 public class SummarizeGrammar extends BaseCommandlineTool {
 
     @Argument(index = 0, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
     private String grammarFile;
+
+    @Option(name = "-m", metaVar = "mode", usage = "Output mode")
+    private Mode mode = Mode.SUMMARY;
 
     public static void main(final String[] args) {
         run(args);
@@ -31,13 +37,30 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         // Read the generic grammar in either text or binary-serialized format.
         final Grammar genericGrammar = Grammar.read(grammarInputStream);
 
-        final SummaryGrammar grammar = new SummaryGrammar(genericGrammar);
-        System.out.print(grammar.getStats());
+        switch (mode) {
+        case SUMMARY:
+            System.out.print(new SummaryGrammar(genericGrammar).getStats());
+            break;
+        case NTS:
+            for (final String nt : genericGrammar.nonTermSet) {
+                System.out.println(nt);
+            }
+            break;
+        case PARENTS:
+            System.out.print(new SummaryGrammar(genericGrammar).parents());
+            break;
+        case PRE_TERMINALS:
+            System.out.print(new SummaryGrammar(genericGrammar).preTerminals());
+            break;
+        }
     }
 
     private class SummaryGrammar extends Grammar {
 
         private int V_l, V_r;
+
+        private final Set<String> parents = new HashSet<String>();
+        private final Set<String> preTerminals = new HashSet<String>();
 
         public SummaryGrammar(final Reader grammarFile) throws Exception {
             super(grammarFile);
@@ -55,9 +78,40 @@ public class SummarizeGrammar extends BaseCommandlineTool {
             for (final Production p : binaryProductions) {
                 vlSet.add(p.leftChild);
                 vrSet.add(p.rightChild);
+                parents.add(p.parentToString());
             }
+            for (final Production p : unaryProductions) {
+                parents.add(p.parentToString());
+            }
+
+            for (final Production p : lexicalProductions) {
+                preTerminals.add(p.parentToString());
+            }
+
+            parents.removeAll(preTerminals);
+
             V_l = vlSet.size();
             V_r = vrSet.size();
+        }
+
+        public String parents() {
+            final StringBuilder sb = new StringBuilder(2048);
+            for (final String parent : parents) {
+                sb.append(parent);
+                sb.append('\n');
+            }
+            sb.deleteCharAt(sb.length() - 1);
+            return sb.toString();
+        }
+
+        public String preTerminals() {
+            final StringBuilder sb = new StringBuilder(2048);
+            for (final String preTerminal : preTerminals) {
+                sb.append(preTerminal);
+                sb.append('\n');
+            }
+            sb.deleteCharAt(sb.length() - 1);
+            return sb.toString();
         }
 
         @Override
@@ -65,5 +119,13 @@ public class SummarizeGrammar extends BaseCommandlineTool {
             return super.getStats() + "V_l: " + V_l + '\n' + "V_r: " + V_r + '\n';
         }
 
+    }
+
+    private enum Mode {
+        SUMMARY("s"), NTS("n"), PARENTS("p"), PRE_TERMINALS("pt");
+
+        private Mode(final String alias) {
+            EnumAliasMap.singleton().addAliases(this, alias);
+        }
     }
 }
