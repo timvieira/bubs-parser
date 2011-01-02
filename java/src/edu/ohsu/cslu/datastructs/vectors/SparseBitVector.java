@@ -224,6 +224,10 @@ public class SparseBitVector extends BaseVector implements BitVector {
         return length;
     }
 
+    public int populatedElements() {
+        return elements.length;
+    }
+
     @Override
     public float max() {
         return intMax();
