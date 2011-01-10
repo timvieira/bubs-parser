@@ -40,7 +40,7 @@ public class PerceptronCellSelector extends CellSelector {
     // {
     // public PerceptronSpanSelection(final CSLUTBlockedCellsTraversal cslutScores) {
     public PerceptronCellSelector(final BufferedReader modelStream, final BufferedReader cslutScoresStream) {
-        cslutScores = new CSLUTBlockedCells(cslutScoresStream);
+        cslutScores = new CSLUTBlockedCells(cslutScoresStream, null);
         if (modelStream != null) {
             trainingMode = false;
             try {
@@ -54,7 +54,7 @@ public class PerceptronCellSelector extends CellSelector {
     }
 
     @Override
-    public void init(final ChartParser<?, ?> p) {
+    public void initSentence(final ChartParser<?, ?> p) {
         // run at the beginning of each sentence
         this.parser = p;
         DEBUG = (p.opts.param1 == -1);

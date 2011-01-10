@@ -12,7 +12,7 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     }
 
     @Override
-    public void init(final ChartParser<?, ?> parser) {
+    public void initSentence(final ChartParser<?, ?> parser) {
         final int n = parser.chart.size();
         cells = n * (n + 1) / 2;
         if (cellIndices == null || cellIndices.length < cells) {

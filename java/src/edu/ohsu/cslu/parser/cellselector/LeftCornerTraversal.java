@@ -14,7 +14,7 @@ public class LeftCornerTraversal extends CellSelector {
     }
 
     @Override
-    public void init(final ChartParser<?, ?> parser) {
+    public void initSentence(final ChartParser<?, ?> parser) {
         // cellList = new LinkedList<ArrayChartCell>();
         /*
          * for (int span=2; span<=this.parser.chartSize; span++) { for (int beg=0; beg<this.parser.chartSize-span+1;
