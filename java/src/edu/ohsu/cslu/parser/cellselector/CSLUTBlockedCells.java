@@ -3,6 +3,7 @@ package edu.ohsu.cslu.parser.cellselector;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -50,59 +51,51 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 public class CSLUTBlockedCells extends CellSelector {
 
     private LinkedList<ChartCell> cellList;
+    private Iterator<ChartCell> cellListIterator;
+
     public HashMap<String, Vector<Float>> allStartScores, allEndScores, allUnaryScores;
     public Vector<Float> curStartScore, curEndScore, curUnaryScore;
     // private float cellTune, unaryTune;
-    private float startThresh, endThresh, unaryThresh;
+    private float startThresh = Float.MAX_VALUE;
+    private float endThresh = Float.MAX_VALUE;
+    private float unaryThresh = Float.MAX_VALUE;
+    // public int factoredCellBeamWidth = Integer.MAX_VALUE;
 
     private boolean[][] openAll, openFactored;
 
     // private boolean isGrammarLeftFactored;
 
-    public CSLUTBlockedCells(final BufferedReader modelStream) {
-        this(modelStream, ParserDriver.param1, ParserDriver.param2, ParserDriver.param3);
-    }
+    // public CSLUTBlockedCells(final BufferedReader modelStream) {
+    // this(modelStream, ParserDriver.chartConstraintsThresh);
+    // this(modelStream, ParserDriver.param1, ParserDriver.param2, ParserDriver.param3);
+    // }
 
-    public CSLUTBlockedCells(final BufferedReader modelStream, final float startThresh, final float endThresh,
-            final float unaryThresh) {
-        // this.cellTune = cellTune;
-        // this.unaryTune = unaryTune;
-        // this.isGrammarLeftFactored = isGrammarLeftFactored;
-
-        // if (cellTune == -1)
-        // this.cellTune = (float) 0.3; // TODO: re-do thresh .. see computeThresh()
-        // if (unaryTune == -1)
-        // this.unaryTune = Float.MAX_VALUE;
-
-        this.startThresh = startThresh;
-        this.endThresh = endThresh;
-        this.unaryThresh = unaryThresh;
-
-        if (startThresh == -1)
-            this.startThresh = Float.MAX_VALUE;
-        if (endThresh == -1)
-            this.endThresh = Float.MAX_VALUE;
-        if (unaryThresh == -1)
-            this.unaryThresh = Float.MAX_VALUE;
+    public CSLUTBlockedCells(final BufferedReader modelStream, final String threshString) {
+        if (threshString != null) {
+            final String[] tokens = threshString.split(",");
+            if (tokens.length > 0) {
+                this.startThresh = Integer.parseInt(tokens[0]);
+            }
+            if (tokens.length > 1) {
+                this.endThresh = Integer.parseInt(tokens[1]);
+            }
+            if (tokens.length > 2) {
+                this.unaryThresh = Integer.parseInt(tokens[2]);
+            }
+            // if (tokens.length > 3) {
+            // this.factoredCellBeamWidth = Integer.parseInt(tokens[3]);
+            // }
+        }
 
         try {
-            // ParserDriver.getLogger()
-            // .fine("CellConstraints: cellTune=" + this.cellTune + " unaryTune=" + this.unaryTune);
-            ParserDriver.getLogger().fine(
-                    "CellConstraints: startThresh=" + this.startThresh + " endThresh=" + this.endThresh
-                            + " unaryThresh=" + this.unaryThresh);
-            ParserDriver.getLogger().fine("CellConstraints: Reading model ...");
             readModel(modelStream);
-            ParserDriver.getLogger().fine("CellConstraints: done.");
-        } catch (final NumberFormatException e) {
-            e.printStackTrace();
         } catch (final IOException e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void init(final ChartParser<?, ?> parser) {
+    public void initSentence(final ChartParser<?, ?> parser) {
         init(parser.chart, parser.currentInput.sentence, parser.grammar.isLeftFactored());
     }
 
@@ -127,6 +120,7 @@ public class CSLUTBlockedCells extends CellSelector {
         // TODO: re-do thresh ... see computeThresh()
         // final float thresh = computeThresh(curStartScore, curEndScore);
 
+        String perCellStats = "";
         for (int span = 1; span <= chartSize; span++) {
             for (int beg = 0; beg < chartSize - span + 1; beg++) { // beginning
                 final int end = beg + span;
@@ -157,6 +151,13 @@ public class CSLUTBlockedCells extends CellSelector {
                 // + " fact=" + openFactored[beg][end] + " bScore=" + curStartScore.get(beg) + " eScore="
                 // + curEndScore.get(end - 1));
 
+                // ignore if closed (default)
+                if (openAll[beg][end]) {
+                    perCellStats += String.format("%d,%d=%d ", beg, end, 4); // open
+                } else if (openFactored[beg][end]) {
+                    perCellStats += String.format("%d,%d=%d ", beg, end, 2); // open only factored
+                }
+
                 if (openAll[beg][end]) {
                     openCells++;
                 } else if (openFactored[beg][end]) {
@@ -164,8 +165,12 @@ public class CSLUTBlockedCells extends CellSelector {
                 }
             }
         }
-        ParserDriver.getLogger().fine(
-                "INFO: CSLUT cell stats: total=" + totalCells + " open=" + openCells + " openFactored=" + factoredCells
+
+        cellListIterator = cellList.iterator();
+
+        ParserDriver.getLogger().finer("INFO: CellConstraints: " + perCellStats);
+        ParserDriver.getLogger().info(
+                "INFO: CellConstraints: total=" + totalCells + " open=" + openCells + " openFactored=" + factoredCells
                         + " closed=" + (totalCells - openCells - factoredCells));
     }
 
@@ -202,28 +207,18 @@ public class CSLUTBlockedCells extends CellSelector {
     // return positiveScores.get((int) (positiveScores.size() * cellTune));
     // }
 
-    public boolean isCellOpen(final int start, final int end) {
+    @Override
+    public boolean isOpenAll(final short start, final short end) {
         return openAll[start][end];
     }
 
     @Override
-    public boolean factoredParentsOnly(final int start, final int end) {
+    public boolean isOpenOnlyFactored(final short start, final short end) {
         return openFactored[start][end] && !openAll[start][end];
     }
 
-    public boolean isCellClosed(final int start, final int end) {
-        return !openFactored[start][end];
-    }
-
-    public float getCurStartScore(final int start) {
-        return curStartScore.get(start);
-    }
-
-    public float getCurEndScore(final int end) {
-        return curEndScore.get(end - 1);
-    }
-
-    public boolean unaryOpen(final int start, final int end) {
+    @Override
+    public boolean isOpenUnary(final short start, final short end) {
         if (end - start > 1) {
             return true;
         }
@@ -233,15 +228,39 @@ public class CSLUTBlockedCells extends CellSelector {
         return false;
     }
 
+    // @Override
+    // public boolean factoredParentsOnly(final int start, final int end) {
+    // return openFactored[start][end] && !openAll[start][end];
+    // }
+
+    // public boolean isCellClosed(final int start, final int end) {
+    // return !openFactored[start][end];
+    // }
+
+    public float getCurStartScore(final int start) {
+        return curStartScore.get(start);
+    }
+
+    public float getCurEndScore(final int end) {
+        return curEndScore.get(end - 1);
+    }
+
     @Override
     public short[] next() {
-        final ChartCell cell = cellList.poll();
+        // final ChartCell cell = cellList.poll();
+        final ChartCell cell = cellListIterator.next();
         return new short[] { (short) cell.start(), (short) cell.end() };
     }
 
     @Override
     public boolean hasNext() {
-        return !cellList.isEmpty();
+        // return !cellList.isEmpty();
+        return cellListIterator.hasNext();
+    }
+
+    @Override
+    public void reset() {
+        cellListIterator = cellList.iterator();
     }
 
     // TODO: this is not a good system. To access the correct entries when processing
@@ -250,6 +269,10 @@ public class CSLUTBlockedCells extends CellSelector {
     @SuppressWarnings("unchecked")
     public void readModel(final BufferedReader inStream) throws NumberFormatException, IOException {
 
+        ParserDriver.getLogger().fine(
+                "CellConstraints: startThresh=" + this.startThresh + " endThresh=" + this.endThresh + " unaryThresh="
+                        + this.unaryThresh);
+        ParserDriver.getLogger().fine("CellConstraints: Reading model ...");
         // HashMap<String, Vector<Vector<Float>>> ccScores = new HashMap<String, Vector<Vector<Float>>>();
 
         allStartScores = new HashMap<String, Vector<Float>>();
@@ -291,6 +314,8 @@ public class CSLUTBlockedCells extends CellSelector {
         allStartScores.put(sentence, (Vector<Float>) tmpStart.clone());
         allEndScores.put(sentence, (Vector<Float>) tmpEnd.clone());
         allUnaryScores.put(sentence, (Vector<Float>) tmpUnary.clone());
+
+        ParserDriver.getLogger().fine("CellConstraints: done.");
     }
 
     // private class SortBucket implements Comparable<SortBucket> {
