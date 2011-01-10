@@ -2,13 +2,13 @@ package edu.ohsu.cslu.perceptron;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
+import edu.ohsu.cslu.parser.ParserUtil;
 
 /**
  * Represents an averaged perceptron (see Collins, 2002). The model should be trained with
@@ -36,12 +36,10 @@ public class AveragedPerceptron extends Perceptron {
         super(learningRate, lossFunction, binsStr, featureTemplate, initialWeights);
     }
 
-    public AveragedPerceptron(final Reader modelFileReader) {
+    public AveragedPerceptron(final BufferedReader modelFileReader) {
         try {
-            this.read(modelFileReader);
-        } catch (final NumberFormatException e) {
-            e.printStackTrace();
-        } catch (final IOException e) {
+            this.readModel(modelFileReader);
+        } catch (final Exception e) {
             e.printStackTrace();
         }
 
@@ -50,6 +48,9 @@ public class AveragedPerceptron extends Perceptron {
         this.rawWeights = null;
         this.learningRate = 0;
         this.trainExampleNumber = 0;
+
+        bias = new float[numClasses()];
+        Arrays.fill(bias, 0.0f); // default to no bias
     }
 
     @Override
@@ -79,7 +80,7 @@ public class AveragedPerceptron extends Perceptron {
         if (lastExampleAllUpdated < trainExampleNumber) {
             averageAllFeatures();
         }
-        return Perceptron.classify(avgWeights, featureVector);
+        return classify(avgWeights, featureVector);
     }
 
     @Override
@@ -151,29 +152,43 @@ public class AveragedPerceptron extends Perceptron {
     // NOTE: this doesn't work with the raw Perceptron model, but we should probably
     // change it so it does. Maybe both Avg and Raw models should have this.weights
     // and the Avg model has an addition rawWeights?
-    private void read(final Reader inputReader) throws NumberFormatException, IOException {
-        final BufferedReader br = new BufferedReader(inputReader);
+    private void readModel(final BufferedReader inputReader) throws IOException {
+        // final BufferedReader br = new BufferedReader(inputReader);
 
-        for (String line = br.readLine(); line != null; line = br.readLine()) {
-            if (line.trim().equals("# === Perceptron Model ===")) {
-                String[] tokens = br.readLine().split("\\s");
-                // this.numClasses = Integer.parseInt(tokens[1].split("=")[1]);
-                this.initBins(tokens[2].split("=")[1]);
-                this.avgWeights = new FloatVector[numClasses()];
-                this.featureTemplate = br.readLine().replace("featTemplate: ", "");
+        // read in file until we get to the model specs
+        String line = inputReader.readLine();
+        while (line != null && !line.trim().equals("# === Perceptron Model ===")) {
+            line = inputReader.readLine();
+        }
+        if (line == null) {
+            throw new RuntimeException("Unexpected EOF found in AveragedPerceptron model.  Exiting.");
+        }
 
-                for (int classIndex = 0; classIndex < numClasses(); classIndex++) {
-                    br.readLine(); // vector type=float length=X
-                    tokens = br.readLine().split("\\s"); // get float values for model[i]
-                    final float[] weights = new float[tokens.length];
-                    for (int i = 0; i < tokens.length; i++) {
-                        weights[i] = Float.parseFloat(tokens[i]);
-                    }
-                    this.avgWeights[classIndex] = new FloatVector(weights);
+        // for (String line = inputReader.readLine(); line != null && !line.trim().equals("# === Perceptron Model ===");
+        // line = inputReader.readLine()) {
+        String[] tokens = inputReader.readLine().split("\\s");
+        final int numFeatures = Integer.parseInt(tokens[0].split("=")[1]);
+        // this.numClasses = Integer.parseInt(tokens[1].split("=")[1]);
+        final String binsString = tokens[2].split("=")[1];
+        // final String biasString = tokens[3].split("=")[1];
+        // this.initBins(binsString);
+        this.binsStr = binsString;
+        this.bins = ParserUtil.strToIntArray(binsStr);
+        this.avgWeights = new FloatVector[numClasses()];
+        this.featureTemplate = inputReader.readLine().replace("featTemplate: ", "");
 
-                    br.readLine(); // blank line
-                }
+        for (int classIndex = 0; classIndex < numClasses(); classIndex++) {
+            inputReader.readLine(); // vector type=float length=X
+            tokens = inputReader.readLine().split("\\s"); // get float values for model[i]
+            final float[] weights = new float[numFeatures];
+            for (int i = 0; i < tokens.length; i++) {
+                weights[i] = Float.parseFloat(tokens[i]);
             }
+            this.avgWeights[classIndex] = new FloatVector(weights);
+
+            // if (classIndex != numClasses() - 1) {
+            inputReader.readLine(); // blank line
+            // }
         }
     }
 

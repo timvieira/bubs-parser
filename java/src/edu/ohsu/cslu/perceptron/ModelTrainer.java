@@ -1,11 +1,14 @@
 package edu.ohsu.cslu.perceptron;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
@@ -46,17 +49,20 @@ public class ModelTrainer extends BaseCommandlineTool {
     @Option(name = "-s", metaVar = "file", usage = "Output model file (Java Serialized Object)")
     private File outputModelFile;
 
-    @Option(name = "-overLoss")
+    @Option(name = "-overLoss", hidden = true)
     private float overPenalty = 1;
 
     @Option(name = "-underLoss")
     private float underPenalty = 1;
 
-    @Option(name = "-feats", usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    @Option(name = "-feats", usage = "Feature template file OR feature template string: lt rt lt_lt-1 rw_rt loc ...")
     public String featTemplate = null;
 
     @Option(name = "-bins", usage = "Value to Class mapping bins. ex: '0,5,10,30' ")
     private String binsStr;
+
+    @Option(name = "-multiBin", usage = "Use old multi-bin classification instead of multiple binary classifiers")
+    private boolean multiBin = false;
 
     // TODO: This class should take a "feature template" as input and learn a model based on that
     // example: t t-1 t-2 t+1 t+2 w w-1 w+1 t_w t_t-1 t-1_t-2 ... t=tag w=word _=joint
@@ -153,44 +159,51 @@ public class ModelTrainer extends BaseCommandlineTool {
         if (featTemplate == null) {
             logger.info("ERROR: Training a model from pre-computed features requires -feats to be non-empty");
             System.exit(1);
+        } else if (!featTemplate.contains(" ") && new File(featTemplate).exists()) {
+            final BufferedReader featFileReader = new BufferedReader(new FileReader(featTemplate));
+            featTemplate = featFileReader.readLine(); // assume it just has one line
         }
+
         if (binsStr == null) {
             logger.info("ERROR: Training a model from pre-computed features requires -bins to be non-empty");
             System.exit(1);
         }
 
-        final AveragedPerceptron perceptron = new AveragedPerceptron(alpha, new Perceptron.OverUnderLoss(overPenalty,
-                underPenalty), binsStr, featTemplate, null);
-        final DataSet train = new DataSet(System.in, perceptron);
+        final DataSet train = new DataSet(System.in);
         final InputStream devStream = ParserUtil.file2inputStream(devSet.getAbsolutePath());
-        final DataSet dev = new DataSet(devStream, perceptron);
-        trainPerceptron(perceptron, train, dev);
-        System.exit(0);
-    }
+        final DataSet dev = new DataSet(devStream);
 
-    // Nate's training method...
-    public void trainPerceptron(final Perceptron perceptron, final DataSet train, final DataSet dev) {
+        Classifier model;
+        if (multiBin) {
+            model = new AveragedPerceptron(alpha, new Perceptron.OverUnderLoss(overPenalty, underPenalty), binsStr,
+                    featTemplate, null);
+        } else {
+            model = new BinaryPerceptronSet(alpha, new Perceptron.OverUnderLoss(overPenalty, underPenalty), binsStr,
+                    featTemplate);
+        }
 
+        // iterate over training data
         for (int i = 0; i < iterations; i++) {
             for (int j = 0; j < train.numExamples; j++) {
-                final int goldClass = train.classification.get(j);
-                perceptron.train(goldClass, train.features.get(j));
+                final int goldClass = model.value2class(train.classification.get(j));
+                model.train(goldClass, train.features.get(j));
             }
 
-            final float trainLoss = evalDataSetAvgLoss(train, perceptron, false);
-            final float devLoss = evalDataSetAvgLoss(dev, perceptron, false);
+            final float trainLoss = evalDataSetAvgLoss(train, model, false);
+            final float devLoss = evalDataSetAvgLoss(dev, model, false);
 
             System.out.format("ittr=%d\t trainLoss=%.4f\t devLoss=%.4f\n", i, trainLoss, devLoss);
         }
 
-        evalDataSetAvgLoss(train, perceptron, true);
-        evalDataSetAvgLoss(dev, perceptron, true);
+        evalDataSetAvgLoss(train, model, true);
+        evalDataSetAvgLoss(dev, model, true);
 
-        System.out.print(perceptron.toString());
+        // System.out.print(model.toString());
+        model.writeModel(new BufferedWriter(new OutputStreamWriter(System.out)));
     }
 
-    public float evalDataSetAvgLoss(final DataSet data, final Perceptron perceptron, final boolean confMatrix) {
-        final int numClasses = perceptron.numClasses();
+    public float evalDataSetAvgLoss(final DataSet data, final Classifier model, final boolean confMatrix) {
+        final int numClasses = model.numClasses();
         final int counts[][] = new int[numClasses][numClasses];
         for (int i = 0; i < numClasses; i++) {
             for (int j = 0; j < numClasses; j++) {
@@ -200,12 +213,12 @@ public class ModelTrainer extends BaseCommandlineTool {
 
         float loss = 0;
         for (int i = 0; i < data.numExamples; i++) {
-            final int goldClass = data.classification.get(i);
-            final int guessClass = perceptron.classify(data.features.get(i));
+            final int goldClass = model.value2class(data.classification.get(i));
+            final int guessClass = model.classify(data.features.get(i));
 
             // System.out.println("gold=" + goldClass + " guess=" + guessClass);
 
-            loss += perceptron.computeLoss(goldClass, guessClass);
+            loss += model.computeLoss(goldClass, guessClass);
             counts[goldClass][guessClass] += 1;
         }
 
@@ -243,13 +256,14 @@ public class ModelTrainer extends BaseCommandlineTool {
         public int numFeatures = -1;
 
         public DataSet(final InputStream is) throws Exception {
-            readDataSet(is, null);
+            readDataSet(is);
+            // readDataSet(is, null);
             // readOldFormat(is);
         }
 
-        public DataSet(final InputStream is, final Perceptron perceptron) throws Exception {
-            readDataSet(is, perceptron);
-        }
+        // public DataSet(final InputStream is, final Perceptron perceptron) throws Exception {
+        // readDataSet(is, perceptron);
+        // }
 
         /**
          * 
@@ -257,7 +271,8 @@ public class ModelTrainer extends BaseCommandlineTool {
          * 2825 2883 7348 30622 55242 95299 0 : 98695 0 19 87 117 185 228 1342 2665 2733 2763 2831 2874 23458 31295
          * 71352 79105 2 : 98695 0 38 68 136 166 234 430 2684 2714 2782 2812 2880 7264 47405 55158 95299 ....
          */
-        private void readDataSet(final InputStream is, final Perceptron perceptron) throws Exception {
+        // private void readDataSet(final InputStream is, final Perceptron perceptron) throws Exception {
+        private void readDataSet(final InputStream is) throws Exception {
             final BufferedReader br = new BufferedReader(new InputStreamReader(is));
             numExamples = 0;
             for (String line = br.readLine(); line != null; line = br.readLine()) {
@@ -267,10 +282,10 @@ public class ModelTrainer extends BaseCommandlineTool {
                 final int numPosFeats = tokens.length - 3;
                 numExamples++;
 
-                int goldClass = new Integer(tokens[0]);
-                if (perceptron != null) {
-                    goldClass = perceptron.value2class(goldClass);
-                }
+                final int goldClass = new Integer(tokens[0]);
+                // if (perceptron != null) {
+                // goldClass = perceptron.value2class(goldClass);
+                // }
                 classification.add(goldClass);
 
                 final int feats[] = new int[numPosFeats];
