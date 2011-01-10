@@ -23,7 +23,7 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         final int sentLength = tokens.length;
         if (chart == null || chart.size() < sentLength) {
             chart = new DenseVectorChart(tokens, grammar);
@@ -31,7 +31,7 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
             chart.clear(sentLength);
         }
 
-        super.initParser(tokens);
+        super.initSentence(tokens);
     }
 
     @Override
