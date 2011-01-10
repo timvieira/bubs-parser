@@ -29,7 +29,7 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         chart = new CellChart(tokens, opts.viterbiMax(), this);
 
         final int n = tokens.length;
@@ -70,12 +70,12 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
 
     @Override
     protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
-        ChartEdge edge, unaryEdge;
-        boolean edgeBelowThresh = false;
+        final ChartEdge unaryEdge;
 
         agenda = new PriorityQueue<ChartEdge>();
         for (final ChartEdge viterbiEdge : bestEdges) {
-            if (viterbiEdge != null && viterbiEdge.fom > bestFOM - beamDeltaThresh) {
+            // if (viterbiEdge != null && viterbiEdge.fom > bestFOM - beamDeltaThresh) {
+            if (fomCheckAndUpdate(viterbiEdge)) {
                 agenda.add(viterbiEdge);
                 cellPushed++;
             }
@@ -90,28 +90,43 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
             }
         }
 
-        while (agenda.isEmpty() == false && cellPopped < beamWidth && !edgeBelowThresh) {
-            edge = agenda.poll();
-            if (edge.fom < bestFOM - beamDeltaThresh) {
-                edgeBelowThresh = true;
-            } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
+        ChartEdge edge = agenda.poll();
+        while (edge != null && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
+            cellPopped++;
+            updateMaxcFOM(edge);
+            if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
-                cellPopped++;
-                updateMaxcFOM(edge);
 
                 // Add unary productions to agenda so they can compete with binary productions
+                // No unary productions are added if CellConstraints are turned on and this cell
+                // is only open to factored non-terms because getUnaryProd..() will return null
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                    unaryEdge = chart.new ChartEdge(p, cell);
-                    final int nt = p.parent;
-                    cellConsidered++;
-                    if ((bestEdges[nt] == null || unaryEdge.fom > bestEdges[nt].fom)
-                            && (unaryEdge.fom > bestFOM - beamDeltaThresh)) {
-                        agenda.add(unaryEdge);
-                        cellPushed++;
-                    }
+                    addEdgeToCollection(chart.new ChartEdge(p, cell));
                 }
             }
+            edge = agenda.poll();
         }
+
+        // while (agenda.isEmpty() == false && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
+        // edge = agenda.poll();
+        // if (edge.inside() > cell.getInside(edge.prod.parent)) {
+        // cell.updateInside(edge);
+        // cellPopped++;
+        // updateMaxcFOM(edge);
+        //
+        // // Add unary productions to agenda so they can compete with binary productions
+        // for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
+        // unaryEdge = chart.new ChartEdge(p, cell);
+        // final int nt = p.parent;
+        // cellConsidered++;
+        // if ((bestEdges[nt] == null || unaryEdge.fom > bestEdges[nt].fom)
+        // && fomCheckAndUpdate(unaryEdge)) {
+        // agenda.add(unaryEdge);
+        // cellPushed++;
+        // }
+        // }
+        // }
+        // }
 
         cell.bestEdge = maxcBackptr;
 

@@ -1,175 +1,102 @@
 package edu.ohsu.cslu.parser.beam;
 
+import java.util.PriorityQueue;
+
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
-public class BSCPBoundedHeap extends BSCPPruneViterbi {
+/**
+ * 
+ * @author Nate Bodenstab This is currently slower than BSCPPruneViterbi.
+ */
+public class BSCPBoundedHeap extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
-	public BSCPBoundedHeap(final ParserDriver opts, final LeftHashGrammar grammar) {
-		super(opts, grammar);
-	}
+    ChartEdge worstEdge;
+    ChartEdge[] edgesInAgenda;
 
-	@Override
-	protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
-		ChartEdge edge;
-		ChartEdge unaryEdge;
-		boolean edgeBelowThresh = false;
-		int numAdded = 0;
-		// final BoundedHeap boundedHeap = new BoundedHeap(maxEdgesToAdd, 3);
-		final CircularBoundedHeap boundedHeap = new CircularBoundedHeap(beamWidth);
+    public BSCPBoundedHeap(final ParserDriver opts, final LeftHashGrammar grammar) {
+        super(opts, grammar);
+    }
 
-		for (int i = 0; i < grammar.numNonTerms(); i++) {
-			if (bestEdges[i] != null) {
-				boundedHeap.add(bestEdges[i]);
-			}
-		}
+    @Override
+    protected void initCell(final short start, final short end) {
+        agenda = new PriorityQueue<ChartEdge>();
+        worstEdge = null;
+        edgesInAgenda = new ChartEdge[grammar.numNonTerms()];
+    }
 
-		while (boundedHeap.isEmpty() == false && numAdded <= beamWidth && !edgeBelowThresh) {
-			edge = boundedHeap.poll();
-			if (edge.fom < bestFOM - beamDeltaThresh) {
-				edgeBelowThresh = true;
-			} else if (edge.inside() > cell.getInside(edge.prod.parent)) {
-				cell.updateInside(edge);
-				numAdded++;
+    // v2: keep a heap of only size k by removing the worst edge when adding a better one
+    @Override
+    protected void addEdgeToCollection(final ChartEdge edge) {
 
-				// Add unary productions to agenda so they can compete with binary productions
-				for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-					unaryEdge = chart.new ChartEdge(p, cell);
-					if ((bestEdges[p.parent] == null || bestEdges[p.parent].fom < unaryEdge.fom) && unaryEdge.fom > bestFOM - beamDeltaThresh) {
-						boundedHeap.add(unaryEdge);
-					}
-				}
-			}
-		}
-	}
+        final int parent = edge.prod.parent;
+        final ChartEdge agendaEdge = edgesInAgenda[parent];
+        if (agendaEdge != null) {
+            if (agendaEdge.fom > edge.fom) {
+                return;
+            }
+            agenda.remove(agendaEdge);
+            agenda.add(edge);
+            edgesInAgenda[edge.prod.parent] = edge;
+            cellPushed++;
+            if (agendaEdge == worstEdge) {
+                resetWorstEdge();
+            }
+        } else {
+            if (agenda.size() < beamWidth) {
+                agenda.add(edge);
+                edgesInAgenda[edge.prod.parent] = edge;
+                cellPushed++;
+                if (worstEdge == null || edge.fom < worstEdge.fom) {
+                    worstEdge = edge;
+                }
+            } else if (edge.fom > worstEdge.fom) {
+                // must remove worst edge, add new edge, and find new worst edge
+                agenda.remove(worstEdge); // O(lg(k))
+                agenda.add(edge); // O(lg(k))
+                cellPushed++;
 
-	protected class CircularBoundedHeap {
-		ChartEdge[] heap;
-		int startIndex, endIndex, maxHeapSize, arraySize;
+                edgesInAgenda[worstEdge.prod.parent] = null;
+                edgesInAgenda[edge.prod.parent] = edge;
 
-		public CircularBoundedHeap(final int maxHeapSize) {
-			this.maxHeapSize = maxHeapSize;
-			arraySize = maxHeapSize + 5;
-			heap = new ChartEdge[arraySize];
-			startIndex = 0;
-			endIndex = 0;
-		}
+                resetWorstEdge();
+            }
+        }
+        // else just ignore the edge
+    }
 
-		public int size() {
-			if (startIndex <= endIndex) {
-				return endIndex - startIndex;
-			}
-			return arraySize - (startIndex - endIndex);
-		}
+    protected void resetWorstEdge() {
+        worstEdge = agenda.peek();
+        for (final ChartEdge agendaEdge : agenda) { // O(k)
+            if (agendaEdge.fom < worstEdge.fom) {
+                worstEdge = agendaEdge;
+            }
+        }
+    }
 
-		public boolean isEmpty() {
-			return startIndex == endIndex;
-		}
-
-		private int nextIndex(final int i) {
-			return (i + 1) % arraySize;
-		}
-
-		private int prevIndex(final int i) {
-			// return (i - 1 + maxHeapSize) % maxHeapSize;
-			if (i == 0)
-				return arraySize - 1;
-			return i - 1;
-		}
-
-		public void add(final ChartEdge edge) {
-			if (size() < maxHeapSize || edge.fom > heap[prevIndex(endIndex)].fom) {
-				if (size() < maxHeapSize) {
-					endIndex = nextIndex(endIndex);
-				}
-				// replace worst edge with current edge
-				heap[prevIndex(endIndex)] = edge;
-
-				// move current edge up the heap until it is in it's sorted order
-				ChartEdge tmpEdge;
-				int newEdgeIndex = prevIndex(endIndex), nextEdge = prevIndex(newEdgeIndex);
-				while (newEdgeIndex != startIndex && heap[newEdgeIndex].fom > heap[nextEdge].fom) {
-					// swap heap[newEdgeIndex], heap[nextEdge]
-					tmpEdge = heap[nextEdge];
-					heap[nextEdge] = heap[newEdgeIndex];
-					heap[newEdgeIndex] = tmpEdge;
-					newEdgeIndex = nextEdge;
-					nextEdge = prevIndex(newEdgeIndex);
-				}
-
-				// System.out.println("PUSH: s=" + startIndex + " e=" + endIndex + " size=" + size() + " i=" +
-				// newEdgeIndex + " edge=" + edge);
-			}
-		}
-
-		public ChartEdge poll() {
-			if (isEmpty()) {
-				return null;
-			}
-			final ChartEdge edge = heap[startIndex];
-			startIndex = nextIndex(startIndex);
-			// System.out.println("POLL: " + edge);
-			return edge;
-		}
-	}
-
-	protected class BoundedHeap {
-		ChartEdge[] heap;
-		int startIndex, endIndex, maxHeapSize;
-
-		// items are kept in an array where the 'heap' is represented as the sorted
-		// elements between startIndex and endIndex in the array. If all items are
-		// added first, and then polled second, the BoundedHeap will be time and memory
-		// efficient. But if items are added and polled in an arbitrary order, the
-		// sorted heap portion of the array (between startIndex and endIndex) will start
-		// to shift towards the end of the array. This prevents moving the sorted elements
-		// to the top of the array when an item is polled.
-		// As a result, the actual array size should be larger than the maxHeapSize if the
-		// user plans on using the BoundedHeap in this fashion.
-		public BoundedHeap(final int maxSize, final int memBufferFactor) {
-			maxHeapSize = maxSize;
-			heap = new ChartEdge[maxHeapSize * memBufferFactor];
-			startIndex = 0;
-			endIndex = 0;
-		}
-
-		public int size() {
-			return endIndex - startIndex;
-		}
-
-		public boolean isEmpty() {
-			return size() == 0;
-		}
-
-		public void add(final ChartEdge edge) {
-			if (size() < maxHeapSize || edge.fom > heap[endIndex - 1].fom) {
-				if (size() < maxHeapSize) {
-					endIndex += 1;
-					assert endIndex < heap.length;
-				}
-				heap[endIndex - 1] = edge;
-
-				ChartEdge tmpEdge;
-				int i = endIndex - 2;
-				while (i >= startIndex && heap[i].fom < heap[i + 1].fom) {
-					// swap heap[i], heap[i+1]
-					tmpEdge = heap[i];
-					heap[i] = heap[i + 1];
-					heap[i + 1] = tmpEdge;
-					i--;
-				}
-			}
-		}
-
-		public ChartEdge poll() {
-			if (isEmpty()) {
-				return null;
-			}
-			startIndex += 1;
-			return heap[startIndex - 1];
-		}
-	}
+    // @Override
+    // protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
+    // ChartEdge edge, unaryEdge;
+    // boolean edgeBelowThresh = false;
+    //
+    // while (agenda.isEmpty() == false && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
+    // edge = agenda.poll();
+    // if (edge.inside() > cell.getInside(edge.prod.parent)) {
+    // cell.updateInside(edge);
+    // cellPopped++;
+    // logger.finest("" + edge);
+    //
+    // // Add unary productions to agenda so they can compete with binary productions
+    // for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
+    // unaryEdge = chart.new ChartEdge(p, cell);
+    // cellConsidered++;
+    // if (unaryEdge.fom > bestFOM - beamDeltaThresh) {
+    // addEdgeToCollection(unaryEdge);
+    // }
+    // }
+    // }
+    // }
+    // }
 }
