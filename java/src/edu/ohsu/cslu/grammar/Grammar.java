@@ -68,6 +68,8 @@ public class Grammar implements Serializable {
     public final Tokenizer tokenizer;
     // maps from 0-based index to entry in nonTermSet. Used to reduce absolute index value for feature extraction
     public final SymbolSet<Integer> posSet;
+    public final SymbolSet<Integer> phraseSet; // phraseSet + posSet == nonTermSet
+    // TODO: factored/non-factored phraseSet?
 
     protected final ArrayList<Production> binaryProductions;
     protected final ArrayList<Production> unaryProductions;
@@ -167,6 +169,7 @@ public class Grammar implements Serializable {
         nonTermSet = new SymbolSet<String>();
         lexSet = new SymbolSet<String>();
         posSet = new SymbolSet<Integer>();
+        phraseSet = new SymbolSet<Integer>();
 
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
@@ -223,7 +226,8 @@ public class Grammar implements Serializable {
         // Special cases for the start symbol and the null symbol (used for start/end of sentence markers and
         // dummy non-terminals). Label them as POS. I'm not sure that's right, but it seems to work.
         nonTerminals.add(startSymbolStr);
-        pos.add(startSymbolStr);
+        // pos.add(startSymbolStr);
+        nonPosSet.add(startSymbolStr); // changed by Nate; startSymbol is NOT a pos symbol!
         nonTerminals.add(nullSymbolStr);
         pos.add(nullSymbolStr);
 
@@ -318,11 +322,14 @@ public class Grammar implements Serializable {
 
         // reduce range of POS indicies so we can store the features more efficiently
         for (int i = 0; i < numNonTerms(); i++) {
-            if (isPos(i)) {
+            // TODO: I don't think this works for non-sorted grammars like Nate's
+            // if (isPos(i)) {
+            if (pos.contains(nonTermSet.getSymbol(i))) {
                 posSet.addSymbol(i);
+            } else {
+                phraseSet.addSymbol(i);
             }
         }
-        posSet.addSymbol(nullSymbol);
 
         ParserDriver.getLogger().fine("done.");
     }
@@ -375,6 +382,7 @@ public class Grammar implements Serializable {
         this.nonTermSet = g.nonTermSet;
         this.lexSet = g.lexSet;
         this.posSet = g.posSet;
+        this.phraseSet = g.phraseSet;
         this.nonTermInfo = g.nonTermInfo;
 
         this.tokenizer = g.tokenizer;
@@ -829,6 +837,37 @@ public class Grammar implements Serializable {
     }
 
     public String getStats() {
+        int nFactored = 0, nUnFactored = 0;
+        for (final String nt : nonTermSet) {
+            if (getNonterminal(mapNonterminal(nt)).isFactored()) {
+                nFactored++;
+            } else {
+                nUnFactored++;
+            }
+        }
+
+        final StringBuilder sb = new StringBuilder(256);
+        sb.append("INFO: grammar:");
+        sb.append(" binaryRules=" + numBinaryProds());
+        sb.append(" unaryRules=" + numUnaryProds());
+        sb.append(" lexicalRules=" + numLexProds());
+
+        sb.append(" nonTerminals=" + numNonTerms());
+        sb.append(" lexicalSymbols=" + lexSet.size());
+        sb.append(" posSymbols=" + numPosSymbols());
+        sb.append(" maxPosIndex=" + maxPOSIndex);
+        sb.append(" factoredNTs=" + nFactored);
+        sb.append(" unfactoredNTs=" + nUnFactored);
+
+        sb.append(" startSymbol=" + nonTermSet.getSymbol(startSymbol));
+        sb.append(" nullSymbol=" + nonTermSet.getSymbol(nullSymbol));
+        sb.append(" factorization=" + (isLeftFactored() ? "left" : "right"));
+        sb.append(" grammarFormat=" + grammarFormat);
+
+        return sb.toString();
+    }
+
+    public String getStatsVerbose() {
 
         int nFactored = 0, nUnFactored = 0;
         for (final String nt : nonTermSet) {
