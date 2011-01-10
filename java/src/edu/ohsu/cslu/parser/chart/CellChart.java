@@ -114,11 +114,11 @@ public class CellChart extends Chart {
 
         private void updateCounts(final Production p) {
             if (p.isBinaryProd()) {
-                parser.currentInput.nBinary++;
+                parser.currentInput.nBinaryConsidered++;
             } else if (p.isLexProd()) {
                 parser.currentInput.nLex++;
             } else {
-                parser.currentInput.nUnary++;
+                parser.currentInput.nUnaryConsidered++;
                 if (this.width() == 1) {
                     parser.currentInput.nLexUnary++;
                 }

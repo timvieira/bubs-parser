@@ -19,14 +19,15 @@ public class ParseStats {
     public String parseBracketString;
     public float insideProbability = Float.NEGATIVE_INFINITY;
 
-    public int totalPops = 0;
-    public int totalPushes = 0;
+    public long totalPops = 0;
+    public long totalPushes = 0;
     public long totalConsidered = 0;
 
-    public int nLex = 0;
+    public int nLex = 0; // num considered == num in chart
     public int nLexUnary = 0;
-    public int nUnary = 0;
-    public int nBinary = 0;
+    public long nLexUnaryConsidered = 0;
+    public long nUnaryConsidered = 0;
+    public long nBinaryConsidered = 0;
 
     public float parseTimeSec = 0;
     public float fomInitSec = 0;
@@ -64,22 +65,18 @@ public class ParseStats {
         // sentenceLength, sentenceMD5, parseTimeSec, insideProbability);
         String result = String.format("STAT: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f", sentenceNumber,
                 sentenceLength, parseTimeSec, insideProbability);
-        if (totalPops > 0)
-            result += " pops=" + totalPops;
-        if (totalPushes > 0)
-            result += " pushes=" + totalPushes;
-        if (totalConsidered > 0)
-            result += " considered=" + totalConsidered;
-        if (fomInitSec > 0)
-            result += " fomInit=" + fomInitSec;
-        if (ccInitSec > 0)
-            result += " ccInitSec=" + ccInitSec;
-        if (nBinary > 0) {
-            result += " nLex=" + nLex;
-            result += " nLexUnary=" + nLexUnary;
-            result += " nUnary=" + nUnary;
-            result += " nBinary=" + nBinary;
-        }
+
+        result += " pops=" + totalPops;
+        result += " pushes=" + totalPushes;
+        result += " considered=" + totalConsidered;
+
+        result += " fomInit=" + fomInitSec;
+        result += " ccInitSec=" + ccInitSec;
+
+        result += " nLex=" + nLex;
+        result += " nLexUnary=" + nLexUnaryConsidered;
+        result += " nUnary=" + nUnaryConsidered;
+        result += " nBinary=" + nBinaryConsidered;
 
         return result;
     }

@@ -23,7 +23,7 @@ public class PerceptronCellSelector extends CellSelector {
     private float learningRate;
 
     // private BaseGrammar grammar;
-    private CSLUTBlockedCells cslutScores;
+    private CSLUTCellConstraints cslutScores;
     private Vector<Float> cslutStartScore, cslutEndScore;
     private ChartParser<?, ?> parser;
     private PriorityQueue<HashSetChartCell> spanAgenda;
@@ -40,7 +40,7 @@ public class PerceptronCellSelector extends CellSelector {
     // {
     // public PerceptronSpanSelection(final CSLUTBlockedCellsTraversal cslutScores) {
     public PerceptronCellSelector(final BufferedReader modelStream, final BufferedReader cslutScoresStream) {
-        cslutScores = new CSLUTBlockedCells(cslutScoresStream, null);
+        cslutScores = new CSLUTCellConstraints(cslutScoresStream, null);
         if (modelStream != null) {
             trainingMode = false;
             try {
@@ -121,7 +121,7 @@ public class PerceptronCellSelector extends CellSelector {
             expandFrontier(bestSpan);
         }
 
-        return new short[] { (short) bestSpan.start(), (short) bestSpan.end() };
+        return new short[] { bestSpan.start(), bestSpan.end() };
     }
 
     private HashSetChartCell pollBestSpan() {

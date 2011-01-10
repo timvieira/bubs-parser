@@ -48,7 +48,7 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
  */
 
-public class CSLUTBlockedCells extends CellSelector {
+public class CSLUTCellConstraints extends CellSelector {
 
     private LinkedList<ChartCell> cellList;
     private Iterator<ChartCell> cellListIterator;
@@ -70,7 +70,7 @@ public class CSLUTBlockedCells extends CellSelector {
     // this(modelStream, ParserDriver.param1, ParserDriver.param2, ParserDriver.param3);
     // }
 
-    public CSLUTBlockedCells(final BufferedReader modelStream, final String threshString) {
+    public CSLUTCellConstraints(final BufferedReader modelStream, final String threshString) {
         if (threshString != null) {
             final String[] tokens = threshString.split(",");
             if (tokens.length > 0) {
@@ -249,7 +249,7 @@ public class CSLUTBlockedCells extends CellSelector {
     public short[] next() {
         // final ChartCell cell = cellList.poll();
         final ChartCell cell = cellListIterator.next();
-        return new short[] { (short) cell.start(), (short) cell.end() };
+        return new short[] { cell.start(), cell.end() };
     }
 
     @Override
