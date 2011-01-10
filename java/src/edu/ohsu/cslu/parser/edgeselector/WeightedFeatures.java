@@ -10,7 +10,6 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -47,7 +46,7 @@ public class WeightedFeatures extends EdgeSelector {
         ParseTree goldTree;
         String line;
         final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorType = CellSelectorType.LeftRightBottomTop;
+        // opts.cellSelectorType = CellSelectorType.LeftRightBottomTop;
         final TrainingParser parser = new TrainingParser(opts, (LeftListGrammar) grammar);
 
         while ((line = inStream.readLine()) != null) {
