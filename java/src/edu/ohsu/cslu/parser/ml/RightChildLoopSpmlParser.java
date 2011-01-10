@@ -21,14 +21,14 @@ public class RightChildLoopSpmlParser extends SparseMatrixLoopParser<RightCscSpa
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         final int sentLength = tokens.length;
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
         } else {
             chart = new DenseVectorChart(tokens, grammar);
         }
-        super.initParser(tokens);
+        super.initSentence(tokens);
     }
 
     @Override

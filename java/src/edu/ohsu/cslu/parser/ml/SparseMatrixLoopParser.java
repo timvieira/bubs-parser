@@ -15,7 +15,7 @@ public abstract class SparseMatrixLoopParser<G extends SparseMatrixGrammar, C ex
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         startTime = System.currentTimeMillis();
     }
 
