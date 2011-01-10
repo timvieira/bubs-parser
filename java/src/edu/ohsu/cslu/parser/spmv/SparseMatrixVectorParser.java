@@ -1,13 +1,13 @@
 package edu.ohsu.cslu.parser.spmv;
 
 import cltool4j.args4j.EnumAliasMap;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
-import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 
 /**
@@ -60,7 +60,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     public abstract void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell);
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         startTime = System.currentTimeMillis();
         if (collectDetailedStatistics) {
             totalBinarySpMVTime = 0;
@@ -150,7 +150,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
         final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
         final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
-        final short chartCellEnd = (short) chartCell.end();
+        final short chartCellEnd = chartCell.end();
 
         unarySpmv(chartCellChildren, chartCellProbabilities, chartCellMidpoints, 0, chartCellEnd);
     }

@@ -40,7 +40,7 @@ public class CartesianProductLeftChildHashSpmlParser extends
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         final int sentLength = tokens.length;
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
@@ -48,7 +48,7 @@ public class CartesianProductLeftChildHashSpmlParser extends
             // TODO Consolidate chart construction in a superclass using the genericized grammar
             chart = new PackedArrayChart(tokens, grammar);
         }
-        super.initParser(tokens);
+        super.initSentence(tokens);
     }
 
     @Override

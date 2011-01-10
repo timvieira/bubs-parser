@@ -26,7 +26,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         initParser(tokens, grammar.numNonTerms(), grammar.numNonTerms());
     }
 
@@ -44,7 +44,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
             totalValidCartesianProductEntries = 0;
         }
 
-        super.initParser(tokens);
+        super.initSentence(tokens);
     }
 
     /**
