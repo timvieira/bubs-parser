@@ -44,7 +44,7 @@ import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
 import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
-import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
+import edu.ohsu.cslu.parser.cellselector.CSLUTCellConstraints;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidth;
@@ -268,7 +268,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             if (chartConstraintsModel != null) {
                 // cellSelectorType = CellSelectorType.CSLUT;
                 // chartConstraintsModelStream = new BufferedReader(new FileReader(chartConstraintsModel));
-                cellSelector = new CSLUTBlockedCells(new BufferedReader(new FileReader(chartConstraintsModel)),
+                cellSelector = new CSLUTCellConstraints(new BufferedReader(new FileReader(chartConstraintsModel)),
                         chartConstraintsThresh);
             }
 

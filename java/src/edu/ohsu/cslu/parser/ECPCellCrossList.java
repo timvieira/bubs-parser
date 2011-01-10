@@ -16,7 +16,6 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
         final HashSetChartCell cell = chart.getCell(start, end);
         float leftInside, rightInside;
 
-        // final boolean onlyFactored = (hasCellConstraints && cellConstraints.factoredParentsOnly(start, end));
         final boolean onlyFactored = cellSelector.isOpenOnlyFactored(start, end);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
@@ -36,14 +35,24 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
             }
         }
 
-        // if (!hasCellConstraints || cellConstraints.unaryOpen(start, end)) {
+        int nUnaryConsidered = 0, nUnaryInCell = 0;
         if (cellSelector.isOpenUnary(start, end)) {
             for (final int childNT : cell.getNtArray()) {
                 for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
+                    if (!cell.hasNT(p.parent))
+                        nUnaryInCell++;
+
                     cell.updateInside(p, p.prob + cell.getInside(childNT));
+                    nUnaryConsidered++;
                     currentInput.totalConsidered++;
+                    if (end - start == 1) {
+                        currentInput.nLexUnaryConsidered++;
+                    }
                 }
             }
         }
+
+        logger.finer("STAT: UNARY: " + currentInput.sentenceLength + " " + (end - start) + " " + nUnaryConsidered + " "
+                + nUnaryInCell);
     }
 }

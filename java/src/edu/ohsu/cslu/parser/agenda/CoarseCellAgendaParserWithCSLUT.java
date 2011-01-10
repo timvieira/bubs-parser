@@ -6,16 +6,16 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
+import edu.ohsu.cslu.parser.cellselector.CSLUTCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
 public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
-    protected CSLUTBlockedCells cslutScores;
+    protected CSLUTCellConstraints cslutScores;
 
     public CoarseCellAgendaParserWithCSLUT(final ParserDriver opts, final LeftHashGrammar grammar,
-            final CSLUTBlockedCells cslutScores) {
+            final CSLUTCellConstraints cslutScores) {
         super(opts, grammar);
         this.cslutScores = cslutScores;
     }

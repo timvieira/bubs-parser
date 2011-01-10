@@ -13,7 +13,7 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
+import edu.ohsu.cslu.parser.cellselector.CSLUTCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.GoldChart;
@@ -22,12 +22,12 @@ import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
 public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
-    private CSLUTBlockedCells cslutScores;
+    private CSLUTCellConstraints cslutScores;
     private Vector<Float> cslutStartScore, cslutEndScore;
     Perceptron perceptron = null;
 
     public BSCPPerceptronCell(final ParserDriver opts, final LeftHashGrammar grammar,
-            final CSLUTBlockedCells cslutScores) {
+            final CSLUTCellConstraints cslutScores) {
         super(opts, grammar);
         this.cslutScores = cslutScores;
     }
