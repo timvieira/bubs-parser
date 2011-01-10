@@ -121,12 +121,12 @@ public abstract class Chart {
     }
 
     public static abstract class ChartCell {
-        protected final int start, end;
+        protected final short start, end;
         public int numEdgesConsidered = 0, numEdgesAdded = 0, numSpanVisits = 0;
 
         public ChartCell(final int start, final int end) {
-            this.start = start;
-            this.end = end;
+            this.start = (short) start;
+            this.end = (short) end;
         }
 
         /**
@@ -155,14 +155,14 @@ public abstract class Chart {
         /**
          * @return the word index of the first word covered by this cell
          */
-        public final int start() {
+        public final short start() {
             return start;
         }
 
         /**
          * @return the word index of the last word covered by this cell
          */
-        public final int end() {
+        public final short end() {
             return end;
         }
 

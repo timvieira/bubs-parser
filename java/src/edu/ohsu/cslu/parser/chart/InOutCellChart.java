@@ -13,7 +13,7 @@ public class InOutCellChart extends CellChart {
         chart = new ChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
             for (int end = start + 1; end < size + 1; end++) {
-                chart[start][end] = new ChartCell(start, end);
+                chart[start][end] = new ChartCell((short) start, (short) end);
             }
         }
     }
@@ -31,7 +31,7 @@ public class InOutCellChart extends CellChart {
 
         public float outside[];
 
-        public ChartCell(final int start, final int end) {
+        public ChartCell(final short start, final short end) {
             super(start, end);
             outside = new float[parser.grammar.numNonTerms()];
             Arrays.fill(outside, Float.NEGATIVE_INFINITY);

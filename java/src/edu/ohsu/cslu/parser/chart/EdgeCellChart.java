@@ -22,7 +22,7 @@ public class EdgeCellChart extends CellChart {
         chart = new ChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
             for (int end = start + 1; end < size + 1; end++) {
-                chart[start][end] = new ChartCell(start, end);
+                chart[start][end] = new ChartCell((short) start, (short) end);
             }
         }
     }
@@ -50,7 +50,7 @@ public class EdgeCellChart extends CellChart {
 
     public class ChartCell extends CellChart.HashSetChartCell {
 
-        public ChartCell(final int start, final int end) {
+        public ChartCell(final short start, final short end) {
             super(start, end);
         }
 
@@ -108,8 +108,10 @@ public class EdgeCellChart extends CellChart {
         }
 
         /**
-         * Alternate addEdge() function so we aren't required to create a new ChartEdge object in the CYK inner loop for every potential new edge entry. Adds an edge to the cell if
-         * the edge's probability is greater than an existing edge with the same non-terminal. Optional operation (some {@link ChartCell} implementations may be immutable).
+         * Alternate addEdge() function so we aren't required to create a new ChartEdge object in the CYK inner loop for
+         * every potential new edge entry. Adds an edge to the cell if the edge's probability is greater than an
+         * existing edge with the same non-terminal. Optional operation (some {@link ChartCell} implementations may be
+         * immutable).
          * 
          * @param p The production to add
          * @param leftCell The left child of this production
@@ -117,7 +119,8 @@ public class EdgeCellChart extends CellChart {
          * @param insideProb The production probability
          */
         // @Override
-        public boolean addEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell, final float insideProb) {
+        public boolean addEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell,
+                final float insideProb) {
             final int parent = p.parent;
             final ChartEdge prevBestEdge = bestEdge[parent];
             numEdgesConsidered++;
