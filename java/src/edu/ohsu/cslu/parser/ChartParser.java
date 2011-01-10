@@ -9,6 +9,7 @@ import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 
 public abstract class ChartParser<G extends Grammar, C extends Chart> extends Parser<G> {
 
@@ -24,9 +25,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     @Override
     public ParseTree findBestParse(final int[] tokens) throws Exception {
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
-        initParser(tokens);
+        initSentence(tokens);
         addLexicalProductions(tokens);
-        cellSelector.init(this);
+
         if (edgeSelector != null) {
             if (collectDetailedStatistics) {
                 final long t1 = System.currentTimeMillis();
@@ -37,6 +38,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                 edgeSelector.init(chart);
             }
         }
+        cellSelector.initSentence(this);
 
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
@@ -62,7 +64,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     protected abstract void visitCell(short start, short end);
 
     @SuppressWarnings("unchecked")
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         chart = (C) new CellChart(tokens, opts.viterbiMax(), this);
     }
 
@@ -174,11 +176,11 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                 final int sentLen = currentInput.sentenceLength;
                 for (int i = 1; i <= 5; i++) {
                     if (span == i) {
-                        featIndicies.add(numFeats); // span length 1-5 }
+                        featIndicies.add(numFeats); // span length 1-5
                     }
                     numFeats++;
                     if (span >= i * 10) {
-                        featIndicies.add(numFeats); // span > 10,20,30,40,50 }
+                        featIndicies.add(numFeats); // span > 10,20,30,40,50
                     }
                     numFeats++;
                     if ((float) span / sentLen >= i / 5.0) {
@@ -227,11 +229,14 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                 // we are decoding -- there are a number of things we could do here to get the "best"
                 // POS tag for this index; I'm choosing to tag the input sentence with a XX tagger
                 // and use the 1-best output.
-
+                index = ((BoundaryInOut) this.edgeSelector).get1bestPOSTag(start);
+                // NOTE: this also works with InsideWithFwdBkwd since it inherits from BoundaryInOut
             }
         }
 
-        assert index != -1;
+        if (index == -1) {
+            throw new UnsupportedOperationException("ERROR: not able to get POS Index during feature extraction");
+        }
         return grammar.posSet.getIndex(index); // map from sparce POS index to compact ordering
     }
 
