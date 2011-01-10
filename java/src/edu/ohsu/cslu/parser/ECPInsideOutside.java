@@ -48,7 +48,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         chart = new InOutCellChart(tokens, opts.viterbiMax(), this);
 
         // TODO: compress this so it's n*(n/2) instead of n*n
@@ -68,8 +68,8 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     public ParseTree findBestParse(final int[] tokens) throws Exception {
         final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
 
-        initParser(tokens);
-        cellSelector.init(this);
+        initSentence(tokens);
+        cellSelector.initSentence(this);
         edgeSelector.init(chart);
         addLexicalProductions(tokens);
 
