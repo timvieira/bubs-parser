@@ -18,7 +18,7 @@ import cltool4j.ConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
+import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
@@ -158,11 +158,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public static void suiteSetUp() throws Exception {
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
-        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
+                .unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
+        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
+                .unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
 
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
@@ -189,8 +189,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
             simpleGrammar2 = createGrammar(simpleGrammar2());
         }
 
-        parser = createParser(f2_21_grammar, CellSelector.create(CellSelectorType.LeftRightBottomTop), parserOptions(),
-                configProperties());
+        parser = createParser(f2_21_grammar, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());
 
         // if (!headerLinePrinted) {
         // System.out.println(parser.getStatHeader());
@@ -239,8 +238,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar1() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        parser = createParser(simpleGrammar1, CellSelector.create(CellSelectorType.LeftRightBottomTop),
-                parserOptions(), configProperties());
+        parser = createParser(simpleGrammar1, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
         assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree);
@@ -255,8 +253,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar2() throws Exception {
         final String sentence = "The fish market stands last";
 
-        parser = createParser(simpleGrammar2, CellSelector.create(CellSelectorType.LeftRightBottomTop),
-                parserOptions(), configProperties());
+        parser = createParser(simpleGrammar2, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
         assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);
@@ -328,7 +325,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * @throws Exception
      */
     @Test
-    @PerformanceTest({ "mbp", "0" })
+    @PerformanceTest( { "mbp", "0" })
     public abstract void profileSentences11Through20() throws Exception;
 
     protected void internalProfileSentences11Through20() throws Exception {
