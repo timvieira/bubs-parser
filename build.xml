@@ -417,6 +417,14 @@
 		</antcall>
 	</target>
 
+        <target name="parser-trainer" depends="compile-java" description="Package parser and FOM training tool">
+                <antcall target="package-tool">
+                        <param name="root-class" value="edu.ohsu.cslu.parser.ParserTrainer" />
+                        <param name="tool-name" value="parser-trainer" />
+                </antcall>
+        </target>
+
+
     <target name="stem" depends="compile-java" description="Package Porter Stemmer">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.common.PorterStemmer" />
