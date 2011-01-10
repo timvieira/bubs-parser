@@ -51,7 +51,7 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         final int sentLength = tokens.length;
         if (chart == null || chart.size() < sentLength) {
             chart = new PackedArrayChart(tokens, grammar);
@@ -60,7 +60,7 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
             chart.clear(sentLength);
         }
 
-        super.initParser(tokens);
+        super.initSentence(tokens);
     }
 
     @Override
