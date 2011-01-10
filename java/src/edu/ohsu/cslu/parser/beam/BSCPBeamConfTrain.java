@@ -8,6 +8,7 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
@@ -32,7 +33,7 @@ import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
 public class BSCPBeamConfTrain extends BSCPPruneViterbi {
 
-    int nPopBinary, nPopUnary, nGoldEdges;
+    // int nPopBinary, nPopUnary, nGoldEdges;
 
     Perceptron perceptron;
 
@@ -40,84 +41,73 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
         super(opts, grammar);
     }
 
+    // @Override
+    // protected void visitCell(final short start, final short end) {
+    // final HashSetChartCell cell = chart.getCell(start, end);
+    // ChartEdge edge;
+    //
+    // // NOTE: we want the CSLUT span scores, but we don't want to block the cells
+    // // boolean onlyFactored = false;
+    // // if (cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
+    // // onlyFactored = ((CSLUTBlockedCells) cellSelector).isCellOpenOnlyToFactored(start, end);
+    // // }
+    //
+    // initCell();
+    //
+    // if (end - start == 1) {
+    // // lexical and unary productions can't compete in the same agenda until their FOM
+    // // scores are changed to be comparable
+    // for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
+    // cell.updateInside(lexProd, cell, null, lexProd.prob);
+    // for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
+    // addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
+    // }
+    //
+    // }
+    // } else {
+    // for (int mid = start + 1; mid < end; mid++) { // mid point
+    // final HashSetChartCell leftCell = chart.getCell(start, mid);
+    // final HashSetChartCell rightCell = chart.getCell(mid, end);
+    // for (final int leftNT : leftCell.getLeftChildNTs()) {
+    // for (final int rightNT : rightCell.getRightChildNTs()) {
+    // for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
+    // // if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
+    // edge = chart.new ChartEdge(p, leftCell, rightCell);
+    // addEdgeToCollection(edge);
+    // // }
+    // }
+    // }
+    // }
+    // }
+    // }
+    //
+    // addEdgeCollectionToChart(cell);
+    // }
+
     @Override
-    protected void visitCell(final short start, final short end) {
-        final HashSetChartCell cell = chart.getCell(start, end);
-        ChartEdge edge;
-
-        // NOTE: we want the CSLUT span scores, but we don't want to block the cells
-        // boolean onlyFactored = false;
-        // if (cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
-        // onlyFactored = ((CSLUTBlockedCells) cellSelector).isCellOpenOnlyToFactored(start, end);
-        // }
-
-        edgeCollectionInit();
-
-        if (end - start == 1) {
-            // lexical and unary productions can't compete in the same agenda until their FOM
-            // scores are changed to be comparable
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
-                cell.updateInside(lexProd, cell, null, lexProd.prob);
-                for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
-                    addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
-                }
-
-            }
-        } else {
-            for (int mid = start + 1; mid < end; mid++) { // mid point
-                final HashSetChartCell leftCell = chart.getCell(start, mid);
-                final HashSetChartCell rightCell = chart.getCell(mid, end);
-                for (final int leftNT : leftCell.getLeftChildNTs()) {
-                    for (final int rightNT : rightCell.getRightChildNTs()) {
-                        for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
-                            // if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
-                            edge = chart.new ChartEdge(p, leftCell, rightCell);
-                            addEdgeToCollection(edge);
-                            // }
-                        }
-                    }
-                }
-            }
-        }
-
-        addEdgeCollectionToChart(cell);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
-        ChartEdge edge, unaryEdge;
-        boolean edgeBelowThresh = false;
-        int goldRank = 0;
-        cell.numEdgesAdded = 0;
-
-        nPopBinary = 0;
-        nPopUnary = 0;
-        nGoldEdges = 0;
-
-        agenda = new PriorityQueue<ChartEdge>();
-        for (final ChartEdge viterbiEdge : bestEdges) {
-            if (viterbiEdge != null && viterbiEdge.fom > bestFOM - beamDeltaThresh) {
-                agenda.add(viterbiEdge);
-                cellPushed++;
-            }
-        }
+    protected void initSentence(final int[] tokens) {
+        super.initSentence(tokens);
 
         if (currentInput.inputTreeChart == null) {
             logger.info("ERROR: BSCPTrainFOMConfidence requires gold trees as input");
             System.exit(1);
         }
-        if (ParserDriver.featTemplate == null) {
-            logger.info("ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
-            System.exit(1);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
+
+        agenda = new PriorityQueue<ChartEdge>();
+        for (final ChartEdge viterbiEdge : bestEdges) {
+            if (viterbiEdge != null && this.fomCheckAndUpdate(viterbiEdge)) {
+                agenda.add(viterbiEdge);
+                cellPushed++;
+            }
         }
 
         final List<Chart.ChartEdge> goldEdges = (List<edu.ohsu.cslu.parser.chart.Chart.ChartEdge>) currentInput.inputTreeChart
                 .getEdgeList(cell.start(), cell.end()).clone();
-
-        // for (final Chart.ChartEdge goldEdge : goldEdges) {
-        // System.out.println("gold:" + goldEdge.prod);
-        // }
 
         // remove lexical entries (we're adding them all by default) but keep unaries in span=1 cells
         if (cell.width() == 1) {
@@ -131,15 +121,23 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
             }
         }
 
-        boolean hasGoldEdge = false;
-        nGoldEdges = goldEdges.size();
-        hasGoldEdge = (nGoldEdges > 0);
+        boolean goldIsFactored = false;
+        for (final Chart.ChartEdge goldEdge : goldEdges) {
+            if (grammar.getNonterminal(goldEdge.prod.parent).isFactored) {
+                goldIsFactored = true;
+            }
+        }
+
+        int goldRank = 0;
+        final int numGoldEdges = goldEdges.size();
+        final boolean hasGoldEdge = numGoldEdges > 0;
         if (hasGoldEdge) {
             goldRank = 99999;
         }
 
-        while (agenda.isEmpty() == false && cellPopped < beamWidth && !edgeBelowThresh) {
-            edge = agenda.poll();
+        ChartEdge edge = agenda.poll();
+        while (edge != null && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
+            cellPopped++;
 
             // check if we just popped a gold edge
             if (hasGoldEdge) {
@@ -152,46 +150,37 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
                 if (goldEdgeAdded != null) {
                     goldEdges.remove(goldEdgeAdded);
                     if (goldEdges.size() == 0) {
-                        goldRank = cellPopped + 1;
+                        goldRank = cellPopped;
                     }
                 }
             }
 
             // add edge to chart
-            if (edge.fom < bestFOM - beamDeltaThresh) {
-                edgeBelowThresh = true;
-            } else if (edge.inside() > cell.getInside(edge.prod.parent)) {
+            if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
-                cellPopped++;
-
-                if (edge.prod.isBinaryProd())
-                    nPopBinary++;
-                if (edge.prod.isUnaryProd())
-                    nPopUnary++;
 
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                    unaryEdge = chart.new ChartEdge(p, cell);
-                    final int nt = p.parent;
-                    if ((bestEdges[nt] == null || unaryEdge.fom > bestEdges[nt].fom)
-                            && (unaryEdge.fom > bestFOM - beamDeltaThresh)) {
+                    cellConsidered++;
+                    final ChartEdge unaryEdge = chart.new ChartEdge(p, cell);
+                    if (fomCheckAndUpdate(unaryEdge)) {
                         agenda.add(unaryEdge);
+                        cellPushed++;
                     }
                 }
             }
+            edge = agenda.poll();
         }
 
         final SparseBitVector cellFeats = getCellFeatures(cell.start(), cell.end(), ParserDriver.featTemplate);
-        System.out.println("DSTAT: " + goldRank + " : " + cellFeats.vectorLength() + " "
-                + intArray2Str(cellFeats.elements()));
 
-        // if (nGoldEdges > 0) {
-        // System.out.println("DSTAT: " + chart.size() + " " + cell.width() + " " + nGoldEdges + " " + goldRank + " "
-        // + nPopBinary + " " + nPopUnary + " " + (nPopBinary + nPopUnary) + " ");
-        // }
-        // System.out.println("DSTAT: " + goldRank);
-        // System.out.println("DSTAT: " + goldRank + " " + floatArray2Str(getCellFeatures(cell.start(), cell.end())));
-        // final float[] cellFeats = getCellFeatures(cell.start(), cell.end());
+        // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
+        System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),
+                numGoldEdges, bool2int(cell.width() == 1), cellFeats.vectorLength(), ParserUtil.intArray2Str(cellFeats
+                        .elements())));
+        // System.out.println(String.format("DSTAT: %d : %d %s", goldRank, cellFeats.vectorLength(),
+        // ParserUtil.intArray2Str(cellFeats.elements())));
+
         // perceptron.learnOnline(cellFeats, rank2bool(goldRank));
     }
 
@@ -234,12 +223,12 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
     // return tmp;
     // }
 
-    // private int bool2int(final boolean value) {
-    // if (value == true) {
-    // return 1;
-    // }
-    // return 0;
-    // }
+    private int bool2int(final boolean value) {
+        if (value == true) {
+            return 1;
+        }
+        return 0;
+    }
 
     // // I can't believe we have to jump through these hoops to get a variable sized float vector
     // private List<Float> getPOSIndexFeatureArray(final int start) {
@@ -258,14 +247,6 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
     // }
     // return result.trim();
     // }
-
-    private String intArray2Str(final int[] data) {
-        String result = "";
-        for (final int val : data) {
-            result += val + " ";
-        }
-        return result.trim();
-    }
 
     // private int rank2bool(final int rank) {
     // if (rank <= 0) {

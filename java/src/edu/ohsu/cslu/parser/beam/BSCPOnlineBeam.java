@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.beam;
 
 import java.util.Collection;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -71,10 +71,9 @@ public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellC
     }
 
     protected boolean addEdgeToChart(final ChartEdge edge, final HashSetChartCell cell) {
-        if (edge.fom < bestFOM - beamDeltaThresh) {
+        if (edge.fom < bestFOM - globalBeamDelta) {
             return false;
         }
-        // if (cell.addEdge(edge) == false) {
         if (edge.inside() <= cell.getInside(edge.prod.parent)) {
             return false;
         }

@@ -1,69 +1,118 @@
 package edu.ohsu.cslu.parser.beam;
 
-import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 
-public class BSCPBeamConf extends BSCPPruneViterbi {
+//public class BSCPBeamConf extends BSCPPruneViterbi {
 
-    protected AveragedPerceptron beamConfModel;
-
-    public BSCPBeamConf(final ParserDriver opts, final LeftHashGrammar grammar, final AveragedPerceptron beamWidthModel) {
-        super(opts, grammar);
-        this.beamConfModel = beamWidthModel;
-    }
-
-    @Override
-    protected void visitCell(final short start, final short end) {
-        final HashSetChartCell cell = chart.getCell(start, end);
-        ChartEdge edge;
-
-        if (end - start == 1) {
-            beamWidth = Integer.MAX_VALUE;
-        } else {
-            final SparseBitVector feats = getCellFeatures(start, end, beamConfModel.featureTemplate());
-            beamWidth = (int) beamConfModel.class2value(beamConfModel.classify(feats));
-        }
-
-        System.out.println("[" + start + "," + end + "] beam=" + beamWidth);
-
-        if (beamWidth > 0) {
-            // final boolean onlyFactored = hasCellConstraints && cellConstraints.factoredParentsOnly(start, end);
-            edgeCollectionInit();
-
-            if (end - start == 1) {
-                // lexical and unary productions can't compete in the same agenda until their FOM
-                // scores are changed to be comparable
-                for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
-                    cell.updateInside(lexProd, cell, null, lexProd.prob);
-                    for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
-                        addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
-                    }
-
-                }
-            } else {
-                for (int mid = start + 1; mid < end; mid++) { // mid point
-                    final HashSetChartCell leftCell = chart.getCell(start, mid);
-                    final HashSetChartCell rightCell = chart.getCell(mid, end);
-                    for (final int leftNT : leftCell.getLeftChildNTs()) {
-                        for (final int rightNT : rightCell.getRightChildNTs()) {
-                            for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
-                                // if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
-                                edge = chart.new ChartEdge(p, leftCell, rightCell);
-                                addEdgeToCollection(edge);
-                                // }
-                            }
-                        }
-                    }
-                }
-            }
-
-            addEdgeCollectionToChart(cell);
-        }
-    }
-
-}
+//    protected AveragedPerceptron beamConfModel;
+//    protected int[] beamClassCounts;
+//    // protected int maxBeamWidth;
+//    protected float scoreThresh;
+//    private String cellStats;
+//    private boolean inferFactoredCells = false, classifyBaseCells = false;
+//    private int beamWidthValues[][];
+//
+//    public BSCPBeamConf(final ParserDriver opts, final LeftHashGrammar grammar, final AveragedPerceptron beamWidthModel) {
+//        super(opts, grammar);
+//        this.beamConfModel = beamWidthModel;
+//        this.beamClassCounts = new int[beamWidthModel.numClasses()];
+//
+//        if (ParserDriver.param2 != -1) {
+//            inferFactoredCells = true;
+//        }
+//
+//        if (ParserDriver.param3 != -1) {
+//            classifyBaseCells = true;
+//        }
+//
+//        if (inferFactoredCells == false && classifyBaseCells == true) {
+//            throw new IllegalArgumentException("ERROR: got that wrong -- no models -fact +base");
+//        }
+//
+//        logger.finer("INFO: beamconf: inferFactoredCells=" + ParserUtil.bool2int(inferFactoredCells)
+//                + " classifyBaseCells=" + ParserUtil.bool2int(classifyBaseCells));
+//    }
+//
+//    @Override
+//    protected void initSentence(final int[] tokens) {
+//        super.initSentence(tokens);
+//        computeBeamWidthValues();
+//    }
+//
+//    @Override
+//    protected void initCell(final short start, final short end) {
+//        super.initCell(start, end);
+//        if (numReparses == 0) {
+//            beamWidth = beamWidthValues[start][end];
+//        } else {
+//            // back off to not using any constraints if we're reparsing
+//            beamWidth = origBeamWidth * (int) Math.pow(2, numReparses);
+//        }
+//
+//        // if (classifyBaseCells || end - start > 1) {
+//        // final SparseBitVector feats = getCellFeatures(start, end, beamConfModel.featureTemplate());
+//        // final int guessClass = beamConfModel.classify(feats);
+//        //
+//        // beamClassCounts[guessClass]++;
+//        // beamWidth = (int) beamConfModel.class2value(guessClass);
+//        //
+//        // final int maxBeamWidth = origBeamWidth * (int) Math.pow(2, numReparses);
+//        // if (beamWidth > maxBeamWidth) {
+//        // beamWidth = maxBeamWidth;
+//        // }
+//        // }
+//    }
+//
+//    @Override
+//    public String getStats() {
+//        logger.finer("INFO: beamconf: " + cellStats);
+//        String s = "";
+//        for (int i = 0; i < beamConfModel.numClasses(); i++) {
+//            s += String.format(" class%d:%d", i, beamClassCounts[i]);
+//        }
+//        return super.getStats() + s;
+//    }
+//
+//    // TODO: Should move this into a CellSelector class....
+//    private void computeBeamWidthValues() {
+//        SparseBitVector feats;
+//        int guessBeamWidth;
+//        int guessClass;
+//        final int n = this.currentInput.sentenceLength;
+//        beamWidthValues = new int[n][n + 1];
+//        cellStats = "";
+//
+//        Arrays.fill(beamClassCounts, 0);
+//
+//        // traverse in a top-down order so we can remember when we first see a non-empty cell
+//        // only works for right factored (berkeley) grammars right now.
+//        // for (int end = 1; end < n + 1; end++) {
+//        for (int start = 0; start < n; start++) {
+//            boolean foundOpenCell = false;
+//            // for (int start = 0; start < end; start++) {
+//            for (int end = n; end > start; end--) {
+//                if (end - start == 1 && classifyBaseCells == false) {
+//                    beamWidthValues[start][end] = origBeamWidth;
+//                    cellStats += String.format("%d,%d=%d ", start, end, origBeamWidth);
+//                } else {
+//                    feats = getCellFeatures(start, end, beamConfModel.featureTemplate());
+//                    guessClass = beamConfModel.classify(feats);
+//                    beamClassCounts[guessClass]++;
+//                    guessBeamWidth = (int) Math.min(beamConfModel.class2value(guessClass), origBeamWidth);
+//
+//                    // need to allow factored productions for classifiers that don't predict these cells
+//                    if (inferFactoredCells == true && guessBeamWidth == 0 && foundOpenCell) {
+//                        guessBeamWidth = factoredBeamWidth;
+//                        cellStats += String.format("%d,%d=2 ", start, end);
+//                    } else if (guessBeamWidth > 0) {
+//                        foundOpenCell = true;
+//                        // cellStats += String.format("%d,%d=%d ", start, end, guessBeamWidth > 0 ? 4 : 0);
+//                        cellStats += String.format("%d,%d=%d ", start, end, guessBeamWidth);
+//                    }
+//
+//                    beamWidthValues[start][end] = guessBeamWidth;
+//                }
+//            }
+//        }
+//
+//    }
+// }
