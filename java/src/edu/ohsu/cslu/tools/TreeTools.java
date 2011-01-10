@@ -42,6 +42,9 @@ public class TreeTools extends BaseCommandlineTool {
     @Option(name = "-countMaxSpans", usage = "Count the longest span that starts and ends at each non-terminal")
     private boolean countMaxSpans = false;
 
+    @Option(name = "-extractUnaries", usage = "Extract unary productions from trees")
+    private boolean extractUnaries = false;
+
     private static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
     private static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
 
@@ -68,6 +71,8 @@ public class TreeTools extends BaseCommandlineTool {
                 binarizeTree(tree, rightFactor, horizontalMarkov, verticalMarkov, annotatePOS, grammarFormat);
             } else if (countMaxSpans) {
                 constituentSpanCountForKristy();
+            } else if (extractUnaries) {
+                extractUnariesFromTree(tree);
             } else {
                 System.err.println("ERROR: action required.  See -h");
                 System.exit(1);
@@ -75,7 +80,29 @@ public class TreeTools extends BaseCommandlineTool {
 
             // this wasn't writing anything to stdout???
             // outputStream.write(tree.toString());
-            System.out.println(tree.toString());
+            if (extractUnaries == false) {
+                System.out.println(tree.toString());
+            }
+        }
+    }
+
+    public static void extractUnariesFromTree(final ParseTree tree) {
+        boolean unaryChain = false;
+        for (final ParseTree node : tree.preOrderTraversal()) {
+            // if (node.isBinaryTree() == false && (node.parent == null || node.parent.isBinaryTree())) {
+            if (node.isPOS() == false && node.children.size() == 1) {
+                unaryChain = true;
+                // System.out.println(node.toString());
+                System.out.print(node.getContents() + " -> " + node.childrenToString() + " ");
+            } else {
+                if (unaryChain == true) {
+                    System.out.println();
+                }
+                unaryChain = false;
+            }
+        }
+        if (unaryChain == true) {
+            System.out.println();
         }
     }
 
