@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.Grammar.Production;
 
 /**
  * Represents a parse chart as a parallel array including:

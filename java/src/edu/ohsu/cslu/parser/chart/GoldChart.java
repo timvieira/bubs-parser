@@ -6,6 +6,7 @@ import java.util.List;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
+import edu.ohsu.cslu.parser.ParserDriver;
 
 public class GoldChart extends Chart {
 
@@ -45,6 +46,7 @@ public class GoldChart extends Chart {
         assert tree.parent == null; // must be root so start/end indicies make sense
         assert leafNodes.size() == this.size; // tree width/span must be same as chart
 
+        String perCellStats = "";
         for (final ParseTree node : tree.preOrderTraversal()) {
             // TODO: could make this O(1) instead of O(n) ...
             start = leafNodes.indexOf(node.leftMostLeaf());
@@ -78,6 +80,13 @@ public class GoldChart extends Chart {
                             + ".  Expecting <= 2.");
                 }
 
+                // we can ignore unary nodes because they are always with a binary node or a lex node
+                if (numChildren == 2) {
+                    perCellStats += String.format("%d,%d=%d ", start, end, grammar.grammarFormat.isFactored(A) ? 2 : 4);
+                } else if (numChildren == 1 && node.isPOS()) {
+                    perCellStats += String.format("%d,%d=4 ", start, end);
+                }
+
                 // System.out.println("Adding: [" + start + "," + end + "] " + edge.prod);
 
                 // if (prod == null) {
@@ -92,6 +101,7 @@ public class GoldChart extends Chart {
             }
         }
 
+        ParserDriver.getLogger().finer("INFO: goldCells: " + perCellStats);
         // parser.edgeSelector = saveEdgeSelector;
     }
 
