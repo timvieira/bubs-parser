@@ -11,3 +11,6 @@ To build documentation:
   Documentation will be built in HTML format in 'build-doc'. 
   See that generated documentation for more information. 
 
+
+To build OHSU Parser: "ant parse"
+
