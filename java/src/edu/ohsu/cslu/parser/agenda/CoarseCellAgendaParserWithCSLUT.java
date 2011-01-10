@@ -46,7 +46,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
     @Override
     protected void visitCell(final HashSetChartCell cell) {
-        final int start = cell.start(), end = cell.end();
+        final short start = cell.start(), end = cell.end();
         Collection<Production> possibleProds;
         ChartEdge edge;
         final ChartEdge[] bestEdges = new ChartEdge[grammar.numNonTerms()]; // inits to null
@@ -80,12 +80,12 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
     @Override
     protected void setSpanMaxEdgeFOM(final HashSetChartCell leftCell, final HashSetChartCell rightCell) {
         ChartEdge edge;
-        final int start = leftCell.start(), end = rightCell.end();
+        final short start = leftCell.start(), end = rightCell.end();
         float bestFOM = maxEdgeFOM[start][end];
 
         // System.out.println(" setSpanMax: " + leftCell + " && " + rightCell);
 
-        if (cslutScores.isCellOpen(start, end)) {
+        if (cslutScores.isOpenAll(start, end)) {
             Collection<Production> possibleProds;
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {
