@@ -21,7 +21,7 @@ public class ParseStats {
 
     public int totalPops = 0;
     public int totalPushes = 0;
-    public int totalConsidered = 0;
+    public long totalConsidered = 0;
 
     public int nLex = 0;
     public int nLexUnary = 0;
@@ -30,6 +30,7 @@ public class ParseStats {
 
     public float parseTimeSec = 0;
     public float fomInitSec = 0;
+    public float ccInitSec = 0;
     public float insideScore = 0;
     public long maxMemoryMB = 0;
 
@@ -71,6 +72,8 @@ public class ParseStats {
             result += " considered=" + totalConsidered;
         if (fomInitSec > 0)
             result += " fomInit=" + fomInitSec;
+        if (ccInitSec > 0)
+            result += " ccInitSec=" + ccInitSec;
         if (nBinary > 0) {
             result += " nLex=" + nLex;
             result += " nLexUnary=" + nLexUnary;
