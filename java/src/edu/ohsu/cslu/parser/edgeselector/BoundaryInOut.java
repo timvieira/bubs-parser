@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.parser.edgeselector;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -14,29 +12,26 @@ import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
-public final class BoundaryInOut extends EdgeSelector {
+public class BoundaryInOut extends EdgeSelector {
 
     private Grammar grammar;
+    private int posNgramOrder = 2;
+
+    // Model params learned from training data
     private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
 
+    // pre-computed left/right FOM outside scores for current sentence
     private float outsideLeft[][], outsideRight[][];
+    private int bestPOSTag[];
 
-    private IntOpenHashSet posSet = new IntOpenHashSet();
-    private IntOpenHashSet clauseNonTermSet = new IntOpenHashSet();
+    // private IntOpenHashSet posSet = new IntOpenHashSet();
+    // private IntOpenHashSet phraseNonTermSet = new IntOpenHashSet();
 
     public BoundaryInOut(final Grammar grammar, final BufferedReader modelStream) throws IOException {
         this.grammar = grammar;
-        // TODO: should we record this in Grammar instead?
-        for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
-            if (grammar.getNonterminal(ntIndex).isPOS()) {
-                posSet.add(ntIndex);
-            } else {
-                clauseNonTermSet.add(ntIndex);
-            }
-        }
 
         final int numNT = grammar.numNonTerms();
         final int maxPOSIndex = grammar.maxPOSIndex();
@@ -121,16 +116,30 @@ public final class BoundaryInOut extends EdgeSelector {
         return s;
     }
 
+    public int get1bestPOSTag(final int i) {
+        return bestPOSTag[i];
+    }
+
     @Override
     public void init(final Chart chart) {
-        // Computes forward-backward and left/right boundary probs across ambiguous
-        // POS tags. Assumes all POS tags have already been placed in the chart and the
-        // inside prob of the tag is the emission probability.
+        // outsideLeftRight(chart);
+        outsideLeftRightAndBestPOS(chart);
+    }
+
+    // Computes forward-backward and left/right boundary probs across ambiguous
+    // POS tags. Assumes all POS tags have already been placed in the chart and the
+    // inside prob of the tag is the emission probability.
+    // Also computes 1-best POS tag sequence based on viterbi-max decoding
+    private void outsideLeftRightAndBestPOS(final Chart chart) {
 
         final int fbSize = chart.size() + 2;
         final int posSize = grammar.maxPOSIndex() + 1;
         outsideLeft = new float[fbSize][grammar.numNonTerms()];
         outsideRight = new float[fbSize][grammar.numNonTerms()];
+
+        final int[][] fwdBackptr = new int[fbSize][posSize];
+        bestPOSTag = new int[chart.size()];
+
         for (int i = 0; i < fbSize; i++) {
             Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
             Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
@@ -171,6 +180,7 @@ public final class BoundaryInOut extends EdgeSelector {
                                 + posEmissionLogProb;
                         if (score > winningScore) {
                             winningScore = score;
+                            fwdBackptr[fwdIndex][curPOS] = prevPOS;
                         }
                     }
 
@@ -224,6 +234,15 @@ public final class BoundaryInOut extends EdgeSelector {
                 }
             }
         }
+
+        // track backpointers to extract best POS sequence
+        // start at the end of the sentence with the nullSymbol and trace backwards
+        int bestPOS = nullSymbol;
+        for (int i = chart.size() - 1; i >= 0; i--) {
+            bestPOS = fwdBackptr[i + 2][bestPOS];
+            bestPOSTag[i] = bestPOS;
+            // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
+        }
     }
 
     public final float leftBoundaryLogProb(final int nonTerm, final int pos) {
@@ -270,7 +289,10 @@ public final class BoundaryInOut extends EdgeSelector {
                 denomIndex = grammar.mapNonterminal(denomStr);
                 prob = Float.parseFloat(tokens[tokens.length - 1]);
 
-                if (tokens[0].equals("LB")) {
+                if (tokens[0].equals("#")) {
+                    // model meta-data
+                    // ex: # model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=2
+                } else if (tokens[0].equals("LB")) {
                     leftBoundaryLogProb[numIndex][denomIndex] = prob;
                 } else if (tokens[0].equals("RB")) {
                     rightBoundaryLogProb[numIndex][denomIndex] = prob;
@@ -287,10 +309,12 @@ public final class BoundaryInOut extends EdgeSelector {
     @Override
     public void writeModel(final BufferedWriter outStream) throws IOException {
 
+        outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder + "\n");
+
         // left boundary = P(NT | POS-1)
-        for (final int leftPOSIndex : posSet) {
+        for (final int leftPOSIndex : grammar.posSet) {
             final String posStr = grammar.mapNonterminal(leftPOSIndex);
-            for (final int ntIndex : clauseNonTermSet) {
+            for (final int ntIndex : grammar.phraseSet) {
                 final String ntStr = grammar.mapNonterminal(ntIndex);
                 final float logProb = leftBoundaryLogProb[ntIndex][leftPOSIndex];
                 if (logProb > Float.NEGATIVE_INFINITY) {
@@ -300,9 +324,9 @@ public final class BoundaryInOut extends EdgeSelector {
         }
 
         // right boundary = P(POS+1 | NT)
-        for (final int ntIndex : clauseNonTermSet) {
+        for (final int ntIndex : grammar.phraseSet) {
             final String ntStr = grammar.mapNonterminal(ntIndex);
-            for (final int rightPOSIndex : posSet) {
+            for (final int rightPOSIndex : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(rightPOSIndex);
                 final float logProb = rightBoundaryLogProb[rightPOSIndex][ntIndex];
                 if (logProb > Float.NEGATIVE_INFINITY) {
@@ -312,9 +336,9 @@ public final class BoundaryInOut extends EdgeSelector {
         }
 
         // pos n-gram = P(POS | POS-1)
-        for (final int histPos : posSet) {
+        for (final int histPos : grammar.posSet) {
             final String histPosStr = grammar.mapNonterminal(histPos);
-            for (final int pos : posSet) {
+            for (final int pos : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(pos);
                 final float logProb = posTransitionLogProb[pos][histPos];
                 if (logProb > Float.NEGATIVE_INFINITY) {
@@ -333,7 +357,6 @@ public final class BoundaryInOut extends EdgeSelector {
         final SimpleCounterSet<String> leftBoundaryCount = new SimpleCounterSet<String>();
         final SimpleCounterSet<String> rightBoundaryCount = new SimpleCounterSet<String>();
         final SimpleCounterSet<String> posTransitionCount = new SimpleCounterSet<String>();
-        final int posNgramOrder = 2;
 
         // TODO: note that we have to have the same training grammar as decoding grammar here
         // so the input needs to be bianarized. How are we going to get gold trees in the
@@ -382,9 +405,7 @@ public final class BoundaryInOut extends EdgeSelector {
         }
 
         final int numNT = grammar.numNonTerms();
-        final int numPOS = posSet.size();
-
-        // System.out.println("numNT=" + numNT + " maxPOSIndex=" + maxPOSIndex + " numPOS=" + numPOS);
+        final int numPOS = grammar.posSet.size();
 
         // smooth counts
         leftBoundaryCount.smoothAddConst(0.5, numPOS);
@@ -394,7 +415,7 @@ public final class BoundaryInOut extends EdgeSelector {
         // turn counts into probs
 
         // left boundary = P(NT | POS-1)
-        for (final int leftPOSIndex : posSet) {
+        for (final int leftPOSIndex : grammar.posSet) {
             final String posStr = grammar.mapNonterminal(leftPOSIndex);
             for (int ntIndex = 0; ntIndex < numNT; ntIndex++) {
                 final String ntStr = grammar.mapNonterminal(ntIndex);
@@ -405,7 +426,7 @@ public final class BoundaryInOut extends EdgeSelector {
         // right boundary = P(POS+1 | NT)
         for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
             final String ntStr = grammar.mapNonterminal(ntIndex);
-            for (final int rightPOSIndex : posSet) {
+            for (final int rightPOSIndex : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(rightPOSIndex);
                 rightBoundaryLogProb[rightPOSIndex][ntIndex] = (float) Math.log(rightBoundaryCount.getProb(posStr,
                         ntStr));
@@ -413,9 +434,9 @@ public final class BoundaryInOut extends EdgeSelector {
         }
 
         // pos n-gram = P(POS | POS-1)
-        for (final int histPos : posSet) {
+        for (final int histPos : grammar.posSet) {
             final String histPosStr = grammar.mapNonterminal(histPos);
-            for (final int pos : posSet) {
+            for (final int pos : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(pos);
                 posTransitionLogProb[pos][histPos] = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
             }

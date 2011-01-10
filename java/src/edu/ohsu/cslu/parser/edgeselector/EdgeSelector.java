@@ -7,13 +7,13 @@ import java.io.Serializable;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public abstract class EdgeSelector implements Serializable {
 
     static public enum EdgeSelectorType {
-        Inside, NormalizedInside, BoundaryInOut, WeightedFeatures
+        Inside, NormalizedInside, BoundaryInOut, InsideWithFwdBkwd, WeightedFeatures
     }
 
     public abstract float calcFOM(ChartEdge edge);
@@ -36,6 +36,8 @@ public abstract class EdgeSelector implements Serializable {
                 return new NormalizedInsideProb();
             case BoundaryInOut:
                 return new BoundaryInOut(grammar, modelStream);
+            case InsideWithFwdBkwd:
+                return new InsideWithFwdBkwd(grammar, modelStream);
             case WeightedFeatures:
                 return new WeightedFeatures(grammar);
             default:
