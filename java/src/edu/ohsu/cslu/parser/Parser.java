@@ -3,9 +3,7 @@ package edu.ohsu.cslu.parser;
 import java.util.logging.Logger;
 
 import cltool4j.args4j.EnumAliasMap;
-
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
@@ -27,8 +25,8 @@ public abstract class Parser<G extends Grammar> {
     protected float totalInsideScore = 0;
     protected long totalMaxMemoryMB = 0;
 
-    protected boolean hasCellConstraints = false;
-    protected CSLUTBlockedCells cellConstraints = null;
+    // protected boolean hasCellConstraints = false;
+    // protected CSLUTBlockedCells cellConstraints = null;
 
     /**
      * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
@@ -48,10 +46,10 @@ public abstract class Parser<G extends Grammar> {
         this.collectDetailedStatistics = opts.collectDetailedStatistics;
         logger = ParserDriver.getLogger();
 
-        if (this.cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
-            this.hasCellConstraints = true;
-            cellConstraints = (CSLUTBlockedCells) cellSelector;
-        }
+        // if (this.cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
+        // this.hasCellConstraints = true;
+        // cellConstraints = (CSLUTBlockedCells) cellSelector;
+        // }
     }
 
     public abstract float getInside(int start, int end, int nt);
@@ -129,7 +127,7 @@ public abstract class Parser<G extends Grammar> {
         BSCPPerceptronCell("beampc"),
         BSCPFomDecode("beamfom"),
         BSCPBeamConfTrain("beamconftrain"),
-        BSCPBeamConf("beamconf"),
+        // BSCPBeamConf("beamconf"),
         CoarseCellAgenda("cc"),
         CoarseCellAgendaCSLUT("cccslut"),
         JsaSparseMatrixVector("jsa"),
