@@ -1,20 +1,24 @@
 package edu.ohsu.cslu.perceptron;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
+import edu.ohsu.cslu.parser.ParserUtil;
 
-public class Perceptron {
+public class Perceptron extends Classifier {
     protected FloatVector[] rawWeights = null;
     protected int trainExampleNumber = 0;
     protected float learningRate;
     protected LossFunction lossFunction;
     protected String featureTemplate;
 
-    protected int[] bins; // classification bins ex: 0,5,10,30
+    // protected int[] bins; // classification bins ex: 0,5,10,30
     protected String binsStr;
+    protected float[] bias;
 
     public Perceptron() {
         this(0.1f, new ZeroOneLoss(), "0", null, null);
@@ -26,20 +30,38 @@ public class Perceptron {
         this.learningRate = learningRate;
         this.lossFunction = lossFunction;
         this.featureTemplate = featureTemplate;
-        initBins(binsStr);
+        // initBins(binsStr);
+        this.binsStr = binsStr;
+        this.bins = ParserUtil.strToIntArray(binsStr);
+
+        bias = new float[numClasses()];
+        Arrays.fill(bias, 0.0f); // default to no bias
 
         if (initialWeights != null) {
             initModel(initialWeights);
         }
     }
 
-    protected void initBins(final String binsString) {
-        this.binsStr = binsString;
-        // convert comma-seperated bin list to int bin list
-        final String[] tokens = binsString.split(",");
-        bins = new int[tokens.length];
+    // protected void initBins(final String binsString) {
+    // this.binsStr = binsString;
+    // // convert comma-seperated bin list to int bin list
+    // final String[] tokens = binsString.split(",");
+    // bins = new int[tokens.length];
+    // for (int i = 0; i < tokens.length; i++) {
+    // bins[i] = Integer.parseInt(tokens[i]);
+    // }
+    // }
+
+    @Override
+    public void setBias(final String biasString) {
+        final String[] tokens = biasString.split(",");
+        if (tokens.length != numClasses()) {
+            throw new IllegalArgumentException(
+                    "ERROR: if bias term is specified, must contain a bias for each class in the model.  numBias="
+                            + tokens.length + " numClasses=" + numClasses());
+        }
         for (int i = 0; i < tokens.length; i++) {
-            bins[i] = Integer.parseInt(tokens[i]);
+            bias[i] = Float.parseFloat(tokens[i]);
         }
     }
 
@@ -58,12 +80,11 @@ public class Perceptron {
      * @param featureVector
      * @return the binary output of the raw perceptron model for the specified feature vector.
      */
-    public static int classify(final FloatVector[] model, final Vector featureVector) {
+    public int classify(final FloatVector[] model, final Vector featureVector) {
         int bestClass = -1;
-        final int numClasses = model.length;
-        float score, bestScore = -1 * Float.MAX_VALUE;
-        for (int i = 0; i < numClasses; i++) {
-            score = model[i].dotProduct(featureVector);
+        float score, bestScore = Float.NEGATIVE_INFINITY;
+        for (int i = 0; i < numClasses(); i++) {
+            score = model[i].dotProduct(featureVector) + bias[i];
             if (score > bestScore) {
                 bestScore = score;
                 bestClass = i;
@@ -72,11 +93,13 @@ public class Perceptron {
         return bestClass;
     }
 
+    @Override
     public int classify(final Vector featureVector) {
-        return Perceptron.classify(rawWeights, featureVector);
+        return classify(rawWeights, featureVector);
     }
 
     // also used by AveragedPerceptron
+    @Override
     public void train(final int goldClass, final SparseBitVector featureVector) {
 
         // since we don't require a user to specify the number of features in their model
@@ -89,7 +112,7 @@ public class Perceptron {
 
         // final boolean rawGuessClass = this.classifyRaw(featureVector);
         // we want to use the raw perceptron for Perceptron AND AveragedPerceptron
-        final int rawGuessClass = Perceptron.classify(rawWeights, featureVector);
+        final int rawGuessClass = classify(rawWeights, featureVector);
         trainExampleNumber++;
 
         final float loss = lossFunction.computeLoss(goldClass, rawGuessClass);
@@ -126,31 +149,6 @@ public class Perceptron {
         return rawWeights[modelIndex];
     }
 
-    public int numClasses() {
-        // return numClasses;
-        return bins.length + 1;
-    }
-
-    public String featureTemplate() {
-        return featureTemplate;
-    }
-
-    public float class2value(final int c) {
-        if (c == numClasses() - 1) {
-            return Integer.MAX_VALUE;
-        }
-        return bins[c];
-    }
-
-    public int value2class(final float value) {
-        for (int i = 0; i < bins.length; i++) {
-            if (value <= bins[i]) {
-                return i;
-            }
-        }
-        return numClasses() - 1;
-    }
-
     @Override
     public String toString() {
         return modelToString(rawWeights);
@@ -167,6 +165,12 @@ public class Perceptron {
         return s;
     }
 
+    @Override
+    public String getFeatureTemplate() {
+        return featureTemplate;
+    }
+
+    @Override
     public float computeLoss(final int goldClass, final int guessClass) {
         return lossFunction.computeLoss(goldClass, guessClass);
     }
@@ -210,6 +214,11 @@ public class Perceptron {
             // small penalty if we overestimate the beam-width
             return overPenalty;
         }
+    }
+
+    @Override
+    public void writeModel(final BufferedWriter stream) throws IOException {
+        stream.write(toString());
     }
 
     // /**
