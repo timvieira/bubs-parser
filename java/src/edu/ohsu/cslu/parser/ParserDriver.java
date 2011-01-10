@@ -36,8 +36,6 @@ import edu.ohsu.cslu.parser.agenda.APGhostEdges;
 import edu.ohsu.cslu.parser.agenda.APWithMemory;
 import edu.ohsu.cslu.parser.agenda.AgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
-import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParserWithCSLUT;
-import edu.ohsu.cslu.parser.beam.BSCPBeamConf;
 import edu.ohsu.cslu.parser.beam.BSCPBeamConfTrain;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
@@ -48,7 +46,8 @@ import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
 import edu.ohsu.cslu.parser.cellselector.CSLUTBlockedCells;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.cellselector.CellSelector.CellSelectorType;
+import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
+import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidth;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
@@ -66,7 +65,6 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
-import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 
 /**
  * Driver class for all parser implementations.
@@ -90,7 +88,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-real", usage = "Use real semiring (sum) instead of tropical (max) for inside/outside calculations")
     public boolean realSemiring = false;
 
-    @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
+    // @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar = "function", usage =
+    // "Cartesian-product function (only used for SpMV parsers)")
+    @Option(name = "-cpf", hidden = true, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
     private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash2;
 
     // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage =
@@ -100,6 +100,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-fom", metaVar = "fom", hidden = true, usage = "Figure of Merit to use for parser")
     public EdgeSelectorType edgeFOMType = EdgeSelectorType.Inside;
     public EdgeSelector edgeSelector;
+    public CellSelector cellSelector = new LeftRightBottomTopTraversal();
 
     @Option(name = "-fomModel", metaVar = "file", hidden = true, usage = "FOM model file")
     private String fomModelFileName = null;
@@ -107,22 +108,40 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Option(name = "-beamConfModel", usage = "required Beam Confidence Model for beamconf Parser")
     private String beamConfModelFileName = null;
-    private AveragedPerceptron beamConfModel = null;
+    // private AveragedPerceptron beamConfModel = null;
+
+    @Option(name = "-beamConfBias", usage = "comma seperated bias for each bin in model; default is no bias")
+    public String beamConfBias = null;
+
+    @Option(name = "-beamMultiBin", hidden = true, usage = "Use old multi-bin classification instead of multiple binary classifiers")
+    public static boolean multiBin = false;
+
+    @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
+    public int reparse = 0;
 
     // Nate: I don't think we need to expose this to the user. Instead
     // there should be different possible parsers since changing the
     // cell selection strategy only matters for a few of them
-    @Option(name = "-cellSelect", hidden = true, metaVar = "TYPE", usage = "Method for cell selection")
-    public CellSelectorType cellSelectorType = CellSelectorType.LeftRightBottomTop;
-    public CellSelector cellSelector;
+    // @Option(name = "-cellSelect", hidden = true, metaVar = "TYPE", usage = "Method for cell selection")
+    // public CellSelectorType cellSelectorType = CellSelectorType.LeftRightBottomTop;
+    // public CellSelector cellSelector;
+    //
+    // @Option(name = "-cellModel", metaVar = "file", hidden = true, usage = "Model for span selection")
+    // private String cellModelFileName = null;
+    // public BufferedReader cellModelStream = null;
 
-    @Option(name = "-cellModel", metaVar = "file", hidden = true, usage = "Model for span selection")
-    private String cellModelFileName = null;
-    public BufferedReader cellModelStream = null;
+    @Option(name = "-beamTune", usage = "Tuning params for beam search: maxBeamWidth,globalScoreDelta,localScoreDelta,factoredCellBeamWidth")
+    public String beamTune = "15,INF,7,15";
 
-    @Option(name = "-cslutCellScores", metaVar = "file", hidden = true, usage = "CSLUT cell scores used for perceptron training and decoding")
-    private String cslutScoresFileName = null;
-    BufferedReader cslutScoresStream = null;
+    @Option(name = "-ccModel", metaVar = "file", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2009)")
+    private String chartConstraintsModel = null;
+    // BufferedReader cslutScoresStream = null;
+
+    // @Option(name = "-ccTune", hidden = true, usage = "CSLU Chart Constraints tuning param (0-1)")
+    // public float chartConstraintsTune = 0.0f;
+
+    @Option(name = "-ccTune", metaVar = "file", usage = "CSLU Chart Constraints thresholds: start,end,unary,factBeam")
+    public String chartConstraintsThresh = "90,120,0";
 
     // == Grammar options ==
     @Option(name = "-g", metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
@@ -197,7 +216,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 researchParserType = ResearchParserType.APWithMemory;
                 break;
             case Beam:
-                researchParserType = ResearchParserType.BSCPPruneViterbi;
+                researchParserType = ResearchParserType.BeamSearchChartParser;
+                // researchParserType = ResearchParserType.BSCPPruneViterbi;
                 // Using the above beam parser until all the model stuff has been finished
                 // researchParserType = ResearchParserType.BeamCscSpmv;
                 break;
@@ -230,43 +250,63 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
         } else {
 
+            // CellSelectorType cellSelectorType = CellSelectorType.LeftRightBottomTop;
+            // final BufferedReader chartConstraintsModelStream = null;
+
             if (fomModelFileName != null) {
                 // Handle gzipped and non-gzipped model files
                 fomModelStream = fomModelFileName.endsWith(".gz") ? new BufferedReader(new InputStreamReader(
                         new GZIPInputStream(new FileInputStream(fomModelFileName)))) : new BufferedReader(
                         new FileReader(fomModelFileName));
+
+                // NOTE: EdgeSelectorType.InsideWithFwdBkwd also uses this fomModelStream for right now
+                if (edgeFOMType == EdgeSelectorType.Inside) {
+                    edgeFOMType = EdgeSelectorType.BoundaryInOut;
+                }
             }
 
-            if (cslutScoresFileName != null) {
-                cellSelectorType = CellSelectorType.CSLUT;
-                cslutScoresStream = new BufferedReader(new FileReader(cslutScoresFileName));
-                cellModelStream = cslutScoresStream;
-            }
-
-            if (cellModelFileName != null) {
-                cellModelStream = new BufferedReader(new FileReader(cellModelFileName));
+            if (chartConstraintsModel != null) {
+                // cellSelectorType = CellSelectorType.CSLUT;
+                // chartConstraintsModelStream = new BufferedReader(new FileReader(chartConstraintsModel));
+                cellSelector = new CSLUTBlockedCells(new BufferedReader(new FileReader(chartConstraintsModel)),
+                        chartConstraintsThresh);
             }
 
             if (beamConfModelFileName != null) {
-                beamConfModel = new AveragedPerceptron(new BufferedReader(new FileReader(beamConfModelFileName)));
+                cellSelector = new PerceptronBeamWidth(new BufferedReader(new FileReader(beamConfModelFileName)),
+                        beamConfBias);
+                // beamConfModel = new AveragedPerceptron(new BufferedReader(new FileReader(beamConfModelFileName)));
+                // if (beamConfBias != null) {
+                // beamConfModel.setBias(beamConfBias);
+                // }
+            }
+
+            if (researchParserType == ResearchParserType.BSCPBeamConfTrain && featTemplate == null) {
+                throw new CmdLineException(cmdlineParser,
+                        "ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
             }
 
             // param validation checks
-            if (edgeFOMType == EdgeSelectorType.BoundaryInOut && fomModelFileName == null) {
+            if ((edgeFOMType == EdgeSelectorType.BoundaryInOut || edgeFOMType == EdgeSelectorType.InsideWithFwdBkwd)
+                    && fomModelFileName == null) {
                 throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomModel param set");
             }
 
-            if (cellSelectorType == CellSelectorType.CSLUT && cellModelStream == null) {
-                throw new CmdLineException(cmdlineParser, "CSLUT span selection must also have -spanModel");
-            }
+            // Nate: perceptron span selection doesn't work any more
+            // if (cellSelectorType == CellSelectorType.Perceptron && cslutScoresStream == null) {
+            // throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
+            // }
 
-            if (cellSelectorType == CellSelectorType.Perceptron && cslutScoresStream == null) {
-                throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
-            }
+            // if (researchParserType == ResearchParserType.BSCPBeamConf && beamConfModel == null) {
+            // throw new CmdLineException(cmdlineParser,
+            // "BSCPBeamConf parser (-rp beamconf) must specify -beamConfModel");
+            // }
+
             // Read in the grammar
             grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
             edgeSelector = EdgeSelector.create(edgeFOMType, grammar, fomModelStream);
-            cellSelector = CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
+            // cellSelector = CellSelector.create(cellSelectorType,
+            // chartConstraintsModelStream,chartConstraintsModelStream);
 
         }
 
@@ -336,7 +376,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         case BSCPPerceptronCell:
         case BSCPFomDecode:
         case BSCPBeamConfTrain:
-        case BSCPBeamConf:
+            // case BSCPBeamConf:
         case CoarseCellAgenda:
         case CoarseCellAgendaCSLUT:
             return new LeftHashGrammar(genericGrammar);
@@ -418,17 +458,17 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new BSCPSkipBaseCells(parserOptions, (LeftHashGrammar) grammar);
         case BSCPFomDecode:
             return new BSCPFomDecode(parserOptions, (LeftHashGrammar) grammar);
-        case BSCPBeamConf:
-            return new BSCPBeamConf(parserOptions, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
+            // case BSCPBeamConf:
+            // return new BSCPBeamConf(parserOptions, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
         case BSCPBeamConfTrain:
             return new BSCPBeamConfTrain(parserOptions, (LeftHashGrammar) grammar);
 
         case CoarseCellAgenda:
             return new CoarseCellAgendaParser(parserOptions, (LeftHashGrammar) grammar);
-        case CoarseCellAgendaCSLUT:
-            final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(
-                    parserOptions.cellSelectorType, parserOptions.cellModelStream, parserOptions.cslutScoresStream);
-            return new CoarseCellAgendaParserWithCSLUT(parserOptions, (LeftHashGrammar) grammar, cslutScores);
+            // case CoarseCellAgendaCSLUT:
+            // final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(
+            // parserOptions.cellSelectorType, parserOptions.cellModelStream, parserOptions.cslutScoresStream);
+            // return new CoarseCellAgendaParserWithCSLUT(parserOptions, (LeftHashGrammar) grammar, cslutScores);
 
         case CsrSpmv:
             return new CsrSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
@@ -493,16 +533,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     }
 
     public String optionsToString() {
-        final String prefix = "OPTS: ";
-        String s = "";
-        s += prefix + "ParserType=" + researchParserType + "\n";
-        s += prefix + "CellSelector=" + cellSelectorType + "\n";
-        s += prefix + "FOM=" + edgeFOMType + "\n";
-        s += prefix + "ViterbiMax=" + viterbiMax() + "\n";
-        s += prefix + "x1=" + param1 + "\n";
-        s += prefix + "x2=" + param2 + "\n";
-        s += prefix + "x3=" + param3;
-
+        String s = "OPTS:";
+        s += " ParserType=" + researchParserType;
+        // s += prefix + "CellSelector=" + cellSelectorType + "\n";
+        s += " FOM=" + edgeFOMType;
+        s += " ViterbiMax=" + viterbiMax();
+        s += " x1=" + param1;
+        s += " x2=" + param2;
+        s += " x3=" + param3;
         return s;
     }
 
