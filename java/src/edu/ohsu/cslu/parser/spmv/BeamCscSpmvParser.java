@@ -27,7 +27,7 @@ public class BeamCscSpmvParser extends CscSpmvParser {
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
+    protected void initSentence(final int[] tokens) {
         initParser(tokens, beamWidth, lexicalRowBeamWidth);
     }
 
