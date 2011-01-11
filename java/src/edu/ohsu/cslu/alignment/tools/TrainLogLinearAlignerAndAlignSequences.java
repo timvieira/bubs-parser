@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
-
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.alignment.LogLinearVocabulary;

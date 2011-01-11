@@ -7,18 +7,19 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Vector;
 
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.classifier.Perceptron;
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.cellselector.CSLUTCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.chart.GoldChart;
 
 public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
@@ -50,7 +51,8 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
             for (final String bracketString : inputData) {
                 tree = ParseTree.readBracketFormat(bracketString);
                 if (tree.isBinaryTree() == false) {
-                    logger.info("ERROR: Training trees must be binarized exactly as used in decoding");
+                    GlobalLogger.singleton()
+                            .info("ERROR: Training trees must be binarized exactly as used in decoding");
                     System.exit(1);
                 }
 
@@ -367,7 +369,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
         if (perceptron == null) {
             perceptron = new Perceptron(featList.size());
         } else if (featList.size() != perceptron.numFeatures()) {
-            ParserDriver.getLogger().info(
+            GlobalLogger.singleton().info(
                     "ERROR: len(featureList)=" + featList.size() + " but number features in model files is numFeats="
                             + perceptron.numFeatures());
             System.exit(1);

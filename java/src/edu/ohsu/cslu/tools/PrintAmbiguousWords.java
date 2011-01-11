@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.zip.GZIPInputStream;
 
-
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Argument;
 import cltool4j.args4j.Option;

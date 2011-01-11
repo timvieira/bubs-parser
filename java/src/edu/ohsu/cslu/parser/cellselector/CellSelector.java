@@ -71,8 +71,6 @@ public abstract class CellSelector implements Iterator<short[]> {
         throw new UnsupportedOperationException();
     }
 
-    // more details options for Cell Constraints and PerceptronBeamWidth
-
     // open to factored and non-factored productions
     public boolean isOpenAll(final short start, final short end) {
         return true;

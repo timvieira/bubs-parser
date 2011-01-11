@@ -4,9 +4,9 @@ import java.io.BufferedReader;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
@@ -45,7 +45,7 @@ public class PerceptronBeamWidth extends CellSelector {
             beamWidthModel.setBias(beamConfBias);
         }
 
-        ParserDriver.getLogger().finer(
+        GlobalLogger.singleton().finer(
                 "INFO: beamconf: inferFactoredCells=" + ParserUtil.bool2int(inferFactoredCells) + " classifyBaseCells="
                         + ParserUtil.bool2int(classifyBaseCells));
     }
@@ -117,8 +117,8 @@ public class PerceptronBeamWidth extends CellSelector {
             classCounts += String.format(" class%d:%d", i, beamClassCounts[i]);
         }
 
-        Parser.logger.finer("INFO: beamconf: " + toString());
-        Parser.logger.info("INFO: beamconf: " + classCounts);
+        GlobalLogger.singleton().finer("INFO: beamconf: " + toString());
+        GlobalLogger.singleton().info("INFO: beamconf: " + classCounts);
         cellListIterator = cellList.iterator();
     }
 
@@ -130,7 +130,7 @@ public class PerceptronBeamWidth extends CellSelector {
     @Override
     public short[] next() {
         final ChartCell cell = cellListIterator.next();
-        return new short[] { (short) cell.start(), (short) cell.end() };
+        return new short[] { cell.start(), cell.end() };
     }
 
     @Override

@@ -14,6 +14,7 @@ import java.util.zip.GZIPInputStream;
 
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
+import cltool4j.GlobalLogger;
 import cltool4j.ThreadLocalLinewiseClTool;
 import cltool4j.Threadable;
 import cltool4j.args4j.CmdLineException;
@@ -204,7 +205,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
         // Collect detailed statistics for high verbosity levels (e.g., NTs per cell, cartesian-product size,etc.)
-        collectDetailedStatistics = logger.isLoggable(Level.FINER);
+        collectDetailedStatistics = GlobalLogger.singleton().isLoggable(Level.FINER);
 
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
@@ -242,10 +243,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             final ConfigProperties props = (ConfigProperties) ois.readObject();
             GlobalConfigProperties.singleton().mergeUnder(props);
 
-            logger.fine("Reading grammar...");
+            GlobalLogger.singleton().fine("Reading grammar...");
             this.grammar = (Grammar) ois.readObject();
 
-            logger.fine("Reading FOM...");
+            GlobalLogger.singleton().fine("Reading FOM...");
             this.edgeSelector = (EdgeSelector) ois.readObject();
 
         } else {
@@ -310,8 +311,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
         }
 
-        logger.fine(grammar.getStats());
-        logger.fine(optionsToString());
+        GlobalLogger.singleton().fine(grammar.getStats());
+        GlobalLogger.singleton().fine(optionsToString());
 
         // TODO: until we embed this info into the model itself ... read it from args
         grammar.annotatePOS = annotatePOS;
@@ -513,9 +514,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 final ParseStats parseStats = parser.parseSentence(sentence);
 
                 // TODO Return an instance of ParseStats instead of String so we can log this after the parse?
-                logger.fine(parseStats.toString() + " " + parser.getStats());
-                if (parser instanceof ChartParser && logger.isLoggable(Level.FINEST)) {
-                    logger.finest(((ChartParser<?, ?>) parser).chart.toString());
+                GlobalLogger.singleton().fine(parseStats.toString() + " " + parser.getStats());
+                if (parser instanceof ChartParser && GlobalLogger.singleton().isLoggable(Level.FINEST)) {
+                    GlobalLogger.singleton().finest(((ChartParser<?, ?>) parser).chart.toString());
                 }
                 return parseStats.parseBracketString;
             }
@@ -528,8 +529,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         final float cpuTime = parseTime * maxThreads;
         final int sentencesParsed = Parser.sentenceNumber;
 
-        logger.info(String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
-                sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
+        GlobalLogger.singleton().info(
+                String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
+                        sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
     }
 
     public String optionsToString() {

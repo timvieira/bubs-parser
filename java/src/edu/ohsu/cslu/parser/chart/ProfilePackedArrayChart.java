@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser.chart;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,7 +14,6 @@ import edu.ohsu.cslu.parser.spmv.PackedArraySpmvParser;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(FilteredRunner.class)
 public class ProfilePackedArrayChart {

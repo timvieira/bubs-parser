@@ -3,17 +3,18 @@ package edu.ohsu.cslu.parser.edgeselector;
 import java.io.BufferedReader;
 import java.util.Arrays;
 
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.GoldChart;
 
 public class WeightedFeatures extends EdgeSelector {
 
@@ -52,7 +53,7 @@ public class WeightedFeatures extends EdgeSelector {
         while ((line = inStream.readLine()) != null) {
             goldTree = ParseTree.readBracketFormat(line);
             if (goldTree.isBinaryTree() == false) {
-                ParserDriver.getLogger().info("ERROR: Training trees must be binarized exactly as used in decoding");
+                GlobalLogger.singleton().info("ERROR: Training trees must be binarized exactly as used in decoding");
                 System.exit(1);
             }
             goldChart = new GoldChart(goldTree, grammar);

@@ -1,7 +1,8 @@
 package edu.ohsu.cslu.parser.agenda;
 
-import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -60,7 +61,7 @@ public class APDecodeFOM extends APWithMemory {
         }
 
         if (agenda.isEmpty()) {
-            logger.info("WARNING: Agenda is empty.  All edges have been added to chart.");
+            GlobalLogger.singleton().info("WARNING: Agenda is empty.  All edges have been added to chart.");
         }
 
         return chart.extractBestParse(grammar.startSymbol);

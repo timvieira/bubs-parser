@@ -6,7 +6,6 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 

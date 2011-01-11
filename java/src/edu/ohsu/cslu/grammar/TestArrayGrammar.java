@@ -1,9 +1,10 @@
 package edu.ohsu.cslu.grammar;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
-import static org.junit.Assert.assertEquals;
 
 public class TestArrayGrammar {
     @Test

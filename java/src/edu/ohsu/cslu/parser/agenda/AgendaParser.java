@@ -2,8 +2,9 @@ package edu.ohsu.cslu.parser.agenda;
 
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -67,7 +68,7 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
         }
 
         if (agenda.isEmpty()) {
-            logger.info("WARNING: Agenda is empty.  All edges have been added to chart.");
+            GlobalLogger.singleton().info("WARNING: Agenda is empty.  All edges have been added to chart.");
         }
 
         return chart.extractBestParse(grammar.startSymbol);

@@ -11,9 +11,9 @@ import java.io.Reader;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-
 import cltool4j.BaseCommandlineTool;
 import cltool4j.GlobalConfigProperties;
+import cltool4j.GlobalLogger;
 import cltool4j.args4j.Argument;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
@@ -70,17 +70,17 @@ public class SerializeModel extends BaseCommandlineTool {
         }
         final ObjectOutputStream oos = new ObjectOutputStream(os);
 
-        logger.info("Reading grammar...");
+        GlobalLogger.singleton().info("Reading grammar...");
         Grammar g = new Grammar(grammarReader);
 
         if (grammarClass != null && grammarClass != Grammar.class.getName()) {
-            logger.info("Converting grammar...");
+            GlobalLogger.singleton().info("Converting grammar...");
             g = (Grammar) Class.forName(grammarClass).getConstructor(Grammar.class).newInstance(g);
         }
 
         EdgeSelector fom = null;
         if (fomModelFileName != null) {
-            logger.info("Reading FOM...");
+            GlobalLogger.singleton().info("Reading FOM...");
             // Handle gzipped and non-gzipped model files
             final BufferedReader fomModelReader = fomModelFileName.endsWith(".gz") ? new BufferedReader(
                     new InputStreamReader(new GZIPInputStream(new FileInputStream(fomModelFileName))))
@@ -94,7 +94,7 @@ public class SerializeModel extends BaseCommandlineTool {
             }
         }
 
-        logger.info("Writing serialized model file...");
+        GlobalLogger.singleton().info("Writing serialized model file...");
 
         // Write a key/value metadata line
         final StringBuilder metadata = new StringBuilder();
@@ -108,15 +108,15 @@ public class SerializeModel extends BaseCommandlineTool {
         oos.writeObject(GlobalConfigProperties.singleton());
 
         // Write the grammar
-        logger.info("Writing grammar...");
+        GlobalLogger.singleton().info("Writing grammar...");
         oos.writeObject(g);
 
         // Write the FOM model
         if (fom != null) {
-            logger.info("Writing FOM...");
+            GlobalLogger.singleton().info("Writing FOM...");
             oos.writeObject(fom);
         }
         oos.close();
-        logger.info("Serialized model file written.");
+        GlobalLogger.singleton().info("Serialized model file written.");
     }
 }

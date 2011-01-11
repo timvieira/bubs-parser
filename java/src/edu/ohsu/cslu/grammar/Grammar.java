@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
 
-import edu.ohsu.cslu.parser.ParserDriver;
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.parser.ParserUtil;
 
 /**
@@ -174,10 +174,10 @@ public class Grammar implements Serializable {
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
 
-        ParserDriver.getLogger().fine("Reading grammar ... ");
+        GlobalLogger.singleton().fine("Reading grammar ... ");
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
-        ParserDriver.getLogger().fine("transforming ... ");
+        GlobalLogger.singleton().fine("transforming ... ");
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
@@ -331,7 +331,7 @@ public class Grammar implements Serializable {
             }
         }
 
-        ParserDriver.getLogger().fine("done.");
+        GlobalLogger.singleton().fine("done.");
     }
 
     public Grammar(final String grammarFile) throws IOException {
@@ -516,7 +516,7 @@ public class Grammar implements Serializable {
         return nonTermSet.getSymbol(startSymbol);
     }
 
-    @SuppressWarnings( { "cast", "unchecked" })
+    @SuppressWarnings({ "cast", "unchecked" })
     public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
@@ -699,8 +699,8 @@ public class Grammar implements Serializable {
      */
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
         if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
-            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild), nonTermSet
-                    .getIndex(rightChild));
+            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
+                    nonTermSet.getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -1011,7 +1011,10 @@ public class Grammar implements Serializable {
             final Set<String> rightChildren) {
         final String internLabel = intern(label);
 
-        if (pos.contains(internLabel)) {
+        if (startSymbolStr.equals(internLabel)) {
+            return new StringNonTerminal(internLabel, NonTerminalClass.EITHER_CHILD);
+
+        } else if (pos.contains(internLabel)) {
             return new StringNonTerminal(internLabel, NonTerminalClass.POS);
 
         } else if (nonPosSet.contains(internLabel) && !rightChildren.contains(internLabel)) {
@@ -1140,7 +1143,7 @@ public class Grammar implements Serializable {
             final int leftChildrenEnd = total - 1;
 
             final int rightChildrenStart = 0;
-            final int rightChildrenEnd = rightChildrenStart + rightChildrenSet.size() + posSet.size() - 1;
+            final int rightChildrenEnd = rightChildrenStart + rightChildrenSet.size() + posSet.size();
 
             final int posStart = rightChildrenStart + rightChildrenSet.size();
             final int posEnd = posStart + posSet.size() - 1;
@@ -1237,7 +1240,7 @@ public class Grammar implements Serializable {
                 return unfactoredParent + "|<" + ParserUtil.join(markovChildrenStr, "-") + ">";
             case Berkeley:
                 if (markovChildrenStr.size() > 0) {
-                    ParserDriver.getLogger().info(
+                    GlobalLogger.singleton().info(
                             "ERROR: Berkeley grammar does not support horizontal markov smoothing for factored nodes");
                     System.exit(1);
                 }

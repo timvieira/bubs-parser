@@ -1,13 +1,12 @@
 package edu.ohsu.cslu.datastructs.narytree;
 
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.FilteredRunner;
-
-import static junit.framework.Assert.assertEquals;
-
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Unit tests for the {@link ShiftRegister class}

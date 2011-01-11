@@ -1,7 +1,8 @@
 package edu.ohsu.cslu.parser;
 
-import edu.ohsu.cslu.grammar.LeftListGrammar;
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
@@ -52,7 +53,8 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
             }
         }
 
-        logger.finer("STAT: UNARY: " + currentInput.sentenceLength + " " + (end - start) + " " + nUnaryConsidered + " "
-                + nUnaryInCell);
+        GlobalLogger.singleton().finer(
+                "STAT: UNARY: " + currentInput.sentenceLength + " " + (end - start) + " " + nUnaryConsidered + " "
+                        + nUnaryInCell);
     }
 }

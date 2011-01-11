@@ -3,8 +3,9 @@ package edu.ohsu.cslu.parser.beam;
 import java.util.Arrays;
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -64,7 +65,7 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
         if (score > maxcFOM[start][end][A]) {
             maxcFOM[start][end][A] = score;
             maxcBackptr[A] = edge;
-            logger.fine("" + edge);
+            GlobalLogger.singleton().fine("" + edge);
         }
     }
 
