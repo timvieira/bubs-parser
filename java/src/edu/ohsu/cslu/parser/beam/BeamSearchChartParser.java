@@ -3,8 +3,9 @@ package edu.ohsu.cslu.parser.beam;
 import java.util.Arrays;
 import java.util.PriorityQueue;
 
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -34,8 +35,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
         setBeamTuneParams(opts.beamTune);
 
-        logger.fine("INFO: beamWidth=" + origBeamWidth + " globalDelta=" + origGlobalBeamDelta + " localDelta="
-                + origLocalBeamDelta + " factBeamWidth=" + origFactoredBeamWidth);
+        GlobalLogger.singleton().fine(
+                "INFO: beamWidth=" + origBeamWidth + " globalDelta=" + origGlobalBeamDelta + " localDelta="
+                        + origLocalBeamDelta + " factBeamWidth=" + origFactoredBeamWidth);
     }
 
     protected void setBeamTuneParams(final String beamTuneStr) {

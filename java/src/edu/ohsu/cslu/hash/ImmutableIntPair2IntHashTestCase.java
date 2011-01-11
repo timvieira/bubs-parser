@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.hash;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -16,8 +18,6 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.tests.SharedNlpTests;
 import edu.ohsu.cslu.util.Math;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Theories.class)
 public abstract class ImmutableIntPair2IntHashTestCase {

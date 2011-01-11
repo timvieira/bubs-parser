@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.util.LinkedList;
 
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 public class LeftCornerTraversal extends CellSelector {
@@ -20,7 +20,7 @@ public class LeftCornerTraversal extends CellSelector {
          * for (int span=2; span<=this.parser.chartSize; span++) { for (int beg=0; beg<this.parser.chartSize-span+1;
          * beg++) { // beginning cellList.add(parser.chart[beg][beg+span]); } }
          */
-        ParserDriver.getLogger().info("ERROR: LeftCornerTraversal() not implemented.");
+        GlobalLogger.singleton().info("ERROR: LeftCornerTraversal() not implemented.");
         System.exit(1);
 
     }

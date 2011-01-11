@@ -17,7 +17,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.CmdLineParser;
 import cltool4j.args4j.Option;

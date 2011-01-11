@@ -3,10 +3,10 @@ package edu.ohsu.cslu.parser.chart;
 import java.util.LinkedList;
 import java.util.List;
 
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
-import edu.ohsu.cslu.parser.ParserDriver;
 
 public class GoldChart extends Chart {
 
@@ -90,7 +90,7 @@ public class GoldChart extends Chart {
                 // System.out.println("Adding: [" + start + "," + end + "] " + edge.prod);
 
                 // if (prod == null) {
-                // ParserDriver.getLogger().info(
+                // GlobalLogger.singleton().info(
                 // "WARNING: production does not exist in grammar for node: " + A + " -> "
                 // + node.childrenToString());
                 // // // prod = Grammar.nullProduction;
@@ -101,7 +101,7 @@ public class GoldChart extends Chart {
             }
         }
 
-        ParserDriver.getLogger().finer("INFO: goldCells: " + perCellStats);
+        GlobalLogger.singleton().finer("INFO: goldCells: " + perCellStats);
         // parser.edgeSelector = saveEdgeSelector;
     }
 

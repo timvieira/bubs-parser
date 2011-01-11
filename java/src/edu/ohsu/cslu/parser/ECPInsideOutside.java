@@ -3,11 +3,11 @@ package edu.ohsu.cslu.parser;
 import java.util.Arrays;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.ProjectedGrammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
-import edu.ohsu.cslu.parser.chart.InOutCellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.InOutCellChart;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 
 public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChart> {

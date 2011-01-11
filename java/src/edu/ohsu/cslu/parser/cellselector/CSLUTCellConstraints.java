@@ -7,8 +7,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
@@ -168,8 +168,8 @@ public class CSLUTCellConstraints extends CellSelector {
 
         cellListIterator = cellList.iterator();
 
-        ParserDriver.getLogger().finer("INFO: CellConstraints: " + perCellStats);
-        ParserDriver.getLogger().info(
+        GlobalLogger.singleton().finer("INFO: CellConstraints: " + perCellStats);
+        GlobalLogger.singleton().info(
                 "INFO: CellConstraints: total=" + totalCells + " open=" + openCells + " openFactored=" + factoredCells
                         + " closed=" + (totalCells - openCells - factoredCells));
     }
@@ -269,10 +269,10 @@ public class CSLUTCellConstraints extends CellSelector {
     @SuppressWarnings("unchecked")
     public void readModel(final BufferedReader inStream) throws NumberFormatException, IOException {
 
-        ParserDriver.getLogger().fine(
+        GlobalLogger.singleton().fine(
                 "CellConstraints: startThresh=" + this.startThresh + " endThresh=" + this.endThresh + " unaryThresh="
                         + this.unaryThresh);
-        ParserDriver.getLogger().fine("CellConstraints: Reading model ...");
+        GlobalLogger.singleton().fine("CellConstraints: Reading model ...");
         // HashMap<String, Vector<Vector<Float>>> ccScores = new HashMap<String, Vector<Vector<Float>>>();
 
         allStartScores = new HashMap<String, Vector<Float>>();
@@ -315,7 +315,7 @@ public class CSLUTCellConstraints extends CellSelector {
         allEndScores.put(sentence, (Vector<Float>) tmpEnd.clone());
         allUnaryScores.put(sentence, (Vector<Float>) tmpUnary.clone());
 
-        ParserDriver.getLogger().fine("CellConstraints: done.");
+        GlobalLogger.singleton().fine("CellConstraints: done.");
     }
 
     // private class SortBucket implements Comparable<SortBucket> {

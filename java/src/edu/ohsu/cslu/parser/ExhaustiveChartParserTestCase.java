@@ -39,7 +39,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
 public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? extends Grammar, ? extends Chart>> {
 
     // Grammar file paths, relative to unit test data root directory
-    private final static String PCFG_FILE = "grammars/wsj.2-21.unk.L2-p1.gz";
+    protected final static String PCFG_FILE = "grammars/wsj.2-21.unk.L2-p1.gz";
 
     /** Very simple grammar for parsing 'systems analyst arbitration chef' */
     protected static Grammar simpleGrammar1;
@@ -158,11 +158,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public static void suiteSetUp() throws Exception {
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
-        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
+                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
+        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
+                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
 
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
@@ -190,11 +190,6 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         }
 
         parser = createParser(f2_21_grammar, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());
-
-        // if (!headerLinePrinted) {
-        // System.out.println(parser.getStatHeader());
-        // headerLinePrinted = true;
-        // }
     }
 
     public static Reader simpleGrammar2() throws Exception {
@@ -325,7 +320,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * @throws Exception
      */
     @Test
-    @PerformanceTest( { "mbp", "0" })
+    @PerformanceTest({ "mbp", "0" })
     public abstract void profileSentences11Through20() throws Exception;
 
     protected void internalProfileSentences11Through20() throws Exception {

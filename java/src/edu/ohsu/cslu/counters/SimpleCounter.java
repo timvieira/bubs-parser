@@ -1,8 +1,8 @@
 package edu.ohsu.cslu.counters;
 
 import java.util.HashMap;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class SimpleCounter<E> {
 	// using floats instead of ints so we can support partial counts and smoothing

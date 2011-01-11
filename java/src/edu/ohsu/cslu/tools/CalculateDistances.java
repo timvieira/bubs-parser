@@ -10,8 +10,6 @@ import java.util.HashMap;
 
 import jsr166y.forkjoin.ForkJoinPool;
 import jsr166y.forkjoin.RecursiveAction;
-
-
 import cltool4j.BaseCommandlineTool;
 import cltool4j.Threadable;
 import cltool4j.args4j.CmdLineException;

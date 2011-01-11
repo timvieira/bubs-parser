@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.parser;
 
-import java.util.logging.Logger;
-
+import cltool4j.GlobalLogger;
 import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
@@ -17,7 +16,6 @@ public abstract class Parser<G extends Grammar> {
     public EdgeSelector edgeSelector;
     public final CellSelector cellSelector;
     public ParseStats currentInput; // temporary so I don't break too much stuff at once
-    public static Logger logger;
 
     // TODO Move global state back out of Parser
     static protected int sentenceNumber = 0;
@@ -44,7 +42,6 @@ public abstract class Parser<G extends Grammar> {
         this.cellSelector = opts.cellSelector;
 
         this.collectDetailedStatistics = opts.collectDetailedStatistics;
-        logger = ParserDriver.getLogger();
 
         // if (this.cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
         // this.hasCellConstraints = true;
@@ -70,8 +67,9 @@ public abstract class Parser<G extends Grammar> {
         stats.tokens = grammar.tokenizer.tokenizeToIndex(stats.sentence);
 
         if (stats.sentenceLength > opts.maxLength) {
-            logger.fine("INFO: Skipping sentence. Length of " + stats.sentenceLength + " is greater than maxLength ("
-                    + opts.maxLength + ")");
+            GlobalLogger.singleton().fine(
+                    "INFO: Skipping sentence. Length of " + stats.sentenceLength + " is greater than maxLength ("
+                            + opts.maxLength + ")");
         } else {
             stats.startTime();
             stats.parse = findBestParse(stats.tokens);

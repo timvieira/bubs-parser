@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserUtil;
 
