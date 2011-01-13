@@ -66,7 +66,19 @@ public class Tokenizer implements Serializable {
         return berkeleyGetSignature(word, sentIndex);
     }
 
-    // try to match Berkeley UNK mapping so that we can use their grammar
+    /**
+     * Translates an unknown word into a unknown-word string, using a decision-tree approach adopted from the Berkeley
+     * parser. The resulting UNK- string will encode as much information as possible about the unknown word. For
+     * example, the word 12-ary would be encoded as UNK-LC-NUM-DASH-y (lower-case, includes a number, includes a dash,
+     * and ends in 'y'). If the detailed UNK- string is also unknown, suffixes can be iteratively removed until an
+     * observed UNK- is found.
+     * 
+     * e.g.: UNK-LC-NUM-DASH-y -> UNK-LC-NUM -> UNK-LC
+     * 
+     * @param word
+     * @param sentIndex
+     * @return A string token representing the unknown word
+     */
     private String wordToUnkStringVer1(final String word) {
         String unkStr = "UNK";
 

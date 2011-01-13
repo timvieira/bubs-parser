@@ -26,6 +26,7 @@ import java.util.zip.GZIPInputStream;
 
 import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.util.StringPool;
 
 /**
  * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or may be
@@ -138,11 +139,11 @@ public class Grammar implements Serializable {
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
 
     /**
-     * A temporary String -> String map, used to conserve memory while reading and sorting the grammar. Similar to
-     * {@link String}'s own intern map, but we don't need to internalize Strings indefinitely, so we map them ourselves
-     * and allow the map to be GC'd after we're done constructing the grammar.
+     * A temporary String -> String map, used to conserve memory while reading and sorting the grammar. We don't need to
+     * internalize Strings indefinitely, so we map them ourselves and allow the map to be GC'd after we're done
+     * constructing the grammar.
      */
-    private HashMap<String, String> internMap = new HashMap<String, String>();
+    private StringPool stringPool = new StringPool();
 
     /**
      * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same command-line option
@@ -224,12 +225,12 @@ public class Grammar implements Serializable {
         }
 
         // Special cases for the start symbol and the null symbol (used for start/end of sentence markers and
-        // dummy non-terminals). Label them as POS. I'm not sure that's right, but it seems to work.
-        nonTerminals.add(startSymbolStr);
-        // pos.add(startSymbolStr);
-        nonPosSet.add(startSymbolStr); // changed by Nate; startSymbol is NOT a pos symbol!
+        // dummy non-terminals). Label null symbol as a POS, and start symbol as not.
         nonTerminals.add(nullSymbolStr);
         pos.add(nullSymbolStr);
+
+        nonTerminals.add(startSymbolStr);
+        nonPosSet.add(startSymbolStr);
 
         // Make the POS set disjoint from the other sets.
         rightChildrenSet.removeAll(pos);
@@ -316,7 +317,7 @@ public class Grammar implements Serializable {
             }
         }
 
-        internMap = null; // We no longer need the String intern map, so let it be GC'd
+        stringPool = null; // We no longer need the String intern map, so let it be GC'd
 
         this.tokenizer = new Tokenizer(lexSet);
 
@@ -429,7 +430,8 @@ public class Grammar implements Serializable {
                 pcfgRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
             } else if (tokens.length == 5) {
                 // Binary production: expecting: A -> B C prob
-                pcfgRules.add(new BinaryStringProduction(tokens[0], tokens[2], tokens[3], Float.valueOf(tokens[4])));
+                pcfgRules.add(new BinaryStringProduction(stringPool.intern(tokens[0]), stringPool.intern(tokens[2]),
+                        stringPool.intern(tokens[3]), Float.valueOf(tokens[4])));
             } else {
                 throw new IllegalArgumentException("Unexpected line in grammar PCFG\n\t" + line);
             }
@@ -998,18 +1000,9 @@ public class Grammar implements Serializable {
 
     }
 
-    private String intern(final String s) {
-        final String internedString = internMap.get(s);
-        if (internedString != null) {
-            return internedString;
-        }
-        internMap.put(s, s);
-        return s;
-    }
-
     private StringNonTerminal create(final String label, final HashSet<String> pos, final Set<String> nonPosSet,
             final Set<String> rightChildren) {
-        final String internLabel = intern(label);
+        final String internLabel = stringPool.intern(label);
 
         if (startSymbolStr.equals(internLabel)) {
             return new StringNonTerminal(internLabel, NonTerminalClass.EITHER_CHILD);
@@ -1022,38 +1015,6 @@ public class Grammar implements Serializable {
         }
 
         return new StringNonTerminal(internLabel, NonTerminalClass.EITHER_CHILD);
-    }
-
-    private class StringProduction {
-        public final String parent;
-        public final String leftChild;
-        public final float probability;
-
-        public StringProduction(final String parent, final String leftChild, final float probability) {
-            this.parent = intern(parent);
-            this.leftChild = intern(leftChild);
-            this.probability = probability;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s -> %s (%.3f)", parent, leftChild, probability);
-        }
-    }
-
-    private final class BinaryStringProduction extends StringProduction {
-        public final String rightChild;
-
-        public BinaryStringProduction(final String parent, final String leftChild, final String rightChild,
-                final float probability) {
-            super(parent, leftChild, probability);
-            this.rightChild = intern(rightChild);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s -> %s %s (%.3f)", parent, leftChild, rightChild, probability);
-        }
     }
 
     private final class StringNonTerminal {

@@ -36,8 +36,6 @@ import edu.ohsu.cslu.util.Strings;
 
 public abstract class SparseMatrixGrammar extends Grammar {
 
-    protected final int validProductionPairs;
-
     public final CartesianProductFunction cartesianProductFunction;
 
     /**
@@ -66,7 +64,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         super(grammarFile);
 
         this.cartesianProductFunction = createCartesianProductFunction(functionClass);
-        this.validProductionPairs = countValidProductionPairs();
 
         // Store all unary rules
         this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
@@ -93,7 +90,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.cartesianProductFunction = createCartesianProductFunction(functionClass);
-        this.validProductionPairs = countValidProductionPairs();
 
         // Store all unary rules
         this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
@@ -105,15 +101,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
         storeRightSiblingIndices();
-    }
-
-    private int countValidProductionPairs() {
-        // Some CartesianProductFunction implementation will duplicate this count, but it's not that expensive
-        final IntOpenHashSet productionPairs = new IntOpenHashSet(50000);
-        for (final Production p : binaryProductions) {
-            productionPairs.add(cartesianProductFunction.pack((short) p.leftChild, (short) p.rightChild));
-        }
-        return productionPairs.size();
     }
 
     @SuppressWarnings("unchecked")
@@ -262,7 +249,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         sb.append(super.getStats());
         sb.append("Cartesian Product Function: " + cartesianProductFunction.getClass().getName() + '\n');
         sb.append("Packed Array Size: " + cartesianProductFunction.packedArraySize() + '\n');
-        sb.append("Valid production pairs: " + validProductionPairs + '\n');
         return sb.toString();
     }
 
