@@ -46,9 +46,13 @@ import edu.ohsu.cslu.util.StringPool;
  * Although branching of arbitrary size is possible in a grammar under this definition, this class models grammars which
  * have been factored into binary-branching form, enabling much more efficient computational approaches to be used.
  * 
+ * TODO Fix this comment
+ * 
  * Note - there will always be more productions than categories, but all categories except the special S-dagger category
  * are also productions. The index of a category will be the same when used as a production as it is when used as a
  * category.
+ * 
+ * TODO Implement an even simpler grammar for use as an intermediate form when transforming one grammar to another.
  * 
  * @author Nathan Bodenstab
  * @author Aaron Dunlop
