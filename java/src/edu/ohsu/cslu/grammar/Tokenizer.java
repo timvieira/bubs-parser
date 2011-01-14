@@ -130,21 +130,23 @@ public class Tokenizer implements Serializable {
         return unkStr;
     }
 
+    private String berkeleyGetSignature(final String word, final int sentIndex) {
+        return berkeleyGetSignature(word, sentIndex, lexSet);
+    }
+
     // taken from Berkeley Parser SimpleLexicon.getNewSignature
 
     /**
      * This routine returns a String that is the "signature" of the class of a word. For, example, it might represent
      * whether it is a number of ends in -s. The strings returned by convention match the pattern UNK-.* , which is just
-     * assumed to not match any real word. Behavior depends on the unknownLevel (-uwm flag) passed in to the class. The
-     * recognized numbers are 1-5: 5 is fairly English-specific; 4, 3, and 2 look for various word features (digits,
-     * dashes, etc.) which are only vaguely English-specific; 1 uses the last two characters combined with a simple
-     * classification by capitalization.
+     * assumed to not match any real word. The decision-tree (and particulary the suffix-handling) is fairly
+     * English-specific.
      * 
      * @param word The word to make a signature for
      * @param loc Its position in the sentence (mainly so sentence-initial capitalized words can be treated differently)
      * @return A String that is its signature (equivalence class)
      */
-    private String berkeleyGetSignature(final String word, final int sentIndex) {
+    public static String berkeleyGetSignature(final String word, final int sentIndex, final SymbolSet<String> lexSet) {
         final StringBuffer sb = new StringBuffer("UNK");
 
         // Reformed Mar 2004 (cdm); hopefully much better now.
@@ -181,7 +183,7 @@ public class Tokenizer implements Serializable {
             if (sentIndex == 0 && numCaps == 1) {
                 sb.append("-INITC");
                 // if (isKnown(lowered)) {
-                if (lexSet.hasSymbol(lowered)) {
+                if (lexSet != null && lexSet.hasSymbol(lowered)) {
                     sb.append("-KNOWNLC");
                 }
             } else {
