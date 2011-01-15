@@ -8,6 +8,7 @@ import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -28,10 +29,20 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
         finalized = false;
     }
 
-    private void resort() {
-        Collections.sort(list, comparator);
-        for (int i = 0; i < list.size(); i++) {
-            map.put(list.get(i), i);
+    public SymbolSet(final Collection<E> symbols) {
+        this();
+        int i = 0;
+        for (final E symbol : symbols) {
+            list.add(symbol);
+            map.put(symbol, i++);
+        }
+    }
+
+    public SymbolSet(final E[] symbols) {
+        this();
+        for (int i = 0; i < symbols.length; i++) {
+            list.add(symbols[i]);
+            map.put(symbols[i], i);
         }
     }
 
@@ -295,6 +306,13 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
     public void setComparator(final Comparator<? super E> comparator) {
         this.comparator = comparator;
         resort();
+    }
+
+    private void resort() {
+        Collections.sort(list, comparator);
+        for (int i = 0; i < list.size(); i++) {
+            map.put(list.get(i), i);
+        }
     }
 
     @Override
