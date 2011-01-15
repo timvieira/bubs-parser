@@ -1,72 +1,236 @@
 package edu.ohsu.cslu.grammar;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntSortedMap;
+import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Map;
 
-public class SymbolSet<E> implements Iterable<E>, Serializable {
+public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serializable {
 
-    private ArrayList<E> symbolVector;
-    private Object2IntOpenHashMap<E> symbolHash;
+    private ArrayList<E> list;
+    private Object2IntOpenHashMap<E> map;
     private boolean finalized;
 
+    private Comparator<? super E> comparator;
+
     public SymbolSet() {
-        symbolVector = new ArrayList<E>();
-        symbolHash = new Object2IntOpenHashMap<E>();
-        symbolHash.defaultReturnValue(-1);
+        list = new ArrayList<E>();
+        map = new Object2IntOpenHashMap<E>();
+        map.defaultReturnValue(-1);
         finalized = false;
     }
 
-    // return index of symbol. If it does not exist, return -1
-    public int getIndex(final E symbol) {
-        return symbolHash.getInt(symbol);
+    private void resort() {
+        Collections.sort(list, comparator);
+        for (int i = 0; i < list.size(); i++) {
+            map.put(list.get(i), i);
+        }
     }
 
     // get integer index of label string. If it does not exist then
     // add it to the internal structures
     public int addSymbol(final E symbol) {
         // return this.getIndex(symbol);
-        int index = symbolHash.getInt(symbol);
+        int index = map.getInt(symbol);
         if (index != -1) {
             return index;
         }
 
         if (finalized) {
-            throw new RuntimeException("ERROR: SymbolSet is finalized but trying to add symbol: " + symbol);
+            throw new RuntimeException("Cannot modify a finalized SymbolSet");
         }
 
-        index = symbolVector.size();
-        symbolHash.put(symbol, index);
-        symbolVector.add(symbol);
+        // TODO Re-sort if we have a comparator
+        // if (comparator != null) {
+        //
+        // }
+        index = list.size();
+        map.put(symbol, index);
+        list.add(symbol);
 
         return index;
     }
 
-    public boolean hasSymbol(final E label) {
-        return symbolHash.containsKey(label);
+    @Override
+    public int put(final E symbol, final int index) {
+        if (finalized) {
+            throw new RuntimeException("Cannot modify a finalized SymbolSet");
+        }
+
+        if (index >= list.size()) {
+            throw new IndexOutOfBoundsException();
+        }
+        // TODO Re-sort if we have a comparator
+        // if (comparator != null) {
+        //
+        // }
+
+        map.remove(symbol);
+        list.set(index, symbol);
+        return map.put(symbol, index);
     }
 
-    public boolean contains(final E label) {
-        return hasSymbol(label);
+    @Override
+    public Integer put(final E symbol, final Integer index) {
+        return put(symbol, index.intValue());
+    }
+
+    @Override
+    public void putAll(final Map<? extends E, ? extends Integer> m) {
+        for (final E key : m.keySet()) {
+            put(key, m.get(key));
+        }
+    }
+
+    // return index of symbol. If it does not exist, return default return value (generally -1)
+    public int getIndex(final E symbol) {
+        return map.getInt(symbol);
+    }
+
+    @Override
+    public Integer get(final Object symbol) {
+        return map.get(symbol);
+    }
+
+    @Override
+    public int getInt(final Object symbol) {
+        return map.getInt(symbol);
     }
 
     public E getSymbol(final int index) {
-        return symbolVector.get(index);
+        return list.get(index);
+    }
+
+    @Override
+    public boolean containsKey(final Object key) {
+        return map.containsKey(key);
+    }
+
+    public boolean hasSymbol(final E label) {
+        // TODO Remove; duplicates containsKey(E)
+        return map.containsKey(label);
+    }
+
+    public boolean contains(final E label) {
+        // TODO Remove; duplicates containsKey(E)
+        return map.containsKey(label);
+    }
+
+    @Override
+    public boolean containsValue(final int value) {
+        return value < list.size();
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+        return ((Integer) value).intValue() < list.size();
+    }
+
+    @Override
+    public Integer remove(final Object symbol) {
+        if (finalized) {
+            throw new RuntimeException("Cannot modify a finalized SymbolSet");
+        }
+        return removeInt(symbol);
+    }
+
+    @Override
+    public int removeInt(final Object symbol) {
+        if (finalized) {
+            throw new RuntimeException("Cannot modify a finalized SymbolSet");
+        }
+
+        final int index = map.getInt(symbol);
+        if (index < 0) {
+            return index;
+        }
+
+        // Remove the symbol from the list and the map
+        map.remove(symbol);
+        list.remove(index);
+
+        // Shift mapped indices
+        for (int i = index; i < list.size(); i++) {
+            map.put(list.get(i), i);
+        }
+        return index;
+    }
+
+    public E removeIndex(final int index) {
+        if (finalized) {
+            throw new RuntimeException("Cannot modify a finalized SymbolSet");
+        }
+
+        if (index < 0 || index >= list.size()) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        final E symbol = list.get(index);
+
+        // Remove the symbol from the list and the map
+        map.remove(symbol);
+        list.remove(index);
+
+        // Shift mapped indices
+        for (int i = index; i < list.size(); i++) {
+            map.put(list.get(i), i);
+        }
+        return symbol;
+    }
+
+    public void removeIndices(final int[] indices) {
+        int j = 0, k = 0;
+        for (int i = 0; i < list.size(); i++) {
+            if (j < indices.length && i == indices[j]) {
+                j++;
+            } else {
+                list.set(k++, list.get(i));
+            }
+        }
+        for (int i = 0; i < indices.length; i++) {
+            list.remove(list.size() - 1);
+        }
+        map.clear();
+        for (int i = 0; i < list.size(); i++) {
+            map.put(list.get(i), i);
+        }
+    }
+
+    @Override
+    public void clear() {
+        if (finalized) {
+            throw new RuntimeException("Cannot modify a finalized SymbolSet");
+        }
+
+        list.clear();
+        map.clear();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return list.isEmpty();
     }
 
     public final int numSymbols() {
-        return symbolVector.size();
+        // TODO Remove; duplicates size()
+        return list.size();
+    }
+
+    public int size() {
+        return list.size();
     }
 
     @Override
     public Iterator<E> iterator() {
-        return symbolVector.iterator();
-    }
-
-    public int size() {
-        return symbolVector.size();
+        return list.iterator();
     }
 
     @Override
@@ -79,11 +243,82 @@ public class SymbolSet<E> implements Iterable<E>, Serializable {
     }
 
     @Override
+    public void defaultReturnValue(final int rv) {
+        map.defaultReturnValue(rv);
+    }
+
+    @Override
+    public int defaultReturnValue() {
+        return map.defaultReturnValue();
+    }
+
+    @Override
+    public E firstKey() {
+        return list.get(0);
+    }
+
+    @Override
+    public E lastKey() {
+        return list.get(list.size() - 1);
+    }
+
+    @Override
+    public ObjectSortedSet<java.util.Map.Entry<E, Integer>> entrySet() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ObjectSortedSet<it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<E>> object2IntEntrySet() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ObjectSortedSet<E> keySet() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public IntCollection values() {
+        final IntArrayList intList = new IntArrayList(list.size());
+        for (int i = 0; i < list.size(); i++) {
+            intList.add(i);
+        }
+        return intList;
+    }
+
+    @Override
+    public Comparator<? super E> comparator() {
+        return comparator;
+    }
+
+    public void setComparator(final Comparator<? super E> comparator) {
+        this.comparator = comparator;
+        resort();
+    }
+
+    @Override
+    public Object2IntSortedMap<E> subMap(final E fromKey, final E toKey) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object2IntSortedMap<E> headMap(final E toKey) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object2IntSortedMap<E> tailMap(final E fromKey) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < symbolVector.size(); i++) {
-            sb.append(i + " : " + symbolVector.get(i) + '\n');
+        for (int i = 0; i < list.size(); i++) {
+            sb.append(i + " : " + list.get(i) + '\n');
         }
         return sb.toString();
     }
+
 }
