@@ -1,8 +1,11 @@
 package edu.ohsu.cslu.util;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class TestMath {
 
@@ -98,5 +101,11 @@ public class TestMath {
 
         assertEquals(-1, Math.roundUp(-1, 1));
         assertEquals(8, Math.roundUp(-1, 8));
+    }
+
+    @Test
+    public void testLogSum() {
+        assertEquals(java.lang.Math.log(.5),
+                Math.logSum((float) java.lang.Math.log(.25), (float) java.lang.Math.log(.25)), 0.001f);
     }
 }

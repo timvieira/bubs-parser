@@ -6,8 +6,8 @@ package edu.ohsu.cslu.util;
 /**
  * Implements common mathematical functions. Suitable for static import.
  * 
- * Includes a lot of duplicated method code to avoid needing automatic up-conversion from int->float and
- * float->double (and re-casting the results downward).
+ * Includes a lot of duplicated method code to avoid needing automatic up-conversion from int->float and float->double
+ * (and re-casting the results downward).
  * 
  * @author Aaron Dunlop
  * @since Jun 12, 2008
@@ -449,8 +449,8 @@ public class Math {
     }
 
     /**
-     * Returns the integer log (base 2) of an integer (equivalent to the highest bit set) Simple, but not
-     * incredibly efficient.
+     * Returns the integer log (base 2) of an integer (equivalent to the highest bit set) Simple, but not incredibly
+     * efficient.
      * 
      * @param n Integer to take the logarithm of
      * @return The the integer log (base 2) of an integer
@@ -480,5 +480,18 @@ public class Math {
             return n;
         }
         return (n / increment + 1) * increment;
+    }
+
+    /**
+     * Returns log_e(e^a + e^b), using the derivation:
+     * 
+     * log(exp(a) + exp(b)) = a + log(1 + exp(b-a))
+     * 
+     * @param a
+     * @param b
+     * @return log_e(e^a + e^b)
+     */
+    public static float logSum(final float a, final float b) {
+        return (float) (a + java.lang.Math.log1p(java.lang.Math.exp(b - a)));
     }
 }
