@@ -418,4 +418,44 @@ public class TestStringBinaryTree {
                 + " (NNP Longman)))) (VP (AUX is) (VP (VBG going) (S (VP (TO to) (VP (VB recoup) "
                 + "(NP (NN today))))))) (. .)))", String.class), binaryTree.unfactor(GrammarFormatType.CSLU));
     }
+
+    @Test
+    public void testMaxUnaryChainLength() {
+        assertEquals(1, BinaryTree.read("(a b)", String.class).maxUnaryChainLength());
+        assertEquals(0, BinaryTree.read("(a b c)", String.class).maxUnaryChainLength());
+        assertEquals(2, BinaryTree.read("(a (b c))", String.class).maxUnaryChainLength());
+        assertEquals(3, BinaryTree.read("(a (b (c d)))", String.class).maxUnaryChainLength());
+        assertEquals(3, BinaryTree.read("(a (b (c (d e))) f)", String.class).maxUnaryChainLength());
+
+        /**
+         * <pre>
+         *             f 
+         *             |
+         *       --------------
+         *       |           |
+         *       d           i
+         *       |           |
+         *       d           h
+         *       |           |
+         *    -------        g
+         *    |     |        |
+         *    b     e     --------
+         *    |     |     |      |
+         *    a     c     h      k
+         *                |      |
+         *                g      j
+         * </pre>
+         */
+        assertEquals(2, BinaryTree.read("(f (d (d (b a) (e c))) (i (h (g (h g) (k j)))))", String.class)
+                .maxUnaryChainLength());
+    }
+
+    @Test
+    public void testDirectUnaryChainLength() {
+        assertEquals(1, BinaryTree.read("(a b)", String.class).directUnaryChainLength());
+        assertEquals(0, BinaryTree.read("(a b c)", String.class).directUnaryChainLength());
+        assertEquals(2, BinaryTree.read("(a (b c))", String.class).directUnaryChainLength());
+        assertEquals(2, BinaryTree.read("(a (b (c d e)))", String.class).directUnaryChainLength());
+        assertEquals(2, BinaryTree.read("(a (b (c d (e f))))", String.class).directUnaryChainLength());
+    }
 }
