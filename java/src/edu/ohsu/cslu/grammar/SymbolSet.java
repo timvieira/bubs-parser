@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serializable {
 
-    private ArrayList<E> list;
+    protected ArrayList<E> list;
     private Object2IntOpenHashMap<E> map;
     private boolean finalized;
 

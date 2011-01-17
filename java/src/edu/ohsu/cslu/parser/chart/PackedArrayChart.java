@@ -38,6 +38,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * 
  * @version $Revision$ $Date$ $Author$
  */
+@SuppressWarnings("unused")
 public class PackedArrayChart extends ParallelArrayChart {
 
     /**
@@ -124,8 +125,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                 final int cellIndex = cellIndex(start, end);
                 final int offset = cellOffset(start, end);
 
-                cellOffsets[cellIndex] = cellOffset(start, end);
-
+                cellOffsets[cellIndex] = offset;
                 minLeftChildIndex[cellIndex] = offset;
                 maxLeftChildIndex[cellIndex] = offset - 1;
                 minRightChildIndex[cellIndex] = offset;
@@ -354,7 +354,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                 tmpInsideProbabilities[parent] = insideProbability;
 
                 // Midpoint == end for unary productions
-                tmpMidpoints[parent] = (short) leftCell.end();
+                tmpMidpoints[parent] = leftCell.end();
 
                 numEdgesAdded++;
             }
@@ -385,7 +385,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                 tmpInsideProbabilities[parent] = edge.inside();
 
                 // Midpoint == end for unary productions
-                tmpMidpoints[parent] = (short) edge.leftCell.end();
+                tmpMidpoints[parent] = edge.leftCell.end();
 
                 numEdgesAdded++;
             }

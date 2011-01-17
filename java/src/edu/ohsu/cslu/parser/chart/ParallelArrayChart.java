@@ -2,8 +2,8 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 
 /**
  * Represents a parse chart as a parallel array including:
@@ -82,11 +82,37 @@ public abstract class ParallelArrayChart extends Chart {
         }
     }
 
+    /**
+     * Constructs a chart for exhaustive parsing (beamWidth = |V|)
+     * 
+     * @param tokens
+     * @param sparseMatrixGrammar
+     */
     protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
         this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms());
     }
 
-    // TODO Add a protected constructor for use by ConstrainedPackedArrayChart
+    /**
+     * Constructs a chart for exhaustive parsing (beamWidth = |V|)
+     * 
+     * @param size
+     * @param chartArraySize
+     * @param sparseMatrixGrammar
+     */
+    protected ParallelArrayChart(final int size, final int chartArraySize, final SparseMatrixGrammar sparseMatrixGrammar) {
+        super();
+        this.sparseMatrixGrammar = sparseMatrixGrammar;
+        this.size = size;
+        this.chartArraySize = chartArraySize;
+
+        cells = size * (size + 1) / 2;
+        cellOffsets = new int[cells];
+
+        insideProbabilities = new float[chartArraySize];
+        Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
+        packedChildren = new int[chartArraySize];
+        midpoints = new short[chartArraySize];
+    }
 
     /**
      * Removes existing chart entries and re-initializes chart state.
@@ -152,6 +178,14 @@ public abstract class ParallelArrayChart extends Chart {
 
     public final int chartArraySize() {
         return chartArraySize;
+    }
+
+    public int beamWidth() {
+        return beamWidth;
+    }
+
+    public int lexicalRowBeamWidth() {
+        return lexicalRowBeamWidth;
     }
 
     @Override
