@@ -3,8 +3,8 @@ package edu.ohsu.cslu.parser;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.ProjectedGrammar;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
@@ -438,13 +438,13 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
         ChartEdge edge;
         final ChartCell curCell = chart.getCell(start, end);
         if (rightChild == Production.LEXICAL_PRODUCTION) {
-            p = grammar.new Production(parent, leftChild, Float.NEGATIVE_INFINITY, true);
+            p = new Production(parent, leftChild, Float.NEGATIVE_INFINITY, true, grammar);
             edge = chart.new ChartEdge(p, curCell);
         } else if (rightChild == Production.UNARY_PRODUCTION) {
-            p = grammar.new Production(parent, leftChild, Float.NEGATIVE_INFINITY, false);
+            p = new Production(parent, leftChild, Float.NEGATIVE_INFINITY, false, grammar);
             edge = chart.new ChartEdge(p, curCell);
         } else {
-            p = grammar.new Production(parent, leftChild, rightChild, Float.NEGATIVE_INFINITY);
+            p = new Production(parent, leftChild, rightChild, Float.NEGATIVE_INFINITY, grammar);
             edge = chart.new ChartEdge(p, chart.getCell(start, midpt), chart.getCell(midpt, end));
         }
 
@@ -626,7 +626,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     // final float inOut = cell.getInside(nt) + cell.getOutside(nt);
     // final int evalNT = grammar.getEvalNonTerm(nt);
     // ruleScores[evalNT] = (float) ParserUtil.logSum(ruleScores[evalNT], inOut);
-    //                    
+    //
     // // find max value
     // if (ruleScores[evalNT] > maxScore[start][end]) {
     // maxScore[start][end] = ruleScores[evalNT];
@@ -658,7 +658,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     // bestNT[maxSplitMid][end], Float.NEGATIVE_INFINITY);
     // cell.bestEdge[bestNT[start][end]] = chart.new ChartEdge(p, chart.getCell(start, maxSplitMid),
     // chart.getCell(maxSplitMid, end));
-    //  
+    //
 
     // private float berkeleySumProduct(float a, float b, boolean maxRuleProduct) {
     // if (maxRuleProduct) {

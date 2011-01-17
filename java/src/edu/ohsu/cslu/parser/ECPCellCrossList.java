@@ -1,8 +1,8 @@
 package edu.ohsu.cslu.parser;
 
 import cltool4j.GlobalLogger;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 

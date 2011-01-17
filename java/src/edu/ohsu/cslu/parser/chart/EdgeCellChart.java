@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
 
 public class EdgeCellChart extends CellChart {

@@ -3,8 +3,8 @@ package edu.ohsu.cslu.parser.agenda;
 import java.util.PriorityQueue;
 
 import cltool4j.GlobalLogger;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;

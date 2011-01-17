@@ -5,7 +5,7 @@ import java.util.List;
 
 import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
 
 public class GoldChart extends Chart {
@@ -59,7 +59,7 @@ public class GoldChart extends Chart {
                     B = node.children.get(0).contents;
                     C = node.children.get(1).contents;
                     // prod = grammar.getBinaryProduction(A, B, C);
-                    prod = grammar.new Production(A, B, C, Float.NEGATIVE_INFINITY);
+                    prod = new Production(A, B, C, Float.NEGATIVE_INFINITY, grammar);
                     midpt = leafNodes.indexOf(node.children.get(0).rightMostLeaf()) + 1;
                     edge = new ChartEdge(prod, getCell(start, midpt), getCell(midpt, end));
                 } else if (numChildren == 1) {
@@ -69,10 +69,10 @@ public class GoldChart extends Chart {
                         // NOTE: don't want to add new words to the lexicon because they
                         // won't get mapped to UNK during decoding
                         B = grammar.tokenizer.mapToLexSetEntry(B, 1);
-                        prod = grammar.new Production(A, B, Float.NEGATIVE_INFINITY, true);
+                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, true, grammar.nonTermSet, grammar.lexSet);
                     } else {
                         // prod = grammar.getUnaryProduction(A, B);
-                        prod = grammar.new Production(A, B, Float.NEGATIVE_INFINITY, false);
+                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, false, grammar.nonTermSet, grammar.lexSet);
                     }
                     edge = new ChartEdge(prod, getCell(start, end));
                 } else {

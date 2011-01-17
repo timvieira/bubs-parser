@@ -1,8 +1,8 @@
 package edu.ohsu.cslu.parser.spmv;
 
 import cltool4j.args4j.EnumAliasMap;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
