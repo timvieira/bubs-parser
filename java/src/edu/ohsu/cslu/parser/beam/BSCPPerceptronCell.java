@@ -9,8 +9,8 @@ import java.util.Vector;
 
 import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.classifier.Perceptron;
-import edu.ohsu.cslu.grammar.Grammar.Production;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;

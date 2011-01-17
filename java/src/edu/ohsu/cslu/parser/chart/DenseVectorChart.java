@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.Grammar.Production;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
@@ -103,7 +103,7 @@ public class DenseVectorChart extends ParallelArrayChart {
                 insideProbabilities[index] = insideProbability;
 
                 // Midpoint == end for unary productions
-                midpoints[index] = (short) leftCell.end();
+                midpoints[index] = leftCell.end();
 
                 numEdgesAdded++;
             }
@@ -130,7 +130,7 @@ public class DenseVectorChart extends ParallelArrayChart {
                 insideProbabilities[index] = edge.inside();
 
                 // Midpoint == end for unary productions
-                midpoints[index] = (short) edge.leftCell.end();
+                midpoints[index] = edge.leftCell.end();
 
                 numEdgesAdded++;
             }
@@ -153,15 +153,15 @@ public class DenseVectorChart extends ParallelArrayChart {
             Production p;
             if (rightChild == Production.LEXICAL_PRODUCTION) {
                 final float probability = sparseMatrixGrammar.lexicalLogProbability(nonTerminal, leftChild);
-                p = sparseMatrixGrammar.new Production(nonTerminal, leftChild, probability, true);
+                p = new Production(nonTerminal, leftChild, probability, true, sparseMatrixGrammar);
 
             } else if (rightChild == Production.UNARY_PRODUCTION) {
                 final float probability = sparseMatrixGrammar.unaryLogProbability(nonTerminal, leftChild);
-                p = sparseMatrixGrammar.new Production(nonTerminal, leftChild, probability, false);
+                p = new Production(nonTerminal, leftChild, probability, false, sparseMatrixGrammar);
 
             } else {
                 final float probability = sparseMatrixGrammar.binaryLogProbability(nonTerminal, edgeChildren);
-                p = sparseMatrixGrammar.new Production(nonTerminal, leftChild, rightChild, probability);
+                p = new Production(nonTerminal, leftChild, rightChild, probability, sparseMatrixGrammar);
             }
             return new ChartEdge(p, leftChildCell, rightChildCell);
         }

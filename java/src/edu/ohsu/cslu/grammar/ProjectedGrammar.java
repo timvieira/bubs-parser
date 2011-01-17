@@ -41,7 +41,7 @@ public class ProjectedGrammar extends Grammar {
             final int A = projectNonTerm(p.parent);
             final int B = projectNonTerm(p.leftChild);
             final int C = projectNonTerm(p.rightChild);
-            final Production possProd = new Production(A, B, C, Float.NEGATIVE_INFINITY);
+            final Production possProd = new Production(A, B, C, Float.NEGATIVE_INFINITY, this);
             Production grammarProd = prods.get(possProd);
             if (grammarProd == null) {
                 prods.put(possProd, possProd);
@@ -54,7 +54,7 @@ public class ProjectedGrammar extends Grammar {
         for (final Production p : parentGrammar.unaryProductions) {
             final int A = projectNonTerm(p.parent);
             final int B = projectNonTerm(p.child());
-            final Production possProd = new Production(A, B, Float.NEGATIVE_INFINITY, false);
+            final Production possProd = new Production(A, B, Float.NEGATIVE_INFINITY, false, this);
             Production grammarProd = prods.get(possProd);
             if (grammarProd == null) {
                 prods.put(possProd, possProd);

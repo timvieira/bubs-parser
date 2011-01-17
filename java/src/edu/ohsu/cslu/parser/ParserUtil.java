@@ -38,6 +38,7 @@ public class ParserUtil {
         return buffer.toString();
     }
 
+    // TODO Merge with Math.logSum()
     public static double logSum(final double a, final double b) {
         // NOTE: these conditions were necessary when multiplying multiple values
         // of Float.NEGATIVE_INFINITY for the result of a or b because logSum was

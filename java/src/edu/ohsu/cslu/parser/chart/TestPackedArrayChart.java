@@ -8,6 +8,7 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
@@ -44,13 +45,13 @@ public class TestPackedArrayChart {
         final ChartCell cell_2_3 = chart.getCell(2, 3);
 
         // Three binary productions
-        cell_2_3.updateInside(simpleGrammar2.new Production(1, 2, 3, -3f), cell_2_3, null, -3f);
-        cell_2_3.updateInside(simpleGrammar2.new Production(2, 3, 4, -2f), cell_2_3, null, -2f);
-        cell_2_3.updateInside(simpleGrammar2.new Production(3, 2, 2, -4f), cell_2_3, null, -4f);
+        cell_2_3.updateInside(new Production(1, 2, 3, -3f, simpleGrammar2), cell_2_3, null, -3f);
+        cell_2_3.updateInside(new Production(2, 3, 4, -2f, simpleGrammar2), cell_2_3, null, -2f);
+        cell_2_3.updateInside(new Production(3, 2, 2, -4f, simpleGrammar2), cell_2_3, null, -4f);
 
         // Two unary productions, one of which will override a binary production
-        cell_2_3.updateInside(simpleGrammar2.new Production(2, 3, -1.5f, false), cell_2_3, null, -1.5f);
-        cell_2_3.updateInside(simpleGrammar2.new Production(4, 3, -1.5f, false), cell_2_3, null, -1.5f);
+        cell_2_3.updateInside(new Production(2, 3, -1.5f, false, simpleGrammar2), cell_2_3, null, -1.5f);
+        cell_2_3.updateInside(new Production(4, 3, -1.5f, false, simpleGrammar2), cell_2_3, null, -1.5f);
         cell_2_3.finalizeCell();
 
         assertEquals(4, cell_2_3.getNumNTs());
@@ -66,13 +67,13 @@ public class TestPackedArrayChart {
         final ChartCell cell_2_3 = chart.getCell(2, 3);
 
         // Three binary productions
-        cell_2_3.updateInside(simpleGrammar2.new Production(1, 2, 3, -3f), cell_2_3, null, -3f);
-        cell_2_3.updateInside(simpleGrammar2.new Production(2, 3, 4, -2f), cell_2_3, null, -2f);
-        cell_2_3.updateInside(simpleGrammar2.new Production(3, 2, 2, -4f), cell_2_3, null, -4f);
+        cell_2_3.updateInside(new Production(1, 2, 3, -3f, simpleGrammar2), cell_2_3, null, -3f);
+        cell_2_3.updateInside(new Production(2, 3, 4, -2f, simpleGrammar2), cell_2_3, null, -2f);
+        cell_2_3.updateInside(new Production(3, 2, 2, -4f, simpleGrammar2), cell_2_3, null, -4f);
 
         // Two unary productions, one of which will override a binary production
-        cell_2_3.updateInside(simpleGrammar2.new Production(2, 3, -1.5f, false), cell_2_3, null, -1.5f);
-        cell_2_3.updateInside(simpleGrammar2.new Production(4, 3, -1.5f, false), cell_2_3, null, -1.5f);
+        cell_2_3.updateInside(new Production(2, 3, -1.5f, false, simpleGrammar2), cell_2_3, null, -1.5f);
+        cell_2_3.updateInside(new Production(4, 3, -1.5f, false, simpleGrammar2), cell_2_3, null, -1.5f);
         cell_2_3.finalizeCell();
 
         assertEquals(2, cell_2_3.getNumNTs());

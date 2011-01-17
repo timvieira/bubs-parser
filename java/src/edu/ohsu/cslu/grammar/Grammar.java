@@ -285,7 +285,7 @@ public class Grammar implements Serializable {
         for (final StringProduction lexicalRule : lexicalRules) {
             final int lexIndex = lexSet.addSymbol(lexicalRule.leftChild);
             lexicalProductions.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexIndex,
-                    lexicalRule.probability, true));
+                    lexicalRule.probability, true, this));
         }
         numLexProds = lexicalProductions.size();
 
@@ -296,10 +296,10 @@ public class Grammar implements Serializable {
         for (final StringProduction grammarRule : pcfgRules) {
             if (grammarRule instanceof BinaryStringProduction) {
                 binaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
-                        ((BinaryStringProduction) grammarRule).rightChild, grammarRule.probability));
+                        ((BinaryStringProduction) grammarRule).rightChild, grammarRule.probability, this));
             } else {
                 unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild, grammarRule.probability,
-                        false));
+                        false, nonTermSet, lexSet));
             }
         }
 
@@ -569,10 +569,7 @@ public class Grammar implements Serializable {
         return lexSet.hasSymbol(s);
     }
 
-    private int addNonTerm(final String nonTerm) {
-        if (nonTermSet.hasSymbol(nonTerm)) {
-            return nonTermSet.getIndex(nonTerm);
-        }
+    int addNonTerm(final String nonTerm) {
         return nonTermSet.addSymbol(nonTerm);
     }
 
@@ -902,106 +899,6 @@ public class Grammar implements Serializable {
         sb.append("GrammarFormat: " + grammarFormat + '\n');
 
         return sb.toString();
-    }
-
-    public final class Production implements Serializable {
-
-        // if rightChild == -1, it's a unary prod, if -2, it's a lexical prod
-        public final static int UNARY_PRODUCTION = -1;
-        public final static int LEXICAL_PRODUCTION = -2;
-
-        public final int parent, leftChild, rightChild;
-        public final float prob;
-
-        // public Production projProd;
-
-        // Binary production
-        public Production(final int parent, final int leftChild, final int rightChild, final float prob) {
-            assert parent != -1 && leftChild != -1 && rightChild != -1;
-            this.parent = parent;
-            this.leftChild = leftChild;
-            this.rightChild = rightChild;
-            this.prob = prob;
-
-            getNonterminal(leftChild).isLeftChild = true;
-            getNonterminal(rightChild).isRightChild = true;
-        }
-
-        // Binary production
-        public Production(final String parent, final String leftChild, final String rightChild, final float prob) {
-            this(addNonTerm(parent), addNonTerm(leftChild), addNonTerm(rightChild), prob);
-        }
-
-        // Unary production
-        public Production(final int parent, final int child, final float prob, final boolean isLex) {
-            assert parent != -1 && child != -1;
-            this.parent = parent;
-            this.leftChild = child;
-            if (isLex) {
-                this.rightChild = LEXICAL_PRODUCTION;
-                getNonterminal(parent).isPOS = true;
-                if (parent > maxPOSIndex) {
-                    maxPOSIndex = parent;
-                }
-            } else {
-                this.rightChild = UNARY_PRODUCTION;
-            }
-            this.prob = prob;
-        }
-
-        public Production(final String parent, final String child, final float prob, final boolean isLex) {
-            this(addNonTerm(parent), isLex ? lexSet.addSymbol(child) : addNonTerm(child), prob, isLex);
-        }
-
-        public final Production copy() {
-            return new Production(parent, leftChild, rightChild, prob);
-        }
-
-        public boolean equals(final Production otherProd) {
-            if (parent != otherProd.parent)
-                return false;
-            if (leftChild != otherProd.leftChild)
-                return false;
-            if (rightChild != otherProd.rightChild)
-                return false;
-
-            return true;
-        }
-
-        public int child() {
-            return leftChild;
-        }
-
-        public final boolean isUnaryProd() {
-            return rightChild == UNARY_PRODUCTION;
-        }
-
-        public final boolean isLexProd() {
-            return rightChild == LEXICAL_PRODUCTION;
-        }
-
-        public boolean isBinaryProd() {
-            return isUnaryProd() == false && isLexProd() == false;
-        }
-
-        public final String parentToString() {
-            return nonTermSet.getSymbol(parent);
-        }
-
-        public String childrenToString() {
-            if (isLexProd()) {
-                return lexSet.getSymbol(leftChild);
-            } else if (isUnaryProd()) {
-                return nonTermSet.getSymbol(leftChild);
-            }
-            return nonTermSet.getSymbol(leftChild) + " " + nonTermSet.getSymbol(rightChild);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s -> %s (p=%.4f)", parentToString(), childrenToString(), prob);
-        }
-
     }
 
     private StringNonTerminal create(final String label, final HashSet<String> pos, final Set<String> nonPosSet,
