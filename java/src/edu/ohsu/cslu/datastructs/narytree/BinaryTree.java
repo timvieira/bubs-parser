@@ -429,6 +429,35 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
     }
 
     /**
+     * @return The length of the longest unary chain in the tree
+     */
+    public int maxUnaryChainLength() {
+        // Not very efficient, but we shouldn't do this very often
+        int max = 0;
+        for (final Iterator<BinaryTree<E>> iter = preOrderIterator(); iter.hasNext();) {
+            final BinaryTree<E> node = iter.next();
+            final int len = node.directUnaryChainLength();
+            if (len > max) {
+                max = len;
+            }
+        }
+        return max;
+    }
+
+    /**
+     * @return The length of the unary chain descending <i>directly</i> from this node
+     */
+    public int directUnaryChainLength() {
+        int length = 0;
+        BinaryTree<E> node = this;
+        while (node.leftChild != null && node.rightChild == null) {
+            length++;
+            node = node.leftChild;
+        }
+        return length;
+    }
+
+    /**
      * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening binary-factored
      * subtrees.
      * 
