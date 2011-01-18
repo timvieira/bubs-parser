@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.util.Math;
@@ -101,6 +102,28 @@ public abstract class SparseMatrixGrammar extends Grammar {
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
         storeRightSiblingIndices();
+    }
+
+    protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
+            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final Class<? extends CartesianProductFunction> functionClass) {
+        super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat);
+
+        // Initialization code duplicated from constructor above to allow these fields to be final
+        this.cartesianProductFunction = createCartesianProductFunction(functionClass);
+
+        // Store all unary rules
+        this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
+        this.csrUnaryColumnIndices = new short[numUnaryProds()];
+        this.csrUnaryProbabilities = new float[numUnaryProds()];
+
+        storeUnaryRulesAsCsrMatrix();
+
+        minRightSiblingIndices = new short[numNonTerms()];
+        maxRightSiblingIndices = new short[numNonTerms()];
+        storeRightSiblingIndices();
+
     }
 
     @SuppressWarnings("unchecked")

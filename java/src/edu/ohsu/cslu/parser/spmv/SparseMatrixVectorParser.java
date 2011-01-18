@@ -5,9 +5,9 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
-import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 
 /**
@@ -182,8 +182,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
         private final SparseMatrixGrammar grammar;
         public final float[] probabilities;
-        final short[] midpoints;
-        final int[] populatedLeftChildren;
+        public final short[] midpoints;
+        public final int[] populatedLeftChildren;
         private int size = 0;
 
         public CartesianProductVector(final SparseMatrixGrammar grammar, final float[] probabilities,
