@@ -87,7 +87,9 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
      * @return The newly added subtree
      */
     protected BinaryTree<E> addChild(final BinaryTree<E> child) {
+        child.parent = this;
         updateSize(1, isLeaf() ? 0 : 1);
+
         if (leftChild == null) {
             leftChild = child;
         } else if (rightChild == null) {
@@ -445,7 +447,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
     }
 
     /**
-     * @return The length of the unary chain descending <i>directly</i> from this node
+     * @return The number of nodes descending <i>directly</i> from this node in a unary chain.
      */
     public int directUnaryChainLength() {
         int length = 0;
@@ -453,6 +455,19 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         while (node.leftChild != null && node.rightChild == null) {
             length++;
             node = node.leftChild;
+        }
+        return length;
+    }
+
+    /**
+     * @return The depth of this node in a unary chain (0 if the parent node has a right child)
+     */
+    public int unaryChainDepth() {
+        int length = 0;
+        BinaryTree<E> node = this;
+        while (node.parent != null && node.parent.rightChild == null) {
+            length++;
+            node = node.parent;
         }
         return length;
     }
