@@ -13,6 +13,7 @@ import java.util.Random;
 import java.util.regex.Pattern;
 
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
@@ -26,7 +27,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class ProductionListGrammar {
 
-    protected final SymbolSet<String> vocabulary;
+    protected final SplitVocabulary vocabulary;
     protected final SymbolSet<String> lexicon;
 
     protected final ArrayList<Production> binaryProductions;
@@ -41,7 +42,8 @@ public class ProductionListGrammar {
     private final static Pattern SUBSTATE_PATTERN = Pattern.compile("^.*_[0-9]+$");
 
     /**
-     * Constructs a production-list grammar based on a {@link StringCountGrammar}.
+     * Constructs a production-list grammar based on a {@link StringCountGrammar}, inducing a vocabulary sorted by
+     * binary parent count.
      * 
      * @param countGrammar
      */
@@ -57,6 +59,12 @@ public class ProductionListGrammar {
         this.startSymbol = countGrammar.startSymbol;
         this.parentGrammar = null;
         this.parentVocabularyMap = null;
+        //
+        // // This grammar was induced from a treebank and has not (yet) been split or merged, so each non-terminal is
+        // its
+        // // own base category.
+        // this.subcategoryIndices = new short[vocabulary.size()];
+        // Arrays.fill(subcategoryIndices, (short) 0);
     }
 
     /**
@@ -77,9 +85,12 @@ public class ProductionListGrammar {
         // TODO Record a parent grammar?
         this.parentGrammar = null;
         this.parentVocabularyMap = null;
+
+        // // TODO Populate this, somehow
+        // this.subcategoryIndices = new short[vocabulary.size()];
     }
 
-    private ProductionListGrammar(final ProductionListGrammar parentGrammar, final SymbolSet<String> vocabulary,
+    private ProductionListGrammar(final ProductionListGrammar parentGrammar, final SplitVocabulary vocabulary,
             final SymbolSet<String> lexicon) {
         this.vocabulary = vocabulary;
         this.lexicon = lexicon;
@@ -113,7 +124,7 @@ public class ProductionListGrammar {
 
         for (final Production p : binaryProductions) {
             if (p.parent == intParent && p.leftChild == intLeftChild && p.rightChild == intRightChild) {
-                return p.probability;
+                return p.prob;
             }
         }
         return Float.NEGATIVE_INFINITY;
@@ -137,7 +148,7 @@ public class ProductionListGrammar {
 
         for (final Production p : unaryProductions) {
             if (p.parent == intParent && p.leftChild == intChild) {
-                return p.probability;
+                return p.prob;
             }
         }
         return Float.NEGATIVE_INFINITY;
@@ -161,7 +172,7 @@ public class ProductionListGrammar {
 
         for (final Production p : lexicalProductions) {
             if (p.parent == intParent && p.leftChild == intChild) {
-                return p.probability;
+                return p.prob;
             }
         }
         return Float.NEGATIVE_INFINITY;
@@ -179,12 +190,12 @@ public class ProductionListGrammar {
 
         for (final Production p : binaryProductions) {
             sb.append(String.format("%s -> %s %s %.6f\n", vocabulary.getSymbol(p.parent),
-                    vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), p.probability));
+                    vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), p.prob));
         }
 
         for (final Production p : unaryProductions) {
             sb.append(String.format("%s -> %s %.6f\n", vocabulary.getSymbol(p.parent),
-                    vocabulary.getSymbol(p.leftChild), p.probability));
+                    vocabulary.getSymbol(p.leftChild), p.prob));
         }
 
         return sb.toString();
@@ -198,7 +209,7 @@ public class ProductionListGrammar {
 
         for (final Production p : lexicalProductions) {
             sb.append(String.format("%s -> %s %.6f\n", vocabulary.getSymbol(p.parent), lexicon.getSymbol(p.leftChild),
-                    p.probability));
+                    p.prob));
         }
 
         return sb.toString();
@@ -216,7 +227,7 @@ public class ProductionListGrammar {
     public ProductionListGrammar split(final Random random, final float randomness) {
         // Produce a new vocabulary, splitting each non-terminal into two substates
 
-        final SymbolSet<String> splitVocabulary = new SymbolSet<String>();
+        final SplitVocabulary splitVocabulary = new SplitVocabulary((short) (vocabulary.maxSplits * 2));
 
         // Do not split the start symbol
         splitVocabulary.addSymbol(startSymbol);
@@ -225,6 +236,7 @@ public class ProductionListGrammar {
             splitVocabulary.addSymbol(substates[0]);
             splitVocabulary.addSymbol(substates[1]);
         }
+        splitVocabulary.recomputeSubcategoryIndices();
 
         final ProductionListGrammar splitGrammar = new ProductionListGrammar(this, splitVocabulary, lexicon);
 
@@ -247,7 +259,7 @@ public class ProductionListGrammar {
                 for (final int splitLeftChild : splitLeftChildren) {
                     for (final int splitRightChild : splitRightChildren) {
                         splitGrammar.binaryProductions.add(new Production(splitParent, splitLeftChild, splitRightChild,
-                                p.probability + logOneEighth));
+                                p.prob + logOneEighth, splitVocabulary, lexicon));
                     }
                 }
             }
@@ -261,7 +273,8 @@ public class ProductionListGrammar {
             // Since we do not split the start symbol, we only split unaries of which it is the parent in two
             if (p.parent == 0) {
                 for (final int splitChild : splitChildren) {
-                    splitGrammar.unaryProductions.add(new Production(0, splitChild, false, p.probability + logOneHalf));
+                    splitGrammar.unaryProductions.add(new Production(0, splitChild, p.prob + logOneHalf, false,
+                            splitVocabulary, lexicon));
                 }
 
             } else {
@@ -269,8 +282,8 @@ public class ProductionListGrammar {
 
                 for (final int splitParent : splitParents) {
                     for (final int splitChild : splitChildren) {
-                        splitGrammar.unaryProductions.add(new Production(splitParent, splitChild, false, p.probability
-                                + logOneFourth));
+                        splitGrammar.unaryProductions.add(new Production(splitParent, splitChild,
+                                p.prob + logOneFourth, false, splitVocabulary, lexicon));
                     }
                 }
             }
@@ -278,10 +291,10 @@ public class ProductionListGrammar {
 
         // Split lexical productions in half
         for (final Production p : lexicalProductions) {
-            splitGrammar.lexicalProductions.add(new Production(p.parent * 2 - 1, p.child(), true, p.probability
-                    + logOneHalf, splitVocabulary, lexicon));
-            splitGrammar.lexicalProductions.add(new Production(p.parent * 2, p.child(), true, p.probability
-                    + logOneHalf, splitVocabulary, lexicon));
+            splitGrammar.lexicalProductions.add(new Production(p.parent * 2 - 1, p.child(), p.prob + logOneHalf, true,
+                    splitVocabulary, lexicon));
+            splitGrammar.lexicalProductions.add(new Production(p.parent * 2, p.child(), p.prob + logOneHalf, true,
+                    splitVocabulary, lexicon));
         }
 
         return splitGrammar;
@@ -319,12 +332,11 @@ public class ProductionListGrammar {
         // TODO Map from split indices -> merged indices?
 
         // Create merged vocabulary and map from old vocab indices to new
-        final SymbolSet<String> mergedVocabulary = new SymbolSet<String>();
         final Short2ShortOpenHashMap mergedIndices = new Short2ShortOpenHashMap();
         short j = 0;
         Arrays.sort(indices);
-
-        mergedVocabulary.addSymbol(startSymbol);
+        final ArrayList<String> mergedSymbols = new ArrayList<String>();
+        mergedSymbols.add(startSymbol);
 
         String previousRoot = "";
         int nextIndex = 0;
@@ -338,16 +350,18 @@ public class ProductionListGrammar {
 
                 if (mergedRoot.equals(previousRoot)) {
                     // Add the next split index in order, which may not match that of the split grammar symbol
-                    mergedVocabulary.addSymbol(previousRoot + '_' + nextIndex);
+                    mergedSymbols.add(previousRoot + '_' + nextIndex);
                     nextIndex++;
                 } else {
-                    mergedVocabulary.addSymbol(mergedRoot + "_0");
+                    mergedSymbols.add(mergedRoot + "_0");
                     nextIndex = 1;
                 }
                 previousRoot = mergedRoot;
             }
-            mergedIndices.put(i, (short) (mergedVocabulary.size() - 1));
+            mergedIndices.put(i, (short) (mergedSymbols.size() - 1));
         }
+
+        final SplitVocabulary mergedVocabulary = new SplitVocabulary(mergedSymbols);
 
         // Create maps to store new rules in
         final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> binaryRuleMap = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
@@ -359,16 +373,16 @@ public class ProductionListGrammar {
 
         for (final Production p : binaryProductions) {
             addBinaryRuleProbability(binaryRuleMap, mergedIndices.get((short) p.parent),
-                    mergedIndices.get((short) p.leftChild), mergedIndices.get((short) p.rightChild), p.probability);
+                    mergedIndices.get((short) p.leftChild), mergedIndices.get((short) p.rightChild), p.prob);
         }
 
         for (final Production p : unaryProductions) {
             addUnaryRuleProbability(unaryRuleMap, mergedIndices.get((short) p.parent),
-                    mergedIndices.get((short) p.leftChild), p.probability);
+                    mergedIndices.get((short) p.leftChild), p.prob);
         }
 
         for (final Production p : lexicalProductions) {
-            addLexicalRuleProbability(lexicalRuleMap, mergedIndices.get((short) p.parent), p.leftChild, p.probability);
+            addLexicalRuleProbability(lexicalRuleMap, mergedIndices.get((short) p.parent), p.leftChild, p.prob);
         }
 
         final ProductionListGrammar mergedGrammar = new ProductionListGrammar(parentGrammar, mergedVocabulary, lexicon);
@@ -462,7 +476,7 @@ public class ProductionListGrammar {
                     continue;
                 }
 
-                unaryProductions.add(new Production(parent, child, false, childMap.get(child), vocabulary, lexicon));
+                unaryProductions.add(new Production(parent, child, childMap.get(child), false, vocabulary, lexicon));
             }
         }
     }
@@ -498,7 +512,7 @@ public class ProductionListGrammar {
                     continue;
                 }
 
-                lexicalProductions.add(new Production(parent, child, true, childMap.get(child), vocabulary, lexicon));
+                lexicalProductions.add(new Production(parent, child, childMap.get(child), true, vocabulary, lexicon));
             }
         }
     }

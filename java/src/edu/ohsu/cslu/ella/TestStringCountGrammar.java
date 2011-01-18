@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.tests.FilteredRunner;
 
@@ -31,14 +32,14 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
 
     @Before
     public void setUp() throws IOException {
-        sg = new StringCountGrammar(new StringReader(STRING_SAMPLE_TREE), null, null, 1);
+        sg = new StringCountGrammar(new StringReader(AllEllaTests.STRING_SAMPLE_TREE), null, null, 1);
         g = sg;
     }
 
     @Test
     public void testUnknownWordThreshold() throws IOException {
         // Two trees, differing only in two terminals which occur one time each
-        final String corpus = STRING_SAMPLE_TREE + '\n' + "(s (a (a (a (a e) (a c)) (b d)) (b (b (b f)) (a d))))";
+        final String corpus = AllEllaTests.STRING_SAMPLE_TREE + '\n' + "(s (a (a (a (a e) (a c)) (b d)) (b (b (b f)) (a d))))";
 
         // With an occurrence threshold of 1, all observed symbols will be in the lexicon
         SymbolSet<String> lexicon = new StringCountGrammar(new StringReader(corpus), null, null, 1).induceLexicon();
