@@ -458,4 +458,25 @@ public class TestStringBinaryTree {
         assertEquals(2, BinaryTree.read("(a (b (c d e)))", String.class).directUnaryChainLength());
         assertEquals(2, BinaryTree.read("(a (b (c d (e f))))", String.class).directUnaryChainLength());
     }
+
+    @Test
+    public void testUnaryChainDepth() {
+        BinaryTree<String> tree = BinaryTree.read("(a b)", String.class);
+        assertEquals(0, tree.unaryChainDepth());
+        assertEquals(1, tree.leftChild().unaryChainDepth());
+
+        tree = BinaryTree.read("(a b c)", String.class);
+        assertEquals(0, tree.unaryChainDepth());
+        assertEquals(0, tree.leftChild().unaryChainDepth());
+
+        tree = BinaryTree.read("(a (b c))", String.class);
+        assertEquals(0, tree.unaryChainDepth());
+        assertEquals(1, tree.leftChild().unaryChainDepth());
+        assertEquals(2, tree.leftChild().leftChild().unaryChainDepth());
+
+        tree = BinaryTree.read("(a ((b (c d e)))", String.class);
+        assertEquals(1, tree.leftChild().unaryChainDepth());
+        assertEquals(2, tree.leftChild().leftChild().unaryChainDepth());
+        assertEquals(0, tree.leftChild().leftChild().leftChild().unaryChainDepth());
+    }
 }
