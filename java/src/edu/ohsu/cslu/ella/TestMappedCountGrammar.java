@@ -20,7 +20,7 @@ public class TestMappedCountGrammar extends CountGrammarTestCase {
     }
 
     static MappedCountGrammar SAMPLE_MAPPED_GRAMMAR() {
-        final SymbolSet<String> vocabulary = new SymbolSet<String>(new String[] { "s", "a", "b" });
+        final SplitVocabulary vocabulary = new SplitVocabulary(new String[] { "s", "a", "b" });
         final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "c", "d" });
 
         // Build up the same grammar as that induced from the tree in AllElviTests

@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.ella;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class TestProductionListGrammar {
     @DataPoints
     public static ProductionListGrammar[] dataPoints() throws IOException {
         final ProductionListGrammar g1 = new ProductionListGrammar(new StringCountGrammar(new StringReader(
-                CountGrammarTestCase.STRING_SAMPLE_TREE), null, null, 1));
+                AllEllaTests.STRING_SAMPLE_TREE), null, null, 1));
         final ProductionListGrammar g2 = new ProductionListGrammar(TestMappedCountGrammar.SAMPLE_MAPPED_GRAMMAR());
         return new ProductionListGrammar[] { g1, g2 };
     }
@@ -83,6 +84,9 @@ public class TestProductionListGrammar {
     public void testSplitStates(final ProductionListGrammar g) {
         final ProductionListGrammar split1 = g.split(null, 0f);
 
+        // s, a_0, a_1, b_0, b_1
+        assertArrayEquals(new short[] { 0, 0, 1, 0, 1 }, split1.vocabulary.subcategoryIndices);
+
         // a -> a b 2/6 should be split into 8
         assertEquals(Math.log(2f / 6 / 8), split1.binaryLogProbability("a_0", "a_0", "b_0"), .01f);
         assertEquals(Math.log(2f / 6 / 8), split1.binaryLogProbability("a_0", "a_1", "b_1"), .01f);
@@ -110,6 +114,9 @@ public class TestProductionListGrammar {
         // Now test re-splitting the newly-split grammar again.
         final ProductionListGrammar split2 = split1.split(null, 0f);
 
+        // s, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3
+        assertArrayEquals(new short[] { 0, 0, 1, 2, 3, 0, 1, 2, 3 }, split2.vocabulary.subcategoryIndices);
+
         // a -> a b 2/6 should now be split into 64
         assertEquals(Math.log(2f / 6 / 64), split2.binaryLogProbability("a_1", "a_0", "b_0"), .01f);
         assertEquals(Math.log(2f / 6 / 64), split2.binaryLogProbability("a_2", "a_2", "b_3"), .01f);
@@ -131,6 +138,9 @@ public class TestProductionListGrammar {
         final short[] indices = new short[] { (short) split2.vocabulary.getIndex("a_3"),
                 (short) split2.vocabulary.getIndex("b_1") };
         final ProductionListGrammar merged = split2.merge(indices);
+
+        // s, a_0, a_1, a_2, b_0, b_1, b_2
+        assertArrayEquals(new short[] { 0, 0, 1, 2, 0, 1, 2 }, merged.vocabulary.subcategoryIndices);
 
         // We now have a_0, a_1, and a_2 (which contains the former a_2 and a_3 splits)
         // And b_0 (containing the former b_0 and b_1), b_1 (formerly b_2), and b_2 (formerly b_3)

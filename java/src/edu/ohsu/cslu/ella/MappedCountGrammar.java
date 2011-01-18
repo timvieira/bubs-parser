@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
@@ -20,7 +21,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class MappedCountGrammar implements CountGrammar {
 
-    protected SymbolSet<String> vocabulary;
+    protected SplitVocabulary vocabulary;
     protected SymbolSet<String> lexicon;
 
     /**
@@ -47,7 +48,7 @@ public class MappedCountGrammar implements CountGrammar {
 
     String startSymbol;
 
-    public MappedCountGrammar(final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
+    public MappedCountGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon) {
         this.vocabulary = vocabulary;
         this.lexicon = lexicon;
         this.startSymbol = vocabulary.getSymbol(0);
@@ -151,7 +152,7 @@ public class MappedCountGrammar implements CountGrammar {
 
                     final float probability = (float) Math.log(binaryRuleObservations(parent, leftChild, rightChild)
                             * 1.0 / observations(parent));
-                    prods.add(new Production(parent, leftChild, rightChild, probability));
+                    prods.add(new Production(parent, leftChild, rightChild, probability, vocabulary, lexicon));
                 }
             }
         }
@@ -177,7 +178,7 @@ public class MappedCountGrammar implements CountGrammar {
 
                 final float probability = (float) Math.log(unaryRuleObservations(parent, child) * 1.0
                         / observations(parent));
-                prods.add(new Production(parent, child, false, probability));
+                prods.add(new Production(parent, child, probability, false, vocabulary, lexicon));
             }
         }
 
@@ -202,7 +203,7 @@ public class MappedCountGrammar implements CountGrammar {
 
                 final float probability = (float) Math.log(lexicalRuleObservations(parent, child) * 1.0
                         / observations(parent));
-                prods.add(new Production(parent, child, true, probability));
+                prods.add(new Production(parent, child, probability, true, vocabulary, lexicon));
             }
         }
 

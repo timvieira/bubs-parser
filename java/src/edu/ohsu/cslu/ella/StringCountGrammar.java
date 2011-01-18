@@ -17,6 +17,7 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
 
@@ -277,13 +278,13 @@ public final class StringCountGrammar implements CountGrammar {
      * 
      * @return A {@link SymbolSet} induced from the observed non-terminals, sorted according to the supplied comparator.
      */
-    public final SymbolSet<String> induceVocabulary(final Comparator<String> comparator) {
+    public final SplitVocabulary induceVocabulary(final Comparator<String> comparator) {
         final ArrayList<String> nts = new ArrayList<String>(observedNonTerminals);
         if (comparator != null) {
             Collections.sort(nts, comparator);
         }
 
-        return new SymbolSet<String>(nts);
+        return new SplitVocabulary(nts);
     }
 
     public final SymbolSet<String> induceLexicon() {
@@ -319,7 +320,7 @@ public final class StringCountGrammar implements CountGrammar {
 
                     final float probability = (float) Math.log(binaryRuleObservations(sParent, sLeftChild, sRightChild)
                             * 1.0 / observations(sParent));
-                    prods.add(new Production(parent, leftChild, rightChild, probability));
+                    prods.add(new Production(parent, leftChild, rightChild, probability, vocabulary, null));
                 }
             }
         }
@@ -348,7 +349,7 @@ public final class StringCountGrammar implements CountGrammar {
 
                 final float probability = (float) Math.log(unaryRuleObservations(sParent, sChild) * 1.0
                         / observations(sParent));
-                prods.add(new Production(parent, child, true, probability));
+                prods.add(new Production(parent, child, probability, true, vocabulary, null));
             }
         }
 
@@ -380,7 +381,7 @@ public final class StringCountGrammar implements CountGrammar {
 
                 final float probability = (float) Math.log(lexicalRuleObservations(sParent, sChild) * 1.0
                         / observations(sParent));
-                prods.add(new Production(parent, child, true, probability));
+                prods.add(new Production(parent, child, probability, true, vocabulary, lexicon));
             }
         }
 
