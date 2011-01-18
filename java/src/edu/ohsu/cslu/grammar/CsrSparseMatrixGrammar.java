@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -64,6 +65,21 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
     public CsrSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass) {
         super(g, functionClass);
+
+        // Initialization code duplicated from constructor above to allow these fields to be final
+        this.csrBinaryRowIndices = new int[numNonTerms() + 1];
+        this.csrBinaryColumnIndices = new int[numBinaryProds()];
+        this.csrBinaryProbabilities = new float[numBinaryProds()];
+
+        storeBinaryRulesAsCsrMatrix(csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
+    }
+
+    public CsrSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
+            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final Class<? extends CartesianProductFunction> functionClass) {
+        super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
+                functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.csrBinaryRowIndices = new int[numNonTerms() + 1];

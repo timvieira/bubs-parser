@@ -343,11 +343,6 @@ public class Grammar implements Serializable {
         this(new FileReader(grammarFile));
     }
 
-    // public Grammar(final ArrayList<BinaryStringProduction> binary, final ArrayList<StringProduction> unary,
-    // final ArrayList<StringProduction> lexical, final String startSymbol) {
-    //
-    // }
-
     /**
      * Construct a {@link Grammar} instance from an existing instance. This is used when constructing a subclass of
      * {@link Grammar} from a binary-serialized {@link Grammar}.
@@ -391,7 +386,48 @@ public class Grammar implements Serializable {
         this.nonTermInfo = g.nonTermInfo;
 
         this.tokenizer = g.tokenizer;
+    }
 
+    protected Grammar(final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
+            final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
+            final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat) {
+        this.nonTermSet = vocabulary;
+        this.lexSet = lexicon;
+        this.startSymbol = 0;
+        this.nullSymbol = -1;
+        this.startSymbolStr = vocabulary.getSymbol(startSymbol);
+        this.nonTermInfo = null;
+        this.tokenizer = new Tokenizer(lexicon);
+
+        this.posSet = null;
+        this.phraseSet = null;
+
+        this.leftChildrenStart = -1;
+        this.leftChildrenEnd = -1;
+        this.rightChildrenStart = -1;
+        this.rightChildrenEnd = -1;
+        this.posStart = -1;
+        this.posEnd = -1;
+        this.parentEnd = -1;
+
+        this.numBinaryProds = binaryProductions.size();
+        this.numUnaryProds = unaryProductions.size();
+        this.numLexProds = lexicalProductions.size();
+
+        this.binaryProductions = binaryProductions;
+        this.unaryProductions = unaryProductions;
+        this.lexicalProductions = lexicalProductions;
+
+        this.unaryProductionsByChild = null;
+        this.lexicalProdsByChild = null;
+        this.lexicalParents = null;
+        this.lexicalLogProbabilities = null;
+
+        this.maxPOSIndex = -1;
+        this.numPosSymbols = -1;
+        this.grammarFormat = grammarFormat;
+
+        this.isLeftFactored = false;
     }
 
     private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile, final List<StringProduction> pcfgRules,

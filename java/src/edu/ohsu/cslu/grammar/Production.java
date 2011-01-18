@@ -24,8 +24,10 @@ public class Production implements Serializable, Cloneable {
     public final SymbolSet<String> vocabulary;
     public final SymbolSet<String> lexicon;
 
+    // TODO Remove lexicon for unary and binary productions?
+
     // Binary production
-    private Production(final int parent, final int leftChild, final int rightChild, final float prob,
+    public Production(final int parent, final int leftChild, final int rightChild, final float prob,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
         assert parent != -1 && leftChild != -1 && rightChild != -1;
         this.parent = parent;
@@ -62,23 +64,26 @@ public class Production implements Serializable, Cloneable {
     }
 
     // Unary or lexical production
-    public Production(final int parent, final int child, final float prob, final boolean isLex, final Grammar grammar) {
+    public Production(final int parent, final int child, final float prob, final boolean isLex,
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
         assert parent != -1 && child != -1;
         this.parent = parent;
         this.leftChild = child;
-        this.vocabulary = grammar.nonTermSet;
-        this.lexicon = grammar.lexSet;
+        this.vocabulary = vocabulary;
+        this.lexicon = lexicon;
+        this.rightChild = isLex ? LEXICAL_PRODUCTION : UNARY_PRODUCTION;
+        this.prob = prob;
+    }
 
+    // Unary or lexical production
+    public Production(final int parent, final int child, final float prob, final boolean isLex, final Grammar grammar) {
+        this(parent, child, prob, isLex, grammar.nonTermSet, grammar.lexSet);
         if (isLex) {
-            this.rightChild = LEXICAL_PRODUCTION;
             grammar.getNonterminal(parent).isPOS = true;
             if (parent > grammar.maxPOSIndex) {
                 grammar.maxPOSIndex = parent;
             }
-        } else {
-            this.rightChild = UNARY_PRODUCTION;
         }
-        this.prob = prob;
     }
 
     // Unary or lexical production
