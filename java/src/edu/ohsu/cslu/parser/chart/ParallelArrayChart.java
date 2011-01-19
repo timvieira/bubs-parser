@@ -34,7 +34,7 @@ public abstract class ParallelArrayChart extends Chart {
     /**
      * Start indices for each cell. Computed from cell start and end indices and stored in the chart for convenience
      */
-    protected final int[] cellOffsets;
+    public final int[] cellOffsets;
 
     /** The number of cells in this chart */
     public final int cells;
@@ -93,7 +93,7 @@ public abstract class ParallelArrayChart extends Chart {
     }
 
     /**
-     * Constructs a chart for exhaustive parsing (beamWidth = |V|)
+     * Constructs a chart for constrained parsing.
      * 
      * @param size
      * @param chartArraySize
@@ -111,7 +111,7 @@ public abstract class ParallelArrayChart extends Chart {
         insideProbabilities = new float[chartArraySize];
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         packedChildren = new int[chartArraySize];
-        midpoints = new short[chartArraySize];
+        midpoints = new short[cells];
     }
 
     /**
