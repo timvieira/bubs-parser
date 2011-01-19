@@ -26,12 +26,12 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             packedArrayCell.allocateTemporaryStorage();
 
             unarySpmv(packedArrayCell.tmpPackedChildren, packedArrayCell.tmpInsideProbabilities,
-                    packedArrayCell.tmpMidpoints, 0, (short) chartCell.end());
+                    packedArrayCell.tmpMidpoints, 0, chartCell.end());
         } else {
             final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
 
             unarySpmv(chart.packedChildren, chart.insideProbabilities, chart.midpoints, denseVectorCell.offset(),
-                    (short) chartCell.end());
+                    chartCell.end());
         }
     }
 
