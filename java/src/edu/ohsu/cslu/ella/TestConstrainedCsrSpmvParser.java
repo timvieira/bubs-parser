@@ -1,18 +1,21 @@
 package edu.ohsu.cslu.ella;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.StringReader;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.parser.ParseTree;
+import edu.ohsu.cslu.parser.ParserDriver;
 
 /**
  * Unit tests for {@link ConstrainedCsrSpmvParser}.
@@ -24,59 +27,138 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class TestConstrainedCsrSpmvParser {
 
-    @Test
-    public void testConstrainedParse() throws IOException {
-        fail("Not Implemented");
+    private ProductionListGrammar plGrammar0;
+    private ProductionListGrammar plGrammar1;
+    private ConstrainedChart chart0;
+    private CsrSparseMatrixGrammar csrGrammar1;
+    private ConstrainedCsrSpmvParser parser1;
 
+    @Before
+    public void setUp() throws IOException {
         // Induce a grammar from the sample tree and construct a basic constraining chart
         final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllEllaTests.STRING_SAMPLE_TREE), null,
                 null, 1);
-        final ProductionListGrammar pg = new ProductionListGrammar(sg);
-        final SparseMatrixGrammar unsplitGrammar = new CsrSparseMatrixGrammar(pg.binaryProductions,
-                pg.unaryProductions, pg.lexicalProductions, pg.vocabulary, pg.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
-        final ConstrainedChart constrainingChart = new ConstrainedChart(BinaryTree.read(
-                AllEllaTests.STRING_SAMPLE_TREE, String.class), unsplitGrammar);
+        plGrammar0 = new ProductionListGrammar(sg);
+        // Create a basic constraining chart
+        final SparseMatrixGrammar unsplitGrammar = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions,
+                plGrammar0.unaryProductions, plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        chart0 = new ConstrainedChart(BinaryTree.read(AllEllaTests.STRING_SAMPLE_TREE, String.class), unsplitGrammar);
 
         // Split the grammar
-        final ProductionListGrammar pg2 = pg.split(null, 0);
-        final SparseMatrixGrammar splitGrammar = new CsrSparseMatrixGrammar(pg2.binaryProductions,
-                pg2.unaryProductions, pg2.lexicalProductions, pg2.vocabulary, pg2.lexicon, GrammarFormatType.Berkeley,
+        plGrammar1 = plGrammar0.split(null, 0);
+        csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
+                plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+    }
 
-        // Create a chart based on the new grammar, constrained by the first chart
-        final ConstrainedChart constrainedChart = null;
+    /**
+     * Parse with the split-1 grammar
+     * 
+     * @return extracted parse tree
+     */
+    private ParseTree parseWithGrammar1() {
+        // Parse with the split-1 grammar
+        // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
+        final ParserDriver opts = new ParserDriver();
+        opts.cellSelector = new ConstrainedCellSelector();
+        parser1 = new ConstrainedCsrSpmvParser(opts, csrGrammar1);
+        return parser1.findBestParse(chart0);
+    }
 
-        // Parse with the split grammar
+    @Test
+    public void test1SplitConstrainedViterbiParse() {
+
+        final ParseTree parseTree1 = parseWithGrammar1();
+        final ConstrainedChart chart1 = parser1.chart;
 
         // Verify expected probabilities in a few cells
-        final SymbolSet<String> vocabulary = pg2.vocabulary;
+        final SymbolSet<String> vocabulary = plGrammar1.vocabulary;
         final int s = vocabulary.getIndex("s");
         final int a_0 = vocabulary.getIndex("a_0");
         final int a_1 = vocabulary.getIndex("a_1");
         final int b_0 = vocabulary.getIndex("b_0");
         final int b_1 = vocabulary.getIndex("b_1");
 
-        assertEquals(0, constrainedChart.getInside(0, 5, s), .001f);
-        assertEquals(Math.log(.5), constrainedChart.getInside(0, 5, a_0), .001f);
-        assertEquals(Math.log(.5), constrainedChart.getInside(0, 5, a_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, constrainedChart.getInside(0, 4, b_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, constrainedChart.getInside(0, 4, b_1), .001f);
+        assertEquals(Math.log(1f / 6), chart1.getInside(0, 1, a_0), .001f);
+        assertEquals(Math.log(1f / 6), chart1.getInside(0, 1, a_1), .001f);
+        assertEquals(Math.log(1f / 6), chart1.getInside(1, 2, a_0), .001f);
+        assertEquals(Math.log(1f / 6), chart1.getInside(1, 2, a_1), .001f);
+        assertEquals(Math.log(1f / 4), chart1.getInside(2, 3, b_0), .001f);
+        assertEquals(Math.log(1f / 4), chart1.getInside(2, 3, b_1), .001f);
 
-        assertEquals(Math.log(.5), constrainedChart.getInside(0, 2, a_0), .001f);
-        assertEquals(Math.log(.5), constrainedChart.getInside(0, 2, a_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, constrainedChart.getInside(0, 2, b_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, constrainedChart.getInside(0, 2, b_1), .001f);
+        assertEquals(Math.log(1f / 1728), chart1.getInside(0, 2, a_0), .001f);
+        assertEquals(Math.log(1f / 1728), chart1.getInside(0, 2, a_1), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 2, b_0), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 2, b_1), .001f);
 
-        assertEquals(Math.log(.5), constrainedChart.getInside(3, 5, b_0), .001f);
-        assertEquals(Math.log(.5), constrainedChart.getInside(3, 5, b_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, constrainedChart.getInside(3, 5, a_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, constrainedChart.getInside(3, 5, a_1), .001f);
+        assertEquals(Math.log(1f / 24576), chart1.getInside(3, 5, b_0), .001f);
+        assertEquals(Math.log(1f / 24576), chart1.getInside(3, 5, b_1), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(3, 5, a_0), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(3, 5, a_1), .001f);
 
-        // And ensure that the extracted parse matches the input gold tree
-        // TODO Unfactor the extracted tree to remove latent annotations
-        assertEquals(AllEllaTests.STRING_SAMPLE_TREE, constrainedChart.extractBestParse(vocabulary.getIndex("s"))
-                .toString());
+        assertEquals(Math.log(1.0 / 195689447424l), chart1.getInside(0, 5, s), .001f);
+        assertEquals(Math.log(1.0 / 97844723712l), chart1.getInside(0, 5, a_0), .001f);
+        assertEquals(Math.log(1.0 / 97844723712l), chart1.getInside(0, 5, a_1), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 4, b_0), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 4, b_1), .001f);
 
+        // And ensure that the extracted and unfactored parse matches the input gold tree
+        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class).unfactor(
+                GrammarFormatType.Berkeley);
+        assertEquals(AllEllaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
+    }
+
+    @Test
+    public void test2SplitConstrainedViterbiParse() {
+        // Parse with the split-1 grammar, creating a new constraining chart.
+        parseWithGrammar1();
+
+        // Split the grammar again
+        // Split the grammar
+        final ProductionListGrammar plGrammar2 = plGrammar1.split(null, 0);
+        final CsrSparseMatrixGrammar csrGrammar2 = new CsrSparseMatrixGrammar(plGrammar2.binaryProductions,
+                plGrammar2.unaryProductions, plGrammar2.lexicalProductions, plGrammar2.vocabulary, plGrammar2.lexicon,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+
+        // Parse with the split-2 grammar, constrained by the split-1 chart
+        // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
+        final ParserDriver opts = new ParserDriver();
+        opts.cellSelector = new ConstrainedCellSelector();
+        final ConstrainedCsrSpmvParser parser2 = new ConstrainedCsrSpmvParser(opts, csrGrammar2);
+        final ParseTree parseTree2 = parser2.findBestParse(parser1.chart);
+        final ConstrainedChart chart2 = parser2.chart;
+
+        // Verify expected probabilities in a few cells
+        final SymbolSet<String> vocabulary = plGrammar2.vocabulary;
+        final int a_0 = vocabulary.getIndex("a_0");
+        final int a_3 = vocabulary.getIndex("a_3");
+        final int b_0 = vocabulary.getIndex("b_0");
+        final int b_2 = vocabulary.getIndex("b_2");
+
+        assertEquals(Math.log(1f / 12), chart2.getInside(0, 1, a_0), .001f);
+        assertEquals(Math.log(1f / 12), chart2.getInside(0, 1, a_3), .001f);
+        assertEquals(Math.log(1f / 12), chart2.getInside(1, 2, a_0), .001f);
+        assertEquals(Math.log(1f / 12), chart2.getInside(1, 2, a_3), .001f);
+        assertEquals(Math.log(1f / 8), chart2.getInside(2, 3, b_0), .001f);
+        assertEquals(Math.log(1f / 8), chart2.getInside(2, 3, b_2), .001f);
+
+        assertEquals(Math.log(1f / 1728 / 32), chart2.getInside(0, 2, a_0), .001f);
+        assertEquals(Math.log(1f / 1728 / 32), chart2.getInside(0, 2, a_3), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 2, b_0), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 2, b_2), .001f);
+
+        assertEquals(Math.log(1f / 24576 / 128), chart2.getInside(3, 5, b_0), .001f);
+        assertEquals(Math.log(1f / 24576 / 128), chart2.getInside(3, 5, b_2), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(3, 5, a_0), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(3, 5, a_3), .001f);
+
+        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 4, b_0), .001f);
+        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 4, b_2), .001f);
+
+        // And ensure that the extracted and unfactored parse matches the input gold tree
+        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree2.toString(), String.class).unfactor(
+                GrammarFormatType.Berkeley);
+        assertEquals(AllEllaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
     }
 }
