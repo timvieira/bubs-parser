@@ -27,10 +27,10 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
     @Override
     protected void initSentence(final int[] tokens) {
-        initParser(tokens, grammar.numNonTerms(), grammar.numNonTerms());
+        initSentence(tokens, grammar.numNonTerms(), grammar.numNonTerms());
     }
 
-    protected void initParser(final int[] tokens, final int beamWidth, final int lexicalRowBeamWidth) {
+    protected void initSentence(final int[] tokens, final int beamWidth, final int lexicalRowBeamWidth) {
         final int sentLength = tokens.length;
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
