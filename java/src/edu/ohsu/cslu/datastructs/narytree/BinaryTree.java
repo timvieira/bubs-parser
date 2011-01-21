@@ -431,7 +431,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
     }
 
     /**
-     * @return The length of the longest unary chain in the tree
+     * @return The length of the longest unary chain in the tree, excluding lexical entries
      */
     public int maxUnaryChainLength() {
         // Not very efficient, but we shouldn't do this very often
@@ -447,12 +447,13 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
     }
 
     /**
-     * @return The number of nodes descending <i>directly</i> from this node in a unary chain.
+     * @return The number of nodes descending <i>directly</i> from this node in a unary chain, excluding lexical
+     *         entries.
      */
-    public int directUnaryChainLength() {
+    int directUnaryChainLength() {
         int length = 0;
         BinaryTree<E> node = this;
-        while (node.leftChild != null && node.rightChild == null) {
+        while (node.leftChild != null && node.rightChild == null && !node.leftChild.isLeaf()) {
             length++;
             node = node.leftChild;
         }
