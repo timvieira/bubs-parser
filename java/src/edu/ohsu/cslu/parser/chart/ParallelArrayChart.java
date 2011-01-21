@@ -2,6 +2,7 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
+import edu.ohsu.cslu.ella.ConstrainedChart;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 
@@ -93,7 +94,7 @@ public abstract class ParallelArrayChart extends Chart {
     }
 
     /**
-     * Constructs a chart for constrained parsing.
+     * Constructs a chart for constrained parsing (see {@link ConstrainedChart}.
      * 
      * @param size
      * @param chartArraySize

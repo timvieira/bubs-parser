@@ -16,12 +16,14 @@ public class ConstrainedCellSelector extends CellSelector {
 
     private short[][] cellIndices;
     private int currentCell = -1;
+    private ConstrainedChart constrainingChart;
 
     @Override
     public void initSentence(final ChartParser<?, ?> parser) {
         final ConstrainedCsrSpmvParser constrainedParser = (ConstrainedCsrSpmvParser) parser;
-        this.cellIndices = constrainedParser.constrainingChart.openCells;
-        currentCell = 0;
+        this.constrainingChart = constrainedParser.constrainingChart;
+        this.cellIndices = constrainingChart.openCells;
+        currentCell = -1;
     }
 
     // @Override
@@ -43,7 +45,7 @@ public class ConstrainedCellSelector extends CellSelector {
 
     @Override
     public boolean hasNext() {
-        return currentCell < cellIndices.length;
+        return currentCell < cellIndices.length - 1;
     }
 
     @Override
@@ -51,14 +53,36 @@ public class ConstrainedCellSelector extends CellSelector {
         currentCell = 0;
     }
 
-    public short midpoint() {
-        // TODO Implement
-        return 0;
+    /**
+     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell can
+     *         contain only a single midpoint)
+     */
+    public short currentCellMidpoint() {
+        return constrainingChart.midpoints[constrainingChart.cellIndex(cellIndices[currentCell][0],
+                cellIndices[currentCell][1])];
     }
 
-    public short[] currentParents() {
-        // TODO Implement
-        return new short[0];
+    /**
+     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell can
+     *         contain only a single midpoint)
+     */
+    public int currentCellUnaryChainDepth() {
+        return constrainingChart.unaryChainDepth(constrainingChart.offset(constrainingChart.cellIndex(
+                cellIndices[currentCell][0], cellIndices[currentCell][1])));
     }
 
+    /**
+     * @return All non-terminals populated in the current cell of the constraining chart
+     */
+    public short[] constrainingChartNonTerminalIndices() {
+        return constrainingChart.nonTerminalIndices;
+    }
+
+    /**
+     * @return Offset of the current cell in the constraining chart
+     */
+    public int constrainingCellOffset() {
+        return constrainingChart.cellOffsets[constrainingChart.cellIndex(cellIndices[currentCell][0],
+                cellIndices[currentCell][1])];
+    }
 }

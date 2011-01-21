@@ -419,7 +419,7 @@ public class Grammar implements Serializable {
         this.lexicalProductions = lexicalProductions;
 
         this.unaryProductionsByChild = null;
-        this.lexicalProdsByChild = null;
+        lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
         this.lexicalParents = null;
         this.lexicalLogProbabilities = null;
 
