@@ -18,8 +18,8 @@ public abstract class GrammarTestCase {
 
     public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader)
             throws Exception {
-        return grammarClass.getConstructor(new Class[] { Reader.class, Reader.class, GrammarFormatType.class })
-                .newInstance(new Object[] { grammarReader, GrammarFormatType.CSLU });
+        return grammarClass.getConstructor(new Class[] { Reader.class, GrammarFormatType.class }).newInstance(
+                new Object[] { grammarReader, GrammarFormatType.CSLU });
     }
 
     public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader,

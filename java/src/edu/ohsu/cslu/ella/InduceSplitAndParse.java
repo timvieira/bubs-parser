@@ -31,6 +31,9 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
     @Option(name = "-tc", aliases = { "--training-corpus" }, metaVar = "corpus", usage = "Training corpus")
     private File trainingCorpus;
 
+    @Option(name = "-dt", aliases = { "--collect-detailed-statistics" }, usage = "Collect detailed timing statistics")
+    private boolean collectDetailedTimings;
+
     @Override
     protected void run() throws Exception {
 
@@ -93,12 +96,14 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
         final long t5 = System.currentTimeMillis();
         System.out.println(String.format("Time: %d ms", t5 - t4));
 
+        System.out.println("Grammar summary: " + csrGrammar1.cartesianProductFunction.toString());
+
         // Parse the entire training corpus with the split-1 grammar
         System.out.println("Parsing with split grammar...");
         count = 0;
         final ParserDriver opts = new ParserDriver();
         opts.cellSelector = new ConstrainedCellSelector();
-        final ConstrainedCsrSpmvParser parser1 = new ConstrainedCsrSpmvParser(opts, csrGrammar1);
+        final ConstrainedCsrSpmvParser parser1 = new ConstrainedCsrSpmvParser(opts, csrGrammar1, collectDetailedTimings);
 
         for (final ConstrainedChart constrainingChart : constrainingCharts) {
             parser1.findBestParse(constrainingChart);
@@ -109,6 +114,16 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
         final long t6 = System.currentTimeMillis();
         System.out.println(String.format("Time: %d ms (%.2f sentences / sec)", t6 - t5, count * 1000.0 / (t6 - t5)));
 
+        if (collectDetailedTimings) {
+            System.out.println("Init Time (ms)            : " + parser1.totalInitializationTime / 1000000);
+            System.out.println("Lex-prod Time (ms)        : " + parser1.totalLexProdTime / 1000000);
+            System.out.println("X-product Time (ms)       : " + parser1.totalConstrainedXproductTime / 1000000);
+            System.out.println("X-product Fill Time (ms)  : " + parser1.totalXproductFillTime / 1000000);
+            // System.out.println("Cell Visit Time (ms) : " + parser1.totalVisitTime / 1000000);
+            System.out.println("Binary SpMV Time (ms)     : " + parser1.totalConstrainedBinaryTime / 1000000);
+            System.out.println("Unary SpMV Time (ms)      : " + parser1.totalConstrainedUnaryTime / 1000000);
+            System.out.println("Extraction Time (ms)      : " + parser1.totalExtractionTime / 1000000);
+        }
     }
 
     private void progressBar(final int count) {

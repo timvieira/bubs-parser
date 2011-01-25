@@ -722,7 +722,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
             };
             return read(reader, labelParser, factorization);
         } catch (final Exception e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
     }
 

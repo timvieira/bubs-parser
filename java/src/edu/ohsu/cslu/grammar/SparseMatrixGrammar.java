@@ -771,6 +771,10 @@ public abstract class SparseMatrixGrammar extends Grammar {
             return size;
         }
 
+        public final int leftChildStart(final short leftChild) {
+            return hashtableOffsets[leftChild];
+        }
+
         @Override
         public String toString() {
             return String.format("keys: %d hashtable size: %d occupancy: %.2f%% shift-table size: %d totalMem: %d",
