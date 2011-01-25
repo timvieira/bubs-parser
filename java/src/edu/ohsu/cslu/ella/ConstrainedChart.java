@@ -57,7 +57,8 @@ public class ConstrainedChart extends ParallelArrayChart {
      * @param sparseMatrixGrammar
      */
     protected ConstrainedChart(final ConstrainedChart constrainingChart, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(constrainingChart.tokens, sparseMatrixGrammar);
+        super(constrainingChart.size, chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength,
+                ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits), sparseMatrixGrammar);
         this.splitVocabulary = (SplitVocabulary) sparseMatrixGrammar.nonTermSet;
         this.beamWidth = lexicalRowBeamWidth = constrainingChart.beamWidth * 2;
         this.nonTerminalIndices = new short[chartArraySize];
@@ -70,10 +71,23 @@ public class ConstrainedChart extends ParallelArrayChart {
         computeOffsets();
     }
 
+    public void clear(final ConstrainedChart constrainingChart) {
+        this.size = constrainingChart.size;
+        this.beamWidth = lexicalRowBeamWidth = constrainingChart.beamWidth * 2;
+        Arrays.fill(
+                nonTerminalIndices,
+                0,
+                chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength,
+                        ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits), (short) -1);
+        computeOffsets();
+
+        this.openCells = constrainingChart.openCells;
+        this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength;
+    }
+
     public ConstrainedChart(final BinaryTree<String> goldTree, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(goldTree.leaves(), (goldTree.leaves() * (goldTree.leaves() + 1) / 2)
-                * (goldTree.maxUnaryChainLength() + 1) * ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits,
-                sparseMatrixGrammar);
+        super(goldTree.leaves(), chartArraySize(goldTree.leaves(), goldTree.maxUnaryChainLength(),
+                ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits), sparseMatrixGrammar);
         this.splitVocabulary = (SplitVocabulary) sparseMatrixGrammar.nonTermSet;
         this.lexicon = sparseMatrixGrammar.lexSet;
 
@@ -153,6 +167,10 @@ public class ConstrainedChart extends ParallelArrayChart {
         computeOffsets();
     }
 
+    static int chartArraySize(final int size, final int maxUnaryChainLength, final int maxSplits) {
+        return (size * (size + 1) / 2) * (maxUnaryChainLength + 1) * maxSplits;
+    }
+
     void shiftCellEntriesDownward(final int topEntryOffset) {
         for (int unaryDepth = maxUnaryChainLength - 2; unaryDepth >= 0; unaryDepth--) {
             final int origin = topEntryOffset + unaryDepth * splitVocabulary.maxSplits;
@@ -168,16 +186,6 @@ public class ConstrainedChart extends ParallelArrayChart {
     @Override
     public void clear(final int sentenceLength) {
         throw new UnsupportedOperationException();
-    }
-
-    public void clear(final ConstrainedChart constrainingChart) {
-        this.size = constrainingChart.size;
-        this.beamWidth = lexicalRowBeamWidth = constrainingChart.beamWidth * 2;
-        Arrays.fill(nonTerminalIndices, (short) -1);
-        computeOffsets();
-
-        this.openCells = constrainingChart.openCells;
-        this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength;
     }
 
     private void computeOffsets() {
@@ -221,27 +229,44 @@ public class ConstrainedChart extends ParallelArrayChart {
             throw new IllegalArgumentException("Max unary chain length exceeded");
         }
 
-        final int i = cellOffset(start, end) + unaryDepth * splitVocabulary.maxSplits;
+        final int i = cellOffset(start, end) + unaryDepth * splitVocabulary.maxSplits
+                + splitVocabulary.subcategoryIndices[parent];
 
-        final int edgeChildren = packedChildren[i];
-        final short edgeMidpoint = midpoints[cellIndex(start, end)];
+        // final int nt = nonTerminalIndices[i];
+        // if (nt != parent) {
+        // System.out.format("Discrepancy; parent = %s (%d); NT = %s (%d)\n", splitVocabulary.getSymbol(parent),
+        // parent, splitVocabulary.getSymbol(nt), nt);
+        // }
 
         final ParseTree subtree = new ParseTree(splitVocabulary.getSymbol(parent));
-        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(edgeChildren);
-        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(edgeChildren);
+        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(packedChildren[i]);
+        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(packedChildren[i]);
+        // if (rightChild == 4) {
+        // System.out.format("Unpacking %d yields %d\n", packedChildren[i], rightChild);
+        // }
 
         if (rightChild == Production.UNARY_PRODUCTION) {
             // final String sLeftChild = splitVocabulary.getSymbol(leftChild);
             subtree.children.add(extractBestParse(start, end, leftChild, unaryDepth + 1));
+            // if (nt != parent) {
+            // System.out.println("  Unary");
+            // }
 
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
+            // if (nt != parent) {
+            // System.out.println("  Lexical");
+            // }
             // final String sLeftChild = lexicon.getSymbol(leftChild);
             subtree.addChild(new ParseTree(lexicon.getSymbol(leftChild)));
 
         } else {
+            // if (nt != parent) {
+            // System.out.println("  Binary");
+            // }
             // final String sLeftChild = splitVocabulary.getSymbol(leftChild);
             // final String sRightChild = splitVocabulary.getSymbol(rightChild);
             // binary production
+            final short edgeMidpoint = midpoints[cellIndex(start, end)];
             subtree.children.add(extractBestParse(start, edgeMidpoint, leftChild, 0));
             subtree.children.add(extractBestParse(edgeMidpoint, end, rightChild, 0));
         }
@@ -308,7 +333,7 @@ public class ConstrainedChart extends ParallelArrayChart {
 
         @Override
         public int getNumNTs() {
-            throw new UnsupportedOperationException();
+            return 0;
         }
 
         /**

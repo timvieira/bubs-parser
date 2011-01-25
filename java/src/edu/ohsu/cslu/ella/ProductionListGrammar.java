@@ -27,12 +27,12 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class ProductionListGrammar {
 
-    protected final SplitVocabulary vocabulary;
-    protected final SymbolSet<String> lexicon;
+    public final SplitVocabulary vocabulary;
+    public final SymbolSet<String> lexicon;
 
-    protected final ArrayList<Production> binaryProductions;
-    protected final ArrayList<Production> unaryProductions;
-    protected final ArrayList<Production> lexicalProductions;
+    public final ArrayList<Production> binaryProductions;
+    public final ArrayList<Production> unaryProductions;
+    public final ArrayList<Production> lexicalProductions;
 
     private final String startSymbol;
 
