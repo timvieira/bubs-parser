@@ -502,7 +502,6 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         } else {
             rootTree.addSubtree(unfactor(grammarFormatType));
         }
-
     }
 
     /**

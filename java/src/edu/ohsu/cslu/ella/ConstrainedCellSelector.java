@@ -79,6 +79,13 @@ public class ConstrainedCellSelector extends CellSelector {
     }
 
     /**
+     * @return All children populated in the current cell of the constraining chart
+     */
+    public int[] constrainingChartPackedChildren() {
+        return constrainingChart.packedChildren;
+    }
+
+    /**
      * @return Offset of the current cell in the constraining chart
      */
     public int constrainingCellOffset() {

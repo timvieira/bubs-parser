@@ -11,6 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -40,7 +42,6 @@ public class TestConstrainedChart {
         csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions, plGrammar0.unaryProductions,
                 plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
-
     }
 
     /**
@@ -86,12 +87,29 @@ public class TestConstrainedChart {
     }
 
     @Test
+    public void testLongUnaryChain() throws IOException {
+        // Try from a problematic tree from the Penn Treebank
+        // Induce a grammar from the tree and construct a SparseMatrixGrammar
+        final ProductionListGrammar plg = new ProductionListGrammar(new StringCountGrammar(new StringReader(
+                AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN), Factorization.RIGHT, GrammarFormatType.Berkeley, 0));
+        final CsrSparseMatrixGrammar csrg = new CsrSparseMatrixGrammar(plg.binaryProductions, plg.unaryProductions,
+                plg.lexicalProductions, plg.vocabulary, plg.lexicon, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+
+        final ConstrainedChart cc = new ConstrainedChart(NaryTree.read(AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN,
+                String.class).factor(GrammarFormatType.Berkeley, Factorization.RIGHT), csrg);
+        assertEquals(AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN,
+                BinaryTree.read(cc.extractBestParse(0).toString(), String.class).unfactor(GrammarFormatType.Berkeley)
+                        .toString());
+    }
+
+    @Test
     public void testCountRuleObservations() {
         fail("Not Implemented");
     }
 
     @Test
-    public void testWithInternalStartSymbol() {
+    public void testWithInternalS() {
         final String bracketedTree = "(s (a (s (a c) (b c))) (b c))";
         // final String bracketedTree = "(s (a (a (a (a c) (a c)) (b d)) (b (s (b (b d)) (a d)))))";
         final ConstrainedChart cc = new ConstrainedChart(BinaryTree.read(bracketedTree, String.class), csrGrammar0);

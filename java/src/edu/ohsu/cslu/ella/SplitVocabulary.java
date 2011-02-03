@@ -12,6 +12,12 @@ public class SplitVocabulary extends SymbolSet<String> {
      */
     short[] subcategoryIndices;
 
+    /**
+     * Records the number of splits for each non-terminal. e.g. the start symbol has 1 split, all others should be
+     * multiples of 2.
+     */
+    short[] splits;
+
     final short maxSplits;
 
     public SplitVocabulary(final short maxSplits) {
@@ -22,17 +28,17 @@ public class SplitVocabulary extends SymbolSet<String> {
 
     public SplitVocabulary(final String[] symbols) {
         super(symbols);
-        recomputeSubcategoryIndices();
+        recomputeSplits();
         this.maxSplits = maxSplits();
     }
 
     public SplitVocabulary(final Collection<String> symbols) {
         super(symbols);
-        recomputeSubcategoryIndices();
+        recomputeSplits();
         this.maxSplits = maxSplits();
     }
 
-    void recomputeSubcategoryIndices() {
+    void recomputeSplits() {
         this.subcategoryIndices = new short[size()];
         for (int i = 0; i < size(); i++) {
             final String[] split = list.get(i).split("_");
@@ -40,6 +46,16 @@ public class SplitVocabulary extends SymbolSet<String> {
                 subcategoryIndices[i] = Short.parseShort(split[1]);
             } else {
                 subcategoryIndices[i] = 0;
+            }
+        }
+
+        this.splits = new short[size()];
+        short currentNtSplits = (short) (subcategoryIndices[size() - 1] + 1);
+        for (int i = size() - 1; i >= 0; i--) {
+            splits[i] = currentNtSplits;
+
+            if (i > 0 && subcategoryIndices[i] == 0) {
+                currentNtSplits = (short) (subcategoryIndices[i - 1] + 1);
             }
         }
     }

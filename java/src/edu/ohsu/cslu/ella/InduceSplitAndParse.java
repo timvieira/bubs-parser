@@ -70,7 +70,9 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
             final BinaryTree<String> goldTree = NaryTree.read(line, String.class).factor(grammarFormatType,
                     factorization);
             try {
-                constrainingCharts.add(new ConstrainedChart(goldTree, csrGrammar0));
+                final ConstrainedChart c = new ConstrainedChart(goldTree, csrGrammar0);
+                constrainingCharts.add(c);
+                c.extractBestParse(0);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 System.err.println("Failed on tree " + count + "(" + goldTree.leaves() + " words)");
                 System.err.println(goldTree.toString());
@@ -107,6 +109,7 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
 
         for (final ConstrainedChart constrainingChart : constrainingCharts) {
             parser1.findBestParse(constrainingChart);
+            constrainingChart.extractBestParse(0);
             count++;
             progressBar(count);
         }
