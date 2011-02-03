@@ -406,4 +406,9 @@ public class TestStringNaryTree {
                 NaryTree.read("(S (NP C0 C1 C2))", String.class)
                         .factor(GrammarFormatType.Berkeley, Factorization.RIGHT));
     }
+
+    @Test
+    public void testClone() {
+        assertEquals(stringSampleTree, sampleTree.clone().toString());
+    }
 }

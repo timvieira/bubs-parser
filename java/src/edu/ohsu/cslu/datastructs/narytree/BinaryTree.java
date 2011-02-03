@@ -547,6 +547,16 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public BinaryTree<E> clone() {
+        try {
+            return (BinaryTree<E>) super.clone();
+        } catch (final CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public boolean equals(final Object o) {
         if (!(o instanceof BinaryTree)) {
             return false;

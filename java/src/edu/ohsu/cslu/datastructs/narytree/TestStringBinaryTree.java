@@ -479,4 +479,9 @@ public class TestStringBinaryTree {
         assertEquals(2, tree.leftChild().leftChild().unaryChainDepth());
         assertEquals(0, tree.leftChild().leftChild().leftChild().unaryChainDepth());
     }
+
+    @Test
+    public void testClone() {
+        assertEquals(stringSampleTree, sampleTree.clone().toString());
+    }
 }
