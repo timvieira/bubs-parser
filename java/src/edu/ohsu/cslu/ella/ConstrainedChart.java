@@ -252,12 +252,9 @@ public class ConstrainedChart extends ParallelArrayChart {
         final ParseTree subtree = new ParseTree(splitVocabulary.getSymbol(parent));
         final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(packedChildren[i]);
         final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(packedChildren[i]);
-        // if (rightChild == 4) {
-        // System.out.format("Unpacking %d yields %d\n", packedChildren[i], rightChild);
-        // }
 
         if (rightChild == Production.UNARY_PRODUCTION) {
-            final String sLeftChild = splitVocabulary.getSymbol(leftChild);
+            // final String sLeftChild = splitVocabulary.getSymbol(leftChild);
             subtree.children.add(extractBestParse(start, end, leftChild, unaryDepth + 1));
             if (nt != parent) {
                 System.out.println("  Unary");
@@ -267,15 +264,15 @@ public class ConstrainedChart extends ParallelArrayChart {
             if (nt != parent) {
                 System.out.println("  Lexical");
             }
-            final String sLeftChild = lexicon.getSymbol(leftChild);
+            // final String sLeftChild = lexicon.getSymbol(leftChild);
             subtree.addChild(new ParseTree(lexicon.getSymbol(leftChild)));
 
         } else {
             if (nt != parent) {
                 System.out.println("  Binary");
             }
-            final String sLeftChild = splitVocabulary.getSymbol(leftChild);
-            final String sRightChild = splitVocabulary.getSymbol(rightChild);
+            // final String sLeftChild = splitVocabulary.getSymbol(leftChild);
+            // final String sRightChild = splitVocabulary.getSymbol(rightChild);
             // binary production
             final short edgeMidpoint = midpoints[cellIndex(start, end)];
             subtree.children.add(extractBestParse(start, edgeMidpoint, leftChild, 0));

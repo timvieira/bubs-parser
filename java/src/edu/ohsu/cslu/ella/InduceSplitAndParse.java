@@ -92,9 +92,10 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
 
         // Convert to CSR format
         System.out.println("Converting to CSR format...");
-        final CsrSparseMatrixGrammar csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions,
-                plGrammar1.unaryProductions, plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        final ConstrainedCsrSparseMatrixGrammar csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(
+                plGrammar1.binaryProductions, plGrammar1.unaryProductions, plGrammar1.lexicalProductions,
+                plGrammar1.vocabulary, plGrammar1.lexicon, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
         final long t5 = System.currentTimeMillis();
         System.out.println(String.format("Time: %d ms", t5 - t4));
 
