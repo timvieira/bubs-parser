@@ -3,7 +3,6 @@ package edu.ohsu.cslu.ella;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.ella.ConstrainedChart.ConstrainedChartCell;
-import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.ParseTree;
@@ -44,7 +43,8 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class ConstrainedCsrSpmvParser extends SparseMatrixVectorParser<CsrSparseMatrixGrammar, ConstrainedChart> {
+public class ConstrainedCsrSpmvParser extends
+        SparseMatrixVectorParser<ConstrainedCsrSparseMatrixGrammar, ConstrainedChart> {
 
     ConstrainedChart constrainingChart;
     private final SplitVocabulary splitVocabulary;
@@ -59,14 +59,14 @@ public class ConstrainedCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
     protected long totalConstrainedUnaryTime = 0;
     protected long totalExtractionTime = 0;
 
-    public ConstrainedCsrSpmvParser(final ParserDriver opts, final CsrSparseMatrixGrammar grammar,
+    public ConstrainedCsrSpmvParser(final ParserDriver opts, final ConstrainedCsrSparseMatrixGrammar grammar,
             final boolean collectDetailedTimings) {
         super(opts, grammar);
         this.splitVocabulary = (SplitVocabulary) grammar.nonTermSet;
         this.collectDetailedTimings = collectDetailedTimings;
     }
 
-    public ConstrainedCsrSpmvParser(final ParserDriver opts, final CsrSparseMatrixGrammar grammar) {
+    public ConstrainedCsrSpmvParser(final ParserDriver opts, final ConstrainedCsrSparseMatrixGrammar grammar) {
         this(opts, grammar, false);
     }
 
@@ -202,7 +202,7 @@ public class ConstrainedCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
         final short firstLeftChild = nonTerminalIndices[leftStart];
         final int leftEnd = leftStart + splitVocabulary.splits[firstLeftChild] - 1;
 
-        Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
+        // Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
 
         final int rightStart = chart.cellOffsets[chart.cellIndex(midpoint, end)];
         final short firstRightChild = nonTerminalIndices[rightStart];
@@ -210,12 +210,12 @@ public class ConstrainedCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
 
         for (int i = leftStart; i <= leftEnd; i++) {
             final short leftChild = nonTerminalIndices[i];
-            // final int fillStart = ((PerfectIntPairHashFilterFunction) grammar.cartesianProductFunction)
-            // .leftChildStart(leftChild);
-            // final int fillEnd = ((PerfectIntPairHashFilterFunction) grammar.cartesianProductFunction)
-            // .leftChildStart((short) (leftChild + 1));
-            //
-            // Arrays.fill(cartesianProductProbabilities, fillStart, fillEnd, Float.NEGATIVE_INFINITY);
+            final int fillStart = ((PerfectIntPairHashFilterFunction) grammar.cartesianProductFunction)
+                    .leftChildStart(leftChild);
+            final int fillEnd = ((PerfectIntPairHashFilterFunction) grammar.cartesianProductFunction)
+                    .leftChildStart((short) (leftChild + 1));
+
+            Arrays.fill(cartesianProductProbabilities, fillStart, fillEnd, Float.NEGATIVE_INFINITY);
 
             final float leftProbability = insideProbabilities[i];
             final int mask = cpf.mask(leftChild);
@@ -253,10 +253,12 @@ public class ConstrainedCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
             t0 = System.nanoTime();
         }
 
+        final PerfectIntPairHashFilterFunction cpf = (PerfectIntPairHashFilterFunction) grammar.cartesianProductFunction;
         final ConstrainedChartCell constrainedCell = (ConstrainedChartCell) chartCell;
         final ConstrainedCellSelector constrainedCellSelector = (ConstrainedCellSelector) cellSelector;
 
         final short[] unsplitEntries = constrainedCellSelector.constrainingChartNonTerminalIndices();
+        final int[] unsplitPackedChildren = constrainedCellSelector.constrainingChartPackedChildren();
 
         // TODO Extract this into a private method
         // Find the lexical production in the constraining chart
@@ -268,16 +270,17 @@ public class ConstrainedCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
         }
         final short firstUnsplitParent = unsplitEntries[unsplitEntryIndex];
 
-        // final int[] unsplitPackedChildren = constrainedCellSelector.constrainingChartPackedChildren();
-        // final short constrainingLeftChild = (short) constrainingChart.sparseMatrixGrammar.cartesianProductFunction
-        // .unpackLeftChild(unsplitPackedChildren[unsplitEntryIndex]);
-
         // Iterate over possible parents (matrix rows)
         final short startParent = (short) (firstUnsplitParent == 0 ? 0 : (firstUnsplitParent * 2 - 1));
         final short endParent = (short) (firstUnsplitParent == 0 ? 0 : (startParent + splitVocabulary.maxSplits - 1));
         for (short splitParent = startParent; splitParent <= endParent; splitParent++) {
 
             final int entryIndex = constrainedCell.offset() + splitParent - startParent;
+
+            final short constrainingLeftChild = (short) constrainingChart.sparseMatrixGrammar.cartesianProductFunction
+                    .unpackLeftChild(unsplitPackedChildren[unsplitEntryIndex]);
+            final short startLeftChild = (short) (constrainingLeftChild == 0 ? 0 : (constrainingLeftChild * 2 - 1));
+            final short endLeftChild = (short) (constrainingLeftChild == 0 ? 0 : startLeftChild + 1);
 
             // TODO Use log-sum instead of viterbi
             float winningProbability = Float.NEGATIVE_INFINITY;
@@ -287,10 +290,17 @@ public class ConstrainedCsrSpmvParser extends SparseMatrixVectorParser<CsrSparse
             // (unsplit) left child
 
             // Iterate over possible children of the parent (columns with non-zero entries)
+            // final int i1 = grammar.csrBinaryRowIndices[splitParent];
+            // final int i2 = grammar.csrBinaryRowIndices[splitParent + 1];
+            // for (int j = grammar.csrBinaryLeftChildStartIndices[splitParent][startLeftChild]; j <
+            // grammar.csrBinaryLeftChildStartIndices[splitParent][endLeftChild + 1]; j++) {
             for (int j = grammar.csrBinaryRowIndices[splitParent]; j < grammar.csrBinaryRowIndices[splitParent + 1]; j++) {
+
                 final int grammarChildren = grammar.csrBinaryColumnIndices[j];
 
-                if (cartesianProductVector.probabilities[grammarChildren] == Float.NEGATIVE_INFINITY) {
+                if (grammarChildren < cpf.leftChildStart(startLeftChild)
+                        || grammarChildren >= cpf.leftChildStart((short) (endLeftChild + 1))
+                        || cartesianProductVector.probabilities[grammarChildren] == Float.NEGATIVE_INFINITY) {
                     continue;
                 }
 

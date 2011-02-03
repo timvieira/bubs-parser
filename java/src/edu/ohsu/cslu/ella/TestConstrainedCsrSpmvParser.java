@@ -12,7 +12,6 @@ import org.junit.Test;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
@@ -34,7 +33,7 @@ public class TestConstrainedCsrSpmvParser {
     private ProductionListGrammar plGrammar0;
     private ProductionListGrammar plGrammar1;
     private ConstrainedChart chart0;
-    private CsrSparseMatrixGrammar csrGrammar1;
+    private ConstrainedCsrSparseMatrixGrammar csrGrammar1;
     private ConstrainedCsrSpmvParser parser1;
 
     @Before
@@ -44,14 +43,14 @@ public class TestConstrainedCsrSpmvParser {
                 null, 1);
         plGrammar0 = new ProductionListGrammar(sg);
         // Create a basic constraining chart
-        final SparseMatrixGrammar unsplitGrammar = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions,
+        final SparseMatrixGrammar unsplitGrammar = new ConstrainedCsrSparseMatrixGrammar(plGrammar0.binaryProductions,
                 plGrammar0.unaryProductions, plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon,
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
         chart0 = new ConstrainedChart(BinaryTree.read(AllEllaTests.STRING_SAMPLE_TREE, String.class), unsplitGrammar);
 
         // Split the grammar
         plGrammar1 = plGrammar0.split(null, 0);
-        csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
+        csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
                 plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
     }
@@ -143,9 +142,10 @@ public class TestConstrainedCsrSpmvParser {
         // Split the grammar again
         // Split the grammar
         final ProductionListGrammar plGrammar2 = plGrammar1.split(null, 0);
-        final CsrSparseMatrixGrammar csrGrammar2 = new CsrSparseMatrixGrammar(plGrammar2.binaryProductions,
-                plGrammar2.unaryProductions, plGrammar2.lexicalProductions, plGrammar2.vocabulary, plGrammar2.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        final ConstrainedCsrSparseMatrixGrammar csrGrammar2 = new ConstrainedCsrSparseMatrixGrammar(
+                plGrammar2.binaryProductions, plGrammar2.unaryProductions, plGrammar2.lexicalProductions,
+                plGrammar2.vocabulary, plGrammar2.lexicon, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
 
         // Parse with the split-2 grammar, constrained by the split-1 chart
         // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
@@ -200,13 +200,14 @@ public class TestConstrainedCsrSpmvParser {
                 Factorization.RIGHT, GrammarFormatType.Berkeley, 0);
         plGrammar0 = new ProductionListGrammar(sg);
         // Create a basic constraining chart
-        final SparseMatrixGrammar unsplitGrammar = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions,
-                plGrammar0.unaryProductions, plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        final ConstrainedCsrSparseMatrixGrammar unsplitGrammar = new ConstrainedCsrSparseMatrixGrammar(
+                plGrammar0.binaryProductions, plGrammar0.unaryProductions, plGrammar0.lexicalProductions,
+                plGrammar0.vocabulary, plGrammar0.lexicon, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
 
         // Split the grammar
         plGrammar1 = plGrammar0.split(null, 0);
-        csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
+        csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
                 plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
 
@@ -234,13 +235,14 @@ public class TestConstrainedCsrSpmvParser {
                 Factorization.RIGHT, GrammarFormatType.Berkeley, 0);
         plGrammar0 = new ProductionListGrammar(sg);
         // Create a basic constraining chart
-        final SparseMatrixGrammar unsplitGrammar = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions,
-                plGrammar0.unaryProductions, plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        final ConstrainedCsrSparseMatrixGrammar unsplitGrammar = new ConstrainedCsrSparseMatrixGrammar(
+                plGrammar0.binaryProductions, plGrammar0.unaryProductions, plGrammar0.lexicalProductions,
+                plGrammar0.vocabulary, plGrammar0.lexicon, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
 
         // Split the grammar
         plGrammar1 = plGrammar0.split(null, 0);
-        csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
+        csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
                 plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
 
