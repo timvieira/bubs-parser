@@ -108,6 +108,11 @@ public class TestConstrainedCsrSpmvParser {
         assertEquals(Math.log(1f / 4), chart1.getInside(2, 3, b_0), .001f);
         assertEquals(Math.log(1f / 4), chart1.getInside(2, 3, b_1), .001f);
 
+        assertEquals(Math.log(1f / 64), chart1.getInside(3, 4, b_0), .001f);
+        assertEquals(Math.log(1f / 64), chart1.getInside(3, 4, b_1), .001f);
+        assertEquals(Math.log(1f / 12), chart1.getInside(4, 5, a_0), .001f);
+        assertEquals(Math.log(1f / 12), chart1.getInside(4, 5, a_1), .001f);
+
         assertEquals(Math.log(1f / 1728), chart1.getInside(0, 2, a_0), .001f);
         assertEquals(Math.log(1f / 1728), chart1.getInside(0, 2, a_1), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 2, b_0), .001f);
@@ -164,6 +169,11 @@ public class TestConstrainedCsrSpmvParser {
         assertEquals(Math.log(1f / 8), chart2.getInside(2, 3, b_0), .001f);
         assertEquals(Math.log(1f / 8), chart2.getInside(2, 3, b_2), .001f);
 
+        assertEquals(Math.log(1f / 64 / 8), chart2.getInside(3, 4, b_0), .001f);
+        assertEquals(Math.log(1f / 64 / 8), chart2.getInside(3, 4, b_2), .001f);
+        assertEquals(Math.log(1f / 12 / 2), chart2.getInside(4, 5, a_0), .001f);
+        assertEquals(Math.log(1f / 12 / 2), chart2.getInside(4, 5, a_3), .001f);
+
         assertEquals(Math.log(1f / 1728 / 32), chart2.getInside(0, 2, a_0), .001f);
         assertEquals(Math.log(1f / 1728 / 32), chart2.getInside(0, 2, a_3), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 2, b_0), .001f);
@@ -184,10 +194,42 @@ public class TestConstrainedCsrSpmvParser {
     }
 
     @Test
+    public void testLongUnaryChain() throws IOException {
+        // Induce a grammar from the corpus and construct a basic constraining chart
+        final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN),
+                Factorization.RIGHT, GrammarFormatType.Berkeley, 0);
+        plGrammar0 = new ProductionListGrammar(sg);
+        // Create a basic constraining chart
+        final SparseMatrixGrammar unsplitGrammar = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions,
+                plGrammar0.unaryProductions, plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+
+        // Split the grammar
+        plGrammar1 = plGrammar0.split(null, 0);
+        csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
+                plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+
+        // Parse with the split-1 grammar
+        final ParserDriver opts = new ParserDriver();
+        opts.cellSelector = new ConstrainedCellSelector();
+        parser1 = new ConstrainedCsrSpmvParser(opts, csrGrammar1);
+
+        final NaryTree<String> goldTree = NaryTree.read(AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
+        final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
+        final ConstrainedChart constrainingChart = new ConstrainedChart(factoredTree, unsplitGrammar);
+
+        final ParseTree parseTree1 = parser1.findBestParse(constrainingChart);
+        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class).unfactor(
+                GrammarFormatType.Berkeley);
+        assertEquals(goldTree.toString(), unfactoredTree.toString());
+    }
+
+    @Test
     public void testWsjSubset() throws Exception {
         final String corpus = "parsing/wsj_24.mrgEC.1-20";
 
-        // Induce a grammar from the sample tree and construct a basic constraining chart
+        // Induce a grammar from the corpus and construct a basic constraining chart
         final StringCountGrammar sg = new StringCountGrammar(SharedNlpTests.unitTestDataAsReader(corpus),
                 Factorization.RIGHT, GrammarFormatType.Berkeley, 0);
         plGrammar0 = new ProductionListGrammar(sg);
@@ -209,15 +251,20 @@ public class TestConstrainedCsrSpmvParser {
 
         final BufferedReader br = new BufferedReader(SharedNlpTests.unitTestDataAsReader(corpus));
 
+        int count = 0;
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
-            final ConstrainedChart constrainingChart = new ConstrainedChart(goldTree.factor(GrammarFormatType.Berkeley,
-                    Factorization.RIGHT), unsplitGrammar);
+            final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
+            final ConstrainedChart constrainingChart = new ConstrainedChart(factoredTree, unsplitGrammar);
+
+            // Ensure that we're constructing the constraining chart correctly
+            assertEquals(factoredTree.toString(), constrainingChart.toString());
+
             final ParseTree parseTree1 = parser1.findBestParse(constrainingChart);
             final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class).unfactor(
                     GrammarFormatType.Berkeley);
             assertEquals(goldTree.toString(), unfactoredTree.toString());
-
+            count++;
         }
     }
 }

@@ -122,6 +122,10 @@ public class ConstrainedChart extends ParallelArrayChart {
             final int i = cellOffset + splitVocabulary.subcategoryIndices[parent] + splitVocabulary.maxSplits
                     * node.unaryChainDepth();
 
+            // if (start == 4 && end == 5) {
+            // System.out.println("Populating 4,5");
+            // }
+
             if (node.rightChild() == null) {
                 if (node.leftChild().isLeaf()) {
                     // Lexical production
@@ -133,7 +137,7 @@ public class ConstrainedChart extends ParallelArrayChart {
                 } else {
                     // Unary production
                     final short child = (short) splitVocabulary.getIndex(node.leftChild().label());
-                    shiftCellEntriesDownward(cellOffset);
+                    // shiftCellEntriesDownward(cellOffset);
                     packedChildren[i] = sparseMatrixGrammar.cartesianProductFunction.packUnary(child);
                 }
             } else {
@@ -179,8 +183,10 @@ public class ConstrainedChart extends ParallelArrayChart {
             nonTerminalIndices[destination] = nonTerminalIndices[origin];
             insideProbabilities[destination] = insideProbabilities[origin];
             packedChildren[destination] = packedChildren[origin];
-
         }
+        nonTerminalIndices[topEntryOffset] = Short.MIN_VALUE;
+        insideProbabilities[topEntryOffset] = Float.NEGATIVE_INFINITY;
+        packedChildren[topEntryOffset] = Integer.MIN_VALUE;
     }
 
     @Override
@@ -223,6 +229,11 @@ public class ConstrainedChart extends ParallelArrayChart {
         return extractBestParse(start, end, parent, 0);
     }
 
+    @Override
+    public String toString() {
+        return extractBestParse(0).toString();
+    }
+
     public ParseTree extractBestParse(final int start, final int end, final int parent, final int unaryDepth) {
 
         if (unaryDepth > maxUnaryChainLength) {
@@ -232,11 +243,11 @@ public class ConstrainedChart extends ParallelArrayChart {
         final int i = cellOffset(start, end) + unaryDepth * splitVocabulary.maxSplits
                 + splitVocabulary.subcategoryIndices[parent];
 
-        // final int nt = nonTerminalIndices[i];
-        // if (nt != parent) {
-        // System.out.format("Discrepancy; parent = %s (%d); NT = %s (%d)\n", splitVocabulary.getSymbol(parent),
-        // parent, splitVocabulary.getSymbol(nt), nt);
-        // }
+        final int nt = nonTerminalIndices[i];
+        if (nt != parent) {
+            System.out.format("Discrepancy; parent = %s (%d); NT = %s (%d)\n", splitVocabulary.getSymbol(parent),
+                    parent, splitVocabulary.getSymbol(nt), nt);
+        }
 
         final ParseTree subtree = new ParseTree(splitVocabulary.getSymbol(parent));
         final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(packedChildren[i]);
@@ -246,25 +257,25 @@ public class ConstrainedChart extends ParallelArrayChart {
         // }
 
         if (rightChild == Production.UNARY_PRODUCTION) {
-            // final String sLeftChild = splitVocabulary.getSymbol(leftChild);
+            final String sLeftChild = splitVocabulary.getSymbol(leftChild);
             subtree.children.add(extractBestParse(start, end, leftChild, unaryDepth + 1));
-            // if (nt != parent) {
-            // System.out.println("  Unary");
-            // }
+            if (nt != parent) {
+                System.out.println("  Unary");
+            }
 
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-            // if (nt != parent) {
-            // System.out.println("  Lexical");
-            // }
-            // final String sLeftChild = lexicon.getSymbol(leftChild);
+            if (nt != parent) {
+                System.out.println("  Lexical");
+            }
+            final String sLeftChild = lexicon.getSymbol(leftChild);
             subtree.addChild(new ParseTree(lexicon.getSymbol(leftChild)));
 
         } else {
-            // if (nt != parent) {
-            // System.out.println("  Binary");
-            // }
-            // final String sLeftChild = splitVocabulary.getSymbol(leftChild);
-            // final String sRightChild = splitVocabulary.getSymbol(rightChild);
+            if (nt != parent) {
+                System.out.println("  Binary");
+            }
+            final String sLeftChild = splitVocabulary.getSymbol(leftChild);
+            final String sRightChild = splitVocabulary.getSymbol(rightChild);
             // binary production
             final short edgeMidpoint = midpoints[cellIndex(start, end)];
             subtree.children.add(extractBestParse(start, edgeMidpoint, leftChild, 0));

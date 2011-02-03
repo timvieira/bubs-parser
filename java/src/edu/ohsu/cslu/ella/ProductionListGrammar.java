@@ -236,7 +236,7 @@ public class ProductionListGrammar {
             splitVocabulary.addSymbol(substates[0]);
             splitVocabulary.addSymbol(substates[1]);
         }
-        splitVocabulary.recomputeSubcategoryIndices();
+        splitVocabulary.recomputeSplits();
 
         final ProductionListGrammar splitGrammar = new ProductionListGrammar(this, splitVocabulary, lexicon);
 
