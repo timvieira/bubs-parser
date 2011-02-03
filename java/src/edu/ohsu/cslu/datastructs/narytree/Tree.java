@@ -15,7 +15,7 @@ import java.util.List;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public interface Tree<E extends Object> {
+public interface Tree<E extends Object> extends Cloneable {
 
     /**
      * @return the label of the root node

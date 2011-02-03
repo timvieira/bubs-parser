@@ -624,6 +624,16 @@ public class NaryTree<E> implements Tree<E>, Serializable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public NaryTree<E> clone() {
+        try {
+            return (NaryTree<E>) super.clone();
+        } catch (final CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public String toString() {
         try {
             final Writer writer = new StringWriter();
