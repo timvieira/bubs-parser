@@ -120,6 +120,14 @@ public interface Tree<E extends Object> extends Cloneable {
     public int leaves();
 
     /**
+     * Returns a copy of this tree in which each label is transformed by the supplied {@link LabelTransformer}.
+     * 
+     * @param t Label transformation function
+     * @return a copy of this tree in which each label is transformed by the supplied {@link LabelTransformer}.
+     */
+    public Tree<E> transform(LabelTransformer<E> t);
+
+    /**
      * @return an {@link Iterator} over all nodes in this tree. Iteration order will be leftmost-child, head, other
      *         children (in left-to-right order).
      */
@@ -181,4 +189,7 @@ public interface Tree<E extends Object> extends Cloneable {
      */
     public void write(Writer writer) throws IOException;
 
+    public static interface LabelTransformer<E> {
+        public E transform(final E label);
+    }
 }
