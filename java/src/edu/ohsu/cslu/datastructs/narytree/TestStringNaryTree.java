@@ -411,4 +411,14 @@ public class TestStringNaryTree {
     public void testClone() {
         assertEquals(stringSampleTree, sampleTree.clone().toString());
     }
+
+    @Test
+    public void testTransform() {
+        assertEquals("(F (D (B A C) E) G (I H (K J)))", sampleTree.transform(new Tree.LabelTransformer<String>() {
+            @Override
+            public String transform(final String s) {
+                return s.toUpperCase();
+            }
+        }).toString());
+    }
 }

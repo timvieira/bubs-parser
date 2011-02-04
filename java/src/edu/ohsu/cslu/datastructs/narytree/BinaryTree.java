@@ -258,6 +258,22 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
     }
 
     @Override
+    public BinaryTree<E> transform(final LabelTransformer<E> t) {
+        return transform(this, t);
+    }
+
+    private BinaryTree<E> transform(final BinaryTree<E> node, final LabelTransformer<E> t) {
+        final BinaryTree<E> tree = new BinaryTree<E>(t.transform(node.label), node.factorization);
+        if (node.leftChild != null) {
+            tree.addChild(transform(node.leftChild, t));
+        }
+        if (node.rightChild != null) {
+            tree.addChild(transform(node.rightChild, t));
+        }
+        return tree;
+    }
+
+    @Override
     public Iterator<BinaryTree<E>> inOrderIterator() {
         // A simple and stupid implementation, but we can tune for performance if needed
         return inOrderList().iterator();

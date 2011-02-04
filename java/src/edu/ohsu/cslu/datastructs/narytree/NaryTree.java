@@ -403,6 +403,19 @@ public class NaryTree<E> implements Tree<E>, Serializable {
         }
     }
 
+    @Override
+    public NaryTree<E> transform(final LabelTransformer<E> t) {
+        return transform(this, t);
+    }
+
+    private NaryTree<E> transform(final NaryTree<E> node, final LabelTransformer<E> t) {
+        final NaryTree<E> tree = new NaryTree<E>(t.transform(node.label));
+        for (final NaryTree<E> child : node.children()) {
+            tree.addChild(transform(child, t));
+        }
+        return tree;
+    }
+
     public BinaryTree<String> factor(final GrammarFormatType grammarFormatType, final Factorization factorization) {
 
         final BinaryTree<String> binaryTreeRoot = new BinaryTree<String>(label.toString(), factorization);
