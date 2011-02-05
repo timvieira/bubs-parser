@@ -39,7 +39,8 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
     @Test
     public void testUnknownWordThreshold() throws IOException {
         // Two trees, differing only in two terminals which occur one time each
-        final String corpus = AllEllaTests.STRING_SAMPLE_TREE + '\n' + "(s (a (a (a (a e) (a c)) (b d)) (b (b (b f)) (a d))))";
+        final String corpus = AllEllaTests.STRING_SAMPLE_TREE + '\n'
+                + "(s (a (a (a (a e) (a c)) (b d)) (b (b (b f)) (a d))))";
 
         // With an occurrence threshold of 1, all observed symbols will be in the lexicon
         SymbolSet<String> lexicon = new StringCountGrammar(new StringReader(corpus), null, null, 1).induceLexicon();
@@ -57,13 +58,13 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
     public void testInduceVocabulary() {
         final SymbolSet<String> unsortedVocabulary = sg.induceVocabulary(null);
         assertEquals(3, unsortedVocabulary.size());
-        assertEquals(0, unsortedVocabulary.getIndex("s"));
+        assertEquals(0, unsortedVocabulary.getIndex("top"));
         assertEquals(1, unsortedVocabulary.getIndex("a"));
         assertEquals(2, unsortedVocabulary.getIndex("b"));
 
         final SymbolSet<String> sortedVocabulary = sg.induceVocabulary(sg.binaryParentCountComparator());
         assertEquals(3, sortedVocabulary.size());
-        assertEquals(0, sortedVocabulary.getIndex("s"));
+        assertEquals(0, sortedVocabulary.getIndex("top"));
         assertEquals(1, sortedVocabulary.getIndex("a"));
         assertEquals(2, sortedVocabulary.getIndex("b"));
     }
@@ -107,8 +108,8 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
         assertEquals(1, c.compare("b", "a"));
 
         // Special-cases for the start symbol
-        assertEquals(-1, c.compare("s", "a"));
-        assertEquals(-1, c.compare("s", "b"));
-        assertEquals(0, c.compare("s", "s"));
+        assertEquals(-1, c.compare("top", "a"));
+        assertEquals(-1, c.compare("top", "b"));
+        assertEquals(0, c.compare("top", "top"));
     }
 }

@@ -82,7 +82,6 @@ public class ConstrainedCsrSpmvParser extends
                 && chart.cellOffsets.length >= constrainingChart.cellOffsets.length) {
             chart.clear(constrainingChart);
         } else {
-            // Don't set the chart's edge selector for the basic inside-probability version.
             chart = new ConstrainedChart(constrainingChart, grammar);
         }
         super.initSentence(constrainingChart.tokens);
@@ -312,14 +311,19 @@ public class ConstrainedCsrSpmvParser extends
                 final float jointProbability = grammar.csrBinaryProbabilities[j]
                         + cartesianProductVector.probabilities[grammarChildren];
 
+                // final String sRightChild = splitVocabulary.getSymbol(cpf.unpackRightChild(grammarChildren));
+                // if (chartCell.start() == 8 && chartCell.end() == 11 && sRightChild.startsWith("NNS_")) {
+                // System.out.println("SpMV over 8,11 : "
+                // + splitVocabulary.getSymbol(cpf.unpackLeftChild(grammarChildren)) + " " + sRightChild);
+                // }
                 if (jointProbability > winningProbability) {
                     winningProbability = jointProbability;
                     winningChildren = grammarChildren;
                 }
             }
 
+            chart.nonTerminalIndices[entryIndex] = splitParent;
             if (winningProbability != Float.NEGATIVE_INFINITY) {
-                chart.nonTerminalIndices[entryIndex] = splitParent;
                 chart.packedChildren[entryIndex] = winningChildren;
                 chart.insideProbabilities[entryIndex] = winningProbability;
             }
@@ -347,10 +351,6 @@ public class ConstrainedCsrSpmvParser extends
 
         final int constrainingCellUnaryDepth = constrainedCellSelector.currentCellUnaryChainDepth();
 
-        // if (chartCell.start() == 4 && chartCell.end() == 5) {
-        // System.out.println("Processing unaries for 4,5");
-        // }
-
         // foreach unary chain depth (starting from 2nd from bottom in chain; bottom is binary parent)
         // - Each unsplit parent has a known unsplit child
         // - All split children are populated (although some may have 0 probability)
@@ -361,19 +361,20 @@ public class ConstrainedCsrSpmvParser extends
         // foreach unary chain depth (starting from 2nd from bottom in chain; bottom is binary parent)
         for (int unaryDepth = 1; unaryDepth < constrainingCellUnaryDepth; unaryDepth++) {
 
+            // Unsplit child and unsplit parent are fixed
+            final short firstUnsplitParent = unsplitEntries[constrainingCellOffset
+                    + (constrainingCellUnaryDepth - 1 - unaryDepth) * constrainingGrammarMaxSplits];
+
+            final short startParent = (short) (firstUnsplitParent == 0 ? 0 : (firstUnsplitParent * 2 - 1));
+            final short endParent = (short) (firstUnsplitParent == 0 ? 0 : startParent
+                    + splitVocabulary.splits[startParent] - 1);
+
             for (int i = 0; i < splitVocabulary.maxSplits; i++) {
                 // Shift all existing entries downward
                 chart.shiftCellEntriesDownward(constrainedCell.offset() + i);
             }
 
-            // Unsplit child and unsplit parent are fixed
-            final short firstUnsplitParent = unsplitEntries[constrainingCellOffset
-                    + (constrainingCellUnaryDepth - 1 - unaryDepth) * constrainingGrammarMaxSplits];
-
             // foreach split parent
-            final short startParent = (short) (firstUnsplitParent == 0 ? 0 : (firstUnsplitParent * 2 - 1));
-            final short endParent = (short) (firstUnsplitParent == 0 ? 0 : startParent + splitVocabulary.maxSplits - 1);
-
             for (short splitParent = startParent; splitParent <= endParent; splitParent++) {
 
                 final short unsplitChild = unsplitEntries[constrainingCellOffset
@@ -409,9 +410,6 @@ public class ConstrainedCsrSpmvParser extends
 
                 chart.nonTerminalIndices[parentEntryIndex] = splitParent;
                 chart.packedChildren[parentEntryIndex] = grammar.cartesianProductFunction.packUnary(winningChild);
-                if (chart.packedChildren[parentEntryIndex] > 10000) {
-                    System.err.println(chart.packedChildren[parentEntryIndex]);
-                }
                 chart.insideProbabilities[parentEntryIndex] = winningProbability;
             }
         }

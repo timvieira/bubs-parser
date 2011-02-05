@@ -1,9 +1,19 @@
 package edu.ohsu.cslu.ella;
 
+import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
+
 import java.util.Collection;
 
 import edu.ohsu.cslu.grammar.SymbolSet;
 
+/**
+ * Represents symbols of a state-split vocabulary. e.g. the base NP type might be split into NP_0, NP_1, NP_2, ...
+ * 
+ * @author Aaron Dunlop
+ * @since Feb 3, 2011
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class SplitVocabulary extends SymbolSet<String> {
 
     /**
@@ -20,22 +30,41 @@ public class SplitVocabulary extends SymbolSet<String> {
 
     final short maxSplits;
 
+    final SplitVocabulary parentVocabulary;
+
+    /**
+     * Maps from the indices of a parent vocabulary to indices in this {@link SplitVocabulary}. Only populated if this
+     * vocabulary was created by merging symbols in an earlier vocabulary.
+     */
+    final Short2ShortOpenHashMap mergedIndices;
+
     public SplitVocabulary(final short maxSplits) {
         super();
         this.subcategoryIndices = null;
         this.maxSplits = maxSplits;
+        this.parentVocabulary = null;
+        this.mergedIndices = null;
     }
 
     public SplitVocabulary(final String[] symbols) {
         super(symbols);
         recomputeSplits();
         this.maxSplits = maxSplits();
+        this.parentVocabulary = null;
+        this.mergedIndices = null;
     }
 
-    public SplitVocabulary(final Collection<String> symbols) {
+    public SplitVocabulary(final Collection<String> symbols, final SplitVocabulary parentVocabulary,
+            final Short2ShortOpenHashMap mergedIndices) {
         super(symbols);
         recomputeSplits();
         this.maxSplits = maxSplits();
+        this.parentVocabulary = parentVocabulary;
+        this.mergedIndices = mergedIndices;
+    }
+
+    public SplitVocabulary(final Collection<String> symbols) {
+        this(symbols, null, null);
     }
 
     void recomputeSplits() {

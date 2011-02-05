@@ -57,13 +57,13 @@ public class TestProductionListGrammar {
     public void testPcfgString(final ProductionListGrammar g) {
         final StringBuilder pcfg = new StringBuilder(1024);
         // Start Symbol
-        pcfg.append("s\n");
+        pcfg.append("top\n");
         // Binary Rules
         pcfg.append("a -> a a -1.791759\n");
         pcfg.append("a -> a b -1.098612\n");
         pcfg.append("b -> b a -1.386294\n");
         // Unary Rules
-        pcfg.append("s -> a 0.000000\n");
+        pcfg.append("top -> a 0.000000\n");
         pcfg.append("b -> b -1.386294\n");
         assertEquals(pcfg.toString(), g.pcfgString());
     }
@@ -82,7 +82,10 @@ public class TestProductionListGrammar {
      */
     @Theory
     public void testSplitStates(final ProductionListGrammar g) {
-        final ProductionListGrammar split1 = g.split(null, 0f);
+
+        final ProductionListGrammar.BiasedNoiseGenerator zeroNoiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(
+                0f);
+        final ProductionListGrammar split1 = g.split(zeroNoiseGenerator);
 
         // s, a_0, a_1, b_0, b_1
         assertArrayEquals(new short[] { 0, 0, 1, 0, 1 }, split1.vocabulary.subcategoryIndices);
@@ -101,8 +104,8 @@ public class TestProductionListGrammar {
 
         // Ensure the start symbol was _not_ split (although we'll leave an unused integer index (1), just to make other
         // indices easy to calculate.
-        assertEquals(Math.log(1f / 2), split1.unaryLogProbability("s", "a_0"), .01f);
-        assertEquals(Math.log(1f / 2), split1.unaryLogProbability("s", "a_1"), .01f);
+        assertEquals(Math.log(1f / 2), split1.unaryLogProbability("top", "a_0"), .01f);
+        assertEquals(Math.log(1f / 2), split1.unaryLogProbability("top", "a_1"), .01f);
 
         // The split indices should be calculable from the pre-split indices (and vice-versa)
         assertEquals(g.vocabulary.getIndex("a") * 2 - 1, split1.vocabulary.getIndex("a_0"));
@@ -112,7 +115,7 @@ public class TestProductionListGrammar {
         assertEquals(g.vocabulary.getIndex("b") * 2, split1.vocabulary.getIndex("b_1"));
 
         // Now test re-splitting the newly-split grammar again.
-        final ProductionListGrammar split2 = split1.split(null, 0f);
+        final ProductionListGrammar split2 = split1.split(zeroNoiseGenerator);
 
         // s, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3
         assertArrayEquals(new short[] { 0, 0, 1, 2, 3, 0, 1, 2, 3 }, split2.vocabulary.subcategoryIndices);
@@ -132,8 +135,12 @@ public class TestProductionListGrammar {
 
     @Theory
     public void testMerge(final ProductionListGrammar g) {
+
+        final ProductionListGrammar.BiasedNoiseGenerator zeroNoiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(
+                0f);
+
         // Split the grammar 2X
-        final ProductionListGrammar split2 = g.split(null, 0f).split(null, 0f);
+        final ProductionListGrammar split2 = g.split(zeroNoiseGenerator).split(zeroNoiseGenerator);
         // Now re-merge a_3 into a_2 and b_1 into b_0
         final short[] indices = new short[] { (short) split2.vocabulary.getIndex("a_3"),
                 (short) split2.vocabulary.getIndex("b_1") };
@@ -168,5 +175,4 @@ public class TestProductionListGrammar {
         // TODO
         // fail("Tests of mapping from split to un-split non-terminals not implemented");
     }
-
 }
