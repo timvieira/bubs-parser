@@ -28,7 +28,7 @@ public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
         final ProductionListGrammar plGrammar0 = new ProductionListGrammar(sg);
 
         // Split the grammar
-        final ProductionListGrammar plGrammar1 = plGrammar0.split(null, 0);
+        final ProductionListGrammar plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
         final CsrSparseMatrixGrammar csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions,
                 plGrammar1.unaryProductions, plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon,
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);

@@ -218,13 +218,10 @@ public class ProductionListGrammar {
     /**
      * Splits each non-terminal in the grammar into 2 sub-states, constructing a new grammar, vocabulary, and lexicon.
      * 
-     * @param random Source of random noise
-     * @param randomness Amount of randomness (0-1) to add to the rule probabilities in the new grammar. With 0 noise,
-     *            the probabilities of each rule will be split equally. Some noise is generally required to break ties
-     *            in the new grammar.
+     * @param noiseGenerator Source of random noise
      * @return Newly-constructed grammar
      */
-    public ProductionListGrammar split(final Random random, final float randomness) {
+    public ProductionListGrammar split(final NoiseGenerator noiseGenerator) {
         // Produce a new vocabulary, splitting each non-terminal into two substates
 
         final SplitVocabulary splitVocabulary = new SplitVocabulary((short) (vocabulary.maxSplits * 2));
@@ -242,8 +239,6 @@ public class ProductionListGrammar {
 
         // Iterate through each rule, creating split rules in the new grammar
 
-        // TODO Add random noise
-
         final float logOneEighth = (float) Math.log(.125);
         final float logOneFourth = (float) Math.log(.25);
         final float logOneHalf = (float) Math.log(.5);
@@ -254,15 +249,24 @@ public class ProductionListGrammar {
             final int[] splitParents = new int[] { p.parent * 2 - 1, p.parent * 2 };
             final int[] splitLeftChildren = new int[] { p.leftChild * 2 - 1, p.leftChild * 2 };
             final int[] splitRightChildren = new int[] { p.rightChild * 2 - 1, p.rightChild * 2 };
+            final float[] noise = noiseGenerator.noise(8);
 
-            for (final int splitParent : splitParents) {
-                for (final int splitLeftChild : splitLeftChildren) {
-                    for (final int splitRightChild : splitRightChildren) {
-                        splitGrammar.binaryProductions.add(new Production(splitParent, splitLeftChild, splitRightChild,
-                                p.prob + logOneEighth, splitVocabulary, lexicon));
-                    }
-                }
-            }
+            splitGrammar.binaryProductions.add(new Production(splitParents[0], splitLeftChildren[0],
+                    splitRightChildren[0], p.prob + logOneEighth + noise[0], splitVocabulary, lexicon));
+            splitGrammar.binaryProductions.add(new Production(splitParents[0], splitLeftChildren[0],
+                    splitRightChildren[1], p.prob + logOneEighth + noise[1], splitVocabulary, lexicon));
+            splitGrammar.binaryProductions.add(new Production(splitParents[0], splitLeftChildren[1],
+                    splitRightChildren[0], p.prob + logOneEighth + noise[2], splitVocabulary, lexicon));
+            splitGrammar.binaryProductions.add(new Production(splitParents[0], splitLeftChildren[1],
+                    splitRightChildren[1], p.prob + logOneEighth + noise[3], splitVocabulary, lexicon));
+            splitGrammar.binaryProductions.add(new Production(splitParents[1], splitLeftChildren[0],
+                    splitRightChildren[0], p.prob + logOneEighth + noise[4], splitVocabulary, lexicon));
+            splitGrammar.binaryProductions.add(new Production(splitParents[1], splitLeftChildren[0],
+                    splitRightChildren[1], p.prob + logOneEighth + noise[5], splitVocabulary, lexicon));
+            splitGrammar.binaryProductions.add(new Production(splitParents[1], splitLeftChildren[1],
+                    splitRightChildren[0], p.prob + logOneEighth + noise[6], splitVocabulary, lexicon));
+            splitGrammar.binaryProductions.add(new Production(splitParents[1], splitLeftChildren[1],
+                    splitRightChildren[1], p.prob + logOneEighth + noise[7], splitVocabulary, lexicon));
         }
 
         // Split unary productions in 4ths
@@ -272,20 +276,24 @@ public class ProductionListGrammar {
 
             // Since we do not split the start symbol, we only split unaries of which it is the parent in two
             if (p.parent == 0) {
-                for (final int splitChild : splitChildren) {
-                    splitGrammar.unaryProductions.add(new Production(0, splitChild, p.prob + logOneHalf, false,
-                            splitVocabulary, lexicon));
-                }
+                final float[] noise = noiseGenerator.noise(2);
+                splitGrammar.unaryProductions.add(new Production(0, splitChildren[0], p.prob + logOneHalf + noise[0],
+                        false, splitVocabulary, lexicon));
+                splitGrammar.unaryProductions.add(new Production(0, splitChildren[1], p.prob + logOneHalf + noise[1],
+                        false, splitVocabulary, lexicon));
 
             } else {
                 final int[] splitParents = new int[] { p.parent * 2 - 1, p.parent * 2 };
+                final float[] noise = noiseGenerator.noise(4);
 
-                for (final int splitParent : splitParents) {
-                    for (final int splitChild : splitChildren) {
-                        splitGrammar.unaryProductions.add(new Production(splitParent, splitChild,
-                                p.prob + logOneFourth, false, splitVocabulary, lexicon));
-                    }
-                }
+                splitGrammar.unaryProductions.add(new Production(splitParents[0], splitChildren[0], p.prob
+                        + logOneFourth + noise[0], false, splitVocabulary, lexicon));
+                splitGrammar.unaryProductions.add(new Production(splitParents[0], splitChildren[1], p.prob
+                        + logOneFourth + noise[1], false, splitVocabulary, lexicon));
+                splitGrammar.unaryProductions.add(new Production(splitParents[1], splitChildren[0], p.prob
+                        + logOneFourth + noise[2], false, splitVocabulary, lexicon));
+                splitGrammar.unaryProductions.add(new Production(splitParents[1], splitChildren[1], p.prob
+                        + logOneFourth + noise[3], false, splitVocabulary, lexicon));
             }
         }
 
@@ -361,7 +369,7 @@ public class ProductionListGrammar {
             mergedIndices.put(i, (short) (mergedSymbols.size() - 1));
         }
 
-        final SplitVocabulary mergedVocabulary = new SplitVocabulary(mergedSymbols);
+        final SplitVocabulary mergedVocabulary = new SplitVocabulary(mergedSymbols, vocabulary, mergedIndices);
 
         // Create maps to store new rules in
         final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> binaryRuleMap = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
@@ -514,6 +522,84 @@ public class ProductionListGrammar {
 
                 lexicalProductions.add(new Production(parent, child, childMap.get(child), true, vocabulary, lexicon));
             }
+        }
+    }
+
+    public static interface NoiseGenerator {
+        /**
+         * Returns an array of size <code>count</code> containing the natural log of generated 'noise' (generally random
+         * or biased, depending on the implementation). Each adjacent pair in the returned array (0,1; 2,3; etc.)
+         * differs by a fixed amount of noise.
+         * 
+         * @param count
+         * @return An array of size <code>count</code> containing the natural log of generated noise
+         */
+        public float[] noise(int count);
+    }
+
+    public static class BiasedNoiseGenerator implements NoiseGenerator {
+        private final float amount;
+
+        /**
+         * @param amount Amount of randomness (0-1) to add to the rule probabilities in the new grammar (e.g., if
+         *            <code>amount</code> is 0.01, each pair differs by 1%). With 0 noise, the probabilities of each
+         *            rule will be split equally. Some noise is generally required to break ties in the new grammar.
+         */
+        public BiasedNoiseGenerator(final float amount) {
+            this.amount = amount;
+        }
+
+        @Override
+        public float[] noise(final int count) {
+            final float[] noise = new float[count];
+            final float n = (float) Math.log1p(amount);
+            for (int i = 0; i < count; i += 2) {
+                noise[i] = n;
+                noise[i + 1] = -n;
+            }
+            return noise;
+        }
+    }
+
+    public static class RandomNoiseGenerator implements NoiseGenerator {
+        final Random random;
+        final float amount;
+
+        /**
+         * @param amount Amount of randomness (0-1) to add to the rule probabilities in the new grammar (e.g., if
+         *            <code>amount</code> is 0.01, each pair differs by 1%). With 0 noise, the probabilities of each
+         *            rule will be split equally. Some noise is generally required to break ties in the new grammar.
+         * @param seed The random seed to initialize with
+         */
+        public RandomNoiseGenerator(final float amount, final long seed) {
+            random = new Random(seed);
+            this.amount = amount;
+        }
+
+        /**
+         * @param amount Amount of randomness (0-1) to add to the rule probabilities in the new grammar (e.g., if
+         *            <code>amount</code> is 0.01, each pair differs by 1%). With 0 noise, the probabilities of each
+         *            rule will be split equally. Some noise is generally required to break ties in the new grammar.
+         */
+        public RandomNoiseGenerator(final float amount) {
+            this(amount, System.currentTimeMillis());
+        }
+
+        @Override
+        public float[] noise(final int count) {
+            final float[] noise = new float[count];
+            final float n = (float) Math.log1p(amount);
+
+            for (int i = 0; i < count; i += 2) {
+                if (random.nextBoolean()) {
+                    noise[i] = n;
+                    noise[i + 1] = -n;
+                } else {
+                    noise[i] = -n;
+                    noise[i + 1] = n;
+                }
+            }
+            return noise;
         }
     }
 }

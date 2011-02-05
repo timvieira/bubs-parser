@@ -10,7 +10,7 @@ public class AllEllaTests {
 
     /**
      * <pre>
-     *             s
+     *            top
      *             |
      *             a 
      *             |
@@ -38,7 +38,7 @@ public class AllEllaTests {
      *  b -> d 2/4
      * </pre>
      */
-    public final static String STRING_SAMPLE_TREE = "(s (a (a (a (a c) (a c)) (b d)) (b (b (b d)) (a d))))";
+    public final static String STRING_SAMPLE_TREE = "(top (a (a (a (a c) (a c)) (b d)) (b (b (b d)) (a d))))";
 
     public final static String TREE_WITH_LONG_UNARY_CHAIN = "(TOP (S (NP (NP (RB Not) (PDT all) (DT those)) (SBAR (WHNP (WP who)) (S (VP (VBD wrote))))) (VP (VBP oppose) (NP (DT the) (NNS changes))) (. .)))";
 

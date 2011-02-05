@@ -86,7 +86,8 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
 
         // Create a split-1 grammar
         System.out.println("Splitting grammar...");
-        final ProductionListGrammar plGrammar1 = plGrammar0.split(null, 0f);
+        final ProductionListGrammar plGrammar1 = plGrammar0
+                .split(new ProductionListGrammar.RandomNoiseGenerator(0.01f));
         final long t4 = System.currentTimeMillis();
         System.out.println(String.format("Time: %d ms", t4 - t3));
 

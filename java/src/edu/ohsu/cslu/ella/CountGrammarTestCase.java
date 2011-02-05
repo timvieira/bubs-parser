@@ -23,7 +23,7 @@ public abstract class CountGrammarTestCase {
 
         // Unary rules
         assertEquals(2, g.unaryRules());
-        assertEquals(1, g.unaryRuleObservations("s", "a"));
+        assertEquals(1, g.unaryRuleObservations("top", "a"));
         assertEquals(1, g.unaryRuleObservations("b", "b"));
 
         assertEquals(0, g.unaryRuleObservations("b", "a"));

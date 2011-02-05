@@ -20,12 +20,12 @@ public class TestMappedCountGrammar extends CountGrammarTestCase {
     }
 
     static MappedCountGrammar SAMPLE_MAPPED_GRAMMAR() {
-        final SplitVocabulary vocabulary = new SplitVocabulary(new String[] { "s", "a", "b" });
+        final SplitVocabulary vocabulary = new SplitVocabulary(new String[] { "top", "a", "b" });
         final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "c", "d" });
 
         // Build up the same grammar as that induced from the tree in AllElviTests
         final MappedCountGrammar g = new MappedCountGrammar(vocabulary, lexicon);
-        g.incrementUnaryCount("s", "a");
+        g.incrementUnaryCount("top", "a");
         g.incrementBinaryCount("a", "a", "b");
         g.incrementBinaryCount("a", "a", "b");
         g.incrementBinaryCount("a", "a", "a");
