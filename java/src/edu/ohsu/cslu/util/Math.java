@@ -492,6 +492,12 @@ public class Math {
      * @return log_e(e^a + e^b)
      */
     public static float logSum(final float a, final float b) {
+        if (a == Float.NEGATIVE_INFINITY) {
+            return b;
+        }
+        if (b == Float.NEGATIVE_INFINITY) {
+            return a;
+        }
         return (float) (a + java.lang.Math.log1p(java.lang.Math.exp(b - a)));
     }
 }

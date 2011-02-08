@@ -48,6 +48,10 @@ public class ConstrainedCsrSpmvParser extends
 
     ConstrainedChart constrainingChart;
     private final SplitVocabulary splitVocabulary;
+
+    /** Use real semiring to compute log-sum for inside-outside. If false, uses tropical semiring (Viterbi) */
+    private final boolean realSemiring;
+
     private final boolean collectDetailedTimings;
 
     protected long totalInitializationTime = 0;
@@ -64,6 +68,7 @@ public class ConstrainedCsrSpmvParser extends
         super(opts, grammar);
         this.splitVocabulary = (SplitVocabulary) grammar.nonTermSet;
         this.collectDetailedTimings = collectDetailedTimings;
+        this.realSemiring = opts.realSemiring;
     }
 
     public ConstrainedCsrSpmvParser(final ParserDriver opts, final ConstrainedCsrSparseMatrixGrammar grammar) {
@@ -269,6 +274,16 @@ public class ConstrainedCsrSpmvParser extends
         }
         final short firstUnsplitParent = unsplitEntries[unsplitEntryIndex];
 
+        final short constrainingLeftChild = (short) constrainingChart.sparseMatrixGrammar.cartesianProductFunction
+                .unpackLeftChild(unsplitPackedChildren[unsplitEntryIndex]);
+        final short startLeftChild = (short) (constrainingLeftChild == 0 ? 0 : (constrainingLeftChild * 2 - 1));
+        final short endLeftChild = (short) (constrainingLeftChild == 0 ? 0 : startLeftChild + 1);
+
+        final short constrainingRightChild = constrainingChart.sparseMatrixGrammar.cartesianProductFunction
+                .unpackRightChild(unsplitPackedChildren[unsplitEntryIndex]);
+        final short startRightChild = (short) (constrainingRightChild == 0 ? 0 : (constrainingRightChild * 2 - 1));
+        final short endRightChild = (short) (constrainingRightChild == 0 ? 0 : startRightChild + 1);
+
         // Iterate over possible parents (matrix rows)
         final short startParent = (short) (firstUnsplitParent == 0 ? 0 : (firstUnsplitParent * 2 - 1));
         final short endParent = (short) (firstUnsplitParent == 0 ? 0 : (startParent + splitVocabulary.maxSplits - 1));
@@ -276,12 +291,6 @@ public class ConstrainedCsrSpmvParser extends
 
             final int entryIndex = constrainedCell.offset() + splitParent - startParent;
 
-            final short constrainingLeftChild = (short) constrainingChart.sparseMatrixGrammar.cartesianProductFunction
-                    .unpackLeftChild(unsplitPackedChildren[unsplitEntryIndex]);
-            final short startLeftChild = (short) (constrainingLeftChild == 0 ? 0 : (constrainingLeftChild * 2 - 1));
-            final short endLeftChild = (short) (constrainingLeftChild == 0 ? 0 : startLeftChild + 1);
-
-            // TODO Use log-sum instead of viterbi
             float winningProbability = Float.NEGATIVE_INFINITY;
             int winningChildren = Integer.MIN_VALUE;
 
@@ -303,20 +312,21 @@ public class ConstrainedCsrSpmvParser extends
                     continue;
                 }
 
-                // final short leftChild = (short) grammar.cartesianProductFunction.unpackLeftChild(grammarChildren);
-                // if ((leftChild + 1) / 2 != constrainingLeftChild) {
-                // continue;
-                // }
+                // Skip child pairs containing right children outside the constraining range
+                final short rightChild = cpf.unpackRightChild(grammarChildren);
+                if (rightChild < startRightChild || rightChild > endRightChild) {
+                    continue;
+                }
 
                 final float jointProbability = grammar.csrBinaryProbabilities[j]
                         + cartesianProductVector.probabilities[grammarChildren];
 
-                // final String sRightChild = splitVocabulary.getSymbol(cpf.unpackRightChild(grammarChildren));
-                // if (chartCell.start() == 8 && chartCell.end() == 11 && sRightChild.startsWith("NNS_")) {
-                // System.out.println("SpMV over 8,11 : "
-                // + splitVocabulary.getSymbol(cpf.unpackLeftChild(grammarChildren)) + " " + sRightChild);
-                // }
-                if (jointProbability > winningProbability) {
+                if (realSemiring) {
+                    winningProbability = edu.ohsu.cslu.util.Math.logSum(jointProbability, winningProbability);
+                    if (winningChildren == Integer.MIN_VALUE) {
+                        winningChildren = grammarChildren;
+                    }
+                } else if (jointProbability > winningProbability) {
                     winningProbability = jointProbability;
                     winningChildren = grammarChildren;
                 }
@@ -402,7 +412,12 @@ public class ConstrainedCsrSpmvParser extends
                     final float grammarProbability = grammar.csrUnaryProbabilities[j];
                     final float jointProbability = grammarProbability + chart.insideProbabilities[childEntryIndex];
 
-                    if (jointProbability > winningProbability) {
+                    if (realSemiring) {
+                        winningProbability = edu.ohsu.cslu.util.Math.logSum(jointProbability, winningProbability);
+                        if (winningChild == Short.MIN_VALUE) {
+                            winningChild = splitChild;
+                        }
+                    } else if (jointProbability > winningProbability) {
                         winningProbability = jointProbability;
                         winningChild = splitChild;
                     }

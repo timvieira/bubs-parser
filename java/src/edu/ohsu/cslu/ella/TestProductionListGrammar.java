@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.ella;
 
+import static edu.ohsu.cslu.tests.Assert.assertLogFractionEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
@@ -34,7 +35,7 @@ public class TestProductionListGrammar {
     public void testLexicalLogProbability(final ProductionListGrammar g) {
         assertEquals(-1.098612, g.lexicalLogProbability("a", "c"), .0001f);
         assertEquals(-1.791759, g.lexicalLogProbability("a", "d"), .0001f);
-        assertEquals(-0.693147, g.lexicalLogProbability("b", "d"), .0001f);
+        assertLogFractionEquals(Math.log(1f / 2), g.lexicalLogProbability("b", "d"), .0001f);
         assertEquals(Float.NEGATIVE_INFINITY, g.lexicalLogProbability("b", "c"), .0001f);
 
     }
@@ -90,22 +91,21 @@ public class TestProductionListGrammar {
         // s, a_0, a_1, b_0, b_1
         assertArrayEquals(new short[] { 0, 0, 1, 0, 1 }, split1.vocabulary.subcategoryIndices);
 
-        // a -> a b 2/6 should be split into 8
-        assertEquals(Math.log(2f / 6 / 8), split1.binaryLogProbability("a_0", "a_0", "b_0"), .01f);
-        assertEquals(Math.log(2f / 6 / 8), split1.binaryLogProbability("a_0", "a_1", "b_1"), .01f);
+        // a -> a b 2/6 should be split into 8, with probability 1/4
+        assertLogFractionEquals(Math.log(2f / 6 / 4), split1.binaryLogProbability("a_0", "a_0", "b_0"), .01f);
+        assertLogFractionEquals(Math.log(2f / 6 / 4), split1.binaryLogProbability("a_0", "a_1", "b_1"), .01f);
 
         // b -> b a 1/4 should be split into 8
-        assertEquals(Math.log(1f / 4 / 8), split1.binaryLogProbability("b_0", "b_0", "a_1"), .01f);
-        assertEquals(Math.log(1f / 4 / 8), split1.binaryLogProbability("b_1", "b_1", "a_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 4), split1.binaryLogProbability("b_0", "b_0", "a_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 4), split1.binaryLogProbability("b_1", "b_1", "a_0"), .01f);
 
         // b -> b 1/4 should be split into 4
-        assertEquals(Math.log(1f / 4 / 4), split1.unaryLogProbability("b_0", "b_1"), .01f);
-        assertEquals(Math.log(1f / 4 / 4), split1.unaryLogProbability("b_1", "b_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 2), split1.unaryLogProbability("b_0", "b_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 2), split1.unaryLogProbability("b_1", "b_0"), .01f);
 
-        // Ensure the start symbol was _not_ split (although we'll leave an unused integer index (1), just to make other
-        // indices easy to calculate.
-        assertEquals(Math.log(1f / 2), split1.unaryLogProbability("top", "a_0"), .01f);
-        assertEquals(Math.log(1f / 2), split1.unaryLogProbability("top", "a_1"), .01f);
+        // Ensure the start symbol was _not_ split
+        assertLogFractionEquals(Math.log(1f / 2), split1.unaryLogProbability("top", "a_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 2), split1.unaryLogProbability("top", "a_1"), .01f);
 
         // The split indices should be calculable from the pre-split indices (and vice-versa)
         assertEquals(g.vocabulary.getIndex("a") * 2 - 1, split1.vocabulary.getIndex("a_0"));
@@ -120,17 +120,17 @@ public class TestProductionListGrammar {
         // s, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3
         assertArrayEquals(new short[] { 0, 0, 1, 2, 3, 0, 1, 2, 3 }, split2.vocabulary.subcategoryIndices);
 
-        // a -> a b 2/6 should now be split into 64
-        assertEquals(Math.log(2f / 6 / 64), split2.binaryLogProbability("a_1", "a_0", "b_0"), .01f);
-        assertEquals(Math.log(2f / 6 / 64), split2.binaryLogProbability("a_2", "a_2", "b_3"), .01f);
+        // a -> a b 2/6 should now be split into 64, with probability 1/16
+        assertLogFractionEquals(Math.log(2f / 6 / 16), split2.binaryLogProbability("a_1", "a_0", "b_0"), .01f);
+        assertLogFractionEquals(Math.log(2f / 6 / 16), split2.binaryLogProbability("a_2", "a_2", "b_3"), .01f);
 
         // b -> b a 1/4
-        assertEquals(Math.log(1f / 4 / 64), split2.binaryLogProbability("b_0", "b_2", "a_3"), .01f);
-        assertEquals(Math.log(1f / 4 / 64), split2.binaryLogProbability("b_2", "b_1", "a_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 16), split2.binaryLogProbability("b_0", "b_2", "a_3"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 16), split2.binaryLogProbability("b_2", "b_1", "a_1"), .01f);
 
-        // b -> b 1/4 should be split into 16
-        assertEquals(Math.log(1f / 4 / 16), split2.unaryLogProbability("b_0", "b_2"), .01f);
-        assertEquals(Math.log(1f / 4 / 16), split2.unaryLogProbability("b_2", "b_3"), .01f);
+        // b -> b 1/4 should be split into 16, with probability 1/4
+        assertLogFractionEquals(Math.log(1f / 4 / 4), split2.unaryLogProbability("b_0", "b_2"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 4), split2.unaryLogProbability("b_2", "b_3"), .01f);
     }
 
     @Theory
@@ -152,25 +152,36 @@ public class TestProductionListGrammar {
         // We now have a_0, a_1, and a_2 (which contains the former a_2 and a_3 splits)
         // And b_0 (containing the former b_0 and b_1), b_1 (formerly b_2), and b_2 (formerly b_3)
 
-        // a -> a b 2/6 was split into 64, but 4 of those merged into a_2 -> a_2 b_2
-        assertEquals(Math.log(2f / 6 / 64 * 4), merged.binaryLogProbability("a_2", "a_2", "b_2"), .01f);
-        // a -> a a 1/6 was split into 64 and 8 merged into a_2 -> a_2 a_2
-        assertEquals(Math.log(1f / 6 / 64 * 8), merged.binaryLogProbability("a_2", "a_2", "a_2"), .01f);
+        // a_0 as parent
+        //
+        // for i in 0 1 2 3; do for j in 0 1 2 3; do for k in 0 1 2 3; do echo "a_$i -> a_$j a_$k";
+        // done; done; done | egrep '^a_0' | tr 3 2 | sort | uniq -c
+        //
+        // a_2 as parent
+        //
+        // <same> | tr 3 2 | sort | egrep '^a_2' | uniq -c
+
+        // a -> a b 2/6 was split by 1/16, but 2 of those merged into a_2 -> a_0 b_2
+        assertLogFractionEquals(Math.log(2f / 6 / 16 * 2 / 2), merged.binaryLogProbability("a_2", "a_0", "b_2"), .01f);
+        // And 8 into a_2 -> a_2 b_0
+        assertLogFractionEquals(Math.log(2f / 6 / 16 * 8 / 2), merged.binaryLogProbability("a_2", "a_2", "b_0"), .01f);
+
+        // a -> a a 1/6 was split by 1/16 and 8 merged into a_2 -> a_2 a_2
+        assertLogFractionEquals(Math.log(1f / 6 / 16 * 8 / 2), merged.binaryLogProbability("a_2", "a_2", "a_2"), .01f);
         // a_1 -> a_1 a_0 was not merged
-        assertEquals(Math.log(1f / 6 / 64), merged.binaryLogProbability("a_1", "a_1", "a_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 6 / 16), split2.binaryLogProbability("a_1", "a_1", "a_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 6 / 16), merged.binaryLogProbability("a_1", "a_1", "a_0"), .01f);
 
-        // b -> b a 1/4 was split in 64, but 4 of those merged into b_0 -> b_1 a_2
-        assertEquals(Math.log(1f / 4 / 64 * 4), merged.binaryLogProbability("b_0", "b_1", "a_2"), .01f);
-
-        // b -> b 1/4 was split in 16, but 4 of those merged into b_0 -> b_0
-        assertEquals(Math.log(1f / 4 / 16 * 4), merged.unaryLogProbability("b_0", "b_0"), .01f);
+        // b -> b 1/4 was split by 1/4, but 4 of those merged into b_0 -> b_0
+        assertLogFractionEquals(Math.log(1f / 4 * (4f / 8)), merged.unaryLogProbability("b_0", "b_0"), .01f);
+        // b_1 -> b_0 was also merged
+        assertLogFractionEquals(Math.log(1f / 4 * (2f / 4)), merged.unaryLogProbability("b_1", "b_0"), .01f);
         // b_1 -> b_2 was not merged
-        assertEquals(Math.log(1f / 4 / 16), merged.unaryLogProbability("b_1", "b_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 * (1f / 4)), merged.unaryLogProbability("b_1", "b_1"), .01f);
 
-        // a -> c 2/6 was split into 4, but 2 of those merged into a_2 -> c
-        assertEquals(Math.log(2f / 6 / 4 * 2), merged.lexicalLogProbability("a_2", "c"), .01f);
-        // But a_1 -> c remains fully split
-        assertEquals(Math.log(2f / 6 / 4), merged.lexicalLogProbability("a_1", "c"), .01f);
+        // a_1 -> c 2/6 and a_2 -> c remain unchanged
+        assertLogFractionEquals(Math.log(2f / 6), merged.lexicalLogProbability("a_1", "c"), .01f);
+        assertLogFractionEquals(Math.log(2f / 6), merged.lexicalLogProbability("a_2", "c"), .01f);
 
         // TODO
         // fail("Tests of mapping from split to un-split non-terminals not implemented");
