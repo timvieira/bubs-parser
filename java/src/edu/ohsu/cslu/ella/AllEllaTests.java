@@ -28,7 +28,7 @@ public class AllEllaTests {
      *  |   |
      *  c   c
      *  
-     *  s -> a 1
+     *  top -> a 1
      *  a -> a b 2/6
      *  a -> a a 1/6
      *  a -> c 2/6
