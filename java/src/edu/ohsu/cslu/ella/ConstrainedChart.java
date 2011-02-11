@@ -25,11 +25,12 @@ import edu.ohsu.cslu.util.Math;
 public class ConstrainedChart extends ParallelArrayChart {
 
     /**
-     * Parallel array storing non-terminals (parallel to {@link ParallelArrayChart#insideProbabilities},
-     * {@link ParallelArrayChart#packedChildren}, and {@link ParallelArrayChart#midpoints}. Entries for each cell begin
-     * at indices from {@link #cellOffsets}.
+     * Parallel arrays storing non-terminals and outside probabilities (parallel to
+     * {@link ParallelArrayChart#insideProbabilities}, {@link ParallelArrayChart#packedChildren}, and
+     * {@link ParallelArrayChart#midpoints}. Entries for each cell begin at indices from {@link #cellOffsets}.
      */
     public final short[] nonTerminalIndices;
+    public final float[] outsideProbabilities;
 
     private final SplitVocabulary splitVocabulary;
 
@@ -63,6 +64,8 @@ public class ConstrainedChart extends ParallelArrayChart {
         this.nonTerminalIndices = new short[chartArraySize];
         Arrays.fill(nonTerminalIndices, Short.MIN_VALUE);
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
+        this.outsideProbabilities = new float[insideProbabilities.length];
+        Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
         this.lexicon = sparseMatrixGrammar.lexSet;
         this.openCells = constrainingChart.openCells;
         this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength;
@@ -85,6 +88,9 @@ public class ConstrainedChart extends ParallelArrayChart {
 
         this.nonTerminalIndices = new short[chartArraySize];
         Arrays.fill(nonTerminalIndices, Short.MIN_VALUE);
+
+        this.outsideProbabilities = new float[insideProbabilities.length];
+        Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
 
         this.maxUnaryChainLength = goldTree.maxUnaryChainLength() + 1;
         this.beamWidth = this.lexicalRowBeamWidth = ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits
@@ -121,19 +127,10 @@ public class ConstrainedChart extends ParallelArrayChart {
                     packedChildren[i] = sparseMatrixGrammar.cartesianProductFunction.packLexical(child);
 
                     tokenList.add(child);
-                } else {
-                    // Unary production
-                    final short child = (short) splitVocabulary.getIndex(node.leftChild().label());
-                    // shiftCellEntriesDownward(cellOffset);
-                    packedChildren[i] = sparseMatrixGrammar.cartesianProductFunction.packUnary(child);
                 }
             } else {
                 // Binary production
                 midpoints[cellIndex] = (short) (start + node.leftChild().leaves());
-                final short leftChild = (short) splitVocabulary.getIndex(node.leftChild().label());
-                final short rightChild = (short) splitVocabulary.getIndex(node.rightChild().label());
-
-                packedChildren[i] = sparseMatrixGrammar.cartesianProductFunction.pack(leftChild, rightChild);
             }
             nonTerminalIndices[i] = parent;
             insideProbabilities[i] = 0;
@@ -170,11 +167,10 @@ public class ConstrainedChart extends ParallelArrayChart {
     public void clear(final ConstrainedChart constrainingChart) {
         this.size = constrainingChart.size;
         this.beamWidth = lexicalRowBeamWidth = constrainingChart.beamWidth * 2;
-        Arrays.fill(
-                nonTerminalIndices,
-                0,
-                chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength,
-                        ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits), (short) -1);
+        final int fillLength = chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength,
+                ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits);
+        Arrays.fill(nonTerminalIndices, 0, fillLength, Short.MIN_VALUE);
+        Arrays.fill(packedChildren, 0, fillLength, 0);
         computeOffsets();
 
         this.openCells = constrainingChart.openCells;
@@ -192,7 +188,7 @@ public class ConstrainedChart extends ParallelArrayChart {
         }
         nonTerminalIndices[topEntryOffset] = Short.MIN_VALUE;
         insideProbabilities[topEntryOffset] = Float.NEGATIVE_INFINITY;
-        packedChildren[topEntryOffset] = Integer.MIN_VALUE;
+        packedChildren[topEntryOffset] = 0;
     }
 
     private void computeOffsets() {
@@ -221,39 +217,49 @@ public class ConstrainedChart extends ParallelArrayChart {
 
     @Override
     public ParseTree extractBestParse(final int start, final int end, final int parent) {
-        return extractBestParse(start, end, parent, 0);
+        return extractInsideParse(start, end, 0);
     }
 
-    private ParseTree extractBestParse(final int start, final int end, final int parent, final int unaryDepth) {
+    private ParseTree extractInsideParse(final int start, final int end, final int unaryDepth) {
 
         if (unaryDepth > maxUnaryChainLength) {
             throw new IllegalArgumentException("Max unary chain length exceeded");
         }
 
-        final int i = cellOffset(start, end) + unaryDepth * splitVocabulary.maxSplits
-                + splitVocabulary.subcategoryIndices[parent];
+        final int cellOffset = cellOffset(start, end);
+        final int startIndex = cellOffset + unaryDepth * splitVocabulary.maxSplits;
 
-        final int nt = nonTerminalIndices[i];
-        if (nt != parent) {
-            System.out.format("Discrepancy; parent = %s (%d); NT = %s (%d)\n", splitVocabulary.getSymbol(parent),
-                    parent, splitVocabulary.getSymbol(nt), nt);
+        // Find maximum probability parent
+        float maxProbability = Float.NEGATIVE_INFINITY;
+        short maxProbabilityParent = Short.MIN_VALUE;
+        int maxProbabilityIndex = -1;
+        for (int i = startIndex; i < startIndex + splitVocabulary.splits[nonTerminalIndices[startIndex]]; i++) {
+            if (insideProbabilities[i] > maxProbability) {
+                maxProbability = insideProbabilities[i];
+                maxProbabilityParent = nonTerminalIndices[i];
+                maxProbabilityIndex = i;
+            }
         }
 
-        final ParseTree subtree = new ParseTree(splitVocabulary.getSymbol(parent));
-        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(packedChildren[i]);
-        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(packedChildren[i]);
+        final ParseTree subtree = new ParseTree(splitVocabulary.getSymbol(maxProbabilityParent));
 
-        if (rightChild == Production.UNARY_PRODUCTION) {
-            subtree.children.add(extractBestParse(start, end, leftChild, unaryDepth + 1));
-
-        } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-            subtree.addChild(new ParseTree(lexicon.getSymbol(leftChild)));
-
+        if (packedChildren[maxProbabilityIndex] < 0) {
+            // Lexical production
+            final String sChild = lexicon.getSymbol(sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
+                    packedChildren[maxProbabilityIndex]));
+            subtree.addChild(new ParseTree(sChild));
+        } else if (unaryDepth < unaryChainDepth(cellOffset) - 1) {
+            // Unary production
+            final String sParent = splitVocabulary.getSymbol(maxProbabilityParent);
+            if (sParent.startsWith("@VP")) {
+                System.out.println(sParent + " as unary");
+            }
+            subtree.children.add(extractInsideParse(start, end, unaryDepth + 1));
         } else {
-            // binary production
+            // Binary production
             final short edgeMidpoint = midpoints[cellIndex(start, end)];
-            subtree.children.add(extractBestParse(start, edgeMidpoint, leftChild, 0));
-            subtree.children.add(extractBestParse(edgeMidpoint, end, rightChild, 0));
+            subtree.children.add(extractInsideParse(start, edgeMidpoint, 0));
+            subtree.children.add(extractInsideParse(edgeMidpoint, end, 0));
         }
         return subtree;
     }
@@ -271,6 +277,19 @@ public class ConstrainedChart extends ParallelArrayChart {
         for (int i = offset; i < offset + beamWidth; i++) {
             if (nonTerminalIndices[i] == nonTerminal) {
                 return insideProbabilities[i];
+            }
+        }
+        return Float.NEGATIVE_INFINITY;
+    }
+
+    public float getOutside(final int start, final int end, final short nonTerminal) {
+        final int offset = cellOffset(start, end);
+
+        // We could compute the possible indices directly, but it's a very short range to linear search, and this method
+        // should only be called in testing
+        for (int i = offset; i < offset + beamWidth; i++) {
+            if (nonTerminalIndices[i] == nonTerminal) {
+                return outsideProbabilities[i];
             }
         }
         return Float.NEGATIVE_INFINITY;
@@ -310,10 +329,6 @@ public class ConstrainedChart extends ParallelArrayChart {
                     if (parent < 0) {
                         continue;
                     }
-                    final int leftChild = sparseMatrixGrammar.cartesianProductFunction
-                            .unpackLeftChild(packedChildren[i]);
-                    final short rightChild = sparseMatrixGrammar.cartesianProductFunction
-                            .unpackRightChild(packedChildren[i]);
                     final float probability = insideProbabilities[i];
 
                     // Record the parent non-terminal and sum the probabilities
@@ -326,23 +341,12 @@ public class ConstrainedChart extends ParallelArrayChart {
                             : Math.logSum(currentMergedProbability, probability);
 
                     // Record packed children
-                    if (rightChild == Production.LEXICAL_PRODUCTION) {
+                    if (packedChildren[i] < 0) {
                         // A lexical entry is the same regardless of grammar
+                        final int leftChild = sparseMatrixGrammar.cartesianProductFunction
+                                .unpackLeftChild(packedChildren[i]);
                         mergedChart.packedChildren[mergedEntryIndex] = mergedGrammar.cartesianProductFunction
                                 .packLexical(leftChild);
-
-                    } else if (rightChild == Production.UNARY_PRODUCTION) {
-                        final short mergedLeftChild = mergedVocabulary.mergedIndices.get((short) leftChild);
-                        final int mergedChildren = mergedGrammar.cartesianProductFunction.packUnary(mergedLeftChild);
-                        mergedChart.packedChildren[mergedEntryIndex] = mergedChildren;
-
-                    } else {
-                        // Binary Production
-                        final short mergedLeftChild = mergedVocabulary.mergedIndices.get((short) leftChild);
-                        final short mergedRightChild = mergedVocabulary.mergedIndices.get(rightChild);
-                        final int mergedChildren = mergedGrammar.cartesianProductFunction.pack(mergedLeftChild,
-                                mergedRightChild);
-                        mergedChart.packedChildren[mergedEntryIndex] = mergedChildren;
                     }
                 }
             }
