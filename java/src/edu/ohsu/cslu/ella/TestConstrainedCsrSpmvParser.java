@@ -101,127 +101,20 @@ public class TestConstrainedCsrSpmvParser {
     }
 
     @Test
-    public void test1SplitConstrainedViterbiParse() {
-
-        final ParseTree parseTree1 = parseWithGrammar1(false);
-        final ConstrainedChart chart1 = parser1.chart;
-
-        // Verify expected probabilities in a few cells
-        final SymbolSet<String> vocabulary = plGrammar1.vocabulary;
-        final int top = vocabulary.getIndex("top");
-        final int a_0 = vocabulary.getIndex("a_0");
-        final int a_1 = vocabulary.getIndex("a_1");
-        final int b_0 = vocabulary.getIndex("b_0");
-        final int b_1 = vocabulary.getIndex("b_1");
-
-        assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(0, 1, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(0, 1, a_1), .001f);
-        assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(1, 2, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(1, 2, a_1), .001f);
-        assertLogFractionEquals(Math.log(1f / 2), chart1.getInside(2, 3, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 2), chart1.getInside(2, 3, b_1), .001f);
-
-        assertLogFractionEquals(Math.log(1f / 16), chart1.getInside(3, 4, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 16), chart1.getInside(3, 4, b_1), .001f);
-        assertLogFractionEquals(Math.log(1f / 6), chart1.getInside(4, 5, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 6), chart1.getInside(4, 5, a_1), .001f);
-
-        assertLogFractionEquals(Math.log(1f / 216), chart1.getInside(0, 2, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 216), chart1.getInside(0, 2, a_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 2, b_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 2, b_1), .001f);
-
-        assertLogFractionEquals(Math.log(1f / 1536), chart1.getInside(3, 5, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 1536), chart1.getInside(3, 5, b_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(3, 5, a_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(3, 5, a_1), .001f);
-
-        assertLogFractionEquals(Math.log(1.0 / 191102976), chart1.getInside(0, 5, top), .001f);
-        assertLogFractionEquals(Math.log(1.0 / 95551488), chart1.getInside(0, 5, a_0), .001f);
-        assertLogFractionEquals(Math.log(1.0 / 95551488), chart1.getInside(0, 5, a_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 4, b_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 4, b_1), .001f);
-
-        // And ensure that the extracted and unfactored parse matches the input gold tree
-        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class).unfactor(
-                GrammarFormatType.Berkeley);
-        assertEquals(AllEllaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
-    }
-
-    @Test
-    public void test2SplitConstrainedViterbiParse() {
-
-        // Parse with the split-1 grammar, creating a new constraining chart.
-        parseWithGrammar1(false);
-
-        // Split the grammar again
-        // Split the grammar
-        final ProductionListGrammar plGrammar2 = plGrammar1.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
-        final ConstrainedCsrSparseMatrixGrammar csrGrammar2 = new ConstrainedCsrSparseMatrixGrammar(
-                plGrammar2.binaryProductions, plGrammar2.unaryProductions, plGrammar2.lexicalProductions,
-                plGrammar2.vocabulary, plGrammar2.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
-
-        // Parse with the split-2 grammar, constrained by the split-1 chart
-        // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
-        final ParserDriver opts = new ParserDriver();
-        opts.cellSelector = new ConstrainedCellSelector();
-        final ConstrainedCsrSpmvParser parser2 = new ConstrainedCsrSpmvParser(opts, csrGrammar2);
-        final ParseTree parseTree2 = parser2.findBestParse(parser1.chart);
-        final ConstrainedChart chart2 = parser2.chart;
-
-        // Verify expected probabilities in a few cells
-        final SymbolSet<String> vocabulary = plGrammar2.vocabulary;
-        final int a_0 = vocabulary.getIndex("a_0");
-        final int a_3 = vocabulary.getIndex("a_3");
-        final int b_0 = vocabulary.getIndex("b_0");
-        final int b_2 = vocabulary.getIndex("b_2");
-
-        assertLogFractionEquals(Math.log(1f / 3), chart2.getInside(0, 1, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 3), chart2.getInside(0, 1, a_3), .001f);
-        assertLogFractionEquals(Math.log(1f / 3), chart2.getInside(1, 2, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 3), chart2.getInside(1, 2, a_3), .001f);
-        assertLogFractionEquals(Math.log(1f / 2), chart2.getInside(2, 3, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 2), chart2.getInside(2, 3, b_2), .001f);
-
-        assertLogFractionEquals(Math.log(1f / 32), chart2.getInside(3, 4, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 32), chart2.getInside(3, 4, b_2), .001f);
-        assertLogFractionEquals(Math.log(1f / 6), chart2.getInside(4, 5, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 6), chart2.getInside(4, 5, a_3), .001f);
-
-        assertLogFractionEquals(Math.log(1f / 216 / 4), chart2.getInside(0, 2, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 216 / 4), chart2.getInside(0, 2, a_3), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 2, b_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 2, b_2), .001f);
-
-        assertLogFractionEquals(Math.log(1f / 1536 / 8), chart2.getInside(3, 5, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 1536 / 8), chart2.getInside(3, 5, b_2), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(3, 5, a_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(3, 5, a_3), .001f);
-
-        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 4, b_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 4, b_2), .001f);
-
-        // And ensure that the extracted and unfactored parse matches the input gold tree
-        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree2.toString(), String.class).unfactor(
-                GrammarFormatType.Berkeley);
-        assertEquals(AllEllaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
-    }
-
-    @Test
-    public void test1SplitConstrainedLogsumParse() {
+    public void test1SplitConstrainedParse() {
 
         final ParseTree parseTree1 = parseWithGrammar1(true);
         final ConstrainedChart chart1 = parser1.chart;
 
         // Verify expected probabilities in a few cells
         final SymbolSet<String> vocabulary = plGrammar1.vocabulary;
-        final int top = vocabulary.getIndex("top");
-        final int a_0 = vocabulary.getIndex("a_0");
-        final int a_1 = vocabulary.getIndex("a_1");
-        final int b_0 = vocabulary.getIndex("b_0");
-        final int b_1 = vocabulary.getIndex("b_1");
+        final short top = (short) vocabulary.getIndex("top");
+        final short a_0 = (short) vocabulary.getIndex("a_0");
+        final short a_1 = (short) vocabulary.getIndex("a_1");
+        final short b_0 = (short) vocabulary.getIndex("b_0");
+        final short b_1 = (short) vocabulary.getIndex("b_1");
 
+        // Verify inside probabilities
         assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(0, 1, a_0), .001f);
         assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(0, 1, a_1), .001f);
         assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(1, 2, a_0), .001f);
@@ -250,6 +143,30 @@ public class TestConstrainedCsrSpmvParser {
         assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 4, b_0), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 4, b_1), .001f);
 
+        // And outside probabilities
+        parser1.computeOutsideProbabilities();
+        assertLogFractionEquals(Math.log(1.0), chart1.getOutside(0, 5, top), .001f);
+
+        final double outside05 = Math.log(1.0 / 186624);
+        assertLogFractionEquals(outside05, chart1.getOutside(0, 5, a_0), .001f);
+        assertLogFractionEquals(outside05, chart1.getOutside(0, 5, a_1), .001f);
+
+        final double outside03 = Math.log((1.0 / 12 * 4) * Math.exp(outside05) * (1.0 / 192));
+        assertLogFractionEquals(outside03, chart1.getOutside(0, 3, a_0), .001f);
+        assertLogFractionEquals(outside03, chart1.getOutside(0, 3, a_1), .001f);
+
+        final double outside23 = Math.log((1.0 / 12 * 4) * Math.exp(outside03) * (1.0 / 54));
+        assertLogFractionEquals(outside23, chart1.getOutside(2, 3, b_0), .001f);
+        assertLogFractionEquals(outside23, chart1.getOutside(2, 3, b_1), .001f);
+
+        final double outside35 = Math.log((1.0 / 12 * 4) * Math.exp(outside05) * (1.0 / 324));
+        assertLogFractionEquals(outside35, chart1.getOutside(3, 5, b_0), .001f);
+        assertLogFractionEquals(outside35, chart1.getOutside(3, 5, b_1), .001f);
+
+        final double outside34 = Math.log((1.0 / 16 * 4) * Math.exp(outside35) * (1.0 / 6) * (1.0 / 8 * 4));
+        assertLogFractionEquals(outside34, chart1.getOutside(3, 4, b_0), .001f);
+        assertLogFractionEquals(outside34, chart1.getOutside(3, 4, b_1), .001f);
+
         // And ensure that the extracted and unfactored parse matches the input gold tree
         final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class).unfactor(
                 GrammarFormatType.Berkeley);
@@ -257,7 +174,7 @@ public class TestConstrainedCsrSpmvParser {
     }
 
     @Test
-    public void test2SplitConstrainedLogSumParse() {
+    public void test2SplitConstrainedParse() {
 
         // Parse with the split-1 grammar, creating a new constraining chart.
         parseWithGrammar1(true);
@@ -281,10 +198,10 @@ public class TestConstrainedCsrSpmvParser {
 
         // Verify expected probabilities in a few cells
         final SymbolSet<String> vocabulary = plGrammar2.vocabulary;
-        final int a_0 = vocabulary.getIndex("a_0");
-        final int a_3 = vocabulary.getIndex("a_3");
-        final int b_0 = vocabulary.getIndex("b_0");
-        final int b_2 = vocabulary.getIndex("b_2");
+        final short a_0 = (short) vocabulary.getIndex("a_0");
+        final short a_3 = (short) vocabulary.getIndex("a_3");
+        final short b_0 = (short) vocabulary.getIndex("b_0");
+        final short b_2 = (short) vocabulary.getIndex("b_2");
 
         assertLogFractionEquals(Math.log(1f / 3), chart2.getInside(0, 1, a_0), .001f);
         assertLogFractionEquals(Math.log(1f / 3), chart2.getInside(0, 1, a_3), .001f);
@@ -293,18 +210,18 @@ public class TestConstrainedCsrSpmvParser {
         assertLogFractionEquals(Math.log(1f / 2), chart2.getInside(2, 3, b_0), .001f);
         assertLogFractionEquals(Math.log(1f / 2), chart2.getInside(2, 3, b_2), .001f);
 
-        assertLogFractionEquals(Math.log(1f / 16), chart2.getInside(3, 4, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 16), chart2.getInside(3, 4, b_2), .001f);
+        assertLogFractionEquals(Math.log(1f / 8), chart2.getInside(3, 4, b_0), .001f);
+        assertLogFractionEquals(Math.log(1f / 8), chart2.getInside(3, 4, b_2), .001f);
         assertLogFractionEquals(Math.log(1f / 6), chart2.getInside(4, 5, a_0), .001f);
         assertLogFractionEquals(Math.log(1f / 6), chart2.getInside(4, 5, a_3), .001f);
 
-        assertLogFractionEquals(Math.log(1f / 216), chart2.getInside(0, 2, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 216), chart2.getInside(0, 2, a_3), .001f);
+        assertLogFractionEquals(Math.log(1f / 54), chart2.getInside(0, 2, a_0), .001f);
+        assertLogFractionEquals(Math.log(1f / 54), chart2.getInside(0, 2, a_3), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 2, b_0), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 2, b_2), .001f);
 
-        assertLogFractionEquals(Math.log(1f / 1536), chart2.getInside(3, 5, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 1536), chart2.getInside(3, 5, b_2), .001f);
+        assertLogFractionEquals(Math.log(1f / 192), chart2.getInside(3, 5, b_0), .001f);
+        assertLogFractionEquals(Math.log(1f / 192), chart2.getInside(3, 5, b_2), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(3, 5, a_0), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(3, 5, a_3), .001f);
 
@@ -372,10 +289,8 @@ public class TestConstrainedCsrSpmvParser {
         parseAndCheck(SharedNlpTests.unitTestDataAsReader(corpus), csr0, csr1);
     }
 
-    private Reader parseAndCheck(final Reader corpus, final ConstrainedCsrSparseMatrixGrammar unsplitGrammar,
+    private void parseAndCheck(final Reader corpus, final ConstrainedCsrSparseMatrixGrammar unsplitGrammar,
             final ConstrainedCsrSparseMatrixGrammar splitGrammar) throws IOException {
-
-        final StringBuilder sb = new StringBuilder();
 
         final BufferedReader br = new BufferedReader(corpus);
 
@@ -394,16 +309,12 @@ public class TestConstrainedCsrSpmvParser {
 
             final ParseTree parseTree1 = parser.findBestParse(constrainingChart);
             final BinaryTree<String> bt = BinaryTree.read(parseTree1.toString(), String.class);
-            sb.append(bt.toString());
-            sb.append('\n');
             final NaryTree<String> unfactoredTree = bt.unfactor(GrammarFormatType.Berkeley);
 
             // Ensure that the resulting parse matches the gold tree
             assertEquals(goldTree.toString(), unfactoredTree.toString());
             count++;
         }
-
-        return new StringReader(sb.toString());
     }
 
     @Test

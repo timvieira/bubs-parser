@@ -2,7 +2,6 @@ package edu.ohsu.cslu.ella;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -103,10 +102,10 @@ public class TestConstrainedChart {
                         .toString());
     }
 
-    @Test
-    public void testCountRuleObservations() {
-        fail("Not Implemented");
-    }
+    // @Test
+    // public void testCountRuleObservations() {
+    // fail("Not Implemented");
+    // }
 
     @Test
     public void testWithInternalStartSymbol() {
