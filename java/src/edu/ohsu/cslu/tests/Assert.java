@@ -36,6 +36,18 @@ public class Assert {
         }
     }
 
+    /**
+     * Returns a string representation of a rational approximation of the exponentiation of a real.
+     * 
+     * Performs brute-force search for numerators from 1 to 20. If no approximation is found within 0.01 of the
+     * specified value, returns the closest approximation with a numerator of 1.
+     * 
+     * This hackish approximation is useful for small fractions (3/16, 5/12, etc.) and for small probabilities, which
+     * can often be well-represented by a numerator of 1 and an appropriate denominator (e.g. 1/12385)
+     * 
+     * @param logProbability
+     * @return
+     */
     private static String fraction(final double logProbability) {
         if (logProbability == 0f) {
             return "1";
@@ -43,6 +55,15 @@ public class Assert {
         if (logProbability == Double.NEGATIVE_INFINITY) {
             return "0";
         }
-        return "1/" + (int) java.lang.Math.round(java.lang.Math.exp(-1.0 * logProbability));
+
+        final double exp = java.lang.Math.exp(-1.0 * logProbability);
+        for (int numerator = 1; numerator <= 20; numerator++) {
+            final double denominator = exp * numerator;
+            if (java.lang.Math.abs(denominator - java.lang.Math.round(denominator)) <= 0.01) {
+                return String.format("%d/%d", numerator, java.lang.Math.round(denominator));
+            }
+        }
+
+        return String.format("1/%d", java.lang.Math.round(exp));
     }
 }
