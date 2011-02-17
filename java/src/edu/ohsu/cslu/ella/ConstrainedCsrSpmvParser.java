@@ -120,6 +120,8 @@ public class ConstrainedCsrSpmvParser extends
             return parseTree;
         }
 
+        computeOutsideProbabilities();
+
         return chart.extractBestParse(grammar.startSymbol);
     }
 
@@ -396,21 +398,21 @@ public class ConstrainedCsrSpmvParser extends
     public void computeOutsideProbabilities() {
 
         final int cellIndex = chart.cellIndex(0, chart.size());
-        final int offset = chart.offset(cellIndex);
+        int offset = chart.offset(cellIndex);
 
         // Outside probability of the start symbol is 1
         chart.outsideProbabilities[offset] = 0;
 
         for (int unaryDepth = 1; unaryDepth < chart.unaryChainDepth(offset); unaryDepth++) {
-            computeUnaryOutsideProbabilities(offset, unaryDepth);
+            offset += splitVocabulary.maxSplits;
+            computeUnaryOutsideProbabilities(offset);
         }
 
         // Recursively compute and populate outside probabilities of binary children
-        // computeOutsideProbabilities((short) 0, chart.midpoints[cellIndex], (short) 0, (short) chart.size(),
-        // BranchDirection.LEFT);
-        // computeOutsideProbabilities(chart.midpoints[cellIndex], (short) chart.size(), (short) 0, (short)
-        // chart.size(),
-        // BranchDirection.RIGHT);
+        computeOutsideProbabilities((short) 0, chart.midpoints[cellIndex], (short) 0, (short) chart.size(),
+                BranchDirection.LEFT);
+        computeOutsideProbabilities(chart.midpoints[cellIndex], (short) chart.size(), (short) 0, (short) chart.size(),
+                BranchDirection.RIGHT);
     }
 
     private void computeOutsideProbabilities(final short start, final short end, final short parentStart,
@@ -419,29 +421,19 @@ public class ConstrainedCsrSpmvParser extends
         final int cellIndex = chart.cellIndex(start, end);
         int offset = chart.offset(cellIndex);
         final int parentIndex = chart.cellIndex(parentStart, parentEnd);
-        final int parentOffset = chart.offset(parentIndex);
+        final int parentOffset = chart.offset(parentIndex) + (chart.unaryChainDepth(chart.offset(parentIndex)) - 1)
+                * splitVocabulary.maxSplits;
 
         // Top level (generally a binary child)
-        final short parentStartSplit = chart.nonTerminalIndices[offset];
+        final short parentStartSplit = chart.nonTerminalIndices[parentOffset];
         final short parentEndSplit = (short) (parentStartSplit == 0 ? 0 : parentStartSplit
                 + splitVocabulary.splits[parentStartSplit] - 1);
+
         final short startSplit = chart.nonTerminalIndices[offset];
         final short endSplit = (short) (startSplit == 0 ? 0 : startSplit + splitVocabulary.splits[startSplit] - 1);
 
-        // Compute unary outside probabilities at each unary child level
-        for (int unaryDepth = chart.unaryChainDepth(offset); unaryDepth > 0; unaryDepth--) {
-            computeUnaryOutsideProbabilities(offset, unaryDepth);
-        }
-
-        offset += splitVocabulary.maxSplits;
-
-        // At the bottom of the unary chain will be either a lexical entry or a binary parent
-        if (chart.packedChildren[offset] < 0) {
-            return;
-        }
-
         // foreach binary parent
-        for (short parent = parentStartSplit; parent < parentEndSplit; parent++) {
+        for (short parent = parentStartSplit; parent <= parentEndSplit; parent++) {
             final int parentSubcategoryIndex = splitVocabulary.subcategoryIndices[parent];
             final int parentEntryIndex = parentOffset + parentSubcategoryIndex;
             final float parentOutsideProbability = chart.outsideProbabilities[parentEntryIndex];
@@ -451,34 +443,64 @@ public class ConstrainedCsrSpmvParser extends
 
                 final int grammarChildren = grammar.csrBinaryColumnIndices[j];
 
+                // String sSibling;
+                // String sSiblingInside;
+                // String sRule;
                 short grammarChild;
+                short sibling;
                 int siblingEntryIndex;
                 if (branchDirection == BranchDirection.LEFT) {
                     grammarChild = (short) grammar.cartesianProductFunction.unpackLeftChild(grammarChildren);
-                    final short sibling = grammar.cartesianProductFunction.unpackRightChild(grammarChildren);
-                    siblingEntryIndex = chart.offset(chart.cellIndex(parentStart, start))
-                            + splitVocabulary.subcategoryIndices[sibling];
-                } else {
-                    grammarChild = grammar.cartesianProductFunction.unpackRightChild(grammarChildren);
-                    final short sibling = (short) grammar.cartesianProductFunction.unpackLeftChild(grammarChildren);
+                    sibling = grammar.cartesianProductFunction.unpackRightChild(grammarChildren);
+                    // sSibling = splitVocabulary.getSymbol(sibling);
                     siblingEntryIndex = chart.offset(chart.cellIndex(end, parentEnd))
                             + splitVocabulary.subcategoryIndices[sibling];
+                    // sSiblingInside = fraction(chart.insideProbabilities[siblingEntryIndex]);
+                    // sRule = String.format("%s -> %s %s", splitVocabulary.getSymbol(parent),
+                    // splitVocabulary.getSymbol(grammarChild), splitVocabulary.getSymbol(sibling));
+                } else {
+                    grammarChild = grammar.cartesianProductFunction.unpackRightChild(grammarChildren);
+                    sibling = (short) grammar.cartesianProductFunction.unpackLeftChild(grammarChildren);
+                    // sSibling = splitVocabulary.getSymbol(sibling);
+                    siblingEntryIndex = chart.offset(chart.cellIndex(parentStart, start))
+                            + splitVocabulary.subcategoryIndices[sibling];
+                    // sSiblingInside = fraction(chart.insideProbabilities[siblingEntryIndex]);
+                    // sRule = String.format("%s -> %s %s", splitVocabulary.getSymbol(parent),
+                    // splitVocabulary.getSymbol(sibling), splitVocabulary.getSymbol(grammarChild));
                 }
 
                 // Skip grammar entries which don't match the child cell populations
-                if (grammarChild < startSplit || grammarChild > endSplit) {
+                if (grammarChild < startSplit || grammarChild > endSplit
+                        || sibling != chart.nonTerminalIndices[siblingEntryIndex]) {
                     continue;
                 }
 
                 final int entryIndex = offset + splitVocabulary.subcategoryIndices[grammarChild];
 
-                // Outside probability = production probability x parent outside x inside x sibling inside
+                // Outside probability = sum(production probability x parent outside x sibling inside)
+                // final String sGrammarProb = fraction(grammar.csrBinaryProbabilities[j]);
+                // final String sParentOutside = fraction(parentOutsideProbability);
+                // final String sCurrentOutside = fraction(chart.outsideProbabilities[entryIndex]);
                 final float outsideProbability = grammar.csrBinaryProbabilities[j] + parentOutsideProbability
-                        + chart.insideProbabilities[entryIndex] + chart.insideProbabilities[siblingEntryIndex];
+                        + chart.insideProbabilities[siblingEntryIndex];
+                // final String sOutsideSum = fraction(Math.logSum(outsideProbability,
+                // chart.outsideProbabilities[entryIndex]));
                 chart.outsideProbabilities[entryIndex] = Math.logSum(outsideProbability,
                         chart.outsideProbabilities[entryIndex]);
             }
         }
+
+        // Compute unary outside probabilities at each unary child level
+        for (int unaryDepth = 1; unaryDepth < chart.unaryChainDepth(offset); unaryDepth++) {
+            offset += splitVocabulary.maxSplits;
+            computeUnaryOutsideProbabilities(offset);
+        }
+
+        // If the entry we just computed is a lexical entry, we're done
+        if (end - start == 1) {
+            return;
+        }
+
         // Recursively compute outside probability of binary children
         final short midpoint = chart.midpoints[cellIndex];
 
@@ -486,12 +508,12 @@ public class ConstrainedCsrSpmvParser extends
         computeOutsideProbabilities(midpoint, end, start, end, BranchDirection.RIGHT); // right child
     }
 
-    private void computeUnaryOutsideProbabilities(final int offset, final int unaryDepth) {
-        final short parentStartSplit = chart.nonTerminalIndices[offset];
+    private void computeUnaryOutsideProbabilities(final int offset) {
+        final short parentStartSplit = chart.nonTerminalIndices[offset - splitVocabulary.maxSplits];
         final short parentEndSplit = (short) (parentStartSplit == 0 ? 0 : parentStartSplit
                 + splitVocabulary.splits[parentStartSplit] - 1);
 
-        final short childStartSplit = chart.nonTerminalIndices[offset + unaryDepth * splitVocabulary.maxSplits];
+        final short childStartSplit = chart.nonTerminalIndices[offset];
         final short childEndSplit = (short) (childStartSplit == 0 ? 0 : childStartSplit
                 + splitVocabulary.splits[childStartSplit] - 1);
 
@@ -499,8 +521,7 @@ public class ConstrainedCsrSpmvParser extends
         for (short splitParent = parentStartSplit; splitParent <= parentStartSplit; splitParent++) {
 
             final int parentSubcategoryIndex = splitVocabulary.subcategoryIndices[splitParent];
-            final int parentEntryIndex = offset + ((unaryDepth - 1) * splitVocabulary.maxSplits)
-                    + parentSubcategoryIndex;
+            final int parentEntryIndex = offset - splitVocabulary.maxSplits + parentSubcategoryIndex;
 
             // Iterate over grammar rows headed by the parent and compute unary outside probability
             for (int j = grammar.csrUnaryRowStartIndices[parentStartSplit]; j < grammar.csrUnaryRowStartIndices[parentEndSplit + 1]; j++) {
@@ -511,17 +532,15 @@ public class ConstrainedCsrSpmvParser extends
                     continue;
                 }
 
-                final int entryIndex = offset + (unaryDepth * splitVocabulary.maxSplits)
-                        + splitVocabulary.subcategoryIndices[splitChild];
+                final int entryIndex = offset + splitVocabulary.subcategoryIndices[splitChild];
 
-                // Outside probability = production probability x parent outside x inside
+                // Outside probability = sum(production probability x parent outside)
                 final float outsideProbability = grammar.csrUnaryProbabilities[j]
-                        + chart.outsideProbabilities[parentEntryIndex] + chart.insideProbabilities[entryIndex];
+                        + chart.outsideProbabilities[parentEntryIndex];
                 chart.outsideProbabilities[entryIndex] = Math.logSum(outsideProbability,
                         chart.outsideProbabilities[entryIndex]);
             }
         }
-
     }
 
     private enum BranchDirection {

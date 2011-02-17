@@ -144,26 +144,34 @@ public class TestConstrainedCsrSpmvParser {
         assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 4, b_1), .001f);
 
         // And outside probabilities
-        parser1.computeOutsideProbabilities();
         assertLogFractionEquals(Math.log(1.0), chart1.getOutside(0, 5, top), .001f);
 
-        final double outside05 = Math.log(1.0 / 186624);
+        final double outside05 = Math.log(1.0 / 2);
         assertLogFractionEquals(outside05, chart1.getOutside(0, 5, a_0), .001f);
         assertLogFractionEquals(outside05, chart1.getOutside(0, 5, a_1), .001f);
 
-        final double outside03 = Math.log((1.0 / 12 * 4) * Math.exp(outside05) * (1.0 / 192));
+        final double outside03 = Math.log((1.0 / 12) * Math.exp(outside05) * (1.0 / 192) * 4);
         assertLogFractionEquals(outside03, chart1.getOutside(0, 3, a_0), .001f);
         assertLogFractionEquals(outside03, chart1.getOutside(0, 3, a_1), .001f);
 
-        final double outside23 = Math.log((1.0 / 12 * 4) * Math.exp(outside03) * (1.0 / 54));
+        final double outside02 = Math.log((1.0 / 12) * Math.exp(outside03) * (1.0 / 2) * 4);
+        assertLogFractionEquals(outside02, chart1.getOutside(0, 2, a_0), .001f);
+        assertLogFractionEquals(outside02, chart1.getOutside(0, 2, a_1), .001f);
+
+        final double outside01 = Math.log((1.0 / 24) * Math.exp(outside02) * (1.0 / 3) * 4);
+        assertLogFractionEquals(outside01, chart1.getOutside(0, 1, a_0), .001f);
+        assertLogFractionEquals(outside01, chart1.getOutside(0, 1, a_1), .001f);
+
+        final double outside23 = Math.log((1.0 / 12) * Math.exp(outside03) * (1.0 / 54) * 4);
         assertLogFractionEquals(outside23, chart1.getOutside(2, 3, b_0), .001f);
         assertLogFractionEquals(outside23, chart1.getOutside(2, 3, b_1), .001f);
 
-        final double outside35 = Math.log((1.0 / 12 * 4) * Math.exp(outside05) * (1.0 / 324));
+        final double outside35 = Math.log((1.0 / 12) * Math.exp(outside05) * (1.0 / 324) * 4);
         assertLogFractionEquals(outside35, chart1.getOutside(3, 5, b_0), .001f);
         assertLogFractionEquals(outside35, chart1.getOutside(3, 5, b_1), .001f);
 
-        final double outside34 = Math.log((1.0 / 16 * 4) * Math.exp(outside35) * (1.0 / 6) * (1.0 / 8 * 4));
+        // Top-level probability for splits of b in 3,4
+        final double outside34 = Math.log((1.0 / 16) * Math.exp(outside35) * (1.0 / 6) * 4);
         assertLogFractionEquals(outside34, chart1.getOutside(3, 4, b_0), .001f);
         assertLogFractionEquals(outside34, chart1.getOutside(3, 4, b_1), .001f);
 
@@ -196,8 +204,9 @@ public class TestConstrainedCsrSpmvParser {
         final ParseTree parseTree2 = parser2.findBestParse(parser1.chart);
         final ConstrainedChart chart2 = parser2.chart;
 
-        // Verify expected probabilities in a few cells
+        // Verify expected inside probabilities in a few cells
         final SymbolSet<String> vocabulary = plGrammar2.vocabulary;
+        final short top = (short) vocabulary.getIndex("top");
         final short a_0 = (short) vocabulary.getIndex("a_0");
         final short a_3 = (short) vocabulary.getIndex("a_3");
         final short b_0 = (short) vocabulary.getIndex("b_0");
@@ -227,6 +236,38 @@ public class TestConstrainedCsrSpmvParser {
 
         assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 4, b_0), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 4, b_2), .001f);
+
+        // And outside probabilities
+        assertLogFractionEquals(Math.log(1.0), chart2.getOutside(0, 5, top), .001f);
+
+        final double outside05 = Math.log(1.0 / 4);
+        assertLogFractionEquals(outside05, chart2.getOutside(0, 5, a_0), .001f);
+        assertLogFractionEquals(outside05, chart2.getOutside(0, 5, a_3), .001f);
+
+        final double outside03 = Math.log((1.0 / 48) * Math.exp(outside05) * (1.0 / 192) * 16);
+        assertLogFractionEquals(outside03, chart2.getOutside(0, 3, a_0), .001f);
+        assertLogFractionEquals(outside03, chart2.getOutside(0, 3, a_3), .001f);
+
+        final double outside02 = Math.log((1.0 / 48) * Math.exp(outside03) * (1.0 / 2) * 16);
+        assertLogFractionEquals(outside02, chart2.getOutside(0, 2, a_0), .001f);
+        assertLogFractionEquals(outside02, chart2.getOutside(0, 2, a_3), .001f);
+
+        final double outside01 = Math.log((1.0 / 96) * Math.exp(outside02) * (1.0 / 3) * 16);
+        assertLogFractionEquals(outside01, chart2.getOutside(0, 1, a_0), .001f);
+        assertLogFractionEquals(outside01, chart2.getOutside(0, 1, a_3), .001f);
+
+        final double outside23 = Math.log((1.0 / 48) * Math.exp(outside03) * (1.0 / 54) * 16);
+        assertLogFractionEquals(outside23, chart2.getOutside(2, 3, b_0), .001f);
+        assertLogFractionEquals(outside23, chart2.getOutside(2, 3, b_2), .001f);
+
+        final double outside35 = Math.log((1.0 / 48) * Math.exp(outside05) * (1.0 / 324) * 16);
+        assertLogFractionEquals(outside35, chart2.getOutside(3, 5, b_0), .001f);
+        assertLogFractionEquals(outside35, chart2.getOutside(3, 5, b_2), .001f);
+
+        // Top-level probability for splits of b in 3,4
+        final double outside34 = Math.log((1.0 / 64) * Math.exp(outside35) * (1.0 / 6) * 16);
+        assertLogFractionEquals(outside34, chart2.getOutside(3, 4, b_0), .001f);
+        assertLogFractionEquals(outside34, chart2.getOutside(3, 4, b_2), .001f);
 
         // And ensure that the extracted and unfactored parse matches the input gold tree
         final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree2.toString(), String.class).unfactor(

@@ -32,9 +32,17 @@ public class Assert {
         }
 
         if (!(Math.abs(expected - actual) <= delta)) {
-            final int expectedDenominator = (int) Math.round(Math.exp(-expected));
-            final int actualDenominator = (int) Math.round(Math.exp(-actual));
-            fail("expected log(1/" + expectedDenominator + ") but was log(1/" + actualDenominator + ")");
+            fail("expected log(" + fraction(expected) + ") but was log(" + fraction(actual) + ")");
         }
+    }
+
+    private static String fraction(final double logProbability) {
+        if (logProbability == 0f) {
+            return "1";
+        }
+        if (logProbability == Double.NEGATIVE_INFINITY) {
+            return "0";
+        }
+        return "1/" + (int) java.lang.Math.round(java.lang.Math.exp(-1.0 * logProbability));
     }
 }
