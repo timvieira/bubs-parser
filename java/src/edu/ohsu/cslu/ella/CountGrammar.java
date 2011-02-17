@@ -1,8 +1,7 @@
 package edu.ohsu.cslu.ella;
 
-
 /**
- * A Grammar computed from observation counts.
+ * A Grammar computed from (possibly fractional) observation counts.
  * 
  * @author Aaron Dunlop
  * @since Jan 13, 2011
@@ -19,7 +18,7 @@ public interface CountGrammar {
      * @param rightChild
      * @return the number of observations of a binary rule.
      */
-    public int binaryRuleObservations(final String parent, final String leftChild, final String rightChild);
+    public float binaryRuleObservations(final String parent, final String leftChild, final String rightChild);
 
     /**
      * Returns the number of observations of a unary rule.
@@ -28,7 +27,7 @@ public interface CountGrammar {
      * @param child
      * @return the number of observations of a unary rule.
      */
-    public int unaryRuleObservations(final String parent, final String child);
+    public float unaryRuleObservations(final String parent, final String child);
 
     /**
      * Returns the number of observations of a lexical rule.
@@ -37,7 +36,7 @@ public interface CountGrammar {
      * @param child
      * @return the number of observations of a lexical rule.
      */
-    public int lexicalRuleObservations(final String parent, final String child);
+    public float lexicalRuleObservations(final String parent, final String child);
 
     /**
      * @return The total number of observed rules
@@ -65,6 +64,6 @@ public interface CountGrammar {
      * @param parent
      * @return the total number of times a non-terminal was observed as a parent
      */
-    public int observations(final String parent);
+    public float observations(final String parent);
 
 }
