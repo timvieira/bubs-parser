@@ -77,7 +77,8 @@ public class ConstrainedChart extends ParallelArrayChart {
     }
 
     protected ConstrainedChart(final ConstrainedChart constrainingChart, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(constrainingChart, sparseMatrixGrammar, constrainingChart.beamWidth * 2);
+        this(constrainingChart, sparseMatrixGrammar, ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits
+                * constrainingChart.maxUnaryChainLength);
     }
 
     public ConstrainedChart(final BinaryTree<String> goldTree, final SparseMatrixGrammar sparseMatrixGrammar) {
@@ -166,9 +167,9 @@ public class ConstrainedChart extends ParallelArrayChart {
 
     public void clear(final ConstrainedChart constrainingChart) {
         this.size = constrainingChart.size;
-        this.beamWidth = lexicalRowBeamWidth = constrainingChart.beamWidth * 2;
-        final int fillLength = chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength,
-                ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits);
+        final short maxSplits = ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits;
+        this.beamWidth = lexicalRowBeamWidth = constrainingChart.maxUnaryChainLength * maxSplits;
+        final int fillLength = chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength, maxSplits);
         Arrays.fill(nonTerminalIndices, 0, fillLength, Short.MIN_VALUE);
         Arrays.fill(packedChildren, 0, fillLength, 0);
         computeOffsets();
@@ -233,7 +234,7 @@ public class ConstrainedChart extends ParallelArrayChart {
         float maxProbability = Float.NEGATIVE_INFINITY;
         short maxProbabilityParent = Short.MIN_VALUE;
         int maxProbabilityIndex = -1;
-        for (int i = startIndex; i < startIndex + splitVocabulary.splits[nonTerminalIndices[startIndex]]; i++) {
+        for (int i = startIndex; i < startIndex + splitVocabulary.splitCount[nonTerminalIndices[startIndex]]; i++) {
             if (insideProbabilities[i] > maxProbability) {
                 maxProbability = insideProbabilities[i];
                 maxProbabilityParent = nonTerminalIndices[i];
@@ -250,10 +251,6 @@ public class ConstrainedChart extends ParallelArrayChart {
             subtree.addChild(new ParseTree(sChild));
         } else if (unaryDepth < unaryChainDepth(cellOffset) - 1) {
             // Unary production
-            final String sParent = splitVocabulary.getSymbol(maxProbabilityParent);
-            if (sParent.startsWith("@VP")) {
-                System.out.println(sParent + " as unary");
-            }
             subtree.children.add(extractInsideParse(start, end, unaryDepth + 1));
         } else {
             // Binary production

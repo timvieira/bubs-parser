@@ -127,6 +127,7 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
             // System.out.println("Cell Visit Time (ms) : " + parser1.totalVisitTime / 1000000);
             System.out.println("Binary SpMV Time (ms)     : " + parser1.totalConstrainedBinaryTime / 1000000);
             System.out.println("Unary SpMV Time (ms)      : " + parser1.totalConstrainedUnaryTime / 1000000);
+            System.out.println("Outside Time (ms)         : " + parser1.totalConstrainedOutsideTime / 1000000);
             System.out.println("Extraction Time (ms)      : " + parser1.totalExtractionTime / 1000000);
         }
     }

@@ -201,7 +201,7 @@ public class TestConstrainedCsrSpmvParser {
         opts.cellSelector = new ConstrainedCellSelector();
         opts.realSemiring = true;
         final ConstrainedCsrSpmvParser parser2 = new ConstrainedCsrSpmvParser(opts, csrGrammar2);
-        final ParseTree parseTree2 = parser2.findBestParse(parser1.chart);
+        final ParseTree parseTree2 = parser2.findBestParse(chart0);
         final ConstrainedChart chart2 = parser2.chart;
 
         // Verify expected inside probabilities in a few cells
@@ -392,9 +392,7 @@ public class TestConstrainedCsrSpmvParser {
             final ConstrainedChart c0 = new ConstrainedChart(tree0, csr0);
 
             final BinaryTree<String> tree1 = BinaryTree.read(p1.findBestParse(c0).toString(), String.class);
-            final ConstrainedChart c1 = p1.chart;
-
-            final BinaryTree<String> tree2 = BinaryTree.read(p2.findBestParse(c1).toString(), String.class);
+            final BinaryTree<String> tree2 = BinaryTree.read(p2.findBestParse(c0).toString(), String.class);
             final BinaryTree<String> preSplitTree = toPreSplitTree(tree2);
 
             // Ensure that the resulting parse matches the constraining 1-split parse
@@ -443,9 +441,10 @@ public class TestConstrainedCsrSpmvParser {
             final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
 
             // Parse with the split-1 grammar
-            p1.findBestParse(new ConstrainedChart(tree0, csr0));
+            final ConstrainedChart c0 = new ConstrainedChart(tree0, csr0);
+            p1.findBestParse(c0);
             // Parse with the split-2 grammar (constrained by the split-1 parse)
-            p2.findBestParse(p1.chart).toString();
+            p2.findBestParse(c0).toString();
 
             // Apply the grammar merge to the split-2 chart
             final ConstrainedChart c2b = p2.chart.merge(csr2b);
@@ -454,7 +453,7 @@ public class TestConstrainedCsrSpmvParser {
             assertEquals(goldTree.toString(), BinaryTree.read(c2b.extractBestParse(0).toString(), String.class)
                     .unfactor(GrammarFormatType.Berkeley).toString());
 
-            final BinaryTree<String> tree3 = BinaryTree.read(p3.findBestParse(c2b).toString(), String.class);
+            final BinaryTree<String> tree3 = BinaryTree.read(p3.findBestParse(c0).toString(), String.class);
 
             // Ensure that the resulting parse matches the gold tree
             assertEquals(goldTree.toString(), tree3.unfactor(GrammarFormatType.Berkeley).toString());

@@ -90,6 +90,8 @@ public class TestProductionListGrammar {
 
         // s, a_0, a_1, b_0, b_1
         assertArrayEquals(new short[] { 0, 0, 1, 0, 1 }, split1.vocabulary.subcategoryIndices);
+        assertArrayEquals(new short[] { 1, 2, 2, 2, 2 }, split1.vocabulary.splitCount);
+        assertArrayEquals(new short[] { 0, 1, 1, 2, 2 }, split1.vocabulary.baseCategoryIndices);
 
         // a -> a b 2/6 should be split into 8, with probability 1/4
         assertLogFractionEquals(Math.log(2f / 6 / 4), split1.binaryLogProbability("a_0", "a_0", "b_0"), .01f);
@@ -119,6 +121,8 @@ public class TestProductionListGrammar {
 
         // s, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3
         assertArrayEquals(new short[] { 0, 0, 1, 2, 3, 0, 1, 2, 3 }, split2.vocabulary.subcategoryIndices);
+        assertArrayEquals(new short[] { 1, 4, 4, 4, 4, 4, 4, 4, 4 }, split2.vocabulary.splitCount);
+        assertArrayEquals(new short[] { 0, 1, 1, 1, 1, 2, 2, 2, 2 }, split2.vocabulary.baseCategoryIndices);
 
         // a -> a b 2/6 should now be split into 64, with probability 1/16
         assertLogFractionEquals(Math.log(2f / 6 / 16), split2.binaryLogProbability("a_1", "a_0", "b_0"), .01f);
@@ -148,6 +152,8 @@ public class TestProductionListGrammar {
 
         // s, a_0, a_1, a_2, b_0, b_1, b_2
         assertArrayEquals(new short[] { 0, 0, 1, 2, 0, 1, 2 }, merged.vocabulary.subcategoryIndices);
+        assertArrayEquals(new short[] { 1, 3, 3, 3, 3, 3, 3 }, merged.vocabulary.splitCount);
+        assertArrayEquals(new short[] { 0, 1, 1, 1, 2, 2, 2 }, merged.vocabulary.baseCategoryIndices);
 
         // We now have a_0, a_1, and a_2 (which contains the former a_2 and a_3 splits)
         // And b_0 (containing the former b_0 and b_1), b_1 (formerly b_2), and b_2 (formerly b_3)
