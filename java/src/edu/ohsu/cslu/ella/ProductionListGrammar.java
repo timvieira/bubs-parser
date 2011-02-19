@@ -227,7 +227,7 @@ public class ProductionListGrammar {
     public ProductionListGrammar split(final NoiseGenerator noiseGenerator) {
         // Produce a new vocabulary, splitting each non-terminal into two substates
 
-        final SplitVocabulary splitVocabulary = new SplitVocabulary((short) (vocabulary.maxSplits * 2));
+        final SplitVocabulary splitVocabulary = new SplitVocabulary(vocabulary, (short) (vocabulary.maxSplits * 2));
 
         // Do not split the start symbol
         splitVocabulary.addSymbol(startSymbol);
