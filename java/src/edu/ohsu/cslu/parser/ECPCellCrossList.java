@@ -1,6 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -17,9 +16,13 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
         final HashSetChartCell cell = chart.getCell(start, end);
         float leftInside, rightInside;
 
-        final boolean onlyFactored = cellSelector.isOpenOnlyFactored(start, end);
+        final int midStart = cellSelector.getMidStart(start, end);
+        final int midEnd = cellSelector.getMidEnd(start, end);
+        final boolean onlyFactored = cellSelector.hasCellConstraints()
+                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
 
-        for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
+        // System.out.println("start=" + start + " end=" + end + " midS=" + midStart + " midE=" + midEnd);
+        for (int mid = midStart; mid <= midEnd; mid++) { // mid point
             final HashSetChartCell leftCell = chart.getCell(start, mid);
             final HashSetChartCell rightCell = chart.getCell(mid, end);
             for (final int leftNT : leftCell.getLeftChildNTs()) {
@@ -37,7 +40,7 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
         }
 
         int nUnaryConsidered = 0, nUnaryInCell = 0;
-        if (cellSelector.isOpenUnary(start, end)) {
+        if (cellSelector.hasCellConstraints() == false || cellSelector.getCellConstraints().isUnaryOpen(start, end)) {
             for (final int childNT : cell.getNtArray()) {
                 for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                     if (!cell.hasNT(p.parent))
@@ -53,8 +56,7 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
             }
         }
 
-        GlobalLogger.singleton().finer(
-                "STAT: UNARY: " + currentInput.sentenceLength + " " + (end - start) + " " + nUnaryConsidered + " "
-                        + nUnaryInCell);
+        // logger.finest("STAT: UNARY: " + currentInput.sentenceLength + " " + (end - start) + " " + nUnaryConsidered +
+        // " "+ nUnaryInCell);
     }
 }

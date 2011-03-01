@@ -61,7 +61,9 @@ public class BeamCscSpmvParser extends CscSpmvParser {
             totalBinarySpMVTime += (t2 - t1);
         }
 
-        final boolean factoredOnly = cellSelector.factoredParentsOnly(start, end);
+        // final boolean factoredOnly = cellSelector.factoredParentsOnly(start, end);
+        final boolean factoredOnly = cellSelector.hasCellConstraints()
+                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
 
         /*
          * Populate the chart cell with the most probable n edges (n = beamWidth).

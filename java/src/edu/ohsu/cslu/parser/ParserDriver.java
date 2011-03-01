@@ -45,9 +45,9 @@ import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
 import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
-import edu.ohsu.cslu.parser.cellselector.CSLUTCellConstraints;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
+import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraints;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidth;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -136,13 +136,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Option(name = "-ccModel", metaVar = "file", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2009)")
     private String chartConstraintsModel = null;
-    // BufferedReader cslutScoresStream = null;
 
-    // @Option(name = "-ccTune", hidden = true, usage = "CSLU Chart Constraints tuning param (0-1)")
-    // public float chartConstraintsTune = 0.0f;
+    @Option(name = "-ccTune", metaVar = "val", usage = "CSLU Chart Constraints for Absolute (A), High Precision (P), or Linear (N): A,start,end,unary | P,pct | N,int")
+    public String chartConstraintsThresh = "A,120,120,inf";
 
-    @Option(name = "-ccTune", metaVar = "file", usage = "CSLU Chart Constraints thresholds: start,end,unary,factBeam")
-    public String chartConstraintsThresh = "90,120,0";
+    // (1) absolute thresh A,start,end,unary
+    // (2) high precision P,pct (pct cells closed score > 0)
+    // (3) linear complexity N,int (x*N max open)
+
+    @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
+    public static boolean chartConstraintsPrint = false;
 
     // == Grammar options ==
     @Option(name = "-g", metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
@@ -266,22 +269,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 }
             }
 
-            if (chartConstraintsModel != null) {
-                // cellSelectorType = CellSelectorType.CSLUT;
-                // chartConstraintsModelStream = new BufferedReader(new FileReader(chartConstraintsModel));
-                cellSelector = new CSLUTCellConstraints(new BufferedReader(new FileReader(chartConstraintsModel)),
-                        chartConstraintsThresh);
-            }
-
-            if (beamConfModelFileName != null) {
-                cellSelector = new PerceptronBeamWidth(new BufferedReader(new FileReader(beamConfModelFileName)),
-                        beamConfBias);
-                // beamConfModel = new AveragedPerceptron(new BufferedReader(new FileReader(beamConfModelFileName)));
-                // if (beamConfBias != null) {
-                // beamConfModel.setBias(beamConfBias);
-                // }
-            }
-
             if (researchParserType == ResearchParserType.BSCPBeamConfTrain && featTemplate == null) {
                 throw new CmdLineException(cmdlineParser,
                         "ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
@@ -291,6 +278,26 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             if ((edgeFOMType == EdgeSelectorType.BoundaryInOut || edgeFOMType == EdgeSelectorType.InsideWithFwdBkwd)
                     && fomModelFileName == null) {
                 throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomModel param set");
+            }
+
+            grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
+
+            if (chartConstraintsModel != null) {
+                // cellSelectorType = CellSelectorType.CSLUT;
+                // chartConstraintsModelStream = new BufferedReader(new FileReader(chartConstraintsModel));
+                // cellSelector = new CSLUTCellConstraints(new BufferedReader(new FileReader(chartConstraintsModel)),
+                // chartConstraintsThresh);
+                cellSelector = new OHSUCellConstraints(new BufferedReader(new FileReader(chartConstraintsModel)),
+                        chartConstraintsThresh, grammar.isLeftFactored());
+            }
+
+            if (beamConfModelFileName != null) {
+                cellSelector = new PerceptronBeamWidth(new BufferedReader(new FileReader(beamConfModelFileName)),
+                        beamConfBias);
+                // beamConfModel = new AveragedPerceptron(new BufferedReader(new FileReader(beamConfModelFileName)));
+                // if (beamConfBias != null) {
+                // beamConfModel.setBias(beamConfBias);
+                // }
             }
 
             // Nate: perceptron span selection doesn't work any more
@@ -303,12 +310,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             // "BSCPBeamConf parser (-rp beamconf) must specify -beamConfModel");
             // }
 
-            // Read in the grammar
-            grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
             edgeSelector = EdgeSelector.create(edgeFOMType, grammar, fomModelStream);
-            // cellSelector = CellSelector.create(cellSelectorType,
-            // chartConstraintsModelStream,chartConstraintsModelStream);
-
         }
 
         GlobalLogger.singleton().fine(grammar.getStats());
@@ -515,9 +517,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
                 // TODO Return an instance of ParseStats instead of String so we can log this after the parse?
                 GlobalLogger.singleton().fine(parseStats.toString() + " " + parser.getStats());
-                if (parser instanceof ChartParser && GlobalLogger.singleton().isLoggable(Level.FINEST)) {
-                    GlobalLogger.singleton().finest(((ChartParser<?, ?>) parser).chart.toString());
-                }
+                // if (parser instanceof ChartParser && GlobalLogger.singleton().isLoggable(Level.FINEST)) {
+                // GlobalLogger.singleton().finest(((ChartParser<?, ?>) parser).chart.toString());
+                // }
                 return parseStats.parseBracketString;
             }
         });

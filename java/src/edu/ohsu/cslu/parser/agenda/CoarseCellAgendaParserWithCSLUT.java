@@ -6,18 +6,18 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.cellselector.CSLUTCellConstraints;
+import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
 public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
-    protected CSLUTCellConstraints cslutScores;
+    protected OHSUCellConstraints cellConstraints;
 
     public CoarseCellAgendaParserWithCSLUT(final ParserDriver opts, final LeftHashGrammar grammar,
-            final CSLUTCellConstraints cslutScores) {
+            final OHSUCellConstraints cellConstraints) {
         super(opts, grammar);
-        this.cslutScores = cslutScores;
+        this.cellConstraints = cellConstraints;
     }
 
     @Override
@@ -27,7 +27,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         initParser(tokens);
         addLexicalProductions(tokens);
         edgeSelector.init(chart);
-        cslutScores.init(chart, currentInput.sentence, grammar.isLeftFactored());
+        cellConstraints.initSentence(chart, currentInput.sentenceNumber, currentInput.sentence);
         addUnaryExtensionsToLexProds();
 
         for (int i = 0; i < chart.size(); i++) {
@@ -52,9 +52,12 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         final ChartEdge[] bestEdges = new ChartEdge[grammar.numNonTerms()]; // inits to null
 
         final int maxEdgesToAdd = (int) opts.param2;
-        final boolean onlyFactored = cslutScores.factoredParentsOnly(start, end);
+        final int midStart = cellSelector.getMidStart(start, end);
+        final int midEnd = cellSelector.getMidEnd(start, end);
+        final boolean onlyFactored = cellConstraints.hasCellConstraints()
+                && cellConstraints.getCellConstraints().isCellOnlyFactored(start, end);
 
-        for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
+        for (int mid = midStart; mid <= midEnd; mid++) { // mid point
             final HashSetChartCell leftCell = chart.getCell(start, mid);
             final HashSetChartCell rightCell = chart.getCell(mid, end);
             for (final int leftNT : leftCell.getLeftChildNTs()) {
@@ -85,7 +88,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
         // System.out.println(" setSpanMax: " + leftCell + " && " + rightCell);
 
-        if (cslutScores.isOpenAll(start, end)) {
+        if (cellConstraints.hasCellConstraints() && cellConstraints.getCellConstraints().isCellOpen(start, end)) {
             Collection<Production> possibleProds;
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {

@@ -309,14 +309,15 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
         // 2) compute maxc scores for unary extensions -- if a unary extension has a
         // better maxc score than any binary rule, use it instead
 
-        // NOTE: we could do this in one pass by using the FOM outside guess
+        // NOTE: we could do this in one pass by using the FOM outside estimate
         // while doing a bottom-up search. Should compare with actual outside scores.
 
-        // TODO: map Berkeley NTs down to Treebank NTs (make sure they do this in the Berkeley parser)
+        // TODO: map Berkeley NTs down to Treebank NTs
         // TODO: need to try brian's idea of not collecting any score/penalty for factored non-terms
         // since they aren't evaluated
 
         // throw new UnsupportedOperationException("goodmanMaximizeLabelRecallWithUnaries() not implemented yet.");
+
         // NOTE: does not work
 
         final int n = chart.size();

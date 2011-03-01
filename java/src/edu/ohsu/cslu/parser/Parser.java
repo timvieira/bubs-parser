@@ -23,9 +23,6 @@ public abstract class Parser<G extends Grammar> {
     protected float totalInsideScore = 0;
     protected long totalMaxMemoryMB = 0;
 
-    // protected boolean hasCellConstraints = false;
-    // protected CSLUTBlockedCells cellConstraints = null;
-
     /**
      * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
      * {@link ParserDriver}, but duplicated here as a final variable, so that the JIT can eliminate
@@ -43,9 +40,9 @@ public abstract class Parser<G extends Grammar> {
 
         this.collectDetailedStatistics = opts.collectDetailedStatistics;
 
-        // if (this.cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
+        // if (this.cellSelector instanceof CellConstraints) {
         // this.hasCellConstraints = true;
-        // cellConstraints = (CSLUTBlockedCells) cellSelector;
+        // cellConstraints = (CellConstraints) cellSelector;
         // }
     }
 
