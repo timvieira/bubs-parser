@@ -1,6 +1,5 @@
 package edu.ohsu.cslu.parser.spmv;
 
-
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -33,7 +32,11 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) chartCell;
         targetCell.allocateTemporaryStorage();
 
-        if (cellSelector.factoredParentsOnly(chartCell.start(), chartCell.end())) {
+        final boolean factoredOnly = cellSelector.hasCellConstraints()
+                && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end());
+
+        // if (cellSelector.factoredParentsOnly(chartCell.start(), chartCell.end())) {
+        if (factoredOnly) {
             binarySpmvMultiply(cartesianProductVector, grammar.factoredCscBinaryPopulatedColumns,
                     grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
                     grammar.factoredCscBinaryProbabilities, targetCell.tmpPackedChildren,

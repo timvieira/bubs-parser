@@ -9,6 +9,7 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.cellselector.CellConstraints;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidth;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -31,7 +32,11 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         origBeamWidth = Integer.MAX_VALUE;
         origGlobalBeamDelta = Float.POSITIVE_INFINITY;
         origLocalBeamDelta = Float.POSITIVE_INFINITY;
-        hasPerceptronBeamWidth = (this.cellSelector instanceof PerceptronBeamWidth);
+        hasPerceptronBeamWidth = this.cellSelector instanceof PerceptronBeamWidth;
+        // hasCellConstraints = this.cellSelector instanceof OHSUCellConstraints;
+        // if (hasCellConstraints) {
+        // cellConstraints = (OHSUCellConstraints) cellSelector;
+        // }
 
         setBeamTuneParams(opts.beamTune);
 
@@ -109,14 +114,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 // + " #push=" + cellPushed + " #considered=" + cellConsidered);
                 // }
             }
-
-            // if (chart.hasCompleteParse(grammar.startSymbol) == false) {
-            // // increase beam width after failed parse
-            // beamWidth *= 2;
-            // factoredBeamWidth *= 2;
-            // globalBeamDelta *= 2;
-            // localBeamDelta *= 2;
-            // }
         }
 
         return chart.extractBestParse(grammar.startSymbol);
@@ -127,10 +124,10 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final HashSetChartCell cell = chart.getCell(start, end);
         ChartEdge edge;
         initCell(start, end);
+        final boolean hasCellConstraints = cellSelector.hasCellConstraints();
+        final CellConstraints cc = cellSelector.getCellConstraints();
 
-        // final boolean onlyFactored = hasCellConstraints && cellConstraints.factoredParentsOnly(start, end);
         // final boolean only1BestPOS = ParserDriver.param1 == 1 && (edgeSelector instanceof BoundaryInOut);
-        final boolean onlyFactored = cellSelector.isOpenOnlyFactored(start, end);
 
         if (end - start == 1) {
             // lexical and unary productions can't compete in the same agenda until their FOM
@@ -139,13 +136,18 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 // TODO: need to be able to get POS posteriors. We could use this as the FOM and rank just like others
                 // if (!only1BestPOS || ((BoundaryInOut) edgeSelector).get1bestPOSTag(start) == lexProd.parent) {
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
-                for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
-                    addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
+                if (hasCellConstraints == false || cc.isUnaryOpen(start, end)) {
+                    for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
+                        addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
+                    }
                 }
-                // }
             }
         } else {
-            for (int mid = start + 1; mid < end; mid++) { // mid point
+            final int midStart = cellSelector.getMidStart(start, end);
+            final int midEnd = cellSelector.getMidEnd(start, end);
+            final boolean onlyFactored = hasCellConstraints && cc.isCellOnlyFactored(start, end);
+
+            for (int mid = midStart; mid <= midEnd; mid++) { // mid point
                 final HashSetChartCell leftCell = chart.getCell(start, mid);
                 final HashSetChartCell rightCell = chart.getCell(mid, end);
                 for (final int leftNT : leftCell.getLeftChildNTs()) {
@@ -180,7 +182,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             beamWidth = Math.min(beamWidth + addToBeamWidth, origBeamWidth * reparseFactor);
         }
         // for PerceptronBeamWidth and CellConstraints
-        if (cellSelector.isOpenOnlyFactored(start, end)) {
+        if (cellSelector.hasCellConstraints() && cellSelector.getCellConstraints().isCellOnlyFactored(start, end)) {
             beamWidth = Math.min(beamWidth, factoredBeamWidth);
         }
 

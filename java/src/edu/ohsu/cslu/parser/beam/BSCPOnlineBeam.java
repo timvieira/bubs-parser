@@ -25,7 +25,10 @@ public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellC
         Collection<Production> possibleProds;
         ChartEdge edge;
 
-        final boolean onlyFactored = cellSelector.factoredParentsOnly(start, end);
+        final int midStart = cellSelector.getMidStart(start, end);
+        final int midEnd = cellSelector.getMidEnd(start, end);
+        final boolean onlyFactored = cellSelector.hasCellConstraints()
+                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
 
         bestFOM = Float.NEGATIVE_INFINITY;
         onlineBeam = Float.NEGATIVE_INFINITY;
@@ -39,7 +42,7 @@ public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellC
                 }
             }
         } else {
-            for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
+            for (int mid = midStart; mid <= midEnd; mid++) { // mid point
                 final HashSetChartCell leftCell = chart.getCell(start, mid);
                 final HashSetChartCell rightCell = chart.getCell(mid, end);
                 for (final int leftNT : leftCell.getLeftChildNTs()) {

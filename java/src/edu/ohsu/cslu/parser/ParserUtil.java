@@ -111,4 +111,11 @@ public class ParserUtil {
         }
         return array;
     }
+
+    public static float str2float(final String s) {
+        if (s.toLowerCase().equals("inf")) {
+            return Float.POSITIVE_INFINITY;
+        }
+        return Float.parseFloat(s);
+    }
 }

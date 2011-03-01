@@ -5,7 +5,6 @@ import java.io.BufferedWriter;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Vector;
 
 import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.parser.ChartParser;
@@ -23,8 +22,8 @@ public class PerceptronCellSelector extends CellSelector {
     private float learningRate;
 
     // private BaseGrammar grammar;
-    private CSLUTCellConstraints cslutScores;
-    private Vector<Float> cslutStartScore, cslutEndScore;
+    private OHSUCellConstraints cellConstraints;
+    // private Vector<Float> cslutStartScore, cslutEndScore;
     private ChartParser<?, ?> parser;
     private PriorityQueue<HashSetChartCell> spanAgenda;
     private boolean[][] hasBeenPopped;
@@ -36,11 +35,11 @@ public class PerceptronCellSelector extends CellSelector {
     // We should also try to predict the number of pops as well as the span
     // Based on all of our features, I'm guessing we could learn the deficiencies
     // of our FOM function and really speed things up
-    // public PerceptronSpanSelection(final BaseGrammar grammar, final CSLUTBlockedCellsTraversal cslutScores)
+    // public PerceptronSpanSelection(final BaseGrammar grammar, final CSLUTBlockedCellsTraversal cellConstraints)
     // {
-    // public PerceptronSpanSelection(final CSLUTBlockedCellsTraversal cslutScores) {
-    public PerceptronCellSelector(final BufferedReader modelStream, final BufferedReader cslutScoresStream) {
-        cslutScores = new CSLUTCellConstraints(cslutScoresStream, null);
+    // public PerceptronSpanSelection(final CSLUTBlockedCellsTraversal cellConstraints) {
+    public PerceptronCellSelector(final BufferedReader modelStream, final OHSUCellConstraints cellConstraints) {
+        this.cellConstraints = cellConstraints;
         if (modelStream != null) {
             trainingMode = false;
             try {
@@ -59,10 +58,7 @@ public class PerceptronCellSelector extends CellSelector {
         this.parser = p;
         DEBUG = (p.opts.param1 == -1);
 
-        // cslutScores.init(parser, parser.currentSentence);
-        assert cslutScores.allStartScores.containsKey(p.currentInput.sentence);
-        cslutStartScore = cslutScores.allStartScores.get(p.currentInput.sentence);
-        cslutEndScore = cslutScores.allEndScores.get(p.currentInput.sentence);
+        cellConstraints.initSentence(parser.chart, parser.currentInput.sentenceNumber, parser.currentInput.sentence);
         final int chartSize = p.chart.size();
 
         // inits all to false
@@ -437,10 +433,10 @@ public class PerceptronCellSelector extends CellSelector {
         featList.addAll(binValue(pctMidptsOfSpan, 0, 1, 21));
 
         // CSLUT scores
-        final float startScore = cslutStartScore.get(span.start());
+        final float startScore = cellConstraints.getBeginScore(span.start());
         featList.addAll(binValue(startScore, -500, 500, 101));
 
-        final float endScore = cslutEndScore.get(span.end() - 1); // -1 because it's s word index, not a span
+        final float endScore = cellConstraints.getEndScore(span.end() - 1); // -1 because it's s word index, not a span
         featList.addAll(binValue(endScore, -500, 500, 101));
 
         if (featList.size() != numFeats) {

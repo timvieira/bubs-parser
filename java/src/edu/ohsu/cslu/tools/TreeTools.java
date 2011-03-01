@@ -45,6 +45,9 @@ public class TreeTools extends BaseCommandlineTool {
     @Option(name = "-extractUnaries", usage = "Extract unary productions from trees")
     private boolean extractUnaries = false;
 
+    @Option(name = "-minBE", usage = "Count minimum begin and end constraints for each sentence")
+    private boolean minimumBeginEndConstraints = false;
+
     private static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
     private static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
 
@@ -70,7 +73,9 @@ public class TreeTools extends BaseCommandlineTool {
             } else if (binarize) {
                 binarizeTree(tree, rightFactor, horizontalMarkov, verticalMarkov, annotatePOS, grammarFormat);
             } else if (countMaxSpans) {
-                constituentSpanCountForKristy();
+                countMaxSpanPerWord();
+            } else if (minimumBeginEndConstraints) {
+                countMinBeginEndConstraints(tree);
             } else if (extractUnaries) {
                 extractUnariesFromTree(tree);
             } else {
@@ -292,7 +297,7 @@ public class TreeTools extends BaseCommandlineTool {
         return allEmpty; // always true
     }
 
-    public static void constituentSpanCountForKristy() throws Exception {
+    public static void countMaxSpanPerWord() throws Exception {
         // to compute cell constraint scores for kristy's code, we need to
         // provide the length of the longest span that starts and and longest
         // span that ends at each word in the training/dev/test corpora
@@ -337,6 +342,40 @@ public class TreeTools extends BaseCommandlineTool {
             System.out.println(word + "\t" + leftMax.get(word) + "\t" + rightMax.get(word));
         }
 
+    }
+
+    private static void countMinBeginEndConstraints(final ParseTree tree) {
+        final int n = tree.getLeafNodes().size();
+        int i = 0;
+        for (final ParseTree leaf : tree.getLeafNodes()) {
+            leaf.contents = new Integer(i).toString();
+            i += 1;
+        }
+
+        final boolean start[] = new boolean[n + 1];
+        final boolean end[] = new boolean[n + 1];
+        for (final ParseTree node : tree.preOrderTraversal()) {
+            if (node.isNonTerminal()) {
+                final int leftIndex = Integer.parseInt(node.rightMostLeaf().contents);
+                final int rightIndex = Integer.parseInt(node.leftMostLeaf().contents) + 1;
+                // int span = rightIndex - leftIndex;
+                start[leftIndex] = true;
+                end[rightIndex] = false;
+            }
+        }
+        System.out.println("n=" + n + "\n" + "B:" + boolarray2str(start) + "\nE:" + boolarray2str(end));
+    }
+
+    public static String boolarray2str(final boolean[] x) {
+        String s = "";
+        for (int i = 0; i < x.length; i++) {
+            if (x[i]) {
+                s += " 1";
+            } else {
+                s += " 0";
+            }
+        }
+        return s;
     }
 
 }

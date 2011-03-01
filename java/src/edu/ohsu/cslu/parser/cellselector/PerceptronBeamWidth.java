@@ -14,7 +14,7 @@ import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.BinaryPerceptronSet;
 import edu.ohsu.cslu.perceptron.Classifier;
 
-public class PerceptronBeamWidth extends CellSelector {
+public class PerceptronBeamWidth extends CellConstraints {
 
     protected Classifier beamWidthModel;
     private boolean inferFactoredCells = false, classifyBaseCells = false;
@@ -22,6 +22,7 @@ public class PerceptronBeamWidth extends CellSelector {
     private boolean onlyFactored[][];
     private LinkedList<ChartCell> cellList;
     private Iterator<ChartCell> cellListIterator;
+    protected boolean grammarLeftFactored;
 
     public PerceptronBeamWidth(final BufferedReader modelStream, final String beamConfBias) {
 
@@ -52,6 +53,7 @@ public class PerceptronBeamWidth extends CellSelector {
 
     @Override
     public void initSentence(final ChartParser<?, ?> parser) {
+        grammarLeftFactored = parser.grammar.isLeftFactored();
         computeBeamWidthValues(parser);
         // init(parser.chart, parser.currentInput.sentence, parser.grammar.isLeftFactored());
     }
@@ -139,13 +141,18 @@ public class PerceptronBeamWidth extends CellSelector {
     }
 
     @Override
-    public boolean isOpenAll(final short start, final short end) {
+    public boolean isCellOpen(final short start, final short end) {
         return beamWidthValues[start][end] > 0 && onlyFactored[start][end] == false;
     }
 
     @Override
-    public boolean isOpenOnlyFactored(final short start, final short end) {
+    public boolean isCellOnlyFactored(final short start, final short end) {
         return onlyFactored[start][end];
+    }
+
+    @Override
+    public boolean isUnaryOpen(final short start, final short end) {
+        return true;
     }
 
     @Override
@@ -170,5 +177,10 @@ public class PerceptronBeamWidth extends CellSelector {
             }
         }
         return cellStats;
+    }
+
+    @Override
+    protected boolean isGrammarLeftFactored() {
+        return grammarLeftFactored;
     }
 }

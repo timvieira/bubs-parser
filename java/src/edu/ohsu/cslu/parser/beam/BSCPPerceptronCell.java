@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Vector;
 
 import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.classifier.Perceptron;
@@ -14,7 +13,7 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.cellselector.CSLUTCellConstraints;
+import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
@@ -23,14 +22,13 @@ import edu.ohsu.cslu.parser.chart.GoldChart;
 
 public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
-    private CSLUTCellConstraints cslutScores;
-    private Vector<Float> cslutStartScore, cslutEndScore;
+    private OHSUCellConstraints cellConstraints;
     Perceptron perceptron = null;
 
     public BSCPPerceptronCell(final ParserDriver opts, final LeftHashGrammar grammar,
-            final CSLUTCellConstraints cslutScores) {
+            final OHSUCellConstraints cellConstraints) {
         super(opts, grammar);
-        this.cslutScores = cslutScores;
+        this.cellConstraints = cellConstraints;
     }
 
     public void train(final BufferedReader inStream) throws Exception {
@@ -59,10 +57,6 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
                 sentence = ParserUtil.join(tree.getLeafNodesContent(), " ");
                 System.out.println("SENT: " + sentence);
 
-                assert cslutScores.allStartScores.containsKey(sentence);
-                cslutStartScore = cslutScores.allStartScores.get(sentence);
-                cslutEndScore = cslutScores.allEndScores.get(sentence);
-
                 tree.tokenizeLeaves(grammar);
                 // final CellChart goldChart = tree.convertToChart(grammar);
                 final GoldChart goldChart = new GoldChart(tree, grammar);
@@ -71,6 +65,7 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
                 initSentence(sent);
                 addLexicalProductions(sent);
                 addUnaryExtensionsToLexProds();
+                cellConstraints.initSentence(this);
                 cellSelector.initSentence(this);
 
                 if (perceptron == null) {
@@ -360,8 +355,8 @@ public class BSCPPerceptronCell extends BeamSearchChartParser<LeftHashGrammar, C
         // featList.add((float)0);
         // }
 
-        final float startScore = cslutStartScore.get(span.start());
-        final float endScore = cslutEndScore.get(span.end() - 1);
+        final float startScore = cellConstraints.getBeginScore(span.start());
+        final float endScore = cellConstraints.getEndScore(span.end() - 1);
         featList.add(startScore);
         featList.add(endScore);
         featList.add(startScore + endScore);
