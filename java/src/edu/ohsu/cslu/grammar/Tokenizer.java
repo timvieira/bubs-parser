@@ -143,10 +143,11 @@ public class Tokenizer implements Serializable {
      * English-specific.
      * 
      * @param word The word to make a signature for
-     * @param loc Its position in the sentence (mainly so sentence-initial capitalized words can be treated differently)
+     * @param wordIndex Its position in the sentence (mainly so sentence-initial capitalized words can be treated
+     *            differently)
      * @return A String that is its signature (equivalence class)
      */
-    public static String berkeleyGetSignature(final String word, final int sentIndex, final SymbolSet<String> lexSet) {
+    public static String berkeleyGetSignature(final String word, final int wordIndex, final SymbolSet<String> lexSet) {
         final StringBuffer sb = new StringBuffer("UNK");
 
         // Reformed Mar 2004 (cdm); hopefully much better now.
@@ -180,7 +181,7 @@ public class Tokenizer implements Serializable {
         final char ch0 = word.charAt(0);
         final String lowered = word.toLowerCase();
         if (Character.isUpperCase(ch0) || Character.isTitleCase(ch0)) {
-            if (sentIndex == 0 && numCaps == 1) {
+            if (wordIndex == 0 && numCaps == 1) {
                 sb.append("-INITC");
                 // if (isKnown(lowered)) {
                 if (lexSet != null && lexSet.hasSymbol(lowered)) {
