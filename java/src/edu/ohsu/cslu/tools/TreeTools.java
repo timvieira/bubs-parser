@@ -1,9 +1,7 @@
 package edu.ohsu.cslu.tools;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -49,7 +47,8 @@ public class TreeTools extends BaseCommandlineTool {
     private boolean minimumBeginEndConstraints = false;
 
     private static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
-    private static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
+
+    // private static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
 
     public static void main(final String[] args) {
         run(args);

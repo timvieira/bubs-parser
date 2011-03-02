@@ -28,7 +28,7 @@ public class LeftCornerTraversal extends CellSelector {
     @Override
     public short[] next() {
         final ChartCell cell = cellList.poll();
-        return new short[] { (short) cell.start(), (short) cell.end() };
+        return new short[] { cell.start(), cell.end() };
     }
 
     @Override

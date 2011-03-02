@@ -71,9 +71,9 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
      * <li>tag i - 1</li>
      * </ol>
      * 
-     * @param sentence
+     * @param source
      * @param tokenIndex
-     * @param tags
+     * @param tagScores
      * @return a feature vector representing the specified token and tags
      */
     @Override

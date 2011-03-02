@@ -95,13 +95,13 @@ public class ModelTrainer extends BaseCommandlineTool {
         }
         br.close();
 
-        final AveragedPerceptron model = new AveragedPerceptron();
+        // final AveragedPerceptron model = new AveragedPerceptron();
 
         // Iterate over training corpus
         for (int i = 1; i <= iterations; i++) {
             for (int j = 0; j < trainingCorpusFeatures.size(); j++) {
                 final SparseBitVector[] featureVectors = trainingCorpusFeatures.get(j);
-                final boolean[] goldTags = trainingCorpusGoldTags.get(j);
+                // final boolean[] goldTags = trainingCorpusGoldTags.get(j);
 
                 // TODO Do forward-backward estimation here
                 for (int k = 0; k < featureVectors.length; k++) {
