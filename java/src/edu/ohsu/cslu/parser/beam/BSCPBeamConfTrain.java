@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.beam;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
@@ -89,7 +89,7 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
         super.initSentence(tokens);
 
         if (currentInput.inputTreeChart == null) {
-            GlobalLogger.singleton().info("ERROR: BSCPTrainFOMConfidence requires gold trees as input");
+            BaseLogger.singleton().info("ERROR: BSCPTrainFOMConfidence requires gold trees as input");
             System.exit(1);
         }
     }

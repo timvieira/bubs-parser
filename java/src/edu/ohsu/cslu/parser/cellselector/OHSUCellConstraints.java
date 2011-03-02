@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
@@ -71,7 +71,7 @@ public class OHSUCellConstraints extends CellConstraints {
         this.grammarLeftFactored = grammarLeftFactored;
         try {
             parseConstraintArgs(constraintArgs);
-            GlobalLogger.singleton().fine(
+            BaseLogger.singleton().fine(
                     "CC_PARAM: startThresh=" + globalBegin + " endThresh=" + globalEnd + " unaryThresh=" + globalUnary
                             + " precisionPct=" + precisionPct + " linearN=" + linearOpen);
 
@@ -92,16 +92,16 @@ public class OHSUCellConstraints extends CellConstraints {
             } else if (tokens[i].equals("P")) {
                 precisionPct = ParserUtil.str2float(tokens[++i]);
                 if (precisionPct < 0.0 || precisionPct > 1.0) {
-                    GlobalLogger.singleton().severe(
+                    BaseLogger.singleton().severe(
                             "Precision constraint must be btwn 0 and 1 inclusive.  Found value: " + precisionPct);
                 }
             } else if (tokens[i].equals("N")) {
                 this.linearOpen = ParserUtil.str2float(tokens[++i]);
                 if (linearOpen <= 0) {
-                    GlobalLogger.singleton().severe("Linear open cells constrain must be greater than zero");
+                    BaseLogger.singleton().severe("Linear open cells constrain must be greater than zero");
                 }
             } else {
-                GlobalLogger.singleton().severe("CC tune option not recognized.  Exiting.");
+                BaseLogger.singleton().severe("CC tune option not recognized.  Exiting.");
             }
             i += 1;
         }
@@ -180,13 +180,13 @@ public class OHSUCellConstraints extends CellConstraints {
 
         final String ccStats = toString(true).trim();
         if (ParserDriver.chartConstraintsPrint) {
-            GlobalLogger.singleton().info("CC_SENT: " + sentence);
-            GlobalLogger.singleton().info(ccStats);
+            BaseLogger.singleton().info("CC_SENT: " + sentence);
+            BaseLogger.singleton().info(ccStats);
             // System.out.println("listSize=" + cellList.size());
             cellList.clear(); // do not parse sentence
         } else {
-            GlobalLogger.singleton().fine(ccStats.split("\n")[0]);
-            GlobalLogger.singleton().finer(ccStats.split("\n")[1]);
+            BaseLogger.singleton().fine(ccStats.split("\n")[0]);
+            BaseLogger.singleton().finer(ccStats.split("\n")[1]);
         }
     }
 

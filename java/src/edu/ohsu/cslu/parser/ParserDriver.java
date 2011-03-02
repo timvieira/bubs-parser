@@ -14,7 +14,7 @@ import java.util.zip.GZIPInputStream;
 
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import cltool4j.ThreadLocalLinewiseClTool;
 import cltool4j.Threadable;
 import cltool4j.args4j.CmdLineException;
@@ -243,10 +243,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             final ConfigProperties props = (ConfigProperties) ois.readObject();
             GlobalConfigProperties.singleton().mergeUnder(props);
 
-            GlobalLogger.singleton().fine("Reading grammar...");
+            BaseLogger.singleton().fine("Reading grammar...");
             this.grammar = (Grammar) ois.readObject();
 
-            GlobalLogger.singleton().fine("Reading FOM...");
+            BaseLogger.singleton().fine("Reading FOM...");
             edgeSelector = (EdgeSelector) ois.readObject();
 
         } else {
@@ -298,8 +298,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             edgeSelector = EdgeSelector.create(edgeFOMType, grammar, fomModelStream);
         }
 
-        GlobalLogger.singleton().fine(grammar.getStats());
-        GlobalLogger.singleton().fine(optionsToString());
+        BaseLogger.singleton().fine(grammar.getStats());
+        BaseLogger.singleton().fine(optionsToString());
 
         // TODO: until we embed this info into the model itself ... read it from args
         grammar.annotatePOS = annotatePOS;
@@ -501,9 +501,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 final ParseStats parseStats = parser.parseSentence(sentence);
 
                 // TODO Return an instance of ParseStats instead of String so we can log this after the parse?
-                GlobalLogger.singleton().fine(parseStats.toString() + " " + parser.getStats());
-                // if (parser instanceof ChartParser && GlobalLogger.singleton().isLoggable(Level.FINEST)) {
-                // GlobalLogger.singleton().finest(((ChartParser<?, ?>) parser).chart.toString());
+                BaseLogger.singleton().fine(parseStats.toString() + " " + parser.getStats());
+                // if (parser instanceof ChartParser && BaseLogger.singleton().isLoggable(Level.FINEST)) {
+                // BaseLogger.singleton().finest(((ChartParser<?, ?>) parser).chart.toString());
                 // }
                 return parseStats.parseBracketString;
             }
@@ -516,7 +516,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         final float cpuTime = parseTime * maxThreads;
         final int sentencesParsed = Parser.sentenceNumber;
 
-        GlobalLogger.singleton().info(
+        BaseLogger.singleton().info(
                 String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
                         sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
     }
@@ -535,7 +535,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     static public ParserDriver defaultTestOptions() {
         final ParserDriver opts = new ParserDriver();
-        GlobalLogger.singleton().setLevel(Level.FINER);
+        BaseLogger.singleton().setLevel(Level.FINER);
         return opts;
     }
 

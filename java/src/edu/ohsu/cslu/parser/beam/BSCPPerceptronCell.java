@@ -6,7 +6,7 @@
 //import java.util.List;
 //import java.util.PriorityQueue;
 //
-//import cltool4j.GlobalLogger;
+//import cltool4j.BaseLogger;
 ////import edu.ohsu.cslu.classifier.Perceptron;
 //import edu.ohsu.cslu.grammar.LeftHashGrammar;
 //import edu.ohsu.cslu.grammar.Production;
@@ -49,7 +49,7 @@
 //            for (final String bracketString : inputData) {
 //                tree = ParseTree.readBracketFormat(bracketString);
 //                if (tree.isBinaryTree() == false) {
-//                    GlobalLogger.singleton()
+//                    BaseLogger.singleton()
 //                            .info("ERROR: Training trees must be binarized exactly as used in decoding");
 //                    System.exit(1);
 //                }
@@ -344,7 +344,7 @@
 //        if (perceptron == null) {
 //            perceptron = new Perceptron(featList.size());
 //        } else if (featList.size() != perceptron.numFeatures()) {
-//            GlobalLogger.singleton().info(
+//            BaseLogger.singleton().info(
 //                    "ERROR: len(featureList)=" + featList.size() + " but number features in model files is numFeats="
 //                            + perceptron.numFeatures());
 //            System.exit(1);

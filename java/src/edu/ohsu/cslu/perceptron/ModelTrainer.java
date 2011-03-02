@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseCommandlineTool;
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
@@ -107,15 +107,15 @@ public class ModelTrainer extends BaseCommandlineTool {
                 for (int k = 0; k < featureVectors.length; k++) {
                     // example++;
                     final SparseBitVector featureVector = featureVectors[k];
-                    if (GlobalLogger.singleton().isLoggable(Level.FINEST)) {
-                        GlobalLogger.singleton().finest(featureVectorToString(featureVector));
+                    if (BaseLogger.singleton().isLoggable(Level.FINEST)) {
+                        BaseLogger.singleton().finest(featureVectorToString(featureVector));
                     }
 
                     // TODO: fix this to work with ints instead of bools
                     // model.train(goldTags[k], featureVector);
 
-                    if (GlobalLogger.singleton().isLoggable(Level.FINER)) {
-                        GlobalLogger.singleton().finer(toString());
+                    if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+                        BaseLogger.singleton().finer(toString());
                     }
                 }
             }
@@ -158,7 +158,7 @@ public class ModelTrainer extends BaseCommandlineTool {
     public void natesTraining() throws Exception {
 
         if (featTemplate == null) {
-            GlobalLogger.singleton().info(
+            BaseLogger.singleton().info(
                     "ERROR: Training a model from pre-computed features requires -feats to be non-empty");
             System.exit(1);
         } else if (!featTemplate.contains(" ") && new File(featTemplate).exists()) {
@@ -167,7 +167,7 @@ public class ModelTrainer extends BaseCommandlineTool {
         }
 
         if (binsStr == null) {
-            GlobalLogger.singleton().info(
+            BaseLogger.singleton().info(
                     "ERROR: Training a model from pre-computed features requires -bins to be non-empty");
             System.exit(1);
         }

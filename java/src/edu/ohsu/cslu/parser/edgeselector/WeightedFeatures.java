@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.edgeselector;
 import java.io.BufferedReader;
 import java.util.Arrays;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
@@ -53,7 +53,7 @@ public class WeightedFeatures extends EdgeSelector {
         while ((line = inStream.readLine()) != null) {
             goldTree = ParseTree.readBracketFormat(line);
             if (goldTree.isBinaryTree() == false) {
-                GlobalLogger.singleton().info("ERROR: Training trees must be binarized exactly as used in decoding");
+                BaseLogger.singleton().info("ERROR: Training trees must be binarized exactly as used in decoding");
                 System.exit(1);
             }
             goldChart = new GoldChart(goldTree, grammar);

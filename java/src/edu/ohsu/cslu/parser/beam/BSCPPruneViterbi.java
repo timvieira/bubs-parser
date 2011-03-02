@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -68,7 +68,7 @@ public class BSCPPruneViterbi extends BeamSearchChartParser<LeftHashGrammar, Cel
             if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
                 cellPopped++;
-                GlobalLogger.singleton().finest("" + edge);
+                BaseLogger.singleton().finest("" + edge);
 
                 // Add unary productions to agenda so they can compete with binary productions
                 for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
