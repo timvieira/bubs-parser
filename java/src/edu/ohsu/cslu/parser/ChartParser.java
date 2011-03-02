@@ -2,7 +2,9 @@ package edu.ohsu.cslu.parser;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
@@ -24,6 +26,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public ParseTree findBestParse(final int[] tokens) throws Exception {
+        final boolean collectDetailedStatistics = GlobalLogger.singleton().isLoggable(Level.FINER);
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
         initSentence(tokens);
         addLexicalProductions(tokens);
@@ -90,7 +93,8 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public String getStats() {
-        return chart.getStats() + (collectDetailedStatistics ? (" edgeInitTime=" + initTime) : "");
+        return chart.getStats()
+                + (GlobalLogger.singleton().isLoggable(Level.FINER) ? (" edgeInitTime=" + initTime) : "");
     }
 
     public SparseBitVector getCellFeatures(final int start, final int end, final String featTemplate) {

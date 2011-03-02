@@ -79,6 +79,11 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFuncti
 @Threadable(defaultThreads = 1)
 public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
+    // Global vars to create parser
+    public CellSelector cellSelector = new LeftRightBottomTopTraversal();
+    public EdgeSelector edgeSelector;
+    private Grammar grammar;
+
     // == Parser options ==
     @Option(name = "-p", aliases = { "--parser" }, metaVar = "parser", usage = "Parser implementation")
     private ParserType parserType = ParserType.CKY;
@@ -98,24 +103,19 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // "Chart cell processing type")
     // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
 
-    @Option(name = "-fom", metaVar = "fom", hidden = true, usage = "Figure of Merit to use for parser")
-    public EdgeSelectorType edgeFOMType = EdgeSelectorType.Inside;
-    public EdgeSelector edgeSelector;
-    public CellSelector cellSelector = new LeftRightBottomTopTraversal();
+    @Option(name = "-fom", metaVar = "fom", hidden = true, usage = "Figure of Merit to use for parser (name or model file)")
+    private String fomTypeOrModel = "Inside";
 
-    @Option(name = "-fomModel", metaVar = "file", hidden = true, usage = "FOM model file")
-    private String fomModelFileName = null;
-    public BufferedReader fomModelStream = null;
-
-    @Option(name = "-beamConfModel", usage = "required Beam Confidence Model for beamconf Parser")
+    @Option(name = "-beamConfModel", usage = "Beam Confidence Model for beam-search parsers")
     private String beamConfModelFileName = null;
     // private AveragedPerceptron beamConfModel = null;
 
     @Option(name = "-beamConfBias", usage = "comma seperated bias for each bin in model; default is no bias")
     public String beamConfBias = null;
 
-    @Option(name = "-beamMultiBin", hidden = true, usage = "Use old multi-bin classification instead of multiple binary classifiers")
-    public static boolean multiBin = false;
+    // @Option(name = "-beamMultiBin", hidden = true, usage =
+    // "Use old multi-bin classification instead of multiple binary classifiers")
+    // public static boolean multiBin = false;
 
     @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
     public int reparse = 0;
@@ -195,9 +195,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Option(name = "-oldunk", hidden = true, usage = "Use old method of UNK replacement to match old grammars")
     public static boolean oldUNK = false;
 
-    private Grammar grammar;
     private long parseStartTime;
-    public boolean collectDetailedStatistics = false;
 
     public static void main(final String[] args) throws Exception {
         run(args);
@@ -207,8 +205,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // run once at initialization despite number of threads
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
-        // Collect detailed statistics for high verbosity levels (e.g., NTs per cell, cartesian-product size,etc.)
-        collectDetailedStatistics = GlobalLogger.singleton().isLoggable(Level.FINER);
+        BufferedReader fomModelStream = null;
+        EdgeSelectorType edgeFOMType;
 
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
@@ -221,7 +219,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 break;
             case Beam:
                 researchParserType = ResearchParserType.BeamSearchChartParser;
-                // researchParserType = ResearchParserType.BSCPPruneViterbi;
                 // Using the above beam parser until all the model stuff has been finished
                 // researchParserType = ResearchParserType.BeamCscSpmv;
                 break;
@@ -250,23 +247,26 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             this.grammar = (Grammar) ois.readObject();
 
             GlobalLogger.singleton().fine("Reading FOM...");
-            this.edgeSelector = (EdgeSelector) ois.readObject();
+            edgeSelector = (EdgeSelector) ois.readObject();
 
         } else {
 
-            // CellSelectorType cellSelectorType = CellSelectorType.LeftRightBottomTop;
-            // final BufferedReader chartConstraintsModelStream = null;
+            if (fomTypeOrModel.equals("Inside")) {
+                edgeFOMType = EdgeSelectorType.Inside;
+            } else if (fomTypeOrModel.equals("NormalizedInside")) {
+                edgeFOMType = EdgeSelectorType.NormalizedInside;
+            } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
+                edgeFOMType = EdgeSelectorType.InsideWithFwdBkwd;
+            } else if (new File(fomTypeOrModel).exists()) {
+                // Assuming boundry FOM
+                edgeFOMType = EdgeSelectorType.BoundaryInOut;
 
-            if (fomModelFileName != null) {
                 // Handle gzipped and non-gzipped model files
-                fomModelStream = fomModelFileName.endsWith(".gz") ? new BufferedReader(new InputStreamReader(
-                        new GZIPInputStream(new FileInputStream(fomModelFileName)))) : new BufferedReader(
-                        new FileReader(fomModelFileName));
-
-                // NOTE: EdgeSelectorType.InsideWithFwdBkwd also uses this fomModelStream for right now
-                if (edgeFOMType == EdgeSelectorType.Inside) {
-                    edgeFOMType = EdgeSelectorType.BoundaryInOut;
-                }
+                fomModelStream = fomTypeOrModel.endsWith(".gz") ? new BufferedReader(new InputStreamReader(
+                        new GZIPInputStream(new FileInputStream(fomTypeOrModel)))) : new BufferedReader(new FileReader(
+                        fomTypeOrModel));
+            } else {
+                throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
 
             if (researchParserType == ResearchParserType.BSCPBeamConfTrain && featTemplate == null) {
@@ -274,19 +274,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                         "ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
             }
 
-            // param validation checks
-            if ((edgeFOMType == EdgeSelectorType.BoundaryInOut || edgeFOMType == EdgeSelectorType.InsideWithFwdBkwd)
-                    && fomModelFileName == null) {
-                throw new CmdLineException(cmdlineParser, "BoundaryInOut FOM must also have -fomModel param set");
-            }
-
             grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
 
             if (chartConstraintsModel != null) {
-                // cellSelectorType = CellSelectorType.CSLUT;
-                // chartConstraintsModelStream = new BufferedReader(new FileReader(chartConstraintsModel));
-                // cellSelector = new CSLUTCellConstraints(new BufferedReader(new FileReader(chartConstraintsModel)),
-                // chartConstraintsThresh);
                 cellSelector = new OHSUCellConstraints(new BufferedReader(new FileReader(chartConstraintsModel)),
                         chartConstraintsThresh, grammar.isLeftFactored());
             }
@@ -303,11 +293,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             // Nate: perceptron span selection doesn't work any more
             // if (cellSelectorType == CellSelectorType.Perceptron && cslutScoresStream == null) {
             // throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
-            // }
-
-            // if (researchParserType == ResearchParserType.BSCPBeamConf && beamConfModel == null) {
-            // throw new CmdLineException(cmdlineParser,
-            // "BSCPBeamConf parser (-rp beamconf) must specify -beamConfModel");
             // }
 
             edgeSelector = EdgeSelector.create(edgeFOMType, grammar, fomModelStream);
@@ -540,7 +525,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         String s = "OPTS:";
         s += " ParserType=" + researchParserType;
         // s += prefix + "CellSelector=" + cellSelectorType + "\n";
-        s += " FOM=" + edgeFOMType;
+        s += " FOM=" + fomTypeOrModel;
         s += " ViterbiMax=" + viterbiMax();
         s += " x1=" + param1;
         s += " x2=" + param2;
@@ -550,7 +535,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     static public ParserDriver defaultTestOptions() {
         final ParserDriver opts = new ParserDriver();
-        opts.collectDetailedStatistics = true;
+        GlobalLogger.singleton().setLevel(Level.FINER);
         return opts;
     }
 
