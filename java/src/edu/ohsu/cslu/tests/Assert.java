@@ -46,9 +46,9 @@ public class Assert {
      * can often be well-represented by a numerator of 1 and an appropriate denominator (e.g. 1/12385)
      * 
      * @param logProbability
-     * @return
+     * @return string representation of a rational approximation of a log probability
      */
-    private static String fraction(final double logProbability) {
+    public static String fraction(final double logProbability) {
         if (logProbability == 0f) {
             return "1";
         }
