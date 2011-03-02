@@ -19,10 +19,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class MappedCountGrammar implements CountGrammar {
-
-    protected SplitVocabulary vocabulary;
-    protected SymbolSet<String> lexicon;
+public class MappedCountGrammar extends FractionalCountGrammar {
 
     /**
      * Contains occurrence counts for each non-terminal which occurs as a binary parent. When representing the grammar
@@ -46,18 +43,11 @@ public class MappedCountGrammar implements CountGrammar {
     private int unaryRules;
     private int lexicalRules;
 
-    String startSymbol;
-
     public MappedCountGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon) {
-        this.vocabulary = vocabulary;
-        this.lexicon = lexicon;
-        this.startSymbol = vocabulary.getSymbol(0);
+        super(vocabulary, lexicon);
     }
 
-    public void incrementBinaryCount(final short parent, final short leftChild, final short rightChild) {
-        incrementBinaryCount(parent, leftChild, rightChild, 1f);
-    }
-
+    @Override
     public void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
             final float increment) {
 
@@ -83,20 +73,7 @@ public class MappedCountGrammar implements CountGrammar {
         }
     }
 
-    public void incrementBinaryCount(final String parent, final String leftChild, final String rightChild) {
-        incrementBinaryCount(parent, leftChild, rightChild, 1f);
-    }
-
-    public void incrementBinaryCount(final String parent, final String leftChild, final String rightChild,
-            final float increment) {
-        incrementBinaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(leftChild),
-                (short) vocabulary.getIndex(rightChild), increment);
-    }
-
-    public void incrementUnaryCount(final short parent, final short child) {
-        incrementUnaryCount(parent, child, 1f);
-    }
-
+    @Override
     public void incrementUnaryCount(final short parent, final short child, final float increment) {
 
         unaryParentCounts.put(parent, unaryParentCounts.get(parent) + increment);
@@ -116,18 +93,7 @@ public class MappedCountGrammar implements CountGrammar {
         }
     }
 
-    public void incrementUnaryCount(final String parent, final String child) {
-        incrementUnaryCount(parent, child, 1f);
-    }
-
-    public void incrementUnaryCount(final String parent, final String child, final float increment) {
-        incrementUnaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(child), increment);
-    }
-
-    public void incrementLexicalCount(final short parent, final int child) {
-        incrementLexicalCount(parent, child, 1f);
-    }
-
+    @Override
     public void incrementLexicalCount(final short parent, final int child, final float increment) {
 
         lexicalParentCounts.put(parent, lexicalParentCounts.get(parent) + increment);
@@ -143,14 +109,6 @@ public class MappedCountGrammar implements CountGrammar {
             childMap.put(child, increment);
             lexicalRules++;
         }
-    }
-
-    public void incrementLexicalCount(final String parent, final String child) {
-        incrementLexicalCount(parent, child, 1f);
-    }
-
-    public void incrementLexicalCount(final String parent, final String child, final float increment) {
-        incrementLexicalCount((short) vocabulary.getIndex(parent), lexicon.getIndex(child), increment);
     }
 
     public ArrayList<Production> binaryProductions() {

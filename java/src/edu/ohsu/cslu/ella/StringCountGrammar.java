@@ -130,51 +130,13 @@ public final class StringCountGrammar implements CountGrammar {
         for (final String word : lexicalEntryOccurrences.keySet()) {
             final int occurrences = lexicalEntryOccurrences.getInt(word);
             if (occurrences < lexicalUnkThreshold) {
-                // TODO For the moment, we don't treat sentence-initial words any different; we should probably handle
+                // TODO For the moment, we don't treat sentence-initial words any differently; we should probably handle
                 // those separately while reading the corpus
                 final String unk = Tokenizer.berkeleyGetSignature(word, 1, null);
                 lexicalEntryOccurrences.put(unk, lexicalEntryOccurrences.getInt(unk) + occurrences);
                 lexicalEntryOccurrences.remove(word);
             }
         }
-
-        // // Populate vocabulary-mapped counts
-        // for (final String parent : binaryStringRuleCounts.keySet()) {
-        // final HashMap<String, Object2IntMap<String>> leftChildMap = binaryStringRuleCounts.get(parent);
-        // for (final String leftChild : leftChildMap.keySet()) {
-        // final Object2IntMap<String> rightChildMap = leftChildMap.get(leftChild);
-        // for (final String rightChild : rightChildMap.keySet()) {
-        // final int count = rightChildMap.getInt(rightChild);
-        // final short p = (short) vocabulary.getIndex(parent);
-        // binaryParentCounts.put(p, binaryParentCounts.get(p) + count);
-        // binaryRightChildMap(p, (short) vocabulary.getIndex(leftChild)).put(
-        // (short) vocabulary.getIndex(rightChild), rightChildMap.getInt(rightChild));
-        // binaryRules++;
-        // }
-        // }
-        // }
-        //
-        // for (final String parent : unaryStringRuleCounts.keySet()) {
-        // final Object2IntMap<String> childMap = unaryStringRuleCounts.get(parent);
-        // for (final String child : childMap.keySet()) {
-        // final int count = childMap.getInt(child);
-        // final short p = (short) vocabulary.getIndex(parent);
-        // unaryParentCounts.put(p, unaryParentCounts.get(p) + count);
-        // unaryChildMap(p).put((short) vocabulary.getIndex(child), count);
-        // unaryRules++;
-        // }
-        // }
-        //
-        // for (final String parent : lexicalStringRuleCounts.keySet()) {
-        // final Object2IntMap<String> childMap = lexicalStringRuleCounts.get(parent);
-        // for (final String child : childMap.keySet()) {
-        // final int count = childMap.getInt(child);
-        // final short p = (short) vocabulary.getIndex(parent);
-        // lexicalParentCounts.put(p, unaryParentCounts.get(p) + count);
-        // lexicalChildMap(p).put((short) vocabulary.getIndex(child), count);
-        // lexicalRules++;
-        // }
-        // }
     }
 
     private void incrementBinaryCount(final String parent, final String leftChild, final String rightChild) {

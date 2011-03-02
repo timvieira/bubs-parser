@@ -92,4 +92,12 @@ public class ConstrainedCellSelector extends CellSelector {
         return constrainingChart.cellOffsets[constrainingChart.cellIndex(cellIndices[currentCell][0],
                 cellIndices[currentCell][1])];
     }
+
+    /**
+     * @return Offset of the current cell's left child in the constraining chart
+     */
+    public int constrainingLeftChildCellOffset() {
+        return constrainingChart.cellOffsets[constrainingChart.cellIndex(cellIndices[currentCell][0],
+                currentCellMidpoint())];
+    }
 }

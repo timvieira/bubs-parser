@@ -53,7 +53,7 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
         System.out.println("Converting to CSR format...");
         final CsrSparseMatrixGrammar csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions,
                 plGrammar0.unaryProductions, plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
         final long t2 = System.currentTimeMillis();
         System.out.println(String.format("Time: %d ms", t2 - t1));
 
@@ -93,10 +93,8 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
 
         // Convert to CSR format
         System.out.println("Converting to CSR format...");
-        final ConstrainedCsrSparseMatrixGrammar csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(
-                plGrammar1.binaryProductions, plGrammar1.unaryProductions, plGrammar1.lexicalProductions,
-                plGrammar1.vocabulary, plGrammar1.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        final ConstrainedCsrSparseMatrixGrammar csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(plGrammar1,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
         final long t5 = System.currentTimeMillis();
         System.out.println(String.format("Time: %d ms", t5 - t4));
 
@@ -120,15 +118,18 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
         System.out.println(String.format("Time: %d ms (%.2f sentences / sec)", t6 - t5, count * 1000.0 / (t6 - t5)));
 
         if (collectDetailedTimings) {
-            System.out.println("Init Time (ms)            : " + parser1.totalInitializationTime / 1000000);
-            System.out.println("Lex-prod Time (ms)        : " + parser1.totalLexProdTime / 1000000);
-            System.out.println("X-product Time (ms)       : " + parser1.totalConstrainedXproductTime / 1000000);
-            System.out.println("X-product Fill Time (ms)  : " + parser1.totalXproductFillTime / 1000000);
+            System.out.println("Init Time (ms)              : " + parser1.totalInitializationTime / 1000000);
+            System.out.println("Lex-prod Time (ms)          : " + parser1.totalLexProdTime / 1000000);
+            System.out.println("X-product Time (ms)         : " + parser1.totalConstrainedXproductTime / 1000000);
+            // System.out.println("X-product Fill Time (ms)  : " + parser1.totalXproductFillTime / 1000000);
             // System.out.println("Cell Visit Time (ms) : " + parser1.totalVisitTime / 1000000);
-            System.out.println("Binary SpMV Time (ms)     : " + parser1.totalConstrainedBinaryTime / 1000000);
-            System.out.println("Unary SpMV Time (ms)      : " + parser1.totalConstrainedUnaryTime / 1000000);
-            System.out.println("Outside Time (ms)         : " + parser1.totalConstrainedOutsideTime / 1000000);
-            System.out.println("Extraction Time (ms)      : " + parser1.totalExtractionTime / 1000000);
+            System.out.println("Binary SpMV Time (ms)       : " + parser1.totalConstrainedBinaryTime / 1000000);
+            System.out.println("Unary SpMV Time (ms)        : " + parser1.totalConstrainedUnaryTime / 1000000);
+            System.out.println("Outside Time (ms)           : " + parser1.totalConstrainedOutsideTime / 1000000);
+            System.out
+                    .println("Outside X-product Time (ms) : " + parser1.totalConstrainedOutsideXproductTime / 1000000);
+            System.out.println("Outside Unary Time (ms)     : " + parser1.totalConstrainedOutsideUnaryTime / 1000000);
+            System.out.println("Extraction Time (ms)        : " + parser1.totalExtractionTime / 1000000);
         }
     }
 

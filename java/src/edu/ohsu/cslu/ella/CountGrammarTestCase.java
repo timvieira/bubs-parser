@@ -42,10 +42,13 @@ public abstract class CountGrammarTestCase {
 
         // Parent counts
         assertEquals(8, g.totalRules());
-        assertEquals(6, g.observations("a"), 0.01f);
-        assertEquals(4, g.observations("b"), 0.01f);
-        assertEquals(0, g.observations("v"), 0.01f);
-        assertEquals(0, g.observations("d"), 0.01f);
+        try {
+            assertEquals(6, g.observations("a"), 0.01f);
+            assertEquals(4, g.observations("b"), 0.01f);
+            assertEquals(0, g.observations("v"), 0.01f);
+            assertEquals(0, g.observations("d"), 0.01f);
+        } catch (final UnsupportedOperationException ignore) {
+        }
     }
 
 }
