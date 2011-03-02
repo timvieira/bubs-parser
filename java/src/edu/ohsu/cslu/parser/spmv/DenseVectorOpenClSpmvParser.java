@@ -45,10 +45,9 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
         final int validRightChildren = grammar.rightChildrenEnd - grammar.rightChildrenStart + 1;
 
         // Bind the arguments of the OpenCL kernel
-        cartesianProductKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints, leftCell
-                .offset(), leftChildrenStart, validLeftChildren, rightCell.offset(), rightChildrenStart,
-                validRightChildren, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints, (short) rightCell
-                        .start());
+        cartesianProductKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
+                leftCell.offset(), leftChildrenStart, validLeftChildren, rightCell.offset(), rightChildrenStart,
+                validRightChildren, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints, rightCell.start());
 
         // Call the cartesian-product kernel with |V_r| X |V_l| threads (rounded up to the next multiple of
         // LOCAL_WORK_SIZE)
@@ -63,10 +62,10 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
     protected void internalBinarySpmvMultiply(final ParallelArrayChartCell chartCell) {
 
         // Bind the arguments of the OpenCL kernel
-        binarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints, chartCell
-                .offset(), clCartesianProductProbabilities0, clCartesianProductMidpoints0,
-                clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities, grammar
-                        .numNonTerms());
+        binarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
+                chartCell.offset(), clCartesianProductProbabilities0, clCartesianProductMidpoints0,
+                clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities,
+                grammar.numNonTerms());
 
         // Call the binary SpMV kernel with |V| threads (rounded up to the nearest multiple of
         // LOCAL_WORK_SIZE)
@@ -81,7 +80,7 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
         // Bind the arguments of the OpenCL kernel
         unarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
                 chartCell.offset(), clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices, clCsrUnaryProbabilities,
-                grammar.numNonTerms(), (short) chartCell.end());
+                grammar.numNonTerms(), chartCell.end());
 
         // Call the unary SpMV kernel with |V| threads (rounded up to the nearest multiple of LOCAL_WORK_SIZE)
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);

@@ -505,7 +505,17 @@ public class Math {
         return (float) (a + java.lang.Math.log1p(java.lang.Math.exp(b - a)));
     }
 
-    private static double approximateExp(final double val) {
+    /**
+     * Returns an approximation to {@link java.lang.Math#exp(double)}, using Schraudolph's algorithm from
+     * "A Fast, Compact Approximation of the Exponential Function". This algorithm depends on 64-bit IEEE-754
+     * floating-point representation. It is not very accurate, but is several times faster than
+     * {@link java.lang.Math#exp(double)}, and may be applicable for some NLP applications (e.g., log sum in
+     * inside-outside grammar re-estimation}.
+     * 
+     * @param val
+     * @return An approximation to {@link java.lang.Math#exp(double)}
+     */
+    public static double approximateExp(final double val) {
         final long tmp = (long) (1512775 * val + (1072693248 - 60801));
         return Double.longBitsToDouble(tmp << 32);
     }

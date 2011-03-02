@@ -27,7 +27,7 @@ public abstract class FeatureExtractor {
      * Returns a feature vector suitable for use with a {@link Perceptron}. If previous or subsequent tags are
      * incorporated into the model as features, this method will generally be used during training, when the
      * {@link FeatureExtractor} instance was constructed with gold-standard tagging information. At test time,
-     * {@link #forwardFeatureVector(Object, int, boolean[])} will be used instead.
+     * {@link #forwardFeatureVector(Object, int, float[])} will be used instead.
      * 
      * @param source
      * @param tokenIndex The index of the token for which features should be extracted
@@ -41,31 +41,31 @@ public abstract class FeatureExtractor {
      * 
      * @param source
      * @param tokenIndex The index of the token for which features should be extracted
-     * @param tags The estimated tags for previous tokens.
+     * @param tagScores The tag scores for previous tokens.
      * @return a feature vector suitable for use with a {@link Perceptron}.
      */
     public abstract Vector forwardFeatureVector(Object source, int tokenIndex, float[] tagScores);
 
     /**
-     * Returns a feature vector suitable for use in backward estimation with a {@link PerceptronModel}. If subsequent
-     * tags are incorporated into the model as features, this method will generally be used during training, when the
+     * Returns a feature vector suitable for use in backward estimation with a {@link Perceptron}. If subsequent tags
+     * are incorporated into the model as features, this method will generally be used during training, when the
      * {@link FeatureExtractor} instance was constructed with gold-standard tagging information. At test time,
-     * {@link #backwardFeatureVector(Object, int, boolean[])} will be used instead.
+     * {@link #backwardFeatureVector(Object, int, float[])} will be used instead.
      * 
      * @param source
      * @param tokenIndex The index of the token for which features should be extracted
-     * @return a feature vector suitable for use with a {@link PerceptronModel}.
+     * @return a feature vector suitable for use with a {@link Perceptron}.
      */
     public abstract Vector backwardFeatureVector(Object source, int tokenIndex);
 
     /**
-     * Returns a feature vector suitable for use in backward estimation with a {@link PerceptronModel}, incorporating
+     * Returns a feature vector suitable for use in backward estimation with a {@link Perceptron}, incorporating
      * subsequent tags into the model as features.
      * 
      * @param source
      * @param tokenIndex The index of the token for which features should be extracted
-     * @param tagScores The estimated tags for previous tokens.
-     * @return a feature vector suitable for use with a {@link PerceptronModel}.
+     * @param tagScores The tag scores for previous tokens.
+     * @return a feature vector suitable for use with a {@link Perceptron}.
      */
     public abstract Vector backwardFeatureVector(Object source, int tokenIndex, float[] tagScores);
 }

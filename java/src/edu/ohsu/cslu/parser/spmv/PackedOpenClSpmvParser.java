@@ -90,7 +90,7 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
         // Bind the arguments of the OpenCL kernel
         cartesianProductKernel.setArgs(clChartNonTerminalIndices, clChartInsideProbabilities, clChartPackedChildren,
                 clChartMidpoints, leftChildrenStart, observedLeftChildren, rightChildrenStart, observedRightChildren,
-                tmpClCartesianProductProbabilities, tmpClCartesianProductMidpoints, (short) rightCell.start());
+                tmpClCartesianProductProbabilities, tmpClCartesianProductMidpoints, rightCell.start());
 
         // Call the kernel and wait for results
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp((observedLeftChildren * observedRightChildren),
@@ -141,7 +141,7 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
         // Bind the arguments of the OpenCL kernel
         unarySpmvKernel.setArgs(clTmpCellInsideProbabilities, clTmpCellPackedChildren, clTmpCellMidpoints,
                 clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices, clCsrUnaryProbabilities, grammar.numNonTerms(),
-                (short) chartCell.end());
+                chartCell.end());
 
         // Call the kernel and wait for results
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
@@ -163,8 +163,8 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
         // Call the prefix-sum and pack kernels
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
 
-        prefixSumKernel.setArgs(clTmpCellInsideProbabilities, clPrefixSum, clChartNumNonTerminals, chart.cellIndex(
-                packedCell.start(), packedCell.end()), grammar.numNonTerms());
+        prefixSumKernel.setArgs(clTmpCellInsideProbabilities, clPrefixSum, clChartNumNonTerminals,
+                chart.cellIndex(packedCell.start(), packedCell.end()), grammar.numNonTerms());
         // TODO Thread prefix sum kernel
         prefixSumKernel.enqueueNDRange(clQueue, new int[] { 1 }, new int[] { 1 });
 
