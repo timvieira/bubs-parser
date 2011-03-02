@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.spmv;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
@@ -93,7 +93,7 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
         Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
         int size = 0;
 
-        final CartesianProductFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.cartesianProductFunction();
 
         final PackedArrayChartCell leftCell = chart.getCell(start, midpoint);
         final PackedArrayChartCell rightCell = chart.getCell(midpoint, end);

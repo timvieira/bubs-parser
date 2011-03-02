@@ -30,7 +30,7 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
     public final int[] cscBinaryLeftChildEndIndices;
 
     public LeftCscSparseMatrixGrammar(final Reader grammarFile,
-            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws IOException {
+            final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
         super(grammarFile, cartesianProductFunctionClass);
 
         this.cscBinaryLeftChildStartIndices = new int[numNonTerms() + 1];
@@ -46,7 +46,7 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         this(new FileReader(grammarFile));
     }
 
-    public LeftCscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass) {
+    public LeftCscSparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
         super(g, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
@@ -56,7 +56,7 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
     }
 
     public LeftCscSparseMatrixGrammar(final Grammar g) {
-        this(g, PerfectIntPairHashFilterFunction.class);
+        this(g, PerfectIntPairHashPackingFunction.class);
     }
 
     private void init() {

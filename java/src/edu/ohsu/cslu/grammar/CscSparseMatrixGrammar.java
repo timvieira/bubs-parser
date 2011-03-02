@@ -79,7 +79,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     public final float[] cscUnaryProbabilities;
 
     protected CscSparseMatrixGrammar(final Reader grammarFile,
-            final Class<? extends CartesianProductFunction> cartesianProductFunctionClass) throws IOException {
+            final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
         super(grammarFile, cartesianProductFunctionClass);
 
         // All binary productions
@@ -120,7 +120,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         this(new FileReader(grammarFile));
     }
 
-    protected CscSparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass) {
+    protected CscSparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
         super(g, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final

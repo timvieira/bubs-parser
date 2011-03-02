@@ -207,17 +207,14 @@ public class CSLUTCellConstraints extends CellSelector {
     // return positiveScores.get((int) (positiveScores.size() * cellTune));
     // }
 
-    @Override
     public boolean isOpenAll(final short start, final short end) {
         return openAll[start][end];
     }
 
-    @Override
     public boolean isOpenOnlyFactored(final short start, final short end) {
         return openFactored[start][end] && !openAll[start][end];
     }
 
-    @Override
     public boolean isOpenUnary(final short start, final short end) {
         if (end - start > 1) {
             return true;

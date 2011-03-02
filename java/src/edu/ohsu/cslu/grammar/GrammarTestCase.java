@@ -23,7 +23,7 @@ public abstract class GrammarTestCase {
     }
 
     public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader,
-            final Class<? extends SparseMatrixGrammar.CartesianProductFunction> cartesianProductFunctionClass)
+            final Class<? extends SparseMatrixGrammar.PackingFunction> cartesianProductFunctionClass)
             throws Exception {
 
         try {

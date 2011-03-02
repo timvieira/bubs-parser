@@ -5,7 +5,7 @@ import static com.nativelibs4java.opencl.JavaCL.createBestContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 
 /**
@@ -16,7 +16,7 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? extends ParallelArrayChart>, C extends CartesianProductFunction>
+public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? extends ParallelArrayChart>, C extends PackingFunction>
         extends SparseMatrixVectorParserTestCase<P, C> {
 
     @BeforeClass

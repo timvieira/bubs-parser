@@ -13,9 +13,9 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -33,7 +33,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVectorParser<? extends SparseMatrixGrammar, ? extends ParallelArrayChart>, C extends CartesianProductFunction>
+public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVectorParser<? extends SparseMatrixGrammar, ? extends ParallelArrayChart>, C extends PackingFunction>
         extends ExhaustiveChartParserTestCase<P> {
 
     @Override
@@ -41,7 +41,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         return createGrammar(grammarReader, cpfClass());
     }
 
-    protected Grammar createGrammar(final Reader grammarReader, final Class<? extends CartesianProductFunction> cpfClass)
+    protected Grammar createGrammar(final Reader grammarReader, final Class<? extends PackingFunction> cpfClass)
             throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
                 new Object[] { grammarReader, cpfClass });
@@ -453,7 +453,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(),
-                PerfectIntPairHashFilterFunction.class);
+                PerfectIntPairHashPackingFunction.class);
 
         // Create the parser
         final P p = createParser(g, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());

@@ -37,7 +37,7 @@ import edu.ohsu.cslu.util.Strings;
 
 public abstract class SparseMatrixGrammar extends Grammar {
 
-    public final CartesianProductFunction cartesianProductFunction;
+    public final PackingFunction cartesianProductFunction;
 
     /**
      * Offsets into {@link #csrUnaryColumnIndices} for the start of each row, indexed by row index (non-terminals)
@@ -60,7 +60,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     public final short[] minRightSiblingIndices;
     public final short[] maxRightSiblingIndices;
 
-    public SparseMatrixGrammar(final Reader grammarFile, final Class<? extends CartesianProductFunction> functionClass)
+    public SparseMatrixGrammar(final Reader grammarFile, final Class<? extends PackingFunction> functionClass)
             throws IOException {
         super(grammarFile);
 
@@ -79,14 +79,14 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     public SparseMatrixGrammar(final Reader grammarFile) throws IOException {
-        this(grammarFile, PerfectIntPairHashFilterFunction.class);
+        this(grammarFile, PerfectIntPairHashPackingFunction.class);
     }
 
     public SparseMatrixGrammar(final String grammarFile) throws IOException {
         this(new FileReader(grammarFile));
     }
 
-    public SparseMatrixGrammar(final Grammar g, final Class<? extends CartesianProductFunction> functionClass) {
+    public SparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
         super(g);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
@@ -107,7 +107,15 @@ public abstract class SparseMatrixGrammar extends Grammar {
     protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends CartesianProductFunction> functionClass) {
+            final Class<? extends PackingFunction> functionClass) {
+        this(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
+                functionClass, true);
+    }
+
+    protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
+            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final Class<? extends PackingFunction> functionClass, final boolean initCsrMatrices) {
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
@@ -118,8 +126,9 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.csrUnaryColumnIndices = new short[numUnaryProds()];
         this.csrUnaryProbabilities = new float[numUnaryProds()];
 
-        storeUnaryRulesAsCsrMatrix();
-
+        if (initCsrMatrices) {
+            storeUnaryRulesAsCsrMatrix();
+        }
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
         storeRightSiblingIndices();
@@ -127,18 +136,17 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     @SuppressWarnings("unchecked")
-    private CartesianProductFunction createCartesianProductFunction(
-            Class<? extends CartesianProductFunction> functionClass) {
+    private PackingFunction createCartesianProductFunction(Class<? extends PackingFunction> functionClass) {
         try {
             if (functionClass == null) {
-                functionClass = PerfectIntPairHashFilterFunction.class;
+                functionClass = PerfectIntPairHashPackingFunction.class;
             }
 
-            Constructor<CartesianProductFunction> c;
+            Constructor<PackingFunction> c;
             try {
-                c = (Constructor<CartesianProductFunction>) functionClass.getConstructor(SparseMatrixGrammar.class);
+                c = (Constructor<PackingFunction>) functionClass.getConstructor(SparseMatrixGrammar.class);
             } catch (final NoSuchMethodException e) {
-                c = (Constructor<CartesianProductFunction>) functionClass.getConstructor(getClass());
+                c = (Constructor<PackingFunction>) functionClass.getConstructor(getClass());
             }
             return c.newInstance(this);
         } catch (final Exception e) {
@@ -228,7 +236,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * 
      * @return the cartesian-product function in use
      */
-    public final CartesianProductFunction cartesianProductFunction() {
+    public final PackingFunction cartesianProductFunction() {
         return cartesianProductFunction;
     }
 
@@ -275,7 +283,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return sb.toString();
     }
 
-    public abstract class CartesianProductFunction implements Serializable {
+    public abstract class PackingFunction implements Serializable {
 
         // Shift lengths and masks for packing and unpacking non-terminals into an int
         public final int shift;
@@ -283,7 +291,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         private final int packedArraySize;
         public final int maxPackedLexicalProduction = -numNonTerms() - 1;
 
-        protected CartesianProductFunction(final int maxUnshiftedNonTerminal) {
+        protected PackingFunction(final int maxUnshiftedNonTerminal) {
             shift = Math.logBase2(Math.nextPowerOf2(maxUnshiftedNonTerminal + 1));
             int m = 0;
             for (int i = 0; i < shift; i++) {
@@ -379,7 +387,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     }
 
-    public final class LeftShiftFunction extends CartesianProductFunction {
+    public final class LeftShiftFunction extends PackingFunction {
 
         public LeftShiftFunction() {
             super(rightChildrenEnd);
@@ -423,7 +431,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
-    public class RightShiftFunction extends CartesianProductFunction {
+    public class RightShiftFunction extends PackingFunction {
         public final int maxPackedLexicalProduction = -numNonTerms() - 1;
 
         public RightShiftFunction() {
@@ -493,7 +501,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         // }
     }
 
-    public final class PerfectIntPairHashFilterFunction extends CartesianProductFunction {
+    public final class PerfectIntPairHashPackingFunction extends PackingFunction {
 
         private final int maxLexicalProduction = -numNonTerms() - 1;
 
@@ -514,12 +522,17 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         private final int size;
 
-        public PerfectIntPairHashFilterFunction() {
-            super(rightChildrenEnd);
+        public PerfectIntPairHashPackingFunction() {
+            this(binaryProductions, rightChildrenEnd);
+        }
 
-            final int[][] childPairs = new int[2][binaryProductions.size()];
+        public PerfectIntPairHashPackingFunction(final ArrayList<Production> productions,
+                final int maxUnshiftedNonTerminal) {
+            super(maxUnshiftedNonTerminal);
+
+            final int[][] childPairs = new int[2][productions.size()];
             int k = 0;
-            for (final Production p : binaryProductions) {
+            for (final Production p : productions) {
                 childPairs[0][k] = p.leftChild;
                 childPairs[1][k++] = p.rightChild;
             }

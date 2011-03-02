@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.spmv;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
@@ -15,7 +15,7 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * @version $Revision$ $Date$ $Author$
  */
 public class TestCsrSpmvParser extends
-        SparseMatrixVectorParserTestCase<CsrSpmvParser, PerfectIntPairHashFilterFunction> {
+        SparseMatrixVectorParserTestCase<CsrSpmvParser, PerfectIntPairHashPackingFunction> {
 
     @Override
     @Test
