@@ -432,7 +432,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     public class RightShiftFunction extends PackingFunction {
-        public final int maxPackedLexicalProduction = -numNonTerms() - 1;
 
         public RightShiftFunction() {
             super(leftChildrenEnd);
@@ -732,8 +731,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
             return k2Shifts[leftChild];
         }
 
-        public final int pack(final short rightChild, final int shift, final int mask, final int offset) {
-            final int x = rightChild >> shift & mask;
+        public final int pack(final short rightChild, final int rightChildShift, final int mask, final int offset) {
+            final int x = rightChild >> rightChildShift & mask;
             final int y = rightChild & mask;
             final int hashcode = displacementTable[offset + x] + y;
             return hashtable[hashcode] == rightChild ? hashcode : Integer.MIN_VALUE;
