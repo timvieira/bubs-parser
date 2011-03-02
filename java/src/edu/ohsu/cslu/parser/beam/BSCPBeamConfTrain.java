@@ -4,15 +4,14 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 import cltool4j.GlobalLogger;
-import edu.ohsu.cslu.classifier.Perceptron;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.chart.Chart;
 
 /*
 
@@ -36,7 +35,7 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
 
     // int nPopBinary, nPopUnary, nGoldEdges;
 
-    Perceptron perceptron;
+    // Perceptron perceptron;
 
     public BSCPBeamConfTrain(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
@@ -177,8 +176,8 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
 
         // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
         System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),
-                numGoldEdges, bool2int(cell.width() == 1), cellFeats.vectorLength(),
-                ParserUtil.intArray2Str(cellFeats.elements())));
+                numGoldEdges, bool2int(cell.width() == 1), cellFeats.vectorLength(), ParserUtil.intArray2Str(cellFeats
+                        .elements())));
         // System.out.println(String.format("DSTAT: %d : %d %s", goldRank, cellFeats.vectorLength(),
         // ParserUtil.intArray2Str(cellFeats.elements())));
 

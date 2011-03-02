@@ -1,6 +1,7 @@
 package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -36,11 +37,28 @@ public class PerceptronBeamWidth extends CellConstraints {
             throw new IllegalArgumentException("ERROR: got that wrong -- no models -fact +base");
         }
 
-        if (ParserDriver.multiBin) {
-            beamWidthModel = new AveragedPerceptron(modelStream);
-        } else {
-            beamWidthModel = new BinaryPerceptronSet(modelStream);
+        try {
+            modelStream.mark(10000);
+            String line = modelStream.readLine();
+            while (line != null && !line.trim().contains("# === ")) {
+                line = modelStream.readLine();
+            }
+            modelStream.reset();
+
+            if (line.equals("# === BinaryPerceptronSet Model ===")) {
+                beamWidthModel = new BinaryPerceptronSet(modelStream);
+            } else {
+                beamWidthModel = new AveragedPerceptron(modelStream);
+            }
+        } catch (final IOException e) {
+            e.printStackTrace();
         }
+
+        // if (ParserDriver.multiBin) {
+        // beamWidthModel = new AveragedPerceptron(modelStream);
+        // } else {
+        // beamWidthModel = new BinaryPerceptronSet(modelStream);
+        // }
 
         if (beamConfBias != null) {
             beamWidthModel.setBias(beamConfBias);

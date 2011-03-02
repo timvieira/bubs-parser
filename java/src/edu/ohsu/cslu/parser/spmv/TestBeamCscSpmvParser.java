@@ -2,12 +2,14 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.logging.Level;
 
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import cltool4j.ConfigProperties;
+import cltool4j.GlobalLogger;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.edgeselector.InsideProb;
@@ -27,11 +29,11 @@ public class TestBeamCscSpmvParser extends
     public static void suiteSetUp() throws Exception {
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
-        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
+                .unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.beam")));
+        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
+                .unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.beam")));
 
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
@@ -41,7 +43,7 @@ public class TestBeamCscSpmvParser extends
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "6092", "d820", "9589" })
+    @PerformanceTest( { "mbp", "6092", "d820", "9589" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
@@ -49,7 +51,8 @@ public class TestBeamCscSpmvParser extends
     @Override
     protected ParserDriver parserOptions() {
         final ParserDriver options = new ParserDriver();
-        options.collectDetailedStatistics = true;
+        // options.collectDetailedStatistics = true;
+        GlobalLogger.singleton().setLevel(Level.FINER);
         options.binaryTreeOutput = true;
         options.edgeSelector = new InsideProb();
         return options;

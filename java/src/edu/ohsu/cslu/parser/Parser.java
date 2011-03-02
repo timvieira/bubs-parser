@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser;
 
+import java.util.logging.Level;
+
 import cltool4j.GlobalLogger;
 import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.grammar.Grammar;
@@ -38,7 +40,7 @@ public abstract class Parser<G extends Grammar> {
         this.edgeSelector = opts.edgeSelector;
         this.cellSelector = opts.cellSelector;
 
-        this.collectDetailedStatistics = opts.collectDetailedStatistics;
+        this.collectDetailedStatistics = GlobalLogger.singleton().isLoggable(Level.FINER);
 
         // if (this.cellSelector instanceof CellConstraints) {
         // this.hasCellConstraints = true;

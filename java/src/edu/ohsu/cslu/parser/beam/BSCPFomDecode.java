@@ -131,7 +131,7 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
 
         cell.bestEdge = maxcBackptr;
 
-        if (opts.collectDetailedStatistics) {
+        if (collectDetailedStatistics) {
             System.out.println(cell.width() + " [" + cell.start() + "," + cell.end() + "] #pop=" + cellPopped
                     + " #push=" + cellPushed + " #considered=" + cellConsidered);
         }
