@@ -487,6 +487,10 @@ public class Math {
      * 
      * log(exp(a) + exp(b)) = a + log(1 + exp(b-a))
      * 
+     * TODO Add a delta and return the greater of a,b if |a-b| > delta
+     * 
+     * TODO Consider approximations (e.g. {@link #approximateExp} and related algorithms)
+     * 
      * @param a
      * @param b
      * @return log_e(e^a + e^b)
@@ -499,5 +503,10 @@ public class Math {
             return a;
         }
         return (float) (a + java.lang.Math.log1p(java.lang.Math.exp(b - a)));
+    }
+
+    private static double approximateExp(final double val) {
+        final long tmp = (long) (1512775 * val + (1072693248 - 60801));
+        return Double.longBitsToDouble(tmp << 32);
     }
 }
