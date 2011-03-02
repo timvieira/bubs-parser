@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.parser.spmv;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -88,7 +88,7 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
     protected void unarySpmv(final int[] chartCellChildren, final float[] chartCellProbabilities,
             final short[] chartCellMidpoints, final int offset, final short chartCellEnd) {
 
-        final CartesianProductFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.cartesianProductFunction();
 
         // Iterate over populated children (matrix columns)
         for (short child = 0; child < grammar.numNonTerms(); child++) {

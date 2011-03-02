@@ -29,7 +29,7 @@ import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.agenda.APDecodeFOM;
@@ -379,7 +379,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             case Simple:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
             case PerfectHash2:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashFilterFunction.class);
+                return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
             default:
                 throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
             }

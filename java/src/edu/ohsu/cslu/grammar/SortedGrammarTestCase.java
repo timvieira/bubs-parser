@@ -8,22 +8,22 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 @RunWith(Theories.class)
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
     @DataPoint
-    public final static Class<? extends CartesianProductFunction> SIMPLE = SparseMatrixGrammar.LeftShiftFunction.class;
+    public final static Class<? extends PackingFunction> SIMPLE = SparseMatrixGrammar.LeftShiftFunction.class;
 
     // TODO Move this into its own class (SparseMatrixGrammarTestCase?)
     @Theory
-    public void testPack(final Class<? extends CartesianProductFunction> cartesianProductFunctionClass)
+    public void testPack(final Class<? extends PackingFunction> cartesianProductFunctionClass)
             throws Exception {
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(grammarClass(),
                 GrammarTestCase.simpleGrammar(), cartesianProductFunctionClass);
-        final CartesianProductFunction f = g.cartesianProductFunction;
+        final PackingFunction f = g.cartesianProductFunction;
         assertEquals(4, f.unpackLeftChild(f.pack((short) 4, (short) 3)));
         assertEquals(3, f.unpackRightChild(f.pack((short) 4, (short) 3)));
 
@@ -39,7 +39,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         // And a couple tests with a larger grammar
         final SparseMatrixGrammar g2 = (SparseMatrixGrammar) createGrammar(grammarClass(),
                 SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"), cartesianProductFunctionClass);
-        final CartesianProductFunction f2 = g2.cartesianProductFunction;
+        final PackingFunction f2 = g2.cartesianProductFunction;
         assertEquals(2, f2.unpackLeftChild(f2.pack((short) 2, (short) 0)));
         assertEquals(0, f2.unpackRightChild(f2.pack((short) 2, (short) 0)));
 
@@ -62,7 +62,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
      * @throws Exception if something bad happens
      */
     @Theory
-    public void testSimpleGrammar(final Class<? extends CartesianProductFunction> cartesianProductFunctionClass)
+    public void testSimpleGrammar(final Class<? extends PackingFunction> cartesianProductFunctionClass)
             throws Exception {
 
         final SparseMatrixGrammar simpleGrammar = (SparseMatrixGrammar) createGrammar(grammarClass(),

@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.ml;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -47,7 +47,7 @@ public class CartesianProductBinarySearchSpmlParser extends
     @Override
     protected void visitCell(final short start, final short end) {
 
-        final CartesianProductFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.cartesianProductFunction();
         final PackedArrayChartCell targetCell = chart.getCell(start, end);
         targetCell.allocateTemporaryStorage();
 

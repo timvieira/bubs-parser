@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.spmv;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 
@@ -61,7 +61,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         Arrays.fill(cartesianProductMidpoints, (short) 0);
         int size = 0;
 
-        final PerfectIntPairHashFilterFunction cpf = (PerfectIntPairHashFilterFunction) grammar
+        final PerfectIntPairHashPackingFunction cpf = (PerfectIntPairHashPackingFunction) grammar
                 .cartesianProductFunction();
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;

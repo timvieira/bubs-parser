@@ -11,7 +11,7 @@ import edu.ohsu.cslu.ella.AllEllaTests;
 import edu.ohsu.cslu.ella.ProductionListGrammar;
 import edu.ohsu.cslu.ella.StringCountGrammar;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 
 public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
 
@@ -31,9 +31,9 @@ public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
         final ProductionListGrammar plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
         final CsrSparseMatrixGrammar csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions,
                 plGrammar1.unaryProductions, plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
-        final CartesianProductFunction f = csrGrammar1.cartesianProductFunction;
+        final PackingFunction f = csrGrammar1.cartesianProductFunction;
 
         assertEquals(1, f.unpackLeftChild(f.pack((short) 1, (short) 4)));
         assertEquals(4, f.unpackRightChild(f.pack((short) 1, (short) 4)));

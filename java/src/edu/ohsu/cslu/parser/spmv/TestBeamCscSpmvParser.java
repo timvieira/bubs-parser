@@ -9,15 +9,15 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import cltool4j.ConfigProperties;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import cltool4j.GlobalLogger;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.edgeselector.InsideProb;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 public class TestBeamCscSpmvParser extends
-        SparseMatrixVectorParserTestCase<BeamCscSpmvParser, PerfectIntPairHashFilterFunction> {
+        SparseMatrixVectorParserTestCase<BeamCscSpmvParser, PerfectIntPairHashPackingFunction> {
 
     /**
      * Reads in the first 20 sentences of WSJ section 24. Run once for the class, prior to execution of the first test
