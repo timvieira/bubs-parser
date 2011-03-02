@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import java.util.logging.Level;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
@@ -40,7 +40,7 @@ public abstract class Parser<G extends Grammar> {
         this.edgeSelector = opts.edgeSelector;
         this.cellSelector = opts.cellSelector;
 
-        this.collectDetailedStatistics = GlobalLogger.singleton().isLoggable(Level.FINER);
+        this.collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINER);
 
         // if (this.cellSelector instanceof CellConstraints) {
         // this.hasCellConstraints = true;
@@ -66,7 +66,7 @@ public abstract class Parser<G extends Grammar> {
         stats.tokens = grammar.tokenizer.tokenizeToIndex(stats.sentence);
 
         if (stats.sentenceLength > opts.maxLength) {
-            GlobalLogger.singleton().fine(
+            BaseLogger.singleton().fine(
                     "INFO: Skipping sentence. Length of " + stats.sentenceLength + " is greater than maxLength ("
                             + opts.maxLength + ")");
         } else {

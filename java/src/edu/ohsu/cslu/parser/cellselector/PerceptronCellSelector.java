@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.beam.BSCPPerceptronCellTrainer;
@@ -441,7 +441,7 @@ public class PerceptronCellSelector extends CellSelector {
 
         if (featList.size() != numFeats) {
             if (trainingMode == true) {
-                GlobalLogger.singleton()
+                BaseLogger.singleton()
                         .info(
                                 "WARNING: len(featureList)=" + featList.size() + " but numFeats=" + numFeats
                                         + ".  Resizing...");
@@ -449,7 +449,7 @@ public class PerceptronCellSelector extends CellSelector {
                 weights = new float[numFeats];
                 initWeights();
             } else {
-                GlobalLogger.singleton().info(
+                BaseLogger.singleton().info(
                         "ERROR: len(featureList)=" + featList.size()
                                 + " but number features in model files is numFeats=" + numFeats);
                 System.exit(1);

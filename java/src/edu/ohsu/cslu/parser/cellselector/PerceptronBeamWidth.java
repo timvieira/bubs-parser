@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -64,7 +64,7 @@ public class PerceptronBeamWidth extends CellConstraints {
             beamWidthModel.setBias(beamConfBias);
         }
 
-        GlobalLogger.singleton().finer(
+        BaseLogger.singleton().finer(
                 "INFO: beamconf: inferFactoredCells=" + ParserUtil.bool2int(inferFactoredCells) + " classifyBaseCells="
                         + ParserUtil.bool2int(classifyBaseCells));
     }
@@ -137,8 +137,8 @@ public class PerceptronBeamWidth extends CellConstraints {
             classCounts += String.format(" class%d:%d", i, beamClassCounts[i]);
         }
 
-        GlobalLogger.singleton().finer("INFO: beamconf: " + toString());
-        GlobalLogger.singleton().info("INFO: beamconf: " + classCounts);
+        BaseLogger.singleton().finer("INFO: beamconf: " + toString());
+        BaseLogger.singleton().info("INFO: beamconf: " + classCounts);
         cellListIterator = cellList.iterator();
     }
 

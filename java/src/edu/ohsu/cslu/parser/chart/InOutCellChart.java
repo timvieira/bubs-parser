@@ -2,7 +2,7 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserUtil;
 
@@ -39,7 +39,7 @@ public class InOutCellChart extends CellChart {
 
             if (start == 0 && end == size()) {
                 outside[parser.grammar.startSymbol] = 0; // log(1)
-                GlobalLogger.singleton().finest(
+                BaseLogger.singleton().finest(
                         "setting " + parser.grammar.startSymbol() + " index=" + parser.grammar.startSymbol + " to 0");
             }
         }

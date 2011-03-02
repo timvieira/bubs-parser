@@ -3,7 +3,7 @@ package edu.ohsu.cslu.parser.beam;
 import java.util.Arrays;
 import java.util.PriorityQueue;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
@@ -40,7 +40,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
         setBeamTuneParams(opts.beamTune);
 
-        GlobalLogger.singleton().fine(
+        BaseLogger.singleton().fine(
                 "INFO: beamWidth=" + origBeamWidth + " globalDelta=" + origGlobalBeamDelta + " localDelta="
                         + origLocalBeamDelta + " factBeamWidth=" + origFactoredBeamWidth);
     }

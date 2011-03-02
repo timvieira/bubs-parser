@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.util.StringPool;
 
@@ -179,10 +179,10 @@ public class Grammar implements Serializable {
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
 
-        GlobalLogger.singleton().fine("Reading grammar ... ");
+        BaseLogger.singleton().fine("Reading grammar ... ");
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
-        GlobalLogger.singleton().fine("transforming ... ");
+        BaseLogger.singleton().fine("transforming ... ");
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
@@ -336,7 +336,7 @@ public class Grammar implements Serializable {
             }
         }
 
-        GlobalLogger.singleton().fine("done.");
+        BaseLogger.singleton().fine("done.");
     }
 
     public Grammar(final String grammarFile) throws IOException {
@@ -1138,7 +1138,7 @@ public class Grammar implements Serializable {
                 return unfactoredParent + "|<" + ParserUtil.join(markovChildrenStr, "-") + ">";
             case Berkeley:
                 if (markovChildrenStr.size() > 0) {
-                    GlobalLogger.singleton().info(
+                    BaseLogger.singleton().info(
                             "ERROR: Berkeley grammar does not support horizontal markov smoothing for factored nodes");
                     System.exit(1);
                 }

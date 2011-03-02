@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import cltool4j.ConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.edgeselector.InsideProb;
 import edu.ohsu.cslu.tests.PerformanceTest;
@@ -52,7 +52,7 @@ public class TestBeamCscSpmvParser extends
     protected ParserDriver parserOptions() {
         final ParserDriver options = new ParserDriver();
         // options.collectDetailedStatistics = true;
-        GlobalLogger.singleton().setLevel(Level.FINER);
+        BaseLogger.singleton().setLevel(Level.FINER);
         options.binaryTreeOutput = true;
         options.edgeSelector = new InsideProb();
         return options;

@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import cltool4j.GlobalLogger;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -168,8 +168,8 @@ public class CSLUTCellConstraints extends CellSelector {
 
         cellListIterator = cellList.iterator();
 
-        GlobalLogger.singleton().finer("INFO: CellConstraints: " + perCellStats);
-        GlobalLogger.singleton().info(
+        BaseLogger.singleton().finer("INFO: CellConstraints: " + perCellStats);
+        BaseLogger.singleton().info(
                 "INFO: CellConstraints: total=" + totalCells + " open=" + openCells + " openFactored=" + factoredCells
                         + " closed=" + (totalCells - openCells - factoredCells));
     }
@@ -266,10 +266,10 @@ public class CSLUTCellConstraints extends CellSelector {
     @SuppressWarnings("unchecked")
     public void readModel(final BufferedReader inStream) throws NumberFormatException, IOException {
 
-        GlobalLogger.singleton().fine(
+        BaseLogger.singleton().fine(
                 "CellConstraints: startThresh=" + this.startThresh + " endThresh=" + this.endThresh + " unaryThresh="
                         + this.unaryThresh);
-        GlobalLogger.singleton().fine("CellConstraints: Reading model ...");
+        BaseLogger.singleton().fine("CellConstraints: Reading model ...");
         // HashMap<String, Vector<Vector<Float>>> ccScores = new HashMap<String, Vector<Vector<Float>>>();
 
         allStartScores = new HashMap<String, Vector<Float>>();
@@ -312,7 +312,7 @@ public class CSLUTCellConstraints extends CellSelector {
         allEndScores.put(sentence, (Vector<Float>) tmpEnd.clone());
         allUnaryScores.put(sentence, (Vector<Float>) tmpUnary.clone());
 
-        GlobalLogger.singleton().fine("CellConstraints: done.");
+        BaseLogger.singleton().fine("CellConstraints: done.");
     }
 
     // private class SortBucket implements Comparable<SortBucket> {
