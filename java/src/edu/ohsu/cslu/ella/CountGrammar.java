@@ -39,6 +39,14 @@ public interface CountGrammar {
     public float lexicalRuleObservations(final String parent, final String child);
 
     /**
+     * Returns the total number of times a non-terminal was observed as a parent (optional operation).
+     * 
+     * @param parent
+     * @return the total number of times a non-terminal was observed as a parent
+     */
+    public float observations(final String parent);
+
+    /**
      * @return The total number of observed rules
      */
     public int totalRules();
@@ -57,13 +65,4 @@ public interface CountGrammar {
      * @return The number of observed lexical rules
      */
     public int lexicalRules();
-
-    /**
-     * Returns the total number of times a non-terminal was observed as a parent
-     * 
-     * @param parent
-     * @return the total number of times a non-terminal was observed as a parent
-     */
-    public float observations(final String parent);
-
 }

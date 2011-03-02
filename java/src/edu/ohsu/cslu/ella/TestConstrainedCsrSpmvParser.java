@@ -22,7 +22,7 @@ import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.ella.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CartesianProductFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -62,17 +62,14 @@ public class TestConstrainedCsrSpmvParser {
                 null, 1);
         plGrammar0 = new ProductionListGrammar(sg);
         // Create a basic constraining chart
-        final ConstrainedCsrSparseMatrixGrammar unsplitGrammar = new ConstrainedCsrSparseMatrixGrammar(
-                plGrammar0.binaryProductions, plGrammar0.unaryProductions, plGrammar0.lexicalProductions,
-                plGrammar0.vocabulary, plGrammar0.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        final ConstrainedCsrSparseMatrixGrammar unsplitGrammar = new ConstrainedCsrSparseMatrixGrammar(plGrammar0,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
         chart0 = new ConstrainedChart(BinaryTree.read(AllEllaTests.STRING_SAMPLE_TREE, String.class), unsplitGrammar);
 
         // Split the grammar
         plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
-        csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
-                plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(plGrammar1, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 
     /**
@@ -80,19 +77,19 @@ public class TestConstrainedCsrSpmvParser {
      * 
      * @return extracted parse tree
      */
-    private ParseTree parseWithGrammar1(final boolean realSemiring) {
+    private ParseTree parseWithGrammar1() {
         // Parse with the split-1 grammar
         // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
         final ParserDriver opts = new ParserDriver();
         opts.cellSelector = new ConstrainedCellSelector();
-        opts.realSemiring = realSemiring;
+        opts.realSemiring = true;
         parser1 = new ConstrainedCsrSpmvParser(opts, csrGrammar1);
         return parser1.findBestParse(chart0);
     }
 
     @Test
     public void testCsrConversion() {
-        final CartesianProductFunction f = csrGrammar1.cartesianProductFunction;
+        final PackingFunction f = csrGrammar1.cartesianProductFunction;
 
         assertEquals(1, f.unpackLeftChild(f.pack((short) 1, (short) 4)));
         assertEquals(4, f.unpackRightChild(f.pack((short) 1, (short) 4)));
@@ -103,7 +100,7 @@ public class TestConstrainedCsrSpmvParser {
     @Test
     public void test1SplitConstrainedParse() {
 
-        final ParseTree parseTree1 = parseWithGrammar1(true);
+        final ParseTree parseTree1 = parseWithGrammar1();
         final ConstrainedChart chart1 = parser1.chart;
 
         // Verify expected probabilities in a few cells
@@ -185,15 +182,13 @@ public class TestConstrainedCsrSpmvParser {
     public void test2SplitConstrainedParse() {
 
         // Parse with the split-1 grammar, creating a new constraining chart.
-        parseWithGrammar1(true);
+        parseWithGrammar1();
 
         // Split the grammar again
         // Split the grammar
         final ProductionListGrammar plGrammar2 = plGrammar1.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
-        final ConstrainedCsrSparseMatrixGrammar csrGrammar2 = new ConstrainedCsrSparseMatrixGrammar(
-                plGrammar2.binaryProductions, plGrammar2.unaryProductions, plGrammar2.lexicalProductions,
-                plGrammar2.vocabulary, plGrammar2.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        final ConstrainedCsrSparseMatrixGrammar csrGrammar2 = new ConstrainedCsrSparseMatrixGrammar(plGrammar2,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         // Parse with the split-2 grammar, constrained by the split-1 chart
         // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
@@ -309,9 +304,8 @@ public class TestConstrainedCsrSpmvParser {
     }
 
     private ConstrainedCsrSparseMatrixGrammar csrGrammar(final ProductionListGrammar plg) {
-        return new ConstrainedCsrSparseMatrixGrammar(plg.binaryProductions, plg.unaryProductions,
-                plg.lexicalProductions, plg.vocabulary, plg.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+        return new ConstrainedCsrSparseMatrixGrammar(plg, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 
     @Theory
@@ -458,6 +452,82 @@ public class TestConstrainedCsrSpmvParser {
             // Ensure that the resulting parse matches the gold tree
             assertEquals(goldTree.toString(), tree3.unfactor(GrammarFormatType.Berkeley).toString());
         }
+    }
+
+    @Test
+    public void testCountRuleOccurrences() {
+
+        // Parse with an equal-split grammar, count (fractional) rule occurrences, and convert those counts into a
+        // grammar
+        parseWithGrammar1();
+        ProductionListGrammar plg = new ProductionListGrammar(parser1.countRuleOccurrences());
+
+        // Verify that we find the same probabilities in the original split grammar
+        assertLogFractionEquals(Math.log(1f / 2), plg.unaryLogProbability("top", "a_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 2), plg.unaryLogProbability("top", "a_1"), .01f);
+
+        assertLogFractionEquals(Math.log(1f / 3), plg.lexicalLogProbability("a_0", "c"), 0.01f);
+        assertLogFractionEquals(Math.log(1f / 6), plg.lexicalLogProbability("a_1", "d"), 0.01f);
+
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.lexicalLogProbability("b_0", "c"), 0.01f);
+        assertLogFractionEquals(Math.log(1f / 2), plg.lexicalLogProbability("b_1", "d"), 0.01f);
+
+        assertLogFractionEquals(Math.log(1f / 6 / 4), plg.binaryLogProbability("a_0", "a_0", "a_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 6 / 4), plg.binaryLogProbability("a_0", "a_1", "a_1"), .01f);
+
+        assertLogFractionEquals(Math.log(2f / 6 / 4), plg.binaryLogProbability("a_1", "a_0", "b_0"), .01f);
+        assertLogFractionEquals(Math.log(2f / 6 / 4), plg.binaryLogProbability("a_1", "a_1", "b_1"), .01f);
+
+        assertLogFractionEquals(Math.log(1f / 4 / 4), plg.binaryLogProbability("b_0", "b_0", "a_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 4), plg.binaryLogProbability("b_1", "b_1", "a_0"), .01f);
+
+        assertLogFractionEquals(Math.log(1f / 4 / 2), plg.unaryLogProbability("b_0", "b_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 2), plg.unaryLogProbability("b_1", "b_0"), .01f);
+
+        // Split the M0 grammar, biasing all rule splits completely to the 2nd option
+        // Split the grammar
+        final ProductionListGrammar biasedGrammar1 = plGrammar0
+                .split(new ProductionListGrammar.BiasedNoiseGenerator(1f));
+        final ConstrainedCsrSparseMatrixGrammar biasedCsrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(
+                biasedGrammar1, GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+
+        final ParserDriver opts = new ParserDriver();
+        opts.cellSelector = new ConstrainedCellSelector();
+        opts.realSemiring = true;
+        parser1 = new ConstrainedCsrSpmvParser(opts, biasedCsrGrammar1);
+        parser1.findBestParse(chart0);
+
+        plg = new ProductionListGrammar(parser1.countRuleOccurrences());
+
+        // Verify that we find the same probabilities in the original split grammar
+        assertLogFractionEquals(Math.log(1), plg.unaryLogProbability("top", "a_0"), .01f);
+        assertLogFractionEquals(Math.log(0), plg.unaryLogProbability("top", "a_1"), .01f);
+
+        assertLogFractionEquals(Math.log(1f / 3), plg.lexicalLogProbability("a_0", "c"), 0.01f);
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.lexicalLogProbability("a_1", "c"), 0.01f);
+        assertLogFractionEquals(Math.log(1f / 6), plg.lexicalLogProbability("a_0", "d"), 0.01f);
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.lexicalLogProbability("a_1", "d"), 0.01f);
+
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.lexicalLogProbability("b_0", "c"), 0.01f);
+        assertLogFractionEquals(Math.log(1f / 2), plg.lexicalLogProbability("b_0", "d"), 0.01f);
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.lexicalLogProbability("b_1", "d"), 0.01f);
+
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.unaryLogProbability("b_0", "b_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4), plg.unaryLogProbability("b_1", "b_0"), .01f);
+
+        assertLogFractionEquals(Math.log(1f / 6 / 2), plg.binaryLogProbability("a_0", "a_0", "a_0"), .01f);
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.binaryLogProbability("a_0", "a_1", "a_1"), .01f);
+
+        assertLogFractionEquals(Math.log(2f / 6 / 2), plg.binaryLogProbability("a_1", "a_0", "b_0"), .01f);
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.binaryLogProbability("a_1", "a_1", "b_1"), .01f);
+
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.binaryLogProbability("b_0", "b_0", "a_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 4 / 2), plg.binaryLogProbability("b_0", "b_0", "a_0"), .01f);
+        // a_x -> a_x b_1 has probability 0, so the outside probability of b_1 in cell 3,5 is 0. Thus, even though b_1
+        // -> b_x a_0 productions have non-0 probability, b_1 -> b_x a_0 is not observed in the chart
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.binaryLogProbability("b_1", "b_0", "a_0"), .01f);
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.binaryLogProbability("b_1", "b_1", "a_0"), .01f);
+
     }
 
     private BinaryTree<String> toPreSplitTree(final BinaryTree<String> splitTree) {

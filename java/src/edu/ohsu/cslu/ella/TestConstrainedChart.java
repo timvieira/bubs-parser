@@ -40,7 +40,7 @@ public class TestConstrainedChart {
         plGrammar0 = new ProductionListGrammar(sg);
         csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions, plGrammar0.unaryProductions,
                 plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 
     /**
@@ -93,7 +93,7 @@ public class TestConstrainedChart {
                 AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN), Factorization.RIGHT, GrammarFormatType.Berkeley, 0));
         final CsrSparseMatrixGrammar csrg = new CsrSparseMatrixGrammar(plg.binaryProductions, plg.unaryProductions,
                 plg.lexicalProductions, plg.vocabulary, plg.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashFilterFunction.class);
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final ConstrainedChart cc = new ConstrainedChart(NaryTree.read(AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN,
                 String.class).factor(GrammarFormatType.Berkeley, Factorization.RIGHT), csrg);

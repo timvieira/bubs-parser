@@ -4,11 +4,12 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.ella.ConstrainedChart.ConstrainedChartCell;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashFilterFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
+import edu.ohsu.cslu.tests.Assert;
 import edu.ohsu.cslu.util.Math;
 
 /**
@@ -51,11 +52,14 @@ public class ConstrainedCsrSpmvParser extends
     protected long totalInitializationTime = 0;
     protected long totalLexProdTime = 0;
     protected long totalConstrainedXproductTime = 0;
-    protected long totalXproductFillTime = 0;
+    // protected long totalXproductFillTime = 0;
     protected long totalVisitTime = 0;
     protected long totalConstrainedBinaryTime = 0;
     protected long totalConstrainedUnaryTime = 0;
     protected long totalConstrainedOutsideTime = 0;
+    protected long totalConstrainedOutsideXproductTime = 0;
+    protected long totalConstrainedOutsideUnaryTime = 0;
+    protected long totalRuleCountTime = 0;
     protected long totalExtractionTime = 0;
 
     public ConstrainedCsrSpmvParser(final ParserDriver opts, final ConstrainedCsrSparseMatrixGrammar grammar,
@@ -134,6 +138,7 @@ public class ConstrainedCsrSpmvParser extends
             final int constrainingCellOffset = constrainingChart.cellOffsets[cellIndex];
 
             // Find the lexical production in the constraining chart
+            // TODO Use the unary chain length stores in the chart now
             int unaryChainLength = chart.maxUnaryChainLength - 1;
             while (unaryChainLength > 0
                     && constrainingChart.nonTerminalIndices[constrainingCellOffset + unaryChainLength] < 0) {
@@ -152,11 +157,10 @@ public class ConstrainedCsrSpmvParser extends
             // through the productions of interest.
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(lexicalProduction)) {
 
-                final int subcategoryIndex = splitVocabulary.subcategoryIndices[lexProd.parent];
-                // Put the lexical entry in the top position, even if we'll move it in subsequent unary processing
-                final int entryIndex = chart.offset(cellIndex) + subcategoryIndex;
-
                 if (splitVocabulary.baseCategoryIndices[lexProd.parent] == constrainingChart.nonTerminalIndices[constrainingEntryIndex]) {
+                    // Put the lexical entry in the top position, even if we'll move it in subsequent unary processing
+                    final int entryIndex = chart.offset(cellIndex) + splitVocabulary.subcategoryIndices[lexProd.parent];
+
                     chart.nonTerminalIndices[entryIndex] = (short) lexProd.parent;
                     chart.packedChildren[entryIndex] = grammar.cartesianProductFunction.packLexical(lexProd.leftChild);
                     chart.insideProbabilities[entryIndex] = lexProd.prob;
@@ -184,30 +188,25 @@ public class ConstrainedCsrSpmvParser extends
 
         final short midpoint = ((ConstrainedCellSelector) cellSelector).currentCellMidpoint();
 
-        final PerfectIntPairHashFilterFunction cpf = (PerfectIntPairHashFilterFunction) grammar
+        final PerfectIntPairHashPackingFunction cpf = (PerfectIntPairHashPackingFunction) grammar
                 .cartesianProductFunction();
 
-        if (collectDetailedTimings) {
-            totalXproductFillTime += System.nanoTime() - t0;
-        }
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 
         final int leftStart = chart.cellOffsets[chart.cellIndex(start, midpoint)];
         final short firstLeftChild = nonTerminalIndices[leftStart];
-        final int leftEnd = leftStart + splitVocabulary.splitCount[firstLeftChild] - 1;
-
-        // Arrays.fill(cartesianProductProbabilities, Float.NEGATIVE_INFINITY);
+        final int leftEnd = leftStart + splitVocabulary.splitCount[firstLeftChild];
 
         final int rightStart = chart.cellOffsets[chart.cellIndex(midpoint, end)];
         final short firstRightChild = nonTerminalIndices[rightStart];
-        final int rightEnd = rightStart + splitVocabulary.splitCount[firstRightChild] - 1;
+        final int rightEnd = rightStart + splitVocabulary.splitCount[firstRightChild];
 
-        for (int i = leftStart; i <= leftEnd; i++) {
+        for (int i = leftStart; i < leftEnd; i++) {
             final short leftChild = nonTerminalIndices[i];
-            final int fillStart = ((PerfectIntPairHashFilterFunction) grammar.cartesianProductFunction)
+            final int fillStart = ((PerfectIntPairHashPackingFunction) grammar.cartesianProductFunction)
                     .leftChildStart(leftChild);
-            final int fillEnd = ((PerfectIntPairHashFilterFunction) grammar.cartesianProductFunction)
+            final int fillEnd = ((PerfectIntPairHashPackingFunction) grammar.cartesianProductFunction)
                     .leftChildStart((short) (leftChild + 1));
 
             Arrays.fill(cartesianProductProbabilities, fillStart, fillEnd, Float.NEGATIVE_INFINITY);
@@ -217,7 +216,7 @@ public class ConstrainedCsrSpmvParser extends
             final int shift = cpf.shift(leftChild);
             final int offset = cpf.offset(leftChild);
 
-            for (int j = rightStart; j <= rightEnd; j++) {
+            for (int j = rightStart; j < rightEnd; j++) {
 
                 final int childPair = cpf.pack(nonTerminalIndices[j], shift, mask, offset);
                 if (childPair == Integer.MIN_VALUE) {
@@ -254,33 +253,26 @@ public class ConstrainedCsrSpmvParser extends
         final short[] constrainingChartEntries = constrainedCellSelector.constrainingChartNonTerminalIndices();
 
         // Find the bottom production in the constraining chart cell
+        // TODO Store unary chain length for each cell?
         int constrainingEntryIndex = constrainingChart.cellOffsets[constrainedCell.cellIndex];
         for (int i = 0; i < chart.maxUnaryChainLength - 1
                 && constrainingChart.nonTerminalIndices[constrainingEntryIndex + 1] >= 0; i++) {
             constrainingEntryIndex++;
         }
         final short constrainingParent = constrainingChartEntries[constrainingEntryIndex];
+        final short constrainingLeftChild = constrainingChartEntries[constrainedCellSelector
+                .constrainingLeftChildCellOffset()];
 
         // Iterate over possible parents (matrix rows)
         final short startParent = splitVocabulary.firstSubcategoryIndices[constrainingParent];
-        final short endParent = (short) (startParent + splitVocabulary.splitCount[startParent] - 1);
 
-        for (short splitParent = startParent; splitParent <= endParent; splitParent++) {
+        for (short parent = startParent; parent < startParent + splitVocabulary.splitCount[startParent]; parent++) {
 
-            final int entryIndex = constrainedCell.offset() + splitParent - startParent;
+            final int entryIndex = constrainedCell.offset() + parent - startParent;
+            chart.nonTerminalIndices[entryIndex] = parent;
 
-            float probability = Float.NEGATIVE_INFINITY;
-
-            // TODO Store start indices of left-children and only iterate over split left children matching
-            // constraining
-            // (unsplit) left child
-
-            // Iterate over possible children of the parent (columns with non-zero entries)
-            // final int i1 = grammar.csrBinaryRowIndices[splitParent];
-            // final int i2 = grammar.csrBinaryRowIndices[splitParent + 1];
-            // for (int j = grammar.csrBinaryLeftChildStartIndices[splitParent][startLeftChild]; j <
-            // grammar.csrBinaryLeftChildStartIndices[splitParent][endLeftChild + 1]; j++) {
-            for (int j = grammar.csrBinaryRowIndices[splitParent]; j < grammar.csrBinaryRowIndices[splitParent + 1]; j++) {
+            // Iterate over split left children matching the constraining left child
+            for (int j = grammar.csrBinaryBaseStartIndices[parent][constrainingLeftChild]; j < grammar.csrBinaryBaseStartIndices[parent][constrainingLeftChild + 1]; j++) {
 
                 final int grammarChildren = grammar.csrBinaryColumnIndices[j];
 
@@ -291,12 +283,8 @@ public class ConstrainedCsrSpmvParser extends
                 final float jointProbability = grammar.csrBinaryProbabilities[j]
                         + cartesianProductVector.probabilities[grammarChildren];
 
-                probability = edu.ohsu.cslu.util.Math.logSum(jointProbability, probability);
-            }
-
-            chart.nonTerminalIndices[entryIndex] = splitParent;
-            if (probability != Float.NEGATIVE_INFINITY) {
-                chart.insideProbabilities[entryIndex] = probability;
+                chart.insideProbabilities[entryIndex] = edu.ohsu.cslu.util.Math.logSum(jointProbability,
+                        chart.insideProbabilities[entryIndex]);
             }
         }
         chart.midpoints[constrainedCell.cellIndex] = constrainedCellSelector.currentCellMidpoint();
@@ -321,7 +309,8 @@ public class ConstrainedCsrSpmvParser extends
 
         final int constrainingCellUnaryDepth = constrainedCellSelector.currentCellUnaryChainDepth();
 
-        // foreach unary chain depth (starting from 2nd from bottom in chain; bottom is binary parent)
+        // foreach unary chain depth (starting from 2nd from bottom in chart storage; bottom is binary or lexical
+        // parent)
         // - Each unsplit parent has a known unsplit child
         // - All split children are populated (although some may have 0 probability)
         // - foreach split parent
@@ -334,6 +323,8 @@ public class ConstrainedCsrSpmvParser extends
             // Unsplit child and unsplit parent are fixed
             final short constrainingParent = constrainingChartEntries[constrainingCellOffset
                     + (constrainingCellUnaryDepth - 1 - unaryDepth)];
+            final short constrainingChild = constrainingChartEntries[constrainingCellOffset
+                    + (constrainingCellUnaryDepth - unaryDepth)];
 
             final short startParent = splitVocabulary.firstSubcategoryIndices[constrainingParent];
             final short endParent = (short) (startParent + splitVocabulary.splitCount[startParent] - 1);
@@ -342,6 +333,8 @@ public class ConstrainedCsrSpmvParser extends
                 // Shift all existing entries downward
                 chart.shiftCellEntriesDownward(constrainedCell.offset() + i);
             }
+
+            final int childOffset = constrainedCell.offset() + (unaryDepth * splitVocabulary.maxSplits);
 
             // foreach split parent
             for (short splitParent = startParent; splitParent <= endParent; splitParent++) {
@@ -353,18 +346,17 @@ public class ConstrainedCsrSpmvParser extends
 
                 // Iterate over possible children of the parent (columns with non-zero entries)
                 // Iterate through grammar looking for winning split of unsplit child
-                for (int j = grammar.csrUnaryRowStartIndices[splitParent]; j < grammar.csrUnaryRowStartIndices[splitParent + 1]; j++) {
+                for (int j = grammar.csrUnaryBaseStartIndices[splitParent][constrainingChild]; j < grammar.csrUnaryBaseStartIndices[splitParent][constrainingChild + 1]; j++) {
 
-                    final short splitChild = grammar.csrUnaryColumnIndices[j];
+                    final int childEntryIndex = childOffset
+                            + splitVocabulary.subcategoryIndices[grammar.csrUnaryColumnIndices[j]];
 
-                    final int childSubcategoryIndex = splitVocabulary.subcategoryIndices[splitChild];
-                    final int childEntryIndex = constrainedCell.offset() + (unaryDepth * splitVocabulary.maxSplits)
-                            + childSubcategoryIndex;
+                    if (chart.insideProbabilities[childEntryIndex] == Float.NEGATIVE_INFINITY) {
+                        continue;
+                    }
 
-                    final float grammarProbability = grammar.csrUnaryProbabilities[j];
-                    final float jointProbability = grammarProbability + chart.insideProbabilities[childEntryIndex];
-
-                    probability = edu.ohsu.cslu.util.Math.logSum(jointProbability, probability);
+                    probability = edu.ohsu.cslu.util.Math.logSum(grammar.csrUnaryProbabilities[j]
+                            + chart.insideProbabilities[childEntryIndex], probability);
                 }
 
                 chart.nonTerminalIndices[parentEntryIndex] = splitParent;
@@ -375,6 +367,71 @@ public class ConstrainedCsrSpmvParser extends
         if (collectDetailedTimings) {
             totalConstrainedUnaryTime += System.nanoTime() - t0;
         }
+    }
+
+    /**
+     * Takes the cartesian-product of all potential child-cell combinations.
+     * 
+     * Note: in a constrained chart, we only have a single (known) midpoint to iterate over
+     * 
+     * @param parentStart
+     * @param parentEnd
+     * @param childStart
+     * @param childEnd
+     * @return Cartesian-product
+     */
+    protected final CartesianProductVector outsideCartesianProductVector(final int parentStart, final int parentEnd,
+            final int childStart, final int childEnd, final PerfectIntPairHashPackingFunction packingFunction) {
+
+        long t0 = 0;
+        if (collectDetailedTimings) {
+            t0 = System.nanoTime();
+        }
+
+        final short[] nonTerminalIndices = chart.nonTerminalIndices;
+        final float[] outsideProbabilities = chart.outsideProbabilities;
+        final float[] insideProbabilities = chart.insideProbabilities;
+
+        final int parentOffset = chart.cellOffsets[chart.cellIndex(parentStart, parentEnd)];
+        final int parentStartIndex = parentOffset + (chart.unaryChainDepth(parentOffset) - 1)
+                * splitVocabulary.maxSplits;
+        final int parentEndIndex = parentStartIndex + splitVocabulary.splitCount[nonTerminalIndices[parentStartIndex]];
+
+        final int childOffset = chart.cellOffsets[chart.cellIndex(childStart, childEnd)];
+        final int childStartIndex = childOffset + (chart.unaryChainDepth(childOffset) - 1) * splitVocabulary.maxSplits;
+        final int childEndIndex = childStartIndex + splitVocabulary.splitCount[nonTerminalIndices[childStartIndex]];
+
+        for (int i = parentStartIndex; i < parentEndIndex; i++) {
+
+            final short parent = nonTerminalIndices[i];
+            Arrays.fill(cartesianProductProbabilities, packingFunction.leftChildStart(parent),
+                    packingFunction.leftChildStart((short) (parent + 1)), Float.NEGATIVE_INFINITY);
+
+            final float parentOutsideProbability = outsideProbabilities[i];
+            final int mask = packingFunction.mask(parent);
+            final int shift = packingFunction.shift(parent);
+            final int offset = packingFunction.offset(parent);
+
+            for (int j = childStartIndex; j < childEndIndex; j++) {
+
+                final int childPair = packingFunction.pack(nonTerminalIndices[j], shift, mask, offset);
+                if (childPair == Integer.MIN_VALUE) {
+                    continue;
+                }
+
+                // Parent outside x child inside
+                cartesianProductProbabilities[childPair] = parentOutsideProbability + insideProbabilities[j];
+            }
+        }
+
+        final CartesianProductVector v = new CartesianProductVector(grammar, cartesianProductProbabilities,
+                cartesianProductMidpoints, (parentEndIndex - parentStartIndex) * (childEndIndex - childStartIndex));
+
+        if (collectDetailedTimings) {
+            totalConstrainedOutsideXproductTime += System.nanoTime() - t0;
+        }
+
+        return v;
     }
 
     /**
@@ -411,62 +468,90 @@ public class ConstrainedCsrSpmvParser extends
         }
     }
 
+    /**
+     * TODO Document
+     * 
+     * To compute the outside probability of a non-terminal in a cell, we need the outside probability of the cell's
+     * parent, so we process recursively from the top of the chart.
+     * 
+     * @param start
+     * @param end
+     * @param parentStart
+     * @param parentEnd
+     * @param branchDirection
+     */
     private void computeOutsideProbabilities(final short start, final short end, final short parentStart,
             final short parentEnd, final BranchDirection branchDirection) {
 
         final int cellIndex = chart.cellIndex(start, end);
         int offset = chart.offset(cellIndex);
-        final int parentIndex = chart.cellIndex(parentStart, parentEnd);
-        final int parentOffset = chart.offset(parentIndex) + (chart.unaryChainDepth(chart.offset(parentIndex)) - 1)
-                * splitVocabulary.maxSplits;
+
+        final int constrainingCellOffset = constrainingChart
+                .offset(constrainingChart.cellIndex(parentStart, parentEnd));
+        final short constrainingParent = constrainingChart.nonTerminalIndices[constrainingCellOffset
+                + constrainingChart.unaryChainDepth(constrainingCellOffset) - 1];
 
         // Top level (generally a binary child)
-        final short parentStartSplit = chart.nonTerminalIndices[parentOffset];
-        final short parentEndSplit = (short) (parentStartSplit == 0 ? 0 : parentStartSplit
-                + splitVocabulary.splitCount[parentStartSplit] - 1);
 
-        final short startSplit = chart.nonTerminalIndices[offset];
-        final short endSplit = (short) (startSplit == 0 ? 0 : startSplit + splitVocabulary.splitCount[startSplit] - 1);
+        if (branchDirection == BranchDirection.LEFT) {
 
-        // foreach binary parent
-        for (short parent = parentStartSplit; parent <= parentEndSplit; parent++) {
-            final int parentSubcategoryIndex = splitVocabulary.subcategoryIndices[parent];
-            final int parentEntryIndex = parentOffset + parentSubcategoryIndex;
-            final float parentOutsideProbability = chart.outsideProbabilities[parentEntryIndex];
+            final CartesianProductVector cartesianProductVector = outsideCartesianProductVector(parentStart, parentEnd,
+                    end, parentEnd, grammar.leftChildPackingFunction);
 
-            // Iterate over grammar rules and update outside probability of children
-            for (int j = grammar.csrBinaryRowIndices[parent]; j < grammar.csrBinaryRowIndices[parent + 1]; j++) {
+            final short childStartSplit = chart.nonTerminalIndices[offset];
 
-                final int grammarChildren = grammar.csrBinaryColumnIndices[j];
+            // foreach child in target (left) cell
+            for (short child = childStartSplit; child < childStartSplit + splitVocabulary.splitCount[childStartSplit]; child++) {
 
-                short grammarChild;
-                short sibling;
-                int siblingEntryIndex;
-                if (branchDirection == BranchDirection.LEFT) {
-                    grammarChild = (short) grammar.cartesianProductFunction.unpackLeftChild(grammarChildren);
-                    sibling = grammar.cartesianProductFunction.unpackRightChild(grammarChildren);
-                    siblingEntryIndex = chart.offset(chart.cellIndex(end, parentEnd))
-                            + splitVocabulary.subcategoryIndices[sibling];
-                } else {
-                    grammarChild = grammar.cartesianProductFunction.unpackRightChild(grammarChildren);
-                    sibling = (short) grammar.cartesianProductFunction.unpackLeftChild(grammarChildren);
-                    siblingEntryIndex = chart.offset(chart.cellIndex(parentStart, start))
-                            + splitVocabulary.subcategoryIndices[sibling];
+                final int childIndex = offset + splitVocabulary.subcategoryIndices[child];
+
+                // Iterate over grammar rules and update outside probability of child
+                for (int j = grammar.leftChildCsrBaseStartIndices[child][constrainingParent]; j < grammar.leftChildCsrBaseStartIndices[child][constrainingParent + 1]; j++) {
+
+                    final int grammarChildren = grammar.leftChildCsrBinaryColumnIndices[j];
+
+                    if (cartesianProductVector.probabilities[grammarChildren] == Float.NEGATIVE_INFINITY) {
+                        continue;
+                    }
+
+                    // Outside probability = sum(production probability x parent outside x sibling inside)
+                    // X-product contains parent outside x sibling inside
+                    final float jointProbability = grammar.leftChildCsrBinaryProbabilities[j]
+                            + cartesianProductVector.probabilities[grammarChildren];
+                    chart.outsideProbabilities[childIndex] = Math.logSum(jointProbability,
+                            chart.outsideProbabilities[childIndex]);
                 }
+            }
 
-                // Skip grammar entries which don't match the child cell populations
-                if (grammarChild < startSplit || grammarChild > endSplit
-                        || sibling != chart.nonTerminalIndices[siblingEntryIndex]) {
-                    continue;
+        } else {
+
+            // Right branch
+            final CartesianProductVector cartesianProductVector = outsideCartesianProductVector(parentStart, parentEnd,
+                    parentStart, start, grammar.rightChildPackingFunction);
+
+            final short childStartSplit = chart.nonTerminalIndices[offset];
+
+            // foreach child in target (right) cell
+            for (short child = childStartSplit; child < childStartSplit + splitVocabulary.splitCount[childStartSplit]; child++) {
+
+                final int childEntryIndex = offset + splitVocabulary.subcategoryIndices[child];
+
+                // Iterate over grammar rules and update outside probability of child
+                for (int j = grammar.rightChildCsrBaseStartIndices[child][constrainingParent]; j < grammar.rightChildCsrBaseStartIndices[child][constrainingParent + 1]; j++) {
+
+                    final int grammarChildren = grammar.rightChildCsrBinaryColumnIndices[j];
+
+                    if (cartesianProductVector.probabilities[grammarChildren] == Float.NEGATIVE_INFINITY) {
+                        continue;
+                    }
+
+                    // Outside probability = sum(production probability x parent outside x sibling inside)
+                    // X-product contains parent outside x sibling inside
+                    final float jointProbability = grammar.rightChildCsrBinaryProbabilities[j]
+                            + cartesianProductVector.probabilities[grammarChildren];
+                    chart.outsideProbabilities[childEntryIndex] = Math.logSum(jointProbability,
+                            chart.outsideProbabilities[childEntryIndex]);
                 }
-
-                final int entryIndex = offset + splitVocabulary.subcategoryIndices[grammarChild];
-
-                // Outside probability = sum(production probability x parent outside x sibling inside)
-                final float outsideProbability = grammar.csrBinaryProbabilities[j] + parentOutsideProbability
-                        + chart.insideProbabilities[siblingEntryIndex];
-                chart.outsideProbabilities[entryIndex] = Math.logSum(outsideProbability,
-                        chart.outsideProbabilities[entryIndex]);
             }
         }
 
@@ -485,31 +570,31 @@ public class ConstrainedCsrSpmvParser extends
         final short midpoint = chart.midpoints[cellIndex];
 
         computeOutsideProbabilities(start, midpoint, start, end, BranchDirection.LEFT); // Left child
-        computeOutsideProbabilities(midpoint, end, start, end, BranchDirection.RIGHT); // right child
+        computeOutsideProbabilities(midpoint, end, start, end, BranchDirection.RIGHT); // Right child
     }
 
     private void computeUnaryOutsideProbabilities(final int offset) {
 
-        final short parentStartSplit = chart.nonTerminalIndices[offset - splitVocabulary.maxSplits];
-        final short parentEndSplit = (short) (parentStartSplit == 0 ? 0 : parentStartSplit
-                + splitVocabulary.splitCount[parentStartSplit] - 1);
+        long t0 = 0;
+        if (collectDetailedTimings) {
+            t0 = System.nanoTime();
+        }
 
+        final short parentStartSplit = chart.nonTerminalIndices[offset - splitVocabulary.maxSplits];
+        final short parentEndSplit = (short) (parentStartSplit + splitVocabulary.splitCount[parentStartSplit]);
         final short childStartSplit = chart.nonTerminalIndices[offset];
-        final short childEndSplit = (short) (childStartSplit == 0 ? 0 : childStartSplit
-                + splitVocabulary.splitCount[childStartSplit] - 1);
+        final short childEndSplit = (short) (childStartSplit + splitVocabulary.splitCount[childStartSplit]);
 
         // foreach split parent
-        for (short splitParent = parentStartSplit; splitParent <= parentStartSplit; splitParent++) {
-
-            final int parentSubcategoryIndex = splitVocabulary.subcategoryIndices[splitParent];
-            final int parentEntryIndex = offset - splitVocabulary.maxSplits + parentSubcategoryIndex;
+        for (int parentIndex = offset - splitVocabulary.maxSplits; parentIndex < offset; parentIndex++) {
 
             // Iterate over grammar rows headed by the parent and compute unary outside probability
-            for (int j = grammar.csrUnaryRowStartIndices[parentStartSplit]; j < grammar.csrUnaryRowStartIndices[parentEndSplit + 1]; j++) {
+            for (int j = grammar.csrUnaryRowStartIndices[parentStartSplit]; j < grammar.csrUnaryRowStartIndices[parentEndSplit]; j++) {
 
                 final short splitChild = grammar.csrUnaryColumnIndices[j];
+
                 // Skip grammar rules which don't match the populated children
-                if (splitChild < childStartSplit || splitChild > childEndSplit) {
+                if (splitChild < childStartSplit || splitChild >= childEndSplit) {
                     continue;
                 }
 
@@ -517,9 +602,170 @@ public class ConstrainedCsrSpmvParser extends
 
                 // Outside probability = sum(production probability x parent outside)
                 final float outsideProbability = grammar.csrUnaryProbabilities[j]
-                        + chart.outsideProbabilities[parentEntryIndex];
+                        + chart.outsideProbabilities[parentIndex];
                 chart.outsideProbabilities[entryIndex] = Math.logSum(outsideProbability,
                         chart.outsideProbabilities[entryIndex]);
+            }
+        }
+
+        if (collectDetailedTimings) {
+            totalConstrainedOutsideUnaryTime += System.nanoTime() - t0;
+        }
+    }
+
+    public ConstrainedCountGrammar countRuleOccurrences() {
+        long t0 = 0;
+        if (collectDetailedTimings) {
+            t0 = System.nanoTime();
+        }
+
+        final ConstrainedCountGrammar countGrammar = new ConstrainedCountGrammar(grammar);
+
+        cellSelector.reset();
+        while (cellSelector.hasNext()) {
+            final short[] startAndEnd = cellSelector.next();
+            countUnaryRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1]);
+            if (startAndEnd[1] - startAndEnd[0] == 1) {
+                countLexicalRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1]);
+            } else {
+                countBinaryRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1]);
+            }
+        }
+
+        if (collectDetailedTimings) {
+            totalRuleCountTime += System.nanoTime() - t0;
+        }
+
+        return countGrammar;
+    }
+
+    private void countBinaryRuleOccurrences(final ConstrainedCountGrammar countGrammar, final short start,
+            final short end) {
+
+        final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
+        final int cellIndex = chart.cellIndex(start, end);
+        final int offset = chart.offset(cellIndex);
+
+        final ConstrainedCellSelector constrainedCellSelector = (ConstrainedCellSelector) cellSelector;
+
+        final short[] constrainingChartEntries = constrainedCellSelector.constrainingChartNonTerminalIndices();
+
+        // Find the bottom production in the constraining chart cell
+        // TODO Store unary chain length for each cell?
+        int constrainingEntryIndex = constrainingChart.offset(cellIndex);
+        for (int i = 0; i < chart.maxUnaryChainLength - 1
+                && constrainingChart.nonTerminalIndices[constrainingEntryIndex + 1] >= 0; i++) {
+            constrainingEntryIndex++;
+        }
+        final short constrainingParent = constrainingChartEntries[constrainingEntryIndex];
+        final short constrainingLeftChild = constrainingChartEntries[constrainedCellSelector
+                .constrainingLeftChildCellOffset()];
+
+        // Iterate over possible parents (matrix rows)
+        final short startParent = splitVocabulary.firstSubcategoryIndices[constrainingParent];
+
+        for (short parent = startParent; parent < startParent + splitVocabulary.splitCount[startParent]; parent++) {
+
+            final int parentIndex = offset + parent - startParent;
+            final float parentOutside = chart.outsideProbabilities[parentIndex];
+
+            // Iterate over split left children matching the constraining left child
+            for (int j = grammar.csrBinaryBaseStartIndices[parent][constrainingLeftChild]; j < grammar.csrBinaryBaseStartIndices[parent][constrainingLeftChild + 1]; j++) {
+
+                final int grammarChildren = grammar.csrBinaryColumnIndices[j];
+
+                if (cartesianProductVector.probabilities[grammarChildren] == Float.NEGATIVE_INFINITY) {
+                    continue;
+                }
+
+                // Parent outside x left child inside x right child inside x production probability
+                final float jointProbability = parentOutside + cartesianProductVector.probabilities[grammarChildren]
+                        + grammar.csrBinaryProbabilities[j];
+
+                // final short leftChild = (short) grammar.cartesianProductFunction.unpackLeftChild(grammarChildren);
+                // final short rightChild = grammar.cartesianProductFunction.unpackRightChild(grammarChildren);
+                // System.out.format("%s -> %s %s %s\n", splitVocabulary.getSymbol(parent),
+                // splitVocabulary.getSymbol(leftChild), splitVocabulary.getSymbol(rightChild),
+                // Assert.fraction(jointProbability));
+
+                countGrammar.incrementBinaryLogCount(parent, grammarChildren, jointProbability);
+            }
+        }
+    }
+
+    private void countUnaryRuleOccurrences(final ConstrainedCountGrammar countGrammar, final short start,
+            final short end) {
+
+        System.out.println("=== " + start + "," + end + " ===");
+        final int cellIndex = chart.cellIndex(start, end);
+        final int offset = chart.offset(cellIndex);
+        final int constrainingCellUnaryDepth = ((ConstrainedCellSelector) cellSelector).currentCellUnaryChainDepth();
+
+        // foreach unary chain depth (starting from 2nd from bottom in chart storage; bottom is binary or lexical
+        // parent)
+        for (int childUnaryDepth = 1; childUnaryDepth < constrainingCellUnaryDepth; childUnaryDepth++) {
+
+            final int parentStartIndex = offset + (childUnaryDepth - 1) * splitVocabulary.maxSplits;
+            final short parentStartSplit = chart.nonTerminalIndices[parentStartIndex];
+            final int parentEndIndex = parentStartIndex + splitVocabulary.splitCount[parentStartSplit];
+            final short parentEndSplit = (short) (parentStartSplit + splitVocabulary.splitCount[parentStartSplit]);
+
+            final short childStartSplit = chart.nonTerminalIndices[offset + childUnaryDepth * splitVocabulary.maxSplits];
+            final short childEndSplit = (short) (childStartSplit + splitVocabulary.splitCount[childStartSplit]);
+
+            // foreach parent
+            for (int parentIndex = parentStartIndex; parentIndex < parentEndIndex; parentIndex++) {
+                final short parent = chart.nonTerminalIndices[parentIndex];
+                final float parentOutside = chart.outsideProbabilities[parentIndex];
+
+                // Iterate over grammar rows headed by the parent and compute unary outside probability
+                for (int j = grammar.csrUnaryRowStartIndices[parentStartSplit]; j < grammar.csrUnaryRowStartIndices[parentEndSplit]; j++) {
+
+                    // Skip grammar rules which don't match the populated children
+                    final short child = grammar.csrUnaryColumnIndices[j];
+                    if (child < childStartSplit || child >= childEndSplit) {
+                        continue;
+                    }
+
+                    // Parent outside x child inside x production probability
+                    final float jointProbability = parentOutside
+                            + chart.insideProbabilities[offset + childUnaryDepth * splitVocabulary.maxSplits
+                                    + splitVocabulary.subcategoryIndices[child]] + grammar.csrUnaryProbabilities[j];
+                    System.out.format("%s -> %s %s\n", splitVocabulary.getSymbol(parent),
+                            splitVocabulary.getSymbol(child), Assert.fraction(jointProbability));
+                    countGrammar.incrementUnaryLogCount(parent, child, jointProbability);
+                }
+            }
+        }
+    }
+
+    private void countLexicalRuleOccurrences(final ConstrainedCountGrammar countGrammar, final short start,
+            final short end) {
+
+        System.out.println("=== " + start + "," + end + " ===");
+
+        final int cellIndex = chart.cellIndex(start, end);
+        final int cellOffset = chart.offset(cellIndex);
+
+        final int constrainingNonTerminal = constrainingChart.nonTerminalIndices[constrainingChart.cellOffsets[cellIndex]];
+
+        final int offset = cellOffset + (chart.unaryChainDepth(cellOffset) - 1) * splitVocabulary.maxSplits;
+        final int lexicalChild = grammar.cartesianProductFunction.unpackLeftChild(chart.packedChildren[offset]);
+
+        // TODO Map lexical productions by both child and unsplit (M-0) parent, so we only have to iterate
+        // through the productions of interest.
+        for (final Production lexProd : grammar.getLexicalProductionsWithChild(lexicalChild)) {
+
+            if (splitVocabulary.baseCategoryIndices[lexProd.parent] == constrainingNonTerminal) {
+
+                // Parent outside x production probability (child inside = 1 for lexical entries)
+                final float jointProbability = chart.outsideProbabilities[offset
+                        + splitVocabulary.subcategoryIndices[lexProd.parent]]
+                        + lexProd.prob;
+
+                System.out.format("%s -> %s %s\n", splitVocabulary.getSymbol(lexProd.parent),
+                        grammar.lexSet.getSymbol(lexicalChild), Assert.fraction(jointProbability));
+                countGrammar.incrementLexicalLogCount((short) lexProd.parent, lexicalChild, jointProbability);
             }
         }
     }
