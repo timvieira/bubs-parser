@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
  * Stores a chart in a 3-way parallel array indexed by non-terminal:
@@ -49,6 +48,7 @@ public class DenseVectorChart extends ParallelArrayChart {
 
     @Override
     public void clear(final int sentenceLength) {
+        this.size = sentenceLength;
         // TODO We probably don't need to re-initialize all three arrays
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         Arrays.fill(packedChildren, 0);
