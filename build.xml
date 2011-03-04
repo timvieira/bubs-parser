@@ -378,7 +378,7 @@
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
 			<param name="tool-name" value="serialize-model" />
-			<param name="heap-size" value="768" />
+			<param name="heap-size" value="1200" />
 		</antcall>
 	</target>
 
