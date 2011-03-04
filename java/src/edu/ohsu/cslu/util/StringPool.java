@@ -1,5 +1,6 @@
 package edu.ohsu.cslu.util;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 /**
@@ -11,9 +12,9 @@ import java.util.HashMap;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class StringPool {
+public class StringPool implements Serializable {
 
-    private final HashMap<String, String> internMap = new HashMap<String, String>(1000);
+    private final HashMap<String, String> internMap = new HashMap<String, String>(50000);
 
     public String intern(final String s) {
         final String internedString = internMap.get(s);

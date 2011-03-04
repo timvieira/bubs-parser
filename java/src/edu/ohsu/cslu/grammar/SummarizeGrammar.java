@@ -23,12 +23,17 @@ public class SummarizeGrammar extends BaseCommandlineTool {
     @Option(name = "-m", metaVar = "mode", usage = "Output mode")
     private Mode mode = Mode.SUMMARY;
 
+    @Option(name = "-t", usage = "Time summary")
+    private boolean time;
+
     public static void main(final String[] args) {
         run(args);
     }
 
     @Override
     protected void run() throws Exception {
+
+        final long startTime = System.currentTimeMillis();
 
         // Handle gzipped and non-gzipped grammar files
         final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
@@ -39,7 +44,7 @@ public class SummarizeGrammar extends BaseCommandlineTool {
 
         switch (mode) {
         case SUMMARY:
-            System.out.print(new SummaryGrammar(genericGrammar).getStats());
+            System.out.println(new SummaryGrammar(genericGrammar).getStats());
             break;
         case NTS:
             for (final String nt : genericGrammar.nonTermSet) {
@@ -52,6 +57,10 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         case PRE_TERMINALS:
             System.out.print(new SummaryGrammar(genericGrammar).preTerminals());
             break;
+        }
+
+        if (time) {
+            System.out.format("Summary Time: %d\n", System.currentTimeMillis() - startTime);
         }
     }
 
@@ -116,7 +125,7 @@ public class SummarizeGrammar extends BaseCommandlineTool {
 
         @Override
         public String getStats() {
-            return super.getStats() + "V_l: " + V_l + '\n' + "V_r: " + V_r + '\n';
+            return super.getStats() + "V_l: " + V_l + ' ' + "V_r: " + V_r;
         }
 
     }
