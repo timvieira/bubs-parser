@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseLogger;
@@ -147,7 +148,7 @@ public class Grammar implements Serializable {
      * internalize Strings indefinitely, so we map them ourselves and allow the map to be GC'd after we're done
      * constructing the grammar.
      */
-    private StringPool stringPool = new StringPool();
+    private StringPool stringPool;
 
     /**
      * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same command-line option
@@ -180,6 +181,7 @@ public class Grammar implements Serializable {
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
 
         BaseLogger.singleton().fine("Reading grammar ... ");
+        this.stringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
         BaseLogger.singleton().fine("transforming ... ");
@@ -457,8 +459,9 @@ public class Grammar implements Serializable {
         }
 
         // for (String line = br.readLine(); line != null && !line.equals(DELIMITER); line = br.readLine()) {
+        final Pattern p = Pattern.compile("\\s");
         for (String line = br.readLine(); !line.equals(DELIMITER); line = br.readLine()) {
-            final String[] tokens = line.split("\\s");
+            final String[] tokens = p.split(line);
 
             if (tokens.length == 1) {
                 throw new IllegalArgumentException(
@@ -480,7 +483,7 @@ public class Grammar implements Serializable {
         // Read Lexicon after finding DELIMITER
         for (String line = br.readLine(); line != null || lexicalRules.size() == 0; line = br.readLine()) {
             if (line != null) {
-                final String[] tokens = line.split("\\s");
+                final String[] tokens = p.split(line);
                 if (tokens.length == 4) {
                     // expecting: A -> B prob
                     lexicalRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
