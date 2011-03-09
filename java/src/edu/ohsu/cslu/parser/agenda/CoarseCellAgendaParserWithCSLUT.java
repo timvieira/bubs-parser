@@ -21,7 +21,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) {
         HashSetChartCell cell;
 
         initParser(tokens);

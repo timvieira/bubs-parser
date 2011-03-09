@@ -30,7 +30,7 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) {
         ChartEdge edge;
         HashSetChartCell cell;
 
@@ -80,7 +80,7 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
         agenda.add(edge);
     }
 
-    protected void addLexicalProductions(final int sent[]) throws Exception {
+    protected void addLexicalProductions(final int sent[]) {
         HashSetChartCell cell;
 
         // add lexical productions and unary productions to the base cells of the chart

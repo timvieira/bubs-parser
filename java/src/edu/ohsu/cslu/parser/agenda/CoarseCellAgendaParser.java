@@ -36,7 +36,7 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) {
         HashSetChartCell cell;
 
         initParser(tokens);
@@ -153,7 +153,7 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
         return bestSpan;
     }
 
-    protected void addLexicalProductions(final int sent[]) throws Exception {
+    protected void addLexicalProductions(final int sent[]) {
         // ChartEdge newEdge;
         HashSetChartCell cell;
         for (int i = 0; i < chart.size(); i++) {
