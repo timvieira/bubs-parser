@@ -10,7 +10,7 @@ public class TestGrammarLoopSpmlParser extends SparseMatrixLoopParserTestCase<Gr
 
     @Override
     @Test
-    @PerformanceTest({ "d820", "0", "mbp", "1" })
+    @PerformanceTest({ "mbp", "1", "d820", "1" })
     public void profileSentences11Through20() throws Exception {
         fail("Too inefficient to profile");
     }
