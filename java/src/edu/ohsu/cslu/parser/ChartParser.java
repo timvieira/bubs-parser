@@ -25,7 +25,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) {
         final boolean collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINER);
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
         initSentence(tokens);
@@ -93,8 +93,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public String getStats() {
-        return chart.getStats()
-                + (BaseLogger.singleton().isLoggable(Level.FINER) ? (" edgeInitTime=" + initTime) : "");
+        return chart.getStats() + (BaseLogger.singleton().isLoggable(Level.FINER) ? (" edgeInitTime=" + initTime) : "");
     }
 
     public SparseBitVector getCellFeatures(final int start, final int end, final String featTemplate) {

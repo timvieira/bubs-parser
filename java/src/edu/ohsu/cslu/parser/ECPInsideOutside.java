@@ -65,7 +65,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) {
         final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
 
         initSentence(tokens);

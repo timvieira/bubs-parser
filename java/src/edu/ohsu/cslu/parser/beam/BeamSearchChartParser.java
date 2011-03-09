@@ -85,7 +85,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) {
         initSentence(tokens);
 
         numReparses = -1;

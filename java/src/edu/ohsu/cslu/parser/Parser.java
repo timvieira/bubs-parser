@@ -54,12 +54,12 @@ public abstract class Parser<G extends Grammar> {
 
     public abstract String getStats();
 
-    protected abstract ParseTree findBestParse(int[] tokens) throws Exception;
+    protected abstract ParseTree findBestParse(int[] tokens);
 
     // wraps parse tree from findBestParse() with additional stats and
     // cleans up output for consumption. Input can be a sentence string
     // or a parse tree
-    public ParseStats parseSentence(final String input) throws Exception {
+    public ParseStats parseSentence(final String input) {
         final ParseStats stats = new ParseStats(input, grammar);
         currentInput = stats; // get ride of currentInput (and chart?). Just pass these around
         stats.sentenceNumber = sentenceNumber++;

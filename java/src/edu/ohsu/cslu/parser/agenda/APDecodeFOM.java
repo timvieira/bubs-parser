@@ -20,7 +20,7 @@ public class APDecodeFOM extends APWithMemory {
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) throws Exception {
+    public ParseTree findBestParse(final int[] tokens) {
         ChartEdge edge;
         HashSetChartCell cell;
 
@@ -68,7 +68,7 @@ public class APDecodeFOM extends APWithMemory {
     }
 
     @Override
-    protected void addLexicalProductions(final int sent[]) throws Exception {
+    protected void addLexicalProductions(final int sent[]) {
         HashSetChartCell cell;
 
         // add lexical productions and unary productions to the base cells of the chart
