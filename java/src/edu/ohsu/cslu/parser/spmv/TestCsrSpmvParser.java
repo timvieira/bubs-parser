@@ -19,7 +19,7 @@ public class TestCsrSpmvParser extends
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "22223", "d820", "45104" })
+    @PerformanceTest({ "mbp", "13144", "d820", "23892" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

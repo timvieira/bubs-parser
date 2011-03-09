@@ -8,7 +8,7 @@ public class TestCartesianProductHashSpmlParser extends SparseMatrixLoopParserTe
 
     @Override
     @Test
-    @PerformanceTest({ "d820", "0", "mbp", "105927" })
+    @PerformanceTest({ "mbp", "70211", "d820", "100000" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
