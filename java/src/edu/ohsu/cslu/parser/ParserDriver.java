@@ -3,18 +3,16 @@ package edu.ohsu.cslu.parser;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 
+import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
-import cltool4j.BaseLogger;
 import cltool4j.ThreadLocalLinewiseClTool;
 import cltool4j.Threadable;
 import cltool4j.args4j.CmdLineException;
@@ -205,7 +203,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // run once at initialization despite number of threads
     public void setup(final CmdLineParser cmdlineParser) throws Exception {
 
-        BufferedReader fomModelStream = null;
+        BufferedReader fomModelReader = null;
         EdgeSelectorType edgeFOMType;
 
         // map simplified parser choices to the specific research version
@@ -258,13 +256,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
                 edgeFOMType = EdgeSelectorType.InsideWithFwdBkwd;
             } else if (new File(fomTypeOrModel).exists()) {
-                // Assuming boundry FOM
+                // Assuming boundary FOM
                 edgeFOMType = EdgeSelectorType.BoundaryInOut;
 
                 // Handle gzipped and non-gzipped model files
-                fomModelStream = fomTypeOrModel.endsWith(".gz") ? new BufferedReader(new InputStreamReader(
-                        new GZIPInputStream(new FileInputStream(fomTypeOrModel)))) : new BufferedReader(new FileReader(
-                        fomTypeOrModel));
+                fomModelReader = fileAsBufferedReader(fomTypeOrModel);
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
@@ -277,13 +273,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
 
             if (chartConstraintsModel != null) {
-                cellSelector = new OHSUCellConstraints(new BufferedReader(new FileReader(chartConstraintsModel)),
+                cellSelector = new OHSUCellConstraints(fileAsBufferedReader(chartConstraintsModel),
                         chartConstraintsThresh, grammar.isLeftFactored());
             }
 
             if (beamConfModelFileName != null) {
-                cellSelector = new PerceptronBeamWidth(new BufferedReader(new FileReader(beamConfModelFileName)),
-                        beamConfBias);
+                cellSelector = new PerceptronBeamWidth(fileAsBufferedReader(beamConfModelFileName), beamConfBias);
                 // beamConfModel = new AveragedPerceptron(new BufferedReader(new FileReader(beamConfModelFileName)));
                 // if (beamConfBias != null) {
                 // beamConfModel.setBias(beamConfBias);
@@ -295,7 +290,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             // throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
             // }
 
-            edgeSelector = EdgeSelector.create(edgeFOMType, grammar, fomModelStream);
+            edgeSelector = EdgeSelector.create(edgeFOMType, grammar, fomModelReader);
         }
 
         BaseLogger.singleton().fine(grammar.getStats());
@@ -402,7 +397,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Override
     public Parser<?> createLocal() {
-        // TODO: Why do we init the cellSelector here instaed of in setup? -nate
+        // TODO: Initialize the cellSelector here so we can run multiple threads
         // this.cellSelector = CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
         return createParser(researchParserType, grammar, this);
     }
