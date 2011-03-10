@@ -1,7 +1,5 @@
 package edu.ohsu.cslu.grammar;
 
-import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -14,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -84,7 +83,7 @@ public class Grammar implements Serializable {
     protected final Collection<Production>[] unaryProductionsByChild;
     protected final Collection<Production>[] lexicalProdsByChild;
     protected final short[][] lexicalParents; // [lexIndex][valid parent ntIndex]
-    protected final Short2FloatOpenHashMap[] lexicalLogProbabilities;
+    protected final float[][] lexicalLogProbabilities;
 
     public final static String nullSymbolStr = "<null>";
     public static Production nullProduction;
@@ -312,14 +311,14 @@ public class Grammar implements Serializable {
         lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
 
         lexicalParents = new short[lexicalProdsByChild.length][];
-        lexicalLogProbabilities = new Short2FloatOpenHashMap[lexicalProdsByChild.length];
+        lexicalLogProbabilities = new float[lexicalProdsByChild.length][];
         for (int child = 0; child < lexicalProdsByChild.length; child++) {
             lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
-            lexicalLogProbabilities[child] = new Short2FloatOpenHashMap(lexicalProdsByChild[child].size());
+            lexicalLogProbabilities[child] = new float[lexicalProdsByChild[child].size()];
             int j = 0;
             for (final Production p : lexicalProdsByChild[child]) {
-                lexicalParents[child][j++] = (short) p.parent;
-                lexicalLogProbabilities[child].put((short) p.parent, p.prob);
+                lexicalParents[child][j] = (short) p.parent;
+                lexicalLogProbabilities[child][j++] = p.prob;
             }
         }
 
@@ -604,6 +603,10 @@ public class Grammar implements Serializable {
         return lexicalParents[child];
     }
 
+    public final float[] lexicalLogProbabilities(final int child) {
+        return lexicalLogProbabilities[child];
+    }
+
     public final boolean hasWord(final String s) {
         return lexSet.hasSymbol(s);
     }
@@ -826,8 +829,9 @@ public class Grammar implements Serializable {
      * @return Log probability of the specified rule.
      */
     public float lexicalLogProbability(final int parent, final int child) {
-        // return getProductionProb(getLexicalProduction(parent, child));
-        return lexicalLogProbabilities[child].get((short) parent);
+        final int i = Arrays.binarySearch(lexicalParents(child), (short) parent);
+        return (i < 0) ? Float.NEGATIVE_INFINITY : lexicalLogProbabilities[child][i];
+        // return lexicalLogProbabilityMaps[child].get((short) parent);
     }
 
     /**
