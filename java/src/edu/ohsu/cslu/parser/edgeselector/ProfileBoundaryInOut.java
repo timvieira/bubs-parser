@@ -29,15 +29,19 @@ public class ProfileBoundaryInOut {
 
     @BeforeClass
     public static void suiteSetUp() throws IOException {
-        parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
-                SharedNlpTests.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
+        if (parentAnnotatedGrammar == null) {
+            parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
+                    SharedNlpTests.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
+        }
         parentAnnotatedBio = new BoundaryInOut(parentAnnotatedGrammar, new BufferedReader(
                 SharedNlpTests.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
 
-        // berkeleyGrammar = new LeftCscSparseMatrixGrammar(
-        // SharedNlpTests.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
-        // berkeleyBio = new BoundaryInOut(berkeleyGrammar, new BufferedReader(
-        // SharedNlpTests.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
+        if (berkeleyGrammar == null) {
+            berkeleyGrammar = new LeftCscSparseMatrixGrammar(
+                    SharedNlpTests.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
+        }
+        berkeleyBio = new BoundaryInOut(berkeleyGrammar, new BufferedReader(
+                SharedNlpTests.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
     }
 
     @Before
@@ -45,23 +49,23 @@ public class ProfileBoundaryInOut {
         final String sentence = "And a large slice of the first episode is devoted to efforts to get rid of some nearly worthless Japanese bonds -LRB- since when is anything Japanese nearly worthless nowadays ? -RRB- .";
         final int[] tokens = parentAnnotatedGrammar.tokenizer.tokenizeToIndex(sentence);
         parentAnnotatedChart = new PackedArrayChart(tokens, parentAnnotatedGrammar, 100, 100);
-        // berkeleyChart = new PackedArrayChart(tokens, berkeleyGrammar, 100, berkeleyBio);
+        berkeleyChart = new PackedArrayChart(tokens, berkeleyGrammar, 100, 150);
     }
 
     @Test
-    @PerformanceTest({ "mbp", "844" })
+    @PerformanceTest({ "mbp", "1443", "d820", "3794" })
     public void profileParentAnnotated() {
 
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 100; i++) {
             parentAnnotatedBio.init(parentAnnotatedChart);
         }
     }
 
-    // @Test
-    // @PerformanceTest({ "mbp", "719" })
-    // public void profileBerkeley() {
-    // for (int i = 0; i < 25; i++) {
-    // berkeleyBio.init(berkeleyChart);
-    // }
-    // }
+    @Test
+    @PerformanceTest({ "mbp", "758" })
+    public void profileBerkeley() {
+        for (int i = 0; i < 50; i++) {
+            berkeleyBio.init(berkeleyChart);
+        }
+    }
 }

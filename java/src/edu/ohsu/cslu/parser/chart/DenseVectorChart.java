@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.parser.ParseTree;
 
 /**
  * Stores a chart in a 3-way parallel array indexed by non-terminal:
@@ -53,6 +54,38 @@ public class DenseVectorChart extends ParallelArrayChart {
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         Arrays.fill(packedChildren, 0);
         Arrays.fill(midpoints, (short) 0);
+    }
+
+    @Override
+    public ParseTree extractBestParse(final int start, final int end, final int parent) {
+        // return super.extractBestParse(start, end, parent);
+        final DenseVectorChartCell packedCell = getCell(start, end);
+
+        if (packedCell == null) {
+            return null;
+        }
+
+        // Find the index of the non-terminal in the chart storage
+        final int parentIndex = packedCell.offset + parent;
+        final int edgeChildren = packedChildren[parentIndex];
+        final short edgeMidpoint = midpoints[parentIndex];
+
+        final ParseTree subtree = new ParseTree(sparseMatrixGrammar.nonTermSet.getSymbol(parent));
+        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(edgeChildren);
+        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(edgeChildren);
+
+        if (rightChild == Production.UNARY_PRODUCTION) {
+            subtree.children.add(extractBestParse(start, end, leftChild));
+
+        } else if (rightChild == Production.LEXICAL_PRODUCTION) {
+            subtree.addChild(new ParseTree(sparseMatrixGrammar.lexSet.getSymbol(leftChild)));
+
+        } else {
+            // binary production
+            subtree.children.add(extractBestParse(start, edgeMidpoint, leftChild));
+            subtree.children.add(extractBestParse(edgeMidpoint, end, rightChild));
+        }
+        return subtree;
     }
 
     @Override
