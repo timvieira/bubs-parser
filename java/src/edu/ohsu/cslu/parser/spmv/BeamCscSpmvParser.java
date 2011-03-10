@@ -86,7 +86,7 @@ public class BeamCscSpmvParser extends CscSpmvParser {
 
         // Push all binary or lexical edges onto a bounded priority queue
         final int cellBeamWidth = (end - start == 1 ? lexicalRowBeamWidth : Math.min(
-                cellSelector.getCellValue(start, end), beamWidth));
+                cellSelector.getBeamWidth(start, end), beamWidth));
         final BoundedPriorityQueue q = new BoundedPriorityQueue(cellBeamWidth, grammar);
 
         final float[] tmpFoms = new float[grammar.numNonTerms()];
