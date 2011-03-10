@@ -133,6 +133,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             // lexical and unary productions can't compete in the same agenda until their FOM
             // scores are changed to be comparable
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
+                currentInput.nLex += 1;
                 // TODO: need to be able to get POS posteriors. We could use this as the FOM and rank just like others
                 // if (!only1BestPOS || ((BoundaryInOut) edgeSelector).get1bestPOSTag(start) == lexProd.parent) {
                 cell.updateInside(lexProd, cell, null, lexProd.prob);

@@ -47,8 +47,10 @@ public class PerceptronBeamWidth extends CellConstraints {
 
             if (line.equals("# === BinaryPerceptronSet Model ===")) {
                 beamWidthModel = new BinaryPerceptronSet(modelStream);
-            } else {
+            } else if (line.equals("# === Perceptron Model ===")) {
                 beamWidthModel = new AveragedPerceptron(modelStream);
+            } else {
+                throw new IllegalArgumentException("ERROR: Unknown beamconf model type on line: " + line);
             }
         } catch (final IOException e) {
             e.printStackTrace();
