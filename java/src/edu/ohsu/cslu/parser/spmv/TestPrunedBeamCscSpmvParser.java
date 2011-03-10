@@ -17,6 +17,16 @@ import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
+/**
+ * Tests FOM-pruned parsing.
+ * 
+ * TODO Add to AllTests
+ * 
+ * @author Aaron Dunlop
+ * @since Mar 9, 2011
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
 public class TestPrunedBeamCscSpmvParser {
 
     private BeamCscSpmvParser parser;
@@ -37,6 +47,11 @@ public class TestPrunedBeamCscSpmvParser {
         parser = new BeamCscSpmvParser(opts, props, grammar);
     }
 
+    /**
+     * TODO Make this a PerformanceTest
+     * 
+     * @throws IOException
+     */
     @Test
     public void testPruned() throws IOException {
 
