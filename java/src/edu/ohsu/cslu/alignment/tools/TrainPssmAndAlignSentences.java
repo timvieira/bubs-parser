@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cltool4j.BaseCommandlineTool;
-import cltool4j.args4j.CmdLineParser;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
@@ -92,8 +91,8 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool {
         // Translate into sequences
         final MappedSequence[] sequences = new MappedSequence[sentences.size()];
         for (int i = 0; i < sequences.length; i++) {
-            sequences[i] = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sentences.get(i),
-                ruleset), vocabularies);
+            sequences[i] = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(sentences.get(i), ruleset),
+                    vocabularies);
         }
 
         // Construct and/or read in substitution matrices
@@ -106,8 +105,8 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool {
                 final float substitutionCost = Float.parseFloat(costs[0]);
                 final float gapCost = costs.length > 1 ? Float.parseFloat(costs[1]) : substitutionCost;
 
-                substitutionMatrices[i] = Matrix.Factory.newSymmetricIdentityFloatMatrix(vocabularies[i]
-                    .size(), substitutionCost, 0f);
+                substitutionMatrices[i] = Matrix.Factory.newSymmetricIdentityFloatMatrix(vocabularies[i].size(),
+                        substitutionCost, 0f);
 
                 // Specific (generally lower) cost for gaps
                 substitutionMatrices[i].setRow(0, gapCost);
@@ -115,13 +114,12 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool {
                 substitutionMatrices[i].set(0, 0, 0f);
             } else {
                 // Read in matrix file
-                substitutionMatrices[i] = (DenseMatrix) Matrix.Factory.read(new File(
-                    substitutionMatrixOptions.get(i)));
+                substitutionMatrices[i] = (DenseMatrix) Matrix.Factory.read(new File(substitutionMatrixOptions.get(i)));
             }
         }
 
         final MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(
-            substitutionMatrices, vocabularies);
+                substitutionMatrices, vocabularies);
 
         // Read in pairwise tree distance file
         // TODO: Option to calculate the distance matrix on-the-fly
@@ -129,22 +127,21 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool {
 
         // Align the sequences
         final IterativePairwiseAligner aligner = new IterativePairwiseAligner();
-        final MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix,
-            alignmentModel);
+        final MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix, alignmentModel);
 
-        System.out.format("Training Alignment of length %d (produced in %d ms)\n\n", trainingAlignment
-            .length(), System.currentTimeMillis() - startTime);
+        System.out.format("Training Alignment of length %d (produced in %d ms)\n\n", trainingAlignment.length(),
+                System.currentTimeMillis() - startTime);
         // System.out.println(trainingAlignment.toString());
         // System.out.println();
 
         final ColumnAlignmentModel pssmAlignmentModel = trainingAlignment
-            .inducePssmAlignmentModel(pseudoCountsPerElement);
+                .inducePssmAlignmentModel(pseudoCountsPerElement);
 
         int trainHeadColumn = 0;
         float headP = Float.MAX_VALUE;
         for (int j = 0; j < pssmAlignmentModel.columnCount(); j++) {
-            final float negativeLogP = pssmAlignmentModel.cost(new IntVector(new int[] { 1, 1, 1 }), j,
-                new int[] { 2 });
+            final float negativeLogP = pssmAlignmentModel
+                    .cost(new IntVector(new int[] { 1, 1, 1 }), j, new int[] { 2 });
             if (negativeLogP < headP) {
                 headP = negativeLogP;
                 trainHeadColumn = j;
@@ -152,8 +149,8 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool {
         }
 
         int correct = headVerbsInColumn(trainHeadColumn, trainingAlignment);
-        System.out.format("Training: %4.2f%% identification accuracy of head verbs (%d out of %d )\n",
-            correct * 100f / trainingAlignment.numOfSequences(), correct, trainingAlignment.numOfSequences());
+        System.out.format("Training: %4.2f%% identification accuracy of head verbs (%d out of %d )\n", correct * 100f
+                / trainingAlignment.numOfSequences(), correct, trainingAlignment.numOfSequences());
 
         System.out.println("\nHead Column = " + trainHeadColumn + "\n");
 
@@ -162,10 +159,10 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool {
         final MultipleSequenceAlignment devAlignment = new MultipleSequenceAlignment();
 
         for (String line = devSetReader.readLine(); line != null; line = devSetReader.readLine()) {
-            final MappedSequence unalignedSequence = new MultipleVocabularyMappedSequence(Strings
-                .extractPosAndHead(line, ruleset), vocabularies);
+            final MappedSequence unalignedSequence = new MultipleVocabularyMappedSequence(Strings.extractPosAndHead(
+                    line, ruleset), vocabularies);
             final MappedSequence alignedSequence = pssmAligner.align(unalignedSequence, pssmAlignmentModel,
-                devSetFeatures).alignedSequence();
+                    devSetFeatures).alignedSequence();
             devAlignment.addSequence(alignedSequence);
         }
 
@@ -173,8 +170,8 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool {
         // System.out.println(devAlignment.toString());
 
         correct = headVerbsInColumn(trainHeadColumn, devAlignment);
-        System.out.format("Development: %4.2f%% identification accuracy of head verbs (%d out of %d )\n",
-            correct * 100f / devAlignment.numOfSequences(), correct, devAlignment.numOfSequences());
+        System.out.format("Development: %4.2f%% identification accuracy of head verbs (%d out of %d )\n", correct
+                * 100f / devAlignment.numOfSequences(), correct, devAlignment.numOfSequences());
     }
 
     private int headVerbsInColumn(final int column, final MultipleSequenceAlignment sequenceAlignment) {
@@ -197,7 +194,7 @@ public class TrainPssmAndAlignSentences extends BaseCommandlineTool {
     }
 
     @Override
-    public void setup(final CmdLineParser parser) {
+    public void setup() {
         final String[] vmOptions = vocabularyMatrixParam.split(",");
 
         for (int i = 0; i < vmOptions.length; i++) {

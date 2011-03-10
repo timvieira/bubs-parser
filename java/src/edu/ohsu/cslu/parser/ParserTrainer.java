@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 import cltool4j.BaseCommandlineTool;
-import cltool4j.args4j.CmdLineParser;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
@@ -48,7 +47,7 @@ public class ParserTrainer extends BaseCommandlineTool {
     }
 
     @Override
-    public void setup(final CmdLineParser cmdlineParser) throws Exception {
+    public void setup() throws Exception {
 
         grammar = ParserDriver.readGrammar(grammarFile, researchParserType, null);
     }

@@ -16,7 +16,6 @@ import java.util.concurrent.FutureTask;
 
 import cltool4j.LinewiseCommandlineTool;
 import cltool4j.args4j.CmdLineException;
-import cltool4j.args4j.CmdLineParser;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.common.FeatureClass;
 import edu.ohsu.cslu.common.PorterStemmer;
@@ -184,7 +183,7 @@ public class SelectFeatures extends LinewiseCommandlineTool {
     }
 
     @Override
-    public void setup(final CmdLineParser parser) throws CmdLineException {
+    public void setup() throws CmdLineException {
         // Some input formats do not support all features
         if (pos || previousPos != 0 || subsequentPos != 0) {
             switch (inputFormat) {
@@ -194,7 +193,7 @@ public class SelectFeatures extends LinewiseCommandlineTool {
             case SquarePosTagged:
                 break;
             default:
-                throw new CmdLineException(parser, "POS features not supported for un-formatted flat input");
+                throw new CmdLineException("POS features not supported for un-formatted flat input");
             }
         }
 
@@ -206,7 +205,7 @@ public class SelectFeatures extends LinewiseCommandlineTool {
             case SquarePosTagged:
                 break;
             default:
-                throw new CmdLineException(parser, "Word features not supported for un-formatted flat input");
+                throw new CmdLineException("Word features not supported for un-formatted flat input");
             }
         }
 
@@ -216,17 +215,17 @@ public class SelectFeatures extends LinewiseCommandlineTool {
             case SquareBracketedTree:
                 break;
             default:
-                throw new CmdLineException(parser, "Head verb features not supported for flat input");
+                throw new CmdLineException("Head verb features not supported for flat input");
             }
         }
 
         if (selectedFeatures != null && selectedFeatures.length > 0 && wordIndex != 1) {
-            throw new CmdLineException(parser, "Cannot select both feature indices and word index");
+            throw new CmdLineException("Cannot select both feature indices and word index");
         }
 
         // And 'f' option when selecting from a flat format
         if (selectedFeatures != null && selectedFeatures.length > 0 && !inputFormat.isFlatFormat()) {
-            throw new CmdLineException(parser, "Field selection is only supported for flat input formats");
+            throw new CmdLineException("Field selection is only supported for flat input formats");
         }
 
         switch (outputFormat) {
@@ -246,7 +245,7 @@ public class SelectFeatures extends LinewiseCommandlineTool {
             featureDelimiter = "/";
             break;
         default:
-            throw new CmdLineException(parser, "Unsuppported output format: " + outputFormat);
+            throw new CmdLineException("Unsuppported output format: " + outputFormat);
         }
 
         if (selectedFeatures != null) {

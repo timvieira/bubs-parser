@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cltool4j.BaseCommandlineTool;
-import cltool4j.args4j.CmdLineParser;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.alignment.MatrixSubstitutionAlignmentModel;
 import edu.ohsu.cslu.alignment.SimpleVocabulary;
@@ -110,8 +109,8 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool {
                 final float substitutionCost = Float.parseFloat(costs[0]);
                 final float gapCost = costs.length > 1 ? Float.parseFloat(costs[1]) : substitutionCost;
 
-                substitutionMatrices[i] = Matrix.Factory.newSymmetricIdentityFloatMatrix(vocabularies[i]
-                    .size(), substitutionCost, 0f);
+                substitutionMatrices[i] = Matrix.Factory.newSymmetricIdentityFloatMatrix(vocabularies[i].size(),
+                        substitutionCost, 0f);
 
                 // Specific (generally lower) cost for gaps
                 substitutionMatrices[i].setRow(0, gapCost);
@@ -119,13 +118,12 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool {
                 substitutionMatrices[i].set(0, 0, 0f);
             } else {
                 // Read in matrix file
-                substitutionMatrices[i] = (DenseMatrix) Matrix.Factory.read(new File(
-                    substitutionMatrixOptions.get(i)));
+                substitutionMatrices[i] = (DenseMatrix) Matrix.Factory.read(new File(substitutionMatrixOptions.get(i)));
             }
         }
 
         final MatrixSubstitutionAlignmentModel alignmentModel = new MatrixSubstitutionAlignmentModel(
-            substitutionMatrices, vocabularies);
+                substitutionMatrices, vocabularies);
 
         // Read in pairwise distance file
         // TODO: Option to calculate the distance matrix on-the-fly
@@ -134,20 +132,19 @@ public class TrainPssmAndAlignForMorphology extends BaseCommandlineTool {
         // Align the sequences
         // IterativePairwiseAligner aligner = new IterativePairwiseAligner();
         final HmmMultipleSequenceAlignerForMorphology aligner = new HmmMultipleSequenceAlignerForMorphology(
-            new int[] { pseudoCountsPerElement }, 0); // Zero for DO NOT UPWEIGHT THE MOST SIMILAR
+                new int[] { pseudoCountsPerElement }, 0); // Zero for DO NOT UPWEIGHT THE MOST SIMILAR
         // SEQUENCE
-        final MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix,
-            alignmentModel);
+        final MultipleSequenceAlignment trainingAlignment = aligner.align(sequences, distanceMatrix, alignmentModel);
 
-        System.out.format("Training Alignment of length %d (produced in %d ms)\n\n", trainingAlignment
-            .length(), System.currentTimeMillis() - startTime);
+        System.out.format("Training Alignment of length %d (produced in %d ms)\n\n", trainingAlignment.length(),
+                System.currentTimeMillis() - startTime);
         System.out.println(trainingAlignment.toString());
         System.out.println();
 
     }
 
     @Override
-    public void setup(final CmdLineParser parser) {
+    public void setup() {
         final String[] vmOptions = vocabularyMatrixParam.split(",");
 
         for (int i = 0; i < vmOptions.length; i++) {
