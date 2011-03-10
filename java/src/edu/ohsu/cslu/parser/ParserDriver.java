@@ -16,7 +16,6 @@ import cltool4j.GlobalConfigProperties;
 import cltool4j.ThreadLocalLinewiseClTool;
 import cltool4j.Threadable;
 import cltool4j.args4j.CmdLineException;
-import cltool4j.args4j.CmdLineParser;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
@@ -200,8 +199,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     }
 
     @Override
-    // run once at initialization despite number of threads
-    public void setup(final CmdLineParser cmdlineParser) throws Exception {
+    // run once at initialization regardless of number of threads
+    public void setup() throws Exception {
 
         BufferedReader fomModelReader = null;
         EdgeSelectorType edgeFOMType;
@@ -266,8 +265,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             }
 
             if (researchParserType == ResearchParserType.BSCPBeamConfTrain && featTemplate == null) {
-                throw new CmdLineException(cmdlineParser,
-                        "ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
+                throw new CmdLineException("ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
             }
 
             grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
