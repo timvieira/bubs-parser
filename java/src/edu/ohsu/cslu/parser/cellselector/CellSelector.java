@@ -80,7 +80,14 @@ public abstract class CellSelector implements Iterator<short[]> {
     // return isOpenOnlyFactored(start, end);
     // }
 
-    public int getCellValue(final short start, final short end) {
-        return 1;
+    /**
+     * Returns the beam width for the current cell. Consumers generally set the cell beam width to
+     * java.lang.Math.min(getCelValue(), beamWidth), so they will not attempt to search a range larger than the maximum
+     * beam width of the parser.
+     * 
+     * TODO The naming and interface still aren't great.
+     */
+    public int getBeamWidth(final short start, final short end) {
+        return Integer.MAX_VALUE;
     }
 }

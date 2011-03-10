@@ -176,7 +176,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
         beamWidth = origBeamWidth * reparseFactor;
         if (hasPerceptronBeamWidth) {
-            beamWidth = Math.min(cellSelector.getCellValue(start, end), beamWidth);
+            beamWidth = Math.min(cellSelector.getBeamWidth(start, end), beamWidth);
             // NOTE: adding value to beam width DOES NOT affect closed cells and also does not exceed maxBeamWidth
             // we can't simply add it to getCellValue() above because it overflows when prediction is Integer.MAX_VALUE
             beamWidth = Math.min(beamWidth + addToBeamWidth, origBeamWidth * reparseFactor);

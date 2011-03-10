@@ -174,7 +174,7 @@ public class PerceptronBeamWidth extends CellConstraints {
     }
 
     @Override
-    public int getCellValue(final short start, final short end) {
+    public int getBeamWidth(final short start, final short end) {
         return beamWidthValues[start][end];
     }
 
