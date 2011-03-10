@@ -116,17 +116,13 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
     }
 
     @Override
-    public String getStatHeader() {
-        return super.getStatHeader()
-                + ", Avg X-prod size, X-prod Entries Examined, Total X-prod Entries, Cells,   Total C, Total C_l, Total C_r";
-    }
-
-    @Override
     public String getStats() {
         return super.getStats()
-                + String.format(", %15.1f, %23d, %20d, %6d, %10d, %10d, %10d", totalCartesianProductSize * 1.0f
-                        / chart.cells, totalCartesianProductEntriesExamined, totalValidCartesianProductEntries,
-                        chart.cells, totalCellPopulation, totalLeftChildPopulation, totalRightChildPopulation);
+                + (collectDetailedStatistics ? String.format(
+                        "avgXprod=%.1f xProdEntriesExamined=%d xProdEntries=%d cells=%d totalC=%d c_l=%d c_r=%d",
+                        totalCartesianProductSize * 1.0f / chart.cells, totalCartesianProductEntriesExamined,
+                        totalValidCartesianProductEntries, chart.cells, totalCellPopulation, totalLeftChildPopulation,
+                        totalRightChildPopulation) : "");
     }
 
 }

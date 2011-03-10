@@ -106,7 +106,6 @@ public abstract class Chart {
     }
 
     public String getStats() {
-        String result = "";
         int con = 0, add = 0;
 
         for (int start = 0; start < size(); start++) {
@@ -116,8 +115,7 @@ public abstract class Chart {
             }
         }
 
-        result += " chartEdges=" + add + " processedEdges=" + con;
-        return result;
+        return " chartEdges=" + add + " processedEdges=" + con;
     }
 
     public static abstract class ChartCell {

@@ -147,15 +147,11 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
     }
 
     @Override
-    public String getStatHeader() {
-        return super.getStatHeader() + ", Avg X-prod size, X-prod Entries Examined, Total X-prod Entries";
-    }
-
-    @Override
     public String getStats() {
         return super.getStats()
-                + String.format(", %15.1f, %23d, %20d", totalCartesianProductSize * 1.0f / chart.cells,
-                        totalCartesianProductEntriesExamined, totalValidCartesianProductEntries);
+                + (collectDetailedStatistics ? String.format("avgXprod=%.1f xProdEntriesExamined=%d xProdEntries=%d",
+                        totalCartesianProductSize * 1.0f / chart.cells, totalCartesianProductEntriesExamined,
+                        totalValidCartesianProductEntries) : "");
     }
 
 }
