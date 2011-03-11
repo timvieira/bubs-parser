@@ -14,10 +14,6 @@ public abstract class CellSelector implements Iterator<short[]> {
         throw new UnsupportedOperationException();
     }
 
-    public void readModel(final BufferedReader inStream) throws Exception {
-        throw new UnsupportedOperationException();
-    }
-
     public void writeModel(final BufferedWriter outStream) throws Exception {
         throw new UnsupportedOperationException();
     }

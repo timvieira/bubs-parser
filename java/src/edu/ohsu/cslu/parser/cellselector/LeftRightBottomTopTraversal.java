@@ -17,6 +17,13 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     private int nextCell = 0;
     private int cells;
 
+    public static CellSelectorFactory FACTORY = new CellSelectorFactory() {
+        @Override
+        public CellSelector createCellSelector() {
+            return new LeftRightBottomTopTraversal();
+        }
+    };
+
     public LeftRightBottomTopTraversal() {
     }
 

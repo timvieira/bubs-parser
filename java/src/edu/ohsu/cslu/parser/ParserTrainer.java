@@ -9,7 +9,7 @@ import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.perceptron.ModelTrainer;
 
@@ -58,9 +58,9 @@ public class ParserTrainer extends BaseCommandlineTool {
         if (boundaryFOM == true) {
             // To train a BoundaryInOut FOM model we need a grammar and
             // binarized gold input trees with NTs from same grammar
-            final EdgeSelector edgeSelector = EdgeSelector.create(EdgeSelectorType.BoundaryInOut, grammar, null);
-            edgeSelector.train(inputStream);
-            edgeSelector.writeModel(outputStream);
+            final BoundaryInOut edgeSelectorModel = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, null);
+            edgeSelectorModel.train(inputStream);
+            edgeSelectorModel.writeModel(outputStream);
         } else if (beamConf == true) {
             final ModelTrainer m = new ModelTrainer();
             m.natesTraining();

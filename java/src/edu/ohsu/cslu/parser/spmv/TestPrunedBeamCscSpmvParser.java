@@ -13,7 +13,7 @@ import cltool4j.ConfigProperties;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
@@ -37,7 +37,7 @@ public class TestPrunedBeamCscSpmvParser {
                 SharedNlpTests.unitTestDataAsReader("grammars/wsj.2-21.unk.R2-p1.gz"),
                 PerfectIntPairHashPackingFunction.class);
         final ParserDriver opts = new ParserDriver();
-        opts.edgeSelector = EdgeSelector.create(EdgeSelectorType.BoundaryInOut, grammar, new BufferedReader(
+        opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, new BufferedReader(
                 SharedNlpTests.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
 
         final ConfigProperties props = new ConfigProperties();

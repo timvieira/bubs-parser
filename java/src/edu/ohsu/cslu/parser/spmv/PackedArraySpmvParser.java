@@ -35,7 +35,6 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
         } else {
-            // Don't set the chart's edge selector for the basic inside-probability version.
             chart = new PackedArrayChart(tokens, grammar, beamWidth, lexicalRowBeamWidth);
         }
 

@@ -22,91 +22,13 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
         super(opts, grammar);
     }
 
-    // /**
-    // * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together, saving
-    // * the maximum probability child combinations.
-    // *
-    // * @param start
-    // * @param end
-    // * @return Unioned cross-product
-    // */
-    // @Override
-    // protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
-    //
-    // Arrays.fill(cartesianProductMidpoints, (short) 0);
-    // int size = 0;
-    //
-    // final CartesianProductFunction cpf = grammar.cartesianProductFunction();
-    // final short[] nonTerminalIndices = chart.nonTerminalIndices;
-    // final float[] insideProbabilities = chart.insideProbabilities;
-    //
-    // // Iterate over all possible midpoints, unioning together the cross-product of discovered
-    // // non-terminals in each left/right child pair
-    //
-    // for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
-    // final int leftCellIndex = chart.cellIndex(start, midpoint);
-    // final int rightCellIndex = chart.cellIndex(midpoint, end);
-    //
-    // final int leftStart = chart.minLeftChildIndex(leftCellIndex);
-    // final int leftEnd = chart.maxLeftChildIndex(leftCellIndex);
-    // final int rightStart = chart.minRightChildIndex(rightCellIndex);
-    // final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
-    //
-    // for (int i = leftStart; i <= leftEnd; i++) {
-    // final short leftChild = nonTerminalIndices[i];
-    // final float leftProbability = insideProbabilities[i];
-    //
-    // for (int j = rightStart; j <= rightEnd; j++) {
-    //
-    // if (collectDetailedStatistics) {
-    // totalCartesianProductEntriesExamined++;
-    // }
-    //
-    // final int childPair = cpf.pack(leftChild, nonTerminalIndices[j]);
-    // if (childPair == Integer.MIN_VALUE) {
-    // continue;
-    // }
-    //
-    // final float jointProbability = leftProbability + insideProbabilities[j];
-    //
-    // if (collectDetailedStatistics) {
-    // totalValidCartesianProductEntries++;
-    // }
-    //
-    // // If this cartesian-product entry is not populated, we can populate it without comparing
-    // // to a current probability.
-    // if (cartesianProductMidpoints[childPair] == 0) {
-    // cartesianProductProbabilities[childPair] = jointProbability;
-    // cartesianProductMidpoints[childPair] = midpoint;
-    //
-    // if (collectDetailedStatistics) {
-    // size++;
-    // }
-    //
-    // } else {
-    // if (jointProbability > cartesianProductProbabilities[childPair]) {
-    // cartesianProductProbabilities[childPair] = jointProbability;
-    // cartesianProductMidpoints[childPair] = midpoint;
-    // }
-    // }
-    // }
-    // }
-    // }
-    //
-    // return new CartesianProductVector(grammar, cartesianProductProbabilities, cartesianProductMidpoints, size);
-    // }
-
     @Override
     public void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
 
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
-
-        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
-        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
-        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
-
-        binarySpmvMultiply(cartesianProductVector, chartCellChildren, chartCellProbabilities, chartCellMidpoints);
+        binarySpmvMultiply(cartesianProductVector, packedArrayCell.tmpPackedChildren,
+                packedArrayCell.tmpInsideProbabilities, packedArrayCell.tmpMidpoints);
     }
 
     protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,

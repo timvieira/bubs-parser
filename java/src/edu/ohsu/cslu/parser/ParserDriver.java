@@ -1,6 +1,5 @@
 package edu.ohsu.cslu.parser;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -42,13 +41,14 @@ import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
 import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
+import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
-import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraints;
-import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidth;
+import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory;
+import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelectorFactory;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
@@ -77,8 +77,8 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFuncti
 public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     // Global vars to create parser
-    public CellSelector cellSelector = new LeftRightBottomTopTraversal();
-    public EdgeSelector edgeSelector;
+    public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
+    public EdgeSelectorFactory edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
     private Grammar grammar;
 
     // == Parser options ==
@@ -202,9 +202,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     // run once at initialization regardless of number of threads
     public void setup() throws Exception {
 
-        BufferedReader fomModelReader = null;
-        EdgeSelectorType edgeFOMType;
-
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
             switch (parserType) {
@@ -232,10 +229,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             this.realSemiring = true;
         }
 
+        grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
+
         if (modelFile != null) {
-            final InputStream is = modelFile.getName().endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
-                    modelFile)) : new FileInputStream(modelFile);
-            final ObjectInputStream ois = new ObjectInputStream(is);
+            final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(modelFile));
             final String metadata = (String) ois.readObject();
             final ConfigProperties props = (ConfigProperties) ois.readObject();
             GlobalConfigProperties.singleton().mergeUnder(props);
@@ -244,22 +241,20 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             this.grammar = (Grammar) ois.readObject();
 
             BaseLogger.singleton().fine("Reading FOM...");
-            edgeSelector = (EdgeSelector) ois.readObject();
+            edgeSelectorFactory = (EdgeSelectorFactory) ois.readObject();
 
         } else {
 
             if (fomTypeOrModel.equals("Inside")) {
-                edgeFOMType = EdgeSelectorType.Inside;
+                edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
             } else if (fomTypeOrModel.equals("NormalizedInside")) {
-                edgeFOMType = EdgeSelectorType.NormalizedInside;
+                edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.NormalizedInside);
             } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
-                edgeFOMType = EdgeSelectorType.InsideWithFwdBkwd;
+                edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.InsideWithFwdBkwd);
             } else if (new File(fomTypeOrModel).exists()) {
                 // Assuming boundary FOM
-                edgeFOMType = EdgeSelectorType.BoundaryInOut;
-
-                // Handle gzipped and non-gzipped model files
-                fomModelReader = fileAsBufferedReader(fomTypeOrModel);
+                edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar,
+                        fileAsBufferedReader(fomTypeOrModel));
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
@@ -268,27 +263,15 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
                 throw new CmdLineException("ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
             }
 
-            grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
-
             if (chartConstraintsModel != null) {
-                cellSelector = new OHSUCellConstraints(fileAsBufferedReader(chartConstraintsModel),
+                cellSelectorFactory = new OHSUCellConstraintsFactory(fileAsBufferedReader(chartConstraintsModel),
                         chartConstraintsThresh, grammar.isLeftFactored());
             }
 
             if (beamConfModelFileName != null) {
-                cellSelector = new PerceptronBeamWidth(fileAsBufferedReader(beamConfModelFileName), beamConfBias);
-                // beamConfModel = new AveragedPerceptron(new BufferedReader(new FileReader(beamConfModelFileName)));
-                // if (beamConfBias != null) {
-                // beamConfModel.setBias(beamConfBias);
-                // }
+                cellSelectorFactory = new PerceptronBeamWidthFactory(fileAsBufferedReader(beamConfModelFileName),
+                        beamConfBias);
             }
-
-            // Nate: perceptron span selection doesn't work any more
-            // if (cellSelectorType == CellSelectorType.Perceptron && cslutScoresStream == null) {
-            // throw new CmdLineException(cmdlineParser, "Perceptron span selection must specify -cslutSpanScores");
-            // }
-
-            edgeSelector = EdgeSelector.create(edgeFOMType, grammar, fomModelReader);
         }
 
         BaseLogger.singleton().fine(grammar.getStats());
@@ -313,7 +296,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
         // Read the generic grammar in either text or binary-serialized format.
         final Grammar genericGrammar = Grammar.read(grammarInputStream);
 
-        // Construct the requested grammar type from the genric grammar
+        // Construct the requested grammar type from the generic grammar
         return createGrammar(genericGrammar, researchParserType, cartesianProductFunctionType);
     }
 
@@ -395,8 +378,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Override
     public Parser<?> createLocal() {
-        // TODO: Initialize the cellSelector here so we can run multiple threads
-        // this.cellSelector = CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
         return createParser(researchParserType, grammar, this);
     }
 

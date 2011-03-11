@@ -13,8 +13,8 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
@@ -76,7 +76,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
             simpleGrammar2 = createGrammar(simpleGrammar2());
         }
 
-        parser = createParser(f2_21_grammar, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());
+        parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
     }
 
     /**
@@ -90,7 +90,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final P p = createParser(g, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());
+        final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
         p.initSentence(new int[4]);
         final Chart chart = p.chart;
 
@@ -160,7 +160,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final P p = createParser(g, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());
+        final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
         p.initSentence(new int[4]);
         final Chart chart = p.chart;
 
@@ -220,7 +220,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final SparseMatrixVectorParser<?, ?> p = createParser(g, new LeftRightBottomTopTraversal(), parserOptions(),
+        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
                 configProperties());
         p.initSentence(new int[4]);
 
@@ -358,7 +358,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(), LeftShiftFunction.class);
 
         // Create the parser
-        final P p = createParser(g, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());
+        final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
         p.initSentence(new int[5]);
         final Chart chart = p.chart;
 
@@ -456,7 +456,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
                 PerfectIntPairHashPackingFunction.class);
 
         // Create the parser
-        final P p = createParser(g, new LeftRightBottomTopTraversal(), parserOptions(), configProperties());
+        final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
         p.initSentence(new int[5]);
         final Chart chart = p.chart;
 
@@ -511,7 +511,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = createParser(g, new LeftRightBottomTopTraversal(), parserOptions(),
+        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
                 configProperties());
         p.initSentence(new int[5]);
         final Chart chart = p.chart;
@@ -621,7 +621,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = createParser(g, new LeftRightBottomTopTraversal(), parserOptions(),
+        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
                 configProperties());
         p.initSentence(new int[5]);
 

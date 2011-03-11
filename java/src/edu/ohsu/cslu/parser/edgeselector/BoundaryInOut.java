@@ -14,8 +14,9 @@ import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 
-public class BoundaryInOut extends EdgeSelector {
+public class BoundaryInOut extends EdgeSelectorFactory {
 
     private Grammar grammar;
     private int posNgramOrder = 2;
@@ -23,16 +24,15 @@ public class BoundaryInOut extends EdgeSelector {
     // Model params learned from training data
     private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
 
-    // pre-computed left/right FOM outside scores for current sentence
-    private float outsideLeft[][], outsideRight[][];
-    private int bestPOSTag[];
-
     // private IntOpenHashSet posSet = new IntOpenHashSet();
     // private IntOpenHashSet phraseNonTermSet = new IntOpenHashSet();
 
-    public BoundaryInOut(final Grammar grammar, final BufferedReader modelStream) throws IOException {
-        this.grammar = grammar;
+    public BoundaryInOut(final EdgeSelectorType type, final Grammar grammar, final BufferedReader modelStream)
+            throws IOException {
 
+        super(type);
+
+        this.grammar = grammar;
         final int numNT = grammar.numNonTerms();
         final int maxPOSIndex = grammar.maxPOSIndex();
         leftBoundaryLogProb = new float[numNT][maxPOSIndex + 1];
@@ -53,223 +53,18 @@ public class BoundaryInOut extends EdgeSelector {
         }
     }
 
-    public BoundaryInOut(final Grammar grammar) throws IOException {
-        this(grammar, null);
-    }
-
     @Override
-    public float calcFOM(final ChartEdge edge) {
-
-        if (edge.prod.isLexProd()) {
-            return edge.inside();
-        }
-
-        // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
-        // are padded with a begin and end <null> value which shifts the entire array to
-        // the right by one
-        // final int spanLength = edge.end() - edge.start();
-        final float outside = outsideLeft[edge.start()][edge.prod.parent]
-                + outsideRight[edge.end() + 1][edge.prod.parent];
-        return edge.inside() + outside;
-    }
-
-    @Override
-    public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
-        // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
-        // are padded with a begin and end <null> value which shifts the entire array to
-        // the right by one
-        // final int spanLength = edge.end() - edge.start();
-
-        final float outside = outsideLeft[start][parent] + outsideRight[end + 1][parent];
-        return insideProbability + outside;
-    }
-
-    @Override
-    public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
-        return insideProbability;
-    }
-
-    public String calcFOMToString(final ChartEdge edge) {
-        final int spanLength = edge.end() - edge.start();
-        final float outside = outsideLeft[edge.start() - 1 + 1][edge.prod.parent]
-                + outsideRight[edge.end() + 1][edge.prod.parent];
-        final float fom = edge.inside() + outside;
-
-        // String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]" + " n=" + spanLength + " p=" +
-        // edge.p.toString() + " i=" + edge.insideProb + " o=" + outside
-        // + " oL[" + (edge.start() - 1 + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" +
-        // outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " oR["
-        // + (edge.end() + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" +
-        // outsideRight[edge.end() + 1][edge.p.parent] + " fom=" + fom;
-
-        String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]";
-        s += " n=" + spanLength;
-        s += " p=" + edge.prod.toString();
-        s += " i=" + edge.inside();
-        s += " o=" + outside;
-        s += " oL[" + (edge.start() - 1 + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]="
-                + outsideLeft[edge.start() - 1 + 1][edge.prod.parent];
-        s += " oR[" + (edge.end() + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]="
-                + outsideRight[edge.end() + 1][edge.prod.parent];
-        s += " fom=" + fom;
-
-        return s;
-    }
-
-    public int get1bestPOSTag(final int i) {
-        return bestPOSTag[i];
-    }
-
-    @Override
-    public void init(final Chart chart) {
-        // outsideLeftRight(chart);
-        outsideLeftRightAndBestPOS(chart);
-    }
-
-    // Computes forward-backward and left/right boundary probs across ambiguous
-    // POS tags. Assumes all POS tags have already been placed in the chart and the
-    // inside prob of the tag is the emission probability.
-    // Also computes 1-best POS tag sequence based on viterbi-max decoding
-    private void outsideLeftRightAndBestPOS(final Chart chart) {
-
-        final int fbSize = chart.size() + 2;
-        final int posSize = grammar.maxPOSIndex() + 1;
-
-        if (outsideLeft == null || outsideLeft.length < fbSize) {
-            outsideLeft = new float[fbSize][grammar.numNonTerms()];
-            outsideRight = new float[fbSize][grammar.numNonTerms()];
-        }
-
-        final int[][] fwdBackptr = new int[fbSize][posSize];
-        bestPOSTag = new int[chart.size()];
-
-        for (int i = 0; i < fbSize; i++) {
-            Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
-            Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
-        }
-
-        final short nullSymbol = (short) grammar.nullSymbol;
-        final short[] NULL_LIST = new short[] { nullSymbol };
-        final float[] NULL_PROBABILITIES = new float[] { 0f };
-
-        short[] prevFwdPOSList = NULL_LIST;
-        float[] prevFwdScores = new float[posSize];
-        prevFwdScores[nullSymbol] = 0f;
-
-        for (int fwdIndex = 0; fwdIndex < fbSize; fwdIndex++) {
-            final int fwdChartIndex = fwdIndex - 1; // -1 because the fbChart is one off from the parser chart
-
-            if (fwdIndex > 0) {
-                // moving from left to right =======>>
-                final short[] fwdPOSList = fwdChartIndex >= chart.size() ? NULL_LIST : grammar
-                        .lexicalParents(chart.tokens[fwdChartIndex]);
-                final float[] fwdPOSProbs = fwdChartIndex >= chart.size() ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(chart.tokens[fwdChartIndex]);
-
-                final int[] currentFwdBackptr = fwdBackptr[fwdIndex];
-
-                final float[] fwdScores = new float[posSize];
-                Arrays.fill(fwdScores, Float.NEGATIVE_INFINITY);
-
-                for (int i = 0; i < fwdPOSList.length; i++) {
-                    final short curPOS = fwdPOSList[i];
-                    final float posEmissionLogProb = fwdPOSProbs[i];
-
-                    for (final short prevPOS : prevFwdPOSList) {
-                        final float score = prevFwdScores[prevPOS] + posTransitionLogProb[curPOS][prevPOS]
-                                + posEmissionLogProb;
-                        if (score > fwdScores[curPOS]) {
-                            fwdScores[curPOS] = score;
-                            currentFwdBackptr[curPOS] = prevPOS;
-                        }
-                    }
-                }
-                prevFwdScores = fwdScores;
-                prevFwdPOSList = fwdPOSList;
-            }
-
-            // compute left and right outside scores to be used during decoding
-            // to calculate the FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
-            final float[] fwdOutsideLeft = outsideLeft[fwdIndex];
-            for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
-
-                for (final short pos : prevFwdPOSList) {
-                    final float score = prevFwdScores[pos] + leftBoundaryLogProb[nonTerm][pos];
-                    if (score > fwdOutsideLeft[nonTerm]) {
-                        fwdOutsideLeft[nonTerm] = score;
-                    }
-                }
-            }
-        }
-
-        short[] prevBkwPOSList = NULL_LIST;
-        float[] prevBkwScores = new float[posSize];
-        prevBkwScores[nullSymbol] = 0f;
-
-        for (int bkwIndex = fbSize - 1; bkwIndex >= 0; bkwIndex--) {
-            if (bkwIndex < fbSize - 1) {
-                final int bkwChartIndex = bkwIndex - 1;
-
-                // moving from right to left <<=======
-                final short[] bkwPOSList = bkwChartIndex < 0 ? NULL_LIST : grammar
-                        .lexicalParents(chart.tokens[bkwChartIndex]);
-                final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(chart.tokens[bkwChartIndex]);
-                final float[] bkwScores = new float[posSize];
-                Arrays.fill(bkwScores, Float.NEGATIVE_INFINITY);
-
-                for (final short prevPOS : prevBkwPOSList) {
-
-                    for (int i = 0; i < bkwPOSList.length; i++) {
-                        final short curPOS = bkwPOSList[i];
-
-                        final float score = prevBkwScores[prevPOS] + posTransitionLogProb[prevPOS][curPOS]
-                                + bkwPOSProbs[i];
-                        if (score > bkwScores[curPOS]) {
-                            bkwScores[curPOS] = score;
-                        }
-                    }
-                }
-                prevBkwScores = bkwScores;
-                prevBkwPOSList = bkwPOSList;
-            }
-
-            // compute right outside scores to be used during decoding
-            // to calculate the FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
-            final float[] bkwOutsideRight = outsideRight[bkwIndex];
-            for (final short pos : prevBkwPOSList) {
-                for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
-                    final float score = prevBkwScores[pos] + rightBoundaryLogProb[pos][nonTerm];
-                    if (score > bkwOutsideRight[nonTerm]) {
-                        bkwOutsideRight[nonTerm] = score;
-                    }
-                }
-            }
-        }
-
-        // track backpointers to extract best POS sequence
-        // start at the end of the sentence with the nullSymbol and trace backwards
-        int bestPOS = nullSymbol;
-        for (int i = chart.size() - 1; i >= 0; i--) {
-            bestPOS = fwdBackptr[i + 2][bestPOS];
-            bestPOSTag[i] = bestPOS;
-            // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
+    public EdgeSelector createEdgeSelector(final Grammar grammar) {
+        switch (type) {
+        case BoundaryInOut:
+            return new BoundaryInOutSelector();
+        case InsideWithFwdBkwd:
+            return new InsideWithFwdBkwd();
+        default:
+            return super.createEdgeSelector(grammar);
         }
     }
 
-    public final float leftBoundaryLogProb(final int nonTerm, final int pos) {
-        return leftBoundaryLogProb[nonTerm][pos];
-    }
-
-    public final float rightBoundaryLogProb(final int pos, final int nonTerm) {
-        return rightBoundaryLogProb[pos][nonTerm];
-    }
-
-    public final float posTransitionLogProb(final int pos, final int histPos) {
-        return posTransitionLogProb[pos][histPos];
-    }
-
-    @Override
     public void readModel(final BufferedReader inStream) throws IOException {
         String line, numStr, denomStr;
         int numIndex, denomIndex;
@@ -317,7 +112,6 @@ public class BoundaryInOut extends EdgeSelector {
         }
     }
 
-    @Override
     public void writeModel(final BufferedWriter outStream) throws IOException {
 
         outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder + "\n");
@@ -360,7 +154,6 @@ public class BoundaryInOut extends EdgeSelector {
         outStream.close();
     }
 
-    @Override
     public void train(final BufferedReader inStream) throws Exception {
         String line, historyStr;
         final String joinString = " ";
@@ -487,5 +280,250 @@ public class BoundaryInOut extends EdgeSelector {
         }
 
         outStream.close();
+    }
+
+    public class BoundaryInOutSelector extends EdgeSelector {
+
+        // pre-computed left/right FOM outside scores for current sentence
+        private float outsideLeft[][], outsideRight[][];
+        private int bestPOSTag[];
+
+        public BoundaryInOutSelector() {
+        }
+
+        @Override
+        public float calcFOM(final ChartEdge edge) {
+
+            if (edge.prod.isLexProd()) {
+                return edge.inside();
+            }
+
+            // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
+            // are padded with a begin and end <null> value which shifts the entire array to
+            // the right by one
+            // final int spanLength = edge.end() - edge.start();
+            final float outside = outsideLeft[edge.start()][edge.prod.parent]
+                    + outsideRight[edge.end() + 1][edge.prod.parent];
+            return edge.inside() + outside;
+        }
+
+        @Override
+        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
+            // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
+            // are padded with a begin and end <null> value which shifts the entire array to
+            // the right by one
+            // final int spanLength = edge.end() - edge.start();
+
+            final float outside = outsideLeft[start][parent] + outsideRight[end + 1][parent];
+            return insideProbability + outside;
+        }
+
+        @Override
+        public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
+            return insideProbability;
+        }
+
+        public String calcFOMToString(final ChartEdge edge) {
+            final int spanLength = edge.end() - edge.start();
+            final float outside = outsideLeft[edge.start() - 1 + 1][edge.prod.parent]
+                    + outsideRight[edge.end() + 1][edge.prod.parent];
+            final float fom = edge.inside() + outside;
+
+            // String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]" + " n=" + spanLength + " p=" +
+            // edge.p.toString() + " i=" + edge.insideProb + " o=" + outside
+            // + " oL[" + (edge.start() - 1 + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" +
+            // outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " oR["
+            // + (edge.end() + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" +
+            // outsideRight[edge.end() + 1][edge.p.parent] + " fom=" + fom;
+
+            String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]";
+            s += " n=" + spanLength;
+            s += " p=" + edge.prod.toString();
+            s += " i=" + edge.inside();
+            s += " o=" + outside;
+            s += " oL[" + (edge.start() - 1 + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]="
+                    + outsideLeft[edge.start() - 1 + 1][edge.prod.parent];
+            s += " oR[" + (edge.end() + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]="
+                    + outsideRight[edge.end() + 1][edge.prod.parent];
+            s += " fom=" + fom;
+
+            return s;
+        }
+
+        public int get1bestPOSTag(final int i) {
+            return bestPOSTag[i];
+        }
+
+        @Override
+        public void init(final Chart chart) {
+            // outsideLeftRight(chart);
+            outsideLeftRightAndBestPOS(chart);
+        }
+
+        // Computes forward-backward and left/right boundary probs across ambiguous
+        // POS tags. Assumes all POS tags have already been placed in the chart and the
+        // inside prob of the tag is the emission probability.
+        // Also computes 1-best POS tag sequence based on viterbi-max decoding
+        private void outsideLeftRightAndBestPOS(final Chart chart) {
+
+            final int fbSize = chart.size() + 2;
+            final int posSize = grammar.maxPOSIndex() + 1;
+
+            if (outsideLeft == null || outsideLeft.length < fbSize) {
+                outsideLeft = new float[fbSize][grammar.numNonTerms()];
+                outsideRight = new float[fbSize][grammar.numNonTerms()];
+            }
+
+            final int[][] fwdBackptr = new int[fbSize][posSize];
+            bestPOSTag = new int[chart.size()];
+
+            for (int i = 0; i < fbSize; i++) {
+                Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
+                Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
+            }
+
+            final short nullSymbol = (short) grammar.nullSymbol;
+            final short[] NULL_LIST = new short[] { nullSymbol };
+            final float[] NULL_PROBABILITIES = new float[] { 0f };
+
+            short[] prevFwdPOSList = NULL_LIST;
+            float[] prevFwdScores = new float[posSize];
+            prevFwdScores[nullSymbol] = 0f;
+
+            for (int fwdIndex = 0; fwdIndex < fbSize; fwdIndex++) {
+                final int fwdChartIndex = fwdIndex - 1; // -1 because the fbChart is one off from the parser chart
+
+                if (fwdIndex > 0) {
+                    // moving from left to right =======>>
+                    final short[] fwdPOSList = fwdChartIndex >= chart.size() ? NULL_LIST : grammar
+                            .lexicalParents(chart.tokens[fwdChartIndex]);
+                    final float[] fwdPOSProbs = fwdChartIndex >= chart.size() ? NULL_PROBABILITIES : grammar
+                            .lexicalLogProbabilities(chart.tokens[fwdChartIndex]);
+
+                    final int[] currentFwdBackptr = fwdBackptr[fwdIndex];
+
+                    final float[] fwdScores = new float[posSize];
+                    Arrays.fill(fwdScores, Float.NEGATIVE_INFINITY);
+
+                    for (int i = 0; i < fwdPOSList.length; i++) {
+                        final short curPOS = fwdPOSList[i];
+                        final float posEmissionLogProb = fwdPOSProbs[i];
+
+                        for (final short prevPOS : prevFwdPOSList) {
+                            final float score = prevFwdScores[prevPOS] + posTransitionLogProb[curPOS][prevPOS]
+                                    + posEmissionLogProb;
+                            if (score > fwdScores[curPOS]) {
+                                fwdScores[curPOS] = score;
+                                currentFwdBackptr[curPOS] = prevPOS;
+                            }
+                        }
+                    }
+                    prevFwdScores = fwdScores;
+                    prevFwdPOSList = fwdPOSList;
+                }
+
+                // compute left and right outside scores to be used during decoding
+                // to calculate the FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
+                final float[] fwdOutsideLeft = outsideLeft[fwdIndex];
+                for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
+
+                    for (final short pos : prevFwdPOSList) {
+                        final float score = prevFwdScores[pos] + leftBoundaryLogProb[nonTerm][pos];
+                        if (score > fwdOutsideLeft[nonTerm]) {
+                            fwdOutsideLeft[nonTerm] = score;
+                        }
+                    }
+                }
+            }
+
+            short[] prevBkwPOSList = NULL_LIST;
+            float[] prevBkwScores = new float[posSize];
+            prevBkwScores[nullSymbol] = 0f;
+
+            for (int bkwIndex = fbSize - 1; bkwIndex >= 0; bkwIndex--) {
+                if (bkwIndex < fbSize - 1) {
+                    final int bkwChartIndex = bkwIndex - 1;
+
+                    // moving from right to left <<=======
+                    final short[] bkwPOSList = bkwChartIndex < 0 ? NULL_LIST : grammar
+                            .lexicalParents(chart.tokens[bkwChartIndex]);
+                    final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
+                            .lexicalLogProbabilities(chart.tokens[bkwChartIndex]);
+                    final float[] bkwScores = new float[posSize];
+                    Arrays.fill(bkwScores, Float.NEGATIVE_INFINITY);
+
+                    for (final short prevPOS : prevBkwPOSList) {
+
+                        for (int i = 0; i < bkwPOSList.length; i++) {
+                            final short curPOS = bkwPOSList[i];
+
+                            final float score = prevBkwScores[prevPOS] + posTransitionLogProb[prevPOS][curPOS]
+                                    + bkwPOSProbs[i];
+                            if (score > bkwScores[curPOS]) {
+                                bkwScores[curPOS] = score;
+                            }
+                        }
+                    }
+                    prevBkwScores = bkwScores;
+                    prevBkwPOSList = bkwPOSList;
+                }
+
+                // compute right outside scores to be used during decoding
+                // to calculate the FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
+                final float[] bkwOutsideRight = outsideRight[bkwIndex];
+                for (final short pos : prevBkwPOSList) {
+                    for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
+                        final float score = prevBkwScores[pos] + rightBoundaryLogProb[pos][nonTerm];
+                        if (score > bkwOutsideRight[nonTerm]) {
+                            bkwOutsideRight[nonTerm] = score;
+                        }
+                    }
+                }
+            }
+
+            // track backpointers to extract best POS sequence
+            // start at the end of the sentence with the nullSymbol and trace backwards
+            int bestPOS = nullSymbol;
+            for (int i = chart.size() - 1; i >= 0; i--) {
+                bestPOS = fwdBackptr[i + 2][bestPOS];
+                bestPOSTag[i] = bestPOS;
+                // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
+            }
+        }
+
+        public final float leftBoundaryLogProb(final int nonTerm, final int pos) {
+            return leftBoundaryLogProb[nonTerm][pos];
+        }
+
+        public final float rightBoundaryLogProb(final int pos, final int nonTerm) {
+            return rightBoundaryLogProb[pos][nonTerm];
+        }
+
+        public final float posTransitionLogProb(final int pos, final int histPos) {
+            return posTransitionLogProb[pos][histPos];
+        }
+
+    }
+
+    // for Beam-Width Prediction, we need the 1-best POS tags from the chart. And
+    // to get these, we need to run the forward-backward algorithm with a model
+    // that has POS transition probabilities. Right now this is only done for the
+    // Boundary FOM, so instead of writing lots more code and creating new model files,
+    // we are simply hi-jacking all of that and overwriting the calcFOM() function to
+    // ignore most of the work that is done during setup.
+    public class InsideWithFwdBkwd extends BoundaryInOutSelector {
+
+        public InsideWithFwdBkwd() {
+        }
+
+        @Override
+        public float calcFOM(final ChartEdge edge) {
+            return edge.inside();
+        }
+
+        @Override
+        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
+            return insideProbability;
+        }
     }
 }

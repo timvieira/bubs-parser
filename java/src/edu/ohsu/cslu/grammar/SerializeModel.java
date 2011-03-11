@@ -12,8 +12,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import cltool4j.BaseCommandlineTool;
-import cltool4j.GlobalConfigProperties;
 import cltool4j.BaseLogger;
+import cltool4j.GlobalConfigProperties;
 import cltool4j.args4j.Argument;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
@@ -87,7 +87,7 @@ public class SerializeModel extends BaseCommandlineTool {
                     : new BufferedReader(new FileReader(fomModelFileName));
             switch (fomType) {
             case BoundaryInOut:
-                fom = new BoundaryInOut(g, fomModelReader);
+                fom = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, g, fomModelReader).createEdgeSelector(g);
                 break;
             default:
                 throw new UnsupportedOperationException("FOM type not supported");

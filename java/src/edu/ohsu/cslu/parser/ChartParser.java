@@ -11,7 +11,7 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
 
 public abstract class ChartParser<G extends Grammar, C extends Chart> extends Parser<G> {
 
@@ -232,7 +232,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                 // we are decoding -- there are a number of things we could do here to get the "best"
                 // POS tag for this index; I'm choosing to tag the input sentence with a XX tagger
                 // and use the 1-best output.
-                index = ((BoundaryInOut) this.edgeSelector).get1bestPOSTag(start);
+                index = ((BoundaryInOutSelector) this.edgeSelector).get1bestPOSTag(start);
                 // NOTE: this also works with InsideWithFwdBkwd since it inherits from BoundaryInOut
             }
         }
