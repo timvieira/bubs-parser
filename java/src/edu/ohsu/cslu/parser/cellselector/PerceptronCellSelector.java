@@ -10,6 +10,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.beam.BSCPPerceptronCellTrainer;
+import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory.OHSUCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
@@ -38,7 +39,8 @@ public class PerceptronCellSelector extends CellSelector {
     // public PerceptronSpanSelection(final BaseGrammar grammar, final CSLUTBlockedCellsTraversal cellConstraints)
     // {
     // public PerceptronSpanSelection(final CSLUTBlockedCellsTraversal cellConstraints) {
-    public PerceptronCellSelector(final BufferedReader modelStream, final OHSUCellConstraints cellConstraints) {
+    public PerceptronCellSelector(final BufferedReader modelStream,
+            final OHSUCellConstraints cellConstraints) {
         this.cellConstraints = cellConstraints;
         if (modelStream != null) {
             trainingMode = false;
@@ -442,9 +444,8 @@ public class PerceptronCellSelector extends CellSelector {
         if (featList.size() != numFeats) {
             if (trainingMode == true) {
                 BaseLogger.singleton()
-                        .info(
-                                "WARNING: len(featureList)=" + featList.size() + " but numFeats=" + numFeats
-                                        + ".  Resizing...");
+                        .info("WARNING: len(featureList)=" + featList.size() + " but numFeats=" + numFeats
+                                + ".  Resizing...");
                 numFeats = featList.size();
                 weights = new float[numFeats];
                 initWeights();
@@ -488,7 +489,6 @@ public class PerceptronCellSelector extends CellSelector {
         throw new RuntimeException("ERROR: PerceptronCellSelector.train() doesn't work anymore");
     }
 
-    @Override
     public void readModel(final BufferedReader inStream) throws Exception {
         String line;
         while ((line = inStream.readLine()) != null) {

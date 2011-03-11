@@ -11,6 +11,8 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
@@ -19,10 +21,10 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
 public class ProfileBoundaryInOut {
 
     private static SparseMatrixGrammar parentAnnotatedGrammar;
-    private static BoundaryInOut parentAnnotatedBio;
+    private static BoundaryInOutSelector parentAnnotatedBio;
 
     private static SparseMatrixGrammar berkeleyGrammar;
-    private static BoundaryInOut berkeleyBio;
+    private static BoundaryInOutSelector berkeleyBio;
 
     private PackedArrayChart parentAnnotatedChart;
     private PackedArrayChart berkeleyChart;
@@ -33,15 +35,19 @@ public class ProfileBoundaryInOut {
             parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
                     SharedNlpTests.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
         }
-        parentAnnotatedBio = new BoundaryInOut(parentAnnotatedGrammar, new BufferedReader(
-                SharedNlpTests.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
+        final BoundaryInOut parentBioFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut,
+                parentAnnotatedGrammar, new BufferedReader(
+                        SharedNlpTests.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
+
+        parentAnnotatedBio = (BoundaryInOutSelector) parentBioFactory.createEdgeSelector(parentAnnotatedGrammar);
 
         if (berkeleyGrammar == null) {
             berkeleyGrammar = new LeftCscSparseMatrixGrammar(
                     SharedNlpTests.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
         }
-        berkeleyBio = new BoundaryInOut(berkeleyGrammar, new BufferedReader(
-                SharedNlpTests.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
+        final BoundaryInOut berkeleyBioFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, berkeleyGrammar,
+                new BufferedReader(SharedNlpTests.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
+        berkeleyBio = (BoundaryInOutSelector) berkeleyBioFactory.createEdgeSelector(berkeleyGrammar);
     }
 
     @Before

@@ -5,7 +5,7 @@ import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
 
 public class APWithMemory extends AgendaParser {
 
@@ -35,7 +35,7 @@ public class APWithMemory extends AgendaParser {
 
     public void printTreeEdgeStats(final ParseTree tree, final Parser<?> parser) {
 
-        assert edgeSelector instanceof BoundaryInOut;
+        assert edgeSelector instanceof BoundaryInOutSelector;
 
         for (final ParseTree node : tree.preOrderTraversal()) {
             if (node.isNonTerminal()) {

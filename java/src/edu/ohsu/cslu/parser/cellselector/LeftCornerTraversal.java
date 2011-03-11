@@ -10,6 +10,13 @@ public class LeftCornerTraversal extends CellSelector {
 
     private LinkedList<ChartCell> cellList;
 
+    public static CellSelectorFactory FACTORY = new CellSelectorFactory() {
+        @Override
+        public CellSelector createCellSelector() {
+            return new LeftCornerTraversal();
+        }
+    };
+
     public LeftCornerTraversal() {
     }
 

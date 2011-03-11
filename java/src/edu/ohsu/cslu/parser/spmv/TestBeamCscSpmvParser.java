@@ -8,11 +8,12 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.edgeselector.InsideProb;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelectorFactory;
 import edu.ohsu.cslu.tests.PerformanceTest;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
@@ -29,11 +30,11 @@ public class TestBeamCscSpmvParser extends
     public static void suiteSetUp() throws Exception {
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
-        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
+                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(SharedNlpTests
-                .unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.beam")));
+        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
+                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.beam")));
 
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
@@ -43,7 +44,7 @@ public class TestBeamCscSpmvParser extends
 
     @Override
     @Test
-    @PerformanceTest( { "mbp", "6092", "d820", "9589" })
+    @PerformanceTest({ "mbp", "6092", "d820", "9589" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
@@ -54,7 +55,7 @@ public class TestBeamCscSpmvParser extends
         // options.collectDetailedStatistics = true;
         BaseLogger.singleton().setLevel(Level.FINER);
         options.binaryTreeOutput = true;
-        options.edgeSelector = new InsideProb();
+        options.edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
         return options;
     }
 
