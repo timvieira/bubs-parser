@@ -124,6 +124,9 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
     public void incrementBinaryLogCount(final short parent, final short leftChild, final short rightChild,
             final float logIncrement) {
 
+        if (Float.isNaN(logIncrement)) {
+            System.out.println("NaN");
+        }
         incrementBinaryLogCount(binaryRuleLogCounts, parent, leftChild, rightChild, logIncrement);
 
         // Base grammar rule count
@@ -157,6 +160,9 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
 
     public void incrementBinaryLogCount(final short parent, final int packedChildren, final float logIncrement) {
 
+        if (Float.isNaN(logIncrement)) {
+            System.out.println("NaN");
+        }
         incrementBinaryLogCount(packedBinaryRuleLogCounts, parent, packedChildren, logIncrement);
 
         int baseChildren = basePackedChildren.get(packedChildren);

@@ -2,6 +2,7 @@ package edu.ohsu.cslu.ella;
 
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
+import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
 
 /**
  * {@link CellSelector} implementation which constrains parsing according to a gold tree represented in a
@@ -13,6 +14,14 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
  * @version $Revision$ $Date$ $Author$
  */
 public class ConstrainedCellSelector extends CellSelector {
+
+    public static CellSelectorFactory FACTORY = new CellSelectorFactory() {
+
+        @Override
+        public CellSelector createCellSelector() {
+            return new ConstrainedCellSelector();
+        }
+    };
 
     private short[][] cellIndices;
     private int currentCell = -1;

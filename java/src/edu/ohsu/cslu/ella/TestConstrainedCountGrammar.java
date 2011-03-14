@@ -12,7 +12,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestConstrainedCountGrammar extends CountGrammarTestCase {
+public class TestConstrainedCountGrammar extends MappedCountGrammarTestCase {
 
     @Before
     public void setUp() {

@@ -97,8 +97,9 @@ public class ProductionListGrammar {
      * Constructs a production-list grammar based on a {@link MappedCountGrammar}.
      * 
      * @param countGrammar
+     * @param parentGrammar
      */
-    public ProductionListGrammar(final ConstrainedCountGrammar countGrammar) {
+    public ProductionListGrammar(final ConstrainedCountGrammar countGrammar, final ProductionListGrammar parentGrammar) {
 
         this.vocabulary = countGrammar.vocabulary;
         this.lexicon = countGrammar.lexicon;
@@ -109,7 +110,7 @@ public class ProductionListGrammar {
 
         this.startSymbol = countGrammar.startSymbol;
         // TODO Record a parent grammar?
-        this.parentGrammar = null;
+        this.parentGrammar = parentGrammar;
         this.parentVocabularyMap = null;
 
         // // TODO Populate this, somehow

@@ -9,7 +9,6 @@ import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
-import edu.ohsu.cslu.tests.Assert;
 import edu.ohsu.cslu.util.Math;
 
 /**
@@ -421,6 +420,9 @@ public class ConstrainedCsrSpmvParser extends
 
                 // Parent outside x child inside
                 cartesianProductProbabilities[childPair] = parentOutsideProbability + insideProbabilities[j];
+                if (cartesianProductProbabilities[childPair] == Float.POSITIVE_INFINITY) {
+                    System.out.println("Infinity");
+                }
             }
         }
 
@@ -613,13 +615,17 @@ public class ConstrainedCsrSpmvParser extends
         }
     }
 
-    public ConstrainedCountGrammar countRuleOccurrences() {
+    ConstrainedCountGrammar countRuleOccurrences() {
+        final ConstrainedCountGrammar countGrammar = new ConstrainedCountGrammar(grammar);
+        countRuleOccurrences(countGrammar);
+        return countGrammar;
+    }
+
+    public void countRuleOccurrences(final ConstrainedCountGrammar countGrammar) {
         long t0 = 0;
         if (collectDetailedTimings) {
             t0 = System.nanoTime();
         }
-
-        final ConstrainedCountGrammar countGrammar = new ConstrainedCountGrammar(grammar);
 
         cellSelector.reset();
         while (cellSelector.hasNext()) {
@@ -635,8 +641,6 @@ public class ConstrainedCsrSpmvParser extends
         if (collectDetailedTimings) {
             totalRuleCountTime += System.nanoTime() - t0;
         }
-
-        return countGrammar;
     }
 
     private void countBinaryRuleOccurrences(final ConstrainedCountGrammar countGrammar, final short start,
@@ -696,7 +700,7 @@ public class ConstrainedCsrSpmvParser extends
     private void countUnaryRuleOccurrences(final ConstrainedCountGrammar countGrammar, final short start,
             final short end) {
 
-        System.out.println("=== " + start + "," + end + " ===");
+        // System.out.println("=== " + start + "," + end + " ===");
         final int cellIndex = chart.cellIndex(start, end);
         final int offset = chart.offset(cellIndex);
         final int constrainingCellUnaryDepth = ((ConstrainedCellSelector) cellSelector).currentCellUnaryChainDepth();
@@ -731,8 +735,8 @@ public class ConstrainedCsrSpmvParser extends
                     final float jointProbability = parentOutside
                             + chart.insideProbabilities[offset + childUnaryDepth * splitVocabulary.maxSplits
                                     + splitVocabulary.subcategoryIndices[child]] + grammar.csrUnaryProbabilities[j];
-                    System.out.format("%s -> %s %s\n", splitVocabulary.getSymbol(parent),
-                            splitVocabulary.getSymbol(child), Assert.fraction(jointProbability));
+                    // System.out.format("%s -> %s %s\n", splitVocabulary.getSymbol(parent),
+                    // splitVocabulary.getSymbol(child), Assert.fraction(jointProbability));
                     countGrammar.incrementUnaryLogCount(parent, child, jointProbability);
                 }
             }
@@ -742,7 +746,7 @@ public class ConstrainedCsrSpmvParser extends
     private void countLexicalRuleOccurrences(final ConstrainedCountGrammar countGrammar, final short start,
             final short end) {
 
-        System.out.println("=== " + start + "," + end + " ===");
+        // System.out.println("=== " + start + "," + end + " ===");
 
         final int cellIndex = chart.cellIndex(start, end);
         final int cellOffset = chart.offset(cellIndex);
@@ -763,8 +767,8 @@ public class ConstrainedCsrSpmvParser extends
                         + splitVocabulary.subcategoryIndices[lexProd.parent]]
                         + lexProd.prob;
 
-                System.out.format("%s -> %s %s\n", splitVocabulary.getSymbol(lexProd.parent),
-                        grammar.lexSet.getSymbol(lexicalChild), Assert.fraction(jointProbability));
+                // System.out.format("%s -> %s %s\n", splitVocabulary.getSymbol(lexProd.parent),
+                // grammar.lexSet.getSymbol(lexicalChild), Assert.fraction(jointProbability));
                 countGrammar.incrementLexicalLogCount((short) lexProd.parent, lexicalChild, jointProbability);
             }
         }
