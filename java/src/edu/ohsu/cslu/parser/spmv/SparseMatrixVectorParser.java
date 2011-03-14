@@ -32,17 +32,19 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     protected final short[] cartesianProductMidpoints;
 
     public long startTime = 0;
-    public long totalCartesianProductTime = 0;
-    public long totalCartesianProductUnionTime = 0;
-    public long totalBinarySpMVTime = 0;
-    public long totalPruningTime = 0;
-    public long totalUnaryTime = 0;
-    public long totalFinalizeTime = 0;
+    public long sentenceCartesianProductTime = 0;
+    public long sentenceBinarySpMVTime = 0;
+    public long sentencePruningTime = 0;
+    public long sentenceUnaryTime = 0;
+    public long sentenceFinalizeTime = 0;
 
-    protected int totalCartesianProductSize;
-    protected long totalCellPopulation;
-    protected long totalLeftChildPopulation;
-    protected long totalRightChildPopulation;
+    protected int sentenceCartesianProductSize;
+    protected long sentenceCellPopulation;
+    protected long sentenceLeftChildPopulation;
+    protected long sentenceRightChildPopulation;
+
+    public static long totalCartesianProductTime = 0;
+    public static long totalBinarySpMVTime = 0;
 
     public SparseMatrixVectorParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -63,16 +65,15 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     protected void initSentence(final int[] tokens) {
         startTime = System.currentTimeMillis();
         if (collectDetailedStatistics) {
-            totalBinarySpMVTime = 0;
-            totalPruningTime = 0;
-            totalUnaryTime = 0;
-            totalCartesianProductTime = 0;
-            totalCartesianProductUnionTime = 0;
-            totalFinalizeTime = 0;
-            totalCartesianProductSize = 0;
-            totalCellPopulation = 0;
-            totalLeftChildPopulation = 0;
-            totalRightChildPopulation = 0;
+            sentenceBinarySpMVTime = 0;
+            sentencePruningTime = 0;
+            sentenceUnaryTime = 0;
+            sentenceCartesianProductTime = 0;
+            sentenceFinalizeTime = 0;
+            sentenceCartesianProductSize = 0;
+            sentenceCellPopulation = 0;
+            sentenceLeftChildPopulation = 0;
+            sentenceRightChildPopulation = 0;
         }
 
         chart.tokens = tokens;
@@ -92,9 +93,11 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
             final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
 
             if (collectDetailedStatistics) {
-                totalCartesianProductSize += cartesianProductVector.size();
+                sentenceCartesianProductSize += cartesianProductVector.size();
                 t1 = System.currentTimeMillis();
-                totalCartesianProductTime += (t1 - t0);
+                final long time = t1 - t0;
+                sentenceCartesianProductTime += time;
+                totalCartesianProductTime += time;
             }
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
@@ -104,7 +107,9 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
         if (collectDetailedStatistics) {
             t2 = System.currentTimeMillis();
-            totalBinarySpMVTime += (t2 - t1);
+            final long time = t2 - t1;
+            sentenceBinarySpMVTime += time;
+            totalBinarySpMVTime += time;
         }
 
         // Handle unary productions
@@ -119,12 +124,12 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         }
 
         if (collectDetailedStatistics) {
-            totalUnaryTime += (System.currentTimeMillis() - t2);
+            sentenceUnaryTime += (System.currentTimeMillis() - t2);
 
-            totalCellPopulation += spvChartCell.getNumNTs();
+            sentenceCellPopulation += spvChartCell.getNumNTs();
             if (spvChartCell instanceof PackedArrayChartCell) {
-                totalLeftChildPopulation += ((PackedArrayChartCell) spvChartCell).leftChildren();
-                totalRightChildPopulation += ((PackedArrayChartCell) spvChartCell).rightChildren();
+                sentenceLeftChildPopulation += ((PackedArrayChartCell) spvChartCell).leftChildren();
+                sentenceRightChildPopulation += ((PackedArrayChartCell) spvChartCell).rightChildren();
             }
         }
 
@@ -132,7 +137,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
             spvChartCell.finalizeCell();
-            totalFinalizeTime += (System.currentTimeMillis() - t3);
+            sentenceFinalizeTime += (System.currentTimeMillis() - t3);
         } else {
             spvChartCell.finalizeCell();
         }
@@ -171,8 +176,9 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     @Override
     public String getStats() {
         return collectDetailedStatistics ? String.format(
-                "xProductTime=%d binarySpMV=%d unary=%d finalize=%d extract=%d pruning=%d", totalCartesianProductTime,
-                totalBinarySpMVTime, totalUnaryTime, totalFinalizeTime, extractTime, totalPruningTime) : "";
+                "xProductTime=%d binarySpMVTime=%d unaryTime=%d finalizeTime=%d extractTime=%d pruningTime=%d",
+                sentenceCartesianProductTime, sentenceBinarySpMVTime, sentenceUnaryTime, sentenceFinalizeTime,
+                extractTime, sentencePruningTime) : "";
     }
 
     public final static class CartesianProductVector {

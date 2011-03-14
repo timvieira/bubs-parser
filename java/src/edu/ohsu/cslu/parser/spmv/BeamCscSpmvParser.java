@@ -8,8 +8,17 @@ import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 
-public class BeamCscSpmvParser extends CscSpmvParser {
+/**
+ * Implements SpMV grammar intersection and beam pruning (using an {@link EdgeSelector}).
+ * 
+ * @author Aaron Dunlop
+ * @since Mar 13, 2011
+ * 
+ * @version $Revision$ $Date$ $Author$
+ */
+public final class BeamCscSpmvParser extends CscSpmvParser {
     private final int beamWidth;
     private final int lexicalRowBeamWidth;
     private final int lexicalRowUnaries;
@@ -46,9 +55,9 @@ public class BeamCscSpmvParser extends CscSpmvParser {
             final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
 
             if (collectDetailedStatistics) {
-                totalCartesianProductSize += cartesianProductVector.size();
+                sentenceCartesianProductSize += cartesianProductVector.size();
                 t1 = System.currentTimeMillis();
-                totalCartesianProductTime += (t1 - t0);
+                sentenceCartesianProductTime += (t1 - t0);
             }
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
@@ -58,7 +67,7 @@ public class BeamCscSpmvParser extends CscSpmvParser {
 
         if (collectDetailedStatistics) {
             t2 = System.currentTimeMillis();
-            totalBinarySpMVTime += (t2 - t1);
+            sentenceBinarySpMVTime += (t2 - t1);
         }
 
         // final boolean factoredOnly = cellSelector.factoredParentsOnly(start, end);
@@ -175,7 +184,7 @@ public class BeamCscSpmvParser extends CscSpmvParser {
         }
 
         if (collectDetailedStatistics) {
-            totalPruningTime += System.currentTimeMillis() - t2;
+            sentencePruningTime += System.currentTimeMillis() - t2;
         }
 
         spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);

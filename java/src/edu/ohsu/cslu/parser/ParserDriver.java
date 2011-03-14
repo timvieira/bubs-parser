@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.util.LinkedList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
@@ -57,11 +58,13 @@ import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.spmv.BeamCscSpmvParser;
+import edu.ohsu.cslu.parser.spmv.CellParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
+import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
 
 /**
@@ -193,6 +196,24 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     public static boolean oldUNK = false;
 
     private long parseStartTime;
+    private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
+
+    /**
+     * Configuration property key for the number of row-level or cell-level threads requested by the user. We handle
+     * threading at three levels; threading per-sentence is handled by the command-line tool infrastructure and
+     * specified with the standard '-xt' parameter. Row-level and cell-level threading is handled by the parser instance
+     * and specified with this option.
+     */
+    public final static String OPT_REQUESTED_THREAD_COUNT = "requestedThreads";
+
+    /**
+     * Configuration property key for the number of row-level or cell-level threads actually used. In some cases the
+     * number of threads requested is impractical (e.g., if it is greater than the maximum number of cells in a row or
+     * greater than the number of grammar rows). {@link Parser} instances which make use of
+     * {@link #OPT_REQUESTED_THREAD_COUNT} should populate this property to indicate the number of threads actually
+     * used. Among other potential uses, this allows {@link #cleanup()} to report accurate timing information.
+     */
+    public final static String OPT_CONFIGURED_THREAD_COUNT = "actualThreads";
 
     public static void main(final String[] args) throws Exception {
         run(args);
@@ -303,6 +324,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     /**
      * Creates a specific {@link Grammar} subclass, based on the generic instance passed in.
      * 
+     * TODO Use the generic grammar types on the parser class to eliminate this massive switch?
+     * 
      * @param genericGrammar
      * @param researchParserType
      * @return a Grammar instance
@@ -346,9 +369,21 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new LeftHashGrammar(genericGrammar);
 
         case CsrSpmv:
+        case CellParallelCsrSpmv:
         case CsrSpmvPerMidpoint:
+            switch (cartesianProductFunctionType) {
+            case Simple:
+                return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+            case PerfectHash2:
+                return new CsrSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
+            default:
+                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
+            }
+
         case PackedOpenClSparseMatrixVector:
         case DenseVectorOpenClSparseMatrixVector:
+            return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+
         case CscSpmv:
         case BeamCscSpmv:
             switch (cartesianProductFunctionType) {
@@ -378,10 +413,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
     @Override
     public Parser<?> createLocal() {
-        return createParser(researchParserType, grammar, this);
+        final Parser<?> parser = createParser(researchParserType, grammar, this);
+        parserInstances.add(parser);
+        return parser;
     }
 
-    public static Parser<?> createParser(final ResearchParserType researchParserType, final Grammar grammar,
+    public Parser<?> createParser(final ResearchParserType researchParserType, final Grammar grammar,
             final ParserDriver parserOptions) {
         switch (researchParserType) {
         case ECPCellCrossList:
@@ -434,6 +471,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
 
         case CsrSpmv:
             return new CsrSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
+        case CellParallelCsrSpmv:
+            return new CellParallelCsrSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
         case CsrSpmvPerMidpoint:
             return new CsrSpmvPerMidpointParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
         case CscSpmv:
@@ -487,12 +526,29 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     @Override
     protected void cleanup() {
         final float parseTime = (System.currentTimeMillis() - parseStartTime) / 1000f;
-        final float cpuTime = parseTime * maxThreads;
+
+        // If the individual parser configured a thread count (e.g. CellParallelCsrSpmvParser), compute CPU-time using
+        // that thread count; otherwise, assume maxThreads is correct
+        final int threads = GlobalConfigProperties.singleton().containsKey(OPT_CONFIGURED_THREAD_COUNT) ? GlobalConfigProperties
+                .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT) : maxThreads;
+
+        // Note that this CPU-time computation does not include GC time
+        final float cpuTime = parseTime * threads;
         final int sentencesParsed = Parser.sentenceNumber;
 
-        BaseLogger.singleton().info(
-                String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
-                        sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
+        final StringBuilder sb = new StringBuilder();
+        sb.append(String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
+                sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
+        if (parserInstances.getFirst() instanceof SparseMatrixVectorParser) {
+            sb.append(String.format(" totalXProductTime=%d totalBinarySpMVTime=%d",
+                    SparseMatrixVectorParser.totalCartesianProductTime, SparseMatrixVectorParser.totalBinarySpMVTime));
+        }
+
+        BaseLogger.singleton().info(sb.toString());
+
+        for (final Parser<?> p : parserInstances) {
+            p.shutdown();
+        }
     }
 
     public String optionsToString() {
