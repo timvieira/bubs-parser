@@ -55,7 +55,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
      * @return Unioned cartesian-product
      */
     @Override
-    protected final CartesianProductVector cartesianProductUnion(final int start, final int end) {
+    protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
         Arrays.fill(cartesianProductMidpoints, (short) 0);
         int size = 0;

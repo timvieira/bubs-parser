@@ -71,8 +71,8 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
     @Override
     public String getStats() {
         return super.getStats()
-                + (collectDetailedStatistics ? String.format("avgXprod=%.1f xProdEntriesExamined=%d xProdEntries=%d",
-                        totalCartesianProductSize * 1.0f / chart.cells, totalCartesianProductEntriesExamined,
+                + (collectDetailedStatistics ? String.format(" avgXprod=%.1f xProdEntriesExamined=%d xProdEntries=%d",
+                        sentenceCartesianProductSize * 1.0f / chart.cells, totalCartesianProductEntriesExamined,
                         totalValidCartesianProductEntries) : "");
     }
 

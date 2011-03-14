@@ -46,10 +46,10 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
                 final long t0 = System.currentTimeMillis();
 
                 final CartesianProductVector cartesianProductVector = cartesianProduct(start, end, midpoint);
-                totalCartesianProductSize += cartesianProductVector.size();
+                sentenceCartesianProductSize += cartesianProductVector.size();
 
                 final long t1 = System.currentTimeMillis();
-                totalCartesianProductTime += t1 - t0;
+                sentenceCartesianProductTime += t1 - t0;
 
                 // Multiply the unioned vector with the grammar matrix and populate the current cell with the
                 // vector resulting from the matrix-vector multiplication
@@ -57,7 +57,7 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
                 binarySpmvMultiply(cartesianProductVector, tmpChildren, tmpProbabilities, tmpMidpoints);
                 maxUnion(chartCellChildren, chartCellProbabilities, chartCellMidpoints, tmpChildren, tmpProbabilities,
                         tmpMidpoints);
-                totalBinarySpMVTime += (System.currentTimeMillis() - t1);
+                sentenceBinarySpMVTime += (System.currentTimeMillis() - t1);
             }
         }
 
@@ -69,12 +69,12 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
         unarySpmv(packedArrayCell);
 
         final long t4 = System.currentTimeMillis();
-        totalUnaryTime += (t4 - t3);
+        sentenceUnaryTime += (t4 - t3);
 
         // Pack the temporary cell storage into the main chart array
         packedArrayCell.finalizeCell();
 
-        totalFinalizeTime += (System.currentTimeMillis() - t4);
+        sentenceFinalizeTime += (System.currentTimeMillis() - t4);
     }
 
     private void maxUnion(final int[] targetChildren, final float[] targetProbabilities, final short[] targetMidpoints,

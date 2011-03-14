@@ -119,10 +119,10 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
     public String getStats() {
         return super.getStats()
                 + (collectDetailedStatistics ? String.format(
-                        "avgXprod=%.1f xProdEntriesExamined=%d xProdEntries=%d cells=%d totalC=%d c_l=%d c_r=%d",
-                        totalCartesianProductSize * 1.0f / chart.cells, totalCartesianProductEntriesExamined,
-                        totalValidCartesianProductEntries, chart.cells, totalCellPopulation, totalLeftChildPopulation,
-                        totalRightChildPopulation) : "");
+                        " avgXprod=%.1f xProdEntriesExamined=%d xProdEntries=%d cells=%d totalC=%d c_l=%d c_r=%d",
+                        sentenceCartesianProductSize * 1.0f / chart.cells, totalCartesianProductEntriesExamined,
+                        totalValidCartesianProductEntries, chart.cells, sentenceCellPopulation,
+                        sentenceLeftChildPopulation, sentenceRightChildPopulation, sentenceBinarySpMVTime) : "");
     }
 
 }

@@ -7,7 +7,7 @@ import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
-import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
+import edu.ohsu.cslu.parser.spmv.CellParallelCsrSpmvParser;
 import edu.ohsu.cslu.tools.TreeTools;
 
 public abstract class Parser<G extends Grammar> {
@@ -20,7 +20,7 @@ public abstract class Parser<G extends Grammar> {
     public ParseStats currentInput; // temporary so I don't break too much stuff at once
 
     // TODO Move global state back out of Parser
-    static protected int sentenceNumber = 0;
+    static volatile protected int sentenceNumber = 0;
     protected float totalParseTimeSec = 0;
     protected float totalInsideScore = 0;
     protected long totalMaxMemoryMB = 0;
@@ -29,8 +29,6 @@ public abstract class Parser<G extends Grammar> {
      * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
      * {@link ParserDriver}, but duplicated here as a final variable, so that the JIT can eliminate
      * potentially-expensive counting code when we don't need it.
-     * 
-     * TODO Move up to {@link ChartParser} (or even higher) and share with {@link SparseMatrixLoopParser}
      */
     protected final boolean collectDetailedStatistics;
 
@@ -97,6 +95,20 @@ public abstract class Parser<G extends Grammar> {
         return stats;
     }
 
+    /**
+     * Closes any resources maintained by the parser (e.g. thread-pools as in {@link CellParallelCsrSpmvParser}.
+     */
+    public void shutdown() {
+    }
+
+    /**
+     * Ensure that we release all resources when garbage-collected
+     */
+    @Override
+    public void finalize() {
+        shutdown();
+    }
+
     static public enum ParserType {
         CKY, Agenda, Beam, Matrix;
 
@@ -131,8 +143,10 @@ public abstract class Parser<G extends Grammar> {
         DenseVectorOpenClSparseMatrixVector("dvopencl"),
         PackedOpenClSparseMatrixVector("popencl"),
         CsrSpmv("csr"),
+        CellParallelCsrSpmv("cpcsr"),
         CsrSpmvPerMidpoint("csrpm"),
         CscSpmv("csc"),
+        RowParallelCscSpmv("rpcsc"),
         BeamCscSpmv("beamcsc"),
         LeftChildMatrixLoop("lcml"),
         RightChildMatrixLoop("rcml"),

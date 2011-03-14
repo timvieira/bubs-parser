@@ -19,8 +19,8 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.util.OpenClUtils;
 
@@ -37,6 +37,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         SparseMatrixVectorParser<CsrSparseMatrixGrammar, C> {
 
     protected final static int LOCAL_WORK_SIZE = 64;
+
+    protected long sentenceCartesianProductUnionTime = 0;
 
     protected final CLContext context;
     protected final CLProgram clProgram;
@@ -91,8 +93,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             prefix.write(grammar.cartesianProductFunction().openClUnpackLeftChild() + '\n');
 
             // Compile kernels shared by all implementing classes
-            final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class, prefix
-                    .toString());
+            final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class,
+                    prefix.toString());
             fillFloatKernel = clSharedProgram.createKernel("fillFloat");
             cartesianProductUnionKernel = clSharedProgram.createKernel("cartesianProductUnion");
 
@@ -138,11 +140,15 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         if (clChartInsideProbabilities == null || tokens.length > chartSize) {
             allocateOpenClChart();
         }
+
+        sentenceCartesianProductUnionTime = 0;
     }
 
     /**
      * Duplicated here from {@link ChartParser} so we can copy the parse chart from the GPU to main memory after
      * parsing.
+     * 
+     * TODO Call super.findBestParse() and just copy here?
      */
     @Override
     public ParseTree findBestParse(final int[] tokens) {
@@ -212,7 +218,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             internalBinarySpmvMultiply(spvChartCell);
 
             t2 = System.currentTimeMillis();
-            totalBinarySpMVTime += (t2 - t1);
+            sentenceBinarySpMVTime += (t2 - t1);
 
         } else {
             t2 = System.currentTimeMillis();
@@ -225,10 +231,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         internalUnarySpmvMultiply(spvChartCell);
 
         final long t3 = System.currentTimeMillis();
-        totalUnaryTime += (t3 - t2);
+        sentenceUnaryTime += (t3 - t2);
 
         finalizeCell(spvChartCell);
-        totalFinalizeTime += (System.currentTimeMillis() - t3);
+        sentenceFinalizeTime += (System.currentTimeMillis() - t3);
 
     }
 
@@ -287,7 +293,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
                 clCartesianProductProbabilities0, clCartesianProductMidpoints0);
 
         long t1 = System.currentTimeMillis();
-        totalCartesianProductTime += (t1 - t0);
+        sentenceCartesianProductTime += (t1 - t0);
 
         // Iterate over all other midpoints, unioning together the cartesian-product of discovered
         // non-terminals in each left/right child pair
@@ -309,7 +315,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
                     clCartesianProductMidpoints1);
 
             t1 = System.currentTimeMillis();
-            totalCartesianProductTime += (t1 - t0);
+            sentenceCartesianProductTime += (t1 - t0);
 
             // Union the new cross-product with the existing cross-product
             cartesianProductUnionKernel.setArgs(clCartesianProductProbabilities0, clCartesianProductMidpoints0,
@@ -319,7 +325,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
                     new int[] { LOCAL_WORK_SIZE });
             clQueue.finish();
 
-            totalCartesianProductUnionTime += (System.currentTimeMillis() - t1);
+            sentenceCartesianProductUnionTime += (System.currentTimeMillis() - t1);
         }
     }
 
