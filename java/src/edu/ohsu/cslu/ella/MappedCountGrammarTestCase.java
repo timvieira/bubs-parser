@@ -7,8 +7,7 @@ import edu.ohsu.cslu.tests.Assert;
 
 public class MappedCountGrammarTestCase extends CountGrammarTestCase {
 
-    @Test
-    public void testFractionalCounts() {
+    private MappedCountGrammar grammar() {
         final SplitVocabulary vocabulary = new SplitVocabulary(new String[] { "top", "a", "b" });
         final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "c", "d" });
         final MappedCountGrammar mcg = new MappedCountGrammar(vocabulary, lexicon);
@@ -35,6 +34,12 @@ public class MappedCountGrammarTestCase extends CountGrammarTestCase {
         mcg.incrementUnaryCount("b", "b", 1.5f);
         mcg.incrementLexicalCount("b", "c", 2.5f);
         mcg.incrementLexicalCount("b", "d", .5f);
+        return mcg;
+    }
+
+    @Test
+    public void testFractionalCounts() {
+        final MappedCountGrammar mcg = grammar();
 
         final ProductionListGrammar plg = new ProductionListGrammar(mcg);
         Assert.assertLogFractionEquals(0, plg.unaryLogProbability("top", "a"), 0.01f);
@@ -49,4 +54,11 @@ public class MappedCountGrammarTestCase extends CountGrammarTestCase {
         Assert.assertLogFractionEquals(Math.log(5f / 16), plg.lexicalLogProbability("b", "c"), 0.01f);
         Assert.assertLogFractionEquals(Math.log(1f / 16), plg.lexicalLogProbability("b", "d"), 0.01f);
     }
+
+    // @Test
+    // public void testSmooth() {
+    // final MappedCountGrammar mcg = grammar();
+    // mcg.smooth();
+    //
+    // }
 }

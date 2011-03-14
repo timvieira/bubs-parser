@@ -16,6 +16,8 @@ package edu.ohsu.cslu.util;
  */
 public class Math {
 
+    private final static float LOG_SUM_DELTA = 20f;
+
     /**
      * Returns the maximum of the arguments supplied
      * 
@@ -496,13 +498,36 @@ public class Math {
      * @return log_e(e^a + e^b)
      */
     public static float logSum(final float a, final float b) {
-        if (a == Float.NEGATIVE_INFINITY) {
-            return b;
+
+        // Two similar cases - one for b > a and one for a >= b
+
+        if (b > a) {
+            if (a == Float.NEGATIVE_INFINITY || b - a > LOG_SUM_DELTA) {
+                return b;
+            }
+            final float logSum = (float) (b + java.lang.Math.log1p(java.lang.Math.exp(a - b)));
+            if (Float.isNaN(logSum)) {
+                System.out.println("NaN");
+            }
+            if (logSum == Float.POSITIVE_INFINITY) {
+                System.out.println("Infinity");
+            }
+            return logSum;
         }
-        if (b == Float.NEGATIVE_INFINITY) {
+
+        // a >= b
+
+        if (b == Float.NEGATIVE_INFINITY || a - b > LOG_SUM_DELTA) {
             return a;
         }
-        return (float) (a + java.lang.Math.log1p(java.lang.Math.exp(b - a)));
+        final float logSum = (float) (a + java.lang.Math.log1p(java.lang.Math.exp(b - a)));
+        if (Float.isNaN(logSum)) {
+            System.out.println("NaN");
+        }
+        if (logSum == Float.POSITIVE_INFINITY) {
+            System.out.println("Infinity");
+        }
+        return logSum;
     }
 
     /**
