@@ -386,7 +386,7 @@
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.ParserDriver" />
             <param name="tool-name" value="parse" />
-            <param name="heap-size" value="1024" />
+            <param name="heap-size" value="1500m" />
             <param name="include-lgpl-libs" value="true" />
             <param name="additional-file-root" value="${dir.src}" />
             <param name="additional-file-includes" value="**/*.cl" />
