@@ -2,7 +2,6 @@ package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.chart.GoldChart;
-import edu.ohsu.cslu.tools.TreeTools;
 
 public class ParseResult {
 
@@ -44,8 +43,12 @@ public class ParseResult {
             // if input is a tree, extract sentence from tree
             if (ParseTree.isBracketFormat(input)) {
                 inputTree = ParseTree.readBracketFormat(input);
-                TreeTools.binarizeTree(inputTree, grammar.isRightFactored(), grammar.horizontalMarkov(),
-                        grammar.verticalMarkov(), grammar.annotatePOS(), grammar.grammarFormat);
+                if (!inputTree.isBinaryTree()) {
+                    throw new IllegalArgumentException(
+                            "Input trees are not binarized.  Please use tree-tools.jar to binarize trees first.");
+                }
+                // TreeTools.binarizeTree(inputTree, grammar.isRightFactored(), grammar.horizontalMarkov(), grammar
+                // .verticalMarkov(), grammar.annotatePOS(), grammar.grammarFormat);
                 inputTreeChart = new GoldChart(inputTree, grammar);
                 input = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
             }
@@ -64,7 +67,7 @@ public class ParseResult {
     public String toString() {
         // String result = String.format("STAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f", sentenceNumber,
         // sentenceLength, sentenceMD5, parseTimeSec, insideProbability);
-        String result = String.format("STAT: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f", sentenceNumber,
+        String result = String.format("INFO: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f", sentenceNumber,
                 sentenceLength, parseTimeSec, insideProbability);
 
         result += " pops=" + totalPops;

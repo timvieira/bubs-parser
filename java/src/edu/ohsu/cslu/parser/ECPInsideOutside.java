@@ -6,8 +6,8 @@ import java.util.LinkedList;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.ProjectedGrammar;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
+import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 
 public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChart> {
@@ -535,7 +535,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                             }
 
                             // TODO: is this correct? It seems like we SHOULD count for each A.
-                            // don't want to double-count entries with X -> A A
+                            // Don't want to double-count entries with X -> A A
                             leftInside = leftCell.getInside(p.leftChild);
                             if (leftInside > Float.NEGATIVE_INFINITY && p.leftChild != p.rightChild) {
                                 rightCell.updateOutside(p.rightChild, leftInside + parentOutside + p.prob);

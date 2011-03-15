@@ -21,11 +21,11 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     PriorityQueue<ChartEdge> agenda;
     int origBeamWidth, beamWidth, cellPushed, cellPopped, cellConsidered, numReparses;
     float globalBestFOM, globalBeamDelta, origGlobalBeamDelta;
-    float localBestFOM, localBeamDelta, origLocalBeamDelta, localWorstFOM;
+    float localBestFOM, localBeamDelta, origLocalBeamDelta;
     int origFactoredBeamWidth, factoredBeamWidth, reparseFactor;
     boolean hasPerceptronBeamWidth;
 
-    int addToBeamWidth = 0;
+    // int addToBeamWidth = 0;
 
     public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
@@ -64,15 +64,14 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             origFactoredBeamWidth = (int) beamVals[3];
         }
 
-        if (ParserDriver.param3 != -1) {
-            addToBeamWidth = (int) ParserDriver.param3;
-        }
+        // if (ParserDriver.param3 != -1) {
+        // addToBeamWidth = (int) ParserDriver.param3;
+        // }
     }
 
     @Override
     protected void initSentence(final int[] tokens) {
         chart = new CellChart(tokens, opts.viterbiMax(), this);
-        globalBestFOM = Float.NEGATIVE_INFINITY;
         numReparses = -1;
 
         final double startTimeMS = System.currentTimeMillis();
@@ -91,12 +90,18 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         numReparses = -1;
         while (numReparses < opts.reparse && chart.hasCompleteParse(grammar.startSymbol) == false) {
             numReparses++;
+            globalBestFOM = Float.NEGATIVE_INFINITY;
 
             reparseFactor = (int) Math.pow(2, numReparses);
-            beamWidth = origBeamWidth * reparseFactor;
-            factoredBeamWidth = origFactoredBeamWidth * reparseFactor;
-            globalBeamDelta = origGlobalBeamDelta * reparseFactor;
-            localBeamDelta = origLocalBeamDelta * reparseFactor;
+            beamWidth = Math.max(origBeamWidth * reparseFactor, origBeamWidth); // don't want overflow problems
+            factoredBeamWidth = Math.max(origFactoredBeamWidth * reparseFactor, origFactoredBeamWidth);
+            globalBeamDelta = Math.max(origGlobalBeamDelta * reparseFactor, origGlobalBeamDelta);
+            localBeamDelta = Math.max(origLocalBeamDelta * reparseFactor, origLocalBeamDelta);
+
+            BaseLogger.singleton().finest(
+                    "INFO: reparseNum=" + (numReparses + 1) + "beamWidth=" + beamWidth + " globalThresh="
+                            + globalBeamDelta + " localThresh=" + localBeamDelta + " factBeamWidth="
+                            + factoredBeamWidth);
 
             cellSelector.reset();
             while (cellSelector.hasNext()) {
@@ -139,6 +144,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
                 if (hasCellConstraints == false || cc.isUnaryOpen(start, end)) {
                     for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
+                        currentInput.nLexUnary += 1;
                         addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
                     }
                 }
@@ -170,23 +176,20 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     protected void initCell(final short start, final short end) {
         agenda = new PriorityQueue<ChartEdge>();
         localBestFOM = Float.NEGATIVE_INFINITY;
-        localWorstFOM = Float.POSITIVE_INFINITY;
         cellPushed = 0;
         cellPopped = 0;
         cellConsidered = 0;
 
-        beamWidth = origBeamWidth * reparseFactor;
-        if (hasPerceptronBeamWidth) {
-            beamWidth = Math.min(cellSelector.getBeamWidth(start, end), beamWidth);
-            // NOTE: adding value to beam width DOES NOT affect closed cells and also does not exceed maxBeamWidth
-            // we can't simply add it to getCellValue() above because it overflows when prediction is Integer.MAX_VALUE
-            beamWidth = Math.min(beamWidth + addToBeamWidth, origBeamWidth * reparseFactor);
-        }
-        // for PerceptronBeamWidth and CellConstraints
-        if (cellSelector.hasCellConstraints() && cellSelector.getCellConstraints().isCellOnlyFactored(start, end)) {
-            beamWidth = Math.min(beamWidth, factoredBeamWidth);
-        }
+        if (cellSelector.hasCellConstraints()) {
+            // reset beamWidth at each cell since it may be modified based on following conditions
+            beamWidth = Math.min(beamWidth, origBeamWidth * reparseFactor);
 
+            if (hasPerceptronBeamWidth) {
+                beamWidth = Math.min(cellSelector.getBeamWidth(start, end), beamWidth);
+            } else if (cellSelector.getCellConstraints().isCellOnlyFactored(start, end)) {
+                beamWidth = factoredBeamWidth;
+            }
+        }
     }
 
     protected boolean fomCheckAndUpdate(final ChartEdge edge) {

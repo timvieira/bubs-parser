@@ -7,8 +7,16 @@ import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class BSCPWeakThresh extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
+    float localWorstFOM;
+
     public BSCPWeakThresh(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
+    }
+
+    @Override
+    protected void initCell(final short start, final short end) {
+        super.initCell(start, end);
+        localWorstFOM = Float.POSITIVE_INFINITY;
     }
 
     // track the worst FOM score in the agenda while we add edges. This

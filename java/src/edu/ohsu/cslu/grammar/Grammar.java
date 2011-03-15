@@ -85,6 +85,9 @@ public class Grammar implements Serializable {
     protected final short[][] lexicalParents; // [lexIndex][valid parent ntIndex]
     protected final float[][] lexicalLogProbabilities;
 
+    // public final SymbolSet<String> evalNonTermSet;
+    // protected final int[] nt2evalntMap;
+
     public final static String nullSymbolStr = "<null>";
     public static Production nullProduction;
 
@@ -97,10 +100,10 @@ public class Grammar implements Serializable {
     public int numFactoredSymbols;
     public int numNonFactoredSymbols;
     private boolean isLeftFactored;
-    public boolean annotatePOS;
-    public boolean isLatentVariableGrammar;
-    public int horizontalMarkov;
-    public int verticalMarkov;
+    // public boolean isLatentVariableGrammar;
+    // public boolean annotatePOS;
+    // public int horizontalMarkov;
+    // public int verticalMarkov;
 
     // == Aaron's Grammar variables ==
     /** String representation of the start symbol (s-dagger) */
@@ -175,15 +178,16 @@ public class Grammar implements Serializable {
         lexSet = new SymbolSet<String>();
         posSet = new SymbolSet<Integer>();
         phraseSet = new SymbolSet<Integer>();
+        // evalNonTermSet = new SymbolSet<String>();
 
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
 
-        BaseLogger.singleton().fine("Reading grammar ... ");
+        BaseLogger.singleton().fine("INFO: Reading grammar ... ");
         this.stringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
-        BaseLogger.singleton().fine("transforming ... ");
+        // BaseLogger.singleton().fine("transforming ... ");
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
@@ -249,11 +253,15 @@ public class Grammar implements Serializable {
             sortedNonTerminals.add(create(nt, pos, nonPosSet, rightChildrenSet));
         }
 
+        // nt2evalntMap = new int[sortedNonTerminals.size()];
         for (final StringNonTerminal nt : sortedNonTerminals) {
             final int ntIndex = nonTermSet.addSymbol(nt.label);
 
             // Added by nate to make Cell Constraints work again
             getNonterminal(ntIndex).isFactored = grammarFormat.isFactored(nt.label);
+
+            // final String evalNT = grammarFormat.getEvalNonTerminal(nt.label);
+            // int evalNTIndex = evalNonTermSet.addSymbol(evalNT);
         }
 
         // TODO Generalize these further for right-factored grammars
@@ -337,7 +345,7 @@ public class Grammar implements Serializable {
             }
         }
 
-        BaseLogger.singleton().fine("done.");
+        // BaseLogger.singleton().fine("done.");
     }
 
     public Grammar(final String grammarFile) throws IOException {
@@ -560,7 +568,7 @@ public class Grammar implements Serializable {
         return nonTermSet.getSymbol(startSymbol);
     }
 
-    @SuppressWarnings({ "cast", "unchecked" })
+    @SuppressWarnings( { "cast", "unchecked" })
     public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
@@ -744,8 +752,8 @@ public class Grammar implements Serializable {
      */
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
         if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
-            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
-                    nonTermSet.getIndex(rightChild));
+            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild), nonTermSet
+                    .getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -893,7 +901,7 @@ public class Grammar implements Serializable {
         }
 
         final StringBuilder sb = new StringBuilder(256);
-        sb.append("INFO: grammar:");
+        sb.append("INFO:");
         sb.append(" binaryRules=" + numBinaryProds());
         sb.append(" unaryRules=" + numUnaryProds());
         sb.append(" lexicalRules=" + numLexProds());
@@ -1102,6 +1110,19 @@ public class Grammar implements Serializable {
 
         }
 
+        public String getEvalNonTerminal(final String nt) {
+            switch (this) {
+            case CSLU:
+                if (isFactored(nt))
+                    return getBaseNT(nt) + "|";
+                return getBaseNT(nt);
+            case Berkeley:
+                return nt.substring(0, nt.indexOf("_"));
+            default:
+                throw new IllegalArgumentException("Grammar format does not support getEvalNonTerminal()");
+            }
+        }
+
         public boolean isFactored(final String nonTerminal) {
             switch (this) {
             case CSLU:
@@ -1133,7 +1154,7 @@ public class Grammar implements Serializable {
                 }
                 return contents;
             case Roark:
-                // TODO Support Roark format
+                // TODO: Support Roark format
             default:
                 throw new IllegalArgumentException("Unsupported format");
             }
@@ -1177,17 +1198,17 @@ public class Grammar implements Serializable {
         }
     }
 
-    public int horizontalMarkov() {
-        return horizontalMarkov;
-    }
-
-    public int verticalMarkov() {
-        return verticalMarkov;
-    }
-
-    public boolean annotatePOS() {
-        return annotatePOS;
-    }
+    // public int horizontalMarkov() {
+    // return horizontalMarkov;
+    // }
+    //
+    // public int verticalMarkov() {
+    // return verticalMarkov;
+    // }
+    //
+    // public boolean annotatePOS() {
+    // return annotatePOS;
+    // }
 
     public String toMappingString() {
         final StringBuilder sb = new StringBuilder(numNonTerms() * 25);
