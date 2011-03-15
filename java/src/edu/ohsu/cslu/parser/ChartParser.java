@@ -2,9 +2,7 @@ package edu.ohsu.cslu.parser;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
 
-import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
@@ -19,6 +17,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     protected long extractTime;
     protected long initTime;
     protected long edgeSelectorInitTime;
+    protected long cellSelectorInitTime;
 
     public ChartParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -40,7 +39,14 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                 edgeSelector.init(chart);
             }
         }
-        cellSelector.initSentence(this);
+
+        if (collectDetailedStatistics) {
+            final long t2 = System.currentTimeMillis();
+            cellSelector.initSentence(this);
+            cellSelectorInitTime = System.currentTimeMillis() - t2;
+        } else {
+            cellSelector.initSentence(this);
+        }
 
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
@@ -48,9 +54,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         }
 
         if (collectDetailedStatistics) {
-            final long t2 = System.currentTimeMillis();
+            final long t3 = System.currentTimeMillis();
             final ParseTree parseTree = chart.extractBestParse(grammar.startSymbol);
-            extractTime = System.currentTimeMillis() - t2;
+            extractTime = System.currentTimeMillis() - t3;
             return parseTree;
         }
 
@@ -92,7 +98,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public String getStats() {
-        return chart.getStats() + (BaseLogger.singleton().isLoggable(Level.FINER) ? (" edgeInitTime=" + initTime) : "");
+        return chart.getStats()
+                + (collectDetailedStatistics ? String.format(" edgeSelectorInitTime=%d cellSelectorInitTime=%d",
+                        edgeSelectorInitTime, cellSelectorInitTime) : "");
     }
 
     public SparseBitVector getCellFeatures(final int start, final int end, final String featTemplate) {
