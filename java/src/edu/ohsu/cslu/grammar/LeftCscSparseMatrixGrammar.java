@@ -64,7 +64,7 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         Arrays.fill(cscBinaryLeftChildEndIndices, -1);
 
         for (int i = 0; i < cscBinaryPopulatedColumns.length; i++) {
-            final int leftChild = cartesianProductFunction.unpackLeftChild(cscBinaryPopulatedColumns[i]);
+            final int leftChild = packingFunction.unpackLeftChild(cscBinaryPopulatedColumns[i]);
             if (cscBinaryLeftChildStartIndices[leftChild] < 0) {
                 cscBinaryLeftChildStartIndices[leftChild] = i;
             }

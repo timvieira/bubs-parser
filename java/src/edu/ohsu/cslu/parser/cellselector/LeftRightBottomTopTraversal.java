@@ -17,6 +17,11 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     private int nextCell = 0;
     private int cells;
 
+    /** The size of the sentences */
+    private short sentenceLength;
+
+    private ChartParser<?, ?> parser;
+
     public static CellSelectorFactory FACTORY = new CellSelectorFactory() {
         @Override
         public CellSelector createCellSelector() {
@@ -28,16 +33,17 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     }
 
     @Override
-    public void initSentence(final ChartParser<?, ?> parser) {
-        final int n = parser.chart.size();
-        cells = n * (n + 1) / 2;
+    public void initSentence(final ChartParser<?, ?> p) {
+        this.parser = p;
+        sentenceLength = (short) p.chart.size();
+        cells = sentenceLength * (sentenceLength + 1) / 2;
         if (cellIndices == null || cellIndices.length < cells) {
             cellIndices = new short[cells][2];
         }
         nextCell = 0;
         int i = 0;
-        for (short span = 1; span <= n; span++) {
-            for (short start = 0; start < n - span + 1; start++) { // beginning
+        for (short span = 1; span <= sentenceLength; span++) {
+            for (short start = 0; start < sentenceLength - span + 1; start++) { // beginning
                 cellIndices[i++] = new short[] { start, (short) (start + span) };
             }
         }
@@ -50,6 +56,11 @@ public class LeftRightBottomTopTraversal extends CellSelector {
 
     @Override
     public boolean hasNext() {
+        // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active tasks (if
+        // any) before proceeding on to the next row and before returning false when parsing is complete.
+        if (nextCell >= 1 && cellIndices[nextCell - 1][1] == sentenceLength) {
+            parser.waitForActiveTasks();
+        }
         return nextCell < cells;
     }
 

@@ -52,7 +52,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         this.csrBinaryColumnIndices = new int[numBinaryProds()];
         this.csrBinaryProbabilities = new float[numBinaryProds()];
 
-        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, cartesianProductFunction),
+        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction),
                 csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
     }
 
@@ -72,7 +72,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         this.csrBinaryColumnIndices = new int[numBinaryProds()];
         this.csrBinaryProbabilities = new float[numBinaryProds()];
 
-        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, cartesianProductFunction),
+        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction),
                 csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
     }
 
@@ -89,7 +89,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         this.csrBinaryProbabilities = new float[numBinaryProds()];
 
         if (initCsrMatrices) {
-            storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, cartesianProductFunction),
+            storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction),
                     csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
         }
     }

@@ -37,7 +37,7 @@ import edu.ohsu.cslu.util.Strings;
 
 public abstract class SparseMatrixGrammar extends Grammar {
 
-    public final PackingFunction cartesianProductFunction;
+    public final PackingFunction packingFunction;
 
     /**
      * Offsets into {@link #csrUnaryColumnIndices} for the start of each row, indexed by row index (non-terminals)
@@ -64,7 +64,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
             throws IOException {
         super(grammarFile);
 
-        this.cartesianProductFunction = createCartesianProductFunction(functionClass);
+        this.packingFunction = createCartesianProductFunction(functionClass);
 
         // Store all unary rules
         this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
@@ -90,7 +90,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         super(g);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
-        this.cartesianProductFunction = createCartesianProductFunction(functionClass);
+        this.packingFunction = createCartesianProductFunction(functionClass);
 
         // Store all unary rules
         this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
@@ -119,7 +119,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
-        this.cartesianProductFunction = createCartesianProductFunction(functionClass);
+        this.packingFunction = createCartesianProductFunction(functionClass);
 
         // Store all unary rules
         this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
@@ -166,7 +166,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     @Override
     public final float binaryLogProbability(final int parent, final int leftChild, final int rightChild) {
-        return binaryLogProbability(parent, cartesianProductFunction.pack((short) leftChild, (short) rightChild));
+        return binaryLogProbability(parent, packingFunction.pack((short) leftChild, (short) rightChild));
     }
 
     /**
@@ -237,7 +237,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * @return the cartesian-product function in use
      */
     public final PackingFunction cartesianProductFunction() {
-        return cartesianProductFunction;
+        return packingFunction;
     }
 
     @Override
@@ -260,13 +260,13 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         final IntSet validChildPairs = new IntOpenHashSet(binaryProductions.size() / 2);
         for (final Production p : binaryProductions) {
-            validChildPairs.add(cartesianProductFunction.pack((short) p.leftChild, (short) p.rightChild));
+            validChildPairs.add(packingFunction.pack((short) p.leftChild, (short) p.rightChild));
         }
 
         final StringBuilder sb = new StringBuilder(10 * 1024);
         for (final int childPair : validChildPairs) {
-            final int leftChild = cartesianProductFunction.unpackLeftChild(childPair);
-            final int rightChild = cartesianProductFunction.unpackRightChild(childPair);
+            final int leftChild = packingFunction.unpackLeftChild(childPair);
+            final int rightChild = packingFunction.unpackRightChild(childPair);
             sb.append(leftChild + "," + rightChild + ',' + childPair + '\n');
         }
 
@@ -278,8 +278,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
     public String getStats() {
         final StringBuilder sb = new StringBuilder(1024);
         sb.append(super.getStats());
-        sb.append("Cartesian Product Function: " + cartesianProductFunction.getClass().getName() + '\n');
-        sb.append("Packed Array Size: " + cartesianProductFunction.packedArraySize() + '\n');
+        sb.append("Cartesian Product Function: " + packingFunction.getClass().getName() + '\n');
+        sb.append("Packed Array Size: " + packingFunction.packedArraySize() + '\n');
         return sb.toString();
     }
 

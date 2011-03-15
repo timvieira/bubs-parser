@@ -73,7 +73,7 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
     }
 
     public ConstrainedCountGrammar(final ConstrainedCsrSparseMatrixGrammar grammar) {
-        this((SplitVocabulary) grammar.nonTermSet, grammar.lexSet, grammar.cartesianProductFunction);
+        this((SplitVocabulary) grammar.nonTermSet, grammar.lexSet, grammar.packingFunction);
 
         // Initialize maps of base grammar probabilities
         for (final Production p : grammar.parentGrammar.binaryProductions) {

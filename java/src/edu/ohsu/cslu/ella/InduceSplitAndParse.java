@@ -98,7 +98,7 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
         final long t5 = System.currentTimeMillis();
         System.out.println(String.format("Time: %d ms", t5 - t4));
 
-        System.out.println("Grammar summary: " + csrGrammar1.cartesianProductFunction.toString());
+        System.out.println("Grammar summary: " + csrGrammar1.packingFunction.toString());
 
         // Parse the entire training corpus with the split-1 grammar
         System.out.println("Parsing with split grammar...");

@@ -89,7 +89,7 @@ public class TestConstrainedCsrSpmvParser {
 
     @Test
     public void testCsrConversion() {
-        final PackingFunction f = csrGrammar1.cartesianProductFunction;
+        final PackingFunction f = csrGrammar1.packingFunction;
 
         assertEquals(1, f.unpackLeftChild(f.pack((short) 1, (short) 4)));
         assertEquals(4, f.unpackRightChild(f.pack((short) 1, (short) 4)));

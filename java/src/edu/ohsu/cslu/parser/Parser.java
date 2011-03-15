@@ -8,6 +8,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.spmv.CellParallelCsrSpmvParser;
+import edu.ohsu.cslu.parser.spmv.RowParallelCscSpmvParser;
 import edu.ohsu.cslu.tools.TreeTools;
 
 public abstract class Parser<G extends Grammar> {
@@ -17,7 +18,7 @@ public abstract class Parser<G extends Grammar> {
     // TODO Make this reference final (once we work around the hack in CellChart)
     public EdgeSelector edgeSelector;
     public final CellSelector cellSelector;
-    public ParseStats currentInput; // temporary so I don't break too much stuff at once
+    public ParseResult currentInput; // temporary so I don't break too much stuff at once
 
     // TODO Move global state back out of Parser
     static volatile protected int sentenceNumber = 0;
@@ -54,45 +55,54 @@ public abstract class Parser<G extends Grammar> {
 
     protected abstract ParseTree findBestParse(int[] tokens);
 
+    /**
+     * Waits until all active parsing tasks have completed. Intended for multi-threaded parsers (e.g.
+     * {@link CellParallelCsrSpmvParser}, {@link RowParallelCscSpmvParser}) which may need to implement a barrier to
+     * synchronize all tasks before proceeding on to dependent tasks.
+     */
+    public void waitForActiveTasks() {
+    }
+
     // wraps parse tree from findBestParse() with additional stats and
     // cleans up output for consumption. Input can be a sentence string
     // or a parse tree
-    public ParseStats parseSentence(final String input) {
-        final ParseStats stats = new ParseStats(input, grammar);
-        currentInput = stats; // get ride of currentInput (and chart?). Just pass these around
-        stats.sentenceNumber = sentenceNumber++;
-        stats.tokens = grammar.tokenizer.tokenizeToIndex(stats.sentence);
+    public ParseResult parseSentence(final String input) {
+        final ParseResult result = new ParseResult(input, grammar);
+        currentInput = result; // get ride of currentInput (and chart?). Just pass these around
+        result.sentenceNumber = sentenceNumber++;
+        result.tokens = grammar.tokenizer.tokenizeToIndex(result.sentence);
 
-        if (stats.sentenceLength > opts.maxLength) {
+        if (result.sentenceLength > opts.maxLength) {
             BaseLogger.singleton().fine(
-                    "INFO: Skipping sentence. Length of " + stats.sentenceLength + " is greater than maxLength ("
+                    "INFO: Skipping sentence. Length of " + result.sentenceLength + " is greater than maxLength ("
                             + opts.maxLength + ")");
         } else {
-            stats.startTime();
-            stats.parse = findBestParse(stats.tokens);
-            stats.stopTime();
+            result.startTime();
+            result.parse = findBestParse(result.tokens);
+            result.stopTime();
 
-            if (stats.parse == null) {
-                stats.parseBracketString = "()";
+            if (result.parse == null) {
+                result.parseBracketString = "()";
             } else {
                 if (!opts.printUnkLabels) {
-                    stats.parse.replaceLeafNodes(stats.strTokens);
+                    result.parse.replaceLeafNodes(result.strTokens);
                 }
 
                 // stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
-                stats.parseBracketString = stats.parse.toString();
-                stats.insideProbability = getInside(0, stats.sentenceLength, grammar.startSymbol);
+                result.parseBracketString = result.parse.toString();
+                result.insideProbability = getInside(0, result.sentenceLength, grammar.startSymbol);
+                result.parserStats = getStats();
 
                 // TODO: we should be converting the tree in tree form, not in bracket string form
                 if (opts.binaryTreeOutput == false) {
-                    stats.parseBracketString = TreeTools.unfactor(stats.parseBracketString, grammar.grammarFormat);
+                    result.parseBracketString = TreeTools.unfactor(result.parseBracketString, grammar.grammarFormat);
                 }
 
                 // TODO: could evaluate accuracy here if input is a gold tree
             }
         }
 
-        return stats;
+        return result;
     }
 
     /**
@@ -139,7 +149,6 @@ public abstract class Parser<G extends Grammar> {
         // BSCPBeamConf("beamconf"),
         CoarseCellAgenda("cc"),
         CoarseCellAgendaCSLUT("cccslut"),
-        JsaSparseMatrixVector("jsa"),
         DenseVectorOpenClSparseMatrixVector("dvopencl"),
         PackedOpenClSparseMatrixVector("popencl"),
         CsrSpmv("csr"),
