@@ -9,26 +9,26 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
- * Tests for {@link CellParallelCsrSpmvParser}.
+ * Unit tests for {@link RowParallelCscSpmvParser}.
  * 
  * @author Aaron Dunlop
- * @since Mar 11, 2011
+ * @since Mar 12, 2011
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestCellParallelCsrSpmvParser extends
-        SparseMatrixVectorParserTestCase<CellParallelCsrSpmvParser, PerfectIntPairHashPackingFunction> {
+public class TestRowParallelCscSpmvParser extends
+        SparseMatrixVectorParserTestCase<RowParallelCscSpmvParser, PerfectIntPairHashPackingFunction> {
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "13460" })
+    @PerformanceTest({ "mbp", "10179" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
 
     @Override
     public void setUp() throws Exception {
-        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_REQUESTED_THREAD_COUNT, "4");
+        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_REQUESTED_THREAD_COUNT, "2");
         super.setUp();
     }
 

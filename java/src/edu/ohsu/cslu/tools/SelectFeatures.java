@@ -45,7 +45,7 @@ import edu.ohsu.cslu.util.Strings;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class SelectFeatures extends LinewiseCommandlineTool {
+public class SelectFeatures extends LinewiseCommandlineTool<String> {
 
     @Option(name = "-i", aliases = { "--input-format" }, metaVar = "format (tree|bracketed|square-bracketed|stanford)", usage = "Input format. Default = bracketed.")
     private FileFormat inputFormat = FileFormat.Bracketed;

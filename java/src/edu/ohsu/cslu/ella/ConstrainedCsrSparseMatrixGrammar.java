@@ -40,9 +40,9 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
         this.parentGrammar = plg.parentGrammar;
 
         this.csrBinaryBaseStartIndices = new int[numNonTerms()][];
-        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, cartesianProductFunction),
+        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction),
                 csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities, csrBinaryBaseStartIndices,
-                (PerfectIntPairHashPackingFunction) cartesianProductFunction);
+                (PerfectIntPairHashPackingFunction) packingFunction);
 
         this.leftChildCsrBinaryRowIndices = new int[numNonTerms() + 1];
         this.leftChildCsrBinaryColumnIndices = new int[numBinaryProds()];

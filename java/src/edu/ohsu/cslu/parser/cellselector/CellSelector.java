@@ -37,7 +37,13 @@ public abstract class CellSelector implements Iterator<short[]> {
         return end - 1;
     }
 
-    // iterator operations
+    /**
+     * Returns true if the cell selector has more cells available. The parser should call {@link #hasNext()} until it
+     * returns <code>false</code> to ensure the sentence is fully parsed.
+     * 
+     * @return true if the cell selector has more cells.
+     */
+    @Override
     public abstract boolean hasNext();
 
     public abstract short[] next();

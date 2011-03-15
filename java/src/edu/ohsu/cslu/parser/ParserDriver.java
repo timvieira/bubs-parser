@@ -64,6 +64,7 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
+import edu.ohsu.cslu.parser.spmv.RowParallelCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
 
@@ -77,7 +78,7 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFuncti
  * @version $Revision$ $Date$ $Author$
  */
 @Threadable(defaultThreads = 1)
-public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
+public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResult> {
 
     // Global vars to create parser
     public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
@@ -385,6 +386,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
 
         case CscSpmv:
+        case RowParallelCscSpmv:
         case BeamCscSpmv:
             switch (cartesianProductFunctionType) {
             case Simple:
@@ -477,6 +479,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
             return new CsrSpmvPerMidpointParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
         case CscSpmv:
             return new CscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
+        case RowParallelCscSpmv:
+            return new RowParallelCscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
         case BeamCscSpmv:
             return new BeamCscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
         case DenseVectorOpenClSparseMatrixVector:
@@ -506,21 +510,20 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>> {
     }
 
     @Override
-    protected FutureTask<String> lineTask(final String sentence) {
-        return new FutureTask<String>(new Callable<String>() {
+    protected FutureTask<ParseResult> lineTask(final String sentence) {
+        return new FutureTask<ParseResult>(new Callable<ParseResult>() {
             @Override
-            public String call() throws Exception {
-                final Parser<?> parser = getLocal();
-                final ParseStats parseStats = parser.parseSentence(sentence);
-
-                // TODO Return an instance of ParseStats instead of String so we can log this after the parse?
-                BaseLogger.singleton().fine(parseStats.toString() + " " + parser.getStats());
-                // if (parser instanceof ChartParser && BaseLogger.singleton().isLoggable(Level.FINEST)) {
-                // BaseLogger.singleton().finest(((ChartParser<?, ?>) parser).chart.toString());
-                // }
-                return parseStats.parseBracketString;
+            public ParseResult call() throws Exception {
+                return getLocal().parseSentence(sentence);
             }
         });
+    }
+
+    @Override
+    protected void output(final ParseResult parseResult) {
+
+        System.out.println(parseResult.parseBracketString);
+        BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);
     }
 
     @Override

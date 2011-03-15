@@ -59,7 +59,7 @@ public class RightCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         Arrays.fill(cscBinaryRightChildEndIndices, -1);
 
         for (int i = 0; i < cscBinaryPopulatedColumns.length; i++) {
-            final int rightChild = cartesianProductFunction.unpackRightChild(cscBinaryPopulatedColumns[i]);
+            final int rightChild = packingFunction.unpackRightChild(cscBinaryPopulatedColumns[i]);
             if (cscBinaryRightChildStartIndices[rightChild] < 0) {
                 cscBinaryRightChildStartIndices[rightChild] = i;
             }

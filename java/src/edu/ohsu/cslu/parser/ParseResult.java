@@ -4,7 +4,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.tools.TreeTools;
 
-public class ParseStats {
+public class ParseResult {
 
     public String sentence;
     public String[] strTokens;
@@ -18,6 +18,7 @@ public class ParseStats {
     public ParseTree parse = null;
     public String parseBracketString;
     public float insideProbability = Float.NEGATIVE_INFINITY;
+    public String parserStats = null;
 
     public long totalPops = 0;
     public long totalPushes = 0;
@@ -37,14 +38,14 @@ public class ParseStats {
 
     long startTime = System.currentTimeMillis();
 
-    public ParseStats(String input, final Grammar grammar) {
+    public ParseResult(String input, final Grammar grammar) {
 
         try {
             // if input is a tree, extract sentence from tree
             if (ParseTree.isBracketFormat(input)) {
                 inputTree = ParseTree.readBracketFormat(input);
-                TreeTools.binarizeTree(inputTree, grammar.isRightFactored(), grammar.horizontalMarkov(), grammar
-                        .verticalMarkov(), grammar.annotatePOS(), grammar.grammarFormat);
+                TreeTools.binarizeTree(inputTree, grammar.isRightFactored(), grammar.horizontalMarkov(),
+                        grammar.verticalMarkov(), grammar.annotatePOS(), grammar.grammarFormat);
                 inputTreeChart = new GoldChart(inputTree, grammar);
                 input = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
             }

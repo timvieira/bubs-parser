@@ -23,7 +23,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
             throws Exception {
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(grammarClass(),
                 GrammarTestCase.simpleGrammar(), cartesianProductFunctionClass);
-        final PackingFunction f = g.cartesianProductFunction;
+        final PackingFunction f = g.packingFunction;
         assertEquals(4, f.unpackLeftChild(f.pack((short) 4, (short) 3)));
         assertEquals(3, f.unpackRightChild(f.pack((short) 4, (short) 3)));
 
@@ -39,7 +39,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         // And a couple tests with a larger grammar
         final SparseMatrixGrammar g2 = (SparseMatrixGrammar) createGrammar(grammarClass(),
                 SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"), cartesianProductFunctionClass);
-        final PackingFunction f2 = g2.cartesianProductFunction;
+        final PackingFunction f2 = g2.packingFunction;
         assertEquals(2, f2.unpackLeftChild(f2.pack((short) 2, (short) 0)));
         assertEquals(0, f2.unpackRightChild(f2.pack((short) 2, (short) 0)));
 
@@ -150,8 +150,8 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(6082, g.posEnd);
 
         assertEquals(1930,
-                g.cartesianProductFunction.unpackLeftChild(g.cartesianProductFunction.pack((short) 1930, (short) 250)));
+                g.packingFunction.unpackLeftChild(g.packingFunction.pack((short) 1930, (short) 250)));
         assertEquals(250,
-                g.cartesianProductFunction.unpackRightChild(g.cartesianProductFunction.pack((short) 1930, (short) 250)));
+                g.packingFunction.unpackRightChild(g.packingFunction.pack((short) 1930, (short) 250)));
     }
 }

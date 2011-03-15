@@ -113,7 +113,6 @@ public class CsrSpmvPerMidpointParser extends CsrSpmvParser {
                     continue;
                 }
 
-                totalCartesianProductEntriesExamined++;
                 cartesianProductProbabilities[childPair] = leftProbability + insideProbabilities[j];
                 cartesianProductMidpoints[childPair] = midpoint;
                 size++;

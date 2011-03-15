@@ -1,6 +1,5 @@
 package edu.ohsu.cslu.parser.spmv;
 
-import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -38,8 +37,8 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
 
     private final ExecutorService executor;
 
-    final float[][] cpvProbabilities;
-    final short[][] cpvMidpoints;
+    private final float[][] cpvProbabilities;
+    private final short[][] cpvMidpoints;
 
     public CellParallelCsrSpmvParser(final ParserDriver opts, final CsrSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -97,7 +96,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
     @Override
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
-        final PerfectIntPairHashPackingFunction cpf = (PerfectIntPairHashPackingFunction) grammar
+        final PerfectIntPairHashPackingFunction pf = (PerfectIntPairHashPackingFunction) grammar
                 .cartesianProductFunction();
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
@@ -122,14 +121,14 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
                     @Override
                     public edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector call()
                             throws Exception {
-                        return cartesianProduct(start, end, midpointStart, midpointEnd, cpf, nonTerminalIndices,
+                        return internalCartesianProduct(start, end, midpointStart, midpointEnd, pf, nonTerminalIndices,
                                 insideProbabilities, probabilities, midpoints);
                     }
                 });
             }
         } else {
-            return cartesianProduct(start, end, start + 1, end - 1, cpf, nonTerminalIndices, insideProbabilities,
-                    cartesianProductProbabilities, cartesianProductMidpoints);
+            return internalCartesianProduct(start, end, start + 1, end - 1, pf, nonTerminalIndices,
+                    insideProbabilities, cartesianProductProbabilities, cartesianProductMidpoints);
         }
 
         // Wait for the first task to complete (the first one uses the 'main' arrays, so we can't begin the merge until
@@ -164,75 +163,6 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
         }
 
         return new CartesianProductVector(grammar, cartesianProductProbabilities, cartesianProductMidpoints, 0);
-    }
-
-    private CartesianProductVector cartesianProduct(final int start, final int end, final int midpointStart,
-            final int midpointEnd, final PerfectIntPairHashPackingFunction cpf, final short[] nonTerminalIndices,
-            final float[] insideProbabilities, final float[] probabilities, final short[] midpoints) {
-
-        Arrays.fill(midpoints, (short) 0);
-
-        // Iterate over all possible midpoints, unioning together the cross-product of discovered
-        // non-terminals in each left/right child pair
-        for (short midpoint = (short) midpointStart; midpoint <= midpointEnd; midpoint++) {
-            final int leftCellIndex = chart.cellIndex(start, midpoint);
-            final int rightCellIndex = chart.cellIndex(midpoint, end);
-
-            final int leftStart = chart.minLeftChildIndex(leftCellIndex);
-            final int leftEnd = chart.maxLeftChildIndex(leftCellIndex);
-
-            final int rightStart = chart.minRightChildIndex(rightCellIndex);
-            final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
-
-            for (int i = leftStart; i <= leftEnd; i++) {
-                final short leftChild = nonTerminalIndices[i];
-                final float leftProbability = insideProbabilities[i];
-                final int mask = cpf.mask(leftChild);
-                final int shift = cpf.shift(leftChild);
-                final int offset = cpf.offset(leftChild);
-
-                final short minRightSibling = grammar.minRightSiblingIndices[leftChild];
-                final short maxRightSibling = grammar.maxRightSiblingIndices[leftChild];
-
-                for (int j = rightStart; j <= rightEnd; j++) {
-                    // Skip any right children which cannot combine with left child
-                    if (nonTerminalIndices[j] < minRightSibling) {
-                        continue;
-                    } else if (nonTerminalIndices[j] > maxRightSibling) {
-                        break;
-                    }
-
-                    if (collectDetailedStatistics) {
-                        totalCartesianProductEntriesExamined++;
-                    }
-
-                    final int childPair = cpf.pack(nonTerminalIndices[j], shift, mask, offset);
-                    if (childPair == Integer.MIN_VALUE) {
-                        continue;
-                    }
-
-                    final float jointProbability = leftProbability + insideProbabilities[j];
-
-                    if (collectDetailedStatistics) {
-                        totalValidCartesianProductEntries++;
-                    }
-
-                    // If this cartesian-product entry is not populated, we can populate it without comparing
-                    // to a current probability. The memory write is faster if we don't first have to read.
-                    if (midpoints[childPair] == 0) {
-                        probabilities[childPair] = jointProbability;
-                        midpoints[childPair] = midpoint;
-
-                    } else {
-                        if (jointProbability > probabilities[childPair]) {
-                            probabilities[childPair] = jointProbability;
-                            midpoints[childPair] = midpoint;
-                        }
-                    }
-                }
-            }
-        }
-        return new CartesianProductVector(grammar, probabilities, midpoints, 0);
     }
 
     @Override

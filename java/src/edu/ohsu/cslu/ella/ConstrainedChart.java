@@ -125,7 +125,7 @@ public class ConstrainedChart extends ParallelArrayChart {
                     // Lexical production
                     midpoints[cellIndex] = 0;
                     final int child = lexicon.getIndex(node.leftChild().label());
-                    packedChildren[i] = sparseMatrixGrammar.cartesianProductFunction.packLexical(child);
+                    packedChildren[i] = sparseMatrixGrammar.packingFunction.packLexical(child);
 
                     tokenList.add(child);
                 }
@@ -340,9 +340,9 @@ public class ConstrainedChart extends ParallelArrayChart {
                     // Record packed children
                     if (packedChildren[i] < 0) {
                         // A lexical entry is the same regardless of grammar
-                        final int leftChild = sparseMatrixGrammar.cartesianProductFunction
+                        final int leftChild = sparseMatrixGrammar.packingFunction
                                 .unpackLeftChild(packedChildren[i]);
-                        mergedChart.packedChildren[mergedEntryIndex] = mergedGrammar.cartesianProductFunction
+                        mergedChart.packedChildren[mergedEntryIndex] = mergedGrammar.packingFunction
                                 .packLexical(leftChild);
                     }
                 }

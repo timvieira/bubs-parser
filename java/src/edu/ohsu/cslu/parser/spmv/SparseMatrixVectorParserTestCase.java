@@ -62,17 +62,17 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     public void setUp() throws Exception {
 
         if (f2_21_grammar == null || f2_21_grammar.getClass() != grammarClass()
-                || ((SparseMatrixGrammar) f2_21_grammar).cartesianProductFunction.getClass() != cpfClass()) {
+                || ((SparseMatrixGrammar) f2_21_grammar).packingFunction.getClass() != cpfClass()) {
             f2_21_grammar = createGrammar(SharedNlpTests.unitTestDataAsReader(PCFG_FILE));
         }
 
         if (simpleGrammar1 == null || simpleGrammar1.getClass() != grammarClass()
-                || ((SparseMatrixGrammar) simpleGrammar1).cartesianProductFunction.getClass() != cpfClass()) {
+                || ((SparseMatrixGrammar) simpleGrammar1).packingFunction.getClass() != cpfClass()) {
             simpleGrammar1 = createGrammar(GrammarTestCase.simpleGrammar());
         }
 
         if (simpleGrammar2 == null || simpleGrammar2.getClass() != grammarClass()
-                || ((SparseMatrixGrammar) simpleGrammar2).cartesianProductFunction.getClass() != cpfClass()) {
+                || ((SparseMatrixGrammar) simpleGrammar2).packingFunction.getClass() != cpfClass()) {
             simpleGrammar2 = createGrammar(simpleGrammar2());
         }
 

@@ -149,7 +149,7 @@ public class ConstrainedCsrSpmvParser extends
             final int constrainingEntryIndex = constrainingChart.offset(cellIndex) + unaryChainLength;
             chart.midpoints[cellIndex] = 0;
 
-            final int lexicalProduction = constrainingChart.sparseMatrixGrammar.cartesianProductFunction
+            final int lexicalProduction = constrainingChart.sparseMatrixGrammar.packingFunction
                     .unpackLeftChild(constrainingChart.packedChildren[constrainingEntryIndex]);
 
             // TODO Map lexical productions by both child and unsplit (M-0) parent, so we only have to iterate
@@ -161,7 +161,7 @@ public class ConstrainedCsrSpmvParser extends
                     final int entryIndex = chart.offset(cellIndex) + splitVocabulary.subcategoryIndices[lexProd.parent];
 
                     chart.nonTerminalIndices[entryIndex] = (short) lexProd.parent;
-                    chart.packedChildren[entryIndex] = grammar.cartesianProductFunction.packLexical(lexProd.leftChild);
+                    chart.packedChildren[entryIndex] = grammar.packingFunction.packLexical(lexProd.leftChild);
                     chart.insideProbabilities[entryIndex] = lexProd.prob;
                 }
             }
@@ -203,9 +203,9 @@ public class ConstrainedCsrSpmvParser extends
 
         for (int i = leftStart; i < leftEnd; i++) {
             final short leftChild = nonTerminalIndices[i];
-            final int fillStart = ((PerfectIntPairHashPackingFunction) grammar.cartesianProductFunction)
+            final int fillStart = ((PerfectIntPairHashPackingFunction) grammar.packingFunction)
                     .leftChildStart(leftChild);
-            final int fillEnd = ((PerfectIntPairHashPackingFunction) grammar.cartesianProductFunction)
+            final int fillEnd = ((PerfectIntPairHashPackingFunction) grammar.packingFunction)
                     .leftChildStart((short) (leftChild + 1));
 
             Arrays.fill(cartesianProductProbabilities, fillStart, fillEnd, Float.NEGATIVE_INFINITY);
@@ -754,7 +754,7 @@ public class ConstrainedCsrSpmvParser extends
         final int constrainingNonTerminal = constrainingChart.nonTerminalIndices[constrainingChart.cellOffsets[cellIndex]];
 
         final int offset = cellOffset + (chart.unaryChainDepth(cellOffset) - 1) * splitVocabulary.maxSplits;
-        final int lexicalChild = grammar.cartesianProductFunction.unpackLeftChild(chart.packedChildren[offset]);
+        final int lexicalChild = grammar.packingFunction.unpackLeftChild(chart.packedChildren[offset]);
 
         // TODO Map lexical productions by both child and unsplit (M-0) parent, so we only have to iterate
         // through the productions of interest.

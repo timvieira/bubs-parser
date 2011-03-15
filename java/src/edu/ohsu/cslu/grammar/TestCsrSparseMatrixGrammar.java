@@ -33,7 +33,7 @@ public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
                 plGrammar1.unaryProductions, plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon,
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
-        final PackingFunction f = csrGrammar1.cartesianProductFunction;
+        final PackingFunction f = csrGrammar1.packingFunction;
 
         assertEquals(1, f.unpackLeftChild(f.pack((short) 1, (short) 4)));
         assertEquals(4, f.unpackRightChild(f.pack((short) 1, (short) 4)));
