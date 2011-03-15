@@ -15,7 +15,6 @@ import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import cltool4j.ThreadLocalLinewiseClTool;
 import cltool4j.Threadable;
-import cltool4j.args4j.CmdLineException;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
@@ -48,8 +47,8 @@ import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelectorFactory;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
@@ -109,31 +108,18 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
 
     @Option(name = "-beamConfModel", usage = "Beam Confidence Model for beam-search parsers")
     private String beamConfModelFileName = null;
-    // private AveragedPerceptron beamConfModel = null;
 
     @Option(name = "-beamConfBias", usage = "comma seperated bias for each bin in model; default is no bias")
     public String beamConfBias = null;
 
-    // @Option(name = "-beamMultiBin", hidden = true, usage =
-    // "Use old multi-bin classification instead of multiple binary classifiers")
-    // public static boolean multiBin = false;
+    @Option(name = "-beamConfFeats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    public static String featTemplate;
 
     @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
-    public int reparse = 0;
-
-    // Nate: I don't think we need to expose this to the user. Instead
-    // there should be different possible parsers since changing the
-    // cell selection strategy only matters for a few of them
-    // @Option(name = "-cellSelect", hidden = true, metaVar = "TYPE", usage = "Method for cell selection")
-    // public CellSelectorType cellSelectorType = CellSelectorType.LeftRightBottomTop;
-    // public CellSelector cellSelector;
-    //
-    // @Option(name = "-cellModel", metaVar = "file", hidden = true, usage = "Model for span selection")
-    // private String cellModelFileName = null;
-    // public BufferedReader cellModelStream = null;
+    public int reparse = 2;
 
     @Option(name = "-beamTune", usage = "Tuning params for beam search: maxBeamWidth,globalScoreDelta,localScoreDelta,factoredCellBeamWidth")
-    public String beamTune = "15,INF,7,15";
+    public String beamTune = "30,20,8";
 
     @Option(name = "-ccModel", metaVar = "file", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2009)")
     private String chartConstraintsModel = null;
@@ -180,20 +166,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     @Option(name = "-x3", hidden = true, usage = "Tuning param #3")
     public static float param3 = -1;
 
-    @Option(name = "-feats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
-    public static String featTemplate;
-
-    // TODO: embed this info into the grammar file as meta data and remove these options
-    @Option(name = "-hMarkov", hidden = true, usage = "Horizontal Markov order of input Grammar")
-    private int horizontalMarkov = 0;
-
-    @Option(name = "-vMarkov", hidden = true, usage = "Vertical Markov order of input Grammar")
-    private int verticalMarkov = 0;
-
-    @Option(name = "-annotatePOS", hidden = true, usage = "Input Grammar has annotation on POS tags")
-    private boolean annotatePOS = false;
-
-    @Option(name = "-oldunk", hidden = true, usage = "Use old method of UNK replacement to match old grammars")
+    @Option(name = "-oldUNK", hidden = true, usage = "Use old UNK function")
     public static boolean oldUNK = false;
 
     private long parseStartTime;
@@ -282,7 +255,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
             }
 
             if (researchParserType == ResearchParserType.BSCPBeamConfTrain && featTemplate == null) {
-                throw new CmdLineException("ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
+                throw new IllegalArgumentException("ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
             }
 
             if (chartConstraintsModel != null) {
@@ -298,12 +271,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
 
         BaseLogger.singleton().fine(grammar.getStats());
         BaseLogger.singleton().fine(optionsToString());
-
-        // TODO: until we embed this info into the model itself ... read it from args
-        grammar.annotatePOS = annotatePOS;
-        grammar.isLatentVariableGrammar = true;
-        grammar.horizontalMarkov = horizontalMarkov;
-        grammar.verticalMarkov = verticalMarkov;
 
         parseStartTime = System.currentTimeMillis();
     }
@@ -533,7 +500,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
         // If the individual parser configured a thread count (e.g. CellParallelCsrSpmvParser), compute CPU-time using
         // that thread count; otherwise, assume maxThreads is correct
         final int threads = GlobalConfigProperties.singleton().containsKey(OPT_CONFIGURED_THREAD_COUNT) ? GlobalConfigProperties
-                .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT) : maxThreads;
+                .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT)
+                : maxThreads;
 
         // Note that this CPU-time computation does not include GC time
         final float cpuTime = parseTime * threads;
@@ -555,7 +523,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     }
 
     public String optionsToString() {
-        String s = "OPTS:";
+        String s = "INFO:";
         s += " ParserType=" + researchParserType;
         // s += prefix + "CellSelector=" + cellSelectorType + "\n";
         s += " FOM=" + fomTypeOrModel;
