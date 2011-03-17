@@ -93,7 +93,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             globalBestFOM = Float.NEGATIVE_INFINITY;
 
             reparseFactor = (int) Math.pow(2, numReparses);
-            beamWidth = Math.max(origBeamWidth * reparseFactor, origBeamWidth); // don't want overflow problems
+            // Math.max to prevent overflow problems
+            beamWidth = Math.max(origBeamWidth * reparseFactor, origBeamWidth);
             factoredBeamWidth = Math.max(origFactoredBeamWidth * reparseFactor, origFactoredBeamWidth);
             globalBeamDelta = Math.max(origGlobalBeamDelta * reparseFactor, origGlobalBeamDelta);
             localBeamDelta = Math.max(origLocalBeamDelta * reparseFactor, origLocalBeamDelta);
@@ -182,7 +183,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
         if (cellSelector.hasCellConstraints()) {
             // reset beamWidth at each cell since it may be modified based on following conditions
-            beamWidth = Math.min(beamWidth, origBeamWidth * reparseFactor);
+            // Math.max to prevent overflow errors
+            beamWidth = Math.max(origBeamWidth * reparseFactor, origBeamWidth);
 
             if (hasPerceptronBeamWidth) {
                 beamWidth = Math.min(cellSelector.getBeamWidth(start, end), beamWidth);
