@@ -84,25 +84,4 @@ public class TestBeamCscSpmvParser extends
     public void testSimpleGrammar2() throws Exception {
         super.testSimpleGrammar2();
     }
-
-    @Override
-    @Ignore
-    public void testCartesianProductVectorExample() {
-    }
-
-    @Override
-    @Ignore
-    public void testUnfilteredCartesianProductVectorSimpleGrammar2() {
-    }
-
-    @Override
-    @Ignore
-    public void testFilteredCartesianProductVectorSimpleGrammar2() {
-    }
-
-    @Override
-    @Ignore
-    public void testBinarySpMVMultiplySimpleGrammar2() {
-    }
-
 }

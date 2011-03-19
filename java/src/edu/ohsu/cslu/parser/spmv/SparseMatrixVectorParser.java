@@ -18,7 +18,7 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
  * <ol>
  * 
  * Subclasses use a variety of sparse matrix grammar representations, and differ in how they perform the cartesian
- * product. Some implementations perform the vector and matrix operations on GPU hardware throgh OpenCL.
+ * product. Some implementations perform the vector and matrix operations on GPU hardware using OpenCL.
  * 
  * @author Aaron Dunlop
  * @since Mar 26, 2010
@@ -27,9 +27,6 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
  */
 public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart> extends
         SparseMatrixParser<G, C> {
-
-    protected final float[] cartesianProductProbabilities;
-    protected final short[] cartesianProductMidpoints;
 
     public long startTime = 0;
     public long sentenceCartesianProductTime = 0;
@@ -48,8 +45,6 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
     public SparseMatrixVectorParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
-        cartesianProductProbabilities = new float[grammar.cartesianProductFunction().packedArraySize()];
-        cartesianProductMidpoints = new short[cartesianProductProbabilities.length];
     }
 
     /**
@@ -81,6 +76,10 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
     @Override
     protected void visitCell(final short start, final short end) {
+        internalVisitCell(start, end);
+    }
+
+    protected void internalVisitCell(final short start, final short end) {
 
         final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
 

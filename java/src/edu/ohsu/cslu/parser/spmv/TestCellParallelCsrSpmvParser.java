@@ -1,6 +1,5 @@
 package edu.ohsu.cslu.parser.spmv;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import cltool4j.GlobalConfigProperties;
@@ -28,32 +27,7 @@ public class TestCellParallelCsrSpmvParser extends
 
     @Override
     public void setUp() throws Exception {
-        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_REQUESTED_THREAD_COUNT, "4");
+        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CELL_THREAD_COUNT, "4");
         super.setUp();
-    }
-
-    @Override
-    @Ignore
-    public void testCartesianProductVectorExample() {
-    }
-
-    @Override
-    @Ignore
-    public void testUnfilteredCartesianProductVectorSimpleGrammar2() {
-    }
-
-    @Override
-    @Ignore
-    public void testFilteredCartesianProductVectorSimpleGrammar2() {
-    }
-
-    @Override
-    @Ignore
-    public void testBinarySpMVMultiplySimpleGrammar2() {
-    }
-
-    @Override
-    @Ignore
-    public void testSimpleGrammar2() {
     }
 }

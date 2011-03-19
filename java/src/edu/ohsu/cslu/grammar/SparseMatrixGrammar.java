@@ -538,7 +538,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
             // System.out.println("Hashed grammar: " + perfectHash.toString());
 
-            final int parallelArraySize = Math.max(childPairs[0]) + 1;
+            final int parallelArraySize = numNonTerms() + 1; // Math.max(childPairs[0]) + 1;
 
             // Find unique k2 values for each k1
             final IntOpenHashSet[] k2Sets = new IntOpenHashSet[parallelArraySize];

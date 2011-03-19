@@ -45,7 +45,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
 
         // Split the binary grammar rules into segments of roughly equal size
         final int requestedThreads = GlobalConfigProperties.singleton().getIntProperty(
-                ParserDriver.OPT_REQUESTED_THREAD_COUNT);
+                ParserDriver.OPT_CELL_THREAD_COUNT);
         final int[] segments = new int[requestedThreads + 1];
         final int segmentSize = grammar.csrBinaryColumnIndices.length / requestedThreads + 1;
         segments[0] = 0;
@@ -79,7 +79,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
         cpvProbabilities = new float[threads][];
         cpvMidpoints = new short[threads][];
         final int arrayLength = grammar.cartesianProductFunction().packedArraySize();
-        for (int j = 1; j < threads; j++) {
+        for (int j = 0; j < threads; j++) {
             cpvProbabilities[j] = new float[arrayLength];
             cpvMidpoints[j] = new short[arrayLength];
         }
@@ -113,8 +113,8 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
 
                 final int midpointStart = start + 1 + segmentSize * i;
                 final int midpointEnd = Math.min(midpointStart + segmentSize, end - 1);
-                final float[] probabilities = i == 0 ? cartesianProductProbabilities : cpvProbabilities[i];
-                final short[] midpoints = i == 0 ? cartesianProductMidpoints : cpvMidpoints[i];
+                final float[] probabilities = cpvProbabilities[i];
+                final short[] midpoints = cpvMidpoints[i];
 
                 futures[i] = executor.submit(new Callable<CartesianProductVector>() {
 
@@ -128,7 +128,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
             }
         } else {
             return internalCartesianProduct(start, end, start + 1, end - 1, pf, nonTerminalIndices,
-                    insideProbabilities, cartesianProductProbabilities, cartesianProductMidpoints);
+                    insideProbabilities, cpvProbabilities[0], cpvMidpoints[0]);
         }
 
         // Wait for the first task to complete (the first one uses the 'main' arrays, so we can't begin the merge until
@@ -147,6 +147,8 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
         for (int i = 1; i < threads; i++) {
             try {
                 final CartesianProductVector partialCpv = futures[i].get();
+                final float[] cartesianProductProbabilities = cpvProbabilities[0];
+                final short[] cartesianProductMidpoints = cpvMidpoints[0];
                 // Merge partial cartesian-product vector into the main vector (tropical semiring - choose maximum
                 // probability)
                 for (int j = 0; j < partialCpv.midpoints.length; j++) {
@@ -162,7 +164,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
             }
         }
 
-        return new CartesianProductVector(grammar, cartesianProductProbabilities, cartesianProductMidpoints, 0);
+        return new CartesianProductVector(grammar, cpvProbabilities[0], cpvMidpoints[0], 0);
     }
 
     @Override

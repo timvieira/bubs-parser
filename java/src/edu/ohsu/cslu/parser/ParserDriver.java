@@ -47,8 +47,8 @@ import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelectorFactory;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelectorFactory;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
@@ -60,10 +60,8 @@ import edu.ohsu.cslu.parser.spmv.BeamCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CellParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
-import edu.ohsu.cslu.parser.spmv.CsrSpmvPerMidpointParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
-import edu.ohsu.cslu.parser.spmv.RowParallelCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
 
@@ -173,19 +171,27 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
 
     /**
-     * Configuration property key for the number of row-level or cell-level threads requested by the user. We handle
-     * threading at three levels; threading per-sentence is handled by the command-line tool infrastructure and
-     * specified with the standard '-xt' parameter. Row-level and cell-level threading is handled by the parser instance
-     * and specified with this option.
+     * Configuration property key for the number of row-level threads requested by the user. We handle threading at
+     * three levels; threading per-sentence is handled by the command-line tool infrastructure and specified with the
+     * standard '-xt' parameter. Row-level and cell-level threading are handled by the parser instance and specified
+     * with this option and with {@link #OPT_CELL_THREAD_COUNT}.
      */
-    public final static String OPT_REQUESTED_THREAD_COUNT = "requestedThreads";
+    public final static String OPT_ROW_THREAD_COUNT = "rowThreads";
+
+    /**
+     * Configuration property key for the number of cell-level threads requested by the user. We handle threading at
+     * three levels; threading per-sentence is handled by the command-line tool infrastructure and specified with the
+     * standard '-xt' parameter. Row-level and cell-level threading are handled by the parser instance and specified
+     * with this option and with {@link #OPT_ROW_THREAD_COUNT}.
+     */
+    public final static String OPT_CELL_THREAD_COUNT = "cellThreads";
 
     /**
      * Configuration property key for the number of row-level or cell-level threads actually used. In some cases the
      * number of threads requested is impractical (e.g., if it is greater than the maximum number of cells in a row or
      * greater than the number of grammar rows). {@link Parser} instances which make use of
-     * {@link #OPT_REQUESTED_THREAD_COUNT} should populate this property to indicate the number of threads actually
-     * used. Among other potential uses, this allows {@link #cleanup()} to report accurate timing information.
+     * {@link #OPT_CELL_THREAD_COUNT} should populate this property to indicate the number of threads actually used.
+     * Among other potential uses, this allows {@link #cleanup()} to report accurate timing information.
      */
     public final static String OPT_CONFIGURED_THREAD_COUNT = "actualThreads";
 
@@ -338,7 +344,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
 
         case CsrSpmv:
         case CellParallelCsrSpmv:
-        case CsrSpmvPerMidpoint:
             switch (cartesianProductFunctionType) {
             case Simple:
                 return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
@@ -353,7 +358,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
             return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
 
         case CscSpmv:
-        case RowParallelCscSpmv:
         case BeamCscSpmv:
             switch (cartesianProductFunctionType) {
             case Simple:
@@ -442,12 +446,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
             return new CsrSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
         case CellParallelCsrSpmv:
             return new CellParallelCsrSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
-        case CsrSpmvPerMidpoint:
-            return new CsrSpmvPerMidpointParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
         case CscSpmv:
             return new CscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
-        case RowParallelCscSpmv:
-            return new RowParallelCscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
         case BeamCscSpmv:
             return new BeamCscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
         case DenseVectorOpenClSparseMatrixVector:
@@ -500,8 +500,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
         // If the individual parser configured a thread count (e.g. CellParallelCsrSpmvParser), compute CPU-time using
         // that thread count; otherwise, assume maxThreads is correct
         final int threads = GlobalConfigProperties.singleton().containsKey(OPT_CONFIGURED_THREAD_COUNT) ? GlobalConfigProperties
-                .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT)
-                : maxThreads;
+                .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT) : maxThreads;
 
         // Note that this CPU-time computation does not include GC time
         final float cpuTime = parseTime * threads;

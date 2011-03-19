@@ -46,6 +46,8 @@ public class ConstrainedCsrSpmvParser extends
     ConstrainedChart constrainingChart;
     private final SplitVocabulary splitVocabulary;
 
+    private final float[] cartesianProductProbabilities;
+    private final short[] cartesianProductMidpoints;
     private final boolean collectDetailedTimings;
 
     protected long totalInitializationTime = 0;
@@ -66,6 +68,8 @@ public class ConstrainedCsrSpmvParser extends
         super(opts, grammar);
         this.splitVocabulary = (SplitVocabulary) grammar.nonTermSet;
         this.collectDetailedTimings = collectDetailedTimings;
+        this.cartesianProductProbabilities = new float[grammar.packingFunction.packedArraySize()];
+        this.cartesianProductMidpoints = new short[grammar.packingFunction.packedArraySize()];
     }
 
     public ConstrainedCsrSpmvParser(final ParserDriver opts, final ConstrainedCsrSparseMatrixGrammar grammar) {

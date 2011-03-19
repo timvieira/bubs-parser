@@ -6,7 +6,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ TestCscSpmvParser.class, TestRowParallelCscSpmvParser.class, TestBeamCscSpmvParser.class,
         TestPrunedBeamCscSpmvParser.class, TestCsrSpmvParser.class, TestCellParallelCsrSpmvParser.class,
-        TestCsrSpmvPerMidpointParser.class, TestDenseVectorOpenClSpmvParser.class
+        TestDenseVectorOpenClSpmvParser.class
 // , TestPackedOpenClSpmvParser
 })
 public class AllSparseMatrixVectorParserTests {

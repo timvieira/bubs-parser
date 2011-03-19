@@ -8,7 +8,8 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.spmv.CellParallelCsrSpmvParser;
-import edu.ohsu.cslu.parser.spmv.RowParallelCscSpmvParser;
+import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
+import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.tools.TreeTools;
 
 public abstract class Parser<G extends Grammar> {
@@ -57,8 +58,8 @@ public abstract class Parser<G extends Grammar> {
 
     /**
      * Waits until all active parsing tasks have completed. Intended for multi-threaded parsers (e.g.
-     * {@link CellParallelCsrSpmvParser}, {@link RowParallelCscSpmvParser}) which may need to implement a barrier to
-     * synchronize all tasks before proceeding on to dependent tasks.
+     * {@link CsrSpmvParser}, {@link CscSpmvParser}) which may need to implement a barrier to synchronize all tasks
+     * before proceeding on to dependent tasks.
      */
     public void waitForActiveTasks() {
     }
@@ -153,9 +154,7 @@ public abstract class Parser<G extends Grammar> {
         PackedOpenClSparseMatrixVector("popencl"),
         CsrSpmv("csr"),
         CellParallelCsrSpmv("cpcsr"),
-        CsrSpmvPerMidpoint("csrpm"),
         CscSpmv("csc"),
-        RowParallelCscSpmv("rpcsc"),
         BeamCscSpmv("beamcsc"),
         LeftChildMatrixLoop("lcml"),
         RightChildMatrixLoop("rcml"),
