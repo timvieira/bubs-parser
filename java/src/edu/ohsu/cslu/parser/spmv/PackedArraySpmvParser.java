@@ -1,7 +1,13 @@
 package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
@@ -19,8 +25,43 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> extends
         SparseMatrixVectorParser<G, PackedArrayChart> {
 
+    protected final ExecutorService executor;
+    protected LinkedList<Future<?>> currentTasks;
+
+    protected final ThreadLocal<float[]> cpvProbabilities;
+    protected final ThreadLocal<short[]> cpvMidpoints;
+
     public PackedArraySpmvParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
+
+        if (GlobalConfigProperties.singleton().containsKey(ParserDriver.OPT_ROW_THREAD_COUNT)) {
+            final int rowThreads = GlobalConfigProperties.singleton().getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT);
+            GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
+                    Integer.toString(rowThreads));
+
+            // Configure thread pool and current-task list
+            this.executor = Executors.newFixedThreadPool(rowThreads);
+            this.currentTasks = new LinkedList<Future<?>>();
+
+        } else {
+            this.currentTasks = null;
+            this.executor = null;
+        }
+
+        // And thread-local cartesian-product vector storage
+        this.cpvProbabilities = new ThreadLocal<float[]>() {
+            @Override
+            protected float[] initialValue() {
+                return new float[grammar.packingFunction.packedArraySize()];
+            }
+        };
+
+        this.cpvMidpoints = new ThreadLocal<short[]>() {
+            @Override
+            protected short[] initialValue() {
+                return new short[grammar.packingFunction.packedArraySize()];
+            }
+        };
     }
 
     @Override
@@ -39,6 +80,22 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         super.initSentence(tokens);
     }
 
+    @Override
+    public void waitForActiveTasks() {
+        if (executor != null) {
+            try {
+                for (final Future<?> f : currentTasks) {
+                    f.get();
+                }
+            } catch (final InterruptedException e) {
+                e.printStackTrace();
+            } catch (final ExecutionException e) {
+                e.printStackTrace();
+            }
+            currentTasks.clear();
+        }
+    }
+
     /**
      * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products together,
      * saving the maximum probability child combinations.
@@ -53,12 +110,11 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         if (grammar.packingFunction instanceof PerfectIntPairHashPackingFunction) {
             return internalCartesianProduct(start, end, start + 1, end - 1,
                     (PerfectIntPairHashPackingFunction) grammar.packingFunction, chart.nonTerminalIndices,
-                    chart.insideProbabilities, cartesianProductProbabilities, cartesianProductMidpoints);
+                    chart.insideProbabilities, cpvProbabilities.get(), cpvMidpoints.get());
         }
 
         return internalCartesianProduct(start, end, start + 1, end - 1, grammar.packingFunction,
-                chart.nonTerminalIndices, chart.insideProbabilities, cartesianProductProbabilities,
-                cartesianProductMidpoints);
+                chart.nonTerminalIndices, chart.insideProbabilities, cpvProbabilities.get(), cpvMidpoints.get());
     }
 
     protected final CartesianProductVector internalCartesianProduct(final int start, final int end,
@@ -179,5 +235,17 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
             }
         }
         return new CartesianProductVector(grammar, probabilities, midpoints, 0);
+    }
+
+    @Override
+    public void shutdown() {
+        if (executor != null) {
+            executor.shutdown();
+        }
+    }
+
+    @Override
+    public void finalize() {
+        shutdown();
     }
 }

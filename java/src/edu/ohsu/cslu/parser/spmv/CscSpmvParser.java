@@ -27,6 +27,22 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
     }
 
     @Override
+    protected void visitCell(final short start, final short end) {
+
+        if (executor != null) {
+            currentTasks.add(executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    internalVisitCell(start, end);
+                }
+            }));
+
+        } else {
+            internalVisitCell(start, end);
+        }
+    }
+
+    @Override
     public void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
 
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) chartCell;
