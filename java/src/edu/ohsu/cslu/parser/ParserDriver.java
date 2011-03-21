@@ -56,7 +56,6 @@ import edu.ohsu.cslu.parser.ml.CartesianProductLeftChildHashSpmlParser;
 import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
-import edu.ohsu.cslu.parser.spmv.BeamCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CellParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
@@ -358,7 +357,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
             return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
 
         case CscSpmv:
-        case BeamCscSpmv:
             switch (cartesianProductFunctionType) {
             case Simple:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
@@ -448,8 +446,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
             return new CellParallelCsrSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
         case CscSpmv:
             return new CscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
-        case BeamCscSpmv:
-            return new BeamCscSpmvParser(parserOptions, (LeftCscSparseMatrixGrammar) grammar);
         case DenseVectorOpenClSparseMatrixVector:
             return new DenseVectorOpenClSpmvParser(parserOptions, (CsrSparseMatrixGrammar) grammar);
         case PackedOpenClSparseMatrixVector:

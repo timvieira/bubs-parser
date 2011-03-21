@@ -9,14 +9,17 @@ import java.io.StringReader;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import cltool4j.ConfigProperties;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
+import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -69,6 +72,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         return options;
     }
 
+    @AfterClass
+    public static void suiteTearDown() throws Exception {
+        GlobalConfigProperties.singleton().clear();
+    }
+
     /**
      * Returns parser configuration options.
      * 
@@ -84,7 +92,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * Creates the appropriate parser for each test class. Ugly reflection code, but at least it's all localized here.
      * 
      * @param grammar The grammar to use when parsing
-     * @param cellSelector Selector controlling chart traversal
+     * @param cellSelectorFactory Factory to produce {@link CellSelector} controlling chart traversal
      * @return Parser instance
      */
     @SuppressWarnings("unchecked")

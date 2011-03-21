@@ -1,6 +1,7 @@
 package edu.ohsu.cslu.grammar;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -13,11 +14,13 @@ import java.util.Arrays;
  * 
  * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for details).
  * 
- * TODO When we get back to CSR (for parallelization?): Store 2 separate matrices; one for span = 2 and one for span >
- * 2. They might be nearly disjoint, since span = 2 means both children are pre-terminals, and we assume the set of
- * multi-word constituents is disjoint from the set of pre-terminals, but the span = 2 matrix has to include any
- * children which occur as unary parents, since those NTs might be found in span-1 cells. It should still shrink the
- * 'main' chart matrix considerably, and thus save time iterating over the ruleset.
+ * TODO Try storung 2 separate matrices; one for span = 2 and one for span > 2. They might be nearly disjoint, since
+ * span = 2 means both children are pre-terminals, and we assume the set of multi-word constituents is disjoint from the
+ * set of pre-terminals, but the span = 2 matrix has to include any children which occur as unary parents, since those
+ * NTs might be found in span-1 cells. It should still shrink the 'main' chart matrix considerably, and thus save time
+ * iterating over the ruleset.
+ * 
+ * TODO Remove unused constructors
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
@@ -43,6 +46,20 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
      */
     public final float[] csrBinaryProbabilities;
 
+    /**
+     * Offsets into {@link #csrUnaryColumnIndices} for the start of each row, indexed by row index (non-terminals)
+     */
+    public final int[] csrUnaryRowStartIndices;
+
+    /**
+     * Column indices of each matrix entry in {@link #csrUnaryProbabilities}. One entry for each unary rule; the same
+     * size as {@link #csrUnaryProbabilities}.
+     */
+    public final short[] csrUnaryColumnIndices;
+
+    /** Unary rule probabilities */
+    public final float[] csrUnaryProbabilities;
+
     public CsrSparseMatrixGrammar(final Reader grammarFile,
             final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
         super(grammarFile, cartesianProductFunctionClass);
@@ -52,8 +69,15 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         this.csrBinaryColumnIndices = new int[numBinaryProds()];
         this.csrBinaryProbabilities = new float[numBinaryProds()];
 
-        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction),
-                csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
+        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction), csrBinaryRowIndices,
+                csrBinaryColumnIndices, csrBinaryProbabilities);
+
+        // Store all unary rules
+        this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
+        this.csrUnaryColumnIndices = new short[numUnaryProds()];
+        this.csrUnaryProbabilities = new float[numUnaryProds()];
+
+        storeUnaryRulesAsCsrMatrix();
     }
 
     public CsrSparseMatrixGrammar(final Reader grammarFile) throws IOException {
@@ -72,8 +96,15 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         this.csrBinaryColumnIndices = new int[numBinaryProds()];
         this.csrBinaryProbabilities = new float[numBinaryProds()];
 
-        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction),
-                csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
+        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction), csrBinaryRowIndices,
+                csrBinaryColumnIndices, csrBinaryProbabilities);
+
+        // Store all unary rules
+        this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
+        this.csrUnaryColumnIndices = new short[numUnaryProds()];
+        this.csrUnaryProbabilities = new float[numUnaryProds()];
+
+        storeUnaryRulesAsCsrMatrix();
     }
 
     protected CsrSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
@@ -88,9 +119,15 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         this.csrBinaryColumnIndices = new int[numBinaryProds()];
         this.csrBinaryProbabilities = new float[numBinaryProds()];
 
+        // Store all unary rules
+        this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
+        this.csrUnaryColumnIndices = new short[numUnaryProds()];
+        this.csrUnaryProbabilities = new float[numUnaryProds()];
+
         if (initCsrMatrices) {
             storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction),
                     csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities);
+            storeUnaryRulesAsCsrMatrix();
         }
     }
 
@@ -119,6 +156,33 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
             }
         }
         csrRowIndices[csrRowIndices.length - 1] = i;
+    }
+
+    protected void storeUnaryRulesAsCsrMatrix() {
+
+        // Bin all rules by parent, mapping child -> probability
+        final Short2FloatOpenHashMap[] maps = new Short2FloatOpenHashMap[numNonTerms()];
+        for (int i = 0; i < numNonTerms(); i++) {
+            maps[i] = new Short2FloatOpenHashMap(1000);
+        }
+
+        for (final Production p : unaryProductions) {
+            maps[p.parent].put((short) p.leftChild, p.prob);
+        }
+
+        // Store rules in CSR matrix
+        int i = 0;
+        for (int parent = 0; parent < numNonTerms(); parent++) {
+            csrUnaryRowStartIndices[parent] = i;
+
+            final short[] children = maps[parent].keySet().toShortArray();
+            Arrays.sort(children);
+            for (int j = 0; j < children.length; j++) {
+                csrUnaryColumnIndices[i] = children[j];
+                csrUnaryProbabilities[i++] = maps[parent].get(children[j]);
+            }
+        }
+        csrUnaryRowStartIndices[csrUnaryRowStartIndices.length - 1] = i;
     }
 
     protected Int2FloatOpenHashMap[] mapBinaryRulesByParent(final ArrayList<Production> rules,

@@ -4,8 +4,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestCscSpmvParser.class, TestRowParallelCscSpmvParser.class, TestBeamCscSpmvParser.class,
-        TestPrunedBeamCscSpmvParser.class, TestCsrSpmvParser.class, TestCellParallelCsrSpmvParser.class,
+@Suite.SuiteClasses({ TestCscSpmvParser.class, TestRowParallelCscSpmvParser.class, TestPrunedBeamCscSpmvParser.class,
+        TestCsrSpmvParser.class, TestRowParallelCsrSpmvParser.class, TestCellParallelCsrSpmvParser.class,
         TestDenseVectorOpenClSpmvParser.class
 // , TestPackedOpenClSpmvParser
 })

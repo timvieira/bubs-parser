@@ -3,6 +3,7 @@ package edu.ohsu.cslu.grammar;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 
 import edu.ohsu.cslu.util.Math;
 import edu.ohsu.cslu.util.Strings;
@@ -40,18 +42,19 @@ public abstract class SparseMatrixGrammar extends Grammar {
     public final PackingFunction packingFunction;
 
     /**
-     * Offsets into {@link #csrUnaryColumnIndices} for the start of each row, indexed by row index (non-terminals)
+     * Offsets into {@link #cscUnaryRowIndices} for the start of each column (child), with one extra entry appended to
+     * prevent loops from falling off the end. Indexed by child non-terminal, so the length is 1 greater than |V|.
      */
-    public final int[] csrUnaryRowStartIndices;
+    public final int[] cscUnaryColumnOffsets;
 
     /**
-     * Column indices of each matrix entry in {@link #csrUnaryProbabilities}. One entry for each unary rule; the same
-     * size as {@link #csrUnaryProbabilities}.
+     * Row indices of each matrix entry in {@link #cscUnaryProbabilities}. One entry for each unary rule; the same size
+     * as {@link #cscUnaryProbabilities}.
      */
-    public final short[] csrUnaryColumnIndices;
+    public final short[] cscUnaryRowIndices;
 
-    /** Unary rule probabilities */
-    public final float[] csrUnaryProbabilities;
+    /** Unary rule probabilities One entry for each unary rule; the same size as {@link #cscUnaryRowIndices}. */
+    public final float[] cscUnaryProbabilities;
 
     /**
      * Indices of the first and last non-terminals which can combine as the right sibling with each non-terminal
@@ -66,16 +69,16 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         this.packingFunction = createCartesianProductFunction(functionClass);
 
-        // Store all unary rules
-        this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
-        this.csrUnaryColumnIndices = new short[numUnaryProds()];
-        this.csrUnaryProbabilities = new float[numUnaryProds()];
-
-        storeUnaryRulesAsCsrMatrix();
-
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
         storeRightSiblingIndices();
+
+        // And all unary productions
+        cscUnaryColumnOffsets = new int[numNonTerms() + 1];
+        cscUnaryRowIndices = new short[numUnaryProds()];
+        cscUnaryProbabilities = new float[numUnaryProds()];
+
+        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
     }
 
     public SparseMatrixGrammar(final Reader grammarFile) throws IOException {
@@ -92,12 +95,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.packingFunction = createCartesianProductFunction(functionClass);
 
-        // Store all unary rules
-        this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
-        this.csrUnaryColumnIndices = new short[numUnaryProds()];
-        this.csrUnaryProbabilities = new float[numUnaryProds()];
+        // Store all unary productions
+        cscUnaryColumnOffsets = new int[numNonTerms() + 1];
+        cscUnaryRowIndices = new short[numUnaryProds()];
+        cscUnaryProbabilities = new float[numUnaryProds()];
 
-        storeUnaryRulesAsCsrMatrix();
+        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
 
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
@@ -115,24 +118,77 @@ public abstract class SparseMatrixGrammar extends Grammar {
     protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass, final boolean initCsrMatrices) {
+            final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.packingFunction = createCartesianProductFunction(functionClass);
 
-        // Store all unary rules
-        this.csrUnaryRowStartIndices = new int[numNonTerms() + 1];
-        this.csrUnaryColumnIndices = new short[numUnaryProds()];
-        this.csrUnaryProbabilities = new float[numUnaryProds()];
+        // And all unary productions
+        cscUnaryColumnOffsets = new int[numNonTerms() + 1];
+        cscUnaryRowIndices = new short[numUnaryProds()];
+        cscUnaryProbabilities = new float[numUnaryProds()];
 
-        if (initCsrMatrices) {
-            storeUnaryRulesAsCsrMatrix();
+        if (initCscMatrices) {
+            storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices,
+                    cscUnaryProbabilities);
         }
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
         storeRightSiblingIndices();
 
+    }
+
+    /**
+     * Stores unary rules in Compressed-Sparse-Column (CSC) matrix format.
+     * 
+     * @param productions
+     * @param validChildPairs Sorted array of valid child pairs
+     * @param cscPopulatedColumns
+     * @param cscColumnIndices
+     * @param cscRowIndices
+     * @param cscProbabilities
+     */
+    private void storeUnaryRulesAsCscMatrix(final Collection<Production> productions, final int[] cscColumnOffsets,
+            final short[] cscRowIndices, final float[] cscProbabilities) {
+
+        // Bin all rules by child, mapping parent -> probability
+        final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> maps = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>(
+                1000);
+
+        for (final Production p : productions) {
+            final short child = (short) p.leftChild;
+
+            Short2FloatOpenHashMap map = maps.get(child);
+            if (map == null) {
+                map = new Short2FloatOpenHashMap(20);
+                maps.put(child, map);
+            }
+            map.put((short) p.parent, p.prob);
+        }
+
+        // Store rules in CSC matrix
+        int j = 0;
+        final short[] keys = maps.keySet().toShortArray();
+        Arrays.sort(keys);
+        for (short child = 0; child < numNonTerms(); child++) {
+
+            cscColumnOffsets[child] = j;
+
+            if (!maps.containsKey(child)) {
+                continue;
+            }
+
+            final Short2FloatOpenHashMap map = maps.get(child);
+            final short[] parents = map.keySet().toShortArray();
+            Arrays.sort(parents);
+
+            for (int k = 0; k < parents.length; k++) {
+                cscRowIndices[j] = parents[k];
+                cscProbabilities[j++] = map.get(parents[k]);
+            }
+        }
+        cscColumnOffsets[cscColumnOffsets.length - 1] = j;
     }
 
     @SuppressWarnings("unchecked")
@@ -178,43 +234,26 @@ public abstract class SparseMatrixGrammar extends Grammar {
      */
     @Override
     public final float unaryLogProbability(final int parent, final int child) {
-        for (int i = csrUnaryRowStartIndices[parent]; i <= csrUnaryRowStartIndices[parent + 1]; i++) {
-            final int column = csrUnaryColumnIndices[i];
-            if (column == child) {
-                return csrUnaryProbabilities[i];
+        for (int i = cscUnaryColumnOffsets[child]; i <= cscUnaryColumnOffsets[child + 1]; i++) {
+            final int row = cscUnaryRowIndices[i];
+            if (row == parent) {
+                return cscUnaryProbabilities[i];
             }
-            if (column > child) {
+            if (row > parent) {
                 return Float.NEGATIVE_INFINITY;
             }
         }
         return Float.NEGATIVE_INFINITY;
-    }
-
-    protected void storeUnaryRulesAsCsrMatrix() {
-
-        // Bin all rules by parent, mapping child -> probability
-        final Short2FloatOpenHashMap[] maps = new Short2FloatOpenHashMap[numNonTerms()];
-        for (int i = 0; i < numNonTerms(); i++) {
-            maps[i] = new Short2FloatOpenHashMap(1000);
-        }
-
-        for (final Production p : unaryProductions) {
-            maps[p.parent].put((short) p.leftChild, p.prob);
-        }
-
-        // Store rules in CSR matrix
-        int i = 0;
-        for (int parent = 0; parent < numNonTerms(); parent++) {
-            csrUnaryRowStartIndices[parent] = i;
-
-            final short[] children = maps[parent].keySet().toShortArray();
-            Arrays.sort(children);
-            for (int j = 0; j < children.length; j++) {
-                csrUnaryColumnIndices[i] = children[j];
-                csrUnaryProbabilities[i++] = maps[parent].get(children[j]);
-            }
-        }
-        csrUnaryRowStartIndices[csrUnaryRowStartIndices.length - 1] = i;
+        // for (int i = csrUnaryRowStartIndices[parent]; i <= csrUnaryRowStartIndices[parent + 1]; i++) {
+        // final int column = csrUnaryColumnIndices[i];
+        // if (column == child) {
+        // return csrUnaryProbabilities[i];
+        // }
+        // if (column > child) {
+        // return Float.NEGATIVE_INFINITY;
+        // }
+        // }
+        // return Float.NEGATIVE_INFINITY;
     }
 
     private void storeRightSiblingIndices() {
