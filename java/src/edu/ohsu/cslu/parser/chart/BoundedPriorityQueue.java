@@ -153,7 +153,7 @@ public class BoundedPriorityQueue {
      * @return True if the parent was found and replaced.
      */
     public boolean replace(final short parentIndex, final float fom) {
-        if (fom <= foms[tail]) {
+        if (tail == maxTail && fom <= foms[tail]) {
             return false;
         }
 

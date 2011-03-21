@@ -69,6 +69,42 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
     }
 
     @Override
+    protected void unarySpmv(final int[] chartCellChildren, final float[] chartCellProbabilities,
+            final short[] chartCellMidpoints, final int offset, final short chartCellEnd) {
+        // Iterate over possible parents (matrix rows)
+        for (int parent = 0; parent < grammar.numNonTerms(); parent++) {
+
+            final float currentProbability = chartCellProbabilities[offset + parent];
+            float winningProbability = currentProbability;
+            // TODO Change this to a short
+            short winningChild = Short.MIN_VALUE;
+            short winningMidpoint = 0;
+
+            // Iterate over possible children of the parent (columns with non-zero entries)
+            for (int i = grammar.csrUnaryRowStartIndices[parent]; i < grammar.csrUnaryRowStartIndices[parent + 1]; i++) {
+
+                final short child = grammar.csrUnaryColumnIndices[i];
+                final float grammarProbability = grammar.csrUnaryProbabilities[i];
+
+                final float jointProbability = grammarProbability + chartCellProbabilities[offset + child];
+
+                if (jointProbability > winningProbability) {
+                    winningProbability = jointProbability;
+                    winningChild = child;
+                    winningMidpoint = chartCellEnd;
+                }
+            }
+
+            if (winningChild != Short.MIN_VALUE) {
+                final int parentIndex = offset + parent;
+                chartCellChildren[parentIndex] = grammar.cartesianProductFunction().packUnary(winningChild);
+                chartCellProbabilities[parentIndex] = winningProbability;
+                chartCellMidpoints[parentIndex] = winningMidpoint;
+            }
+        }
+    }
+
+    @Override
     public String getStats() {
         return super.getStats()
                 + (collectDetailedStatistics ? String.format(" avgXprod=%.1f", sentenceCartesianProductSize * 1.0f

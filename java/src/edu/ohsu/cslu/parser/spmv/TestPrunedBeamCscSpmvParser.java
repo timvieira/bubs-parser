@@ -6,10 +6,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import cltool4j.ConfigProperties;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -18,9 +21,7 @@ import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
- * Tests FOM-pruned parsing.
- * 
- * TODO Add to AllTests
+ * Tests FOM-pruned parsing, using row-level threading.
  * 
  * @author Aaron Dunlop
  * @since Mar 9, 2011
@@ -29,7 +30,7 @@ import edu.ohsu.cslu.tests.SharedNlpTests;
  */
 public class TestPrunedBeamCscSpmvParser {
 
-    private BeamCscSpmvParser parser;
+    private CscSpmvParser parser;
 
     @Before
     public void setUp() throws IOException {
@@ -40,11 +41,21 @@ public class TestPrunedBeamCscSpmvParser {
         opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, new BufferedReader(
                 SharedNlpTests.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
 
-        final ConfigProperties props = new ConfigProperties();
+        final ConfigProperties props = GlobalConfigProperties.singleton();
         props.put("beamcsc.lexicalRowBeamWidth", "60");
         props.put("beamcsc.beamWidth", "20");
         props.put("beamcsc.lexicalRowUnaries", "20");
-        parser = new BeamCscSpmvParser(opts, props, grammar);
+        parser = new CscSpmvParser(opts, grammar);
+    }
+
+    @BeforeClass
+    public static void configureThreads() throws Exception {
+        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_ROW_THREAD_COUNT, "2");
+    }
+
+    @AfterClass
+    public static void suiteTearDown() {
+        GlobalConfigProperties.singleton().clear();
     }
 
     /**
@@ -61,10 +72,11 @@ public class TestPrunedBeamCscSpmvParser {
         final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
                 SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.fom")));
 
+        int i = 1;
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
-            assertEquals(parsedSentence, parser.parseSentence(sentence).parse.toString());
+            assertEquals("Failed on sentence " + i, parsedSentence, parser.parseSentence(sentence).parse.toString());
+            i++;
         }
-
     }
 }

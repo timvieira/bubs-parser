@@ -16,12 +16,12 @@ import edu.ohsu.cslu.tests.PerformanceTest;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestRowParallelCscSpmvParser extends
-        SparseMatrixVectorParserTestCase<CscSpmvParser, PerfectIntPairHashPackingFunction> {
+public class TestRowParallelCsrSpmvParser extends
+        SparseMatrixVectorParserTestCase<CsrSpmvParser, PerfectIntPairHashPackingFunction> {
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "6732" })
+    @PerformanceTest({ "mbp", "8000" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

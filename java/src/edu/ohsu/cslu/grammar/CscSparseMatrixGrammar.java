@@ -4,8 +4,6 @@ import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
-import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -63,21 +61,6 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
      */
     public final float[] factoredCscBinaryProbabilities;
 
-    /**
-     * Offsets into {@link #cscUnaryRowIndices} for the start of each column (child), with one extra entry appended to
-     * prevent loops from falling off the end. Indexed by child non-terminal, so the length is 1 greater than |V|.
-     */
-    public final int[] cscUnaryColumnOffsets;
-
-    /**
-     * Row indices of each matrix entry in {@link #cscUnaryProbabilities}. One entry for each unary rule; the same size
-     * as {@link #cscUnaryProbabilities}.
-     */
-    public final short[] cscUnaryRowIndices;
-
-    /** Unary rule probabilities One entry for each unary rule; the same size as {@link #cscUnaryRowIndices}. */
-    public final float[] cscUnaryProbabilities;
-
     protected CscSparseMatrixGrammar(final Reader grammarFile,
             final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
         super(grammarFile, cartesianProductFunctionClass);
@@ -104,12 +87,6 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
                 factoredCscBinaryPopulatedColumns, factoredCscBinaryPopulatedColumnOffsets,
                 factoredCscBinaryRowIndices, factoredCscBinaryProbabilities);
 
-        // And all unary productions
-        cscUnaryColumnOffsets = new int[numNonTerms() + 1];
-        cscUnaryRowIndices = new short[numUnaryProds()];
-        cscUnaryProbabilities = new float[numUnaryProds()];
-
-        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
     }
 
     protected CscSparseMatrixGrammar(final Reader grammarFile) throws IOException {
@@ -144,13 +121,6 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         storeRulesAsMatrix(factoredBinaryProductions, factoredPopulatedBinaryColumnIndices,
                 factoredCscBinaryPopulatedColumns, factoredCscBinaryPopulatedColumnOffsets,
                 factoredCscBinaryRowIndices, factoredCscBinaryProbabilities);
-
-        // And all unary productions
-        cscUnaryColumnOffsets = new int[numNonTerms() + 1];
-        cscUnaryRowIndices = new short[numUnaryProds()];
-        cscUnaryProbabilities = new float[numUnaryProds()];
-
-        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
     }
 
     private int[] populatedBinaryColumnIndices(final Collection<Production> productions) {
@@ -209,58 +179,6 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             }
         }
         cscColumnIndices[cscColumnIndices.length - 1] = j;
-    }
-
-    /**
-     * Stores binary rules in Compressed-Sparse-Column (CSC) matrix format.
-     * 
-     * @param productions
-     * @param validChildPairs Sorted array of valid child pairs
-     * @param cscPopulatedColumns
-     * @param cscColumnIndices
-     * @param cscRowIndices
-     * @param cscProbabilities
-     */
-    private void storeUnaryRulesAsCscMatrix(final Collection<Production> productions, final int[] cscColumnOffsets,
-            final short[] cscRowIndices, final float[] cscProbabilities) {
-
-        // Bin all rules by child, mapping parent -> probability
-        final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> maps = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>(
-                1000);
-
-        for (final Production p : productions) {
-            final short child = (short) p.leftChild;
-
-            Short2FloatOpenHashMap map = maps.get(child);
-            if (map == null) {
-                map = new Short2FloatOpenHashMap(20);
-                maps.put(child, map);
-            }
-            map.put((short) p.parent, p.prob);
-        }
-
-        // Store rules in CSC matrix
-        int j = 0;
-        final short[] keys = maps.keySet().toShortArray();
-        Arrays.sort(keys);
-        for (short child = 0; child < numNonTerms(); child++) {
-
-            cscColumnOffsets[child] = j;
-
-            if (!maps.containsKey(child)) {
-                continue;
-            }
-
-            final Short2FloatOpenHashMap map = maps.get(child);
-            final short[] parents = map.keySet().toShortArray();
-            Arrays.sort(parents);
-
-            for (int k = 0; k < parents.length; k++) {
-                cscRowIndices[j] = parents[k];
-                cscProbabilities[j++] = map.get(parents[k]);
-            }
-        }
-        cscColumnOffsets[cscColumnOffsets.length - 1] = j;
     }
 
     @Override
