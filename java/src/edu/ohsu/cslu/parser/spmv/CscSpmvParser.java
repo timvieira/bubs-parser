@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.parser.spmv;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -32,30 +31,31 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) chartCell;
         targetCell.allocateTemporaryStorage();
 
-        final boolean factoredOnly = cellSelector.hasCellConstraints()
-                && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end());
-
-        // if (cellSelector.factoredParentsOnly(chartCell.start(), chartCell.end())) {
-        if (factoredOnly) {
+        if (cellSelector.hasCellConstraints()
+                && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end())) {
+            // Multiply by the factored grammar rule matrix
             binarySpmvMultiply(cartesianProductVector, grammar.factoredCscBinaryPopulatedColumns,
                     grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
                     grammar.factoredCscBinaryProbabilities, targetCell.tmpPackedChildren,
-                    targetCell.tmpInsideProbabilities, targetCell.tmpMidpoints);
+                    targetCell.tmpInsideProbabilities, targetCell.tmpMidpoints, 0,
+                    grammar.cscBinaryPopulatedColumns.length);
         } else {
+            // Multiply by the main grammar rule matrix
             binarySpmvMultiply(cartesianProductVector, grammar.cscBinaryPopulatedColumns,
                     grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
                     grammar.cscBinaryProbabilities, targetCell.tmpPackedChildren, targetCell.tmpInsideProbabilities,
-                    targetCell.tmpMidpoints);
+                    targetCell.tmpMidpoints, 0, grammar.cscBinaryPopulatedColumns.length);
         }
     }
 
-    private void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
+    protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
             final int[] grammarCscBinaryPopulatedColumns, final int[] grammarCscBinaryPopulatedColumnOffsets,
             final short[] grammarCscBinaryRowIndices, final float[] grammarCscBinaryProbabilities,
-            final int[] targetCellChildren, final float[] targetCellProbabilities, final short[] targetCellMidpoints) {
+            final int[] targetCellChildren, final float[] targetCellProbabilities, final short[] targetCellMidpoints,
+            final int populatedColumnStartIndex, final int populatedColumnEndIndex) {
 
         // Iterate over possible populated child pairs (matrix columns)
-        for (int i = 0; i < grammarCscBinaryPopulatedColumns.length; i++) {
+        for (int i = populatedColumnStartIndex; i < populatedColumnEndIndex; i++) {
 
             // TODO Try iterating through the midpoints array first and only look up the childPair for populated
             // columns. Even though some entries will be impossible, the cache-efficiency of in-order iteration might be
@@ -79,37 +79,6 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
                     targetCellChildren[parent] = childPair;
                     targetCellProbabilities[parent] = jointProbability;
                     targetCellMidpoints[parent] = cartesianProductMidpoint;
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void unarySpmv(final int[] chartCellChildren, final float[] chartCellProbabilities,
-            final short[] chartCellMidpoints, final int offset, final short chartCellEnd) {
-
-        final PackingFunction cpf = grammar.cartesianProductFunction();
-
-        // Iterate over populated children (matrix columns)
-        for (short child = 0; child < grammar.numNonTerms(); child++) {
-
-            final int childOffset = offset + child;
-            if (chartCellProbabilities[childOffset] == Float.NEGATIVE_INFINITY) {
-                continue;
-            }
-
-            // Iterate over possible parents of the child (rows with non-zero entries)
-            for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
-
-                final short parent = grammar.cscUnaryRowIndices[i];
-                final int parentOffset = offset + parent;
-                final float grammarProbability = grammar.cscUnaryProbabilities[i];
-
-                final float jointProbability = grammarProbability + chartCellProbabilities[childOffset];
-                if (jointProbability > chartCellProbabilities[parentOffset]) {
-                    chartCellProbabilities[parentOffset] = jointProbability;
-                    chartCellChildren[parentOffset] = cpf.packUnary(child);
-                    chartCellMidpoints[parentOffset] = chartCellEnd;
                 }
             }
         }
