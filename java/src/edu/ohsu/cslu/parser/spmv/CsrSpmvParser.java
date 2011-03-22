@@ -68,6 +68,9 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
         }
     }
 
+    // CSR Unary SpMV. For now, we're using the standard CSC version, but if we want to parallelize unary processing, we
+    // might want this one again.
+
     // @Override
     // protected void unarySpmv(final int[] chartCellChildren, final float[] chartCellProbabilities,
     // final short[] chartCellMidpoints, final int offset, final short chartCellEnd) {

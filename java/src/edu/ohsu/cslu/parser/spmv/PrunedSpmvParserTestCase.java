@@ -43,9 +43,9 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
                 SharedNlpTests.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
-        props.put("beamcsc.lexicalRowBeamWidth", "60");
-        props.put("beamcsc.beamWidth", "20");
-        props.put("beamcsc.lexicalRowUnaries", "20");
+        props.put("maxBeamWidth", "20");
+        props.put("lexicalRowBeamWidth", "60");
+        props.put("lexicalRowUnaries", "20");
         parser = createParser(opts, grammar);
     }
 

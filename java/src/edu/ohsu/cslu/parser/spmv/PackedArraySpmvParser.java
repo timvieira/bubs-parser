@@ -72,10 +72,10 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
         // Pruning Parameters
         final ConfigProperties props = GlobalConfigProperties.singleton();
-        if (props.containsKey("beamcsc.beamWidth")) {
-            beamWidth = props.getIntProperty("beamcsc.beamWidth");
-            lexicalRowBeamWidth = props.getIntProperty("beamcsc.lexicalRowBeamWidth");
-            lexicalRowUnaries = props.getIntProperty("beamcsc.lexicalRowUnaries");
+        if (props.containsKey("maxBeamWidth")) {
+            beamWidth = props.getIntProperty("maxBeamWidth");
+            lexicalRowBeamWidth = props.getIntProperty("lexicalRowBeamWidth");
+            lexicalRowUnaries = props.getIntProperty("lexicalRowUnaries");
         } else {
             beamWidth = grammar.numNonTerms();
             lexicalRowBeamWidth = grammar.numNonTerms();
@@ -135,7 +135,6 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         final PackedArrayChartCell spvChartCell = chart.getCell(start, end);
 
         long t1 = t0;
-        long t2 = t0;
 
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
@@ -144,7 +143,9 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
             if (collectDetailedStatistics) {
                 sentenceCartesianProductSize += cartesianProductVector.size();
                 t1 = System.currentTimeMillis();
-                sentenceCartesianProductTime += (t1 - t0);
+                final long xProductTime = (t1 - t0);
+                sentenceCartesianProductTime += xProductTime;
+                totalCartesianProductTime += xProductTime;
             }
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
@@ -153,9 +154,23 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         }
 
         if (collectDetailedStatistics) {
-            t2 = System.currentTimeMillis();
-            sentenceBinarySpMVTime += (t2 - t1);
+            final long spMVTime = (System.currentTimeMillis() - t1);
+            sentenceBinarySpMVTime += spMVTime;
+            totalBinarySpMVTime += spMVTime;
         }
+
+        final int[] cellPackedChildren = new int[grammar.numNonTerms()];
+        final float[] cellInsideProbabilities = new float[grammar.numNonTerms()];
+        final short[] cellMidpoints = new short[grammar.numNonTerms()];
+        internalUnaryAndPruning(spvChartCell, start, end, cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+
+        spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+    }
+
+    protected void internalUnaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end,
+            final int[] cellPackedChildren, final float[] cellInsideProbabilities, final short[] cellMidpoints) {
+
+        final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
 
         // final boolean factoredOnly = cellSelector.factoredParentsOnly(start, end);
         final boolean factoredOnly = cellSelector.hasCellConstraints()
@@ -213,12 +228,9 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
             }
         }
 
-        final int[] cellPackedChildren = new int[grammar.numNonTerms()];
-        final float[] cellInsideProbabilities = new float[grammar.numNonTerms()];
-        Arrays.fill(cellInsideProbabilities, Float.NEGATIVE_INFINITY);
         final float[] cellFoms = new float[grammar.numNonTerms()];
+        Arrays.fill(cellInsideProbabilities, Float.NEGATIVE_INFINITY);
         Arrays.fill(cellFoms, Float.NEGATIVE_INFINITY);
-        final short[] cellMidpoints = new short[grammar.numNonTerms()];
 
         // Pop edges off the queue until we fill the beam width. With each non-terminal popped off the queue, push
         // unary edges for each unary grammar rule with the non-terminal as a child
@@ -271,10 +283,8 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         }
 
         if (collectDetailedStatistics) {
-            sentencePruningTime += System.currentTimeMillis() - t2;
+            sentencePruningTime += System.currentTimeMillis() - t0;
         }
-
-        spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
     }
 
     /**
