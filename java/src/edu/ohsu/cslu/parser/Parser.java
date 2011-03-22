@@ -155,6 +155,7 @@ public abstract class Parser<G extends Grammar> {
         CsrSpmv("csr"),
         CellParallelCsrSpmv("cpcsr"),
         CscSpmv("csc"),
+        CellParallelCscSpmv("cpcsc"),
         LeftChildMatrixLoop("lcml"),
         RightChildMatrixLoop("rcml"),
         GrammarLoopMatrixLoop("glml"),
