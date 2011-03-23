@@ -38,7 +38,6 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-@SuppressWarnings("unused")
 public class PackedArrayChart extends ParallelArrayChart {
 
     /**
@@ -77,6 +76,16 @@ public class PackedArrayChart extends ParallelArrayChart {
      */
     private final int[] maxRightChildIndex;
 
+    private final int leftChildSegments;
+
+    /**
+     * Indices in the main chart array of each 'segment', dividing left children for multi-threading cartesian-product
+     * operation. Indexed by cellIndex * (segment count + 1) + segment num. e.g. if each left cell is divided into 4
+     * segments, segment 3 of cell 12 will begin at {@link #leftChildSegmentStartIndices}[12 * 5 + 3] and end at
+     * {@link #leftChildSegmentStartIndices}[12 * 5 + 4].
+     */
+    public final int[] leftChildSegmentStartIndices;
+
     // TODO Remove this large array and share a single temporary cell. Should avoid some object creation and GC
     public final PackedArrayChartCell[][] temporaryCells;
 
@@ -86,9 +95,12 @@ public class PackedArrayChart extends ParallelArrayChart {
      * @param tokens Sentence tokens, mapped to integer indices
      * @param sparseMatrixGrammar Grammar
      * @param beamWidth
+     * @param lexicalRowBeamWidth
+     * @param leftChildSegments The number of 'segments' to split left children into; used to multi-thread
+     *            cartesian-product operation.
      */
     public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar, final int beamWidth,
-            final int lexicalRowBeamWidth) {
+            final int lexicalRowBeamWidth, final int leftChildSegments) {
         super(tokens, sparseMatrixGrammar, Math.min(beamWidth, sparseMatrixGrammar.numNonTerms()), Math.min(
                 lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms()));
 
@@ -102,7 +114,26 @@ public class PackedArrayChart extends ParallelArrayChart {
 
         temporaryCells = new PackedArrayChartCell[size][size + 1];
 
+        this.leftChildSegments = leftChildSegments;
+        if (leftChildSegments > 0) {
+            leftChildSegmentStartIndices = new int[(cells * (leftChildSegments + 1)) + 1];
+        } else {
+            leftChildSegmentStartIndices = null;
+        }
         clear(size);
+    }
+
+    /**
+     * Constructs a chart
+     * 
+     * @param tokens Sentence tokens, mapped to integer indices
+     * @param sparseMatrixGrammar Grammar
+     * @param beamWidth
+     * @param lexicalRowBeamWidth
+     */
+    public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar, final int beamWidth,
+            final int lexicalRowBeamWidth) {
+        this(tokens, sparseMatrixGrammar, beamWidth, lexicalRowBeamWidth, 0);
     }
 
     /**
@@ -112,7 +143,7 @@ public class PackedArrayChart extends ParallelArrayChart {
      * @param sparseMatrixGrammar Grammar
      */
     public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms());
+        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms(), 0);
     }
 
     @Override
@@ -132,6 +163,19 @@ public class PackedArrayChart extends ParallelArrayChart {
                 maxRightChildIndex[cellIndex] = offset - 1;
             }
         }
+
+        if (leftChildSegmentStartIndices != null) {
+
+            for (int start = 0; start < size; start++) {
+                for (int end = start + 1; end <= size; end++) {
+                    final int cellIndex = cellIndex(start, end);
+                    leftChildSegmentStartIndices[cellIndex * (leftChildSegments + 1)] = beamWidth * cellIndex;
+                }
+            }
+            final int activeCells = sentenceLength * (sentenceLength + 1) / 2;
+            leftChildSegmentStartIndices[leftChildSegmentStartIndices.length - 1] = beamWidth * activeCells;
+        }
+
         for (int i = 0; i < size; i++) {
             Arrays.fill(temporaryCells[i], null);
         }
@@ -230,11 +274,10 @@ public class PackedArrayChart extends ParallelArrayChart {
 
         public PackedArrayChartCell(final int start, final int end) {
             super(start, end);
+            temporaryCells[start][end] = this;
         }
 
         public void allocateTemporaryStorage() {
-            temporaryCells[start][end] = this;
-
             // Allocate storage
             if (tmpPackedChildren == null) {
                 final int arraySize = sparseMatrixGrammar.numNonTerms();
@@ -310,6 +353,20 @@ public class PackedArrayChart extends ParallelArrayChart {
 
                     nonTerminalOffset++;
                 }
+            }
+
+            if (leftChildSegmentStartIndices != null) {
+                final int segmentSize = sparseMatrixGrammar.posEnd / leftChildSegments + 1;
+                final int cellSegmentStartIndex = cellIndex * (leftChildSegments + 1);
+                int i = 0;
+                for (int j = minLeftChildIndex[cellIndex]; i < leftChildSegments && j <= maxLeftChildIndex[cellIndex]; j++) {
+                    if (nonTerminalIndices[j] >= (segmentSize * i)) {
+                        leftChildSegmentStartIndices[cellSegmentStartIndex + i] = j;
+                        i++;
+                    }
+                }
+                Arrays.fill(leftChildSegmentStartIndices, cellSegmentStartIndex + i, cellSegmentStartIndex
+                        + leftChildSegments + 1, maxLeftChildIndex[cellIndex]);
             }
 
             numNonTerminals[cellIndex] = nonTerminalOffset - offset;

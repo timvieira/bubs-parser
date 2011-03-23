@@ -35,8 +35,8 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     protected final ExecutorService executor;
     protected LinkedList<Future<?>> currentTasks;
 
-    protected final ThreadLocal<float[]> cpvProbabilities;
-    protected final ThreadLocal<short[]> cpvMidpoints;
+    protected final ThreadLocal<float[]> threadLocalCpvProbabilities;
+    protected final ThreadLocal<short[]> threadLocalCpvMidpoints;
 
     public PackedArraySpmvParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -56,17 +56,19 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         }
 
         // And thread-local cartesian-product vector storage
-        this.cpvProbabilities = new ThreadLocal<float[]>() {
+        this.threadLocalCpvProbabilities = new ThreadLocal<float[]>() {
             @Override
             protected float[] initialValue() {
                 return new float[grammar.packingFunction.packedArraySize()];
             }
         };
 
-        this.cpvMidpoints = new ThreadLocal<short[]>() {
+        this.threadLocalCpvMidpoints = new ThreadLocal<short[]>() {
             @Override
             protected short[] initialValue() {
-                return new short[grammar.packingFunction.packedArraySize()];
+                final short[] m = new short[grammar.packingFunction.packedArraySize()];
+                Arrays.fill(m, (short) 0);
+                return m;
             }
         };
 
@@ -301,11 +303,12 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         if (grammar.packingFunction instanceof PerfectIntPairHashPackingFunction) {
             return internalCartesianProduct(start, end, start + 1, end - 1,
                     (PerfectIntPairHashPackingFunction) grammar.packingFunction, chart.nonTerminalIndices,
-                    chart.insideProbabilities, cpvProbabilities.get(), cpvMidpoints.get());
+                    chart.insideProbabilities, threadLocalCpvProbabilities.get(), threadLocalCpvMidpoints.get());
         }
 
         return internalCartesianProduct(start, end, start + 1, end - 1, grammar.packingFunction,
-                chart.nonTerminalIndices, chart.insideProbabilities, cpvProbabilities.get(), cpvMidpoints.get());
+                chart.nonTerminalIndices, chart.insideProbabilities, threadLocalCpvProbabilities.get(),
+                threadLocalCpvMidpoints.get());
     }
 
     protected final CartesianProductVector internalCartesianProduct(final int start, final int end,
@@ -366,6 +369,20 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         return new CartesianProductVector(grammar, probabilities, midpoints, 0);
     }
 
+    /**
+     * Duplicate internalCartesianProduct method, specific to {@link PerfectIntPairHashPackingFunction}.
+     * 
+     * @param start
+     * @param end
+     * @param midpointStart
+     * @param midpointEnd
+     * @param cpf
+     * @param nonTerminalIndices
+     * @param insideProbabilities
+     * @param probabilities
+     * @param midpoints
+     * @return Cartesian Product Vector
+     */
     protected final CartesianProductVector internalCartesianProduct(final int start, final int end,
             final int midpointStart, final int midpointEnd, final PerfectIntPairHashPackingFunction cpf,
             final short[] nonTerminalIndices, final float[] insideProbabilities, final float[] probabilities,

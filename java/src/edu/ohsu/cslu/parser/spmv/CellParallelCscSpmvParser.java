@@ -1,7 +1,6 @@
 package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,12 +8,14 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
+import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
@@ -37,19 +38,19 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
      */
     private final int[] binaryRowSegments;
 
-    private final ExecutorService executor;
+    // TODO Remove - add threads to PackedArraySpmvParser.executor instead
+    private final ExecutorService cellExecutor;
 
-    private final float[][] cpvProbabilities;
-    private final short[][] cpvMidpoints;
+    // private Future<?> cpvClearTask;
 
-    protected final ThreadLocal<TemporaryChartCell> temporaryCells;
+    protected final TemporaryChartCell[] temporaryCells;
 
     public CellParallelCscSpmvParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
 
+        final ConfigProperties props = GlobalConfigProperties.singleton();
         // Split the binary grammar rules into segments of roughly equal size
-        final int requestedThreads = GlobalConfigProperties.singleton().getIntProperty(
-                ParserDriver.OPT_CELL_THREAD_COUNT);
+        final int requestedThreads = props.getIntProperty(ParserDriver.OPT_CELL_THREAD_COUNT);
         final int[] segments = new int[requestedThreads + 1];
         final int segmentSize = grammar.cscBinaryRowIndices.length / requestedThreads + 1;
         segments[0] = 0;
@@ -63,8 +64,11 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         segments[i] = grammar.cscBinaryPopulatedColumnOffsets.length - 1;
 
         this.threads = i;
+        final int configuredThreads = props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT) ? props
+                .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) * threads : threads;
         GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
-                Integer.toString(threads));
+                Integer.toString(configuredThreads));
+
         this.binaryRowSegments = new int[i + 1];
         System.arraycopy(segments, 0, binaryRowSegments, 0, binaryRowSegments.length);
 
@@ -74,29 +78,56 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
                 sb.append((grammar.cscBinaryPopulatedColumnOffsets[binaryRowSegments[j]] - grammar.cscBinaryPopulatedColumnOffsets[binaryRowSegments[j - 1]])
                         + " ");
             }
-            BaseLogger.singleton().fine("CSR Binary Grammar segments of length: " + sb.toString());
+            BaseLogger.singleton().fine("CSC Binary Grammar segments of length: " + sb.toString());
         }
 
         // Configure a thread pool
-        executor = Executors.newFixedThreadPool(threads);
+        this.cellExecutor = Executors.newFixedThreadPool(threads);
 
-        // Pre-allocate cartesian-product vector arrays for each thread
-        cpvProbabilities = new float[threads][];
-        cpvMidpoints = new short[threads][];
-        final int arrayLength = grammar.cartesianProductFunction().packedArraySize();
+        // Preallocate temporary cell storage
+        this.temporaryCells = new TemporaryChartCell[threads];
         for (int j = 0; j < threads; j++) {
-            cpvProbabilities[j] = new float[arrayLength];
-            cpvMidpoints[j] = new short[arrayLength];
+            temporaryCells[j] = new TemporaryChartCell();
+        }
+    }
+
+    @Override
+    protected void initSentence(final int[] tokens) {
+        final int sentLength = tokens.length;
+        if (chart != null && chart.size() >= sentLength) {
+            chart.clear(sentLength);
+        } else {
+            chart = new PackedArrayChart(tokens, grammar, beamWidth, lexicalRowBeamWidth, threads);
         }
 
-        // And thread-local temporary cell storage
-        this.temporaryCells = new ThreadLocal<TemporaryChartCell>() {
-            @Override
-            protected TemporaryChartCell initialValue() {
-                return new TemporaryChartCell();
-            }
-        };
+        super.initSentence(tokens);
     }
+
+    // @Override
+    // protected void visitCell(final short start, final short end) {
+    //
+    // // Wait for the array fill task
+    // if (cpvClearTask != null) {
+    // try {
+    // cpvClearTask.get();
+    // } catch (final InterruptedException e) {
+    // e.printStackTrace();
+    // } catch (final ExecutionException e) {
+    // e.printStackTrace();
+    // }
+    // }
+    //
+    // // TODO Auto-generated method stub
+    // super.visitCell(start, end);
+    //
+    // // Schedule a task to clear the cartesian-product vector storage
+    // cellExecutor.execute(new Runnable() {
+    // @Override
+    // public void run() {
+    // Arrays.fill(threadLocalCpvMidpoints.get(), (short) 0);
+    // }
+    // });
+    // }
 
     /**
      * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products together,
@@ -114,104 +145,165 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 
-        // Perform cartesian-product operation at each midpoint
-        @SuppressWarnings("unchecked")
-        final Future<CartesianProductVector>[] futures = new Future[threads];
+        final float[] cpvProbabilities = threadLocalCpvProbabilities.get();
+        final short[] cpvMidpoints = threadLocalCpvMidpoints.get();
 
-        // Don't bother multi-threading for fewer than 4 midpoints
-        final int segmentSize = (end - start - 2) / threads + 1;
+        Arrays.fill(cpvMidpoints, (short) 0);
 
-        if (end - start - 1 > 4) {
-            for (int i = 0; i < threads; i++) {
+        // // Don't bother multi-threading for fewer than 4 midpoints
+        // if (end - start - 1 < 4) {
+        // return internalCartesianProduct(start, end, start + 1, end - 1, pf, nonTerminalIndices,
+        // insideProbabilities, cpvProbabilities, cpvMidpoints);
+        // }
 
-                final int midpointStart = start + 1 + segmentSize * i;
-                final int midpointEnd = Math.min(midpointStart + segmentSize, end - 1);
-                final float[] probabilities = cpvProbabilities[i];
-                final short[] midpoints = cpvMidpoints[i];
+        // Perform cartesian-product operation for each left-child segment
+        final Future<?>[] futures = new Future[threads];
 
-                futures[i] = executor.submit(new Callable<CartesianProductVector>() {
-
-                    @Override
-                    public edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector call()
-                            throws Exception {
-                        return internalCartesianProduct(start, end, midpointStart, midpointEnd, pf, nonTerminalIndices,
-                                insideProbabilities, probabilities, midpoints);
-                    }
-                });
-            }
-        } else {
-            return internalCartesianProduct(start, end, start + 1, end - 1, pf, nonTerminalIndices,
-                    insideProbabilities, cpvProbabilities[0], cpvMidpoints[0]);
-        }
-
-        // Wait for the first task to complete (the first one uses the 'main' arrays, so we can't begin the merge until
-        // it is complete)
-        try {
-            futures[0].get();
-        } catch (final InterruptedException ignore) {
-        } catch (final ExecutionException e) {
-            e.printStackTrace();
-        }
-
-        // Wait for other tasks to complete.
-        // Copy the probabilities and midpoints of the first task directly to the main array and merge each subsequent
-        // task into that array.
-        // TODO This merge could be parallelized by splitting the vector array in segments
-        for (int i = 1; i < threads; i++) {
-            try {
-                final CartesianProductVector partialCpv = futures[i].get();
-                final float[] cartesianProductProbabilities = cpvProbabilities[0];
-                final short[] cartesianProductMidpoints = cpvMidpoints[0];
-                // Merge partial cartesian-product vector into the main vector (tropical semiring - choose maximum
-                // probability)
-                for (int j = 0; j < partialCpv.midpoints.length; j++) {
-                    if (partialCpv.midpoints[j] != 0
-                            && (cartesianProductMidpoints[j] == 0 || partialCpv.probabilities[j] > cartesianProductProbabilities[j])) {
-                        cartesianProductMidpoints[j] = partialCpv.midpoints[j];
-                        cartesianProductProbabilities[j] = partialCpv.probabilities[j];
-                    }
+        for (int i = 0; i < threads; i++) {
+            final int segment = i;
+            futures[i] = cellExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    cartesianProductSegment(start, end, segment, pf, nonTerminalIndices, insideProbabilities,
+                            cpvProbabilities, cpvMidpoints);
                 }
+            });
+        }
+
+        // Wait for CPV tasks to complete.
+        for (int i = 0; i < threads; i++) {
+            try {
+                futures[i].get();
             } catch (final InterruptedException ignore) {
             } catch (final ExecutionException e) {
                 e.printStackTrace();
             }
         }
 
-        return new CartesianProductVector(grammar, cpvProbabilities[0], cpvMidpoints[0], 0);
+        return new CartesianProductVector(grammar, cpvProbabilities, cpvMidpoints, 0);
+    }
+
+    private void cartesianProductSegment(final int start, final int end, final int segment,
+            final PerfectIntPairHashPackingFunction cpf, final short[] chartNonTerminalIndices,
+            final float[] chartInsideProbabilities, final float[] cpvProbabilities, final short[] cpvMidpoints) {
+
+        // Iterate over all possible midpoints, populating the cartesian product of discovered
+        // non-terminals in each left/right child pair
+        for (short midpoint = (short) (start + 1); midpoint <= (end - 1); midpoint++) {
+            final int leftCellIndex = chart.cellIndex(start, midpoint);
+            final int rightCellIndex = chart.cellIndex(midpoint, end);
+
+            final int leftChildrenStartIndex = chart.leftChildSegmentStartIndices[leftCellIndex * (threads + 1)
+                    + segment];
+            final int leftChildrenEndIndex = chart.leftChildSegmentStartIndices[leftCellIndex * (threads + 1) + segment
+                    + 1];
+
+            final int rightStart = chart.minRightChildIndex(rightCellIndex);
+            final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
+
+            for (int i = leftChildrenStartIndex; i <= leftChildrenEndIndex; i++) {
+                final short leftChild = chartNonTerminalIndices[i];
+                final float leftProbability = chartInsideProbabilities[i];
+                final int mask = cpf.mask(leftChild);
+                final int shift = cpf.shift(leftChild);
+                final int offset = cpf.offset(leftChild);
+
+                final short minRightSibling = grammar.minRightSiblingIndices[leftChild];
+                final short maxRightSibling = grammar.maxRightSiblingIndices[leftChild];
+
+                for (int j = rightStart; j <= rightEnd; j++) {
+                    // Skip any right children which cannot combine with left child
+                    if (chartNonTerminalIndices[j] < minRightSibling) {
+                        continue;
+                    } else if (chartNonTerminalIndices[j] > maxRightSibling) {
+                        break;
+                    }
+
+                    final int childPair = cpf.pack(chartNonTerminalIndices[j], shift, mask, offset);
+                    if (childPair == Integer.MIN_VALUE) {
+                        continue;
+                    }
+
+                    final float jointProbability = leftProbability + chartInsideProbabilities[j];
+
+                    // If this cartesian-product entry is not populated, we can populate it without comparing
+                    // to a current probability. The memory write is faster if we don't first have to read.
+                    if (cpvMidpoints[childPair] == 0) {
+                        cpvProbabilities[childPair] = jointProbability;
+                        cpvMidpoints[childPair] = midpoint;
+
+                    } else {
+                        if (jointProbability > cpvProbabilities[childPair]) {
+                            cpvProbabilities[childPair] = jointProbability;
+                            cpvMidpoints[childPair] = midpoint;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override
     public void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
 
-        @SuppressWarnings("unchecked")
-        final Future<TemporaryChartCell>[] futures = new Future[binaryRowSegments.length - 1];
+        final Future<?>[] futures = new Future[threads];
         // Iterate over binary grammar segments
         for (int i = 0; i < threads; i++) {
             final int segmentStart = binaryRowSegments[i];
             final int segmentEnd = binaryRowSegments[i + 1];
-            futures[i] = executor.submit(new Callable<TemporaryChartCell>() {
+            final TemporaryChartCell tmpCell = temporaryCells[i];
 
-                @Override
-                public TemporaryChartCell call() throws Exception {
-                    final TemporaryChartCell tmpCell = temporaryCells.get();
+            if (cellSelector.hasCellConstraints()
+                    && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end())) {
+                futures[i] = cellExecutor.submit(new Runnable() {
 
-                    binarySpmvMultiply(cartesianProductVector, grammar.cscBinaryPopulatedColumns,
-                            grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
-                            grammar.cscBinaryProbabilities, tmpCell.packedChildren, tmpCell.insideProbabilities,
-                            tmpCell.midpoints, segmentStart, segmentEnd);
-                    return tmpCell;
-                }
-            });
+                    @Override
+                    public void run() {
+                        // Multiply by the factored grammar rule matrix
+                        binarySpmvMultiply(cartesianProductVector, grammar.factoredCscBinaryPopulatedColumns,
+                                grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
+                                grammar.factoredCscBinaryProbabilities, tmpCell.packedChildren,
+                                tmpCell.insideProbabilities, tmpCell.midpoints, segmentStart, segmentEnd);
+                    }
+                });
+            } else {
+                futures[i] = cellExecutor.submit(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        // Multiply by the full grammar rule matrix
+                        binarySpmvMultiply(cartesianProductVector, grammar.cscBinaryPopulatedColumns,
+                                grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
+                                grammar.cscBinaryProbabilities, tmpCell.packedChildren, tmpCell.insideProbabilities,
+                                tmpCell.midpoints, segmentStart, segmentEnd);
+                    }
+                });
+            }
         }
 
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
+        try {
+            // Wait for the first task to finish and use its arrays as the temporary cell storage
+            futures[0].get();
 
-        // Wait for each task to complete and merge results into the main temporary storage
-        for (int i = 0; i < binaryRowSegments.length - 1; i++) {
-            try {
-                final TemporaryChartCell tmpCell = futures[i].get();
-                for (int j = 0; j < tmpCell.midpoints.length; j++) {
+            System.arraycopy(temporaryCells[0].insideProbabilities, 0, packedArrayCell.tmpInsideProbabilities, 0,
+                    temporaryCells[0].insideProbabilities.length);
+            System.arraycopy(temporaryCells[0].packedChildren, 0, packedArrayCell.tmpPackedChildren, 0,
+                    temporaryCells[0].packedChildren.length);
+            System.arraycopy(temporaryCells[0].midpoints, 0, packedArrayCell.tmpMidpoints, 0,
+                    temporaryCells[0].midpoints.length);
+            temporaryCells[0].clear();
+
+            // packedArrayCell.tmpInsideProbabilities = tmpCell0.insideProbabilities;
+            // packedArrayCell.tmpPackedChildren = tmpCell0.packedChildren;
+            // packedArrayCell.tmpMidpoints = tmpCell0.midpoints;
+
+            // Wait for each other task to complete and merge results into the main temporary storage
+            for (int i = 1; i < threads; i++) {
+                futures[i].get();
+                final TemporaryChartCell tmpCell = temporaryCells[i];
+                for (int j = 0; j < tmpCell.insideProbabilities.length; j++) {
                     if (tmpCell.insideProbabilities[j] > packedArrayCell.tmpInsideProbabilities[j]) {
                         packedArrayCell.tmpInsideProbabilities[j] = tmpCell.insideProbabilities[j];
                         packedArrayCell.tmpPackedChildren[j] = tmpCell.packedChildren[j];
@@ -219,16 +311,17 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
                     }
                 }
                 tmpCell.clear();
-            } catch (final InterruptedException ignore) {
-            } catch (final ExecutionException e) {
-                e.printStackTrace();
             }
+        } catch (final InterruptedException e) {
+            e.printStackTrace();
+        } catch (final ExecutionException e) {
+            e.printStackTrace();
         }
     }
 
     @Override
     public void shutdown() {
-        executor.shutdown();
+        cellExecutor.shutdown();
     }
 
     private final class TemporaryChartCell {

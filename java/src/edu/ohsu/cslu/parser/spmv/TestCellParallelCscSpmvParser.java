@@ -1,7 +1,10 @@
 package edu.ohsu.cslu.parser.spmv;
 
+import java.util.logging.Level;
+
 import org.junit.Test;
 
+import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -27,7 +30,8 @@ public class TestCellParallelCscSpmvParser extends
 
     @Override
     public void setUp() throws Exception {
-        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CELL_THREAD_COUNT, "2");
+        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CELL_THREAD_COUNT, "8");
+        BaseLogger.singleton().setLevel(Level.FINER);
         super.setUp();
     }
 }
