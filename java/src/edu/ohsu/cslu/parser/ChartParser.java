@@ -110,6 +110,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         final int numTags = grammar.posSet.size();
         final int numWords = grammar.lexSet.size();
 
+        // TODO Create a feature enum. Pre-tokenize the feature template once per sentence into an EnumSet (in
+        // CellSelector.initSentence()) and make this a large switch statement. Should help with initialization time,
+        // although it's not a huge priority, since that init time is only ~5% of the total time.
         for (final String featStr : ParserUtil.tokenize(featTemplate)) {
 
             // Left tags
