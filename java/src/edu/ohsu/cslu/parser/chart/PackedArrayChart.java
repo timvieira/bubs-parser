@@ -6,7 +6,6 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParseTree;
-import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
  * Stores a chart in a 4-way parallel array of:
@@ -76,13 +75,14 @@ public class PackedArrayChart extends ParallelArrayChart {
      */
     private final int[] maxRightChildIndex;
 
+    /** The number of 'segments' dividing left children for multi-threading cartesian-product operation. */
     private final int leftChildSegments;
 
     /**
      * Indices in the main chart array of each 'segment', dividing left children for multi-threading cartesian-product
      * operation. Indexed by cellIndex * (segment count + 1) + segment num. e.g. if each left cell is divided into 4
-     * segments, segment 3 of cell 12 will begin at {@link #leftChildSegmentStartIndices}[12 * 5 + 3] and end at
-     * {@link #leftChildSegmentStartIndices}[12 * 5 + 4].
+     * segments ({@link #leftChildSegments} == 4), segment 3 of cell 12 will begin at
+     * {@link #leftChildSegmentStartIndices}[12 * 5 + 3] and end at {@link #leftChildSegmentStartIndices}[12 * 5 + 4].
      */
     public final int[] leftChildSegmentStartIndices;
 
@@ -162,18 +162,6 @@ public class PackedArrayChart extends ParallelArrayChart {
                 minRightChildIndex[cellIndex] = offset;
                 maxRightChildIndex[cellIndex] = offset - 1;
             }
-        }
-
-        if (leftChildSegmentStartIndices != null) {
-
-            for (int start = 0; start < size; start++) {
-                for (int end = start + 1; end <= size; end++) {
-                    final int cellIndex = cellIndex(start, end);
-                    leftChildSegmentStartIndices[cellIndex * (leftChildSegments + 1)] = beamWidth * cellIndex;
-                }
-            }
-            final int activeCells = sentenceLength * (sentenceLength + 1) / 2;
-            leftChildSegmentStartIndices[leftChildSegmentStartIndices.length - 1] = beamWidth * activeCells;
         }
 
         for (int i = 0; i < size; i++) {
@@ -356,17 +344,56 @@ public class PackedArrayChart extends ParallelArrayChart {
             }
 
             if (leftChildSegmentStartIndices != null) {
-                final int segmentSize = sparseMatrixGrammar.posEnd / leftChildSegments + 1;
+                // Split up the left-child non-terminals into 'segments' for multi-threading of cartesian product
+                // operation.
+
+                // The cell population is likely to be biased toward a specific range of non-terminals, but we still
+                // have to use fixed segment boundaries (instead of splitting the actual population range equally) so
+                // that individual x-product threads can operate on different regions of the x-product vector without
+                // interfering with one another.
+
+                // We use equal segment ranges, with the exception of POS. POS will occur only in one midpoint per cell.
+                // Since many non-terms are POS (particularly in latent-variable grammars) and the threads allocated to
+                // POS would be mostly idle, we include all POS in the segment containing the first segment containing
+                // POS.
                 final int cellSegmentStartIndex = cellIndex * (leftChildSegments + 1);
-                int i = 0;
-                for (int j = minLeftChildIndex[cellIndex]; i < leftChildSegments && j <= maxLeftChildIndex[cellIndex]; j++) {
-                    if (nonTerminalIndices[j] >= (segmentSize * i)) {
-                        leftChildSegmentStartIndices[cellSegmentStartIndex + i] = j;
-                        i++;
+
+                if (end - start == 1) {
+                    Arrays.fill(leftChildSegmentStartIndices, cellSegmentStartIndex, cellSegmentStartIndex
+                            + leftChildSegments, minLeftChildIndex[cellIndex]);
+                    leftChildSegmentStartIndices[cellSegmentStartIndex + leftChildSegments] = maxLeftChildIndex[cellIndex];
+                } else {
+                    final int segmentSize = (sparseMatrixGrammar.numNonTerms() - sparseMatrixGrammar.numPosSymbols)
+                            / leftChildSegments + 1;
+                    int i = 0;
+                    int segmentEndNT = 0;
+                    for (int j = minLeftChildIndex[cellIndex]; i < leftChildSegments
+                            && j <= maxLeftChildIndex[cellIndex]; j++) {
+                        if (nonTerminalIndices[j] >= segmentEndNT) {
+                            leftChildSegmentStartIndices[cellSegmentStartIndex + i] = j;
+                            i++;
+                            segmentEndNT = segmentSize * i;
+                            if (segmentEndNT >= sparseMatrixGrammar.posStart
+                                    && segmentEndNT <= sparseMatrixGrammar.posEnd) {
+                                segmentEndNT += sparseMatrixGrammar.posEnd - sparseMatrixGrammar.posStart + 1;
+                            }
+                        }
                     }
+
+                    Arrays.fill(leftChildSegmentStartIndices, cellSegmentStartIndex + i, cellSegmentStartIndex
+                            + leftChildSegments + 1, maxLeftChildIndex[cellIndex]);
+
+                    // final short[] ntBoundaries = new short[leftChildSegments + 1];
+                    // final int[] ntCounts = new int[leftChildSegments + 1];
+                    // for (int j = 0; j < ntBoundaries.length - 1; j++) {
+                    // ntBoundaries[j] = nonTerminalIndices[leftChildSegmentStartIndices[cellSegmentStartIndex + j]];
+                    // ntCounts[j] = leftChildSegmentStartIndices[cellSegmentStartIndex + j + 1]
+                    // - leftChildSegmentStartIndices[cellSegmentStartIndex + j];
+                    // }
+                    // ntBoundaries[ntBoundaries.length - 1] = nonTerminalIndices[maxLeftChildIndex[cellIndex]];
+                    //
+                    // System.out.println();
                 }
-                Arrays.fill(leftChildSegmentStartIndices, cellSegmentStartIndex + i, cellSegmentStartIndex
-                        + leftChildSegments + 1, maxLeftChildIndex[cellIndex]);
             }
 
             numNonTerminals[cellIndex] = nonTerminalOffset - offset;

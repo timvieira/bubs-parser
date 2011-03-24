@@ -43,7 +43,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
 
     // private Future<?> cpvClearTask;
 
-    protected final TemporaryChartCell[] temporaryCells;
+    protected final ThreadLocal<TemporaryChartCell[]> threadLocalTemporaryCells;
 
     public CellParallelCscSpmvParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -84,11 +84,17 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         // Configure a thread pool
         this.cellExecutor = Executors.newFixedThreadPool(threads);
 
-        // Preallocate temporary cell storage
-        this.temporaryCells = new TemporaryChartCell[threads];
-        for (int j = 0; j < threads; j++) {
-            temporaryCells[j] = new TemporaryChartCell();
-        }
+        // Temporary cell storage for each row-level thread
+        this.threadLocalTemporaryCells = new ThreadLocal<CellParallelCscSpmvParser.TemporaryChartCell[]>() {
+            @Override
+            protected TemporaryChartCell[] initialValue() {
+                final TemporaryChartCell[] tcs = new TemporaryChartCell[threads];
+                for (int j = 0; j < threads; j++) {
+                    tcs[j] = new TemporaryChartCell();
+                }
+                return tcs;
+            }
+        };
     }
 
     @Override
@@ -247,6 +253,8 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
     public void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
 
         final Future<?>[] futures = new Future[threads];
+        final TemporaryChartCell[] temporaryCells = threadLocalTemporaryCells.get();
+
         // Iterate over binary grammar segments
         for (int i = 0; i < threads; i++) {
             final int segmentStart = binaryRowSegments[i];
@@ -287,14 +295,14 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
             // Wait for the first task to finish and use its arrays as the temporary cell storage
             futures[0].get();
 
+            final int arrayLength = temporaryCells[0].insideProbabilities.length;
             System.arraycopy(temporaryCells[0].insideProbabilities, 0, packedArrayCell.tmpInsideProbabilities, 0,
-                    temporaryCells[0].insideProbabilities.length);
-            System.arraycopy(temporaryCells[0].packedChildren, 0, packedArrayCell.tmpPackedChildren, 0,
-                    temporaryCells[0].packedChildren.length);
-            System.arraycopy(temporaryCells[0].midpoints, 0, packedArrayCell.tmpMidpoints, 0,
-                    temporaryCells[0].midpoints.length);
+                    arrayLength);
+            System.arraycopy(temporaryCells[0].packedChildren, 0, packedArrayCell.tmpPackedChildren, 0, arrayLength);
+            System.arraycopy(temporaryCells[0].midpoints, 0, packedArrayCell.tmpMidpoints, 0, arrayLength);
             temporaryCells[0].clear();
 
+            // final TemporaryChartCell tmpCell0 = temporaryCells[0];
             // packedArrayCell.tmpInsideProbabilities = tmpCell0.insideProbabilities;
             // packedArrayCell.tmpPackedChildren = tmpCell0.packedChildren;
             // packedArrayCell.tmpMidpoints = tmpCell0.midpoints;
@@ -303,7 +311,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
             for (int i = 1; i < threads; i++) {
                 futures[i].get();
                 final TemporaryChartCell tmpCell = temporaryCells[i];
-                for (int j = 0; j < tmpCell.insideProbabilities.length; j++) {
+                for (int j = 0; j < arrayLength; j++) {
                     if (tmpCell.insideProbabilities[j] > packedArrayCell.tmpInsideProbabilities[j]) {
                         packedArrayCell.tmpInsideProbabilities[j] = tmpCell.insideProbabilities[j];
                         packedArrayCell.tmpPackedChildren[j] = tmpCell.packedChildren[j];
@@ -322,6 +330,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
     @Override
     public void shutdown() {
         cellExecutor.shutdown();
+        super.shutdown();
     }
 
     private final class TemporaryChartCell {
