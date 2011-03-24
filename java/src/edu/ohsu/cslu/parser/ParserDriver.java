@@ -505,6 +505,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
         final int sentencesParsed = Parser.sentenceNumber;
 
         final StringBuilder sb = new StringBuilder();
+        // TODO Add cpuSecondsPerSent and switch avgSecondsPerSent to report mean latency (not mean throughput)
         sb.append(String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
                 sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
         if (parserInstances.getFirst() instanceof SparseMatrixVectorParser) {

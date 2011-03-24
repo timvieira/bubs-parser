@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -47,6 +48,13 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
         props.put("lexicalRowBeamWidth", "60");
         props.put("lexicalRowUnaries", "20");
         parser = createParser(opts, grammar);
+    }
+
+    @After
+    public void tearDown() {
+        if (parser != null) {
+            parser.shutdown();
+        }
     }
 
     @BeforeClass

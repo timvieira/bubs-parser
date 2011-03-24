@@ -27,7 +27,7 @@ public class ParserUtil {
     }
 
     public static String join(final Collection<String> s, final String delimiter) {
-        final StringBuffer buffer = new StringBuffer();
+        final StringBuilder buffer = new StringBuilder();
         final Iterator<String> iter = s.iterator();
         while (iter.hasNext()) {
             buffer.append(iter.next());
@@ -35,6 +35,26 @@ public class ParserUtil {
                 buffer.append(delimiter);
             }
         }
+        return buffer.toString();
+    }
+
+    public static String join(final Object[] objs, final String delimiter) {
+        final StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < objs.length - 1; i++) {
+            buffer.append(objs[i].toString());
+            buffer.append(delimiter);
+        }
+        buffer.append(objs[objs.length - 1].toString());
+        return buffer.toString();
+    }
+
+    public static String join(final long[] objs, final String delimiter) {
+        final StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < objs.length - 1; i++) {
+            buffer.append(Long.toString(objs[i]));
+            buffer.append(delimiter);
+        }
+        buffer.append(Long.toString(objs[objs.length - 1]));
         return buffer.toString();
     }
 
