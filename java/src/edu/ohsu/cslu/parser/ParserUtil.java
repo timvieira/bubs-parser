@@ -58,6 +58,26 @@ public class ParserUtil {
         return buffer.toString();
     }
 
+    public static String join(final int[] objs, final String delimiter) {
+        final StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < objs.length - 1; i++) {
+            buffer.append(Integer.toString(objs[i]));
+            buffer.append(delimiter);
+        }
+        buffer.append(Integer.toString(objs[objs.length - 1]));
+        return buffer.toString();
+    }
+
+    public static String join(final short[] objs, final String delimiter) {
+        final StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < objs.length - 1; i++) {
+            buffer.append(Short.toString(objs[i]));
+            buffer.append(delimiter);
+        }
+        buffer.append(Short.toString(objs[objs.length - 1]));
+        return buffer.toString();
+    }
+
     // TODO Merge with Math.logSum()
     public static double logSum(final double a, final double b) {
         // NOTE: these conditions were necessary when multiplying multiple values
