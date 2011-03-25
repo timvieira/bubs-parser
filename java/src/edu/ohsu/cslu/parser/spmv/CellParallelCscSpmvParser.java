@@ -28,8 +28,11 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  */
 public final class CellParallelCscSpmvParser extends CscSpmvParser {
 
-    /** The number of threads configured for binary grammar intersection */
+    /** The number of threads configured for cartesian-product and binary grammar intersection */
     private final int threads;
+
+    /** The number of tasks to split cartesian-product operation into. Normally a multiple of the number of threads. */
+    private final int cpvSegments;
 
     /**
      * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into segments of
@@ -64,6 +67,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         segments[i] = grammar.cscBinaryPopulatedColumnOffsets.length - 1;
 
         this.threads = i;
+        this.cpvSegments = threads * 2;
         final int configuredThreads = props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT) ? props
                 .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) * threads : threads;
         GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
@@ -78,7 +82,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
                 sb.append((grammar.cscBinaryPopulatedColumnOffsets[binaryRowSegments[j]] - grammar.cscBinaryPopulatedColumnOffsets[binaryRowSegments[j - 1]])
                         + " ");
             }
-            BaseLogger.singleton().fine("CSC Binary Grammar segments of length: " + sb.toString());
+            BaseLogger.singleton().fine("INFO: CSC Binary Grammar segments of length: " + sb.toString());
         }
 
         // Configure a thread pool
@@ -103,7 +107,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
         } else {
-            chart = new PackedArrayChart(tokens, grammar, beamWidth, lexicalRowBeamWidth, threads);
+            chart = new PackedArrayChart(tokens, grammar, beamWidth, lexicalRowBeamWidth, cpvSegments);
         }
 
         super.initSentence(tokens);
@@ -163,9 +167,9 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         // }
 
         // Perform cartesian-product operation for each left-child segment
-        final Future<?>[] futures = new Future[threads];
+        final Future<?>[] futures = new Future[cpvSegments];
 
-        for (int i = 0; i < threads; i++) {
+        for (int i = 0; i < cpvSegments; i++) {
             final int segment = i;
             futures[i] = cellExecutor.submit(new Runnable() {
                 @Override
@@ -177,7 +181,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         }
 
         // Wait for CPV tasks to complete.
-        for (int i = 0; i < threads; i++) {
+        for (int i = 0; i < cpvSegments; i++) {
             try {
                 futures[i].get();
             } catch (final InterruptedException ignore) {
@@ -199,15 +203,15 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
             final int leftCellIndex = chart.cellIndex(start, midpoint);
             final int rightCellIndex = chart.cellIndex(midpoint, end);
 
-            final int leftChildrenStartIndex = chart.leftChildSegmentStartIndices[leftCellIndex * (threads + 1)
+            final int leftChildrenStartIndex = chart.leftChildSegmentStartIndices[leftCellIndex * (cpvSegments + 1)
                     + segment];
-            final int leftChildrenEndIndex = chart.leftChildSegmentStartIndices[leftCellIndex * (threads + 1) + segment
-                    + 1];
+            final int leftChildrenEndIndex = chart.leftChildSegmentStartIndices[leftCellIndex * (cpvSegments + 1)
+                    + segment + 1];
 
             final int rightStart = chart.minRightChildIndex(rightCellIndex);
             final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
 
-            for (int i = leftChildrenStartIndex; i <= leftChildrenEndIndex; i++) {
+            for (int i = leftChildrenStartIndex; i < leftChildrenEndIndex; i++) {
                 final short leftChild = chartNonTerminalIndices[i];
                 final float leftProbability = chartInsideProbabilities[i];
                 final int mask = cpf.mask(leftChild);

@@ -77,33 +77,43 @@ public abstract class Parser<G extends Grammar> {
             BaseLogger.singleton().fine(
                     "INFO: Skipping sentence. Length of " + result.sentenceLength + " is greater than maxLength ("
                             + opts.maxLength + ")");
-        } else {
+            result.parseBracketString = "()";
+            return result;
+        }
+
+        try {
             result.startTime();
             result.parse = findBestParse(result.tokens);
             result.stopTime();
 
             if (result.parse == null) {
                 result.parseBracketString = "()";
-            } else {
-                if (!opts.printUnkLabels) {
-                    result.parse.replaceLeafNodes(result.strTokens);
-                }
-
-                // stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
-                result.parseBracketString = result.parse.toString();
-                result.insideProbability = getInside(0, result.sentenceLength, grammar.startSymbol);
-                result.parserStats = getStats();
-
-                // TODO: we should be converting the tree in tree form, not in bracket string form
-                if (opts.binaryTreeOutput == false) {
-                    result.parseBracketString = TreeTools.unfactor(result.parseBracketString, grammar.grammarFormat);
-                }
-
-                // TODO: could evaluate accuracy here if input is a gold tree
+                return result;
             }
-        }
 
-        return result;
+            if (!opts.printUnkLabels) {
+                result.parse.replaceLeafNodes(result.strTokens);
+            }
+
+            // stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
+            result.parseBracketString = result.parse.toString();
+            result.insideProbability = getInside(0, result.sentenceLength, grammar.startSymbol);
+            result.parserStats = getStats();
+
+            // TODO: we should be converting the tree in tree form, not in bracket string form
+            if (opts.binaryTreeOutput == false) {
+                result.parseBracketString = TreeTools.unfactor(result.parseBracketString, grammar.grammarFormat);
+            }
+
+            // TODO: could evaluate accuracy here if input is a gold tree
+
+            return result;
+
+        } catch (final Exception e) {
+            BaseLogger.singleton().fine("ERROR: " + e.getMessage());
+            result.parseBracketString = "()";
+            return result;
+        }
     }
 
     /**
