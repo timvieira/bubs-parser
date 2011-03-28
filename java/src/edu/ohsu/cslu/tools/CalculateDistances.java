@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import jsr166y.forkjoin.ForkJoinPool;
-import jsr166y.forkjoin.RecursiveAction;
+import jsr166y.ForkJoinPool;
+import jsr166y.RecursiveAction;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.Threadable;
 import cltool4j.args4j.CmdLineException;
@@ -193,7 +193,7 @@ public class CalculateDistances extends BaseCommandlineTool {
 
                 final RowDistanceCalculator rdc1 = new RowDistanceCalculator(begin, begin + (end - begin) / 2);
                 final RowDistanceCalculator rdc2 = new RowDistanceCalculator(begin + (end - begin) / 2 + 1, end);
-                forkJoin(rdc1, rdc2);
+                invokeAll(rdc1, rdc2);
             }
         }
 
