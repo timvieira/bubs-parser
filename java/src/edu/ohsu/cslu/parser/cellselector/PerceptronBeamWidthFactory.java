@@ -2,15 +2,12 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.BinaryPerceptronSet;
 import edu.ohsu.cslu.perceptron.Classifier;
@@ -83,22 +80,27 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
 
         private int beamWidthValues[][];
         private boolean onlyFactored[][];
-        private LinkedList<ChartCell> cellList;
-        private Iterator<ChartCell> cellListIterator;
+        private int nextCell = 0;
+        private short[][] cellIndices;
+        private int openCells;
+
+        private ChartParser<?, ?> parser;
 
         @Override
-        public void initSentence(final ChartParser<?, ?> parser) {
+        public void initSentence(final ChartParser<?, ?> p) {
+            this.parser = p;
             grammarLeftFactored = parser.grammar.isLeftFactored();
-            computeBeamWidthValues(parser);
+            computeBeamWidthValues();
             // init(parser.chart, parser.currentInput.sentence, parser.grammar.isLeftFactored());
         }
 
-        private void computeBeamWidthValues(final ChartParser<?, ?> parser) {
+        private void computeBeamWidthValues() {
             SparseBitVector feats;
             int guessBeamWidth, guessClass;
             final int n = parser.currentInput.sentenceLength;
             beamWidthValues = new int[n][n + 1];
             onlyFactored = new boolean[n][n + 1];
+            openCells = 0;
             // cellList = new LinkedList<ChartCell>();
 
             final int[] beamClassCounts = new int[beamWidthModel.numClasses()];
@@ -112,6 +114,7 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
                 // for (int start = 0; start < end; start++) {
                 for (int end = n; end > start; end--) {
                     if (end - start == 1 && classifyBaseCells == false) {
+                        openCells++;
                         beamWidthValues[start][end] = Integer.MAX_VALUE;
                         // beamWidthValues[start][end] = maxBeamWidth;
                         // cellStats += String.format("%d,%d=%d ", start, end, maxBeamWidth);
@@ -135,44 +138,67 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
                         }
 
                         beamWidthValues[start][end] = guessBeamWidth;
+                        if (guessBeamWidth > 0) {
+                            openCells++;
+                        }
                     }
                 }
             }
 
-            // init cell list here because we don't classifiy cells in bottom-up order above
-            cellList = new LinkedList<ChartCell>();
+            // init cell list here because we don't classify cells in bottom-up order above
+            if (cellIndices == null || cellIndices.length < openCells) {
+                cellIndices = new short[openCells][2];
+            }
+            nextCell = 0;
+            int i = 0;
             for (int span = 1; span <= n; span++) {
                 for (int start = 0; start < n - span + 1; start++) { // beginning
                     if (beamWidthValues[start][start + span] > 0) {
-                        cellList.add(parser.chart.getCell(start, start + span));
+                        cellIndices[i++] = new short[] { (short) start, (short) (start + span) };
                     }
                 }
             }
 
             String classCounts = "";
-            for (int i = 0; i < beamWidthModel.numClasses(); i++) {
+            for (i = 0; i < beamWidthModel.numClasses(); i++) {
                 classCounts += String.format(" class%d:%d", i, beamClassCounts[i]);
             }
 
             BaseLogger.singleton().finer("INFO: beamconf: " + toString());
             BaseLogger.singleton().info("INFO: beamconf: " + classCounts);
-            cellListIterator = cellList.iterator();
+            nextCell = 0;
         }
 
         @Override
         public boolean hasNext() {
-            return cellListIterator.hasNext();
+            // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active tasks
+            // (if any) before proceeding on to the next row and before returning false when parsing is complete.
+            if (nextCell >= 1) {
+                if (nextCell >= openCells) {
+                    parser.waitForActiveTasks();
+                    return false;
+                }
+                final int nextSpan = cellIndices[nextCell][1] - cellIndices[nextCell][0];
+                final int currentSpan = cellIndices[nextCell - 1][1] - cellIndices[nextCell - 1][0];
+                if (nextSpan > currentSpan) {
+                    parser.waitForActiveTasks();
+                }
+            }
+
+            return nextCell < openCells;
         }
 
         @Override
         public short[] next() {
-            final ChartCell cell = cellListIterator.next();
-            return new short[] { cell.start(), cell.end() };
+            if (cellIndices[nextCell][1] == 0) {
+                System.out.println("Error");
+            }
+            return cellIndices[nextCell++];
         }
 
         @Override
         public void reset() {
-            cellListIterator = cellList.iterator();
+            nextCell = 0;
         }
 
         @Override

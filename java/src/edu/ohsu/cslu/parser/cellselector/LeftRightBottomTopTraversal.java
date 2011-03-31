@@ -17,7 +17,7 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     private int nextCell = 0;
     private int cells;
 
-    /** The size of the sentences */
+    /** The length of the current sentence */
     private short sentenceLength;
 
     private ChartParser<?, ?> parser;
@@ -56,11 +56,20 @@ public class LeftRightBottomTopTraversal extends CellSelector {
 
     @Override
     public boolean hasNext() {
-        // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active tasks (if
-        // any) before proceeding on to the next row and before returning false when parsing is complete.
-        if (nextCell >= 1 && cellIndices[nextCell - 1][1] == sentenceLength) {
-            parser.waitForActiveTasks();
+        // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active tasks
+        // (if any) before proceeding on to the next row and before returning false when parsing is complete.
+        if (nextCell >= 1) {
+            if (nextCell >= cells) {
+                parser.waitForActiveTasks();
+                return false;
+            }
+            final int nextSpan = cellIndices[nextCell][1] - cellIndices[nextCell][0];
+            final int currentSpan = cellIndices[nextCell - 1][1] - cellIndices[nextCell - 1][0];
+            if (nextSpan > currentSpan) {
+                parser.waitForActiveTasks();
+            }
         }
+
         return nextCell < cells;
     }
 

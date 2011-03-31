@@ -47,8 +47,8 @@ import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelectorFactory;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelectorFactory;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
@@ -56,6 +56,7 @@ import edu.ohsu.cslu.parser.ml.CartesianProductLeftChildHashSpmlParser;
 import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
+import edu.ohsu.cslu.parser.spmv.CellParallelCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CellParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
@@ -505,8 +506,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
         // If the individual parser configured a thread count (e.g. CellParallelCsrSpmvParser), compute CPU-time using
         // that thread count; otherwise, assume maxThreads is correct
         final int threads = GlobalConfigProperties.singleton().containsKey(OPT_CONFIGURED_THREAD_COUNT) ? GlobalConfigProperties
-                .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT)
-                : maxThreads;
+                .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT) : maxThreads;
 
         // Note that this CPU-time computation does not include GC time
         final float cpuTime = parseTime * threads;
