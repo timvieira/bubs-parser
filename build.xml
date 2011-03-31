@@ -1,95 +1,95 @@
 <!-- $Id: build.xml 7582 2008-06-17 21:57:19Z chriso $ -->
 <project name="shared-nlp-code" default="dist" basedir=".">
 
-    <property name="dir.shared.base" location="../shared-nlp-code" />
+	<property name="dir.shared.base" location="../shared-nlp-code" />
 
-    <property name="dir.build" location="build" />
-    <property name="dir.src" location="java/src" />
-    <property name="dir.doc" location="doc" />
-    <property name="dir.bsd.lib" location="java/bsd-lib" />
-    <property name="dir.lgpl.lib" location="java/lgpl-lib" />
-    <property name="dir.gpl.lib" location="java/gpl-lib" />
-    <property name="dir.build.doc" location="build-doc" />
+	<property name="dir.build" location="build" />
+	<property name="dir.src" location="java/src" />
+	<property name="dir.doc" location="doc" />
+	<property name="dir.bsd.lib" location="java/bsd-lib" />
+	<property name="dir.lgpl.lib" location="java/lgpl-lib" />
+	<property name="dir.gpl.lib" location="java/gpl-lib" />
+	<property name="dir.build.doc" location="build-doc" />
 
-    <property name="dir.shared.build" location="${dir.shared.base}/build" />
-    <property name="dir.shared.build.lib" location="${dir.shared.base}/build-lib" />
-    <property name="dir.shared.bsd.lib" location="${dir.shared.base}/java/bsd-lib" />
-    <property name="dir.shared.lgpl.lib" location="${dir.shared.base}/java/lgpl-lib" />
+	<property name="dir.shared.build" location="${dir.shared.base}/build" />
+	<property name="dir.shared.build.lib" location="${dir.shared.base}/build-lib" />
+	<property name="dir.shared.bsd.lib" location="${dir.shared.base}/java/bsd-lib" />
+	<property name="dir.shared.lgpl.lib" location="${dir.shared.base}/java/lgpl-lib" />
 
-    <property name="dir.dist" location="build-dist" />
+	<property name="dir.dist" location="build-dist" />
 
-    <!-- Use ant-contrib, cpptasks ,and genjar to enable if/then, 
+	<!-- Use ant-contrib, cpptasks ,and genjar to enable if/then, 
          gcc compilation, and better dependency analysis than classfileset -->
-    <taskdef classpath="${dir.shared.build.lib}/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
-    <taskdef classpath="${dir.shared.build.lib}/cpptasks.jar" resource="cpptasks.tasks" />
-    <taskdef classpath="${dir.shared.build.lib}/genjar.jar" resource="genjar.properties" />
-    <path id="path.svn">
-        <fileset dir="${dir.shared.build.lib}" includes="svnant.jar,svnkit.jar,svnClientAdapter.jar,svnjavahl.jar" />
-    </path>
-    <typedef classpathref="path.svn" resource="org/tigris/subversion/svnant/svnantlib.xml" />
+	<taskdef classpath="${dir.shared.build.lib}/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
+	<taskdef classpath="${dir.shared.build.lib}/cpptasks.jar" resource="cpptasks.tasks" />
+	<taskdef classpath="${dir.shared.build.lib}/genjar.jar" resource="genjar.properties" />
+	<path id="path.svn">
+		<fileset dir="${dir.shared.build.lib}" includes="svnant.jar,svnkit.jar,svnClientAdapter.jar,svnjavahl.jar" />
+	</path>
+	<typedef classpathref="path.svn" resource="org/tigris/subversion/svnant/svnantlib.xml" />
 
-    <path id="classpath.libs">
-        <fileset dir="${dir.bsd.lib}" includes="*.jar" />
-        <fileset dir="${dir.lgpl.lib}" includes="*.jar" />
-        <fileset dir="${dir.gpl.lib}" includes="*.jar" />
-    </path>
+	<path id="classpath.libs">
+		<fileset dir="${dir.bsd.lib}" includes="*.jar" />
+		<fileset dir="${dir.lgpl.lib}" includes="*.jar" />
+		<fileset dir="${dir.gpl.lib}" includes="*.jar" />
+	</path>
 
-    <!--
+	<!--
     ========================================================================
         Clean the entire project
     ========================================================================
     -->
-    <target name="clean" description="Clean the entire project">
-        <delete dir="build" />
-        <delete dir="build-dist" />
-    </target>
+	<target name="clean" description="Clean the entire project">
+		<delete dir="build" />
+		<delete dir="build-dist" />
+	</target>
 
-    <!--
+	<!--
     ========================================================================
         Compile all Java code
     ========================================================================
     -->
-    <target name="compile-java" description="Compile Java code and tools">
-        <!-- If the build directory doesn't already exist, create it -->
-        <mkdir dir="${dir.build}" />
-        <javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
-            <classpath refid="classpath.libs" />
-        </javac>
-    </target>
+	<target name="compile-java" description="Compile Java code and tools">
+		<!-- If the build directory doesn't already exist, create it -->
+		<mkdir dir="${dir.build}" />
+		<javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
+			<classpath refid="classpath.libs" />
+		</javac>
+	</target>
 
-    <!--
+	<!--
     ========================================================================
         Compile all native code
     ========================================================================
     -->
-    <target name="compile-native" description="Compile native code and tools">
-        <!-- If the build directory doesn't already exist, create it -->
-        <mkdir dir="${dir.dist}" />
+	<target name="compile-native" description="Compile native code and tools">
+		<!-- If the build directory doesn't already exist, create it -->
+		<mkdir dir="${dir.dist}" />
 
-        <!-- TODO Update to recognize Windows vs Unix and find the right gcc path -->
-        <cc name="gcc" outtype="executable" outfile="${dir.dist}/evalb" debug="true">
-            <fileset dir="c/evalb" includes="*.c" />
-        </cc>
+		<!-- TODO Update to recognize Windows vs Unix and find the right gcc path -->
+		<cc name="gcc" outtype="executable" outfile="${dir.dist}/evalb" debug="true">
+			<fileset dir="c/evalb" includes="*.c" />
+		</cc>
 
-        <delete dir="${dir.dist}" includes="*.o,dependencies.xml,history.xml" />
-    </target>
+		<delete dir="${dir.dist}" includes="*.o,dependencies.xml,history.xml" />
+	</target>
 
-    <!-- 
+	<!-- 
     ========================================================================
        Package documentation 
     ========================================================================
     -->
-    <target name="doc">
-        <javadoc destdir="${dir.build.doc}/javadoc">
-            <fileset dir="${dir.src}" includes="**/*.java" excludes="**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
-            <classpath refid="classpath.libs" />
-        </javadoc>
-        <copy todir="${dir.build.doc}">
-            <fileset dir="${dir.doc}" excludes="package-template.html" />
-        </copy>
-    </target>
+	<target name="doc">
+		<javadoc destdir="${dir.build.doc}/javadoc">
+			<fileset dir="${dir.src}" includes="**/*.java" excludes="**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
+			<classpath refid="classpath.libs" />
+		</javadoc>
+		<copy todir="${dir.build.doc}">
+			<fileset dir="${dir.doc}" excludes="package-template.html" />
+		</copy>
+	</target>
 
-    <!-- 
+	<!-- 
     ========================================================================
        Package an executable jar file and runner scripts for direct shell 
        usage and for submission to the Sun Grid Engine.
@@ -116,92 +116,98 @@
              class-file jar
     ========================================================================
     -->
-    <target name="package-jar" description="Package an executable jar file">
+	<target name="package-jar" description="Package an executable jar file">
 
-        <!-- Create the distribution directory if it doesn't already exist -->
-        <mkdir dir="${dir.dist}" />
+		<!-- Create the distribution directory if it doesn't already exist -->
+		<mkdir dir="${dir.dist}" />
 
-        <!-- We'll label the SVN revision and build time in the jar manifest -->
-        <svn svnkit="true">
-            <wcVersion path="." />
-        </svn>
-        <tstamp>
-            <format property="build.timestamp" pattern="MM-dd-yyyy HH:mm:ss" locale="en,US" />
-        </tstamp>
+		<!-- We'll label the SVN revision and build time in the jar manifest -->
+		<if>
+			<available file=".svn" />
+			<then>
+				<svn svnkit="true">
+					<wcVersion path="." />
+				</svn>
+			</then>
+		</if>
 
-        <!-- Generate manifest classpath for LGPL libraries -->
-        <if>
-            <isset property="include-lgpl-libs" />
-            <then>
-                <pathconvert property="path.lgpl.libs" pathsep=" ">
-                    <!-- remove absolute path -->
-                    <mapper type="flatten" />
-                    <fileset dir="${dir.lgpl.lib}" includes="*.jar" excludes="*-src.jar" />
-                </pathconvert>
-            </then>
-            <else>
-                <property name="path.lgpl.libs" value="" />
-            </else>
-        </if>
+		<tstamp>
+			<format property="build.timestamp" pattern="MM-dd-yyyy HH:mm:ss" locale="en,US" />
+		</tstamp>
 
-        <!-- Copy specified readme and license files into a temporary directory -->
-        <delete dir="package-jar-tmp" failonerror="false" />
-        <mkdir dir="package-jar-tmp/META-INF" />
-        <copy file="${readme-file}" tofile="package-jar-tmp/META-INF/README.txt" failonerror="false" />
-        <copy file="${license-file}" tofile="package-jar-tmp/META-INF/LICENSE.txt" failonerror="false" />
+		<!-- Generate manifest classpath for LGPL libraries -->
+		<if>
+			<isset property="include-lgpl-libs" />
+			<then>
+				<pathconvert property="path.lgpl.libs" pathsep=" ">
+					<!-- remove absolute path -->
+					<mapper type="flatten" />
+					<fileset dir="${dir.lgpl.lib}" includes="*.jar" excludes="*-src.jar" />
+				</pathconvert>
+			</then>
+			<else>
+				<property name="path.lgpl.libs" value="" />
+			</else>
+		</if>
 
-        <!-- Package the jar -->
-        <genjar jarfile="${dir.dist}/${tool-name}.jar">
-            <class name="${root-class}" />
-            <classes names="${additional-root-classes}" />
+		<!-- Copy specified readme and license files into a temporary directory -->
+		<delete dir="package-jar-tmp" failonerror="false" />
+		<mkdir dir="package-jar-tmp/META-INF" />
+		<copy file="${readme-file}" tofile="package-jar-tmp/META-INF/README.txt" failonerror="false" />
+		<copy file="${license-file}" tofile="package-jar-tmp/META-INF/LICENSE.txt" failonerror="false" />
 
-            <classpath>
-                <pathelement location="${dir.build}" />
-                <pathelement location="${dir.shared.build}" />
-                <fileset dir="${dir.bsd.lib}" includes="*.jar" />
-                <fileset dir="${dir.shared.bsd.lib}" includes="*.jar" />
-            </classpath>
+		<!-- Package the jar -->
+		<genjar jarfile="${dir.dist}/${tool-name}.jar">
+			<class name="${root-class}" />
+			<classes names="${additional-root-classes}" />
 
-            <runtimeclasspath>
-                <fileset dir="${dir.lgpl.lib}" includes="*.jar" />
-                <fileset dir="${dir.shared.lgpl.lib}" includes="*.jar" />
-            </runtimeclasspath>
+			<classpath>
+				<pathelement location="${dir.build}" />
+				<pathelement location="${dir.shared.build}" />
+				<fileset dir="${dir.bsd.lib}" includes="*.jar" />
+				<fileset dir="${dir.shared.bsd.lib}" includes="*.jar" />
+			</classpath>
 
-            <manifest>
-                <attribute name="Main-Class" value="${root-class}" />
-                <attribute name="Class-Path" value="${path.lgpl.libs}" />
-                <attribute name="Source-Revision" value="${revision.max}" />
-                <attribute name="Build-Time" value="${build.timestamp}" />
-                <attribute name="Version" value="${version}" />
-            </manifest>
+			<runtimeclasspath>
+				<fileset dir="${dir.lgpl.lib}" includes="*.jar" />
+				<fileset dir="${dir.shared.lgpl.lib}" includes="*.jar" />
+			</runtimeclasspath>
 
-            <!-- Include any additional files specified -->
-            <fileset dir="${additional-file-root}" includes="${additional-file-includes}" />
+			<manifest>
+				<attribute name="Main-Class" value="${root-class}" />
+				<attribute name="Class-Path" value="${path.lgpl.libs}" />
+				<attribute name="Source-Revision" value="${revision.max}" />
+				<attribute name="Build-Time" value="${build.timestamp}" />
+				<attribute name="Version" value="${version}" />
+			</manifest>
 
-            <!-- Include any additional files specified -->
-            <fileset dir="package-jar-tmp" includes="META-INF/*" />
+			<!-- Include any additional files specified -->
+			<fileset dir="${additional-file-root}" includes="${additional-file-includes}" />
 
-            <!-- And any additional jars specified by the caller -->
-            <zipgroupfileset dir="." includes="${additional-libs}" />
-        </genjar>
+			<!-- Include any additional files specified -->
+			<fileset dir="package-jar-tmp" includes="META-INF/*" />
 
-        <if>
-            <equals arg1="${srcjar}" arg2="true" />
-            <then>
-                <srcjar destfile="${dir.dist}/${tool-name}-src.jar" classjar="${dir.dist}/${tool-name}.jar">
-                    <sourcepath>
-                        <pathelement location="${dir.src}" />
-                        <pathelement location="${dir.shared.base}/java/src" />
-                    </sourcepath>
-                </srcjar>
-            </then>
-        </if>
+			<!-- And any additional jars specified by the caller -->
+			<zipgroupfileset dir="." includes="${additional-libs}" />
+		</genjar>
 
-        <!-- Clean up -->
-        <delete dir="package-jar-tmp" />
-    </target>
+		<if>
+			<equals arg1="${srcjar}" arg2="true" />
+			<then>
+				<srcjar destfile="${dir.dist}/${tool-name}-src.jar" classjar="${dir.dist}/${tool-name}.jar">
+					<sourcepath>
+						<pathelement location="${dir.src}" />
+						<pathelement location="${dir.shared.base}/java/src" />
+					</sourcepath>
+				</srcjar>
+			</then>
+		</if>
 
-    <!-- 
+		<!-- Clean up -->
+		<delete dir="package-jar-tmp" />
+	</target>
+
+	<!-- 
     ========================================================================
        Package an executable jar file and runner scripts for direct shell 
        usage and for submission to the Sun Grid Engine.
@@ -229,231 +235,231 @@
          * license-file (optional) Location of a license file for the tool
     ========================================================================
     -->
-    <target name="package-tool" description="Package an executable jar file">
+	<target name="package-tool" description="Package an executable jar file">
 
-        <!-- Default unspecified parameters -->
-        <property name="additional-libs" value="none" />
-        <property name="additional-root-classes" value="" />
-        <property name="grid-params" value="" />
-        <property name="additional-file-root" value="" />
-        <property name="additional-file-includes" value="none" />
-        <property name="version" value="" />
-        <property name="readme-file" value="none" />
-        <property name="license-file" value="none" />
+		<!-- Default unspecified parameters -->
+		<property name="additional-libs" value="none" />
+		<property name="additional-root-classes" value="" />
+		<property name="grid-params" value="" />
+		<property name="additional-file-root" value="" />
+		<property name="additional-file-includes" value="none" />
+		<property name="version" value="" />
+		<property name="readme-file" value="none" />
+		<property name="license-file" value="none" />
 
-        <!-- If 'heap-size' is not specified, default it to 128m -->
-        <property name="heap-size" value="128" />
+		<!-- If 'heap-size' is not specified, default it to 128m -->
+		<property name="heap-size" value="128" />
 
-        <antcall target="package-jar">
-            <param name="root-class" value="${root-class}" />
-            <param name="additional-root-classes" value="${additional-root-classes}" />
-            <param name="heap-size" value="${heap-size}" />
-            <param name="additional-libs" value="${additional-libs}" />
-            <param name="grid-params" value="${grid-params}" />
-            <param name="readme-file" value="${readme-file}" />
-            <param name="license-file" value="${license-file}" />
-        </antcall>
+		<antcall target="package-jar">
+			<param name="root-class" value="${root-class}" />
+			<param name="additional-root-classes" value="${additional-root-classes}" />
+			<param name="heap-size" value="${heap-size}" />
+			<param name="additional-libs" value="${additional-libs}" />
+			<param name="grid-params" value="${grid-params}" />
+			<param name="readme-file" value="${readme-file}" />
+			<param name="license-file" value="${license-file}" />
+		</antcall>
 
-        <!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
-        <delete file="${dir.dist}/${tool-name}" />
-        <copy file="${dir.shared.base}/java/tools/script-template.sh" tofile="${dir.dist}/${tool-name}" />
-        <fixcrlf file="${dir.dist}/${tool-name}" eol="unix" />
-        <replace file="${dir.dist}/${tool-name}">
-            <replacefilter token="%JAR%" value="${tool-name}.jar" />
-            <replacefilter token="%MEM%" value="${heap-size}" />
-        </replace>
-        <!-- Make the script executable -->
-        <chmod file="${dir.dist}/${tool-name}" perm="ug+x" />
+		<!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
+		<delete file="${dir.dist}/${tool-name}" />
+		<copy file="${dir.shared.base}/java/tools/script-template.sh" tofile="${dir.dist}/${tool-name}" />
+		<fixcrlf file="${dir.dist}/${tool-name}" eol="unix" />
+		<replace file="${dir.dist}/${tool-name}">
+			<replacefilter token="%JAR%" value="${tool-name}.jar" />
+			<replacefilter token="%MEM%" value="${heap-size}" />
+		</replace>
+		<!-- Make the script executable -->
+		<chmod file="${dir.dist}/${tool-name}" perm="ug+x" />
 
-        <!-- Generate a grid-engine runner script (submittable via qsub) -->
-        <delete file="${dir.dist}/grid-${tool-name}" failonerror="false" />
-        <copy file="${dir.shared.base}/java/tools/grid-script-template.sh" tofile="${dir.dist}/grid-${tool-name}" />
-        <fixcrlf file="${dir.dist}/grid-${tool-name}" eol="unix" />
-        <replace file="${dir.dist}/grid-${tool-name}">
-            <replacefilter token="%NAME%" value="${tool-name}" />
-            <replacefilter token="%ROOT-CLASS%" value="${root-class}" />
-            <replacefilter token="%CP_JARS%" value="${cp-jars}" />
-            <replacefilter token="%MEM%" value="${heap-size}" />
-            <replacefilter token="%PARAMS%" value="${grid-params}" />
-        </replace>
+		<!-- Generate a grid-engine runner script (submittable via qsub) -->
+		<delete file="${dir.dist}/grid-${tool-name}" failonerror="false" />
+		<copy file="${dir.shared.base}/java/tools/grid-script-template.sh" tofile="${dir.dist}/grid-${tool-name}" />
+		<fixcrlf file="${dir.dist}/grid-${tool-name}" eol="unix" />
+		<replace file="${dir.dist}/grid-${tool-name}">
+			<replacefilter token="%NAME%" value="${tool-name}" />
+			<replacefilter token="%ROOT-CLASS%" value="${root-class}" />
+			<replacefilter token="%CP_JARS%" value="${cp-jars}" />
+			<replacefilter token="%MEM%" value="${heap-size}" />
+			<replacefilter token="%PARAMS%" value="${grid-params}" />
+		</replace>
 
-    </target>
+	</target>
 
-    <!--
+	<!--
     ========================================================================
        Package an executable jar file and runner script, based on Scala 
        code. Parameters are identical to the package-tool target above.
     ========================================================================
     -->
-    <target name="package-scala-tool" description="Package an executable jar file">
+	<target name="package-scala-tool" description="Package an executable jar file">
 
-        <!-- Default unspecified parameters -->
-        <property name="additional-libs" value="none" />
-        <property name="additional-root-classes" value="" />
-        <property name="grid-params" value="" />
-        <property name="version" value="" />
-        <property name="readme-file" value="none" />
-        <property name="license-file" value="none" />
+		<!-- Default unspecified parameters -->
+		<property name="additional-libs" value="none" />
+		<property name="additional-root-classes" value="" />
+		<property name="grid-params" value="" />
+		<property name="version" value="" />
+		<property name="readme-file" value="none" />
+		<property name="license-file" value="none" />
 
-        <!-- If 'heap-size' is not specified, default it to 128m -->
-        <property name="heap-size" value="128" />
+		<!-- If 'heap-size' is not specified, default it to 128m -->
+		<property name="heap-size" value="128" />
 
-        <antcall target="package-jar">
-            <param name="root-class" value="${root-class}" />
-            <param name="additional-root-classes" value="${additional-root-classes}" />
-            <param name="heap-size" value="${heap-size}" />
-            <param name="additional-libs" value="${additional-libs}" />
-            <param name="grid-params" value="${grid-params}" />
-        </antcall>
+		<antcall target="package-jar">
+			<param name="root-class" value="${root-class}" />
+			<param name="additional-root-classes" value="${additional-root-classes}" />
+			<param name="heap-size" value="${heap-size}" />
+			<param name="additional-libs" value="${additional-libs}" />
+			<param name="grid-params" value="${grid-params}" />
+		</antcall>
 
-        <!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
-        <delete file="${dir.dist}/${tool-name}" />
-        <copy file="${dir.shared.base}/scala/tools/scala-script-template.sh" tofile="${dir.dist}/${tool-name}" />
-        <fixcrlf file="${dir.dist}/${tool-name}" eol="unix" />
-        <replace file="${dir.dist}/${tool-name}">
-            <replacefilter token="%JAR%" value="${tool-name}.jar" />
-            <replacefilter token="%MEM%" value="${heap-size}" />
-            <replacefilter token="%ROOTCLASS%" value="${root-class}" />
-        </replace>
-        <!-- Make the script executable -->
-        <chmod file="${dir.dist}/${tool-name}" perm="ug+x" />
+		<!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
+		<delete file="${dir.dist}/${tool-name}" />
+		<copy file="${dir.shared.base}/scala/tools/scala-script-template.sh" tofile="${dir.dist}/${tool-name}" />
+		<fixcrlf file="${dir.dist}/${tool-name}" eol="unix" />
+		<replace file="${dir.dist}/${tool-name}">
+			<replacefilter token="%JAR%" value="${tool-name}.jar" />
+			<replacefilter token="%MEM%" value="${heap-size}" />
+			<replacefilter token="%ROOTCLASS%" value="${root-class}" />
+		</replace>
+		<!-- Make the script executable -->
+		<chmod file="${dir.dist}/${tool-name}" perm="ug+x" />
 
-        <!-- TODO: Generate a grid-engine runner script (submittable via qsub) -->
+		<!-- TODO: Generate a grid-engine runner script (submittable via qsub) -->
 
-    </target>
+	</target>
 
-    <!-- 
+	<!-- 
     ========================================================================
        Targets to package various NLP executables 
     ========================================================================
     -->
 
-    <target name="select-features" depends="compile-java" description="Package feature selection/formatting tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.SelectFeatures" />
-            <param name="tool-name" value="select-features" />
-            <param name="srcjar" value="true" />
-        </antcall>
-    </target>
+	<target name="select-features" depends="compile-java" description="Package feature selection/formatting tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.tools.SelectFeatures" />
+			<param name="tool-name" value="select-features" />
+			<param name="srcjar" value="true" />
+		</antcall>
+	</target>
 
-    <target name="create-vector" depends="compile-java" description="Package vector creation tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.alignment.tools.CreateVectorFromVocabulary" />
-            <param name="tool-name" value="create-vector" />
-        </antcall>
-    </target>
+	<target name="create-vector" depends="compile-java" description="Package vector creation tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.CreateVectorFromVocabulary" />
+			<param name="tool-name" value="create-vector" />
+		</antcall>
+	</target>
 
-    <target name="filter-sentences" depends="compile-java" description="Package Sentence Filtering Tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.FilterSentences" />
-            <param name="tool-name" value="filter-sentences" />
-            <param name="heap-size" value="256" />
-        </antcall>
-    </target>
+	<target name="filter-sentences" depends="compile-java" description="Package Sentence Filtering Tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.tools.FilterSentences" />
+			<param name="tool-name" value="filter-sentences" />
+			<param name="heap-size" value="256" />
+		</antcall>
+	</target>
 
-    <target name="calculate-distances" depends="compile-java" description="Package Distance Calculation Tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.CalculateDistances" />
-            <param name="tool-name" value="calculate-distances" />
-            <param name="heap-size" value="512" />
-        </antcall>
-    </target>
+	<target name="calculate-distances" depends="compile-java" description="Package Distance Calculation Tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.tools.CalculateDistances" />
+			<param name="tool-name" value="calculate-distances" />
+			<param name="heap-size" value="512" />
+		</antcall>
+	</target>
 
-    <target name="induce-vocabularies" depends="compile-java" description="Package Vocabulary Induction Tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.alignment.tools.InduceMappedVocabularies" />
-            <param name="tool-name" value="induce-vocabularies" />
-        </antcall>
-    </target>
+	<target name="induce-vocabularies" depends="compile-java" description="Package Vocabulary Induction Tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.alignment.tools.InduceMappedVocabularies" />
+			<param name="tool-name" value="induce-vocabularies" />
+		</antcall>
+	</target>
 
-    <target name="summarize-grammar" depends="compile-java" description="Package grammar statistics tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
-            <param name="tool-name" value="summarize-grammar" />
-            <param name="heap-size" value="512" />
-        </antcall>
-    </target>
+	<target name="summarize-grammar" depends="compile-java" description="Package grammar statistics tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
+			<param name="tool-name" value="summarize-grammar" />
+			<param name="heap-size" value="512" />
+		</antcall>
+	</target>
 
-    <target name="serialize-model" depends="compile-java" description="Package grammar serialization tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
-            <param name="tool-name" value="serialize-model" />
-            <param name="heap-size" value="1200" />
-        </antcall>
-    </target>
+	<target name="serialize-model" depends="compile-java" description="Package grammar serialization tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
+			<param name="tool-name" value="serialize-model" />
+			<param name="heap-size" value="1200" />
+		</antcall>
+	</target>
 
-    <target name="parse" depends="compile-java" description="Package parser driver">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.parser.ParserDriver" />
-            <param name="tool-name" value="parse" />
-            <param name="heap-size" value="1500m" />
-            <param name="include-lgpl-libs" value="true" />
-            <param name="additional-file-root" value="${dir.src}" />
-            <param name="additional-file-includes" value="**/*.cl" />
-            <param name="license-file" value="java/tools/license.txt" />
-            <param name="readme-file" value="java/tools/parser-readme.txt" />
-        </antcall>
-    </target>
+	<target name="parse" depends="compile-java" description="Package parser driver">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.parser.ParserDriver" />
+			<param name="tool-name" value="parse" />
+			<param name="heap-size" value="1500m" />
+			<param name="include-lgpl-libs" value="true" />
+			<param name="additional-file-root" value="${dir.src}" />
+			<param name="additional-file-includes" value="**/*.cl" />
+			<param name="license-file" value="java/tools/license.txt" />
+			<param name="readme-file" value="java/tools/parser-readme.txt" />
+		</antcall>
+	</target>
 
-    <target name="grammar-train" depends="compile-java" description="Tools for inducing a CSLU grammar">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.GrammarTrainer" />
-            <param name="tool-name" value="grammar-train" />
-        </antcall>
-    </target>
-
-
-    <target name="tree-tools" depends="compile-java" description="Tools for tree transforms, binarization, and other tree-related things">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.TreeTools" />
-            <param name="tool-name" value="tree-tools" />
-        </antcall>
-    </target>
+	<target name="grammar-train" depends="compile-java" description="Tools for inducing a CSLU grammar">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.grammar.GrammarTrainer" />
+			<param name="tool-name" value="grammar-train" />
+		</antcall>
+	</target>
 
 
-    <target name="factor-trees" depends="compile-java" description="Package tree-factorization tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.FactorTrees" />
-            <param name="tool-name" value="factor-trees" />
-        </antcall>
-    </target>
-
-    <target name="induce-grammar" depends="compile-java" description="Package grammar induction tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.elvi.InduceGrammar" />
-            <param name="tool-name" value="induce-grammar" />
-        </antcall>
-    </target>
-
-    <target name="train-perceptron" depends="compile-java" description="Package perceptron model training tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.perceptron.ModelTrainer" />
-            <param name="tool-name" value="train-perceptron" />
-        </antcall>
-    </target>
-
-    <target name="parser-trainer" depends="compile-java" description="Package parser and FOM training tool">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.parser.ParserTrainer" />
-            <param name="tool-name" value="parser-trainer" />
-        </antcall>
-    </target>
+	<target name="tree-tools" depends="compile-java" description="Tools for tree transforms, binarization, and other tree-related things">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.tools.TreeTools" />
+			<param name="tool-name" value="tree-tools" />
+		</antcall>
+	</target>
 
 
-    <target name="stem" depends="compile-java" description="Package Porter Stemmer">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.common.PorterStemmer" />
-            <param name="tool-name" value="stem" />
-        </antcall>
-    </target>
+	<target name="factor-trees" depends="compile-java" description="Package tree-factorization tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.tools.FactorTrees" />
+			<param name="tool-name" value="factor-trees" />
+		</antcall>
+	</target>
 
-    <!-- 
+	<target name="induce-grammar" depends="compile-java" description="Package grammar induction tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.elvi.InduceGrammar" />
+			<param name="tool-name" value="induce-grammar" />
+		</antcall>
+	</target>
+
+	<target name="train-perceptron" depends="compile-java" description="Package perceptron model training tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.perceptron.ModelTrainer" />
+			<param name="tool-name" value="train-perceptron" />
+		</antcall>
+	</target>
+
+	<target name="parser-trainer" depends="compile-java" description="Package parser and FOM training tool">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.parser.ParserTrainer" />
+			<param name="tool-name" value="parser-trainer" />
+		</antcall>
+	</target>
+
+
+	<target name="stem" depends="compile-java" description="Package Porter Stemmer">
+		<antcall target="package-tool">
+			<param name="root-class" value="edu.ohsu.cslu.common.PorterStemmer" />
+			<param name="tool-name" value="stem" />
+		</antcall>
+	</target>
+
+	<!-- 
     ========================================================================
        Package all NLP applications
     ========================================================================
     -->
-    <!-- TODO: Re-add compile-native -->
-    <target name="dist" depends="filter-sentences,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,serialize-model,parse,tree-tools,train-perceptron,stem" description="Package all NLP application">
-    </target>
+	<!-- TODO: Re-add compile-native -->
+	<target name="dist" depends="filter-sentences,select-features,calculate-distances,induce-vocabularies,create-vector,summarize-grammar,serialize-model,parse,tree-tools,train-perceptron,stem" description="Package all NLP application">
+	</target>
 
 </project>
