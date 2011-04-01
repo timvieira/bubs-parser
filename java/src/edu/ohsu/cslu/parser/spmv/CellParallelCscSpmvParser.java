@@ -2,11 +2,10 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
+import jsr166y.ForkJoinTask;
 import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
@@ -29,20 +28,17 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 public final class CellParallelCscSpmvParser extends CscSpmvParser {
 
     /** The number of threads configured for cartesian-product and binary grammar intersection */
-    private final int threads;
+    private final int cellThreads;
 
     /** The number of tasks to split cartesian-product operation into. Normally a multiple of the number of threads. */
     private final int cpvSegments;
 
     /**
      * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into segments of
-     * roughly equal size for distribution between threads. Length is {@link #threads} + 1 (to avoid falling off the
+     * roughly equal size for distribution between threads. Length is {@link #cellThreads} + 1 (to avoid falling off the
      * end)
      */
     private final int[] binaryRowSegments;
-
-    // TODO Remove - add threads to PackedArraySpmvParser.executor instead
-    private final ExecutorService cellExecutor;
 
     // private Future<?> cpvClearTask;
 
@@ -66,10 +62,10 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         }
         segments[i] = grammar.cscBinaryPopulatedColumnOffsets.length - 1;
 
-        this.threads = i;
-        this.cpvSegments = threads * 2;
+        this.cellThreads = i;
+        this.cpvSegments = cellThreads * 2;
         final int configuredThreads = props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT) ? props
-                .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) * threads : threads;
+                .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) * cellThreads : cellThreads;
         GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
                 Integer.toString(configuredThreads));
 
@@ -85,15 +81,12 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
             BaseLogger.singleton().fine("INFO: CSC Binary Grammar segments of length: " + sb.toString());
         }
 
-        // Configure a thread pool
-        this.cellExecutor = Executors.newFixedThreadPool(threads);
-
         // Temporary cell storage for each row-level thread
         this.threadLocalTemporaryCells = new ThreadLocal<CellParallelCscSpmvParser.TemporaryChartCell[]>() {
             @Override
             protected TemporaryChartCell[] initialValue() {
-                final TemporaryChartCell[] tcs = new TemporaryChartCell[threads];
-                for (int j = 0; j < threads; j++) {
+                final TemporaryChartCell[] tcs = new TemporaryChartCell[cellThreads];
+                for (int j = 0; j < cellThreads; j++) {
                     tcs[j] = new TemporaryChartCell();
                 }
                 return tcs;
@@ -167,11 +160,11 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         // }
 
         // Perform cartesian-product operation for each left-child segment
-        final Future<?>[] futures = new Future[cpvSegments];
+        final ForkJoinTask<?>[] futures = new ForkJoinTask[cpvSegments];
 
         for (int i = 0; i < cpvSegments; i++) {
             final int segment = i;
-            futures[i] = cellExecutor.submit(new Runnable() {
+            futures[i] = threadPool.submit(new Runnable() {
                 @Override
                 public void run() {
                     cartesianProductSegment(start, end, segment, pf, nonTerminalIndices, insideProbabilities,
@@ -182,12 +175,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
 
         // Wait for CPV tasks to complete.
         for (int i = 0; i < cpvSegments; i++) {
-            try {
-                futures[i].get();
-            } catch (final InterruptedException ignore) {
-            } catch (final ExecutionException e) {
-                e.printStackTrace();
-            }
+            futures[i].join();
         }
 
         return new CartesianProductVector(grammar, cpvProbabilities, cpvMidpoints, 0);
@@ -256,18 +244,18 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
     @Override
     public void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
 
-        final Future<?>[] futures = new Future[threads];
+        final Future<?>[] futures = new Future[cellThreads];
         final TemporaryChartCell[] temporaryCells = threadLocalTemporaryCells.get();
 
         // Iterate over binary grammar segments
-        for (int i = 0; i < threads; i++) {
+        for (int i = 0; i < cellThreads; i++) {
             final int segmentStart = binaryRowSegments[i];
             final int segmentEnd = binaryRowSegments[i + 1];
             final TemporaryChartCell tmpCell = temporaryCells[i];
 
             if (cellSelector.hasCellConstraints()
                     && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end())) {
-                futures[i] = cellExecutor.submit(new Runnable() {
+                futures[i] = threadPool.submit(new Runnable() {
 
                     @Override
                     public void run() {
@@ -279,7 +267,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
                     }
                 });
             } else {
-                futures[i] = cellExecutor.submit(new Runnable() {
+                futures[i] = threadPool.submit(new Runnable() {
 
                     @Override
                     public void run() {
@@ -312,7 +300,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
             // packedArrayCell.tmpMidpoints = tmpCell0.midpoints;
 
             // Wait for each other task to complete and merge results into the main temporary storage
-            for (int i = 1; i < threads; i++) {
+            for (int i = 1; i < cellThreads; i++) {
                 futures[i].get();
                 final TemporaryChartCell tmpCell = temporaryCells[i];
                 for (int j = 0; j < arrayLength; j++) {
@@ -329,12 +317,6 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         } catch (final ExecutionException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void shutdown() {
-        cellExecutor.shutdown();
-        super.shutdown();
     }
 
     private final class TemporaryChartCell {
