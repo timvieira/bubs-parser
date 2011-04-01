@@ -2,11 +2,9 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
+import jsr166y.ForkJoinPool;
+import jsr166y.ForkJoinTask;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -32,8 +30,10 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     protected final int lexicalRowBeamWidth;
     protected final int lexicalRowUnaries;
 
-    protected final ExecutorService executor;
-    protected LinkedList<Future<?>> currentTasks;
+    protected final ForkJoinPool threadPool;
+    protected final LinkedList<ForkJoinTask<?>> currentTasks;
+
+    private final int rowThreads;
 
     protected final ThreadLocal<float[]> threadLocalCpvProbabilities;
     protected final ThreadLocal<short[]> threadLocalCpvMidpoints;
@@ -41,18 +41,29 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     public PackedArraySpmvParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
 
-        if (GlobalConfigProperties.singleton().containsKey(ParserDriver.OPT_ROW_THREAD_COUNT)) {
-            final int rowThreads = GlobalConfigProperties.singleton().getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT);
+        final ConfigProperties props = GlobalConfigProperties.singleton();
+
+        if (props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT)
+                || props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT)) {
+
+            this.rowThreads = props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT) ? props
+                    .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) : 1;
+            final int cellThreads = props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT) ? props
+                    .getIntProperty(ParserDriver.OPT_CELL_THREAD_COUNT) : 1;
+
+            final int threads = rowThreads * cellThreads;
+
             GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
-                    Integer.toString(rowThreads));
+                    Integer.toString(threads));
 
             // Configure thread pool and current-task list
-            this.executor = Executors.newFixedThreadPool(rowThreads);
-            this.currentTasks = new LinkedList<Future<?>>();
+            this.threadPool = new ForkJoinPool(threads);
+            this.currentTasks = new LinkedList<ForkJoinTask<?>>();
 
         } else {
+            this.rowThreads = 1;
             this.currentTasks = null;
-            this.executor = null;
+            this.threadPool = null;
         }
 
         // And thread-local cartesian-product vector storage
@@ -73,7 +84,6 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         };
 
         // Pruning Parameters
-        final ConfigProperties props = GlobalConfigProperties.singleton();
         if (props.containsKey("maxBeamWidth")) {
             beamWidth = props.getIntProperty("maxBeamWidth");
             lexicalRowBeamWidth = props.getIntProperty("lexicalRowBeamWidth");
@@ -100,8 +110,8 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     @Override
     protected void visitCell(final short start, final short end) {
 
-        if (executor != null) {
-            currentTasks.add(executor.submit(new Runnable() {
+        if (threadPool != null && rowThreads > 1) {
+            currentTasks.add(threadPool.submit(new Runnable() {
                 @Override
                 public void run() {
                     internalVisitCell(start, end);
@@ -115,15 +125,9 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
     @Override
     public void waitForActiveTasks() {
-        if (executor != null) {
-            try {
-                for (final Future<?> f : currentTasks) {
-                    f.get();
-                }
-            } catch (final InterruptedException e) {
-                e.printStackTrace();
-            } catch (final ExecutionException e) {
-                e.printStackTrace();
+        if (threadPool != null) {
+            for (final ForkJoinTask<?> t : currentTasks) {
+                t.join();
             }
             currentTasks.clear();
         }
@@ -447,8 +451,8 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
     @Override
     public void shutdown() {
-        if (executor != null) {
-            executor.shutdown();
+        if (threadPool != null) {
+            threadPool.shutdown();
         }
     }
 
