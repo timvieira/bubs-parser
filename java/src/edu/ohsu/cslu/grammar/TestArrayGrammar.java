@@ -4,12 +4,12 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.tests.SharedNlpTests;
+import edu.ohsu.cslu.tests.JUnit;
 
 public class TestArrayGrammar {
     @Test
     public void testF2_21_R2_unk() throws Exception {
-        final Grammar g = new Grammar(SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-unk.gz"));
+        final Grammar g = new Grammar(JUnit.unitTestDataAsReader("grammars/f2-21-R2-unk.gz"));
         assertEquals(11793, g.binaryProductions.size());
         assertEquals(242, g.unaryProductions.size());
         assertEquals(52000, g.numLexProds());

@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarFormatType;
 
 public class InduceGrammar extends BaseCommandlineTool {
 
@@ -17,7 +17,7 @@ public class InduceGrammar extends BaseCommandlineTool {
     private Factorization factorization = null;
 
     @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Grammar Format (required if factorization is specified)")
-    private Grammar.GrammarFormatType grammarFormatType = null;
+    private GrammarFormatType grammarFormatType = null;
 
     @Option(name = "-unk", aliases = { "--unk-threshold" }, metaVar = "threshold", usage = "The number of observations of a word required in order to add it to the lexicon.")
     private int lexicalUnkThreshold = 1;

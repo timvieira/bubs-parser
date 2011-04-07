@@ -21,7 +21,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFuncti
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
-import edu.ohsu.cslu.tests.SharedNlpTests;
+import edu.ohsu.cslu.tests.JUnit;
 
 /**
  * Tests FOM-pruned parsing, using row-level threading.
@@ -37,11 +37,11 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
 
     @Before
     public void setUp() throws IOException {
-        final G grammar = createGrammar(SharedNlpTests.unitTestDataAsReader("grammars/wsj.2-21.unk.R2-p1.gz"),
+        final G grammar = createGrammar(JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.R2-p1.gz"),
                 PerfectIntPairHashPackingFunction.class);
         final ParserDriver opts = new ParserDriver();
         opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, new BufferedReader(
-                SharedNlpTests.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
+                JUnit.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
         props.put("maxBeamWidth", "20");
@@ -81,10 +81,10 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
     public void testPruned() throws IOException {
 
         final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
         final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.fom")));
+                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.fom")));
 
         int i = 1;
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {

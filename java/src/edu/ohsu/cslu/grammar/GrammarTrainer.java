@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.tools.TreeTools;
 

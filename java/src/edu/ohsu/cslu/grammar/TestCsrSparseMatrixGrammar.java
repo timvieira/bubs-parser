@@ -10,7 +10,6 @@ import org.junit.Test;
 import edu.ohsu.cslu.ella.AllEllaTests;
 import edu.ohsu.cslu.ella.ProductionListGrammar;
 import edu.ohsu.cslu.ella.StringCountGrammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 
 public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
