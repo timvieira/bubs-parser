@@ -22,8 +22,12 @@
 #include <stdlib.h> //### added for exit, atoi decls
 #include <ctype.h>
 #include <string.h>
-#include <malloc.h>
 
+#ifdef __MACOSX__
+#include <malloc/malloc.h>
+#else
+#include <malloc.h>
+#endif
 
 /* Internal Data format -------------------------------------------*/
 /*                                                                 */
