@@ -12,8 +12,8 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedArraySpmvParser;
 import edu.ohsu.cslu.tests.FilteredRunner;
+import edu.ohsu.cslu.tests.JUnit;
 import edu.ohsu.cslu.tests.PerformanceTest;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 
 @RunWith(FilteredRunner.class)
 public class ProfilePackedArrayChart {
@@ -25,7 +25,7 @@ public class ProfilePackedArrayChart {
     public static void suiteSetUp() throws Exception {
         if (grammar == null) {
             grammar = new LeftCscSparseMatrixGrammar(
-                    SharedNlpTests.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
+                    JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
             parser = new CscSpmvParser(new ParserDriver(), grammar);
         }
 

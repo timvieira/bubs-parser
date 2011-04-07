@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
+import edu.ohsu.cslu.grammar.GrammarFormatType;
 
 public class ParseTree {
 

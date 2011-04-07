@@ -22,7 +22,7 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector;
-import edu.ohsu.cslu.tests.SharedNlpTests;
+import edu.ohsu.cslu.tests.JUnit;
 
 /**
  * Base test class for all sparse-matrix-vector parsers
@@ -62,7 +62,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         if (f2_21_grammar == null || f2_21_grammar.getClass() != grammarClass()
                 || ((SparseMatrixGrammar) f2_21_grammar).packingFunction.getClass() != cpfClass()) {
-            f2_21_grammar = createGrammar(SharedNlpTests.unitTestDataAsReader(PCFG_FILE));
+            f2_21_grammar = createGrammar(JUnit.unitTestDataAsReader(PCFG_FILE));
         }
 
         if (simpleGrammar1 == null || simpleGrammar1.getClass() != grammarClass()

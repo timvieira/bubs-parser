@@ -25,8 +25,8 @@ import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.tests.DetailedTest;
 import edu.ohsu.cslu.tests.FilteredRunner;
+import edu.ohsu.cslu.tests.JUnit;
 import edu.ohsu.cslu.tests.PerformanceTest;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial
@@ -166,10 +166,10 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
         final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
         final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                SharedNlpTests.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
+                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
 
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
@@ -185,7 +185,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     @Before
     public void setUp() throws Exception {
         if (f2_21_grammar == null || f2_21_grammar.getClass() != grammarClass()) {
-            f2_21_grammar = createGrammar(SharedNlpTests.unitTestDataAsReader(PCFG_FILE));
+            f2_21_grammar = createGrammar(JUnit.unitTestDataAsReader(PCFG_FILE));
         }
 
         if (simpleGrammar1 == null || simpleGrammar1.getClass() != grammarClass()) {

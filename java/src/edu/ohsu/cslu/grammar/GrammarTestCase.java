@@ -7,7 +7,6 @@ import java.io.StringReader;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
 
 public abstract class GrammarTestCase {
 

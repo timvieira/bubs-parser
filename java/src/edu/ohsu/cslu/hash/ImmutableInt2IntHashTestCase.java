@@ -15,7 +15,7 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import edu.ohsu.cslu.tests.SharedNlpTests;
+import edu.ohsu.cslu.tests.JUnit;
 
 @RunWith(Theories.class)
 public abstract class ImmutableInt2IntHashTestCase {
@@ -23,8 +23,8 @@ public abstract class ImmutableInt2IntHashTestCase {
     public final static int[] keys1 = new int[] { 0, 3, 4, 7, 10, 13, 15, 18, 19, 21, 22, 24, 26, 29, 30, 34 };
 
     @DataPoint
-    public final static int[] keys2 = new int[] { 10, 23, 54, 77, 103, 123, 157, 118, 198, 221, 322, 324,
-            426, 529, 530, 1034 };
+    public final static int[] keys2 = new int[] { 10, 23, 54, 77, 103, 123, 157, 118, 198, 221, 322, 324, 426, 529,
+            530, 1034 };
 
     @DataPoint
     public final static Object[] dp1 = new Object[] { keys1 };
@@ -49,16 +49,16 @@ public abstract class ImmutableInt2IntHashTestCase {
     public void testHashcode(final Object[] datapoint) {
         final int[] keys = (int[]) datapoint[0];
 
-        final ImmutableInt2IntHash hash = (datapoint.length > 1 ? hash(keys, ((Integer) datapoint[1])
-            .intValue()) : hash(keys, 0));
+        final ImmutableInt2IntHash hash = (datapoint.length > 1 ? hash(keys, ((Integer) datapoint[1]).intValue())
+                : hash(keys, 0));
 
         verifyHash(hash, keys);
     }
 
     @Test
     public void testR2Grammar() throws Exception {
-        final BufferedReader br = new BufferedReader(new InputStreamReader(SharedNlpTests
-            .unitTestDataAsStream("hash/f2_21_R2.rm")));
+        final BufferedReader br = new BufferedReader(new InputStreamReader(
+                JUnit.unitTestDataAsStream("hash/f2_21_R2.rm")));
         final IntArrayList keyList = new IntArrayList();
 
         for (String line = br.readLine(); line != null; line = br.readLine()) {

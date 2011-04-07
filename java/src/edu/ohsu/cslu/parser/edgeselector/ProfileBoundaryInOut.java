@@ -14,8 +14,8 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.tests.FilteredRunner;
+import edu.ohsu.cslu.tests.JUnit;
 import edu.ohsu.cslu.tests.PerformanceTest;
-import edu.ohsu.cslu.tests.SharedNlpTests;
 
 @RunWith(FilteredRunner.class)
 public class ProfileBoundaryInOut {
@@ -33,20 +33,20 @@ public class ProfileBoundaryInOut {
     public static void suiteSetUp() throws IOException {
         if (parentAnnotatedGrammar == null) {
             parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
-                    SharedNlpTests.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
+                    JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
         }
         final BoundaryInOut parentBioFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut,
                 parentAnnotatedGrammar, new BufferedReader(
-                        SharedNlpTests.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
+                        JUnit.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
 
         parentAnnotatedBio = (BoundaryInOutSelector) parentBioFactory.createEdgeSelector(parentAnnotatedGrammar);
 
         if (berkeleyGrammar == null) {
             berkeleyGrammar = new LeftCscSparseMatrixGrammar(
-                    SharedNlpTests.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
+                    JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
         }
         final BoundaryInOut berkeleyBioFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, berkeleyGrammar,
-                new BufferedReader(SharedNlpTests.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
+                new BufferedReader(JUnit.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
         berkeleyBio = (BoundaryInOutSelector) berkeleyBioFactory.createEdgeSelector(berkeleyGrammar);
     }
 

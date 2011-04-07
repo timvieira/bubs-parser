@@ -16,7 +16,7 @@ import java.util.LinkedHashSet;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
@@ -74,7 +74,7 @@ public final class StringCountGrammar implements CountGrammar {
      * @throws IOException
      */
     public StringCountGrammar(final Reader reader, final Factorization factorization,
-            final Grammar.GrammarFormatType grammarFormatType, final int lexicalUnkThreshold) throws IOException {
+            final GrammarFormatType grammarFormatType, final int lexicalUnkThreshold) throws IOException {
 
         // Temporary string-based maps recording counts of binary, unary, and lexical rules. We will transfer these
         // counts to more compact index-mapped maps after collapsing unknown words in the lexicon

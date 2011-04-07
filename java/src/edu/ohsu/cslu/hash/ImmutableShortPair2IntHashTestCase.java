@@ -16,7 +16,7 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import edu.ohsu.cslu.tests.SharedNlpTests;
+import edu.ohsu.cslu.tests.JUnit;
 import edu.ohsu.cslu.util.Math;
 
 @RunWith(Theories.class)
@@ -24,11 +24,10 @@ public abstract class ImmutableShortPair2IntHashTestCase {
 
     public final static short[] keys0 = new short[] { 1, 3 };
 
-    public final static short[] keys1 = new short[] { 0, 3, 4, 7, 10, 13, 15, 18, 19, 21, 22, 24, 26, 29, 30,
-            34 };
+    public final static short[] keys1 = new short[] { 0, 3, 4, 7, 10, 13, 15, 18, 19, 21, 22, 24, 26, 29, 30, 34 };
 
-    public final static short[] keys2 = new short[] { 10, 23, 54, 77, 103, 123, 157, 118, 198, 221, 322, 324,
-            426, 529, 530, 1034 };
+    public final static short[] keys2 = new short[] { 10, 23, 54, 77, 103, 123, 157, 118, 198, 221, 322, 324, 426, 529,
+            530, 1034 };
 
     @DataPoint
     public final static Object[] dp0 = new Object[] { keys0 };
@@ -52,8 +51,7 @@ public abstract class ImmutableShortPair2IntHashTestCase {
     protected abstract ImmutableShortPair2IntHash hash(short[][] keyPairs, int modulus);
 
     private ImmutableShortPair2IntHash hash(final Object[] datapoint, final short[][] keyPairs) {
-        return (datapoint.length > 1 ? hash(keyPairs, ((Integer) datapoint[1]).intValue())
-                : hash(keyPairs, 0));
+        return (datapoint.length > 1 ? hash(keyPairs, ((Integer) datapoint[1]).intValue()) : hash(keyPairs, 0));
     }
 
     @Theory
@@ -104,8 +102,7 @@ public abstract class ImmutableShortPair2IntHashTestCase {
     }
 
     private void verifyRecognitionMatrix(final String filename) throws IOException {
-        final BufferedReader br = new BufferedReader(new InputStreamReader(SharedNlpTests
-            .unitTestDataAsStream(filename)));
+        final BufferedReader br = new BufferedReader(new InputStreamReader(JUnit.unitTestDataAsStream(filename)));
         final ShortArrayList keyList = new ShortArrayList();
 
         for (String line = br.readLine(); line != null; line = br.readLine()) {

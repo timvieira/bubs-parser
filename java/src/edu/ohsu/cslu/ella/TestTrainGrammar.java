@@ -10,9 +10,9 @@ import org.junit.Test;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.ella.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.ella.TrainGrammar.EmIterationResult;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
+import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.tests.SharedNlpTests;
+import edu.ohsu.cslu.tests.JUnit;
 
 /**
  * Unified tests for training of a split-merge grammar.
@@ -36,7 +36,7 @@ public class TestTrainGrammar {
         tg.factorization = Factorization.RIGHT;
         tg.grammarFormatType = GrammarFormatType.Berkeley;
         final BufferedReader br = new BufferedReader(
-                SharedNlpTests.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"), 20 * 1024 * 1024);
+                JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"), 20 * 1024 * 1024);
         br.mark(20 * 1024 * 1024);
         final ProductionListGrammar plg0 = tg.induceGrammar(br);
         br.reset();

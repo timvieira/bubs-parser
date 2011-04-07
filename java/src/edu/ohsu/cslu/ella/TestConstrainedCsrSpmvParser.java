@@ -20,13 +20,13 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.ella.ProductionListGrammar.NoiseGenerator;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
+import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.tests.SharedNlpTests;
+import edu.ohsu.cslu.tests.JUnit;
 
 /**
  * Unit tests for {@link ConstrainedCsrSpmvParser}.
@@ -314,7 +314,7 @@ public class TestConstrainedCsrSpmvParser {
         final String corpus = "parsing/wsj_24.mrgEC.1-20";
 
         // Induce a grammar from the corpus
-        final ProductionListGrammar plg0 = induceProductionListGrammar(SharedNlpTests.unitTestDataAsReader(corpus));
+        final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
         final ConstrainedCsrSparseMatrixGrammar csr0 = csrGrammar(plg0);
 
         // Split the grammar
@@ -322,7 +322,7 @@ public class TestConstrainedCsrSpmvParser {
         final ConstrainedCsrSparseMatrixGrammar csr1 = csrGrammar(plg1);
 
         // Parse each tree in the training corpus with the split-1 grammar
-        parseAndCheck(SharedNlpTests.unitTestDataAsReader(corpus), csr0, csr1);
+        parseAndCheck(JUnit.unitTestDataAsReader(corpus), csr0, csr1);
     }
 
     private void parseAndCheck(final Reader corpus, final ConstrainedCsrSparseMatrixGrammar unsplitGrammar,
@@ -360,7 +360,7 @@ public class TestConstrainedCsrSpmvParser {
         final String corpus = "parsing/wsj_24.mrgEC.1-20";
 
         // Induce a grammar from the corpus
-        final ProductionListGrammar plg0 = induceProductionListGrammar(SharedNlpTests.unitTestDataAsReader(corpus));
+        final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
         final ConstrainedCsrSparseMatrixGrammar csr0 = csrGrammar(plg0);
 
         // Split the grammar
@@ -380,7 +380,7 @@ public class TestConstrainedCsrSpmvParser {
         final ConstrainedCsrSpmvParser p1 = new ConstrainedCsrSpmvParser(opts, csr1);
         final ConstrainedCsrSpmvParser p2 = new ConstrainedCsrSpmvParser(opts, csr2);
 
-        final BufferedReader br = new BufferedReader(SharedNlpTests.unitTestDataAsReader(corpus));
+        final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
             final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
@@ -400,7 +400,7 @@ public class TestConstrainedCsrSpmvParser {
         final String corpus = "parsing/wsj_24.mrgEC.1-20";
 
         // Induce a grammar from the corpus
-        final ProductionListGrammar plg0 = induceProductionListGrammar(SharedNlpTests.unitTestDataAsReader(corpus));
+        final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
         final ConstrainedCsrSparseMatrixGrammar csr0 = csrGrammar(plg0);
 
         // Split the grammar
@@ -430,7 +430,7 @@ public class TestConstrainedCsrSpmvParser {
         final ConstrainedCsrSpmvParser p2 = new ConstrainedCsrSpmvParser(opts, csr2);
         final ConstrainedCsrSpmvParser p3 = new ConstrainedCsrSpmvParser(opts, csr3);
 
-        final BufferedReader br = new BufferedReader(SharedNlpTests.unitTestDataAsReader(corpus));
+        final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
             final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);

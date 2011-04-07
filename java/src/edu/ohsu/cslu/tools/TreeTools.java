@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
-import edu.ohsu.cslu.grammar.Grammar.GrammarFormatType;
+import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.parser.ParseTree;
 
 public class TreeTools extends BaseCommandlineTool {

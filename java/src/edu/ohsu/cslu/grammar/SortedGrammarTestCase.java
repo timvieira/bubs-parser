@@ -9,7 +9,7 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.tests.SharedNlpTests;
+import edu.ohsu.cslu.tests.JUnit;
 
 @RunWith(Theories.class)
 public abstract class SortedGrammarTestCase extends GrammarTestCase {
@@ -38,7 +38,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
         // And a couple tests with a larger grammar
         final SparseMatrixGrammar g2 = (SparseMatrixGrammar) createGrammar(grammarClass(),
-                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"), cartesianProductFunctionClass);
+                JUnit.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"), cartesianProductFunctionClass);
         final PackingFunction f2 = g2.packingFunction;
         assertEquals(2, f2.unpackLeftChild(f2.pack((short) 2, (short) 0)));
         assertEquals(0, f2.unpackRightChild(f2.pack((short) 2, (short) 0)));
@@ -106,7 +106,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
     @Test
     public void testF2_21_R2_unk() throws Exception {
-        final Grammar g = createGrammar(grammarClass(), SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-unk.gz"));
+        final Grammar g = createGrammar(grammarClass(), JUnit.unitTestDataAsReader("grammars/f2-21-R2-unk.gz"));
         assertEquals(11793, g.numBinaryProds());
         assertEquals(242, g.numUnaryProds());
         assertEquals(52000, g.numLexProds());
@@ -130,7 +130,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     @Test
     public void testF2_21_R2_p1_unk() throws Exception {
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(grammarClass(),
-                SharedNlpTests.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"));
+                JUnit.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"));
         assertEquals(22299, g.numBinaryProds());
         assertEquals(745, g.numUnaryProds());
         assertEquals(52000, g.numLexProds());
