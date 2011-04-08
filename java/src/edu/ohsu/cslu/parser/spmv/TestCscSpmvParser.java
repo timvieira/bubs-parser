@@ -18,10 +18,10 @@
  */ 
 package edu.ohsu.cslu.parser.spmv;
 
+import org.cjunit.PerformanceTest;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
  * Tests for {@link CscSpmvParser}.

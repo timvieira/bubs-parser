@@ -15,13 +15,13 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.tests.Assert;
+import edu.ohsu.cslu.tests.JUnit;
 
 public class MappedCountGrammarTestCase extends CountGrammarTestCase {
 
@@ -60,17 +60,17 @@ public class MappedCountGrammarTestCase extends CountGrammarTestCase {
         final MappedCountGrammar mcg = grammar();
 
         final ProductionListGrammar plg = new ProductionListGrammar(mcg);
-        Assert.assertLogFractionEquals(0, plg.unaryLogProbability("top", "a"), 0.01f);
+        JUnit.assertLogFractionEquals(0, plg.unaryLogProbability("top", "a"), 0.01f);
 
-        Assert.assertLogFractionEquals(Math.log(5f / 12), plg.binaryLogProbability("a", "a", "b"), 0.01f);
-        Assert.assertLogFractionEquals(Math.log(3f / 12), plg.binaryLogProbability("a", "a", "a"), 0.01f);
-        Assert.assertLogFractionEquals(Math.log(3f / 12), plg.lexicalLogProbability("a", "c"), 0.01f);
-        Assert.assertLogFractionEquals(Math.log(1f / 12), plg.lexicalLogProbability("a", "d"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(5f / 12), plg.binaryLogProbability("a", "a", "b"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(3f / 12), plg.binaryLogProbability("a", "a", "a"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(3f / 12), plg.lexicalLogProbability("a", "c"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(1f / 12), plg.lexicalLogProbability("a", "d"), 0.01f);
 
-        Assert.assertLogFractionEquals(Math.log(7f / 16), plg.binaryLogProbability("b", "b", "a"), 0.01f);
-        Assert.assertLogFractionEquals(Math.log(3f / 16), plg.unaryLogProbability("b", "b"), 0.01f);
-        Assert.assertLogFractionEquals(Math.log(5f / 16), plg.lexicalLogProbability("b", "c"), 0.01f);
-        Assert.assertLogFractionEquals(Math.log(1f / 16), plg.lexicalLogProbability("b", "d"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(7f / 16), plg.binaryLogProbability("b", "b", "a"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(3f / 16), plg.unaryLogProbability("b", "b"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(5f / 16), plg.lexicalLogProbability("b", "c"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(1f / 16), plg.lexicalLogProbability("b", "d"), 0.01f);
     }
 
     // @Test

@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser.chart;
 
 import static org.junit.Assert.assertEquals;
 
+import org.cjunit.FilteredRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,7 +31,6 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
  * Unit tests for {@link PackedArrayChart}

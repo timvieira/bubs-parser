@@ -22,11 +22,10 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Comparator;
 
+import org.cjunit.FilteredRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
  * Unit tests for {@link SymbolSet}.

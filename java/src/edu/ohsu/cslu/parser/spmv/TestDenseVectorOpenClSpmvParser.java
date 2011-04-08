@@ -18,11 +18,11 @@
  */ 
 package edu.ohsu.cslu.parser.spmv;
 
+import org.cjunit.PerformanceTest;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
  * Unit tests for {@link DenseVectorOpenClSpmvParser}

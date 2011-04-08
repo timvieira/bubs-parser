@@ -27,6 +27,9 @@ import java.io.StringReader;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 
+import org.cjunit.DetailedTest;
+import org.cjunit.FilteredRunner;
+import org.cjunit.PerformanceTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -41,10 +44,7 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.tests.DetailedTest;
-import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.JUnit;
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
  * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial

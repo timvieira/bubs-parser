@@ -20,13 +20,13 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.util.logging.Level;
 
+import org.cjunit.PerformanceTest;
 import org.junit.Test;
 
 import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
  * Tests for {@link CellParallelCscSpmvParser}.

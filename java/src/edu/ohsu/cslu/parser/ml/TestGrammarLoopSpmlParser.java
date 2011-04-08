@@ -20,9 +20,8 @@ package edu.ohsu.cslu.parser.ml;
 
 import static org.junit.Assert.fail;
 
+import org.cjunit.PerformanceTest;
 import org.junit.Test;
-
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 public class TestGrammarLoopSpmlParser extends SparseMatrixLoopParserTestCase<GrammarLoopSpmlParser> {
 

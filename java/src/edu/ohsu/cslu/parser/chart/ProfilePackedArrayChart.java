@@ -20,6 +20,8 @@ package edu.ohsu.cslu.parser.chart;
 
 import static org.junit.Assert.assertEquals;
 
+import org.cjunit.FilteredRunner;
+import org.cjunit.PerformanceTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,9 +31,7 @@ import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedArraySpmvParser;
-import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.JUnit;
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 @RunWith(FilteredRunner.class)
 public class ProfilePackedArrayChart {
