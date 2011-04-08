@@ -22,7 +22,7 @@ if [ $OSTYPE = "cygwin" ]; then
     fi
   done
 
-  java -Xmx%MEM%m -server -XX:+UseParallelGC -XX:+UseParallelOldGC -jar $INSTALL_DIR/%JAR%  \
+  java -Xmx%MEM% -server -XX:+UseParallelGC -XX:+UseParallelOldGC -jar $INSTALL_DIR/%JAR%  \
       ${ARGS[1]} ${ARGS[2]} ${ARGS[3]} ${ARGS[4]} ${ARGS[5]} ${ARGS[6]} ${ARGS[7]} \
       ${ARGS[8]} ${ARGS[9]} ${ARGS[10]} ${ARGS[11]} ${ARGS[12]} ${ARGS[13]} ${ARGS[14]} \
       ${ARGS[15]} ${ARGS[16]} ${ARGS[17]} ${ARGS[18]} ${ARGS[19]} ${ARGS[20]} ${ARGS[21]} \
@@ -32,7 +32,7 @@ if [ $OSTYPE = "cygwin" ]; then
       ${ARGS[43]} ${ARGS[44]} ${ARGS[45]} ${ARGS[46]} ${ARGS[47]} ${ARGS[48]} ${ARGS[49]}
 else
   # Everything's simple if we're not in Cygwin  
-  java -Xmx%MEM%m -server -XX:+UseParallelGC -XX:+UseParallelOldGC -jar $INSTALL_DIR/%JAR% $@
+  java -Xmx%MEM% -server -XX:+UseParallelGC -XX:+UseParallelOldGC -jar $INSTALL_DIR/%JAR% $@
 fi
 
 

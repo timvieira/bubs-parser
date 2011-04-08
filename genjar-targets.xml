@@ -1,0 +1,179 @@
+<!-- $Id: build.xml 7582 2008-06-17 21:57:19Z chriso $ -->
+<project name="genjar-targets" basedir=".">
+
+    <!-- Use ant-contrib and genjar to enable if/then and better dependency analysis than classfileset -->
+    <taskdef classpath="${dir.build.lib}/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
+    <taskdef classpath="${dir.build.lib}/genjar.jar" resource="genjar.properties" />
+
+    <target name="svnversion" unless="source-revision">
+        <!-- Enable SVN tasks -->
+        <path id="path.svn">
+            <fileset dir="${dir.build.lib}" includes="svnant.jar,svnkit.jar,svnClientAdapter.jar,svnjavahl.jar" />
+        </path>
+        <typedef classpathref="path.svn" resource="org/tigris/subversion/svnant/svnantlib.xml" />
+        <if>
+            <available file=".svn" />
+            <then>
+                <svn svnkit="true">
+                    <wcVersion path="." />
+                </svn>
+            </then>
+        </if>
+        <property name="source-revision" value="${revision.max}" />
+    </target>
+
+    <!-- 
+    ========================================================================
+       Package an executable jar file.
+       
+       Called by individual targets below
+       
+       Arguments:
+         * root-class - Primary root classname (required)
+         * additional-root-classes - Additional root classnames, comma-delimited 
+             (optional)
+         * additional-libs (optional) List of any additional jars which should
+             be included in their entirety
+         * additional-file-root, additional-file-includes (optional) Fileset 
+             specifying any additional files which should be included
+         * heap-size (optional - default=128m) Heap size (e.g. 20m, 1g)
+         * package-gpl-libs (optional) Package GPL and LGPL libraries in generated 
+             jar
+         * reference-lgpl-libs (optional) Reference LGPL libraries in generated 
+             jar classpath. For non-GPL code, we don't want to package LGPL libraries 
+             directly into the generated jar file. For GPL code, see package-gpl-libs.
+         * version (options) Version number to include in jar file MANIFEST
+         * readme-file (optional) Location of a README file for the tool. If 
+             the file exists, it will be packaged as META-INF/README.txt 
+         * license-file (optional) Location of a license file for the tool. If
+             the file exists, it will be packaged as META-INF/LICENSE.txt 
+         * srcjar (optional) If true, build a source jar as well as the 
+             class-file jar
+             
+         * The following properties must be configured:
+         *  dir.build
+         *  dir.dist
+         *  dir.bsd.lib
+         *  dir.lgpl.lib
+         *  dir.gpl.lib
+    ========================================================================
+    -->
+    <target name="package-tool">
+
+        <!-- Default unspecified parameters -->
+        <property name="additional-libs" value="none" />
+        <property name="additional-root-classes" value="" />
+        <property name="grid-params" value="" />
+        <property name="additional-file-root" value="" />
+        <property name="additional-file-includes" value="none" />
+        <property name="version" value="" />
+        <property name="readme-file" value="none" />
+        <property name="license-file" value="none" />
+
+        <!-- If 'heap-size' is not specified, default it to 128m -->
+        <property name="heap-size" value="128m" />
+
+        <!-- Create the distribution directory if it doesn't already exist -->
+        <mkdir dir="${dir.dist}" />
+
+        <!-- Label the build time  -->
+        <tstamp>
+            <format property="build.timestamp" pattern="MM-dd-yyyy HH:mm:ss" locale="en,US" />
+        </tstamp>
+
+        <!-- Generate manifest classpath for LGPL libraries -->
+        <if>
+            <isset property="reference-lgpl-libs" />
+            <then>
+                <pathconvert property="path.lgpl.libs" pathsep=" ">
+                    <!-- remove absolute path -->
+                    <mapper type="flatten" />
+                    <fileset dir="${dir.lgpl.lib}" includes="*.jar" excludes="*-src.jar" />
+                </pathconvert>
+            </then>
+            <else>
+                <property name="path.lgpl.libs" value="" />
+            </else>
+        </if>
+
+        <if>
+            <isset property="package-gpl-libs" />
+            <then>
+                <path id="classpath">
+                    <pathelement location="${dir.build}" />
+                    <fileset dir="${dir.bsd.lib}" includes="*.jar" />
+                    <fileset dir="${dir.lgpl.lib}" includes="*.jar" />
+                    <fileset dir="${dir.gpl.lib}" includes="*.jar" />
+                </path>
+                <path id="sourcepath">
+                    <fileset dir="${dir.bsd.lib}" includes="*-src.jar" />
+                    <fileset dir="${dir.lgpl.lib}" includes="*-src.jar" />
+                    <fileset dir="${dir.gpl.lib}" includes="*-src.jar" />
+                </path>
+            </then>
+            <else>
+                <path id="classpath">
+                    <pathelement location="${dir.build}" />
+                    <fileset dir="${dir.bsd.lib}" includes="*.jar" />
+                </path>
+                <path id="sourcepath">
+                    <fileset dir="${dir.bsd.lib}" includes="*-src.jar" />
+                </path>
+            </else>
+        </if>
+
+        <!-- Copy specified readme and license files into a temporary directory -->
+        <delete dir="package-jar-tmp" failonerror="false" />
+        <mkdir dir="package-jar-tmp/META-INF" />
+        <copy file="${readme-file}" tofile="package-jar-tmp/META-INF/README.txt" failonerror="false" />
+        <copy file="${license-file}" tofile="package-jar-tmp/META-INF/LICENSE.txt" failonerror="false" />
+
+        <!-- Package the jar -->
+        <genjar jarfile="${dir.dist}/${tool-name}.jar">
+            <class name="${root-class}" />
+            <classes names="${additional-root-classes}" />
+            <classpath refid="classpath" />
+
+            <manifest>
+                <attribute name="Main-Class" value="${root-class}" />
+                <attribute name="Class-Path" value="${path.lgpl.libs}" />
+                <attribute name="Source-Revision" value="${source-revision}" />
+                <attribute name="Build-Time" value="${build.timestamp}" />
+                <attribute name="Version" value="${version}" />
+            </manifest>
+
+            <!-- Include any additional files specified -->
+            <fileset dir="${additional-file-root}" includes="${additional-file-includes}" />
+
+            <!-- Include any additional files specified -->
+            <fileset dir="package-jar-tmp" includes="META-INF/*" />
+
+            <!-- And any additional jars specified by the caller -->
+            <zipgroupfileset dir="." includes="${additional-libs}" />
+        </genjar>
+
+        <if>
+            <isset property="srcjar" />
+            <then>
+                <srcjar destfile="${dir.dist}/${tool-name}-src.jar" classjar="${dir.dist}/${tool-name}.jar">
+                    <sourcepath refid="sourcepath" />
+                </srcjar>
+            </then>
+        </if>
+
+        <!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
+        <delete file="${dir.dist}/${tool-name}" />
+        <copy file="${dir.bubs.base}/java/tools/script-template.sh" tofile="${dir.dist}/${tool-name}" />
+        <fixcrlf file="${dir.dist}/${tool-name}" eol="unix" />
+        <replace file="${dir.dist}/${tool-name}">
+            <replacefilter token="%JAR%" value="${tool-name}.jar" />
+            <replacefilter token="%MEM%" value="${heap-size}" />
+        </replace>
+        <!-- Make the script executable -->
+        <chmod file="${dir.dist}/${tool-name}" perm="ug+x" />
+
+        <!-- Clean up -->
+        <delete dir="package-jar-tmp" />
+    </target>
+
+</project>
