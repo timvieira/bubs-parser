@@ -24,12 +24,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Random;
 
+import org.cjunit.FilteredRunner;
+import org.cjunit.PerformanceTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import edu.ohsu.cslu.tests.FilteredRunner;
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
  * Unit tests for {@link BoundedPriorityQueue}

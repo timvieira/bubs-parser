@@ -18,9 +18,8 @@
  */ 
 package edu.ohsu.cslu.parser.ml;
 
+import org.cjunit.PerformanceTest;
 import org.junit.Test;
-
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 public class TestCartesianProductBinarySearchLeftChildSpmlParser extends
         SparseMatrixLoopParserTestCase<CartesianProductBinarySearchLeftChildSpmlParser> {

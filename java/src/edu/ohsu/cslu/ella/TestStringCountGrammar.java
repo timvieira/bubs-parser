@@ -27,13 +27,13 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Comparator;
 
+import org.cjunit.FilteredRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.tests.FilteredRunner;
 
 /**
  * Unit tests for {@link StringCountGrammar}.

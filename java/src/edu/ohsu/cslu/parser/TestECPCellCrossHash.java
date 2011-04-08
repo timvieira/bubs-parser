@@ -18,9 +18,8 @@
  */ 
 package edu.ohsu.cslu.parser;
 
+import org.cjunit.PerformanceTest;
 import org.junit.Test;
-
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 /**
  * Unit and performance tests for {@link TestECPCellCrossHash}

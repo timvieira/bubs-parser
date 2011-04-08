@@ -21,6 +21,8 @@ package edu.ohsu.cslu.parser.edgeselector;
 import java.io.BufferedReader;
 import java.io.IOException;
 
+import org.cjunit.FilteredRunner;
+import org.cjunit.PerformanceTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,9 +33,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
-import edu.ohsu.cslu.tests.FilteredRunner;
 import edu.ohsu.cslu.tests.JUnit;
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 @RunWith(FilteredRunner.class)
 public class ProfileBoundaryInOut {

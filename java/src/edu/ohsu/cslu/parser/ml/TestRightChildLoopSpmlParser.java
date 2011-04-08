@@ -20,11 +20,11 @@ package edu.ohsu.cslu.parser.ml;
 
 import java.io.Reader;
 
+import org.cjunit.PerformanceTest;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.RightShiftFunction;
-import edu.ohsu.cslu.tests.PerformanceTest;
 
 public class TestRightChildLoopSpmlParser extends SparseMatrixLoopParserTestCase<RightChildLoopSpmlParser> {
 
