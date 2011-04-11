@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import java.util.LinkedList;
@@ -312,11 +312,11 @@ public class ParseTree {
     // public boolean hasNodeAtSpan(ParseTree toFind, int start, int end) {
     // // instead of searching the entire tree, we should be able to find a node
     // // in O(1) by looking up [start][end] incidies
-    //        
+    //
     // if (indexedBySpan == false) {
     // indexBySpan();
     // }
-    //        
+    //
     // if (nodesBySpan[start][end] == null) return false;
     // for (ParseTree node : nodesBySpan[start][end]) {
     // if (toFind.contents != node.contents) return false;
@@ -325,7 +325,7 @@ public class ParseTree {
     // if (toFind.children.get(i).contents != node.children.get(i).contents) return false;
     // }
     // }
-    //        
+    //
     // return true;
     // }
 

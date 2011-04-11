@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import java.io.File;
@@ -102,7 +102,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
 
     // == Parser options ==
     @Option(name = "-p", aliases = { "--parser" }, metaVar = "parser", usage = "Parser implementation")
-    private ParserType parserType = ParserType.CKY;
+    private ParserType parserType = ParserType.CYK;
 
     @Option(name = "-rp", aliases = { "--research-parser" }, hidden = true, metaVar = "parser", usage = "Research Parser implementation")
     private ResearchParserType researchParserType = null;
@@ -110,7 +110,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     @Option(name = "-real", usage = "Use real semiring (sum) instead of tropical (max) for inside/outside calculations")
     public boolean realSemiring = false;
 
-    // @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar = "function", usage =
+    // @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar =
+    // "function", usage =
     // "Cartesian-product function (only used for SpMV parsers)")
     @Option(name = "-cpf", hidden = true, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
     private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash2;
@@ -172,7 +173,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     public boolean binaryTreeOutput = false;
 
     // == Other options ==
-    // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance passed in
+    // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance
+    // passed in
     @Option(name = "-x1", hidden = true, usage = "Tuning param #1")
     public static float param1 = -1;
 
@@ -189,27 +191,27 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
 
     /**
-     * Configuration property key for the number of row-level threads requested by the user. We handle threading at
-     * three levels; threading per-sentence is handled by the command-line tool infrastructure and specified with the
-     * standard '-xt' parameter. Row-level and cell-level threading are handled by the parser instance and specified
-     * with this option and with {@link #OPT_CELL_THREAD_COUNT}.
+     * Configuration property key for the number of row-level threads requested by the user. We handle
+     * threading at three levels; threading per-sentence is handled by the command-line tool infrastructure
+     * and specified with the standard '-xt' parameter. Row-level and cell-level threading are handled by the
+     * parser instance and specified with this option and with {@link #OPT_CELL_THREAD_COUNT}.
      */
     public final static String OPT_ROW_THREAD_COUNT = "rowThreads";
 
     /**
-     * Configuration property key for the number of cell-level threads requested by the user. We handle threading at
-     * three levels; threading per-sentence is handled by the command-line tool infrastructure and specified with the
-     * standard '-xt' parameter. Row-level and cell-level threading are handled by the parser instance and specified
-     * with this option and with {@link #OPT_ROW_THREAD_COUNT}.
+     * Configuration property key for the number of cell-level threads requested by the user. We handle
+     * threading at three levels; threading per-sentence is handled by the command-line tool infrastructure
+     * and specified with the standard '-xt' parameter. Row-level and cell-level threading are handled by the
+     * parser instance and specified with this option and with {@link #OPT_ROW_THREAD_COUNT}.
      */
     public final static String OPT_CELL_THREAD_COUNT = "cellThreads";
 
     /**
-     * Configuration property key for the number of row-level or cell-level threads actually used. In some cases the
-     * number of threads requested is impractical (e.g., if it is greater than the maximum number of cells in a row or
-     * greater than the number of grammar rows). {@link Parser} instances which make use of
-     * {@link #OPT_CELL_THREAD_COUNT} should populate this property to indicate the number of threads actually used.
-     * Among other potential uses, this allows {@link #cleanup()} to report accurate timing information.
+     * Configuration property key for the number of row-level or cell-level threads actually used. In some
+     * cases the number of threads requested is impractical (e.g., if it is greater than the maximum number of
+     * cells in a row or greater than the number of grammar rows). {@link Parser} instances which make use of
+     * {@link #OPT_CELL_THREAD_COUNT} should populate this property to indicate the number of threads actually
+     * used. Among other potential uses, this allows {@link #cleanup()} to report accurate timing information.
      */
     public final static String OPT_CONFIGURED_THREAD_COUNT = "actualThreads";
 
@@ -223,25 +225,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
 
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
-            switch (parserType) {
-            case CKY:
-                researchParserType = ResearchParserType.ECPCellCrossList;
-                break;
-            case Agenda:
-                researchParserType = ResearchParserType.APWithMemory;
-                break;
-            case Beam:
-                researchParserType = ResearchParserType.BeamSearchChartParser;
-                // Using the above beam parser until all the model stuff has been finished
-                // researchParserType = ResearchParserType.BeamCscSpmv;
-                break;
-            case Matrix:
-                researchParserType = ResearchParserType.CscSpmv;
-                cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash2;
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported parser type");
-            }
+            researchParserType = parserType.researchParserType;
         }
 
         if (researchParserType == ResearchParserType.ECPInsideOutside) {
@@ -273,23 +257,25 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
             } else if (new File(fomTypeOrModel).exists()) {
                 // Assuming boundary FOM
                 edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar,
-                        fileAsBufferedReader(fomTypeOrModel));
+                    fileAsBufferedReader(fomTypeOrModel));
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
 
             if (researchParserType == ResearchParserType.BSCPBeamConfTrain && featTemplate == null) {
-                throw new IllegalArgumentException("ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
+                throw new IllegalArgumentException(
+                    "ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
             }
 
             if (chartConstraintsModel != null) {
-                cellSelectorFactory = new OHSUCellConstraintsFactory(fileAsBufferedReader(chartConstraintsModel),
-                        chartConstraintsThresh, grammar.isLeftFactored());
+                cellSelectorFactory = new OHSUCellConstraintsFactory(
+                    fileAsBufferedReader(chartConstraintsModel), chartConstraintsThresh,
+                    grammar.isLeftFactored());
             }
 
             if (beamConfModelFileName != null) {
-                cellSelectorFactory = new PerceptronBeamWidthFactory(fileAsBufferedReader(beamConfModelFileName),
-                        beamConfBias);
+                cellSelectorFactory = new PerceptronBeamWidthFactory(
+                    fileAsBufferedReader(beamConfModelFileName), beamConfBias);
             }
         }
 
@@ -303,8 +289,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
             final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
 
         // Handle gzipped and non-gzipped grammar files
-        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
-                grammarFile)) : new FileInputStream(grammarFile);
+        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(
+            new FileInputStream(grammarFile)) : new FileInputStream(grammarFile);
 
         // Read the generic grammar in either text or binary-serialized format.
         final Grammar genericGrammar = Grammar.read(grammarInputStream);
@@ -323,85 +309,90 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
      * @return a Grammar instance
      * @throws Exception
      */
-    public static Grammar createGrammar(final Grammar genericGrammar, final ResearchParserType researchParserType,
+    public static Grammar createGrammar(final Grammar genericGrammar,
+            final ResearchParserType researchParserType,
             final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
 
         switch (researchParserType) {
-        case ECPInsideOutside:
-        case ECPCellCrossList:
-            return new LeftListGrammar(genericGrammar);
+            case ECPInsideOutside:
+            case ECPCellCrossList:
+                return new LeftListGrammar(genericGrammar);
 
-            // case ECPInsideOutside:
-        case ECPCellCrossHashGrammarLoop:
-        case ECPCellCrossHashGrammarLoop2:
-        case ECPCellCrossHash:
-            return new LeftHashGrammar(genericGrammar);
+                // case ECPInsideOutside:
+            case ECPCellCrossHashGrammarLoop:
+            case ECPCellCrossHashGrammarLoop2:
+            case ECPCellCrossHash:
+                return new LeftHashGrammar(genericGrammar);
 
-        case ECPCellCrossMatrix:
-            return new ChildMatrixGrammar(genericGrammar);
+            case ECPCellCrossMatrix:
+                return new ChildMatrixGrammar(genericGrammar);
 
-        case ECPGrammarLoop:
-        case ECPGrammarLoopBerkeleyFilter:
-            return genericGrammar;
+            case ECPGrammarLoop:
+            case ECPGrammarLoopBerkeleyFilter:
+                return genericGrammar;
 
-        case AgendaParser:
-        case APWithMemory:
-        case APGhostEdges:
-        case APDecodeFOM:
-            return new LeftRightListsGrammar(genericGrammar);
+            case AgendaParser:
+            case APWithMemory:
+            case APGhostEdges:
+            case APDecodeFOM:
+                return new LeftRightListsGrammar(genericGrammar);
 
-        case BeamSearchChartParser:
-        case BSCPPruneViterbi:
-        case BSCPOnlineBeam:
-        case BSCPBoundedHeap:
-        case BSCPExpDecay:
-        case BSCPPerceptronCell:
-        case BSCPFomDecode:
-        case BSCPBeamConfTrain:
-            // case BSCPBeamConf:
-        case CoarseCellAgenda:
-        case CoarseCellAgendaCSLUT:
-            return new LeftHashGrammar(genericGrammar);
+            case BeamSearchChartParser:
+            case BSCPPruneViterbi:
+            case BSCPOnlineBeam:
+            case BSCPBoundedHeap:
+            case BSCPExpDecay:
+            case BSCPPerceptronCell:
+            case BSCPFomDecode:
+            case BSCPBeamConfTrain:
+                // case BSCPBeamConf:
+            case CoarseCellAgenda:
+            case CoarseCellAgendaCSLUT:
+                return new LeftHashGrammar(genericGrammar);
 
-        case CsrSpmv:
-        case CellParallelCsrSpmv:
-            switch (cartesianProductFunctionType) {
-            case Simple:
+            case CsrSpmv:
+            case CellParallelCsrSpmv:
+                switch (cartesianProductFunctionType) {
+                    case Simple:
+                        return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+                    case PerfectHash2:
+                        return new CsrSparseMatrixGrammar(genericGrammar,
+                            PerfectIntPairHashPackingFunction.class);
+                    default:
+                        throw new Exception("Unsupported cartesian-product-function type: "
+                                + cartesianProductFunctionType);
+                }
+
+            case PackedOpenClSparseMatrixVector:
+            case DenseVectorOpenClSparseMatrixVector:
                 return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-            case PerfectHash2:
-                return new CsrSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
-            default:
-                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
-            }
 
-        case PackedOpenClSparseMatrixVector:
-        case DenseVectorOpenClSparseMatrixVector:
-            return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+            case CscSpmv:
+            case CellParallelCscSpmv:
+                switch (cartesianProductFunctionType) {
+                    case Simple:
+                        return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+                    case PerfectHash2:
+                        return new LeftCscSparseMatrixGrammar(genericGrammar,
+                            PerfectIntPairHashPackingFunction.class);
+                    default:
+                        throw new Exception("Unsupported cartesian-product-function type: "
+                                + cartesianProductFunctionType);
+                }
 
-        case CscSpmv:
-        case CellParallelCscSpmv:
-            switch (cartesianProductFunctionType) {
-            case Simple:
+            case LeftChildMatrixLoop:
+            case CartesianProductBinarySearch:
+            case CartesianProductBinarySearchLeftChild:
+            case CartesianProductHash:
+            case CartesianProductLeftChildHash:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-            case PerfectHash2:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
+            case RightChildMatrixLoop:
+                return new RightCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+            case GrammarLoopMatrixLoop:
+                return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+
             default:
-                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
-            }
-
-        case LeftChildMatrixLoop:
-        case CartesianProductBinarySearch:
-        case CartesianProductBinarySearchLeftChild:
-        case CartesianProductHash:
-        case CartesianProductLeftChildHash:
-            return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-        case RightChildMatrixLoop:
-            return new RightCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-        case GrammarLoopMatrixLoop:
-            return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-
-        default:
-            throw new Exception("Unsupported parser type: " + researchParserType);
+                throw new Exception("Unsupported parser type: " + researchParserType);
         }
     }
 
@@ -414,95 +405,98 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
 
     public Parser<?> createParser() {
         switch (researchParserType) {
-        case ECPCellCrossList:
-            return new ECPCellCrossList(this, (LeftListGrammar) grammar);
-        case ECPCellCrossHash:
-            return new ECPCellCrossHash(this, (LeftHashGrammar) grammar);
-        case ECPCellCrossHashGrammarLoop:
-            return new ECPCellCrossHashGrammarLoop(this, (LeftHashGrammar) grammar);
-        case ECPCellCrossHashGrammarLoop2:
-            return new ECPCellCrossHashGrammarLoop2(this, (LeftHashGrammar) grammar);
-        case ECPCellCrossMatrix:
-            return new ECPCellCrossMatrix(this, (ChildMatrixGrammar) grammar);
-        case ECPGrammarLoop:
-            return new ECPGrammarLoop(this, grammar);
-        case ECPGrammarLoopBerkeleyFilter:
-            return new ECPGrammarLoopBerkFilter(this, grammar);
-        case ECPInsideOutside:
-            return new ECPInsideOutside(this, (LeftListGrammar) grammar);
-            // return new ECPInsideOutside2(parserOptions, (LeftHashGrammar) grammar);
+            case ECPCellCrossList:
+                return new ECPCellCrossList(this, (LeftListGrammar) grammar);
+            case ECPCellCrossHash:
+                return new ECPCellCrossHash(this, (LeftHashGrammar) grammar);
+            case ECPCellCrossHashGrammarLoop:
+                return new ECPCellCrossHashGrammarLoop(this, (LeftHashGrammar) grammar);
+            case ECPCellCrossHashGrammarLoop2:
+                return new ECPCellCrossHashGrammarLoop2(this, (LeftHashGrammar) grammar);
+            case ECPCellCrossMatrix:
+                return new ECPCellCrossMatrix(this, (ChildMatrixGrammar) grammar);
+            case ECPGrammarLoop:
+                return new ECPGrammarLoop(this, grammar);
+            case ECPGrammarLoopBerkeleyFilter:
+                return new ECPGrammarLoopBerkFilter(this, grammar);
+            case ECPInsideOutside:
+                return new ECPInsideOutside(this, (LeftListGrammar) grammar);
+                // return new ECPInsideOutside2(parserOptions, (LeftHashGrammar) grammar);
 
-        case AgendaParser:
-            return new AgendaParser(this, (LeftRightListsGrammar) grammar);
-        case APWithMemory:
-            return new APWithMemory(this, (LeftRightListsGrammar) grammar);
-        case APGhostEdges:
-            return new APGhostEdges(this, (LeftRightListsGrammar) grammar);
-        case APDecodeFOM:
-            return new APDecodeFOM(this, (LeftRightListsGrammar) grammar);
+            case AgendaParser:
+                return new AgendaParser(this, (LeftRightListsGrammar) grammar);
+            case APWithMemory:
+                return new APWithMemory(this, (LeftRightListsGrammar) grammar);
+            case APGhostEdges:
+                return new APGhostEdges(this, (LeftRightListsGrammar) grammar);
+            case APDecodeFOM:
+                return new APDecodeFOM(this, (LeftRightListsGrammar) grammar);
 
-        case BeamSearchChartParser:
-            return new BeamSearchChartParser<LeftHashGrammar, CellChart>(this, (LeftHashGrammar) grammar);
-        case BSCPPruneViterbi:
-            return new BSCPPruneViterbi(this, (LeftHashGrammar) grammar);
-        case BSCPOnlineBeam:
-            return new BSCPWeakThresh(this, (LeftHashGrammar) grammar);
-        case BSCPBoundedHeap:
-            return new BSCPBoundedHeap(this, (LeftHashGrammar) grammar);
-        case BSCPExpDecay:
-            return new BSCPExpDecay(this, (LeftHashGrammar) grammar);
-        case BSCPPerceptronCell:
-            return new BSCPSkipBaseCells(this, (LeftHashGrammar) grammar);
-        case BSCPFomDecode:
-            return new BSCPFomDecode(this, (LeftHashGrammar) grammar);
-            // case BSCPBeamConf:
-            // return new BSCPBeamConf(this, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
-        case BSCPBeamConfTrain:
-            return new BSCPBeamConfTrain(this, (LeftHashGrammar) grammar);
+            case BeamSearchChartParser:
+                return new BeamSearchChartParser<LeftHashGrammar, CellChart>(this, (LeftHashGrammar) grammar);
+            case BSCPPruneViterbi:
+                return new BSCPPruneViterbi(this, (LeftHashGrammar) grammar);
+            case BSCPOnlineBeam:
+                return new BSCPWeakThresh(this, (LeftHashGrammar) grammar);
+            case BSCPBoundedHeap:
+                return new BSCPBoundedHeap(this, (LeftHashGrammar) grammar);
+            case BSCPExpDecay:
+                return new BSCPExpDecay(this, (LeftHashGrammar) grammar);
+            case BSCPPerceptronCell:
+                return new BSCPSkipBaseCells(this, (LeftHashGrammar) grammar);
+            case BSCPFomDecode:
+                return new BSCPFomDecode(this, (LeftHashGrammar) grammar);
+                // case BSCPBeamConf:
+                // return new BSCPBeamConf(this, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
+            case BSCPBeamConfTrain:
+                return new BSCPBeamConfTrain(this, (LeftHashGrammar) grammar);
 
-        case CoarseCellAgenda:
-            return new CoarseCellAgendaParser(this, (LeftHashGrammar) grammar);
-            // case CoarseCellAgendaCSLUT:
-            // final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(
-            // parserOptions.cellSelectorType, parserOptions.cellModelStream, parserOptions.cslutScoresStream);
-            // return new CoarseCellAgendaParserWithCSLUT(this, (LeftHashGrammar) grammar, cslutScores);
+            case CoarseCellAgenda:
+                return new CoarseCellAgendaParser(this, (LeftHashGrammar) grammar);
+                // case CoarseCellAgendaCSLUT:
+                // final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(
+                // parserOptions.cellSelectorType, parserOptions.cellModelStream,
+                // parserOptions.cslutScoresStream);
+                // return new CoarseCellAgendaParserWithCSLUT(this, (LeftHashGrammar) grammar, cslutScores);
 
-        case CsrSpmv:
-            return new CsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-        case CellParallelCsrSpmv:
-            return new CellParallelCsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-        case CscSpmv:
-            return new CscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case CellParallelCscSpmv:
-            return new CellParallelCscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case DenseVectorOpenClSparseMatrixVector:
-            return new DenseVectorOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-        case PackedOpenClSparseMatrixVector:
-            return new PackedOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
+            case CsrSpmv:
+                return new CsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
+            case CellParallelCsrSpmv:
+                return new CellParallelCsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
+            case CscSpmv:
+                return new CscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
+            case CellParallelCscSpmv:
+                return new CellParallelCscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
+            case DenseVectorOpenClSparseMatrixVector:
+                return new DenseVectorOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
+            case PackedOpenClSparseMatrixVector:
+                return new PackedOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
 
-        case LeftChildMatrixLoop:
-            return new LeftChildLoopSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case RightChildMatrixLoop:
-            return new RightChildLoopSpmlParser(this, (RightCscSparseMatrixGrammar) grammar);
-        case GrammarLoopMatrixLoop:
-            return new GrammarLoopSpmlParser(this, (CsrSparseMatrixGrammar) grammar);
-        case CartesianProductBinarySearch:
-            return new CartesianProductBinarySearchSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case CartesianProductBinarySearchLeftChild:
-            return new CartesianProductBinarySearchLeftChildSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case CartesianProductHash:
-            return new CartesianProductHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case CartesianProductLeftChildHash:
-            return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+            case LeftChildMatrixLoop:
+                return new LeftChildLoopSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+            case RightChildMatrixLoop:
+                return new RightChildLoopSpmlParser(this, (RightCscSparseMatrixGrammar) grammar);
+            case GrammarLoopMatrixLoop:
+                return new GrammarLoopSpmlParser(this, (CsrSparseMatrixGrammar) grammar);
+            case CartesianProductBinarySearch:
+                return new CartesianProductBinarySearchSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+            case CartesianProductBinarySearchLeftChild:
+                return new CartesianProductBinarySearchLeftChildSpmlParser(this,
+                    (LeftCscSparseMatrixGrammar) grammar);
+            case CartesianProductHash:
+                return new CartesianProductHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+            case CartesianProductLeftChildHash:
+                return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
 
-        default:
-            throw new IllegalArgumentException("Unsupported parser type");
+            default:
+                throw new IllegalArgumentException("Unsupported parser type");
         }
     }
 
     @Override
     protected FutureTask<ParseResult> lineTask(final String sentence) {
         return new FutureTask<ParseResult>(new Callable<ParseResult>() {
+
             @Override
             public ParseResult call() throws Exception {
                 return getLocal().parseSentence(sentence);
@@ -521,22 +515,26 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     protected void cleanup() {
         final float parseTime = (System.currentTimeMillis() - parseStartTime) / 1000f;
 
-        // If the individual parser configured a thread count (e.g. CellParallelCsrSpmvParser), compute CPU-time using
+        // If the individual parser configured a thread count (e.g. CellParallelCsrSpmvParser), compute
+        // CPU-time using
         // that thread count; otherwise, assume maxThreads is correct
-        final int threads = GlobalConfigProperties.singleton().containsKey(OPT_CONFIGURED_THREAD_COUNT) ? GlobalConfigProperties
-                .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT) : maxThreads;
+        final int threads = GlobalConfigProperties.singleton().containsKey(OPT_CONFIGURED_THREAD_COUNT)
+                ? GlobalConfigProperties.singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT) : maxThreads;
 
         // Note that this CPU-time computation does not include GC time
         final float cpuTime = parseTime * threads;
         final int sentencesParsed = Parser.sentenceNumber;
 
         final StringBuilder sb = new StringBuilder();
-        // TODO Add cpuSecondsPerSent and switch avgSecondsPerSent to report mean latency (not mean throughput)
-        sb.append(String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
-                sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
+        // TODO Add cpuSecondsPerSent and switch avgSecondsPerSent to report mean latency (not mean
+        // throughput)
+        sb.append(String.format(
+            "INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
+            sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
         if (parserInstances.getFirst() instanceof SparseMatrixVectorParser) {
             sb.append(String.format(" totalXProductTime=%d totalBinarySpMVTime=%d",
-                    SparseMatrixVectorParser.totalCartesianProductTime, SparseMatrixVectorParser.totalBinarySpMVTime));
+                SparseMatrixVectorParser.totalCartesianProductTime,
+                SparseMatrixVectorParser.totalBinarySpMVTime));
         }
 
         BaseLogger.singleton().info(sb.toString());

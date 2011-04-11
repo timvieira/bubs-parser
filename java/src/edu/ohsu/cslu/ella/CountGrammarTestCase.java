@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import static org.junit.Assert.assertEquals;

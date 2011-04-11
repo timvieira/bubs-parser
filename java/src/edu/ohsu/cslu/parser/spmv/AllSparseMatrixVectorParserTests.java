@@ -15,16 +15,17 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestCscSpmvParser.class, TestRowParallelCscSpmvParser.class, TestPrunedBeamCscSpmvParser.class,
-        TestCsrSpmvParser.class, TestRowParallelCsrSpmvParser.class, TestCellParallelCsrSpmvParser.class,
-        TestPrunedBeamCsrSpmvParser.class, TestDenseVectorOpenClSpmvParser.class
+@Suite.SuiteClasses({ TestCscSpmvParser.class, TestRowParallelCscSpmvParser.class,
+        TestPrunedBeamCscSpmvParser.class, TestCsrSpmvParser.class, TestRowParallelCsrSpmvParser.class,
+        TestCellParallelCsrSpmvParser.class, TestPrunedBeamCsrSpmvParser.class,
+        TestDenseVectorOpenClSpmvParser.class
 // , TestPackedOpenClSpmvParser
 })
 public class AllSparseMatrixVectorParserTests {

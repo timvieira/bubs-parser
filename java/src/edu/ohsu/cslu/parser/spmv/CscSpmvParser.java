@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
@@ -53,30 +53,34 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
                 && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end())) {
             // Multiply by the factored grammar rule matrix
             binarySpmvMultiply(cartesianProductVector, grammar.factoredCscBinaryPopulatedColumns,
-                    grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
-                    grammar.factoredCscBinaryProbabilities, targetCell.tmpPackedChildren,
-                    targetCell.tmpInsideProbabilities, targetCell.tmpMidpoints, 0,
-                    grammar.cscBinaryPopulatedColumns.length);
+                grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
+                grammar.factoredCscBinaryProbabilities, targetCell.tmpPackedChildren,
+                targetCell.tmpInsideProbabilities, targetCell.tmpMidpoints, 0,
+                grammar.cscBinaryPopulatedColumns.length);
         } else {
             // Multiply by the main grammar rule matrix
             binarySpmvMultiply(cartesianProductVector, grammar.cscBinaryPopulatedColumns,
-                    grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
-                    grammar.cscBinaryProbabilities, targetCell.tmpPackedChildren, targetCell.tmpInsideProbabilities,
-                    targetCell.tmpMidpoints, 0, grammar.cscBinaryPopulatedColumns.length);
+                grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
+                grammar.cscBinaryProbabilities, targetCell.tmpPackedChildren,
+                targetCell.tmpInsideProbabilities, targetCell.tmpMidpoints, 0,
+                grammar.cscBinaryPopulatedColumns.length);
         }
     }
 
     protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
             final int[] grammarCscBinaryPopulatedColumns, final int[] grammarCscBinaryPopulatedColumnOffsets,
             final short[] grammarCscBinaryRowIndices, final float[] grammarCscBinaryProbabilities,
-            final int[] targetCellChildren, final float[] targetCellProbabilities, final short[] targetCellMidpoints,
-            final int populatedColumnStartIndex, final int populatedColumnEndIndex) {
+            final int[] targetCellChildren, final float[] targetCellProbabilities,
+            final short[] targetCellMidpoints, final int populatedColumnStartIndex,
+            final int populatedColumnEndIndex) {
 
         // Iterate over possible populated child pairs (matrix columns)
         for (int i = populatedColumnStartIndex; i < populatedColumnEndIndex; i++) {
 
-            // TODO Try iterating through the midpoints array first and only look up the childPair for populated
-            // columns. Even though some entries will be impossible, the cache-efficiency of in-order iteration might be
+            // TODO Try iterating through the midpoints array first and only look up the childPair for
+            // populated
+            // columns. Even though some entries will be impossible, the cache-efficiency of in-order
+            // iteration might be
             // a win?
             final int childPair = grammarCscBinaryPopulatedColumns[i];
             final short cartesianProductMidpoint = cartesianProductVector.midpoints[childPair];
@@ -105,9 +109,10 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
     @Override
     public String getStats() {
         return super.getStats()
-                + (collectDetailedStatistics ? String.format(" avgXprod=%.1f cells=%d totalC=%d c_l=%d c_r=%d",
-                        sentenceCartesianProductSize * 1.0f / chart.cells, chart.cells, sentenceCellPopulation,
-                        sentenceLeftChildPopulation, sentenceRightChildPopulation, sentenceBinarySpMVTime) : "");
+                + (collectDetailedStatistics ? String.format(
+                    " avgXprod=%.1f cells=%d totalC=%d c_l=%d c_r=%d", sentenceCartesianProductSize * 1.0f
+                            / chart.cells, chart.cells, sentenceCellPopulation, sentenceLeftChildPopulation,
+                    sentenceRightChildPopulation, sentenceBinarySpMVTime) : "");
     }
 
 }

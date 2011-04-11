@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.perceptron;
 
 import java.io.BufferedWriter;
@@ -28,6 +28,7 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.ParserUtil;
 
 public class Perceptron extends Classifier {
+
     protected FloatVector[] rawWeights = null;
     protected int trainExampleNumber = 0;
     protected float learningRate;
@@ -75,8 +76,8 @@ public class Perceptron extends Classifier {
         final String[] tokens = biasString.split(",");
         if (tokens.length != numClasses()) {
             throw new IllegalArgumentException(
-                    "ERROR: if bias term is specified, must contain a bias for each class in the model.  numBias="
-                            + tokens.length + " numClasses=" + numClasses());
+                "ERROR: if bias term is specified, must contain a bias for each class in the model.  numBias="
+                        + tokens.length + " numClasses=" + numClasses());
         }
         for (int i = 0; i < tokens.length; i++) {
             bias[i] = Float.parseFloat(tokens[i]);
@@ -148,12 +149,16 @@ public class Perceptron extends Classifier {
     /**
      * Update weights for all features found in the specified feature vector by the specified alpha
      * 
-     * @param featureVector Features to update
-     * @param alpha Update amount (generally positive for positive examples and negative for negative examples)
-     * @param example The number of examples seen in the training corpus (i.e., the index of the example which caused
-     *            this update, 1-indexed).
+     * @param featureVector
+     *            Features to update
+     * @param alpha
+     *            Update amount (generally positive for positive examples and negative for negative examples)
+     * @param example
+     *            The number of examples seen in the training corpus (i.e., the index of the example which
+     *            caused this update, 1-indexed).
      */
-    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector, final int example) {
+    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector,
+            final int example) {
         for (int i = 0; i < numClasses(); i++) {
             if (i == goldClass) {
                 rawWeights[i].inPlaceAdd(featureVector, alpha);
@@ -174,8 +179,8 @@ public class Perceptron extends Classifier {
 
     protected String modelToString(final FloatVector[] model) {
         String s = "# === Perceptron Model ===\n";
-        s += String.format("numFeats=%d numClasses=%d bins=%s numTrainExamples=%d \n", model[0].length(), numClasses(),
-                binsStr, trainExampleNumber);
+        s += String.format("numFeats=%d numClasses=%d bins=%s numTrainExamples=%d \n", model[0].length(),
+            numClasses(), binsStr, trainExampleNumber);
         s += String.format("featTemplate: %s\n", featureTemplate);
         for (int i = 0; i < numClasses(); i++) {
             s += model[i].toString() + "\n";
@@ -194,14 +199,16 @@ public class Perceptron extends Classifier {
     }
 
     public static abstract class LossFunction {
+
         public abstract float computeLoss(int goldClass, int guessClass);
     }
 
     /**
-     * Allow loss functions other than Zero-One loss such that some errors can be considered better or worse than
-     * others.
+     * Allow loss functions other than Zero-One loss such that some errors can be considered better or worse
+     * than others.
      */
     public static class ZeroOneLoss extends LossFunction {
+
         @Override
         public float computeLoss(final int goldClass, final int guessClass) {
             if (goldClass == guessClass) {
@@ -213,6 +220,7 @@ public class Perceptron extends Classifier {
 
     // TODO: should also test out sliding scale -- more penalty the farther from the gold prediction
     public static class OverUnderLoss extends LossFunction {
+
         private float overPenalty, underPenalty;
 
         public OverUnderLoss(final float overPenalty, final float underPenalty) {

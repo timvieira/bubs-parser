@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import java.io.FileInputStream;
@@ -141,7 +141,8 @@ public class ParserUtil {
         return strToIntArray(str, ",", 0, -1);
     }
 
-    public static int[] strToIntArray(final String str, final String delim, final float defaultVal, final int numBins) {
+    public static int[] strToIntArray(final String str, final String delim, final float defaultVal,
+            final int numBins) {
         final float[] floatArray = strToFloatArray(str, delim, defaultVal, numBins);
         final int[] intArray = new int[floatArray.length];
         for (int i = 0; i < floatArray.length; i++) {
@@ -155,7 +156,8 @@ public class ParserUtil {
     }
 
     // assuming str has the form: x,y,z
-    public static float[] strToFloatArray(final String str, final String delim, final float defaultVal, int numBins) {
+    public static float[] strToFloatArray(final String str, final String delim, final float defaultVal,
+            int numBins) {
         final String[] tokens = str.split(delim);
         if (numBins == -1) {
             numBins = tokens.length;

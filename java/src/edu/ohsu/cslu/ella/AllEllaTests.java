@@ -15,15 +15,16 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestStringCountGrammar.class, TestMappedCountGrammar.class, TestConstrainedCountGrammar.class,
-        TestProductionListGrammar.class, TestConstrainedCsrSparseMatrixGrammar.class, TestConstrainedChart.class,
+@Suite.SuiteClasses({ TestStringCountGrammar.class, TestMappedCountGrammar.class,
+        TestConstrainedCountGrammar.class, TestProductionListGrammar.class,
+        TestConstrainedCsrSparseMatrixGrammar.class, TestConstrainedChart.class,
         TestConstrainedCsrSpmvParser.class })
 public class AllEllaTests {
 

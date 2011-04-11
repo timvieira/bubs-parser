@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.edgeselector;
 
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -33,7 +33,8 @@ public class InsideProb extends EdgeSelector {
     }
 
     @Override
-    public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
+    public float calcLexicalFOM(final int start, final int end, final short parent,
+            final float insideProbability) {
         return insideProbability;
     }
 }

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.beam;
 
 import java.util.List;
@@ -125,7 +125,7 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
         }
 
         final List<Chart.ChartEdge> goldEdges = (List<edu.ohsu.cslu.parser.chart.Chart.ChartEdge>) currentInput.inputTreeChart
-                .getEdgeList(cell.start(), cell.end()).clone();
+            .getEdgeList(cell.start(), cell.end()).clone();
 
         // remove lexical entries (we're adding them all by default) but keep unaries in span=1 cells
         if (cell.width() == 1) {
@@ -194,8 +194,8 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
 
         // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
         System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),
-                numGoldEdges, bool2int(cell.width() == 1), cellFeats.vectorLength(), ParserUtil.intArray2Str(cellFeats
-                        .elements())));
+            numGoldEdges, bool2int(cell.width() == 1), cellFeats.vectorLength(),
+            ParserUtil.intArray2Str(cellFeats.elements())));
         // System.out.println(String.format("DSTAT: %d : %d %s", goldRank, cellFeats.vectorLength(),
         // ParserUtil.intArray2Str(cellFeats.elements())));
 

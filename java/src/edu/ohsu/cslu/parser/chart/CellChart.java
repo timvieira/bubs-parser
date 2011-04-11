@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
@@ -89,6 +89,7 @@ public class CellChart extends Chart {
     // TODO: why is this not its own class in its own file? Do we actually need
     // the abstraction of a ChartCell? Can we put this all into Chart?
     public class HashSetChartCell extends ChartCell implements Comparable<HashSetChartCell> {
+
         public float fom = Float.NEGATIVE_INFINITY;
         protected boolean isLexCell;
 
@@ -289,6 +290,7 @@ public class CellChart extends Chart {
     }
 
     public class ChartEdge extends Chart.ChartEdge implements Comparable<ChartEdge> {
+
         public float fom = 0; // figure of merit
 
         // binary production

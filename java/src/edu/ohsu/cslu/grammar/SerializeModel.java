@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import java.io.BufferedReader;
@@ -80,7 +80,8 @@ public class SerializeModel extends BaseCommandlineTool {
             grammarReader = new FileReader(inputGrammarFile);
         }
 
-        // Try to create the output stream before we read in the source files. At least it will fail a little sooner if
+        // Try to create the output stream before we read in the source files. At least it will fail a little
+        // sooner if
         // the path is invalid
         OutputStream os = new FileOutputStream(serializedOutputFile);
         if (serializedOutputFile.endsWith(".gz")) {
@@ -101,14 +102,15 @@ public class SerializeModel extends BaseCommandlineTool {
             BaseLogger.singleton().info("Reading FOM...");
             // Handle gzipped and non-gzipped model files
             final BufferedReader fomModelReader = fomModelFileName.endsWith(".gz") ? new BufferedReader(
-                    new InputStreamReader(new GZIPInputStream(new FileInputStream(fomModelFileName))))
+                new InputStreamReader(new GZIPInputStream(new FileInputStream(fomModelFileName))))
                     : new BufferedReader(new FileReader(fomModelFileName));
             switch (fomType) {
-            case BoundaryInOut:
-                fom = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, g, fomModelReader).createEdgeSelector(g);
-                break;
-            default:
-                throw new UnsupportedOperationException("FOM type not supported");
+                case BoundaryInOut:
+                    fom = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, g, fomModelReader)
+                        .createEdgeSelector(g);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("FOM type not supported");
             }
         }
 

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.edgeselector;
 
 import java.io.BufferedReader;
@@ -71,7 +71,8 @@ public class WeightedFeatures extends EdgeSelector {
         while ((line = inStream.readLine()) != null) {
             goldTree = ParseTree.readBracketFormat(line);
             if (goldTree.isBinaryTree() == false) {
-                BaseLogger.singleton().info("ERROR: Training trees must be binarized exactly as used in decoding");
+                BaseLogger.singleton().info(
+                    "ERROR: Training trees must be binarized exactly as used in decoding");
                 System.exit(1);
             }
             goldChart = new GoldChart(goldTree, grammar);

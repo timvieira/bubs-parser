@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.cellselector;
 
 public abstract class CellConstraints extends CellSelector {
@@ -56,8 +56,8 @@ public abstract class CellConstraints extends CellSelector {
     }
 
     /**
-     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
-     * complete constituent).
+     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated
+     * with a complete constituent).
      * 
      * @param start
      * @param end

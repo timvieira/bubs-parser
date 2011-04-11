@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import java.io.BufferedReader;
@@ -96,25 +96,27 @@ public class TrainGrammar extends BaseCommandlineTool {
     final ProductionListGrammar induceGrammar(final BufferedReader trainingCorpusReader) throws IOException {
         // Induce M0 grammar from training corpus
         System.out.println("Inducing M0 grammar...");
-        return new ProductionListGrammar(new StringCountGrammar(trainingCorpusReader, factorization, grammarFormatType,
-                lexicalUnkThreshold));
+        return new ProductionListGrammar(new StringCountGrammar(trainingCorpusReader, factorization,
+            grammarFormatType, lexicalUnkThreshold));
 
     }
 
-    final void loadConstrainingCharts(final BufferedReader trainingCorpusReader, final ProductionListGrammar plGrammar)
-            throws IOException {
+    final void loadConstrainingCharts(final BufferedReader trainingCorpusReader,
+            final ProductionListGrammar plGrammar) throws IOException {
         // Convert M0 grammar to CSR format
         System.out.println("Converting to CSR format...");
         final CsrSparseMatrixGrammar csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar.binaryProductions,
-                plGrammar.unaryProductions, plGrammar.lexicalProductions, plGrammar.vocabulary, plGrammar.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+            plGrammar.unaryProductions, plGrammar.lexicalProductions, plGrammar.vocabulary,
+            plGrammar.lexicon, GrammarFormatType.Berkeley,
+            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         // Load in constraining charts from training corpus
         System.out.println("Loading constraining charts...");
         int count = 0;
-        for (String line = trainingCorpusReader.readLine(); line != null; line = trainingCorpusReader.readLine()) {
+        for (String line = trainingCorpusReader.readLine(); line != null; line = trainingCorpusReader
+            .readLine()) {
             final BinaryTree<String> goldTree = NaryTree.read(line, String.class).factor(grammarFormatType,
-                    factorization);
+                factorization);
             try {
                 final ConstrainedChart c = new ConstrainedChart(goldTree, csrGrammar0);
                 constrainingCharts.add(c);
@@ -151,7 +153,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
 
         return new EmIterationResult(new ProductionListGrammar(countGrammar, csrGrammar.parentGrammar),
-                Float.NEGATIVE_INFINITY);
+            Float.NEGATIVE_INFINITY);
     }
 
     public static void main(final String[] args) {
@@ -159,6 +161,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     }
 
     public static class EmIterationResult {
+
         final ProductionListGrammar plGrammar;
         final float corpusLikelihood;
 

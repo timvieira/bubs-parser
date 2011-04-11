@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
@@ -24,14 +24,16 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
- * Left-child loop exhaustive parser using a sparse-matrix grammar representation ( {@link LeftCscSparseMatrixGrammar}).
+ * Left-child loop exhaustive parser using a sparse-matrix grammar representation (
+ * {@link LeftCscSparseMatrixGrammar}).
  * 
  * @author Aaron Dunlop
  * @since Jun 13, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, DenseVectorChart> {
+public class LeftChildLoopSpmlParser extends
+        SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, DenseVectorChart> {
 
     public LeftChildLoopSpmlParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -77,10 +79,12 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<LeftCscSpars
 
                     // Unpack the grammar rule's right child
                     final int packedChildPair = grammar.cscBinaryPopulatedColumns[j];
-                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(packedChildPair);
+                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(
+                        packedChildPair);
 
                     // Look up the right child NT's probability in the right child cell
-                    final float rightInsideProbability = chart.insideProbabilities[rightCellOffset + rightChild];
+                    final float rightInsideProbability = chart.insideProbabilities[rightCellOffset
+                            + rightChild];
 
                     if (rightInsideProbability == Float.NEGATIVE_INFINITY) {
                         continue;
@@ -88,7 +92,8 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<LeftCscSpars
                     final float childProbability = leftInsideProbability + rightInsideProbability;
 
                     for (int entryIndex = grammar.cscBinaryPopulatedColumnOffsets[j]; entryIndex < grammar.cscBinaryPopulatedColumnOffsets[j + 1]; entryIndex++) {
-                        final float jointProbability = childProbability + grammar.cscBinaryProbabilities[entryIndex];
+                        final float jointProbability = childProbability
+                                + grammar.cscBinaryProbabilities[entryIndex];
                         final int parent = grammar.cscBinaryRowIndices[entryIndex];
 
                         final int targetCellParentIndex = targetCellOffset + parent;

@@ -15,10 +15,11 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 public class StringProduction {
+
     public final String parent;
     public final String leftChild;
     public final float probability;

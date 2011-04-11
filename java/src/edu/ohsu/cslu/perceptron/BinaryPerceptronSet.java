@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.perceptron;
 
 import java.io.BufferedReader;
@@ -35,8 +35,8 @@ public class BinaryPerceptronSet extends Classifier {
     String binsStr;
     boolean smallestBeamFirst = true;
 
-    public BinaryPerceptronSet(final float learningRate, final LossFunction lossFunction, final String binsStr,
-            final String featureTemplate) {
+    public BinaryPerceptronSet(final float learningRate, final LossFunction lossFunction,
+            final String binsStr, final String featureTemplate) {
 
         this.binsStr = binsStr;
         bins = ParserUtil.strToIntArray(binsStr);
@@ -93,7 +93,8 @@ public class BinaryPerceptronSet extends Classifier {
                     return i;
                 }
             }
-            return numClasses() - 1; // last classification of beam-width <= X was false, so return largest beam-width
+            return numClasses() - 1; // last classification of beam-width <= X was false, so return largest
+                                     // beam-width
         }
 
         for (int i = numClassifiers - 1; i > 0; i--) {
@@ -140,8 +141,8 @@ public class BinaryPerceptronSet extends Classifier {
         final String[] tokens = biasString.split(",");
         if (tokens.length != numClassifiers) {
             throw new IllegalArgumentException(
-                    "ERROR: if BinaryPerceptronSet bias term is specified, must contain a bias for each model.  numBias="
-                            + tokens.length + " numModels=" + numClassifiers);
+                "ERROR: if BinaryPerceptronSet bias term is specified, must contain a bias for each model.  numBias="
+                        + tokens.length + " numModels=" + numClassifiers);
         }
         for (int i = 0; i < tokens.length; i++) {
             classifiers[i].setBias("0," + tokens[i]);

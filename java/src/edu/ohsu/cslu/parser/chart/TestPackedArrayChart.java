@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import static org.junit.Assert.assertEquals;
@@ -49,12 +49,13 @@ public class TestPackedArrayChart {
     /**
      * Constructs the grammar (if necessary) and a new parser instance. Run prior to each test method.
      * 
-     * @throws Exception if unable to construct grammar or parser.
+     * @throws Exception
+     *             if unable to construct grammar or parser.
      */
     @Before
     public void setUp() throws Exception {
         simpleGrammar2 = GrammarTestCase.createGrammar(LeftCscSparseMatrixGrammar.class,
-                ExhaustiveChartParserTestCase.simpleGrammar2());
+            ExhaustiveChartParserTestCase.simpleGrammar2());
     }
 
     @Test

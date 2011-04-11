@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.agenda;
 
 import java.util.Collection;
@@ -106,14 +106,16 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
         // System.out.println(" setSpanMax: " + leftCell + " && " + rightCell);
 
-        if (cellConstraints.hasCellConstraints() && cellConstraints.getCellConstraints().isCellOpen(start, end)) {
+        if (cellConstraints.hasCellConstraints()
+                && cellConstraints.getCellConstraints().isCellOpen(start, end)) {
             Collection<Production> possibleProds;
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {
                     possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
-                            // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                            // final float prob = p.prob + leftCell.getInside(leftNT) +
+                            // rightCell.getInside(rightNT);
                             edge = chart.new ChartEdge(p, leftCell, rightCell);
                             // System.out.println(" considering: " + edge);
                             if (edge.fom > bestFOM) {

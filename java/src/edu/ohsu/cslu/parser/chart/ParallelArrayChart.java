@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
@@ -44,14 +44,16 @@ public abstract class ParallelArrayChart extends Chart {
     public final SparseMatrixGrammar sparseMatrixGrammar;
 
     /**
-     * The maximum number of entries allowed per cell. For exhaustive search, this must be equal to the size of the
-     * grammar's vocabulary, but for pruned search, we can limit cell population, reducing the chart's memory footprint
+     * The maximum number of entries allowed per cell. For exhaustive search, this must be equal to the size
+     * of the grammar's vocabulary, but for pruned search, we can limit cell population, reducing the chart's
+     * memory footprint
      */
     protected int beamWidth;
     protected int lexicalRowBeamWidth;
 
     /**
-     * Start indices for each cell. Computed from cell start and end indices and stored in the chart for convenience
+     * Start indices for each cell. Computed from cell start and end indices and stored in the chart for
+     * convenience
      */
     public final int[] cellOffsets;
 
@@ -61,8 +63,8 @@ public abstract class ParallelArrayChart extends Chart {
     protected final int chartArraySize;
 
     /**
-     * Parallel arrays storing non-terminals, inside probabilities, and the grammar rules and midpoints which produced
-     * them. Entries for each cell begin at indices from {@link #cellOffsets}.
+     * Parallel arrays storing non-terminals, inside probabilities, and the grammar rules and midpoints which
+     * produced them. Entries for each cell begin at indices from {@link #cellOffsets}.
      */
     public final float[] insideProbabilities;
     public final int[] packedChildren;
@@ -71,9 +73,12 @@ public abstract class ParallelArrayChart extends Chart {
     /**
      * Constructs a chart
      * 
-     * @param tokens Indices of sentence tokens
-     * @param sparseMatrixGrammar Grammar
-     * @param beamWidth The maximum number of entries allowed in a chart cell
+     * @param tokens
+     *            Indices of sentence tokens
+     * @param sparseMatrixGrammar
+     *            Grammar
+     * @param beamWidth
+     *            The maximum number of entries allowed in a chart cell
      */
     protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar,
             final int beamWidth, final int lexicalRowBeamWidth) {
@@ -108,7 +113,8 @@ public abstract class ParallelArrayChart extends Chart {
      * @param sparseMatrixGrammar
      */
     protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms());
+        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar
+            .numNonTerms());
     }
 
     /**
@@ -118,7 +124,8 @@ public abstract class ParallelArrayChart extends Chart {
      * @param chartArraySize
      * @param sparseMatrixGrammar
      */
-    protected ParallelArrayChart(final int size, final int chartArraySize, final SparseMatrixGrammar sparseMatrixGrammar) {
+    protected ParallelArrayChart(final int size, final int chartArraySize,
+            final SparseMatrixGrammar sparseMatrixGrammar) {
         super();
         this.sparseMatrixGrammar = sparseMatrixGrammar;
         this.size = size;
@@ -144,8 +151,8 @@ public abstract class ParallelArrayChart extends Chart {
     public abstract ParallelArrayChartCell getCell(final int start, final int end);
 
     /**
-     * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
-     * that of {@link #cellOffset(int, int)}
+     * Returns the index of the specified cell in the parallel chart arrays (note that this computation must
+     * agree with that of {@link #cellOffset(int, int)}
      * 
      * @param start
      * @param end
@@ -167,8 +174,8 @@ public abstract class ParallelArrayChart extends Chart {
     }
 
     /**
-     * Returns the offset of the specified cell in the parallel chart arrays (note that this computation must agree with
-     * that of {@link #cellIndex(int, int)}
+     * Returns the offset of the specified cell in the parallel chart arrays (note that this computation must
+     * agree with that of {@link #cellIndex(int, int)}
      * 
      * @param start
      * @param end
@@ -185,7 +192,8 @@ public abstract class ParallelArrayChart extends Chart {
         }
 
         final int priorCellBeamWidths = cellIndex(start, end) * this.beamWidth;
-        // If this cell is in the lexical row, we've seen 'start' prior lexical entries; otherwise we've seen the one in
+        // If this cell is in the lexical row, we've seen 'start' prior lexical entries; otherwise we've seen
+        // the one in
         // this diagonal too, so 'start + 1'
         final int priorLexicalCells = (end - start == 1) ? start : start + 1;
         return priorCellBeamWidths + priorLexicalCells * (this.lexicalRowBeamWidth - this.beamWidth);
@@ -223,6 +231,7 @@ public abstract class ParallelArrayChart extends Chart {
     }
 
     public abstract class ParallelArrayChartCell extends ChartCell {
+
         protected final int cellIndex;
         protected final int offset;
 
@@ -244,21 +253,26 @@ public abstract class ParallelArrayChart extends Chart {
 
         protected String formatCellEntry(final int nonterminal, final int childProductions,
                 final float insideProbability, final int midpoint) {
-            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
-            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
+            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
+                childProductions);
+            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
+                childProductions);
 
             if (rightChild == Production.UNARY_PRODUCTION) {
                 // Unary Production
-                return String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
-                        sparseMatrixGrammar.mapNonterminal(leftChild), insideProbability, midpoint);
+                return String.format("%s -> %s (%.5f, %d)\n",
+                    sparseMatrixGrammar.mapNonterminal(nonterminal),
+                    sparseMatrixGrammar.mapNonterminal(leftChild), insideProbability, midpoint);
             } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                 // Lexical Production
-                return String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
-                        sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint);
+                return String.format("%s -> %s (%.5f, %d)\n",
+                    sparseMatrixGrammar.mapNonterminal(nonterminal),
+                    sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint);
             } else {
-                return String.format("%s -> %s %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
-                        sparseMatrixGrammar.mapNonterminal(leftChild), sparseMatrixGrammar.mapNonterminal(rightChild),
-                        insideProbability, midpoint);
+                return String.format("%s -> %s %s (%.5f, %d)\n",
+                    sparseMatrixGrammar.mapNonterminal(nonterminal),
+                    sparseMatrixGrammar.mapNonterminal(leftChild),
+                    sparseMatrixGrammar.mapNonterminal(rightChild), insideProbability, midpoint);
             }
         }
     }

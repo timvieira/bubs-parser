@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.ml;
 
 import java.io.Reader;
@@ -29,39 +29,40 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.chart.Chart;
 
-public abstract class SparseMatrixLoopParserTestCase<P extends ChartParser<? extends Grammar, ? extends Chart>> extends
-        ExhaustiveChartParserTestCase<P> {
+public abstract class SparseMatrixLoopParserTestCase<P extends ChartParser<? extends Grammar, ? extends Chart>>
+        extends ExhaustiveChartParserTestCase<P> {
 
     @Override
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
-                new Object[] { grammarReader, LeftShiftFunction.class });
+            new Object[] { grammarReader, LeftShiftFunction.class });
     }
 
     /**
-     * Ensure the grammar is constructed with the Constructs the grammar (if necessary) and a new parser instance. Run
-     * prior to each test method.
+     * Ensure the grammar is constructed with the Constructs the grammar (if necessary) and a new parser
+     * instance. Run prior to each test method.
      * 
-     * @throws Exception if unable to construct grammar or parser.
+     * @throws Exception
+     *             if unable to construct grammar or parser.
      */
     @Override
     @Before
     public void setUp() throws Exception {
         if (f2_21_grammar != null
                 && (f2_21_grammar.getClass() != grammarClass() || ((SparseMatrixGrammar) f2_21_grammar)
-                        .cartesianProductFunction().getClass() != LeftShiftFunction.class)) {
+                    .cartesianProductFunction().getClass() != LeftShiftFunction.class)) {
             f2_21_grammar = null;
         }
 
         if (simpleGrammar1 != null
                 && (simpleGrammar1.getClass() != grammarClass() || ((SparseMatrixGrammar) simpleGrammar1)
-                        .cartesianProductFunction().getClass() != LeftShiftFunction.class)) {
+                    .cartesianProductFunction().getClass() != LeftShiftFunction.class)) {
             simpleGrammar1 = null;
         }
 
         if (simpleGrammar2 != null
                 && (simpleGrammar2.getClass() != grammarClass() || ((SparseMatrixGrammar) simpleGrammar2)
-                        .cartesianProductFunction().getClass() != LeftShiftFunction.class)) {
+                    .cartesianProductFunction().getClass() != LeftShiftFunction.class)) {
             simpleGrammar2 = null;
         }
 

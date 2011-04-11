@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import java.io.BufferedInputStream;
@@ -46,8 +46,8 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.util.StringPool;
 
 /**
- * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or may be
- * inferred from a corpus of data.
+ * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or
+ * may be inferred from a corpus of data.
  * 
  * A PCFG consists of
  * <ul>
@@ -57,19 +57,21 @@ import edu.ohsu.cslu.util.StringPool;
  * <li>A set of rule productions P mapping from V to (V union T)</li>
  * </ul>
  * 
- * Such grammars are useful in modeling and analyzing the structure of natural language or the (secondary) structure of
- * many biological sequences.
+ * Such grammars are useful in modeling and analyzing the structure of natural language or the (secondary)
+ * structure of many biological sequences.
  * 
- * Although branching of arbitrary size is possible in a grammar under this definition, this class models grammars which
- * have been factored into binary-branching form, enabling much more efficient computational approaches to be used.
+ * Although branching of arbitrary size is possible in a grammar under this definition, this class models
+ * grammars which have been factored into binary-branching form, enabling much more efficient computational
+ * approaches to be used.
  * 
  * TODO Fix this comment
  * 
- * Note - there will always be more productions than categories, but all categories except the special S-dagger category
- * are also productions. The index of a category will be the same when used as a production as it is when used as a
- * category.
+ * Note - there will always be more productions than categories, but all categories except the special
+ * S-dagger category are also productions. The index of a category will be the same when used as a production
+ * as it is when used as a category.
  * 
- * TODO Implement an even simpler grammar for use as an intermediate form when transforming one grammar to another.
+ * TODO Implement an even simpler grammar for use as an intermediate form when transforming one grammar to
+ * another.
  * 
  * @author Nathan Bodenstab
  * @author Aaron Dunlop
@@ -88,7 +90,8 @@ public class Grammar implements Serializable {
     public final SymbolSet<String> nonTermSet;
     public SymbolSet<String> lexSet;
     public final Tokenizer tokenizer;
-    // maps from 0-based index to entry in nonTermSet. Used to reduce absolute index value for feature extraction
+    // maps from 0-based index to entry in nonTermSet. Used to reduce absolute index value for feature
+    // extraction
     public final SymbolSet<Integer> posSet;
     public final SymbolSet<Integer> phraseSet; // phraseSet + posSet == nonTermSet
     // TODO: factored/non-factored phraseSet?
@@ -163,15 +166,15 @@ public class Grammar implements Serializable {
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
 
     /**
-     * A temporary String -> String map, used to conserve memory while reading and sorting the grammar. We don't need to
-     * internalize Strings indefinitely, so we map them ourselves and allow the map to be GC'd after we're done
-     * constructing the grammar.
+     * A temporary String -> String map, used to conserve memory while reading and sorting the grammar. We
+     * don't need to internalize Strings indefinitely, so we map them ourselves and allow the map to be GC'd
+     * after we're done constructing the grammar.
      */
     private StringPool stringPool;
 
     /**
-     * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same command-line option
-     * for serialized and text grammars and auto-detect the format
+     * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same
+     * command-line option for serialized and text grammars and auto-detect the format
      */
     private final static short OBJECT_SIGNATURE = (short) 0xACED;
 
@@ -181,13 +184,14 @@ public class Grammar implements Serializable {
     // }
 
     /**
-     * Default Constructor. This constructor does an inordinate amount of work directly in the constructor specifically
-     * so we can initialize final instance variables. Making the instance variables final allows the JIT to inline them
-     * everywhere we use them, improving runtime efficiency considerably.
+     * Default Constructor. This constructor does an inordinate amount of work directly in the constructor
+     * specifically so we can initialize final instance variables. Making the instance variables final allows
+     * the JIT to inline them everywhere we use them, improving runtime efficiency considerably.
      * 
-     * Reads the grammar into memory and sorts non-terminals (V) according to their occurrence in binary rules. This can
-     * allow more efficient iteration in grammar intersection (e.g., skipping NTs only valid as left children in the
-     * right cell) and more efficient chart storage (e.g., omitting storage for POS NTs in chart rows >= 2).
+     * Reads the grammar into memory and sorts non-terminals (V) according to their occurrence in binary
+     * rules. This can allow more efficient iteration in grammar intersection (e.g., skipping NTs only valid
+     * as left children in the right cell) and more efficient chart storage (e.g., omitting storage for POS
+     * NTs in chart rows >= 2).
      */
     public Grammar(final Reader grammarFile) throws IOException {
 
@@ -284,8 +288,8 @@ public class Grammar implements Serializable {
         // TODO Generalize these further for right-factored grammars
 
         // Initialize indices
-        final int[] startAndEndIndices = comparator.startAndEndIndices(nonPosSet, leftChildrenSet, rightChildrenSet,
-                pos);
+        final int[] startAndEndIndices = comparator.startAndEndIndices(nonPosSet, leftChildrenSet,
+            rightChildrenSet, pos);
         leftChildrenStart = startAndEndIndices[0];
         leftChildrenEnd = startAndEndIndices[1];
 
@@ -311,7 +315,7 @@ public class Grammar implements Serializable {
         for (final StringProduction lexicalRule : lexicalRules) {
             final int lexIndex = lexSet.addSymbol(lexicalRule.leftChild);
             lexicalProductions.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexIndex,
-                    lexicalRule.probability, true, this));
+                lexicalRule.probability, true, this));
         }
         numLexProds = lexicalProductions.size();
 
@@ -322,10 +326,10 @@ public class Grammar implements Serializable {
         for (final StringProduction grammarRule : pcfgRules) {
             if (grammarRule instanceof BinaryStringProduction) {
                 binaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
-                        ((BinaryStringProduction) grammarRule).rightChild, grammarRule.probability, this));
+                    ((BinaryStringProduction) grammarRule).rightChild, grammarRule.probability, this));
             } else {
-                unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild, grammarRule.probability,
-                        false, nonTermSet, lexSet));
+                unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
+                    grammarRule.probability, false, nonTermSet, lexSet));
             }
         }
 
@@ -370,8 +374,8 @@ public class Grammar implements Serializable {
     }
 
     /**
-     * Construct a {@link Grammar} instance from an existing instance. This is used when constructing a subclass of
-     * {@link Grammar} from a binary-serialized {@link Grammar}.
+     * Construct a {@link Grammar} instance from an existing instance. This is used when constructing a
+     * subclass of {@link Grammar} from a binary-serialized {@link Grammar}.
      * 
      * @param g
      */
@@ -414,9 +418,10 @@ public class Grammar implements Serializable {
         this.tokenizer = g.tokenizer;
     }
 
-    protected Grammar(final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
-            final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
-            final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat) {
+    protected Grammar(final ArrayList<Production> binaryProductions,
+            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon,
+            final GrammarFormatType grammarFormat) {
         this.nonTermSet = vocabulary;
         this.lexSet = lexicon;
         this.startSymbol = 0;
@@ -456,8 +461,9 @@ public class Grammar implements Serializable {
         this.isLeftFactored = false;
     }
 
-    private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile, final List<StringProduction> pcfgRules,
-            final List<StringProduction> lexicalRules) throws IOException {
+    private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile,
+            final List<StringProduction> pcfgRules, final List<StringProduction> lexicalRules)
+            throws IOException {
         // Read in the grammar file.
 
         final BufferedReader br = new BufferedReader(grammarFile);
@@ -489,16 +495,16 @@ public class Grammar implements Serializable {
 
             if (tokens.length == 1) {
                 throw new IllegalArgumentException(
-                        "Grammar file must contain a single line with a single string representing the START SYMBOL.\n"
-                                + "More than one entry was found.  Last line: " + line);
+                    "Grammar file must contain a single line with a single string representing the START SYMBOL.\n"
+                            + "More than one entry was found.  Last line: " + line);
             } else if (tokens.length == 4) {
                 // Unary production: expecting: A -> B prob
                 // TODO: Should we make sure there aren't any duplicates?
                 pcfgRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
             } else if (tokens.length == 5) {
                 // Binary production: expecting: A -> B C prob
-                pcfgRules.add(new BinaryStringProduction(stringPool.intern(tokens[0]), stringPool.intern(tokens[2]),
-                        stringPool.intern(tokens[3]), Float.valueOf(tokens[4])));
+                pcfgRules.add(new BinaryStringProduction(stringPool.intern(tokens[0]), stringPool
+                    .intern(tokens[2]), stringPool.intern(tokens[3]), Float.valueOf(tokens[4])));
             } else {
                 throw new IllegalArgumentException("Unexpected line in grammar PCFG\n\t" + line);
             }
@@ -585,8 +591,9 @@ public class Grammar implements Serializable {
         return nonTermSet.getSymbol(startSymbol);
     }
 
-    @SuppressWarnings( { "cast", "unchecked" })
-    public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
+    @SuppressWarnings({ "cast", "unchecked" })
+    public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods,
+            final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
         for (int i = 0; i < prodsByChild.length; i++) {
@@ -768,9 +775,10 @@ public class Grammar implements Serializable {
      * @return Log probability of the specified rule.
      */
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
-        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
-            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild), nonTermSet
-                    .getIndex(rightChild));
+        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild)
+                && nonTermSet.hasSymbol(rightChild)) {
+            return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
+                nonTermSet.getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -876,7 +884,8 @@ public class Grammar implements Serializable {
     /**
      * Returns the log probability of a rule.
      * 
-     * @param p Production
+     * @param p
+     *            Production
      * @return Log probability of the specified rule.
      */
     protected float getProductionProb(final Production p) {
@@ -969,8 +978,8 @@ public class Grammar implements Serializable {
         return sb.toString();
     }
 
-    private StringNonTerminal create(final String label, final HashSet<String> pos, final Set<String> nonPosSet,
-            final Set<String> rightChildren) {
+    private StringNonTerminal create(final String label, final HashSet<String> pos,
+            final Set<String> nonPosSet, final Set<String> rightChildren) {
         final String internLabel = stringPool.intern(label);
 
         if (startSymbolStr.equals(internLabel)) {
@@ -987,6 +996,7 @@ public class Grammar implements Serializable {
     }
 
     private final class StringNonTerminal {
+
         public final String label;
         public final NonTerminalClass ntClass;
 
@@ -1002,6 +1012,7 @@ public class Grammar implements Serializable {
     }
 
     private abstract static class StringNonTerminalComparator implements Comparator<StringNonTerminal> {
+
         HashMap<NonTerminalClass, Integer> map = new HashMap<NonTerminalClass, Integer>();
 
         @Override
@@ -1019,8 +1030,8 @@ public class Grammar implements Serializable {
         }
 
         /**
-         * @return an array containing leftChildStart, leftChildEnd, rightChildStart, rightChildEnd, posStart, posEnd,
-         *         parentEnd
+         * @return an array containing leftChildStart, leftChildEnd, rightChildStart, rightChildEnd, posStart,
+         *         posEnd, parentEnd
          */
         public abstract int[] startAndEndIndices(HashSet<?> nonPosSet, HashSet<?> leftChildrenSet,
                 HashSet<?> rightChildrenSet, HashSet<?> posSet);
@@ -1057,6 +1068,7 @@ public class Grammar implements Serializable {
     // }
 
     private static class PosEmbeddedComparator extends StringNonTerminalComparator {
+
         public PosEmbeddedComparator() {
             map.put(NonTerminalClass.EITHER_CHILD, 0);
             map.put(NonTerminalClass.POS, 1);
@@ -1080,8 +1092,8 @@ public class Grammar implements Serializable {
 
             final int parentEnd = leftChildrenEnd;
 
-            return new int[] { leftChildrenStart, leftChildrenEnd, rightChildrenStart, rightChildrenEnd, posStart,
-                    posEnd, parentEnd };
+            return new int[] { leftChildrenStart, leftChildrenEnd, rightChildrenStart, rightChildrenEnd,
+                    posStart, posEnd, parentEnd };
         }
     }
 

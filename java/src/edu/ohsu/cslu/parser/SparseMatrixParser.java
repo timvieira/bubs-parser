@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -33,8 +33,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
     }
 
     /**
-     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and
-     * populates this chart cell. Used to populate unary rules.
+     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely),
+     * and populates this chart cell. Used to populate unary rules.
      * 
      * @param chartCell
      */
@@ -45,12 +45,12 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             packedArrayCell.allocateTemporaryStorage();
 
             unarySpmv(packedArrayCell.tmpPackedChildren, packedArrayCell.tmpInsideProbabilities,
-                    packedArrayCell.tmpMidpoints, 0, chartCell.end());
+                packedArrayCell.tmpMidpoints, 0, chartCell.end());
         } else {
             final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
 
-            unarySpmv(chart.packedChildren, chart.insideProbabilities, chart.midpoints, denseVectorCell.offset(),
-                    chartCell.end());
+            unarySpmv(chart.packedChildren, chart.insideProbabilities, chart.midpoints,
+                denseVectorCell.offset(), chartCell.end());
         }
     }
 

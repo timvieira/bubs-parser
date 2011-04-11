@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
@@ -26,9 +26,9 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * Parser implementation which loops over all combinations of left and right child cell populations (cartesian product
- * of observed left and right non-terminals) and probes into the grammar for each combination using a lookup into a
- * perfect hash.
+ * Parser implementation which loops over all combinations of left and right child cell populations (cartesian
+ * product of observed left and right non-terminals) and probes into the grammar for each combination using a
+ * lookup into a perfect hash.
  * 
  * @author Aaron Dunlop
  * @since Jun 14, 2010

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import java.util.logging.Level;
@@ -76,8 +76,8 @@ public abstract class Parser<G extends Grammar> {
 
     /**
      * Waits until all active parsing tasks have completed. Intended for multi-threaded parsers (e.g.
-     * {@link CsrSpmvParser}, {@link CscSpmvParser}) which may need to implement a barrier to synchronize all tasks
-     * before proceeding on to dependent tasks.
+     * {@link CsrSpmvParser}, {@link CscSpmvParser}) which may need to implement a barrier to synchronize all
+     * tasks before proceeding on to dependent tasks.
      */
     public void waitForActiveTasks() {
     }
@@ -93,8 +93,8 @@ public abstract class Parser<G extends Grammar> {
 
         if (result.sentenceLength > opts.maxLength) {
             BaseLogger.singleton().fine(
-                    "INFO: Skipping sentence. Length of " + result.sentenceLength + " is greater than maxLength ("
-                            + opts.maxLength + ")");
+                "INFO: Skipping sentence. Length of " + result.sentenceLength
+                        + " is greater than maxLength (" + opts.maxLength + ")");
             result.parseBracketString = "()";
             return result;
         }
@@ -120,7 +120,8 @@ public abstract class Parser<G extends Grammar> {
 
             // TODO: we should be converting the tree in tree form, not in bracket string form
             if (opts.binaryTreeOutput == false) {
-                result.parseBracketString = TreeTools.unfactor(result.parseBracketString, grammar.grammarFormat);
+                result.parseBracketString = TreeTools.unfactor(result.parseBracketString,
+                    grammar.grammarFormat);
             }
 
             // TODO: could evaluate accuracy here if input is a gold tree
@@ -135,7 +136,8 @@ public abstract class Parser<G extends Grammar> {
     }
 
     /**
-     * Closes any resources maintained by the parser (e.g. thread-pools as in {@link CellParallelCsrSpmvParser}.
+     * Closes any resources maintained by the parser (e.g. thread-pools as in
+     * {@link CellParallelCsrSpmvParser}.
      */
     public void shutdown() {
     }
@@ -149,10 +151,14 @@ public abstract class Parser<G extends Grammar> {
     }
 
     static public enum ParserType {
-        CKY, Agenda, Beam, Matrix;
 
-        private ParserType(final String... aliases) {
-            EnumAliasMap.singleton().addAliases(this, aliases);
+        CYK(ResearchParserType.ECPCellCrossList), Agenda(ResearchParserType.APWithMemory), Beam(
+                ResearchParserType.BeamSearchChartParser), Matrix(ResearchParserType.CscSpmv);
+
+        public ResearchParserType researchParserType;
+
+        private ParserType(final ResearchParserType researchParserType) {
+            this.researchParserType = researchParserType;
         }
     }
 

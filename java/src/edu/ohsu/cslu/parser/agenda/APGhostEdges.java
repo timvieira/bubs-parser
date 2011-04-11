@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.agenda;
 
 import java.util.Collection;
@@ -84,7 +84,8 @@ public class APGhostEdges extends AgendaParser {
             possibleEdges = needLeftGhostEdges[nt][cell.end()];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
-                    curBestEdge = chart.getCell(cell.start(), ghostEdge.end()).getBestEdge(ghostEdge.prod.parent);
+                    curBestEdge = chart.getCell(cell.start(), ghostEdge.end()).getBestEdge(
+                        ghostEdge.prod.parent);
                     if (curBestEdge == null) {
                         // ghost edge inside prob = grammar rule prob + ONE
                         // CHILD inside prob
@@ -97,7 +98,8 @@ public class APGhostEdges extends AgendaParser {
             possibleEdges = needRightGhostEdges[nt][cell.start()];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
-                    curBestEdge = chart.getCell(ghostEdge.start(), cell.end()).getBestEdge(ghostEdge.prod.parent);
+                    curBestEdge = chart.getCell(ghostEdge.start(), cell.end()).getBestEdge(
+                        ghostEdge.prod.parent);
                     if (curBestEdge == null) {
                         addEdgeToFrontier(chart.new ChartEdge(ghostEdge.prod, ghostEdge.leftCell, cell));
                     }

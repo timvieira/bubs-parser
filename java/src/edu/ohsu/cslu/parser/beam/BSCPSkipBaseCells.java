@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.beam;
 
 import java.util.Collection;
@@ -141,7 +141,7 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
             }
         }
 
-        return super.getStats() + " agendaPush=" + cellPushed + " #cells=" + cells + " #visited=" + cellsVisited
-                + " #skipped=" + cellsSkipped + " #totalVisits=" + cellVisits;
+        return super.getStats() + " agendaPush=" + cellPushed + " #cells=" + cells + " #visited="
+                + cellsVisited + " #skipped=" + cellsSkipped + " #totalVisits=" + cellVisits;
     }
 }

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.beam;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
@@ -106,7 +106,8 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // goldSpan = (ChartCell) chart.getCell(goldEdge.start(), goldEdge.end());
     // if (goldSpan == guessSpan) {
     // guessSpanInGoldSpanFrontier = true;
-    // // for (final ChartEdge cellGoldEdge : goldChart.getChartCell(goldEdge.start(), goldEdge.end()).getEdges()) {
+    // // for (final ChartEdge cellGoldEdge : goldChart.getChartCell(goldEdge.start(),
+    // goldEdge.end()).getEdges()) {
     // // if (cellGoldEdge.p.isLexProd() == false) {
     // // goldEdgeListForGuessSpan.add(cellGoldEdge);
     // // System.out.println("goldEdgeForSpan: " + cellGoldEdge);
@@ -115,7 +116,8 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // }
     // }
     //
-    // LinkedList<ChartEdge> goldEdgeListForGuessSpan = (LinkedList<ChartEdge>) goldChart.getCell(guessSpan.start(),
+    // LinkedList<ChartEdge> goldEdgeListForGuessSpan = (LinkedList<ChartEdge>)
+    // goldChart.getCell(guessSpan.start(),
     // guessSpan.end()).getEdges();
     //
     // boolean guessSpanAlreadyHasGoldEdges = false;
@@ -135,7 +137,8 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // }
     //
     // // boolean alreadyHasGoldEdges = false;
-    // // for (final ChartEdge goldEdge : goldChart.getChartCell(guessSpan.start(), guessSpan.end()).getEdges()) {
+    // // for (final ChartEdge goldEdge : goldChart.getChartCell(guessSpan.start(),
+    // guessSpan.end()).getEdges()) {
     // // if (chart[guessSpan.start()][guessSpan.end()].hasEdge(goldEdge)) {
     // // alreadyHasGoldEdges = true;
     // // }
@@ -157,7 +160,8 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // }
     // }
     // perceptronCellSelector.decreaseLearningRate();
-    // System.out.println("TOTAL: total=" + totalCells + " correct=" + correctCells + " pct=" + ((float) correctCells /
+    // System.out.println("TOTAL: total=" + totalCells + " correct=" + correctCells + " pct=" + ((float)
+    // correctCells /
     // totalCells));
     // // perceptronCellSelector.writeModel(new BufferedWriter(new OutputStreamWriter(System.out)));
     // System.out.println(perceptronCellSelector.toString());
@@ -208,7 +212,8 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // // addUnaryExtensionsToLexProds();
     // perceptronCellSelector.init(this);
     //
-    // // while (hasCompleteParse() == false && perceptronCellSelector.hasNext() && canBuildGoldEdge == true) {
+    // // while (hasCompleteParse() == false && perceptronCellSelector.hasNext() && canBuildGoldEdge == true)
+    // {
     // goldEdgeList = getGoldEdgeList(goldChart);
     // while (goldEdgeList.size() > 0) {
     // // goldEdge = getGoldEdge(goldChart);
@@ -264,7 +269,8 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // // final boolean isBaseCell = ((goldEdge.end() - goldEdge.start()) == 1);
     // // should only be triggered once for each cell because there can only be one
     // // binary gold prod for each cell. wait. what about multiple unary chains in a basecell!
-    // // if (goldSpan == guessSpan && builtGoldEdgeList == false && (isBaseCell || goldEdge.p.isBinaryProd())) {
+    // // if (goldSpan == guessSpan && builtGoldEdgeList == false && (isBaseCell ||
+    // goldEdge.p.isBinaryProd())) {
     // // use a flag since if there are two gold spans, we don't want to double up the edges
     // // guessSpanInGoldBuildableSpans = true;
     // // builtGoldEdgeList = true;
@@ -287,7 +293,8 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // // }
     // // }
     //
-    // // final LinkedList<ChartEdge> goldEdgesCopy = (LinkedList<ChartEdge>) buildableGoldEdgesInGuessSpan.clone();
+    // // final LinkedList<ChartEdge> goldEdgesCopy = (LinkedList<ChartEdge>)
+    // buildableGoldEdgesInGuessSpan.clone();
     // // visitCell(guessSpan, buildableGoldEdgesInGuessSpan);
     // visitCell(guessSpan, goldEdgeListForGuessSpan);
     //
@@ -310,7 +317,8 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // }
     // }
     // perceptronCellSelector.decreaseLearningRate();
-    // System.out.println("TOTAL: total=" + totalCells + " correct=" + correctCells + " pct=" + ((float) correctCells /
+    // System.out.println("TOTAL: total=" + totalCells + " correct=" + correctCells + " pct=" + ((float)
+    // correctCells /
     // totalCells));
     // }
     // }
@@ -484,10 +492,12 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // // private void addEdgeToAgenda(final ChartEdge edge, final PriorityQueue<ChartEdge> agenda, final
     // Collection<ChartEdge> goldEdges) {
     // // force the gold parse to be built by only allowing TOP edges from the gold parse
-    // // i dont think this would work ... we can still build the gold TOP edge without the rest of the gold tree
+    // // i dont think this would work ... we can still build the gold TOP edge without the rest of the gold
+    // tree
     // // }
     //
-    // private int addBestEdgesToChart(final ChartCell cell, final ChartEdge[] bestEdges, final LinkedList<ChartEdge>
+    // private int addBestEdgesToChart(final ChartCell cell, final ChartEdge[] bestEdges, final
+    // LinkedList<ChartEdge>
     // goldEdges) {
     // ChartEdge edge, unaryEdge;
     // boolean addedEdge;
@@ -524,9 +534,11 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // return numAdded;
     // }
     //
-    // // private int addBestEdgesToChart(final ArrayChartCell cell, final PriorityQueue<ChartEdge> agenda, final
+    // // private int addBestEdgesToChart(final ArrayChartCell cell, final PriorityQueue<ChartEdge> agenda,
+    // final
     // ChartEdge goldEdge) {
-    // // private int addBestEdgesToChart(final ArrayChartCell cell, final PriorityQueue<ChartEdge> agenda, final
+    // // private int addBestEdgesToChart(final ArrayChartCell cell, final PriorityQueue<ChartEdge> agenda,
+    // final
     // LinkedList<ChartEdge> goldEdges) {
     // // ChartEdge edge, unaryEdge;
     // // boolean addedEdge;
@@ -544,11 +556,13 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // // maxEdgesToAdd = Integer.MAX_VALUE;
     // // }
     // //
-    // // System.out.println(" agendaSize = " + agenda.size() + " goldSize=" + goldEdges.size() + " maxEdges=" +
+    // // System.out.println(" agendaSize = " + agenda.size() + " goldSize=" + goldEdges.size() + " maxEdges="
+    // +
     // maxEdgesToAdd);
     // //
     // // // We can sometimes not be able to build the gold edge because
-    // // // (1) the viterbi max edge is not the gold edge and the gold edge gets pruned (this temp works by adding all
+    // // // (1) the viterbi max edge is not the gold edge and the gold edge gets pruned (this temp works by
+    // adding all
     // edges to the agenda)
     // // // (2) the gold edge contains a production not in our grammar
     // // // while (addedGoldEdge == false && agenda.isEmpty() == false) {
@@ -593,7 +607,8 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // maxEdgesToAdd);
     //
     // // We can sometimes not be able to build the gold edge because
-    // // (1) the viterbi max edge is not the gold edge and the gold edge gets pruned (this temp works by adding all
+    // // (1) the viterbi max edge is not the gold edge and the gold edge gets pruned (this temp works by
+    // adding all
     // edges to the agenda)
     // // (2) the gold edge contains a production not in our grammar
     // while (numAdded < maxEdgesToAdd && !agenda.isEmpty()) {

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.tools;
 
 import java.io.BufferedReader;
@@ -188,7 +188,8 @@ public class TreeTools extends BaseCommandlineTool {
                 }
             }
 
-            final String newChildStr = grammarFormatType.createFactoredNT(unfactoredParent, markovChildrenStr);
+            final String newChildStr = grammarFormatType
+                .createFactoredNT(unfactoredParent, markovChildrenStr);
             final ParseTree newNode = new ParseTree(newChildStr, tree, remainingChildren);
             if (rightFactor) {
                 tree.children.addFirst(newNode);
@@ -203,11 +204,13 @@ public class TreeTools extends BaseCommandlineTool {
     }
 
     /**
-     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening binary-factored
-     * subtrees.
+     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening
+     * binary-factored subtrees.
      * 
-     * @param bracketedTree Bracketed string parse tree
-     * @param grammarFormatType Grammar format
+     * @param bracketedTree
+     *            Bracketed string parse tree
+     * @param grammarFormatType
+     *            Grammar format
      * @return Bracketed string representation of the un-factored tree
      */
     public static String unfactor(final String bracketedTree, final GrammarFormatType grammarFormatType) {
@@ -321,7 +324,8 @@ public class TreeTools extends BaseCommandlineTool {
         final HashMap<String, Integer> leftMax = new HashMap<String, Integer>();
         final HashMap<String, Integer> rightMax = new HashMap<String, Integer>();
 
-        // final BufferedReader inputStream = new java.io.BufferedReader(new java.io.InputStreamReader(System.in));
+        // final BufferedReader inputStream = new java.io.BufferedReader(new
+        // java.io.InputStreamReader(System.in));
         for (String line = inputStream.readLine(); line != null; line = inputStream.readLine()) {
             final ParseTree tree = ParseTree.readBracketFormat(line);
             ParseTree node;

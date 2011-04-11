@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.Grammar;
@@ -63,9 +63,10 @@ public class ParseResult {
                 inputTree = ParseTree.readBracketFormat(input);
                 if (!inputTree.isBinaryTree()) {
                     throw new IllegalArgumentException(
-                            "Input trees are not binarized.  Please use tree-tools.jar to binarize trees first.");
+                        "Input trees are not binarized.  Please use tree-tools.jar to binarize trees first.");
                 }
-                // TreeTools.binarizeTree(inputTree, grammar.isRightFactored(), grammar.horizontalMarkov(), grammar
+                // TreeTools.binarizeTree(inputTree, grammar.isRightFactored(), grammar.horizontalMarkov(),
+                // grammar
                 // .verticalMarkov(), grammar.annotatePOS(), grammar.grammarFormat);
                 inputTreeChart = new GoldChart(inputTree, grammar);
                 input = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
@@ -83,10 +84,11 @@ public class ParseResult {
 
     @Override
     public String toString() {
-        // String result = String.format("STAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f", sentenceNumber,
+        // String result = String.format("STAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f",
+        // sentenceNumber,
         // sentenceLength, sentenceMD5, parseTimeSec, insideProbability);
-        String result = String.format("INFO: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f", sentenceNumber,
-                sentenceLength, parseTimeSec, insideProbability);
+        String result = String.format("INFO: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f",
+            sentenceNumber, sentenceLength, parseTimeSec, insideProbability);
 
         result += " pops=" + totalPops;
         result += " pushes=" + totalPushes;

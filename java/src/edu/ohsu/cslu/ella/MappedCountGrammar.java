@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
@@ -29,8 +29,8 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
- * Grammar computed from observation counts in which the non-terminals and terminal vocabularies are mapped to short /
- * int values using {@link SymbolSet}.
+ * Grammar computed from observation counts in which the non-terminals and terminal vocabularies are mapped to
+ * short / int values using {@link SymbolSet}.
  * 
  * @author Aaron Dunlop
  * @since Jan 13, 2011
@@ -40,10 +40,10 @@ import edu.ohsu.cslu.grammar.SymbolSet;
 public class MappedCountGrammar extends FractionalCountGrammar {
 
     /**
-     * Contains occurrence counts for each non-terminal which occurs as a binary parent. When representing the grammar
-     * for inside-outside re-estimation, we may be able to save space by not creating certain data structures for
-     * non-terminals which don't occur as binary parents. And we may be able to save execution time by sorting other
-     * data structures according to frequency counts.
+     * Contains occurrence counts for each non-terminal which occurs as a binary parent. When representing the
+     * grammar for inside-outside re-estimation, we may be able to save space by not creating certain data
+     * structures for non-terminals which don't occur as binary parents. And we may be able to save execution
+     * time by sorting other data structures according to frequency counts.
      */
     final Short2FloatMap binaryParentCounts = new Short2FloatOpenHashMap();
 
@@ -152,9 +152,10 @@ public class MappedCountGrammar extends FractionalCountGrammar {
                         continue;
                     }
 
-                    final float probability = (float) Math.log(binaryRuleObservations(parent, leftChild, rightChild)
-                            / observations(parent));
-                    prods.add(new Production(parent, leftChild, rightChild, probability, vocabulary, lexicon));
+                    final float probability = (float) Math.log(binaryRuleObservations(parent, leftChild,
+                        rightChild) / observations(parent));
+                    prods
+                        .add(new Production(parent, leftChild, rightChild, probability, vocabulary, lexicon));
                 }
             }
         }
@@ -178,7 +179,8 @@ public class MappedCountGrammar extends FractionalCountGrammar {
                     continue;
                 }
 
-                final float probability = (float) Math.log(unaryRuleObservations(parent, child) / observations(parent));
+                final float probability = (float) Math.log(unaryRuleObservations(parent, child)
+                        / observations(parent));
                 prods.add(new Production(parent, child, probability, false, vocabulary, lexicon));
             }
         }
@@ -219,10 +221,11 @@ public class MappedCountGrammar extends FractionalCountGrammar {
      * @param rightChild
      * @return the number of observations of a binary rule.
      */
-    public final float binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
+    public final float binaryRuleObservations(final String parent, final String leftChild,
+            final String rightChild) {
 
-        return binaryRuleObservations((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(leftChild),
-                (short) vocabulary.getIndex(rightChild));
+        return binaryRuleObservations((short) vocabulary.getIndex(parent),
+            (short) vocabulary.getIndex(leftChild), (short) vocabulary.getIndex(rightChild));
     }
 
     /**
@@ -233,7 +236,8 @@ public class MappedCountGrammar extends FractionalCountGrammar {
      * @param rightChild
      * @return the number of observations of a binary rule.
      */
-    public final float binaryRuleObservations(final short parent, final short leftChild, final short rightChild) {
+    public final float binaryRuleObservations(final short parent, final short leftChild,
+            final short rightChild) {
 
         final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {

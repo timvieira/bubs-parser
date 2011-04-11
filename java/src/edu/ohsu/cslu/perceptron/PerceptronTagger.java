@@ -15,12 +15,12 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.perceptron;
 
-
 /**
- * Tags words as potentially beginning or ending multi-word constituents (see Roark and Hollingshead, 2008 and 2009).
+ * Tags words as potentially beginning or ending multi-word constituents (see Roark and Hollingshead, 2008 and
+ * 2009).
  * 
  * @author Aaron Dunlop
  * @since Oct 6, 2010

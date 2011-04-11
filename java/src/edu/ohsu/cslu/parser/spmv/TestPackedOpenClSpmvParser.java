@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import org.cjunit.PerformanceTest;
@@ -31,7 +31,9 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestPackedOpenClSpmvParser extends OpenClSpmvParserTestCase<PackedOpenClSpmvParser, LeftShiftFunction> {
+public class TestPackedOpenClSpmvParser extends
+        OpenClSpmvParserTestCase<PackedOpenClSpmvParser, LeftShiftFunction> {
+
     @Override
     @Test
     @PerformanceTest({ "mbp", "667853" })

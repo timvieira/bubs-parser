@@ -15,16 +15,17 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 
-public abstract class DenseVectorMlParser<G extends SparseMatrixGrammar> extends SparseMatrixLoopParser<G, DenseVectorChart> {
+public abstract class DenseVectorMlParser<G extends SparseMatrixGrammar> extends
+        SparseMatrixLoopParser<G, DenseVectorChart> {
 
-	public DenseVectorMlParser(final ParserDriver opts, final G grammar) {
-		super(opts, grammar);
-	}
+    public DenseVectorMlParser(final ParserDriver opts, final G grammar) {
+        super(opts, grammar);
+    }
 }

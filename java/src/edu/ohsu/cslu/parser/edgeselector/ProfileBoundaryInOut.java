@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.edgeselector;
 
 import java.io.BufferedReader;
@@ -51,20 +51,22 @@ public class ProfileBoundaryInOut {
     public static void suiteSetUp() throws IOException {
         if (parentAnnotatedGrammar == null) {
             parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
-                    JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
+                JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
         }
         final BoundaryInOut parentBioFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut,
-                parentAnnotatedGrammar, new BufferedReader(
-                        JUnit.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
+            parentAnnotatedGrammar, new BufferedReader(
+                JUnit.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
 
-        parentAnnotatedBio = (BoundaryInOutSelector) parentBioFactory.createEdgeSelector(parentAnnotatedGrammar);
+        parentAnnotatedBio = (BoundaryInOutSelector) parentBioFactory
+            .createEdgeSelector(parentAnnotatedGrammar);
 
         if (berkeleyGrammar == null) {
             berkeleyGrammar = new LeftCscSparseMatrixGrammar(
-                    JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
+                JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
         }
-        final BoundaryInOut berkeleyBioFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, berkeleyGrammar,
-                new BufferedReader(JUnit.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
+        final BoundaryInOut berkeleyBioFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut,
+            berkeleyGrammar, new BufferedReader(
+                JUnit.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
         berkeleyBio = (BoundaryInOutSelector) berkeleyBioFactory.createEdgeSelector(berkeleyGrammar);
     }
 

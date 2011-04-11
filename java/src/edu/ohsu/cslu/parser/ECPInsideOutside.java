@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import java.util.Arrays;
@@ -60,6 +60,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     public class MaxcStruct {
+
         public float score;
         public int split, leftChild, rightChild;
         public int unaryChild; // -1 means no unary (or self loop to binary)
@@ -280,14 +281,16 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                             for (final Production p : grammar.getBinaryProductionsWithLeftChild(leftNT)) {
                                 if (rightCell.hasNT(p.rightChild)) {
                                     final int A = p.parent;
-                                    final float ruleScore = cell.getOutside(A) + p.prob + leftCell.getInside(leftNT)
-                                            + rightCell.getInside(p.rightChild) - stringProb;
+                                    final float ruleScore = cell.getOutside(A) + p.prob
+                                            + leftCell.getInside(leftNT) + rightCell.getInside(p.rightChild)
+                                            - stringProb;
                                     final float gScore = ruleScore + maxcScore[start][mid][p.leftChild]
                                             + maxcScore[mid][end][p.rightChild];
                                     if (gScore > maxcScore[start][end][A]) {
                                         maxcScore[start][end][A] = gScore;
                                         cell.bestEdge[A] = chart.new ChartEdge(p, leftCell, rightCell);
-                                        // logger.finest("maxc=" + maxcScore[start][end][A] + "\t" + cell.bestEdge[A]);
+                                        // logger.finest("maxc=" + maxcScore[start][end][A] + "\t" +
+                                        // cell.bestEdge[A]);
                                     }
                                 }
                             }
@@ -300,7 +303,8 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                 for (final int childNT : cell.getNtArray()) {
                     for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                         final int A = p.parent;
-                        final float ruleScore = cell.getOutside(A) + p.prob + cell.getInside(p.child()) - stringProb;
+                        final float ruleScore = cell.getOutside(A) + p.prob + cell.getInside(p.child())
+                                - stringProb;
                         final float gScore = ruleScore + maxcScore[start][end][p.child()];
 
                         if (gScore > maxcUnaryScores[A]) {
@@ -334,7 +338,8 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
         // TODO: need to try brian's idea of not collecting any score/penalty for factored non-terms
         // since they aren't evaluated
 
-        // throw new UnsupportedOperationException("goodmanMaximizeLabelRecallWithUnaries() not implemented yet.");
+        // throw new
+        // UnsupportedOperationException("goodmanMaximizeLabelRecallWithUnaries() not implemented yet.");
 
         // NOTE: does not work
 
@@ -364,7 +369,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
                 if (span == 1) {
                     addBackptrToChart(start, -1, end, bestNT[start][end], chart.tokens[start],
-                            Production.LEXICAL_PRODUCTION);
+                        Production.LEXICAL_PRODUCTION);
                 } else if (maxc[start][end] > Float.NEGATIVE_INFINITY) {
                     // find best midpoint
                     float maxSplitScore = Float.NEGATIVE_INFINITY;
@@ -380,14 +385,14 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                     if (maxSplitMid > -1) {
                         // add split cost for binary rules
                         maxc[start][end] = (float) ParserUtil.logSum(maxc[start][end], maxSplitScore);
-                        addBackptrToChart(start, maxSplitMid, end, bestNT[start][end], bestNT[start][maxSplitMid],
-                                bestNT[maxSplitMid][end]);
+                        addBackptrToChart(start, maxSplitMid, end, bestNT[start][end],
+                            bestNT[start][maxSplitMid], bestNT[maxSplitMid][end]);
                     }
                 }
 
                 if (span == n) {
                     addBackptrToChart(start, -1, end, grammar.startSymbol, bestNT[start][end],
-                            Production.UNARY_PRODUCTION);
+                        Production.UNARY_PRODUCTION);
                 }
             }
         }
@@ -422,7 +427,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
                 if (span == 1) {
                     addBackptrToChart(start, -1, end, bestNT[start][end], chart.tokens[start],
-                            Production.LEXICAL_PRODUCTION);
+                        Production.LEXICAL_PRODUCTION);
                 } else if (maxc[start][end] > Float.NEGATIVE_INFINITY) {
                     float maxSplitScore = Float.NEGATIVE_INFINITY;
                     int maxSplitMid = -1;
@@ -437,14 +442,14 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                     if (maxSplitMid > -1) {
                         // add split cost for binary rules
                         maxc[start][end] = (float) ParserUtil.logSum(maxc[start][end], maxSplitScore);
-                        addBackptrToChart(start, maxSplitMid, end, bestNT[start][end], bestNT[start][maxSplitMid],
-                                bestNT[maxSplitMid][end]);
+                        addBackptrToChart(start, maxSplitMid, end, bestNT[start][end],
+                            bestNT[start][maxSplitMid], bestNT[maxSplitMid][end]);
                     }
                 }
 
                 if (span == n) {
                     addBackptrToChart(start, -1, end, grammar.startSymbol, bestNT[start][end],
-                            Production.UNARY_PRODUCTION);
+                        Production.UNARY_PRODUCTION);
                 }
             }
         }
@@ -486,7 +491,8 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final Production p : grammar.getBinaryProductionsWithLeftChild(leftNT)) {
                     if (rightCell.hasNT(p.rightChild)) {
-                        insideScore = p.prob + getInside(start, mid, leftNT) + getInside(mid, end, p.rightChild);
+                        insideScore = p.prob + getInside(start, mid, leftNT)
+                                + getInside(mid, end, p.rightChild);
                         cell.updateInside(p.parent, insideScore);
                     }
                 }
@@ -702,7 +708,8 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     //
     // if (ruleScore > maxScore[A]) {
     // maxScore[A] = ruleScore;
-    // cell.bestEdge[A] = chart.new ChartEdge(evalGrammar.new Production(A, B, Float.NEGATIVE_INFINITY, false),
+    // cell.bestEdge[A] = chart.new ChartEdge(evalGrammar.new Production(A, B, Float.NEGATIVE_INFINITY,
+    // false),
     // cell);
     // // System.out.println(maxScore[start][end][A] + "\t" + cell.bestEdge[A]);
     // }

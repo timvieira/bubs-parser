@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
@@ -56,8 +56,8 @@ public abstract class CellSelector implements Iterator<short[]> {
     }
 
     /**
-     * Returns true if the cell selector has more cells available. The parser should call {@link #hasNext()} until it
-     * returns <code>false</code> to ensure the sentence is fully parsed.
+     * Returns true if the cell selector has more cells available. The parser should call {@link #hasNext()}
+     * until it returns <code>false</code> to ensure the sentence is fully parsed.
      * 
      * @return true if the cell selector has more cells.
      */
@@ -89,8 +89,8 @@ public abstract class CellSelector implements Iterator<short[]> {
     // }
 
     /**
-     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
-     * complete constituent).
+     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated
+     * with a complete constituent).
      * 
      * @param start
      * @param end
@@ -102,8 +102,8 @@ public abstract class CellSelector implements Iterator<short[]> {
 
     /**
      * Returns the beam width for the current cell. Consumers generally set the cell beam width to
-     * java.lang.Math.min(getCelValue(), beamWidth), so they will not attempt to search a range larger than the maximum
-     * beam width of the parser.
+     * java.lang.Math.min(getCelValue(), beamWidth), so they will not attempt to search a range larger than
+     * the maximum beam width of the parser.
      * 
      * TODO The naming and interface still aren't great.
      */

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
@@ -49,10 +49,10 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
 
     final ProductionListGrammar parentGrammar;
 
-    public ConstrainedCsrSparseMatrixGrammar(final ProductionListGrammar plg, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass) {
-        super(plg.binaryProductions, plg.unaryProductions, plg.lexicalProductions, plg.vocabulary, plg.lexicon,
-                grammarFormat, functionClass, false);
+    public ConstrainedCsrSparseMatrixGrammar(final ProductionListGrammar plg,
+            final GrammarFormatType grammarFormat, final Class<? extends PackingFunction> functionClass) {
+        super(plg.binaryProductions, plg.unaryProductions, plg.lexicalProductions, plg.vocabulary,
+            plg.lexicon, grammarFormat, functionClass, false);
 
         this.csrUnaryBaseStartIndices = new int[numNonTerms()][];
         storeUnaryRulesAsCsrMatrix();
@@ -60,8 +60,8 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
 
         this.csrBinaryBaseStartIndices = new int[numNonTerms()][];
         storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductions, packingFunction),
-                csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities, csrBinaryBaseStartIndices,
-                (PerfectIntPairHashPackingFunction) packingFunction);
+            csrBinaryRowIndices, csrBinaryColumnIndices, csrBinaryProbabilities, csrBinaryBaseStartIndices,
+            (PerfectIntPairHashPackingFunction) packingFunction);
 
         this.leftChildCsrBinaryRowIndices = new int[numNonTerms() + 1];
         this.leftChildCsrBinaryColumnIndices = new int[numBinaryProds()];
@@ -69,11 +69,12 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
         this.leftChildCsrBaseStartIndices = new int[numNonTerms()][];
         final ArrayList<Production> binaryProductionsByLeftChild = binaryProductionsByLeftChild();
         leftChildPackingFunction = this.new PerfectIntPairHashPackingFunction(binaryProductionsByLeftChild,
-                numNonTerms() - 1);
+            numNonTerms() - 1);
 
-        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductionsByLeftChild, leftChildPackingFunction),
-                leftChildCsrBinaryRowIndices, leftChildCsrBinaryColumnIndices, leftChildCsrBinaryProbabilities,
-                leftChildCsrBaseStartIndices, leftChildPackingFunction);
+        storeBinaryRulesAsCsrMatrix(
+            mapBinaryRulesByParent(binaryProductionsByLeftChild, leftChildPackingFunction),
+            leftChildCsrBinaryRowIndices, leftChildCsrBinaryColumnIndices, leftChildCsrBinaryProbabilities,
+            leftChildCsrBaseStartIndices, leftChildPackingFunction);
 
         this.rightChildCsrBinaryRowIndices = new int[numNonTerms() + 1];
         this.rightChildCsrBinaryColumnIndices = new int[numBinaryProds()];
@@ -81,10 +82,11 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
         this.rightChildCsrBaseStartIndices = new int[numNonTerms()][];
         final ArrayList<Production> binaryProductionsByRightChild = binaryProductionsByRightChild();
         rightChildPackingFunction = this.new PerfectIntPairHashPackingFunction(binaryProductionsByRightChild,
-                numNonTerms() - 1);
-        storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductionsByRightChild, rightChildPackingFunction),
-                rightChildCsrBinaryRowIndices, rightChildCsrBinaryColumnIndices, rightChildCsrBinaryProbabilities,
-                rightChildCsrBaseStartIndices, rightChildPackingFunction);
+            numNonTerms() - 1);
+        storeBinaryRulesAsCsrMatrix(
+            mapBinaryRulesByParent(binaryProductionsByRightChild, rightChildPackingFunction),
+            rightChildCsrBinaryRowIndices, rightChildCsrBinaryColumnIndices,
+            rightChildCsrBinaryProbabilities, rightChildCsrBaseStartIndices, rightChildPackingFunction);
     }
 
     private void storeBinaryRulesAsCsrMatrix(final Int2FloatOpenHashMap[] maps, final int[] csrRowIndices,
@@ -115,7 +117,7 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
                 final short leftChild = (short) packingFunction.unpackLeftChild(childPair);
                 if (splitVocabulary.baseCategoryIndices[leftChild] != baseLeftChild) {
                     Arrays.fill(baseStartIndices[parent], baseLeftChild + 1,
-                            splitVocabulary.baseCategoryIndices[leftChild] + 1, i);
+                        splitVocabulary.baseCategoryIndices[leftChild] + 1, i);
                     baseLeftChild = splitVocabulary.baseCategoryIndices[leftChild];
                 }
                 i++;
@@ -128,18 +130,21 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
     }
 
     private ArrayList<Production> binaryProductionsByLeftChild() {
-        final ArrayList<Production> productionsByLeftChild = new ArrayList<Production>(binaryProductions.size());
+        final ArrayList<Production> productionsByLeftChild = new ArrayList<Production>(
+            binaryProductions.size());
         for (final Production p : binaryProductions) {
-            productionsByLeftChild.add(new Production(p.leftChild, p.parent, p.rightChild, p.prob, nonTermSet, lexSet));
+            productionsByLeftChild.add(new Production(p.leftChild, p.parent, p.rightChild, p.prob,
+                nonTermSet, lexSet));
         }
         return productionsByLeftChild;
     }
 
     private ArrayList<Production> binaryProductionsByRightChild() {
-        final ArrayList<Production> productionsByRightChild = new ArrayList<Production>(binaryProductions.size());
+        final ArrayList<Production> productionsByRightChild = new ArrayList<Production>(
+            binaryProductions.size());
         for (final Production p : binaryProductions) {
-            productionsByRightChild
-                    .add(new Production(p.rightChild, p.parent, p.leftChild, p.prob, nonTermSet, lexSet));
+            productionsByRightChild.add(new Production(p.rightChild, p.parent, p.leftChild, p.prob,
+                nonTermSet, lexSet));
         }
         return productionsByRightChild;
     }
@@ -180,13 +185,14 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
 
                 if (splitVocabulary.baseCategoryIndices[child] != baseChild) {
                     Arrays.fill(csrUnaryBaseStartIndices[parent], baseChild + 1,
-                            splitVocabulary.baseCategoryIndices[child] + 1, i);
+                        splitVocabulary.baseCategoryIndices[child] + 1, i);
                     baseChild = splitVocabulary.baseCategoryIndices[child];
                 }
                 i++;
             }
             if (children.length > 0) {
-                Arrays.fill(csrUnaryBaseStartIndices[parent], baseChild + 1, csrUnaryBaseStartIndices[parent].length, i);
+                Arrays.fill(csrUnaryBaseStartIndices[parent], baseChild + 1,
+                    csrUnaryBaseStartIndices[parent].length, i);
             }
         }
         csrUnaryRowStartIndices[csrUnaryRowStartIndices.length - 1] = i;

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import static com.nativelibs4java.opencl.JavaCL.createBestContext;
@@ -66,9 +66,9 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
     }
 
     /**
-     * OpenCL parsers must use a simple shift function, since we don't (yet) implement the more complex hashing in
-     * OpenCL code. So we override setUp() and tearDown() to null out the grammar and force re-creation, and override
-     * createGrammar() to create a grammar implementation using a simpler CPF.
+     * OpenCL parsers must use a simple shift function, since we don't (yet) implement the more complex
+     * hashing in OpenCL code. So we override setUp() and tearDown() to null out the grammar and force
+     * re-creation, and override createGrammar() to create a grammar implementation using a simpler CPF.
      */
     @AfterClass
     public static void suiteTearDown() throws Exception {
@@ -81,15 +81,16 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
      * Tests the binary SpMV multiplication of the cartesian-product computed in
      * {@link #testUnfilteredCartesianProductVectorSimpleGrammar2()} with simple grammar 2.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public void testBinarySpMVMultiplySimpleGrammar2() throws Exception {
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
-                configProperties());
+        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.FACTORY,
+            parserOptions(), configProperties());
         p.initSentence(new int[5]);
         final Chart chart = p.chart;
 
@@ -188,10 +189,11 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
     }
 
     /**
-     * Tests an imagined example cartesian-product vector (based very loosely on the computation of the top cell in the
-     * 'systems analyst arbitration chef' example)
+     * Tests an imagined example cartesian-product vector (based very loosely on the computation of the top
+     * cell in the 'systems analyst arbitration chef' example)
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public void testCartesianProductVectorExample() throws Exception {
@@ -246,28 +248,33 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         // So: 0,3 X 3,4 cross-product = NP/NP (-4,3)
 
         // Cross-product union should be NN/NN (-5,1), NN/NP (-6,1), NP/NN (-7,2), NP/NP (-4,3)
-        final SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0, 4);
-        final int[] expectedChildren = new int[] { pack(g, nn, nn), pack(g, nn, np), pack(g, np, nn), pack(g, np, np) };
+        final SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0,
+            4);
+        final int[] expectedChildren = new int[] { pack(g, nn, nn), pack(g, nn, np), pack(g, np, nn),
+                pack(g, np, np) };
         final float[] expectedProbabilities = new float[] { -5f, -6f, -7f, -4f };
         final int[] expectedMidpoints = new int[] { 1, 1, 2, 3 };
 
         for (int i = 0; i < expectedChildren.length; i++) {
             assertEquals("Wrong probability #" + i, expectedProbabilities[i],
-                    crossProductVector.probability(expectedChildren[i]), .01f);
-            assertEquals("Wrong midpoint #" + i, expectedMidpoints[i], crossProductVector.midpoint(expectedChildren[i]));
+                crossProductVector.probability(expectedChildren[i]), .01f);
+            assertEquals("Wrong midpoint #" + i, expectedMidpoints[i],
+                crossProductVector.midpoint(expectedChildren[i]));
         }
     }
 
     /**
-     * Tests the cartesian-product vector computed in the top cells of the 'The fish market stands last' example.
+     * Tests the cartesian-product vector computed in the top cells of the 'The fish market stands last'
+     * example.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(),
-                PerfectIntPairHashPackingFunction.class);
+            PerfectIntPairHashPackingFunction.class);
 
         // Create the parser
         final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
@@ -279,9 +286,10 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Row of span 5
         final ChartCell cell_0_5 = chart.getCell(0, 5);
-        cell_0_5.updateInside(new Production("S", "NP", "VP", -5.37528f, simpleGrammar2), chart.getCell(0, 3),
-                chart.getCell(3, 5), -5.37528f);
-        cell_0_5.updateInside(new Production("TOP", "S", -5.37528f, false, simpleGrammar2), cell_0_5, null, -5.37528f);
+        cell_0_5.updateInside(new Production("S", "NP", "VP", -5.37528f, simpleGrammar2),
+            chart.getCell(0, 3), chart.getCell(3, 5), -5.37528f);
+        cell_0_5.updateInside(new Production("TOP", "S", -5.37528f, false, simpleGrammar2), cell_0_5, null,
+            -5.37528f);
 
         // Finalize all chart cells
         for (int i = 0; i < chart.size(); i++) {
@@ -295,13 +303,13 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         assertEquals(2, crossProductVector.size());
 
         // Midpoint 1
-        assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))),
-                .001f);
+        assertEquals(-2.890f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))), .001f);
         assertEquals(1, crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))));
 
         // Midpoint 3
-        assertEquals(-5.663f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))),
-                .001f);
+        assertEquals(-5.663f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))));
 
         // Cross-product union for cell 0,5
@@ -310,7 +318,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Midpoint 3
         assertEquals(-5.37528f,
-                crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))), .001f);
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))));
     }
 
@@ -329,14 +337,17 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
     }
 
     /**
-     * Tests the cartesian-product vector computed in the top cells of the 'The fish market stands last' example.
+     * Tests the cartesian-product vector computed in the top cells of the 'The fish market stands last'
+     * example.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public void testUnfilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
-        final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(), LeftShiftFunction.class);
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(),
+            LeftShiftFunction.class);
 
         // Create the parser
         final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
@@ -348,9 +359,10 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Row of span 5
         final ChartCell cell_0_5 = chart.getCell(0, 5);
-        cell_0_5.updateInside(new Production("S", "NP", "VP", -5.37528f, simpleGrammar2), chart.getCell(0, 3),
-                chart.getCell(3, 5), -5.37528f);
-        cell_0_5.updateInside(new Production("TOP", "S", -5.37528f, false, simpleGrammar2), cell_0_5, null, -5.37528f);
+        cell_0_5.updateInside(new Production("S", "NP", "VP", -5.37528f, simpleGrammar2),
+            chart.getCell(0, 3), chart.getCell(3, 5), -5.37528f);
+        cell_0_5.updateInside(new Production("TOP", "S", -5.37528f, false, simpleGrammar2), cell_0_5, null,
+            -5.37528f);
 
         // Finalize all chart cells
         for (int i = 0; i < chart.size(); i++) {
@@ -365,37 +377,40 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Midpoint 1
         assertEquals(-2.890f,
-                crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))), .001f);
-        assertEquals(1, crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))));
+            crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))), .001f);
+        assertEquals(1,
+            crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("VP|VB"))));
 
-        assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))),
-                .001f);
+        assertEquals(-2.890f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))), .001f);
         assertEquals(1, crossProductVector.midpoint(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))));
 
         // Midpoint 2
         assertEquals(-2.485f,
-                crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))), .001f);
-        assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))));
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))), .001f);
+        assertEquals(2,
+            crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP|NN"))));
 
         assertEquals(-4.277f,
-                crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))), .001f);
-        assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))), .001f);
+        assertEquals(2,
+            crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
 
-        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))),
-                .001f);
+        assertEquals(-4.277f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))), .001f);
         assertEquals(2, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))));
 
         // Midpoint 3
-        assertEquals(-5.663f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))),
-                .001f);
+        assertEquals(-5.663f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))));
 
-        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NN"))),
-                .001f);
+        assertEquals(-4.277f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NN"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NN"))));
 
-        assertEquals(-4.277f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))),
-                .001f);
+        assertEquals(-4.277f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))));
 
         // Cross-product union for cell 0,5
@@ -404,24 +419,25 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Midpoint 3
         assertEquals(-5.37528f,
-                crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))), .001f);
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP"))));
 
         assertEquals(-6.474f,
-                crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))), .001f);
-        assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))), .001f);
+        assertEquals(3,
+            crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VP|VB"))));
 
-        assertEquals(-6.474f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))),
-                .001f);
+        assertEquals(-6.474f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))), .001f);
         assertEquals(3, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("NP"))));
 
         // Midpoint 4
-        assertEquals(-4.682f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("RB"))),
-                .001f);
+        assertEquals(-4.682f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("RB"))), .001f);
         assertEquals(4, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("RB"))));
 
-        assertEquals(-5.375f, crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))),
-                .001f);
+        assertEquals(-5.375f,
+            crossProductVector.probability(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))), .001f);
         assertEquals(4, crossProductVector.midpoint(pack(g, g.mapNonterminal("NP"), g.mapNonterminal("VB"))));
     }
 

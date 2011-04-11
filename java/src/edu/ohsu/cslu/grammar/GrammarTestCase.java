@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import static org.junit.Assert.assertEquals;
@@ -24,7 +24,6 @@ import java.io.Reader;
 import java.io.StringReader;
 
 import org.junit.Test;
-
 
 public abstract class GrammarTestCase {
 
@@ -35,20 +34,21 @@ public abstract class GrammarTestCase {
 
     public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader)
             throws Exception {
-        return grammarClass.getConstructor(new Class[] { Reader.class, GrammarFormatType.class }).newInstance(
-                new Object[] { grammarReader, GrammarFormatType.CSLU });
+        return grammarClass.getConstructor(new Class[] { Reader.class, GrammarFormatType.class })
+            .newInstance(new Object[] { grammarReader, GrammarFormatType.CSLU });
     }
 
-    public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader,
+    public static <C extends Grammar> C createGrammar(final Class<C> grammarClass,
+            final Reader grammarReader,
             final Class<? extends SparseMatrixGrammar.PackingFunction> cartesianProductFunctionClass)
             throws Exception {
 
         try {
             return grammarClass.getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
-                    new Object[] { grammarReader, cartesianProductFunctionClass });
+                new Object[] { grammarReader, cartesianProductFunctionClass });
         } catch (final NoSuchMethodException e) {
-            return grammarClass.getConstructor(new Class[] { Reader.class })
-                    .newInstance(new Object[] { grammarReader });
+            return grammarClass.getConstructor(new Class[] { Reader.class }).newInstance(
+                new Object[] { grammarReader });
         }
     }
 
@@ -81,7 +81,8 @@ public abstract class GrammarTestCase {
      * 
      * TODO Share grammar creation with GrammarTestCase
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Test
     public void testSimpleGrammar() throws Exception {

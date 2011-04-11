@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
@@ -23,12 +23,13 @@ import java.util.Arrays;
 import edu.ohsu.cslu.grammar.Grammar;
 
 /**
- * Represents a one-shot bounded priority queue of non-terminal cell entries, ordered by a figure-of-merit. Stored as a
- * double-ended queue so we can simultaneously pop the max-priority entries and replace the min-priority entries.
+ * Represents a one-shot bounded priority queue of non-terminal cell entries, ordered by a figure-of-merit.
+ * Stored as a double-ended queue so we can simultaneously pop the max-priority entries and replace the
+ * min-priority entries.
  * 
- * One-shot behavior: We know that we'll never pop more than the initial maxSize edges, so once we start popping, we
- * reduce maxSize with each pop, reducing the number of edges subsequently added which will never make it to the head of
- * the queue.
+ * One-shot behavior: We know that we'll never pop more than the initial maxSize edges, so once we start
+ * popping, we reduce maxSize with each pop, reducing the number of edges subsequently added which will never
+ * make it to the head of the queue.
  * 
  * 
  * TODO Replace bubble-sort with a min-max heap or a tree
@@ -42,8 +43,8 @@ public class BoundedPriorityQueue {
 
     /**
      * Parallel array storing a bounded cell population (parents and a figure-of-merit for each). Analagous to
-     * {@link ParallelArrayChart#insideProbabilities} and {@link PackedArrayChart#nonTerminalIndices}. The most probable
-     * entry should be stored in index 0.
+     * {@link ParallelArrayChart#insideProbabilities} and {@link PackedArrayChart#nonTerminalIndices}. The
+     * most probable entry should be stored in index 0.
      */
     public final short[] parentIndices;
     public final float[] foms;
@@ -80,8 +81,8 @@ public class BoundedPriorityQueue {
         final int currentMaxSize = maxTail - head + 1;
         if (maxSize != currentMaxSize) {
             if (maxSize > parentIndices.length) {
-                throw new IllegalArgumentException("Specified size (" + maxSize + ") exceeds storage capacity ("
-                        + parentIndices.length + ")");
+                throw new IllegalArgumentException("Specified size (" + maxSize
+                        + ") exceeds storage capacity (" + parentIndices.length + ")");
             }
             if (maxSize < 0) {
                 throw new IllegalArgumentException("Negative size specified (" + maxSize + ")");
@@ -127,10 +128,10 @@ public class BoundedPriorityQueue {
     }
 
     /**
-     * Inserts an entry in the priority queue, if its figure-of-merit meets the current threshold (ejecting the lowest
-     * item in the queue if the size bound is exceeded). Returns true if the parent was inserted into the queue and
-     * false if the entry did not fit into the queue (i.e., the queue is full and the figure-of-merit was less than the
-     * lowest queue entry).
+     * Inserts an entry in the priority queue, if its figure-of-merit meets the current threshold (ejecting
+     * the lowest item in the queue if the size bound is exceeded). Returns true if the parent was inserted
+     * into the queue and false if the entry did not fit into the queue (i.e., the queue is full and the
+     * figure-of-merit was less than the lowest queue entry).
      * 
      * @param parentIndex
      * @param fom
@@ -163,8 +164,8 @@ public class BoundedPriorityQueue {
     }
 
     /**
-     * Replaces the figure-of-merit for a parent if the new FOM is greater than the current FOM. Returns true if the
-     * parent was found and replaced.
+     * Replaces the figure-of-merit for a parent if the new FOM is greater than the current FOM. Returns true
+     * if the parent was found and replaced.
      * 
      * @param parentIndex
      * @param fom

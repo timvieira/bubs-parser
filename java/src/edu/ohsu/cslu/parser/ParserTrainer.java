@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
@@ -76,7 +76,8 @@ public class ParserTrainer extends BaseCommandlineTool {
         if (boundaryFOM == true) {
             // To train a BoundaryInOut FOM model we need a grammar and
             // binarized gold input trees with NTs from same grammar
-            final BoundaryInOut edgeSelectorModel = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, null);
+            final BoundaryInOut edgeSelectorModel = new BoundaryInOut(EdgeSelectorType.BoundaryInOut,
+                grammar, null);
             edgeSelectorModel.train(inputStream);
             edgeSelectorModel.writeModel(outputStream);
         } else if (beamConf == true) {
@@ -84,7 +85,8 @@ public class ParserTrainer extends BaseCommandlineTool {
             m.natesTraining();
             // final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector)
             // CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
-            // final BSCPPerceptronCellTrainer parser = new BSCPPerceptronCellTrainer(opts, (LeftHashGrammar) grammar);
+            // final BSCPPerceptronCellTrainer parser = new BSCPPerceptronCellTrainer(opts, (LeftHashGrammar)
+            // grammar);
             // perceptronCellSelector.train(inputStream, parser);
         } else {
             System.out.println("ERROR.");

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
@@ -90,8 +90,8 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
         try {
             parseConstraintArgs(constraintArgs);
             BaseLogger.singleton().fine(
-                    "CC_PARAM: startThresh=" + globalBegin + " endThresh=" + globalEnd + " unaryThresh=" + globalUnary
-                            + " precisionPct=" + precisionPct + " linearN=" + linearOpen);
+                "CC_PARAM: startThresh=" + globalBegin + " endThresh=" + globalEnd + " unaryThresh="
+                        + globalUnary + " precisionPct=" + precisionPct + " linearN=" + linearOpen);
 
             readModel(modelStream);
         } catch (final Exception e) {
@@ -111,7 +111,7 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
                 precisionPct = ParserUtil.str2float(tokens[++i]);
                 if (precisionPct < 0.0 || precisionPct > 1.0) {
                     BaseLogger.singleton().severe(
-                            "Precision constraint must be btwn 0 and 1 inclusive.  Found value: " + precisionPct);
+                        "Precision constraint must be btwn 0 and 1 inclusive.  Found value: " + precisionPct);
                 }
             } else if (tokens[i].equals("N")) {
                 this.linearOpen = ParserUtil.str2float(tokens[++i]);
@@ -146,7 +146,8 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
                         allUnaryScores.lastElement().add(Float.parseFloat(tokens[3]));
                     }
                 } else {
-                    throw new Exception("ERROR: incorrect format for cellConstraintsFile on line: '" + line + "'");
+                    throw new Exception("ERROR: incorrect format for cellConstraintsFile on line: '" + line
+                            + "'");
                 }
             }
         }
@@ -292,6 +293,7 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
         }
 
         private class TagScore implements Comparable<TagScore> {
+
             public float score;
             public int start, end;
 
@@ -388,8 +390,8 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
             }
 
             final int nOpen = total - nClosed - nFact - nUnaryClosed;
-            String stats = "CC_STATS: total=" + total + " nOpen=" + nOpen + " nFact=" + nFact + " nClosed=" + nClosed
-                    + " nUnaryClosed=" + nUnaryClosed;
+            String stats = "CC_STATS: total=" + total + " nOpen=" + nOpen + " nFact=" + nFact + " nClosed="
+                    + nClosed + " nUnaryClosed=" + nUnaryClosed;
             if (perCell) {
                 stats += "\nCC_CELLS: " + s;
             }

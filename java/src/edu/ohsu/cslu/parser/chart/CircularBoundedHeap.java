@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import java.util.PriorityQueue;
@@ -23,6 +23,7 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class CircularBoundedHeap extends PriorityQueue<ChartEdge> {
+
     int arraySize, maxHeapSize, startIndex = 0, endIndex = 0;
     ChartEdge[] heap;
 
