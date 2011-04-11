@@ -1,5 +1,5 @@
 Unless otherwise noted in the source code, this software is 
-    Copyright 2010, Aaron Dunlop and Nathan Bodenstab.
+    Copyright 2010,2011 Nathan Bodenstab and Aaron Dunlop.
 
 This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as 
