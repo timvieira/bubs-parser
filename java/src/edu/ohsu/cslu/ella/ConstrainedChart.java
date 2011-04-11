@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -32,8 +32,8 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.util.Math;
 
 /**
- * Represents a parse chart constrained by a parent chart (e.g., for inside-outside parameter estimation constrained by
- * gold trees or (possibly) coarse-to-fine parsing).
+ * Represents a parse chart constrained by a parent chart (e.g., for inside-outside parameter estimation
+ * constrained by gold trees or (possibly) coarse-to-fine parsing).
  * 
  * @author Aaron Dunlop
  * @since Jun 2, 2010
@@ -65,18 +65,19 @@ public class ConstrainedChart extends ParallelArrayChart {
      * 
      * 1 entry for each substate of the constraining non-terminal
      * 
-     * k unary children of each of those states, where k is the maximum length of a unary chain in the constraining
-     * chart.
+     * k unary children of each of those states, where k is the maximum length of a unary chain in the
+     * constraining chart.
      * 
      * So the maximum number of entries in a cell is maxSubstates * (1 + maxUnaryChainLength)
      * 
      * @param constrainingChart
      * @param sparseMatrixGrammar
      */
-    protected ConstrainedChart(final ConstrainedChart constrainingChart, final SparseMatrixGrammar sparseMatrixGrammar,
-            final int beamWidth) {
-        super(constrainingChart.size, chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength,
-                ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits), sparseMatrixGrammar);
+    protected ConstrainedChart(final ConstrainedChart constrainingChart,
+            final SparseMatrixGrammar sparseMatrixGrammar, final int beamWidth) {
+        super(constrainingChart.size, chartArraySize(constrainingChart.size,
+            constrainingChart.maxUnaryChainLength,
+            ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits), sparseMatrixGrammar);
         this.splitVocabulary = (SplitVocabulary) sparseMatrixGrammar.nonTermSet;
         this.beamWidth = lexicalRowBeamWidth = beamWidth;
         this.nonTerminalIndices = new short[chartArraySize];
@@ -94,14 +95,16 @@ public class ConstrainedChart extends ParallelArrayChart {
         computeOffsets();
     }
 
-    protected ConstrainedChart(final ConstrainedChart constrainingChart, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(constrainingChart, sparseMatrixGrammar, ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits
-                * constrainingChart.maxUnaryChainLength);
+    protected ConstrainedChart(final ConstrainedChart constrainingChart,
+            final SparseMatrixGrammar sparseMatrixGrammar) {
+        this(constrainingChart, sparseMatrixGrammar,
+            ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits
+                    * constrainingChart.maxUnaryChainLength);
     }
 
     public ConstrainedChart(final BinaryTree<String> goldTree, final SparseMatrixGrammar sparseMatrixGrammar) {
         super(goldTree.leaves(), chartArraySize(goldTree.leaves(), goldTree.maxUnaryChainLength(),
-                ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits), sparseMatrixGrammar);
+            ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits), sparseMatrixGrammar);
         this.splitVocabulary = (SplitVocabulary) sparseMatrixGrammar.nonTermSet;
         this.lexicon = sparseMatrixGrammar.lexSet;
 
@@ -122,7 +125,8 @@ public class ConstrainedChart extends ParallelArrayChart {
             final BinaryTree<String> node = iter.next();
 
             if (node.isLeaf()) {
-                // Increment the start index every time we process a leaf. The lexical entry was already populated (see
+                // Increment the start index every time we process a leaf. The lexical entry was already
+                // populated (see
                 // below)
                 start++;
                 continue;
@@ -155,7 +159,8 @@ public class ConstrainedChart extends ParallelArrayChart {
             insideProbabilities[i] = 0;
         }
 
-        // Populate openCells with the start/end pairs of each populated cell. Used by {@link ConstrainedCellSelector}
+        // Populate openCells with the start/end pairs of each populated cell. Used by {@link
+        // ConstrainedCellSelector}
         this.openCells = new short[size * 2 - 1][2];
         int i = 0;
         for (short span = 1; span <= size; span++) {
@@ -187,7 +192,8 @@ public class ConstrainedChart extends ParallelArrayChart {
         this.size = constrainingChart.size;
         final short maxSplits = ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits;
         this.beamWidth = lexicalRowBeamWidth = constrainingChart.maxUnaryChainLength * maxSplits;
-        final int fillLength = chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength, maxSplits);
+        final int fillLength = chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength,
+            maxSplits);
         Arrays.fill(nonTerminalIndices, 0, fillLength, Short.MIN_VALUE);
         Arrays.fill(packedChildren, 0, fillLength, 0);
         computeOffsets();
@@ -221,8 +227,8 @@ public class ConstrainedChart extends ParallelArrayChart {
 
     /**
      * @param cellOffset
-     * @return The unary chain depth of a cell, including the binary or lexical production. e.g. unaryChainDepth(a ->
-     *         foo) = 2 and unaryChainDepth(s -> a -> a -> a b) = 3
+     * @return The unary chain depth of a cell, including the binary or lexical production. e.g.
+     *         unaryChainDepth(a -> foo) = 2 and unaryChainDepth(s -> a -> a -> a b) = 3
      */
     int unaryChainDepth(final int cellOffset) {
 
@@ -264,8 +270,8 @@ public class ConstrainedChart extends ParallelArrayChart {
 
         if (packedChildren[maxProbabilityIndex] < 0) {
             // Lexical production
-            final String sChild = lexicon.getSymbol(sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(
-                    packedChildren[maxProbabilityIndex]));
+            final String sChild = lexicon.getSymbol(sparseMatrixGrammar.cartesianProductFunction()
+                .unpackLeftChild(packedChildren[maxProbabilityIndex]));
             subtree.addChild(new ParseTree(sChild));
         } else if (unaryDepth < unaryChainDepth(cellOffset) - 1) {
             // Unary production
@@ -287,7 +293,8 @@ public class ConstrainedChart extends ParallelArrayChart {
     public float getInside(final int start, final int end, final int nonTerminal) {
         final int offset = cellOffset(start, end);
 
-        // We could compute the possible indices directly, but it's a very short range to linear search, and this method
+        // We could compute the possible indices directly, but it's a very short range to linear search, and
+        // this method
         // should only be called in testing
         for (int i = offset; i < offset + beamWidth; i++) {
             if (nonTerminalIndices[i] == nonTerminal) {
@@ -300,7 +307,8 @@ public class ConstrainedChart extends ParallelArrayChart {
     public float getOutside(final int start, final int end, final short nonTerminal) {
         final int offset = cellOffset(start, end);
 
-        // We could compute the possible indices directly, but it's a very short range to linear search, and this method
+        // We could compute the possible indices directly, but it's a very short range to linear search, and
+        // this method
         // should only be called in testing
         for (int i = offset; i < offset + beamWidth; i++) {
             if (nonTerminalIndices[i] == nonTerminal) {
@@ -311,8 +319,8 @@ public class ConstrainedChart extends ParallelArrayChart {
     }
 
     /**
-     * Populates a new {@link ConstrainedChart} with a re-merged grammar, including all merged non-terminals populated
-     * in the pre-merge chart.
+     * Populates a new {@link ConstrainedChart} with a re-merged grammar, including all merged non-terminals
+     * populated in the pre-merge chart.
      * 
      * @param mergedGrammar
      * @return Chart containing merged versions of the current chart's pre-merge non-terminals.
@@ -320,8 +328,8 @@ public class ConstrainedChart extends ParallelArrayChart {
     public ConstrainedChart merge(final SparseMatrixGrammar mergedGrammar) {
 
         final SplitVocabulary mergedVocabulary = (SplitVocabulary) mergedGrammar.nonTermSet;
-        final ConstrainedChart mergedChart = new ConstrainedChart(this, mergedGrammar, mergedVocabulary.maxSplits
-                * maxUnaryChainLength);
+        final ConstrainedChart mergedChart = new ConstrainedChart(this, mergedGrammar,
+            mergedVocabulary.maxSplits * maxUnaryChainLength);
 
         // Iterate over each open cell
         for (final short[] startAndEnd : openCells) {
@@ -331,7 +339,8 @@ public class ConstrainedChart extends ParallelArrayChart {
 
                 final int cellIndex = cellIndex(startAndEnd[0], startAndEnd[1]);
                 final int offset = offset(cellIndex) + splitVocabulary.maxSplits * unaryDepth;
-                final int mergedOffset = mergedChart.offset(cellIndex) + mergedVocabulary.maxSplits * unaryDepth;
+                final int mergedOffset = mergedChart.offset(cellIndex) + mergedVocabulary.maxSplits
+                        * unaryDepth;
 
                 // Stop when we reach an un-populated unary depth
                 if (nonTerminalIndices[offset] < 0) {
@@ -348,20 +357,21 @@ public class ConstrainedChart extends ParallelArrayChart {
 
                     // Record the parent non-terminal and sum the probabilities
                     final short mergedParent = mergedVocabulary.mergedIndices.get(parent);
-                    final int mergedEntryIndex = mergedOffset + mergedVocabulary.subcategoryIndices[mergedParent];
+                    final int mergedEntryIndex = mergedOffset
+                            + mergedVocabulary.subcategoryIndices[mergedParent];
                     mergedChart.nonTerminalIndices[mergedEntryIndex] = mergedParent;
 
                     final float currentMergedProbability = mergedChart.insideProbabilities[mergedEntryIndex];
-                    mergedChart.insideProbabilities[mergedEntryIndex] = currentMergedProbability == Float.NEGATIVE_INFINITY ? probability
-                            : Math.logSum(currentMergedProbability, probability);
+                    mergedChart.insideProbabilities[mergedEntryIndex] = currentMergedProbability == Float.NEGATIVE_INFINITY
+                            ? probability : Math.logSum(currentMergedProbability, probability);
 
                     // Record packed children
                     if (packedChildren[i] < 0) {
                         // A lexical entry is the same regardless of grammar
                         final int leftChild = sparseMatrixGrammar.packingFunction
-                                .unpackLeftChild(packedChildren[i]);
+                            .unpackLeftChild(packedChildren[i]);
                         mergedChart.packedChildren[mergedEntryIndex] = mergedGrammar.packingFunction
-                                .packLexical(leftChild);
+                            .packLexical(leftChild);
                     }
                 }
             }
@@ -386,6 +396,7 @@ public class ConstrainedChart extends ParallelArrayChart {
     }
 
     public class ConstrainedChartCell extends ParallelArrayChartCell {
+
         public final int cellIndex;
 
         public ConstrainedChartCell(final int start, final int end) {
@@ -420,7 +431,8 @@ public class ConstrainedChart extends ParallelArrayChart {
         }
 
         /**
-         * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same chart.
+         * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same
+         * chart.
          */
         @Override
         public boolean equals(final Object o) {

@@ -44,8 +44,9 @@ public class TestProductionListGrammar {
     @DataPoints
     public static ProductionListGrammar[] dataPoints() throws IOException {
         final ProductionListGrammar g1 = new ProductionListGrammar(new StringCountGrammar(new StringReader(
-                AllEllaTests.STRING_SAMPLE_TREE), null, null, 1));
-        final ProductionListGrammar g2 = new ProductionListGrammar(TestMappedCountGrammar.SAMPLE_MAPPED_GRAMMAR());
+            AllEllaTests.STRING_SAMPLE_TREE), null, null, 1));
+        final ProductionListGrammar g2 = new ProductionListGrammar(
+            TestMappedCountGrammar.SAMPLE_MAPPED_GRAMMAR());
         return new ProductionListGrammar[] { g1, g2 };
     }
 
@@ -103,7 +104,7 @@ public class TestProductionListGrammar {
     public void testSplitStates(final ProductionListGrammar g) {
 
         final ProductionListGrammar.BiasedNoiseGenerator zeroNoiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(
-                0f);
+            0f);
         final ProductionListGrammar split1 = g.split(zeroNoiseGenerator);
 
         // s, a_0, a_1, b_0, b_1
@@ -159,7 +160,7 @@ public class TestProductionListGrammar {
     public void testMerge(final ProductionListGrammar g) {
 
         final ProductionListGrammar.BiasedNoiseGenerator zeroNoiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(
-                0f);
+            0f);
 
         // Split the grammar 2X
         final ProductionListGrammar split2 = g.split(zeroNoiseGenerator).split(zeroNoiseGenerator);
@@ -186,12 +187,15 @@ public class TestProductionListGrammar {
         // <same> | tr 3 2 | sort | egrep '^a_2' | uniq -c
 
         // a -> a b 2/6 was split by 1/16, but 2 of those merged into a_2 -> a_0 b_2
-        assertLogFractionEquals(Math.log(2f / 6 / 16 * 2 / 2), merged.binaryLogProbability("a_2", "a_0", "b_2"), .01f);
+        assertLogFractionEquals(Math.log(2f / 6 / 16 * 2 / 2),
+            merged.binaryLogProbability("a_2", "a_0", "b_2"), .01f);
         // And 8 into a_2 -> a_2 b_0
-        assertLogFractionEquals(Math.log(2f / 6 / 16 * 8 / 2), merged.binaryLogProbability("a_2", "a_2", "b_0"), .01f);
+        assertLogFractionEquals(Math.log(2f / 6 / 16 * 8 / 2),
+            merged.binaryLogProbability("a_2", "a_2", "b_0"), .01f);
 
         // a -> a a 1/6 was split by 1/16 and 8 merged into a_2 -> a_2 a_2
-        assertLogFractionEquals(Math.log(1f / 6 / 16 * 8 / 2), merged.binaryLogProbability("a_2", "a_2", "a_2"), .01f);
+        assertLogFractionEquals(Math.log(1f / 6 / 16 * 8 / 2),
+            merged.binaryLogProbability("a_2", "a_2", "a_2"), .01f);
         // a_1 -> a_1 a_0 was not merged
         assertLogFractionEquals(Math.log(1f / 6 / 16), split2.binaryLogProbability("a_1", "a_1", "a_0"), .01f);
         assertLogFractionEquals(Math.log(1f / 6 / 16), merged.binaryLogProbability("a_1", "a_1", "a_0"), .01f);

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.perceptron;
 
 import java.util.Iterator;
@@ -27,8 +27,9 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
- * Extracts features for classifying whether a lexical item can begin a multiword constituent. Depends only on lexical
- * items (as mapped by the supplied {@link Grammar}) and on prior tags (gold in training, predicted at test time).
+ * Extracts features for classifying whether a lexical item can begin a multiword constituent. Depends only on
+ * lexical items (as mapped by the supplied {@link Grammar}) and on prior tags (gold in training, predicted at
+ * test time).
  * 
  * TODO Add suffix features as well
  * 
@@ -57,8 +58,8 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
             twoCharacterSuffixes.addSymbol(token.substring(token.length() - 2));
             threeCharacterSuffixes.addSymbol(token.substring(token.length() - 3));
         }
-        this.featureCount = grammar.numLexSymbols() * windowSize + markovOrder * 2 + twoCharacterSuffixes.size()
-                + threeCharacterSuffixes.size();
+        this.featureCount = grammar.numLexSymbols() * windowSize + markovOrder * 2
+                + twoCharacterSuffixes.size() + threeCharacterSuffixes.size();
     }
 
     @Override
@@ -95,7 +96,8 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
      * @return a feature vector representing the specified token and tags
      */
     @Override
-    public SparseBitVector forwardFeatureVector(final Object source, final int tokenIndex, final float[] tagScores) {
+    public SparseBitVector forwardFeatureVector(final Object source, final int tokenIndex,
+            final float[] tagScores) {
         final Sentence s = (Sentence) source;
         final int windowSize = markovOrder * 2 + 1;
 
@@ -146,11 +148,13 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
     }
 
     public class Sentence {
+
         /**
-         * Parallel array of tokens (mapped according to the grammar lexicon) and booleans labeling tokens which start
-         * or end multiword constituents. The parallel array is of length n + 2o, where n is the length of the sentence
-         * and o is the Markov order. That is, we allow o entries prior to the beginning of the sentence and o following
-         * the end, so a Markov-order-2 tagger for a 6-word sentence will be represented by a 10-element array.
+         * Parallel array of tokens (mapped according to the grammar lexicon) and booleans labeling tokens
+         * which start or end multiword constituents. The parallel array is of length n + 2o, where n is the
+         * length of the sentence and o is the Markov order. That is, we allow o entries prior to the
+         * beginning of the sentence and o following the end, so a Markov-order-2 tagger for a 6-word sentence
+         * will be represented by a 10-element array.
          */
         public final String[] tokens;
         public final int[] mappedTokens;
@@ -166,7 +170,8 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
 
                 tokens = new String[sentenceLength + 2 * markovOrder];
                 mappedTokens = new int[sentenceLength + 2 * markovOrder];
-                System.arraycopy(grammar.tokenizer.tokenizeToIndex(tree), 0, mappedTokens, markovOrder, sentenceLength);
+                System.arraycopy(grammar.tokenizer.tokenizeToIndex(tree), 0, mappedTokens, markovOrder,
+                    sentenceLength);
                 beginsMultiwordConstituent = new boolean[sentenceLength];
 
                 for (int k = 0; k < markovOrder; k++) {
@@ -185,7 +190,7 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
 
                 mappedTokens = new int[tmpTokens.length + 2 * markovOrder];
                 System.arraycopy(grammar.tokenizer.tokenizeToIndex(sentence), 0, mappedTokens, markovOrder,
-                        tmpTokens.length);
+                    tmpTokens.length);
 
                 tokens = new String[tmpTokens.length + 2 * markovOrder];
                 System.arraycopy(tmpTokens, 0, tokens, markovOrder, tmpTokens.length);

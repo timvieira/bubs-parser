@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.perceptron;
 
 import java.io.BufferedReader;
@@ -32,8 +32,8 @@ import edu.ohsu.cslu.parser.ParserUtil;
  * Represents an averaged perceptron (see Collins, 2002). The model should be trained with
  * {@link #train(int, SparseBitVector)}, and applied with {@link #classify(Vector)}.
  * 
- * NOTE: clients are responsible to include their own bias feature in the training and testing instances, meaning that
- * there is a single feature which is always on (value=1) for all instances.
+ * NOTE: clients are responsible to include their own bias feature in the training and testing instances,
+ * meaning that there is a single feature which is always on (value=1) for all instances.
  * 
  * @author Aaron Dunlop, Nathan Bodenstab
  * @since Oct 12, 2010
@@ -41,6 +41,7 @@ import edu.ohsu.cslu.parser.ParserUtil;
  * @version $Revision$ $Date$ $Author$
  */
 public class AveragedPerceptron extends Perceptron {
+
     private FloatVector[] avgWeights = null;
     private IntVector lastAveraged; // same for every model since we update all at once
     private int lastExampleAllUpdated = 0;
@@ -49,8 +50,8 @@ public class AveragedPerceptron extends Perceptron {
         this(0.1f, new ZeroOneLoss(), "0", null, null);
     }
 
-    public AveragedPerceptron(final float learningRate, final LossFunction lossFunction, final String binsStr,
-            final String featureTemplate, final float[] initialWeights) {
+    public AveragedPerceptron(final float learningRate, final LossFunction lossFunction,
+            final String binsStr, final String featureTemplate, final float[] initialWeights) {
         super(learningRate, lossFunction, binsStr, featureTemplate, initialWeights);
     }
 
@@ -102,7 +103,8 @@ public class AveragedPerceptron extends Perceptron {
     }
 
     @Override
-    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector, final int example) {
+    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector,
+            final int example) {
         float newAvg, oldAvgValue, oldRawValue, newRawValue;
         for (final int featIndex : featureVector.elements()) {
             final int lastAvgExample = lastAveraged.getInt(featIndex); // default=0
@@ -182,7 +184,8 @@ public class AveragedPerceptron extends Perceptron {
             throw new RuntimeException("Unexpected EOF found in AveragedPerceptron model.  Exiting.");
         }
 
-        // for (String line = inputReader.readLine(); line != null && !line.trim().equals("# === Perceptron Model ===");
+        // for (String line = inputReader.readLine(); line != null &&
+        // !line.trim().equals("# === Perceptron Model ===");
         // line = inputReader.readLine()) {
         String[] tokens = inputReader.readLine().split("\\s");
         final int numFeatures = Integer.parseInt(tokens[0].split("=")[1]);
@@ -214,8 +217,10 @@ public class AveragedPerceptron extends Perceptron {
     // * Update weights for all features found in the specified feature vector by the specified alpha
     // *
     // * @param featureVector Features to update
-    // * @param alpha Update amount (generally positive for positive examples and negative for negative examples)
-    // * @param example The number of examples seen in the training corpus (i.e., the index of the example which caused
+    // * @param alpha Update amount (generally positive for positive examples and negative for negative
+    // examples)
+    // * @param example The number of examples seen in the training corpus (i.e., the index of the example
+    // which caused
     // * this update, 1-indexed).
     // */
     // private void update2(final SparseBitVector featureVector, final float alpha, final int example) {
@@ -247,7 +252,8 @@ public class AveragedPerceptron extends Perceptron {
     // }
     //
     // /**
-    // * Compute averaged weights for any features which have been updated in the raw perceptron and not subsequently
+    // * Compute averaged weights for any features which have been updated in the raw perceptron and not
+    // subsequently
     // * averaged. This method should be called following training and prior to testing.
     // *
     // * @param totalExamples The number of training examples seen

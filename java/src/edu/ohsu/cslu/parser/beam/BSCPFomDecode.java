@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.beam;
 
 import java.util.Arrays;
@@ -68,7 +68,7 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
                         + maxcFOM[midpt][end][edge.prod.rightChild];
             } else {
                 score = (float) ParserUtil.logSum(edge.fom, ParserUtil.logSum(
-                        maxcFOM[start][midpt][edge.prod.leftChild], maxcFOM[midpt][end][edge.prod.rightChild]));
+                    maxcFOM[start][midpt][edge.prod.leftChild], maxcFOM[midpt][end][edge.prod.rightChild]));
             }
         } else if (edge.prod.isUnaryProd()) {
             if (maxProduct) {

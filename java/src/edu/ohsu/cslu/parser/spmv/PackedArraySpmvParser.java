@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
@@ -65,14 +65,14 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
                 || props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT)) {
 
             this.rowThreads = props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT) ? props
-                    .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) : 1;
+                .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) : 1;
             final int cellThreads = props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT) ? props
-                    .getIntProperty(ParserDriver.OPT_CELL_THREAD_COUNT) : 1;
+                .getIntProperty(ParserDriver.OPT_CELL_THREAD_COUNT) : 1;
 
             final int threads = rowThreads * cellThreads;
 
             GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
-                    Integer.toString(threads));
+                Integer.toString(threads));
 
             // Configure thread pool and current-task list
             this.threadPool = new ForkJoinPool(threads);
@@ -86,6 +86,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
         // And thread-local cartesian-product vector storage
         this.threadLocalCpvProbabilities = new ThreadLocal<float[]>() {
+
             @Override
             protected float[] initialValue() {
                 return new float[grammar.packingFunction.packedArraySize()];
@@ -93,6 +94,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         };
 
         this.threadLocalCpvMidpoints = new ThreadLocal<short[]>() {
+
             @Override
             protected short[] initialValue() {
                 final short[] m = new short[grammar.packingFunction.packedArraySize()];
@@ -130,6 +132,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
         if (threadPool != null && rowThreads > 1) {
             currentTasks.add(threadPool.submit(new Runnable() {
+
                 @Override
                 public void run() {
                     internalVisitCell(start, end);
@@ -186,13 +189,15 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         final int[] cellPackedChildren = new int[grammar.numNonTerms()];
         final float[] cellInsideProbabilities = new float[grammar.numNonTerms()];
         final short[] cellMidpoints = new short[grammar.numNonTerms()];
-        internalUnaryAndPruning(spvChartCell, start, end, cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+        internalUnaryAndPruning(spvChartCell, start, end, cellPackedChildren, cellInsideProbabilities,
+            cellMidpoints);
 
         spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
     }
 
-    protected void internalUnaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end,
-            final int[] cellPackedChildren, final float[] cellInsideProbabilities, final short[] cellMidpoints) {
+    protected void internalUnaryAndPruning(final PackedArrayChartCell spvChartCell, final short start,
+            final short end, final int[] cellPackedChildren, final float[] cellInsideProbabilities,
+            final short[] cellMidpoints) {
 
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
 
@@ -205,23 +210,25 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
          * 
          * This operation depends on 3 data structures:
          * 
-         * A) The temporary edge storage already populated with binary inside probabilities and (viterbi) backpointers
+         * A) The temporary edge storage already populated with binary inside probabilities and (viterbi)
+         * backpointers
          * 
          * B) A bounded priority queue of non-terminal indices, prioritized by their figure-of-merit scores
          * 
-         * C) A parallel array of edges. We will pop a limited number of edges off the priority queue into this array,
-         * so this storage represents the actual cell population.
+         * C) A parallel array of edges. We will pop a limited number of edges off the priority queue into
+         * this array, so this storage represents the actual cell population.
          * 
-         * First, we push all binary edges onto the priority queue (if we're pruning significantly, most will not make
-         * the queue). We then begin popping edges off the queue. With each edge popped, we 1) Add the edge to the array
-         * of cell edges (C); and 2) Iterate through unary grammar rules with the edge parent as a child, inserting any
-         * resulting unary edges to the queue. This insertion replaces the existing queue entry for the parent
-         * non-terminal, if greater, and updates the inside probability and backpointer in (A).
+         * First, we push all binary edges onto the priority queue (if we're pruning significantly, most will
+         * not make the queue). We then begin popping edges off the queue. With each edge popped, we 1) Add
+         * the edge to the array of cell edges (C); and 2) Iterate through unary grammar rules with the edge
+         * parent as a child, inserting any resulting unary edges to the queue. This insertion replaces the
+         * existing queue entry for the parent non-terminal, if greater, and updates the inside probability
+         * and backpointer in (A).
          */
 
         // Push all binary or lexical edges onto a bounded priority queue
         final int cellBeamWidth = (end - start == 1 ? lexicalRowBeamWidth : Math.min(
-                cellSelector.getBeamWidth(start, end), beamWidth));
+            cellSelector.getBeamWidth(start, end), beamWidth));
         final BoundedPriorityQueue q = new BoundedPriorityQueue(cellBeamWidth, grammar);
 
         final float[] tmpFoms = new float[grammar.numNonTerms()];
@@ -234,7 +241,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 if (spvChartCell.tmpInsideProbabilities[nt] != Float.NEGATIVE_INFINITY) {
                     final float fom = edgeSelector.calcLexicalFOM(start, end, nt,
-                            spvChartCell.tmpInsideProbabilities[nt]);
+                        spvChartCell.tmpInsideProbabilities[nt]);
                     q.insert(nt, fom);
                     tmpFoms[nt] = fom;
                 }
@@ -245,7 +252,8 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         } else {
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 if (spvChartCell.tmpInsideProbabilities[nt] != Float.NEGATIVE_INFINITY) {
-                    final float fom = edgeSelector.calcFOM(start, end, nt, spvChartCell.tmpInsideProbabilities[nt]);
+                    final float fom = edgeSelector.calcFOM(start, end, nt,
+                        spvChartCell.tmpInsideProbabilities[nt]);
                     q.insert(nt, fom);
                     tmpFoms[nt] = fom;
                 }
@@ -256,7 +264,8 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         Arrays.fill(cellInsideProbabilities, Float.NEGATIVE_INFINITY);
         Arrays.fill(cellFoms, Float.NEGATIVE_INFINITY);
 
-        // Pop edges off the queue until we fill the beam width. With each non-terminal popped off the queue, push
+        // Pop edges off the queue until we fill the beam width. With each non-terminal popped off the queue,
+        // push
         // unary edges for each unary grammar rule with the non-terminal as a child
         for (int edgesPopulated = 0; edgesPopulated < cellBeamWidth && q.size() > 0;) {
 
@@ -284,11 +293,13 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
                                 + spvChartCell.tmpInsideProbabilities[child];
                         final float parentFom = edgeSelector.calcFOM(start, end, parent, jointProbability);
 
-                        if (parentFom > tmpFoms[parent] && parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
-                            // The FOM was high enough that the edge was added to the queue; update temporary storage
+                        if (parentFom > tmpFoms[parent] && parentFom > cellFoms[parent]
+                                && q.replace(parent, parentFom)) {
+                            // The FOM was high enough that the edge was added to the queue; update temporary
+                            // storage
                             // (A) to reflect the new unary child and probability
                             spvChartCell.tmpPackedChildren[parent] = grammar.cartesianProductFunction()
-                                    .packUnary(child);
+                                .packUnary(child);
                             spvChartCell.tmpInsideProbabilities[parent] = jointProbability;
                         }
                     }
@@ -312,8 +323,8 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     }
 
     /**
-     * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products together,
-     * saving the maximum probability child combinations.
+     * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products
+     * together, saving the maximum probability child combinations.
      * 
      * @param start
      * @param end
@@ -324,18 +335,19 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
         if (grammar.packingFunction instanceof PerfectIntPairHashPackingFunction) {
             return internalCartesianProduct(start, end, start + 1, end - 1,
-                    (PerfectIntPairHashPackingFunction) grammar.packingFunction, chart.nonTerminalIndices,
-                    chart.insideProbabilities, threadLocalCpvProbabilities.get(), threadLocalCpvMidpoints.get());
+                (PerfectIntPairHashPackingFunction) grammar.packingFunction, chart.nonTerminalIndices,
+                chart.insideProbabilities, threadLocalCpvProbabilities.get(), threadLocalCpvMidpoints.get());
         }
 
         return internalCartesianProduct(start, end, start + 1, end - 1, grammar.packingFunction,
-                chart.nonTerminalIndices, chart.insideProbabilities, threadLocalCpvProbabilities.get(),
-                threadLocalCpvMidpoints.get());
+            chart.nonTerminalIndices, chart.insideProbabilities, threadLocalCpvProbabilities.get(),
+            threadLocalCpvMidpoints.get());
     }
 
     protected final CartesianProductVector internalCartesianProduct(final int start, final int end,
-            final int midpointStart, final int midpointEnd, final PackingFunction pf, final short[] nonTerminalIndices,
-            final float[] insideProbabilities, final float[] probabilities, final short[] midpoints) {
+            final int midpointStart, final int midpointEnd, final PackingFunction pf,
+            final short[] nonTerminalIndices, final float[] insideProbabilities, final float[] probabilities,
+            final short[] midpoints) {
 
         Arrays.fill(midpoints, (short) 0);
 

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import static org.junit.Assert.assertTrue;
@@ -43,8 +43,8 @@ import edu.ohsu.cslu.tests.JUnit;
 public class TestTrainGrammar {
 
     /**
-     * Learns a 2-split grammar from a small corpus (WSJ section 24). Verifies that corpus likelihood increases with
-     * successive EM runs.
+     * Learns a 2-split grammar from a small corpus (WSJ section 24). Verifies that corpus likelihood
+     * increases with successive EM runs.
      * 
      * @throws IOException
      */
@@ -54,7 +54,7 @@ public class TestTrainGrammar {
         tg.factorization = Factorization.RIGHT;
         tg.grammarFormatType = GrammarFormatType.Berkeley;
         final BufferedReader br = new BufferedReader(
-                JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"), 20 * 1024 * 1024);
+            JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"), 20 * 1024 * 1024);
         br.mark(20 * 1024 * 1024);
         final ProductionListGrammar plg0 = tg.induceGrammar(br);
         br.reset();
@@ -73,8 +73,9 @@ public class TestTrainGrammar {
 
             final EmIterationResult result = tg.emIteration(csr1);
             csr1 = csrGrammar(result.plGrammar);
-            assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f", previousCorpusLikelihood,
-                    result.corpusLikelihood), result.corpusLikelihood >= previousCorpusLikelihood);
+            assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f",
+                previousCorpusLikelihood, result.corpusLikelihood),
+                result.corpusLikelihood >= previousCorpusLikelihood);
             previousCorpusLikelihood = result.corpusLikelihood;
         }
 
@@ -83,6 +84,6 @@ public class TestTrainGrammar {
 
     private ConstrainedCsrSparseMatrixGrammar csrGrammar(final ProductionListGrammar plg) {
         return new ConstrainedCsrSparseMatrixGrammar(plg, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 }

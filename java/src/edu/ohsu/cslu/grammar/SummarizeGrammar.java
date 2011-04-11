@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -54,27 +54,27 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         final long startTime = System.currentTimeMillis();
 
         // Handle gzipped and non-gzipped grammar files
-        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
-                grammarFile)) : new FileInputStream(grammarFile);
+        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(
+            new FileInputStream(grammarFile)) : new FileInputStream(grammarFile);
 
         // Read the generic grammar in either text or binary-serialized format.
         final Grammar genericGrammar = Grammar.read(grammarInputStream);
 
         switch (mode) {
-        case SUMMARY:
-            System.out.println(new SummaryGrammar(genericGrammar).getStats());
-            break;
-        case NTS:
-            for (final String nt : genericGrammar.nonTermSet) {
-                System.out.println(nt);
-            }
-            break;
-        case PARENTS:
-            System.out.print(new SummaryGrammar(genericGrammar).parents());
-            break;
-        case PRE_TERMINALS:
-            System.out.print(new SummaryGrammar(genericGrammar).preTerminals());
-            break;
+            case SUMMARY:
+                System.out.println(new SummaryGrammar(genericGrammar).getStats());
+                break;
+            case NTS:
+                for (final String nt : genericGrammar.nonTermSet) {
+                    System.out.println(nt);
+                }
+                break;
+            case PARENTS:
+                System.out.print(new SummaryGrammar(genericGrammar).parents());
+                break;
+            case PRE_TERMINALS:
+                System.out.print(new SummaryGrammar(genericGrammar).preTerminals());
+                break;
         }
 
         if (time) {

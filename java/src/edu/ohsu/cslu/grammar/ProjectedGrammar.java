@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import java.util.HashMap;
@@ -99,23 +99,24 @@ public class ProjectedGrammar extends Grammar {
 
     public String projectNonTermString(final String parentGrammarNT) {
         switch (parentGrammar.grammarFormat) {
-        case Berkeley:
-            if (parentGrammarNT.contains("_")) {
-                // System.out.println("nt=" + nt + " index=" + mapNonterminal(nt) + " eval=" + nt.substring(0,
-                // nt.indexOf("_")));
-                // NP_12 => NP ; @S_5 => @S
-                return parentGrammarNT.substring(0, parentGrammarNT.indexOf("_"));
-            }
-            // System.out.println("nt=" + nt + " index=" + mapNonterminal(nt) + " eval=" + nt);
-            return parentGrammarNT; // <null>, ...
-        case CSLU:
-            return parentGrammarNT;
-        case Roark:
-            // SBAR_^SBAR+S_^SBAR+VP_^S => ???
-            // @NP_^PP_PP_^NP_''_^NP => ???
-            return parentGrammarNT;
-        default:
-            throw new RuntimeException("GrammarFormatType '" + grammarFormat + "' unknown");
+            case Berkeley:
+                if (parentGrammarNT.contains("_")) {
+                    // System.out.println("nt=" + nt + " index=" + mapNonterminal(nt) + " eval=" +
+                    // nt.substring(0,
+                    // nt.indexOf("_")));
+                    // NP_12 => NP ; @S_5 => @S
+                    return parentGrammarNT.substring(0, parentGrammarNT.indexOf("_"));
+                }
+                // System.out.println("nt=" + nt + " index=" + mapNonterminal(nt) + " eval=" + nt);
+                return parentGrammarNT; // <null>, ...
+            case CSLU:
+                return parentGrammarNT;
+            case Roark:
+                // SBAR_^SBAR+S_^SBAR+VP_^S => ???
+                // @NP_^PP_PP_^NP_''_^NP => ???
+                return parentGrammarNT;
+            default:
+                throw new RuntimeException("GrammarFormatType '" + grammarFormat + "' unknown");
         }
     }
 

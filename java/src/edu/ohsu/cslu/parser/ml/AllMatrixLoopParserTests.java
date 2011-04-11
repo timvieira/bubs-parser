@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.ml;
 
 import org.junit.runner.RunWith;
@@ -23,7 +23,8 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ TestLeftChildLoopSpmlParser.class, TestRightChildLoopSpmlParser.class,
-        TestCartesianProductBinarySearchSpmlParser.class, TestCartesianProductBinarySearchLeftChildSpmlParser.class,
-        TestCartesianProductHashSpmlParser.class, TestGrammarLoopSpmlParser.class })
+        TestCartesianProductBinarySearchSpmlParser.class,
+        TestCartesianProductBinarySearchLeftChildSpmlParser.class, TestCartesianProductHashSpmlParser.class,
+        TestGrammarLoopSpmlParser.class })
 public class AllMatrixLoopParserTests {
 }

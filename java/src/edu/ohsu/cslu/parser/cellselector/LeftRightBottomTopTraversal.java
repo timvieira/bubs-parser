@@ -15,14 +15,14 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.cellselector;
 
 import edu.ohsu.cslu.parser.ChartParser;
 
 /**
- * Traverses each chart row sequentially from from left to right, beginning at the bottom (span-1) row and working
- * upward through each row in order.
+ * Traverses each chart row sequentially from from left to right, beginning at the bottom (span-1) row and
+ * working upward through each row in order.
  * 
  * @author Nathan Bodenstab
  * @since Dec 17, 2009
@@ -41,6 +41,7 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     private ChartParser<?, ?> parser;
 
     public static CellSelectorFactory FACTORY = new CellSelectorFactory() {
+
         @Override
         public CellSelector createCellSelector() {
             return new LeftRightBottomTopTraversal();
@@ -74,7 +75,8 @@ public class LeftRightBottomTopTraversal extends CellSelector {
 
     @Override
     public boolean hasNext() {
-        // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active tasks
+        // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active
+        // tasks
         // (if any) before proceeding on to the next row and before returning false when parsing is complete.
         if (nextCell >= 1) {
             if (nextCell >= cells) {

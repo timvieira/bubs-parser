@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.ml;
 
 import java.io.Reader;
@@ -31,7 +31,7 @@ public class TestRightChildLoopSpmlParser extends SparseMatrixLoopParserTestCase
     @Override
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
-                new Object[] { grammarReader, RightShiftFunction.class });
+            new Object[] { grammarReader, RightShiftFunction.class });
     }
 
     @Override

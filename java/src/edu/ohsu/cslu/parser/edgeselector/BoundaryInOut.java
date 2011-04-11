@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.edgeselector;
 
 import java.io.BufferedReader;
@@ -74,12 +74,12 @@ public class BoundaryInOut extends EdgeSelectorFactory {
     @Override
     public EdgeSelector createEdgeSelector(final Grammar grammar) {
         switch (type) {
-        case BoundaryInOut:
-            return new BoundaryInOutSelector();
-        case InsideWithFwdBkwd:
-            return new InsideWithFwdBkwd();
-        default:
-            return super.createEdgeSelector(grammar);
+            case BoundaryInOut:
+                return new BoundaryInOutSelector();
+            case InsideWithFwdBkwd:
+                return new InsideWithFwdBkwd();
+            default:
+                return super.createEdgeSelector(grammar);
         }
     }
 
@@ -132,7 +132,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
 
     public void writeModel(final BufferedWriter outStream) throws IOException {
 
-        outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder + "\n");
+        outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder
+                + "\n");
 
         // left boundary = P(NT | POS-1)
         for (final int leftPOSIndex : grammar.posSet) {
@@ -241,7 +242,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
             final String posStr = grammar.mapNonterminal(leftPOSIndex);
             for (int ntIndex = 0; ntIndex < numNT; ntIndex++) {
                 final String ntStr = grammar.mapNonterminal(ntIndex);
-                leftBoundaryLogProb[ntIndex][leftPOSIndex] = (float) Math.log(leftBoundaryCount.getProb(ntStr, posStr));
+                leftBoundaryLogProb[ntIndex][leftPOSIndex] = (float) Math.log(leftBoundaryCount.getProb(
+                    ntStr, posStr));
             }
         }
 
@@ -250,8 +252,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
             final String ntStr = grammar.mapNonterminal(ntIndex);
             for (final int rightPOSIndex : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(rightPOSIndex);
-                rightBoundaryLogProb[rightPOSIndex][ntIndex] = (float) Math.log(rightBoundaryCount.getProb(posStr,
-                        ntStr));
+                rightBoundaryLogProb[rightPOSIndex][ntIndex] = (float) Math.log(rightBoundaryCount.getProb(
+                    posStr, ntStr));
             }
         }
 
@@ -260,7 +262,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
             final String histPosStr = grammar.mapNonterminal(histPos);
             for (final int pos : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(pos);
-                posTransitionLogProb[pos][histPos] = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
+                posTransitionLogProb[pos][histPos] = (float) Math.log(posTransitionCount.getProb(posStr,
+                    histPosStr));
             }
         }
     }
@@ -272,11 +275,13 @@ public class BoundaryInOut extends EdgeSelectorFactory {
         return nonTerm;
     }
 
-    public void writeModelCounts(final BufferedWriter outStream, final SimpleCounterSet<String> leftBoundaryCount,
+    public void writeModelCounts(final BufferedWriter outStream,
+            final SimpleCounterSet<String> leftBoundaryCount,
             final SimpleCounterSet<String> rightBoundaryCount, final SimpleCounterSet<String> posNgramCount)
             throws IOException {
 
-        outStream.write("# columns: <type> X1 X2 ... | Y1 Y2 ... negLogProb = -1*log(P(X1,X2,..|Y1,Y2,..)) \n");
+        outStream
+            .write("# columns: <type> X1 X2 ... | Y1 Y2 ... negLogProb = -1*log(P(X1,X2,..|Y1,Y2,..)) \n");
         outStream.write("# type = LB (left boundary), RB (right boundary), PN (POS n-gram)\n");
 
         for (final Entry<String, SimpleCounter<String>> posCounter : leftBoundaryCount.items.entrySet()) {
@@ -337,7 +342,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
         }
 
         @Override
-        public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
+        public float calcLexicalFOM(final int start, final int end, final short parent,
+                final float insideProbability) {
             return insideProbability;
         }
 
@@ -409,14 +415,15 @@ public class BoundaryInOut extends EdgeSelectorFactory {
             prevFwdScores[nullSymbol] = 0f;
 
             for (int fwdIndex = 0; fwdIndex < fbSize; fwdIndex++) {
-                final int fwdChartIndex = fwdIndex - 1; // -1 because the fbChart is one off from the parser chart
+                final int fwdChartIndex = fwdIndex - 1; // -1 because the fbChart is one off from the parser
+                                                        // chart
 
                 if (fwdIndex > 0) {
                     // moving from left to right =======>>
                     final short[] fwdPOSList = fwdChartIndex >= chart.size() ? NULL_LIST : grammar
-                            .lexicalParents(chart.tokens[fwdChartIndex]);
+                        .lexicalParents(chart.tokens[fwdChartIndex]);
                     final float[] fwdPOSProbs = fwdChartIndex >= chart.size() ? NULL_PROBABILITIES : grammar
-                            .lexicalLogProbabilities(chart.tokens[fwdChartIndex]);
+                        .lexicalLogProbabilities(chart.tokens[fwdChartIndex]);
 
                     final int[] currentFwdBackptr = fwdBackptr[fwdIndex];
 
@@ -428,8 +435,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
                         final float posEmissionLogProb = fwdPOSProbs[i];
 
                         for (final short prevPOS : prevFwdPOSList) {
-                            final float score = prevFwdScores[prevPOS] + posTransitionLogProb[curPOS][prevPOS]
-                                    + posEmissionLogProb;
+                            final float score = prevFwdScores[prevPOS]
+                                    + posTransitionLogProb[curPOS][prevPOS] + posEmissionLogProb;
                             if (score > fwdScores[curPOS]) {
                                 fwdScores[curPOS] = score;
                                 currentFwdBackptr[curPOS] = prevPOS;
@@ -464,9 +471,9 @@ public class BoundaryInOut extends EdgeSelectorFactory {
 
                     // moving from right to left <<=======
                     final short[] bkwPOSList = bkwChartIndex < 0 ? NULL_LIST : grammar
-                            .lexicalParents(chart.tokens[bkwChartIndex]);
+                        .lexicalParents(chart.tokens[bkwChartIndex]);
                     final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
-                            .lexicalLogProbabilities(chart.tokens[bkwChartIndex]);
+                        .lexicalLogProbabilities(chart.tokens[bkwChartIndex]);
                     final float[] bkwScores = new float[posSize];
                     Arrays.fill(bkwScores, Float.NEGATIVE_INFINITY);
 
@@ -475,8 +482,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
                         for (int i = 0; i < bkwPOSList.length; i++) {
                             final short curPOS = bkwPOSList[i];
 
-                            final float score = prevBkwScores[prevPOS] + posTransitionLogProb[prevPOS][curPOS]
-                                    + bkwPOSProbs[i];
+                            final float score = prevBkwScores[prevPOS]
+                                    + posTransitionLogProb[prevPOS][curPOS] + bkwPOSProbs[i];
                             if (score > bkwScores[curPOS]) {
                                 bkwScores[curPOS] = score;
                             }

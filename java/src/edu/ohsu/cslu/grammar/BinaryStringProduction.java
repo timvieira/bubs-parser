@@ -15,10 +15,11 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 public final class BinaryStringProduction extends StringProduction {
+
     public final String rightChild;
 
     public BinaryStringProduction(final String parent, final String leftChild, final String rightChild,

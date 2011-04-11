@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
@@ -38,11 +38,11 @@ import edu.ohsu.cslu.parser.ParseTree;
  * 
  * Each parallel array entry consumes 2 + 4 + 4 + 2 = 12 bytes
  * 
- * Individual cells in the parallel array are indexed by cell offsets of fixed length (the number of non-terminals in
- * the grammar).
+ * Individual cells in the parallel array are indexed by cell offsets of fixed length (the number of
+ * non-terminals in the grammar).
  * 
- * The ancillary data structures are relatively small, so the total size consumed is approximately = n * (n-1) / 2 * V *
- * 12 bytes.
+ * The ancillary data structures are relatively small, so the total size consumed is approximately = n * (n-1)
+ * / 2 * V * 12 bytes.
  * 
  * Similar to {@link DenseVectorChart}, but observed non-terminals are packed together in
  * {@link PackedArrayChartCell#finalizeCell()}; this packing scan and the resulting denser access to observed
@@ -59,37 +59,38 @@ public class PackedArrayChart extends ParallelArrayChart {
 
     /**
      * Parallel array storing non-terminals (parallel to {@link ParallelArrayChart#insideProbabilities},
-     * {@link ParallelArrayChart#packedChildren}, and {@link ParallelArrayChart#midpoints}. Entries for each cell begin
-     * at indices from {@link #cellOffsets}.
+     * {@link ParallelArrayChart#packedChildren}, and {@link ParallelArrayChart#midpoints}. Entries for each
+     * cell begin at indices from {@link #cellOffsets}.
      */
     public final short[] nonTerminalIndices;
 
     /**
-     * The number of non-terminals populated in each cell. Indexed by cell index ({@link #cellIndex(int, int)} ).
+     * The number of non-terminals populated in each cell. Indexed by cell index ({@link #cellIndex(int, int)}
+     * ).
      */
     private final int[] numNonTerminals;
 
     /**
-     * The index in the main chart array of the first non-terminal in each cell which is valid as a left child. Indexed
-     * by cell index ({@link #cellIndex(int, int)}).
+     * The index in the main chart array of the first non-terminal in each cell which is valid as a left
+     * child. Indexed by cell index ({@link #cellIndex(int, int)}).
      */
     private final int[] minLeftChildIndex;
 
     /**
-     * The index in the main chart array of the last non-terminal in each cell which is valid as a left child. Indexed
-     * by cell index ({@link #cellIndex(int, int)}).
+     * The index in the main chart array of the last non-terminal in each cell which is valid as a left child.
+     * Indexed by cell index ({@link #cellIndex(int, int)}).
      */
     private final int[] maxLeftChildIndex;
 
     /**
-     * The index in the main chart array of the last non-terminal in each cell which is valid as a right child. Indexed
-     * by cell index ({@link #cellIndex(int, int)}).
+     * The index in the main chart array of the last non-terminal in each cell which is valid as a right
+     * child. Indexed by cell index ({@link #cellIndex(int, int)}).
      */
     private final int[] minRightChildIndex;
 
     /**
-     * The index in the main chart array of the last non-terminal in each cell which is valid as a right child. Indexed
-     * by cell index ({@link #cellIndex(int, int)}).
+     * The index in the main chart array of the last non-terminal in each cell which is valid as a right
+     * child. Indexed by cell index ({@link #cellIndex(int, int)}).
      */
     private final int[] maxRightChildIndex;
 
@@ -97,30 +98,35 @@ public class PackedArrayChart extends ParallelArrayChart {
     private final int leftChildSegments;
 
     /**
-     * Indices in the main chart array of each 'segment', dividing left children for multi-threading cartesian-product
-     * operation. Indexed by cellIndex * (segment count + 1) + segment num. e.g. if each left cell is divided into 4
-     * segments ({@link #leftChildSegments} == 4), segment 3 of cell 12 will begin at
-     * {@link #leftChildSegmentStartIndices}[12 * 5 + 3] and end at {@link #leftChildSegmentStartIndices}[12 * 5 + 4].
+     * Indices in the main chart array of each 'segment', dividing left children for multi-threading
+     * cartesian-product operation. Indexed by cellIndex * (segment count + 1) + segment num. e.g. if each
+     * left cell is divided into 4 segments ({@link #leftChildSegments} == 4), segment 3 of cell 12 will begin
+     * at {@link #leftChildSegmentStartIndices}[12 * 5 + 3] and end at {@link #leftChildSegmentStartIndices}
+     * [12 * 5 + 4].
      */
     public final int[] leftChildSegmentStartIndices;
 
-    // TODO Remove this large array and share a single temporary cell. Should avoid some object creation and GC
+    // TODO Remove this large array and share a single temporary cell. Should avoid some object creation and
+    // GC
     public final PackedArrayChartCell[][] temporaryCells;
 
     /**
      * Constructs a chart
      * 
-     * @param tokens Sentence tokens, mapped to integer indices
-     * @param sparseMatrixGrammar Grammar
+     * @param tokens
+     *            Sentence tokens, mapped to integer indices
+     * @param sparseMatrixGrammar
+     *            Grammar
      * @param beamWidth
      * @param lexicalRowBeamWidth
-     * @param leftChildSegments The number of 'segments' to split left children into; used to multi-thread
-     *            cartesian-product operation.
+     * @param leftChildSegments
+     *            The number of 'segments' to split left children into; used to multi-thread cartesian-product
+     *            operation.
      */
-    public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar, final int beamWidth,
-            final int lexicalRowBeamWidth, final int leftChildSegments) {
+    public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar,
+            final int beamWidth, final int lexicalRowBeamWidth, final int leftChildSegments) {
         super(tokens, sparseMatrixGrammar, Math.min(beamWidth, sparseMatrixGrammar.numNonTerms()), Math.min(
-                lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms()));
+            lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms()));
 
         numNonTerminals = new int[cells];
         minLeftChildIndex = new int[cells];
@@ -144,24 +150,29 @@ public class PackedArrayChart extends ParallelArrayChart {
     /**
      * Constructs a chart
      * 
-     * @param tokens Sentence tokens, mapped to integer indices
-     * @param sparseMatrixGrammar Grammar
+     * @param tokens
+     *            Sentence tokens, mapped to integer indices
+     * @param sparseMatrixGrammar
+     *            Grammar
      * @param beamWidth
      * @param lexicalRowBeamWidth
      */
-    public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar, final int beamWidth,
-            final int lexicalRowBeamWidth) {
+    public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar,
+            final int beamWidth, final int lexicalRowBeamWidth) {
         this(tokens, sparseMatrixGrammar, beamWidth, lexicalRowBeamWidth, 0);
     }
 
     /**
      * Constructs a chart for exhaustive inference.
      * 
-     * @param tokens Sentence tokens, mapped to integer indices
-     * @param sparseMatrixGrammar Grammar
+     * @param tokens
+     *            Sentence tokens, mapped to integer indices
+     * @param sparseMatrixGrammar
+     *            Grammar
      */
     public PackedArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms(), 0);
+        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar
+            .numNonTerms(), 0);
     }
 
     @Override
@@ -229,8 +240,8 @@ public class PackedArrayChart extends ParallelArrayChart {
     public float getInside(final int start, final int end, final int nonTerminal) {
         final int cellIndex = cellIndex(start, end);
         final int offset = cellIndex * beamWidth;
-        final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
-                (short) nonTerminal);
+        final int index = Arrays.binarySearch(nonTerminalIndices, offset,
+            offset + numNonTerminals[cellIndex], (short) nonTerminal);
         if (index < 0) {
             return Float.NEGATIVE_INFINITY;
         }
@@ -274,8 +285,8 @@ public class PackedArrayChart extends ParallelArrayChart {
     public class PackedArrayChartCell extends ParallelArrayChartCell {
 
         /**
-         * Temporary storage for manipulating cell entries. Indexed by parent non-terminal. Only allocated when the cell
-         * is being modified
+         * Temporary storage for manipulating cell entries. Indexed by parent non-terminal. Only allocated
+         * when the cell is being modified
          */
         public int[] tmpPackedChildren;
         public float[] tmpInsideProbabilities;
@@ -369,17 +380,24 @@ public class PackedArrayChart extends ParallelArrayChart {
             temporaryCells[start][end] = null;
 
             if (leftChildSegmentStartIndices != null) {
-                // Split up the left-child non-terminals into 'segments' for multi-threading of cartesian product
+                // Split up the left-child non-terminals into 'segments' for multi-threading of cartesian
+                // product
                 // operation.
 
-                // The cell population is likely to be biased toward a specific range of non-terminals, but we still
-                // have to use fixed segment boundaries (instead of splitting the actual population range equally) so
-                // that individual x-product threads can operate on different regions of the x-product vector without
+                // The cell population is likely to be biased toward a specific range of non-terminals, but we
+                // still
+                // have to use fixed segment boundaries (instead of splitting the actual population range
+                // equally) so
+                // that individual x-product threads can operate on different regions of the x-product vector
+                // without
                 // interfering with one another.
 
-                // We use equal segment ranges, with the exception of POS. POS will occur only in one midpoint per cell.
-                // Since many non-terms are POS (particularly in latent-variable grammars) and the threads allocated to
-                // POS would be mostly idle, we include all POS in the segment containing the first segment containing
+                // We use equal segment ranges, with the exception of POS. POS will occur only in one midpoint
+                // per cell.
+                // Since many non-terms are POS (particularly in latent-variable grammars) and the threads
+                // allocated to
+                // POS would be mostly idle, we include all POS in the segment containing the first segment
+                // containing
                 // POS.
                 final int cellSegmentStartIndex = cellIndex * (leftChildSegments + 1);
                 leftChildSegmentStartIndices[cellSegmentStartIndex] = minLeftChildIndex[cellIndex];
@@ -389,7 +407,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                 int i = 0;
 
                 int segmentEndNT = segmentSize;
-                if (segmentEndNT >= sparseMatrixGrammar.posStart && segmentEndNT <= sparseMatrixGrammar.posEnd) {
+                if (segmentEndNT >= sparseMatrixGrammar.posStart
+                        && segmentEndNT <= sparseMatrixGrammar.posEnd) {
                     segmentEndNT += sparseMatrixGrammar.posEnd - sparseMatrixGrammar.posStart + 1;
                 }
                 for (int j = minLeftChildIndex[cellIndex]; i < (leftChildSegments - 1)
@@ -398,18 +417,20 @@ public class PackedArrayChart extends ParallelArrayChart {
                         i++;
                         leftChildSegmentStartIndices[cellSegmentStartIndex + i] = j;
                         segmentEndNT += segmentSize;
-                        if (segmentEndNT >= sparseMatrixGrammar.posStart && segmentEndNT <= sparseMatrixGrammar.posEnd) {
+                        if (segmentEndNT >= sparseMatrixGrammar.posStart
+                                && segmentEndNT <= sparseMatrixGrammar.posEnd) {
                             segmentEndNT += sparseMatrixGrammar.posEnd - sparseMatrixGrammar.posStart + 1;
                         }
                     }
                 }
-                Arrays.fill(leftChildSegmentStartIndices, cellSegmentStartIndex + i + 1, cellSegmentStartIndex
-                        + leftChildSegments + 1, maxLeftChildIndex[cellIndex] + 1);
+                Arrays.fill(leftChildSegmentStartIndices, cellSegmentStartIndex + i + 1,
+                    cellSegmentStartIndex + leftChildSegments + 1, maxLeftChildIndex[cellIndex] + 1);
 
                 // final short[] ntBoundaries = new short[leftChildSegments + 1];
                 // final int[] ntCounts = new int[leftChildSegments];
                 // for (int j = 0; j < ntBoundaries.length - 1; j++) {
-                // ntBoundaries[j] = nonTerminalIndices[leftChildSegmentStartIndices[cellSegmentStartIndex + j]];
+                // ntBoundaries[j] = nonTerminalIndices[leftChildSegmentStartIndices[cellSegmentStartIndex +
+                // j]];
                 // if (j < ntCounts.length) {
                 // ntCounts[j] = leftChildSegmentStartIndices[cellSegmentStartIndex + j + 1]
                 // - leftChildSegmentStartIndices[cellSegmentStartIndex + j];
@@ -429,8 +450,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                 return tmpInsideProbabilities[nonTerminal];
             }
 
-            final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
-                    (short) nonTerminal);
+            final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset
+                    + numNonTerminals[cellIndex], (short) nonTerminal);
             if (index < 0) {
                 return Float.NEGATIVE_INFINITY;
             }
@@ -450,12 +471,13 @@ public class PackedArrayChart extends ParallelArrayChart {
             if (insideProbability > tmpInsideProbabilities[p.parent]) {
                 if (p.isBinaryProd()) {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
-                            (short) p.leftChild, (short) p.rightChild);
+                        (short) p.leftChild, (short) p.rightChild);
                 } else if (p.isLexProd()) {
-                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(p.leftChild);
+                    tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
+                        p.leftChild);
                 } else {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
-                            (short) p.leftChild);
+                        (short) p.leftChild);
                 }
                 tmpInsideProbabilities[parent] = insideProbability;
 
@@ -480,13 +502,13 @@ public class PackedArrayChart extends ParallelArrayChart {
 
                 if (edge.prod.isBinaryProd()) {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().pack(
-                            (short) edge.prod.leftChild, (short) edge.prod.rightChild);
+                        (short) edge.prod.leftChild, (short) edge.prod.rightChild);
                 } else if (edge.prod.isLexProd()) {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
-                            edge.prod.leftChild);
+                        edge.prod.leftChild);
                 } else {
                     tmpPackedChildren[parent] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
-                            (short) edge.prod.leftChild);
+                        (short) edge.prod.leftChild);
                 }
                 tmpInsideProbabilities[parent] = edge.inside();
 
@@ -511,8 +533,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                 edgeMidpoint = tmpMidpoints[nonTerminal];
 
             } else {
-                final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
-                        (short) nonTerminal);
+                final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset
+                        + numNonTerminals[cellIndex], (short) nonTerminal);
                 if (index < 0) {
                     return null;
                 }
@@ -520,11 +542,13 @@ public class PackedArrayChart extends ParallelArrayChart {
                 edgeMidpoint = midpoints[index];
             }
 
-            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(edgeChildren);
-            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(edgeChildren);
+            final int leftChild = sparseMatrixGrammar.cartesianProductFunction()
+                .unpackLeftChild(edgeChildren);
+            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
+                edgeChildren);
             final PackedArrayChartCell leftChildCell = getCell(start(), edgeMidpoint);
             final PackedArrayChartCell rightChildCell = edgeMidpoint < end ? (PackedArrayChartCell) getCell(
-                    edgeMidpoint, end) : null;
+                edgeMidpoint, end) : null;
 
             Production p;
             if (rightChild == Production.LEXICAL_PRODUCTION) {
@@ -561,7 +585,8 @@ public class PackedArrayChart extends ParallelArrayChart {
             if (tmpPackedChildren != null) {
                 int count = 0;
                 for (int i = 0; i < tmpInsideProbabilities.length; i++) {
-                    if (tmpInsideProbabilities[i] != Float.NEGATIVE_INFINITY && sparseMatrixGrammar.isValidLeftChild(i)) {
+                    if (tmpInsideProbabilities[i] != Float.NEGATIVE_INFINITY
+                            && sparseMatrixGrammar.isValidLeftChild(i)) {
                         count++;
                     }
                 }
@@ -587,8 +612,8 @@ public class PackedArrayChart extends ParallelArrayChart {
         }
 
         /**
-         * Returns the index of the first non-terminal in this cell which is valid as a left child. The grammar must be
-         * sorted right, both, left, unary-only, as in {@link Grammar}.
+         * Returns the index of the first non-terminal in this cell which is valid as a left child. The
+         * grammar must be sorted right, both, left, unary-only, as in {@link Grammar}.
          * 
          * @return the index of the first non-terminal in this cell which is valid as a left child.
          */
@@ -597,8 +622,8 @@ public class PackedArrayChart extends ParallelArrayChart {
         }
 
         /**
-         * Returns the index of the last non-terminal in this cell which is valid as a left child. The grammar must be
-         * sorted right, both, left, unary-only, as in {@link Grammar}.
+         * Returns the index of the last non-terminal in this cell which is valid as a left child. The grammar
+         * must be sorted right, both, left, unary-only, as in {@link Grammar}.
          * 
          * @return the index of the last non-terminal in this cell which is valid as a left child.
          */
@@ -607,8 +632,8 @@ public class PackedArrayChart extends ParallelArrayChart {
         }
 
         /**
-         * Returns the index of the last non-terminal in this cell which is valid as a right child. The grammar must be
-         * sorted right, both, left, unary-only, as in {@link Grammar}.
+         * Returns the index of the last non-terminal in this cell which is valid as a right child. The
+         * grammar must be sorted right, both, left, unary-only, as in {@link Grammar}.
          * 
          * @return the index of the last non-terminal in this cell which is valid as a right child.
          */
@@ -617,7 +642,8 @@ public class PackedArrayChart extends ParallelArrayChart {
         }
 
         /**
-         * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same chart.
+         * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same
+         * chart.
          */
         @Override
         public boolean equals(final Object o) {

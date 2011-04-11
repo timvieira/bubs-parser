@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.grammar.LeftListGrammar;
@@ -58,7 +58,8 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
         }
 
         int nUnaryConsidered = 0, nUnaryInCell = 0;
-        if (cellSelector.hasCellConstraints() == false || cellSelector.getCellConstraints().isUnaryOpen(start, end)) {
+        if (cellSelector.hasCellConstraints() == false
+                || cellSelector.getCellConstraints().isUnaryOpen(start, end)) {
             for (final int childNT : cell.getNtArray()) {
                 for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                     if (!cell.hasNT(p.parent))
@@ -74,7 +75,8 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
             }
         }
 
-        // logger.finest("STAT: UNARY: " + currentInput.sentenceLength + " " + (end - start) + " " + nUnaryConsidered +
+        // logger.finest("STAT: UNARY: " + currentInput.sentenceLength + " " + (end - start) + " " +
+        // nUnaryConsidered +
         // " "+ nUnaryInCell);
     }
 }

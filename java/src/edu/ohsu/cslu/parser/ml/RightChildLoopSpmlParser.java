@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
@@ -24,15 +24,16 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
- * Right-child loop exhaustive parser using a sparse-matrix grammar representation ( {@link RightCscSparseMatrixGrammar}
- * ).
+ * Right-child loop exhaustive parser using a sparse-matrix grammar representation (
+ * {@link RightCscSparseMatrixGrammar} ).
  * 
  * @author Aaron Dunlop
  * @since Jun 13, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class RightChildLoopSpmlParser extends SparseMatrixLoopParser<RightCscSparseMatrixGrammar, DenseVectorChart> {
+public class RightChildLoopSpmlParser extends
+        SparseMatrixLoopParser<RightCscSparseMatrixGrammar, DenseVectorChart> {
 
     public RightChildLoopSpmlParser(final ParserDriver opts, final RightCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -89,7 +90,8 @@ public class RightChildLoopSpmlParser extends SparseMatrixLoopParser<RightCscSpa
                     final float childProbability = leftInsideProbability + rightInsideProbability;
 
                     for (int entryIndex = grammar.cscBinaryPopulatedColumnOffsets[j]; entryIndex < grammar.cscBinaryPopulatedColumnOffsets[j + 1]; entryIndex++) {
-                        final float jointProbability = childProbability + grammar.cscBinaryProbabilities[entryIndex];
+                        final float jointProbability = childProbability
+                                + grammar.cscBinaryProbabilities[entryIndex];
                         final int parent = grammar.cscBinaryRowIndices[entryIndex];
 
                         final int targetCellParentIndex = targetCellOffset + parent;

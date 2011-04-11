@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.ml;
 
 import java.util.Arrays;
@@ -27,8 +27,9 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * Parser implementation which loops over all combinations of left and right child cell populations (cartesian product
- * of observed left and right non-terminals) and probes into the grammar for each combination using a binary search.
+ * Parser implementation which loops over all combinations of left and right child cell populations (cartesian
+ * product of observed left and right non-terminals) and probes into the grammar for each combination using a
+ * binary search.
  * 
  * @author Aaron Dunlop
  * @since Jun 14, 2010
@@ -38,7 +39,8 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 public class CartesianProductBinarySearchSpmlParser extends
         SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, PackedArrayChart> {
 
-    public CartesianProductBinarySearchSpmlParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
+    public CartesianProductBinarySearchSpmlParser(final ParserDriver opts,
+            final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
     }
 
@@ -106,8 +108,8 @@ public class CartesianProductBinarySearchSpmlParser extends
                     }
 
                     // Search in the grammar for the child pair
-                    final int index = Arrays.binarySearch(grammar.cscBinaryPopulatedColumns, binarySearchStart,
-                            binarySearchEnd, childPair);
+                    final int index = Arrays.binarySearch(grammar.cscBinaryPopulatedColumns,
+                        binarySearchStart, binarySearchEnd, childPair);
                     if (index < 0) {
                         continue;
                     }

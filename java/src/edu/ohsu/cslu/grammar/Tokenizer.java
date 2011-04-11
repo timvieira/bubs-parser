@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import java.io.Serializable;
@@ -85,11 +85,11 @@ public class Tokenizer implements Serializable {
     }
 
     /**
-     * Translates an unknown word into a unknown-word string, using a decision-tree approach adopted from the Berkeley
-     * parser. The resulting UNK- string will encode as much information as possible about the unknown word. For
-     * example, the word 12-ary would be encoded as UNK-LC-NUM-DASH-y (lower-case, includes a number, includes a dash,
-     * and ends in 'y'). If the detailed UNK- string is also unknown, suffixes can be iteratively removed until an
-     * observed UNK- is found.
+     * Translates an unknown word into a unknown-word string, using a decision-tree approach adopted from the
+     * Berkeley parser. The resulting UNK- string will encode as much information as possible about the
+     * unknown word. For example, the word 12-ary would be encoded as UNK-LC-NUM-DASH-y (lower-case, includes
+     * a number, includes a dash, and ends in 'y'). If the detailed UNK- string is also unknown, suffixes can
+     * be iteratively removed until an observed UNK- is found.
      * 
      * e.g.: UNK-LC-NUM-DASH-y -> UNK-LC-NUM -> UNK-LC
      * 
@@ -123,7 +123,8 @@ public class Tokenizer implements Serializable {
 
         final String lcWord = word.toLowerCase();
 
-        if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us") && !lcWord.endsWith("is")) {
+        if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us")
+                && !lcWord.endsWith("is")) {
             unkStr += "-s";
         } else if (lcWord.endsWith("ed")) {
             unkStr += "-ed";
@@ -155,17 +156,20 @@ public class Tokenizer implements Serializable {
     // taken from Berkeley Parser SimpleLexicon.getNewSignature
 
     /**
-     * This routine returns a String that is the "signature" of the class of a word. For, example, it might represent
-     * whether it is a number of ends in -s. The strings returned by convention match the pattern UNK-.* , which is just
-     * assumed to not match any real word. The decision-tree (and particulary the suffix-handling) is fairly
-     * English-specific.
+     * This routine returns a String that is the "signature" of the class of a word. For, example, it might
+     * represent whether it is a number of ends in -s. The strings returned by convention match the pattern
+     * UNK-.* , which is just assumed to not match any real word. The decision-tree (and particulary the
+     * suffix-handling) is fairly English-specific.
      * 
-     * @param word The word to make a signature for
-     * @param wordIndex Its position in the sentence (mainly so sentence-initial capitalized words can be treated
+     * @param word
+     *            The word to make a signature for
+     * @param wordIndex
+     *            Its position in the sentence (mainly so sentence-initial capitalized words can be treated
      *            differently)
      * @return A String that is its signature (equivalence class)
      */
-    public static String berkeleyGetSignature(final String word, final int wordIndex, final SymbolSet<String> lexSet) {
+    public static String berkeleyGetSignature(final String word, final int wordIndex,
+            final SymbolSet<String> lexSet) {
         final StringBuffer sb = new StringBuffer("UNK");
 
         // Reformed Mar 2004 (cdm); hopefully much better now.

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
@@ -86,8 +86,8 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
         }
 
         BaseLogger.singleton().finer(
-                "INFO: beamconf: inferFactoredCells=" + ParserUtil.bool2int(inferFactoredCells) + " classifyBaseCells="
-                        + ParserUtil.bool2int(classifyBaseCells));
+            "INFO: beamconf: inferFactoredCells=" + ParserUtil.bool2int(inferFactoredCells)
+                    + " classifyBaseCells=" + ParserUtil.bool2int(classifyBaseCells));
     }
 
     public CellSelector createCellSelector() {
@@ -140,7 +140,8 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
                         feats = parser.getCellFeatures(start, end, beamWidthModel.getFeatureTemplate());
                         guessClass = beamWidthModel.classify(feats);
                         beamClassCounts[guessClass]++;
-                        // guessBeamWidth = (int) Math.min(beamWidthModel.class2value(guessClass), maxBeamWidth);
+                        // guessBeamWidth = (int) Math.min(beamWidthModel.class2value(guessClass),
+                        // maxBeamWidth);
                         guessBeamWidth = (int) beamWidthModel.class2value(guessClass);
 
                         // need to allow factored productions for classifiers that don't predict these cells
@@ -151,7 +152,8 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
                             // cellStats += String.format("%d,%d=2 ", start, end);
                         } else if (guessBeamWidth > 0) {
                             foundOpenCell = true;
-                            // cellStats += String.format("%d,%d=%d ", start, end, guessBeamWidth > 0 ? 4 : 0);
+                            // cellStats += String.format("%d,%d=%d ", start, end, guessBeamWidth > 0 ? 4 :
+                            // 0);
                             // cellStats += String.format("%d,%d=%d ", start, end, guessBeamWidth);
                         }
 
@@ -189,8 +191,10 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
 
         @Override
         public boolean hasNext() {
-            // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active tasks
-            // (if any) before proceeding on to the next row and before returning false when parsing is complete.
+            // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for
+            // active tasks
+            // (if any) before proceeding on to the next row and before returning false when parsing is
+            // complete.
             if (nextCell >= 1) {
                 if (nextCell >= openCells) {
                     parser.waitForActiveTasks();

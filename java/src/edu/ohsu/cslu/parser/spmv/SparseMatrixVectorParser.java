@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import cltool4j.args4j.EnumAliasMap;
@@ -31,20 +31,22 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 /**
  * A class of parser which performs the grammar intersection in each cell by:
  * <ol>
- * <li>Finding the cartesian product of possible child productions in child cells across all possible midpoints.
+ * <li>Finding the cartesian product of possible child productions in child cells across all possible
+ * midpoints.
  * <li>Multiplying that cartesian product vector by the grammar matrix (stored in a sparse format).
  * <ol>
  * 
- * Subclasses use a variety of sparse matrix grammar representations, and differ in how they perform the cartesian
- * product. Some implementations perform the vector and matrix operations on GPU hardware using OpenCL.
+ * Subclasses use a variety of sparse matrix grammar representations, and differ in how they perform the
+ * cartesian product. Some implementations perform the vector and matrix operations on GPU hardware using
+ * OpenCL.
  * 
  * @author Aaron Dunlop
  * @since Mar 26, 2010
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart> extends
-        SparseMatrixParser<G, C> {
+public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart>
+        extends SparseMatrixParser<G, C> {
 
     public long startTime = 0;
     public long sentenceCartesianProductTime = 0;
@@ -66,13 +68,14 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     }
 
     /**
-     * Multiplies the grammar matrix (stored sparsely) by the supplied cartesian product vector (stored densely), and
-     * populates this chart cell.
+     * Multiplies the grammar matrix (stored sparsely) by the supplied cartesian product vector (stored
+     * densely), and populates this chart cell.
      * 
      * @param cartesianProductVector
      * @param chartCell
      */
-    public abstract void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell);
+    public abstract void binarySpmv(final CartesianProductVector cartesianProductVector,
+            final ChartCell chartCell);
 
     @Override
     protected void initSentence(final int[] tokens) {
@@ -161,8 +164,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     }
 
     /**
-     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and
-     * populates this chart cell. Used to populate unary rules.
+     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely),
+     * and populates this chart cell. Used to populate unary rules.
      * 
      * @param chartCell
      */
@@ -181,8 +184,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     }
 
     /**
-     * Takes the cartesian product of all potential child-cell combinations. Unions those cartesian products together,
-     * saving the maximum probability child combinations.
+     * Takes the cartesian product of all potential child-cell combinations. Unions those cartesian products
+     * together, saving the maximum probability child combinations.
      * 
      * @param start
      * @param end
@@ -193,11 +196,12 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     @Override
     public String getStats() {
         return super.getStats()
-                + (collectDetailedStatistics ? String
-                        .format(" xProductTime=%d binarySpMVTime=%d unaryTime=%d finalizeTime=%d extractTime=%d pruningTime=%d",
+                + (collectDetailedStatistics
+                        ? String
+                            .format(
+                                " xProductTime=%d binarySpMVTime=%d unaryTime=%d finalizeTime=%d extractTime=%d pruningTime=%d",
                                 sentenceCartesianProductTime, sentenceBinarySpMVTime, sentenceUnaryTime,
-                                sentenceFinalizeTime, extractTime, sentencePruningTime)
-                        : "");
+                                sentenceFinalizeTime, extractTime, sentencePruningTime) : "");
     }
 
     public final static class CartesianProductVector {
@@ -249,18 +253,19 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
                     if (rightChild == Production.UNARY_PRODUCTION) {
                         // Unary production
-                        sb.append(String.format("%s (%d) %.3f (%d)\n", grammar.mapNonterminal(leftChild), leftChild,
-                                probability, midpoint));
+                        sb.append(String.format("%s (%d) %.3f (%d)\n", grammar.mapNonterminal(leftChild),
+                            leftChild, probability, midpoint));
 
                     } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                         // Lexical production
-                        sb.append(String.format("%s (%d) %.3f (%d)\n", grammar.mapLexicalEntry(leftChild), leftChild,
-                                probability, midpoint));
+                        sb.append(String.format("%s (%d) %.3f (%d)\n", grammar.mapLexicalEntry(leftChild),
+                            leftChild, probability, midpoint));
 
                     } else {
                         // Binary production
-                        sb.append(String.format("%s (%d),%s (%d) %.3f (%d)\n", grammar.mapNonterminal(leftChild),
-                                leftChild, grammar.mapNonterminal(rightChild), rightChild, probability, midpoint));
+                        sb.append(String.format("%s (%d),%s (%d) %.3f (%d)\n",
+                            grammar.mapNonterminal(leftChild), leftChild, grammar.mapNonterminal(rightChild),
+                            rightChild, probability, midpoint));
                     }
                 }
             }
@@ -269,8 +274,12 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     }
 
     static public enum CartesianProductFunctionType {
-        Simple("d", "default"), Unfiltered("u", "unfiltered"), PosFactoredFiltered("pf"), BitMatrixExactFilter("bme",
-                "bitmatrixexact"), PerfectHash("ph", "perfecthash"), PerfectHash2("ph2", "perfecthash2");
+        Simple("d", "default"),
+        Unfiltered("u", "unfiltered"),
+        PosFactoredFiltered("pf"),
+        BitMatrixExactFilter("bme", "bitmatrixexact"),
+        PerfectHash("ph", "perfecthash"),
+        PerfectHash2("ph2", "perfecthash2");
 
         private CartesianProductFunctionType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

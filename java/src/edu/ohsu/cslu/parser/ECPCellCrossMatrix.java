@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser;
 
 import java.util.LinkedList;
@@ -47,7 +47,8 @@ public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChar
                     final List<Production> validProductions = gramByLeft[rightNT];
                     if (validProductions != null) {
                         for (final Production p : validProductions) {
-                            final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                            final float prob = p.prob + leftCell.getInside(leftNT)
+                                    + rightCell.getInside(rightNT);
                             cell.updateInside(p, leftCell, rightCell, prob);
                         }
                     }

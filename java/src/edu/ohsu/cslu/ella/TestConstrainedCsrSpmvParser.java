@@ -76,18 +76,20 @@ public class TestConstrainedCsrSpmvParser {
     public void setUp() throws IOException {
 
         // Induce a grammar from the sample tree and construct a basic constraining chart
-        final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllEllaTests.STRING_SAMPLE_TREE), null,
-                null, 1);
+        final StringCountGrammar sg = new StringCountGrammar(
+            new StringReader(AllEllaTests.STRING_SAMPLE_TREE), null, null, 1);
         plGrammar0 = new ProductionListGrammar(sg);
         // Create a basic constraining chart
-        final ConstrainedCsrSparseMatrixGrammar unsplitGrammar = new ConstrainedCsrSparseMatrixGrammar(plGrammar0,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
-        chart0 = new ConstrainedChart(BinaryTree.read(AllEllaTests.STRING_SAMPLE_TREE, String.class), unsplitGrammar);
+        final ConstrainedCsrSparseMatrixGrammar unsplitGrammar = new ConstrainedCsrSparseMatrixGrammar(
+            plGrammar0, GrammarFormatType.Berkeley,
+            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+        chart0 = new ConstrainedChart(BinaryTree.read(AllEllaTests.STRING_SAMPLE_TREE, String.class),
+            unsplitGrammar);
 
         // Split the grammar
         plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
         csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(plGrammar1, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 
     /**
@@ -191,8 +193,8 @@ public class TestConstrainedCsrSpmvParser {
         assertLogFractionEquals(outside34, chart1.getOutside(3, 4, b_1), .001f);
 
         // And ensure that the extracted and unfactored parse matches the input gold tree
-        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class).unfactor(
-                GrammarFormatType.Berkeley);
+        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class)
+            .unfactor(GrammarFormatType.Berkeley);
         assertEquals(AllEllaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
     }
 
@@ -204,9 +206,11 @@ public class TestConstrainedCsrSpmvParser {
 
         // Split the grammar again
         // Split the grammar
-        final ProductionListGrammar plGrammar2 = plGrammar1.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
-        final ConstrainedCsrSparseMatrixGrammar csrGrammar2 = new ConstrainedCsrSparseMatrixGrammar(plGrammar2,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+        final ProductionListGrammar plGrammar2 = plGrammar1
+            .split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
+        final ConstrainedCsrSparseMatrixGrammar csrGrammar2 = new ConstrainedCsrSparseMatrixGrammar(
+            plGrammar2, GrammarFormatType.Berkeley,
+            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         // Parse with the split-2 grammar, constrained by the split-1 chart
         // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
@@ -284,8 +288,8 @@ public class TestConstrainedCsrSpmvParser {
         assertLogFractionEquals(outside34, chart2.getOutside(3, 4, b_2), .001f);
 
         // And ensure that the extracted and unfactored parse matches the input gold tree
-        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree2.toString(), String.class).unfactor(
-                GrammarFormatType.Berkeley);
+        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree2.toString(), String.class)
+            .unfactor(GrammarFormatType.Berkeley);
         assertEquals(AllEllaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
     }
 
@@ -294,7 +298,7 @@ public class TestConstrainedCsrSpmvParser {
 
         // Induce a grammar from the corpus and construct a basic constraining chart
         final ProductionListGrammar plg0 = induceProductionListGrammar(new StringReader(
-                AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN));
+            AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN));
         final ConstrainedCsrSparseMatrixGrammar csr0 = csrGrammar(plg0);
 
         // Split the grammar
@@ -302,8 +306,10 @@ public class TestConstrainedCsrSpmvParser {
         final ConstrainedCsrSparseMatrixGrammar csr1 = csrGrammar(plg1);
 
         // Construct a constraining chart
-        final NaryTree<String> goldTree = NaryTree.read(AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
-        final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
+        final NaryTree<String> goldTree = NaryTree
+            .read(AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
+        final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley,
+            Factorization.RIGHT);
         final ConstrainedChart constrainingChart = new ConstrainedChart(factoredTree, csr0);
 
         // Parse with the split-1 grammar
@@ -312,19 +318,20 @@ public class TestConstrainedCsrSpmvParser {
         final ConstrainedCsrSpmvParser parser = new ConstrainedCsrSpmvParser(opts, csr1);
 
         final ParseTree parseTree1 = parser.findBestParse(constrainingChart);
-        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class).unfactor(
-                GrammarFormatType.Berkeley);
+        final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class)
+            .unfactor(GrammarFormatType.Berkeley);
         assertEquals(goldTree.toString(), unfactoredTree.toString());
     }
 
     private ProductionListGrammar induceProductionListGrammar(final Reader reader) throws IOException {
-        final StringCountGrammar sg = new StringCountGrammar(reader, Factorization.RIGHT, GrammarFormatType.Berkeley, 0);
+        final StringCountGrammar sg = new StringCountGrammar(reader, Factorization.RIGHT,
+            GrammarFormatType.Berkeley, 0);
         return new ProductionListGrammar(sg);
     }
 
     private ConstrainedCsrSparseMatrixGrammar csrGrammar(final ProductionListGrammar plg) {
         return new ConstrainedCsrSparseMatrixGrammar(plg, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 
     @Theory
@@ -355,7 +362,8 @@ public class TestConstrainedCsrSpmvParser {
         int count = 0;
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
-            final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
+            final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley,
+                Factorization.RIGHT);
             final ConstrainedChart constrainingChart = new ConstrainedChart(factoredTree, unsplitGrammar);
 
             // Ensure that we're constructing the constraining chart correctly
@@ -389,8 +397,10 @@ public class TestConstrainedCsrSpmvParser {
         final ProductionListGrammar plg2 = plg1.split(noiseGenerator);
         final ConstrainedCsrSparseMatrixGrammar csr2 = csrGrammar(plg2);
 
-        // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the split-2
-        // grammar (constrained by the split-1 parses). Convert each split-2 tree back to its split-1 form and ensure it
+        // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the
+        // split-2
+        // grammar (constrained by the split-1 parses). Convert each split-2 tree back to its split-1 form and
+        // ensure it
         // matches the split-1 parse
 
         final ParserDriver opts = new ParserDriver();
@@ -430,16 +440,18 @@ public class TestConstrainedCsrSpmvParser {
         final ConstrainedCsrSparseMatrixGrammar csr2 = csrGrammar(plg2);
 
         // Re-merge some categories in the split-2 grammar
-        final ProductionListGrammar plg2b = plg2.merge(new short[] { 2, 4, 8, 12, 20, 22, 26, 40, 46, 56, 70, 72, 100,
-                110 });
+        final ProductionListGrammar plg2b = plg2.merge(new short[] { 2, 4, 8, 12, 20, 22, 26, 40, 46, 56, 70,
+                72, 100, 110 });
         final ConstrainedCsrSparseMatrixGrammar csr2b = csrGrammar(plg2b);
 
         // Split the merged 2-split grammar again (producing a 3-split grammar) and parse with that grammar
         final ProductionListGrammar plg3 = plg2b.split(noiseGenerator);
         final ConstrainedCsrSparseMatrixGrammar csr3 = csrGrammar(plg3);
 
-        // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the split-2
-        // grammar (constrained by the split-1 parses). Convert each split-2 tree back to its split-1 form and ensure it
+        // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the
+        // split-2
+        // grammar (constrained by the split-1 parses). Convert each split-2 tree back to its split-1 form and
+        // ensure it
         // matches the split-1 parse
 
         final ParserDriver opts = new ParserDriver();
@@ -463,7 +475,9 @@ public class TestConstrainedCsrSpmvParser {
             final ConstrainedChart c2b = p2.chart.merge(csr2b);
 
             // Ensure that the tree encoded in the newly-merged chart matches the original un-split tree
-            assertEquals(goldTree.toString(), BinaryTree.read(c2b.extractBestParse(0).toString(), String.class)
+            assertEquals(
+                goldTree.toString(),
+                BinaryTree.read(c2b.extractBestParse(0).toString(), String.class)
                     .unfactor(GrammarFormatType.Berkeley).toString());
 
             final BinaryTree<String> tree3 = BinaryTree.read(p3.findBestParse(c0).toString(), String.class);
@@ -476,11 +490,12 @@ public class TestConstrainedCsrSpmvParser {
     @Test
     public void testCountRuleOccurrences() {
 
-        // Parse with an equal-split grammar, count (fractional) rule occurrences, and convert those counts into a
+        // Parse with an equal-split grammar, count (fractional) rule occurrences, and convert those counts
+        // into a
         // grammar
         parseWithGrammar1();
         ProductionListGrammar plg = new ProductionListGrammar(parser1.countRuleOccurrences(),
-                parser1.grammar.parentGrammar);
+            parser1.grammar.parentGrammar);
 
         // Verify that we find the same probabilities in the original split grammar
         assertLogFractionEquals(Math.log(1f / 2), plg.unaryLogProbability("top", "a_0"), .01f);
@@ -507,9 +522,10 @@ public class TestConstrainedCsrSpmvParser {
         // Split the M0 grammar, biasing all rule splits completely to the 2nd option
         // Split the grammar
         final ProductionListGrammar biasedGrammar1 = plGrammar0
-                .split(new ProductionListGrammar.BiasedNoiseGenerator(1f));
+            .split(new ProductionListGrammar.BiasedNoiseGenerator(1f));
         final ConstrainedCsrSparseMatrixGrammar biasedCsrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(
-                biasedGrammar1, GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+            biasedGrammar1, GrammarFormatType.Berkeley,
+            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
@@ -543,7 +559,8 @@ public class TestConstrainedCsrSpmvParser {
 
         assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.binaryLogProbability("b_0", "b_0", "a_1"), .01f);
         assertLogFractionEquals(Math.log(1f / 4 / 2), plg.binaryLogProbability("b_0", "b_0", "a_0"), .01f);
-        // a_x -> a_x b_1 has probability 0, so the outside probability of b_1 in cell 3,5 is 0. Thus, even though b_1
+        // a_x -> a_x b_1 has probability 0, so the outside probability of b_1 in cell 3,5 is 0. Thus, even
+        // though b_1
         // -> b_x a_0 productions have non-0 probability, b_1 -> b_x a_0 is not observed in the chart
         assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.binaryLogProbability("b_1", "b_0", "a_0"), .01f);
         assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.binaryLogProbability("b_1", "b_1", "a_0"), .01f);

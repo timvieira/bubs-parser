@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import edu.ohsu.cslu.grammar.Production;
@@ -71,8 +71,10 @@ public abstract class Chart {
      * 
      * @param start
      * @param end
-     * @param nonTerminal Non-terminal index
-     * @param insideProbability New inside probability
+     * @param nonTerminal
+     *            Non-terminal index
+     * @param insideProbability
+     *            New inside probability
      */
     public abstract void updateInside(int start, int end, int nonTerminal, float insideProbability);
 
@@ -81,7 +83,8 @@ public abstract class Chart {
      * 
      * @param start
      * @param end
-     * @param nonTerminal Non-terminal index
+     * @param nonTerminal
+     *            Non-terminal index
      * @return the inside probability of the specified non-terminal in the a cell.
      */
     public abstract float getInside(int start, int end, int nonTerminal);
@@ -137,6 +140,7 @@ public abstract class Chart {
     }
 
     public static abstract class ChartCell {
+
         protected final short start, end;
         public int numEdgesConsidered = 0, numEdgesAdded = 0, numSpanVisits = 0;
 
@@ -154,9 +158,9 @@ public abstract class Chart {
         public abstract float getInside(final int nonTerminal);
 
         /**
-         * Returns the most probable edge producing the specified non-terminal. Most {@link ChartCell} implementations
-         * will only maintain one edge per non-terminal, but some implementations may maintain multiple edges (e.g., for
-         * k-best parsing).
+         * Returns the most probable edge producing the specified non-terminal. Most {@link ChartCell}
+         * implementations will only maintain one edge per non-terminal, but some implementations may maintain
+         * multiple edges (e.g., for k-best parsing).
          * 
          * @param nonTerminal
          * @return the most probable populated edge producing the specified non-terminal
@@ -165,8 +169,8 @@ public abstract class Chart {
 
         public abstract void updateInside(final ChartEdge edge);
 
-        public abstract void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell,
-                final float insideProb);
+        public abstract void updateInside(final Production p, final ChartCell leftCell,
+                final ChartCell rightCell, final float insideProb);
 
         /**
          * @return the word index of the first word covered by this cell
@@ -209,6 +213,7 @@ public abstract class Chart {
     }
 
     public static class ChartEdge {
+
         public Production prod;
         public ChartCell leftCell, rightCell;
 
@@ -256,9 +261,11 @@ public abstract class Chart {
         public final int midpt() {
             if (rightCell == null) {
                 if (leftCell == null) {
-                    throw new RuntimeException("right/leftCell must be set to use start(), end(), and midpt()");
+                    throw new RuntimeException(
+                        "right/leftCell must be set to use start(), end(), and midpt()");
                 }
-                throw new RuntimeException("Do not use midpt() with unary productions.  They do not have midpoints.");
+                throw new RuntimeException(
+                    "Do not use midpt() with unary productions.  They do not have midpoints.");
             }
             return leftCell.end();
         }

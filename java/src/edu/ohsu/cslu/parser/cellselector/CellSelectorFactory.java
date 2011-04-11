@@ -15,13 +15,13 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.cellselector;
 
 /**
- * Represents a model for cell selection and creates cell selector instances using that model(see {@link CellSelector}).
- * Implementers may constrain chart cell iteration or population by lexical analysis of the sentence or other outside
- * information.
+ * Represents a model for cell selection and creates cell selector instances using that model(see
+ * {@link CellSelector}). Implementers may constrain chart cell iteration or population by lexical analysis of
+ * the sentence or other outside information.
  * 
  * @author Aaron Dunlop
  * @since Mar 10, 2011

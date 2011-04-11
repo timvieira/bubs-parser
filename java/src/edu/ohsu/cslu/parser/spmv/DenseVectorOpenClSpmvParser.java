@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import com.nativelibs4java.opencl.CLFloatBuffer;
@@ -63,15 +63,18 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
         final int validRightChildren = grammar.rightChildrenEnd - grammar.rightChildrenStart + 1;
 
         // Bind the arguments of the OpenCL kernel
-        cartesianProductKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
-                leftCell.offset(), leftChildrenStart, validLeftChildren, rightCell.offset(), rightChildrenStart,
-                validRightChildren, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints, rightCell.start());
+        cartesianProductKernel
+            .setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints, leftCell.offset(),
+                leftChildrenStart, validLeftChildren, rightCell.offset(), rightChildrenStart,
+                validRightChildren, tmpClCrossProductProbabilities, tmpClCrossProductMidpoints,
+                rightCell.start());
 
         // Call the cartesian-product kernel with |V_r| X |V_l| threads (rounded up to the next multiple of
         // LOCAL_WORK_SIZE)
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp((validLeftChildren * validRightChildren),
-                LOCAL_WORK_SIZE);
-        cartesianProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
+            LOCAL_WORK_SIZE);
+        cartesianProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
+            new int[] { LOCAL_WORK_SIZE });
 
         clQueue.finish();
     }
@@ -81,9 +84,9 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
 
         // Bind the arguments of the OpenCL kernel
         binarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
-                chartCell.offset(), clCartesianProductProbabilities0, clCartesianProductMidpoints0,
-                clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities,
-                grammar.numNonTerms());
+            chartCell.offset(), clCartesianProductProbabilities0, clCartesianProductMidpoints0,
+            clBinaryRuleMatrixRowIndices, clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities,
+            grammar.numNonTerms());
 
         // Call the binary SpMV kernel with |V| threads (rounded up to the nearest multiple of
         // LOCAL_WORK_SIZE)
@@ -97,8 +100,8 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
 
         // Bind the arguments of the OpenCL kernel
         unarySpmvKernel.setArgs(clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
-                chartCell.offset(), clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices, clCsrUnaryProbabilities,
-                grammar.numNonTerms(), chartCell.end());
+            chartCell.offset(), clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices, clCsrUnaryProbabilities,
+            grammar.numNonTerms(), chartCell.end());
 
         // Call the unary SpMV kernel with |V| threads (rounded up to the nearest multiple of LOCAL_WORK_SIZE)
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);

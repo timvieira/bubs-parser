@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
@@ -48,13 +48,16 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
     /** The number of threads configured for cartesian-product and binary grammar intersection */
     private final int cellThreads;
 
-    /** The number of tasks to split cartesian-product operation into. Normally a multiple of the number of threads. */
+    /**
+     * The number of tasks to split cartesian-product operation into. Normally a multiple of the number of
+     * threads.
+     */
     private final int cpvSegments;
 
     /**
-     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into segments of
-     * roughly equal size for distribution between threads. Length is {@link #cellThreads} + 1 (to avoid falling off the
-     * end)
+     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into
+     * segments of roughly equal size for distribution between threads. Length is {@link #cellThreads} + 1 (to
+     * avoid falling off the end)
      */
     private final int[] binaryRowSegments;
 
@@ -74,7 +77,8 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         int i = 1;
         // Examine each populated column
         for (int j = 1; j < grammar.cscBinaryPopulatedColumns.length - 1; j++) {
-            if (grammar.cscBinaryPopulatedColumnOffsets[j] - grammar.cscBinaryPopulatedColumnOffsets[segments[i - 1]] >= segmentSize) {
+            if (grammar.cscBinaryPopulatedColumnOffsets[j]
+                    - grammar.cscBinaryPopulatedColumnOffsets[segments[i - 1]] >= segmentSize) {
                 segments[i++] = j;
             }
         }
@@ -83,9 +87,9 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         this.cellThreads = i;
         this.cpvSegments = cellThreads * 2;
         final int configuredThreads = props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT) ? props
-                .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) * cellThreads : cellThreads;
+            .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) * cellThreads : cellThreads;
         GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
-                Integer.toString(configuredThreads));
+            Integer.toString(configuredThreads));
 
         this.binaryRowSegments = new int[i + 1];
         System.arraycopy(segments, 0, binaryRowSegments, 0, binaryRowSegments.length);
@@ -101,6 +105,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
 
         // Temporary cell storage for each row-level thread
         this.threadLocalTemporaryCells = new ThreadLocal<CellParallelCscSpmvParser.TemporaryChartCell[]>() {
+
             @Override
             protected TemporaryChartCell[] initialValue() {
                 final TemporaryChartCell[] tcs = new TemporaryChartCell[cellThreads];
@@ -151,8 +156,8 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
     // }
 
     /**
-     * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products together,
-     * saving the maximum probability child combinations.
+     * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products
+     * together, saving the maximum probability child combinations.
      * 
      * @param start
      * @param end
@@ -162,7 +167,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
         final PerfectIntPairHashPackingFunction pf = (PerfectIntPairHashPackingFunction) grammar
-                .cartesianProductFunction();
+            .cartesianProductFunction();
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 
@@ -183,10 +188,11 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         for (int i = 0; i < cpvSegments; i++) {
             final int segment = i;
             futures[i] = threadPool.submit(new Runnable() {
+
                 @Override
                 public void run() {
                     cartesianProductSegment(start, end, segment, pf, nonTerminalIndices, insideProbabilities,
-                            cpvProbabilities, cpvMidpoints);
+                        cpvProbabilities, cpvMidpoints);
                 }
             });
         }
@@ -209,10 +215,10 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
             final int leftCellIndex = chart.cellIndex(start, midpoint);
             final int rightCellIndex = chart.cellIndex(midpoint, end);
 
-            final int leftChildrenStartIndex = chart.leftChildSegmentStartIndices[leftCellIndex * (cpvSegments + 1)
-                    + segment];
-            final int leftChildrenEndIndex = chart.leftChildSegmentStartIndices[leftCellIndex * (cpvSegments + 1)
-                    + segment + 1];
+            final int leftChildrenStartIndex = chart.leftChildSegmentStartIndices[leftCellIndex
+                    * (cpvSegments + 1) + segment];
+            final int leftChildrenEndIndex = chart.leftChildSegmentStartIndices[leftCellIndex
+                    * (cpvSegments + 1) + segment + 1];
 
             final int rightStart = chart.minRightChildIndex(rightCellIndex);
             final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
@@ -272,16 +278,18 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
             final TemporaryChartCell tmpCell = temporaryCells[i];
 
             if (cellSelector.hasCellConstraints()
-                    && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end())) {
+                    && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(),
+                        chartCell.end())) {
                 futures[i] = threadPool.submit(new Runnable() {
 
                     @Override
                     public void run() {
                         // Multiply by the factored grammar rule matrix
                         binarySpmvMultiply(cartesianProductVector, grammar.factoredCscBinaryPopulatedColumns,
-                                grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
-                                grammar.factoredCscBinaryProbabilities, tmpCell.packedChildren,
-                                tmpCell.insideProbabilities, tmpCell.midpoints, segmentStart, segmentEnd);
+                            grammar.factoredCscBinaryPopulatedColumnOffsets,
+                            grammar.factoredCscBinaryRowIndices, grammar.factoredCscBinaryProbabilities,
+                            tmpCell.packedChildren, tmpCell.insideProbabilities, tmpCell.midpoints,
+                            segmentStart, segmentEnd);
                     }
                 });
             } else {
@@ -291,9 +299,9 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
                     public void run() {
                         // Multiply by the full grammar rule matrix
                         binarySpmvMultiply(cartesianProductVector, grammar.cscBinaryPopulatedColumns,
-                                grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
-                                grammar.cscBinaryProbabilities, tmpCell.packedChildren, tmpCell.insideProbabilities,
-                                tmpCell.midpoints, segmentStart, segmentEnd);
+                            grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
+                            grammar.cscBinaryProbabilities, tmpCell.packedChildren,
+                            tmpCell.insideProbabilities, tmpCell.midpoints, segmentStart, segmentEnd);
                     }
                 });
             }
@@ -306,9 +314,10 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
             futures[0].get();
 
             final int arrayLength = temporaryCells[0].insideProbabilities.length;
-            System.arraycopy(temporaryCells[0].insideProbabilities, 0, packedArrayCell.tmpInsideProbabilities, 0,
-                    arrayLength);
-            System.arraycopy(temporaryCells[0].packedChildren, 0, packedArrayCell.tmpPackedChildren, 0, arrayLength);
+            System.arraycopy(temporaryCells[0].insideProbabilities, 0,
+                packedArrayCell.tmpInsideProbabilities, 0, arrayLength);
+            System.arraycopy(temporaryCells[0].packedChildren, 0, packedArrayCell.tmpPackedChildren, 0,
+                arrayLength);
             System.arraycopy(temporaryCells[0].midpoints, 0, packedArrayCell.tmpMidpoints, 0, arrayLength);
             temporaryCells[0].clear();
 
@@ -338,6 +347,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
     }
 
     private final class TemporaryChartCell {
+
         final int[] packedChildren = new int[grammar.numNonTerms()];
         final float[] insideProbabilities = new float[grammar.numNonTerms()];
         final short[] midpoints = new short[grammar.numNonTerms()];

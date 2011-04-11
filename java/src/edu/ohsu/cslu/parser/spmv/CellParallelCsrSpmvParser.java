@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import java.util.concurrent.Callable;
@@ -47,9 +47,9 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
     private final int threads;
 
     /**
-     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into segments of
-     * roughly equal size for distribution between threads. Length is {@link #threads} + 1 (to avoid falling off the
-     * end)
+     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into
+     * segments of roughly equal size for distribution between threads. Length is {@link #threads} + 1 (to
+     * avoid falling off the end)
      */
     private final int[] binaryRowSegments;
 
@@ -63,7 +63,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
 
         // Split the binary grammar rules into segments of roughly equal size
         final int requestedThreads = GlobalConfigProperties.singleton().getIntProperty(
-                ParserDriver.OPT_CELL_THREAD_COUNT);
+            ParserDriver.OPT_CELL_THREAD_COUNT);
         final int[] segments = new int[requestedThreads + 1];
         final int segmentSize = grammar.csrBinaryColumnIndices.length / requestedThreads + 1;
         segments[0] = 0;
@@ -77,7 +77,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
 
         this.threads = i;
         GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
-                Integer.toString(threads));
+            Integer.toString(threads));
         this.binaryRowSegments = new int[i + 1];
         System.arraycopy(segments, 0, binaryRowSegments, 0, binaryRowSegments.length);
 
@@ -104,8 +104,8 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
     }
 
     /**
-     * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products together,
-     * saving the maximum probability child combinations.
+     * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products
+     * together, saving the maximum probability child combinations.
      * 
      * @param start
      * @param end
@@ -115,7 +115,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
         final PerfectIntPairHashPackingFunction pf = (PerfectIntPairHashPackingFunction) grammar
-                .cartesianProductFunction();
+            .cartesianProductFunction();
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 
@@ -139,17 +139,18 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
                     @Override
                     public edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector call()
                             throws Exception {
-                        return internalCartesianProduct(start, end, midpointStart, midpointEnd, pf, nonTerminalIndices,
-                                insideProbabilities, probabilities, midpoints);
+                        return internalCartesianProduct(start, end, midpointStart, midpointEnd, pf,
+                            nonTerminalIndices, insideProbabilities, probabilities, midpoints);
                     }
                 });
             }
         } else {
             return internalCartesianProduct(start, end, start + 1, end - 1, pf, nonTerminalIndices,
-                    insideProbabilities, cpvProbabilities[0], cpvMidpoints[0]);
+                insideProbabilities, cpvProbabilities[0], cpvMidpoints[0]);
         }
 
-        // Wait for the first task to complete (the first one uses the 'main' arrays, so we can't begin the merge until
+        // Wait for the first task to complete (the first one uses the 'main' arrays, so we can't begin the
+        // merge until
         // it is complete)
         try {
             futures[0].get();
@@ -159,7 +160,8 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
         }
 
         // Wait for other tasks to complete.
-        // Copy the probabilities and midpoints of the first task directly to the main array and merge each subsequent
+        // Copy the probabilities and midpoints of the first task directly to the main array and merge each
+        // subsequent
         // task into that array.
         // TODO This merge could be parallelized by splitting the vector array in segments
         for (int i = 1; i < threads; i++) {
@@ -167,7 +169,8 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
                 final CartesianProductVector partialCpv = futures[i].get();
                 final float[] cartesianProductProbabilities = cpvProbabilities[0];
                 final short[] cartesianProductMidpoints = cpvMidpoints[0];
-                // Merge partial cartesian-product vector into the main vector (tropical semiring - choose maximum
+                // Merge partial cartesian-product vector into the main vector (tropical semiring - choose
+                // maximum
                 // probability)
                 for (int j = 0; j < partialCpv.midpoints.length; j++) {
                     if (partialCpv.midpoints[j] != 0

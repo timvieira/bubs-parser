@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.edgeselector;
 
 import java.io.BufferedReader;
@@ -37,7 +37,8 @@ public abstract class EdgeSelector implements Serializable {
         throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
     }
 
-    public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
+    public float calcLexicalFOM(final int start, final int end, final short parent,
+            final float insideProbability) {
         throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
     }
 

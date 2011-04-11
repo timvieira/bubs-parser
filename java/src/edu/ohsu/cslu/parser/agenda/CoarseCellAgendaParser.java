@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.agenda;
 
 import java.util.Collection;
@@ -114,7 +114,8 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
         agenda.add(edge);
     }
 
-    protected void addBestEdgesToChart(final HashSetChartCell cell, final ChartEdge[] bestEdges, final int maxEdgesToAdd) {
+    protected void addBestEdgesToChart(final HashSetChartCell cell, final ChartEdge[] bestEdges,
+            final int maxEdgesToAdd) {
         ChartEdge edge, unaryEdge;
         int numAdded = 0;
 
@@ -230,7 +231,8 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
                 possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                 if (possibleProds != null) {
                     for (final Production p : possibleProds) {
-                        // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
+                        // final float prob = p.prob + leftCell.getInside(leftNT) +
+                        // rightCell.getInside(rightNT);
                         edge = chart.new ChartEdge(p, leftCell, rightCell);
                         // System.out.println(" considering: " + edge);
                         if (edge.fom > bestFOM) {

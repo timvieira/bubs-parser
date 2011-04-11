@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import static org.junit.Assert.assertEquals;
@@ -61,7 +61,8 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
                 + "(s (a (a (a (a e) (a c)) (b d)) (b (b (b f)) (a d))))";
 
         // With an occurrence threshold of 1, all observed symbols will be in the lexicon
-        SymbolSet<String> lexicon = new StringCountGrammar(new StringReader(corpus), null, null, 1).induceLexicon();
+        SymbolSet<String> lexicon = new StringCountGrammar(new StringReader(corpus), null, null, 1)
+            .induceLexicon();
         assertTrue("Expected 'e' in lexicon", lexicon.contains("e"));
         assertTrue("Expected 'f' in lexicon", lexicon.contains("f"));
 

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import static junit.framework.Assert.assertEquals;
@@ -40,7 +40,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     public void testPack(final Class<? extends PackingFunction> cartesianProductFunctionClass)
             throws Exception {
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(grammarClass(),
-                GrammarTestCase.simpleGrammar(), cartesianProductFunctionClass);
+            GrammarTestCase.simpleGrammar(), cartesianProductFunctionClass);
         final PackingFunction f = g.packingFunction;
         assertEquals(4, f.unpackLeftChild(f.pack((short) 4, (short) 3)));
         assertEquals(3, f.unpackRightChild(f.pack((short) 4, (short) 3)));
@@ -56,7 +56,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
         // And a couple tests with a larger grammar
         final SparseMatrixGrammar g2 = (SparseMatrixGrammar) createGrammar(grammarClass(),
-                JUnit.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"), cartesianProductFunctionClass);
+            JUnit.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"), cartesianProductFunctionClass);
         final PackingFunction f2 = g2.packingFunction;
         assertEquals(2, f2.unpackLeftChild(f2.pack((short) 2, (short) 0)));
         assertEquals(0, f2.unpackRightChild(f2.pack((short) 2, (short) 0)));
@@ -77,14 +77,15 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     /**
      * Tests a _very_ simple grammar.
      * 
-     * @throws Exception if something bad happens
+     * @throws Exception
+     *             if something bad happens
      */
     @Theory
     public void testSimpleGrammar(final Class<? extends PackingFunction> cartesianProductFunctionClass)
             throws Exception {
 
         final SparseMatrixGrammar simpleGrammar = (SparseMatrixGrammar) createGrammar(grammarClass(),
-                GrammarTestCase.simpleGrammar());
+            GrammarTestCase.simpleGrammar());
 
         assertEquals(0f, simpleGrammar.lexicalLogProbability("NN", "systems"), .01f);
         assertEquals(0f, simpleGrammar.lexicalLogProbability("NN", "analyst"), .01f);
@@ -124,7 +125,8 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
 
     @Test
     public void testF2_21_R2_unk() throws Exception {
-        final Grammar g = createGrammar(grammarClass(), JUnit.unitTestDataAsReader("grammars/f2-21-R2-unk.gz"));
+        final Grammar g = createGrammar(grammarClass(),
+            JUnit.unitTestDataAsReader("grammars/f2-21-R2-unk.gz"));
         assertEquals(11793, g.numBinaryProds());
         assertEquals(242, g.numUnaryProds());
         assertEquals(52000, g.numLexProds());
@@ -148,7 +150,7 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
     @Test
     public void testF2_21_R2_p1_unk() throws Exception {
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(grammarClass(),
-                JUnit.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"));
+            JUnit.unitTestDataAsReader("grammars/f2-21-R2-p1-unk.gz"));
         assertEquals(22299, g.numBinaryProds());
         assertEquals(745, g.numUnaryProds());
         assertEquals(52000, g.numLexProds());
@@ -168,8 +170,8 @@ public abstract class SortedGrammarTestCase extends GrammarTestCase {
         assertEquals(6082, g.posEnd);
 
         assertEquals(1930,
-                g.packingFunction.unpackLeftChild(g.packingFunction.pack((short) 1930, (short) 250)));
+            g.packingFunction.unpackLeftChild(g.packingFunction.pack((short) 1930, (short) 250)));
         assertEquals(250,
-                g.packingFunction.unpackRightChild(g.packingFunction.pack((short) 1930, (short) 250)));
+            g.packingFunction.unpackRightChild(g.packingFunction.pack((short) 1930, (short) 250)));
     }
 }

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import java.io.FileWriter;
@@ -42,8 +42,8 @@ public class InduceGrammar extends BaseCommandlineTool {
 
     @Override
     protected void run() throws Exception {
-        final StringCountGrammar cg = new StringCountGrammar(new InputStreamReader(System.in), factorization, grammarFormatType,
-                lexicalUnkThreshold);
+        final StringCountGrammar cg = new StringCountGrammar(new InputStreamReader(System.in), factorization,
+            grammarFormatType, lexicalUnkThreshold);
         final ProductionListGrammar plg = new ProductionListGrammar(cg);
 
         final FileWriter pcfgWriter = new FileWriter(grammarPrefix + ".pcfg");

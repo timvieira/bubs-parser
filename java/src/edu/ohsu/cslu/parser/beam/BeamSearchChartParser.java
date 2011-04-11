@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.beam;
 
 import java.util.Arrays;
@@ -59,8 +59,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         setBeamTuneParams(opts.beamTune);
 
         BaseLogger.singleton().fine(
-                "INFO: beamWidth=" + origBeamWidth + " globalDelta=" + origGlobalBeamDelta + " localDelta="
-                        + origLocalBeamDelta + " factBeamWidth=" + origFactoredBeamWidth);
+            "INFO: beamWidth=" + origBeamWidth + " globalDelta=" + origGlobalBeamDelta + " localDelta="
+                    + origLocalBeamDelta + " factBeamWidth=" + origFactoredBeamWidth);
     }
 
     protected void setBeamTuneParams(final String beamTuneStr) {
@@ -118,9 +118,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             localBeamDelta = Math.max(origLocalBeamDelta * reparseFactor, origLocalBeamDelta);
 
             BaseLogger.singleton().finest(
-                    "INFO: reparseNum=" + (numReparses + 1) + "beamWidth=" + beamWidth + " globalThresh="
-                            + globalBeamDelta + " localThresh=" + localBeamDelta + " factBeamWidth="
-                            + factoredBeamWidth);
+                "INFO: reparseNum=" + (numReparses + 1) + "beamWidth=" + beamWidth + " globalThresh="
+                        + globalBeamDelta + " localThresh=" + localBeamDelta + " factBeamWidth="
+                        + factoredBeamWidth);
 
             cellSelector.reset();
             while (cellSelector.hasNext()) {
@@ -134,7 +134,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
                 // if (opts.collectDetailedStatistics) {
                 // final HashSetChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
-                // System.out.println(cell.width() + " [" + cell.start() + "," + cell.end() + "] #pop=" + cellPopped
+                // System.out.println(cell.width() + " [" + cell.start() + "," + cell.end() + "] #pop=" +
+                // cellPopped
                 // + " #push=" + cellPushed + " #considered=" + cellConsidered);
                 // }
             }
@@ -158,8 +159,10 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             // scores are changed to be comparable
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
                 currentInput.nLex += 1;
-                // TODO: need to be able to get POS posteriors. We could use this as the FOM and rank just like others
-                // if (!only1BestPOS || ((BoundaryInOut) edgeSelector).get1bestPOSTag(start) == lexProd.parent) {
+                // TODO: need to be able to get POS posteriors. We could use this as the FOM and rank just
+                // like others
+                // if (!only1BestPOS || ((BoundaryInOut) edgeSelector).get1bestPOSTag(start) ==
+                // lexProd.parent) {
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
                 if (hasCellConstraints == false || cc.isUnaryOpen(start, end)) {
                     for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {

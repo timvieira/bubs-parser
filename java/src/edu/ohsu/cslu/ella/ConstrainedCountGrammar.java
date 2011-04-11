@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
@@ -96,7 +96,7 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
         // Initialize maps of base grammar probabilities
         for (final Production p : grammar.parentGrammar.binaryProductions) {
             Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = baseBinaryRuleLogProbabilities
-                    .get((short) p.parent);
+                .get((short) p.parent);
             if (leftChildMap == null) {
                 leftChildMap = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
                 baseBinaryRuleLogProbabilities.put((short) p.parent, leftChildMap);
@@ -149,7 +149,7 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
 
         // Base grammar rule count
         incrementBinaryLogCount(baseBinaryRuleLogCounts, parent, vocabulary.baseCategoryIndices[leftChild],
-                vocabulary.baseCategoryIndices[rightChild], logIncrement);
+            vocabulary.baseCategoryIndices[rightChild], logIncrement);
     }
 
     public void incrementBinaryLogCount(
@@ -170,7 +170,8 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
         }
 
         if (rightChildMap.containsKey(rightChild)) {
-            rightChildMap.put(rightChild, edu.ohsu.cslu.util.Math.logSum(rightChildMap.get(rightChild), logIncrement));
+            rightChildMap.put(rightChild,
+                edu.ohsu.cslu.util.Math.logSum(rightChildMap.get(rightChild), logIncrement));
         } else {
             rightChildMap.put(rightChild, logIncrement);
         }
@@ -185,9 +186,10 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
 
         int baseChildren = basePackedChildren.get(packedChildren);
         if (baseChildren < 0) {
-            final short baseLeftChild = vocabulary.baseCategoryIndices[packingFunction.unpackLeftChild(packedChildren)];
+            final short baseLeftChild = vocabulary.baseCategoryIndices[packingFunction
+                .unpackLeftChild(packedChildren)];
             final short baseRightChild = vocabulary.baseCategoryIndices[packingFunction
-                    .unpackRightChild(packedChildren)];
+                .unpackRightChild(packedChildren)];
             baseChildren = baseLeftChild << 16 | baseRightChild;
         }
 
@@ -206,7 +208,8 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
         }
 
         if (childMap.containsKey(packedChildren)) {
-            childMap.put(packedChildren, edu.ohsu.cslu.util.Math.logSum(childMap.get(packedChildren), logIncrement));
+            childMap.put(packedChildren,
+                edu.ohsu.cslu.util.Math.logSum(childMap.get(packedChildren), logIncrement));
         } else {
             childMap.put(packedChildren, logIncrement);
         }
@@ -223,7 +226,8 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
         incrementUnaryLogCount(unaryRuleLogCounts, parent, child, logIncrement);
 
         // Base grammar rule count
-        incrementUnaryLogCount(baseUnaryRuleLogCounts, parent, vocabulary.baseCategoryIndices[child], logIncrement);
+        incrementUnaryLogCount(baseUnaryRuleLogCounts, parent, vocabulary.baseCategoryIndices[child],
+            logIncrement);
     }
 
     public void incrementUnaryLogCount(final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> countMap,
@@ -292,7 +296,8 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
                 continue;
             }
 
-            final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = binaryRuleLogCounts.get(parent);
+            final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = binaryRuleLogCounts
+                .get(parent);
 
             for (short leftChild = 0; leftChild < vocabulary.size(); leftChild++) {
                 if (!leftChildMap.containsKey(leftChild)) {
@@ -310,9 +315,11 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
                     // final String sLeftChild = vocabulary.getSymbol(leftChild);
                     // final String sRightChild = vocabulary.getSymbol(rightChild);
                     //
-                    // final double observations = Math.exp(binaryRuleLogObservations(binaryRuleLogCounts, parent,
+                    // final double observations = Math.exp(binaryRuleLogObservations(binaryRuleLogCounts,
+                    // parent,
                     // leftChild, rightChild));
-                    // final double baseRuleObservations = Math.exp(binaryRuleLogObservations(baseBinaryRuleLogCounts,
+                    // final double baseRuleObservations =
+                    // Math.exp(binaryRuleLogObservations(baseBinaryRuleLogCounts,
                     // parent, vocabulary.baseCategoryIndices[leftChild],
                     // vocabulary.baseCategoryIndices[rightChild]));
 
@@ -324,18 +331,19 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
 
                     // Observations of this rule / Observations of all split rules with the parent X Base rule
                     // probability
-                    final float logObservations = binaryRuleLogObservations(binaryRuleLogCounts, parent, leftChild,
-                            rightChild);
+                    final float logObservations = binaryRuleLogObservations(binaryRuleLogCounts, parent,
+                        leftChild, rightChild);
                     if (logObservations != Float.NEGATIVE_INFINITY) {
                         final float logProbability = logObservations
                                 - binaryRuleLogObservations(baseBinaryRuleLogCounts, parent,
-                                        vocabulary.baseCategoryIndices[leftChild],
-                                        vocabulary.baseCategoryIndices[rightChild])
+                                    vocabulary.baseCategoryIndices[leftChild],
+                                    vocabulary.baseCategoryIndices[rightChild])
                                 + (baseBinaryRuleLogProbabilities != null ? baseBinaryRuleLogProbabilities
-                                        .get(vocabulary.baseCategoryIndices[parent])
-                                        .get(vocabulary.baseCategoryIndices[leftChild])
-                                        .get(vocabulary.baseCategoryIndices[rightChild]) : 0);
-                        prods.add(new Production(parent, leftChild, rightChild, logProbability, vocabulary, lexicon));
+                                    .get(vocabulary.baseCategoryIndices[parent])
+                                    .get(vocabulary.baseCategoryIndices[leftChild])
+                                    .get(vocabulary.baseCategoryIndices[rightChild]) : 0);
+                        prods.add(new Production(parent, leftChild, rightChild, logProbability, vocabulary,
+                            lexicon));
                     }
                 }
             }
@@ -383,15 +391,16 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
                     continue;
                 }
 
-                // Observations of this rule / Observations of all split rules with the parent X Base rule probability
+                // Observations of this rule / Observations of all split rules with the parent X Base rule
+                // probability
                 final float logObservations = unaryRuleLogObservations(unaryRuleLogCounts, parent, child);
                 if (logObservations != Float.NEGATIVE_INFINITY) {
                     final float logProbability = logObservations
                             - unaryRuleLogObservations(baseUnaryRuleLogCounts, parent,
-                                    vocabulary.baseCategoryIndices[child])
+                                vocabulary.baseCategoryIndices[child])
                             + (baseUnaryRuleLogProbabilities != null ? baseUnaryRuleLogProbabilities.get(
-                                    vocabulary.baseCategoryIndices[parent]).get(vocabulary.baseCategoryIndices[child])
-                                    : 0);
+                                vocabulary.baseCategoryIndices[parent]).get(
+                                vocabulary.baseCategoryIndices[child]) : 0);
                     prods.add(new Production(parent, child, logProbability, false, vocabulary, lexicon));
                 }
             }
@@ -420,22 +429,26 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
                 // final String sParent = vocabulary.getSymbol(parent);
                 // final String sChild = lexicon.getSymbol(child);
                 //
-                // final double observations = Math.exp(lexicalRuleLogObservations(lexicalRuleLogCounts, parent,
+                // final double observations = Math.exp(lexicalRuleLogObservations(lexicalRuleLogCounts,
+                // parent,
                 // child));
-                // final double baseRuleObservations = Math.exp(lexicalRuleLogObservations(baseLexicalRuleLogCounts,
+                // final double baseRuleObservations =
+                // Math.exp(lexicalRuleLogObservations(baseLexicalRuleLogCounts,
                 // parent, child));
                 //
-                // final String observationProbability = Assert.fraction(Math.log(observations / baseRuleObservations));
+                // final String observationProbability = Assert.fraction(Math.log(observations /
+                // baseRuleObservations));
                 // final String baseRuleProbability = Assert.fraction(baseLexicalRuleLogProbabilities.get(
                 // vocabulary.baseCategoryIndices[parent]).get(child));
 
-                // Observations of this rule / Observations of all split rules with the parent X Base rule probability
+                // Observations of this rule / Observations of all split rules with the parent X Base rule
+                // probability
                 final float logObservations = lexicalRuleLogObservations(lexicalRuleLogCounts, parent, child);
                 if (logObservations != Float.NEGATIVE_INFINITY) {
                     final float logProbability = logObservations
                             - lexicalRuleLogObservations(baseLexicalRuleLogCounts, parent, child)
                             + (baseLexicalRuleLogProbabilities != null ? baseLexicalRuleLogProbabilities.get(
-                                    vocabulary.baseCategoryIndices[parent]).get(child) : 0);
+                                vocabulary.baseCategoryIndices[parent]).get(child) : 0);
                     prods.add(new Production(parent, child, logProbability, true, vocabulary, lexicon));
                 }
             }
@@ -452,10 +465,12 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
      * @param rightChild
      * @return the number of observations of a binary rule.
      */
-    public final float binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
+    public final float binaryRuleObservations(final String parent, final String leftChild,
+            final String rightChild) {
 
-        return (float) Math.exp(binaryRuleLogObservations(binaryRuleLogCounts, (short) vocabulary.getIndex(parent),
-                (short) vocabulary.getIndex(leftChild), (short) vocabulary.getIndex(rightChild)));
+        return (float) Math.exp(binaryRuleLogObservations(binaryRuleLogCounts,
+            (short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(leftChild),
+            (short) vocabulary.getIndex(rightChild)));
     }
 
     /**
@@ -492,8 +507,8 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
      * @return the number of observations of a unary rule.
      */
     public final float unaryRuleObservations(final String parent, final String child) {
-        return (float) Math.exp(unaryRuleLogObservations(unaryRuleLogCounts, (short) vocabulary.getIndex(parent),
-                (short) vocabulary.getIndex(child)));
+        return (float) Math.exp(unaryRuleLogObservations(unaryRuleLogCounts,
+            (short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(child)));
     }
 
     /**
@@ -523,8 +538,8 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
      * @return the number of observations of a lexical rule.
      */
     public final float lexicalRuleObservations(final String parent, final String child) {
-        return (float) Math.exp(lexicalRuleLogObservations(lexicalRuleLogCounts, (short) vocabulary.getIndex(parent),
-                lexicon.getIndex(child)));
+        return (float) Math.exp(lexicalRuleLogObservations(lexicalRuleLogCounts,
+            (short) vocabulary.getIndex(parent), lexicon.getIndex(child)));
     }
 
     /**

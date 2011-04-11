@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import java.io.FileReader;
@@ -25,7 +25,8 @@ import java.util.Arrays;
 /**
  * Stores a sparse-matrix grammar in compressed-sparse-column (CSC) format
  * 
- * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for details).
+ * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for
+ * details).
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
@@ -35,14 +36,16 @@ import java.util.Arrays;
 public class RightCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
 
     /**
-     * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal, or -1 for non-terminals
-     * which do not occur as left children. Indexed by left non-terminal. Length is 1 greater than V, to simplify loops.
+     * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal, or -1 for
+     * non-terminals which do not occur as left children. Indexed by left non-terminal. Length is 1 greater
+     * than V, to simplify loops.
      */
     public final int[] cscBinaryRightChildStartIndices;
 
     /**
-     * Indices in {@link #cscBinaryPopulatedColumns} of final columns for each non-terminal, or -1 for non-terminals
-     * which do not occur as left children. Indexed by left non-terminal. Length is 1 greater than V, to simplify loops.
+     * Indices in {@link #cscBinaryPopulatedColumns} of final columns for each non-terminal, or -1 for
+     * non-terminals which do not occur as left children. Indexed by left non-terminal. Length is 1 greater
+     * than V, to simplify loops.
      */
     public final int[] cscBinaryRightChildEndIndices;
 

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import java.io.BufferedReader;
@@ -59,7 +59,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
         for (String line = inputStream.readLine(); line != null; line = inputStream.readLine()) {
             final ParseTree tree = ParseTree.readBracketFormat(line);
             TreeTools.binarizeTree(tree, rightFactor, horizontalMarkov, verticalMarkov, annotatePOS,
-                    GrammarFormatType.CSLU);
+                GrammarFormatType.CSLU);
             // System.out.println(tree.toString());
             trainingTrees.add(tree);
         }

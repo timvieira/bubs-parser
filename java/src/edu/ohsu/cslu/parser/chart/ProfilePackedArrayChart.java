@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import static org.junit.Assert.assertEquals;
@@ -43,7 +43,7 @@ public class ProfilePackedArrayChart {
     public static void suiteSetUp() throws Exception {
         if (grammar == null) {
             grammar = new LeftCscSparseMatrixGrammar(
-                    JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
+                JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
             parser = new CscSpmvParser(new ParserDriver(), grammar);
         }
 

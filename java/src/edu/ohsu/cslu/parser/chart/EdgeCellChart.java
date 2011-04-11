@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import java.util.LinkedList;
@@ -126,15 +126,19 @@ public class EdgeCellChart extends CellChart {
         }
 
         /**
-         * Alternate addEdge() function so we aren't required to create a new ChartEdge object in the CYK inner loop for
-         * every potential new edge entry. Adds an edge to the cell if the edge's probability is greater than an
-         * existing edge with the same non-terminal. Optional operation (some {@link ChartCell} implementations may be
-         * immutable).
+         * Alternate addEdge() function so we aren't required to create a new ChartEdge object in the CYK
+         * inner loop for every potential new edge entry. Adds an edge to the cell if the edge's probability
+         * is greater than an existing edge with the same non-terminal. Optional operation (some
+         * {@link ChartCell} implementations may be immutable).
          * 
-         * @param p The production to add
-         * @param leftCell The left child of this production
-         * @param rightCell The right child of this production
-         * @param insideProb The production probability
+         * @param p
+         *            The production to add
+         * @param leftCell
+         *            The left child of this production
+         * @param rightCell
+         *            The right child of this production
+         * @param insideProb
+         *            The production probability
          */
         // @Override
         public boolean addEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell,
@@ -173,7 +177,8 @@ public class EdgeCellChart extends CellChart {
         public boolean canBuild(final ChartEdge edge) throws Exception {
             if (edge.prod.isBinaryProd()) {
                 final int midpt = edge.midpt();
-                if (getCell(start, midpt).hasNT(edge.prod.leftChild) && getCell(midpt, end).hasNT(edge.prod.rightChild)) {
+                if (getCell(start, midpt).hasNT(edge.prod.leftChild)
+                        && getCell(midpt, end).hasNT(edge.prod.rightChild)) {
                     return true;
                 }
             } else {

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
@@ -25,7 +25,8 @@ import java.util.Collection;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
- * Represents symbols of a state-split vocabulary. e.g. the base NP type might be split into NP_0, NP_1, NP_2, ...
+ * Represents symbols of a state-split vocabulary. e.g. the base NP type might be split into NP_0, NP_1, NP_2,
+ * ...
  * 
  * @author Aaron Dunlop
  * @since Feb 3, 2011
@@ -35,8 +36,8 @@ import edu.ohsu.cslu.grammar.SymbolSet;
 public class SplitVocabulary extends SymbolSet<String> {
 
     /**
-     * Maps non-terminal indices to positions within the sets of sub-categories derived from the same base category.
-     * e.g. NP_0 -> 0, VP_3 -> 3, PP_5 -> 5.
+     * Maps non-terminal indices to positions within the sets of sub-categories derived from the same base
+     * category. e.g. NP_0 -> 0, VP_3 -> 3, PP_5 -> 5.
      */
     short[] subcategoryIndices;
 
@@ -44,15 +45,15 @@ public class SplitVocabulary extends SymbolSet<String> {
     short[] baseCategoryIndices;
 
     /**
-     * Indices of the first split categories derived from each category in the Markov-order-0 grammar (indexed by base
-     * non-terminal indices)
+     * Indices of the first split categories derived from each category in the Markov-order-0 grammar (indexed
+     * by base non-terminal indices)
      */
     short[] firstSubcategoryIndices;
 
     /**
-     * Records the number of splits for each non-terminal (i.e., the number of sub-categories descended from the same
-     * unsplit category in the base Markov-order-0 grammar). The start symbol has 1 split, all others will normally be
-     * multiples of 2 (the exception being immediately after a merge operation).
+     * Records the number of splits for each non-terminal (i.e., the number of sub-categories descended from
+     * the same unsplit category in the base Markov-order-0 grammar). The start symbol has 1 split, all others
+     * will normally be multiples of 2 (the exception being immediately after a merge operation).
      */
     short[] splitCount;
 
@@ -65,8 +66,8 @@ public class SplitVocabulary extends SymbolSet<String> {
     final SymbolSet<String> baseVocabulary;
 
     /**
-     * Maps from the indices of a parent vocabulary to indices in this {@link SplitVocabulary}. Only populated if this
-     * vocabulary was created by merging symbols in an earlier vocabulary.
+     * Maps from the indices of a parent vocabulary to indices in this {@link SplitVocabulary}. Only populated
+     * if this vocabulary was created by merging symbols in an earlier vocabulary.
      */
     final Short2ShortOpenHashMap mergedIndices;
 
@@ -108,10 +109,12 @@ public class SplitVocabulary extends SymbolSet<String> {
     void recomputeSplits() {
         // Compute:
         //
-        // -- Subcategory indices (i.e., the position of each category within the set of splits derived from each base
+        // -- Subcategory indices (i.e., the position of each category within the set of splits derived from
+        // each base
         // (Markov-0) category; NP_1 -> 1, VP_3 -> 3, etc.)
         //
-        // -- Base categories (i.e., the indices in the base vocabulary of the category from which each split is
+        // -- Base categories (i.e., the indices in the base vocabulary of the category from which each split
+        // is
         // derived)
         //
         // -- Indices of the first subcategory derived from each base (Markov-0) category

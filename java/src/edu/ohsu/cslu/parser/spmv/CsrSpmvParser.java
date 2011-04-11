@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
@@ -24,8 +24,8 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ( {@link CsrSparseMatrixGrammar})
- * and implements cross-product and SpMV multiplication in Java.
+ * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format (
+ * {@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
  * 
  * @see OpenClSpmvParser
  * 
@@ -46,7 +46,7 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
         binarySpmvMultiply(cartesianProductVector, packedArrayCell.tmpPackedChildren,
-                packedArrayCell.tmpInsideProbabilities, packedArrayCell.tmpMidpoints);
+            packedArrayCell.tmpInsideProbabilities, packedArrayCell.tmpMidpoints);
     }
 
     protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
@@ -86,7 +86,8 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
         }
     }
 
-    // CSR Unary SpMV. For now, we're using the standard CSC version, but if we want to parallelize unary processing, we
+    // CSR Unary SpMV. For now, we're using the standard CSC version, but if we want to parallelize unary
+    // processing, we
     // might want this one again.
 
     // @Override
@@ -101,7 +102,8 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
     // short winningMidpoint = 0;
     //
     // // Iterate over possible children of the parent (columns with non-zero entries)
-    // for (int i = grammar.csrUnaryRowStartIndices[parent]; i < grammar.csrUnaryRowStartIndices[parent + 1]; i++) {
+    // for (int i = grammar.csrUnaryRowStartIndices[parent]; i < grammar.csrUnaryRowStartIndices[parent + 1];
+    // i++) {
     //
     // final short child = grammar.csrUnaryColumnIndices[i];
     // final float grammarProbability = grammar.csrUnaryProbabilities[i];
@@ -127,7 +129,7 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
     @Override
     public String getStats() {
         return super.getStats()
-                + (collectDetailedStatistics ? String.format(" avgXprod=%.1f", sentenceCartesianProductSize * 1.0f
-                        / chart.cells) : "");
+                + (collectDetailedStatistics ? String.format(" avgXprod=%.1f", sentenceCartesianProductSize
+                        * 1.0f / chart.cells) : "");
     }
 }

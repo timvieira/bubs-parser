@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.spmv;
 
 import static org.junit.Assert.assertEquals;
@@ -56,10 +56,10 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
     @Before
     public void setUp() throws IOException {
         final G grammar = createGrammar(JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.R2-p1.gz"),
-                PerfectIntPairHashPackingFunction.class);
+            PerfectIntPairHashPackingFunction.class);
         final ParserDriver opts = new ParserDriver();
-        opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, new BufferedReader(
-                JUnit.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
+        opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar,
+            new BufferedReader(JUnit.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
         props.put("maxBeamWidth", "20");
@@ -85,8 +85,8 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
         GlobalConfigProperties.singleton().clear();
     }
 
-    protected abstract G createGrammar(Reader grammarReader, Class<? extends PackingFunction> packingFunctionClass)
-            throws IOException;
+    protected abstract G createGrammar(Reader grammarReader,
+            Class<? extends PackingFunction> packingFunctionClass) throws IOException;
 
     protected abstract PackedArraySpmvParser<G> createParser(ParserDriver opts, G grammar);
 
@@ -99,15 +99,17 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
     public void testPruned() throws IOException {
 
         final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+            JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
         final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.fom")));
+            JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.fom")));
 
         int i = 1;
-        for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
+        for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader
+            .readLine()) {
             final String parsedSentence = parsedReader.readLine();
-            assertEquals("Failed on sentence " + i, parsedSentence, parser.parseSentence(sentence).parse.toString());
+            assertEquals("Failed on sentence " + i, parsedSentence,
+                parser.parseSentence(sentence).parse.toString());
             i++;
         }
     }

@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import java.util.ArrayList;
@@ -35,8 +35,8 @@ public abstract class FractionalCountGrammar implements CountGrammar {
         this.startSymbol = vocabulary.getSymbol(0);
     }
 
-    public abstract void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
-            final float increment);
+    public abstract void incrementBinaryCount(final short parent, final short leftChild,
+            final short rightChild, final float increment);
 
     public abstract void incrementUnaryCount(final short parent, final short child, final float increment);
 
@@ -52,14 +52,15 @@ public abstract class FractionalCountGrammar implements CountGrammar {
 
     public abstract ArrayList<Production> lexicalProductions();
 
-    public final void incrementBinaryCount(final String parent, final String leftChild, final String rightChild) {
+    public final void incrementBinaryCount(final String parent, final String leftChild,
+            final String rightChild) {
         incrementBinaryCount(parent, leftChild, rightChild, 1f);
     }
 
-    public final void incrementBinaryCount(final String parent, final String leftChild, final String rightChild,
-            final float increment) {
+    public final void incrementBinaryCount(final String parent, final String leftChild,
+            final String rightChild, final float increment) {
         incrementBinaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(leftChild),
-                (short) vocabulary.getIndex(rightChild), increment);
+            (short) vocabulary.getIndex(rightChild), increment);
     }
 
     public final void incrementUnaryCount(final short parent, final short child) {
@@ -71,7 +72,8 @@ public abstract class FractionalCountGrammar implements CountGrammar {
     }
 
     public final void incrementUnaryCount(final String parent, final String child, final float increment) {
-        incrementUnaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(child), increment);
+        incrementUnaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(child),
+            increment);
     }
 
     public final void incrementLexicalCount(final short parent, final int child) {

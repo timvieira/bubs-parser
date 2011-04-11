@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
@@ -58,7 +58,8 @@ public class InOutCellChart extends CellChart {
             if (start == 0 && end == size()) {
                 outside[parser.grammar.startSymbol] = 0; // log(1)
                 BaseLogger.singleton().finest(
-                        "setting " + parser.grammar.startSymbol() + " index=" + parser.grammar.startSymbol + " to 0");
+                    "setting " + parser.grammar.startSymbol() + " index=" + parser.grammar.startSymbol
+                            + " to 0");
             }
         }
 
@@ -72,7 +73,8 @@ public class InOutCellChart extends CellChart {
                     outside[nt] = outsideProb;
                 }
             } else {
-                // System.out.println("Adding: " + start + "," + end + "," + parser.grammar.mapNonterminal(nt) + " : " +
+                // System.out.println("Adding: " + start + "," + end + "," + parser.grammar.mapNonterminal(nt)
+                // + " : " +
                 // outside[nt] + " + " + outsideProb + " = "+
                 // ParserUtil.logSum(outside[nt], outsideProb));
                 outside[nt] = (float) ParserUtil.logSum(outside[nt], outsideProb);

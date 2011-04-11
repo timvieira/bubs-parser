@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.ella;
 
 import edu.ohsu.cslu.parser.ChartParser;
@@ -81,21 +81,21 @@ public class ConstrainedCellSelector extends CellSelector {
     }
 
     /**
-     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell can
-     *         contain only a single midpoint)
+     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell
+     *         can contain only a single midpoint)
      */
     public short currentCellMidpoint() {
         return constrainingChart.midpoints[constrainingChart.cellIndex(cellIndices[currentCell][0],
-                cellIndices[currentCell][1])];
+            cellIndices[currentCell][1])];
     }
 
     /**
-     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell can
-     *         contain only a single midpoint)
+     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell
+     *         can contain only a single midpoint)
      */
     public int currentCellUnaryChainDepth() {
         return constrainingChart.unaryChainDepth(constrainingChart.offset(constrainingChart.cellIndex(
-                cellIndices[currentCell][0], cellIndices[currentCell][1])));
+            cellIndices[currentCell][0], cellIndices[currentCell][1])));
     }
 
     /**
@@ -117,7 +117,7 @@ public class ConstrainedCellSelector extends CellSelector {
      */
     public int constrainingCellOffset() {
         return constrainingChart.cellOffsets[constrainingChart.cellIndex(cellIndices[currentCell][0],
-                cellIndices[currentCell][1])];
+            cellIndices[currentCell][1])];
     }
 
     /**
@@ -125,6 +125,6 @@ public class ConstrainedCellSelector extends CellSelector {
      */
     public int constrainingLeftChildCellOffset() {
         return constrainingChart.cellOffsets[constrainingChart.cellIndex(cellIndices[currentCell][0],
-                currentCellMidpoint())];
+            currentCellMidpoint())];
     }
 }

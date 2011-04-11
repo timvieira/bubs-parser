@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.grammar;
 
 import static org.junit.Assert.assertEquals;
@@ -25,6 +25,7 @@ import org.junit.Test;
 import edu.ohsu.cslu.tests.JUnit;
 
 public class TestArrayGrammar {
+
     @Test
     public void testF2_21_R2_unk() throws Exception {
         final Grammar g = new Grammar(JUnit.unitTestDataAsReader("grammars/f2-21-R2-unk.gz"));

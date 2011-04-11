@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.chart;
 
 import java.util.LinkedList;
@@ -87,10 +87,12 @@ public class GoldChart extends Chart {
                         // NOTE: don't want to add new words to the lexicon because they
                         // won't get mapped to UNK during decoding
                         B = grammar.tokenizer.mapToLexSetEntry(B, 1);
-                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, true, grammar.nonTermSet, grammar.lexSet);
+                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, true, grammar.nonTermSet,
+                            grammar.lexSet);
                     } else {
                         // prod = grammar.getUnaryProduction(A, B);
-                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, false, grammar.nonTermSet, grammar.lexSet);
+                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, false, grammar.nonTermSet,
+                            grammar.lexSet);
                     }
                     edge = new ChartEdge(prod, getCell(start, end));
                 } else {
@@ -100,7 +102,8 @@ public class GoldChart extends Chart {
 
                 // we can ignore unary nodes because they are always with a binary node or a lex node
                 if (numChildren == 2) {
-                    perCellStats += String.format("%d,%d=%d ", start, end, grammar.grammarFormat.isFactored(A) ? 2 : 4);
+                    perCellStats += String.format("%d,%d=%d ", start, end,
+                        grammar.grammarFormat.isFactored(A) ? 2 : 4);
                 } else if (numChildren == 1 && node.isPOS()) {
                     perCellStats += String.format("%d,%d=4 ", start, end);
                 }
@@ -144,7 +147,8 @@ public class GoldChart extends Chart {
     }
 
     @Override
-    public void updateInside(final int start, final int end, final int nonTerminal, final float insideProbability) {
+    public void updateInside(final int start, final int end, final int nonTerminal,
+            final float insideProbability) {
         throw new UnsupportedOperationException("updateInside() not implemented for GoldChart");
     }
 

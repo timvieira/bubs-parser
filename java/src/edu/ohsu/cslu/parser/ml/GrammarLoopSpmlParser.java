@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
@@ -24,8 +24,9 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
- * Grammar loop exhaustive parser using a sparse-matrix grammar representation ( {@link CsrSparseMatrixGrammar}). Loops
- * over the entire grammar for each midpoint, probing child cells for non-terminals matching each grammar rule.
+ * Grammar loop exhaustive parser using a sparse-matrix grammar representation (
+ * {@link CsrSparseMatrixGrammar}). Loops over the entire grammar for each midpoint, probing child cells for
+ * non-terminals matching each grammar rule.
  * 
  * @author Aaron Dunlop
  * @since Jun 13, 2010
@@ -79,13 +80,15 @@ public class GrammarLoopSpmlParser extends SparseMatrixLoopParser<CsrSparseMatri
                     final int packedChildPair = grammar.csrBinaryColumnIndices[i];
 
                     final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(packedChildPair);
-                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(packedChildPair);
+                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(
+                        packedChildPair);
 
                     final float leftInsideProbability = chartInsideProbabilities[leftCellOffset + leftChild];
                     if (leftInsideProbability == Float.NEGATIVE_INFINITY) {
                         continue;
                     }
-                    final float rightInsideProbability = chartInsideProbabilities[rightCellOffset + rightChild];
+                    final float rightInsideProbability = chartInsideProbabilities[rightCellOffset
+                            + rightChild];
                     if (rightInsideProbability == Float.NEGATIVE_INFINITY) {
                         continue;
                     }
