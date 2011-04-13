@@ -191,27 +191,28 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
 
     /**
-     * Configuration property key for the number of row-level threads requested by the user. We handle
-     * threading at three levels; threading per-sentence is handled by the command-line tool infrastructure
-     * and specified with the standard '-xt' parameter. Row-level and cell-level threading are handled by the
-     * parser instance and specified with this option and with {@link #OPT_CELL_THREAD_COUNT}.
-     */
-    public final static String OPT_ROW_THREAD_COUNT = "rowThreads";
-
-    /**
      * Configuration property key for the number of cell-level threads requested by the user. We handle
      * threading at three levels; threading per-sentence is handled by the command-line tool infrastructure
-     * and specified with the standard '-xt' parameter. Row-level and cell-level threading are handled by the
-     * parser instance and specified with this option and with {@link #OPT_ROW_THREAD_COUNT}.
+     * and specified with the standard '-xt' parameter. Cell-level and grammar-level threading are handled by
+     * the parser instance and specified with this option and with {@link #OPT_GRAMMAR_THREAD_COUNT}.
      */
     public final static String OPT_CELL_THREAD_COUNT = "cellThreads";
+
+    /**
+     * Configuration property key for the number of grammar-level threads requested by the user. We handle
+     * threading at three levels; threading per-sentence is handled by the command-line tool infrastructure
+     * and specified with the standard '-xt' parameter. Cell-level and grammar-level threading are handled by
+     * the parser instance and specified with this option and with {@link #OPT_CELL_THREAD_COUNT}.
+     */
+    public final static String OPT_GRAMMAR_THREAD_COUNT = "grammarThreads";
 
     /**
      * Configuration property key for the number of row-level or cell-level threads actually used. In some
      * cases the number of threads requested is impractical (e.g., if it is greater than the maximum number of
      * cells in a row or greater than the number of grammar rows). {@link Parser} instances which make use of
-     * {@link #OPT_CELL_THREAD_COUNT} should populate this property to indicate the number of threads actually
-     * used. Among other potential uses, this allows {@link #cleanup()} to report accurate timing information.
+     * {@link #OPT_GRAMMAR_THREAD_COUNT} should populate this property to indicate the number of threads
+     * actually used. Among other potential uses, this allows {@link #cleanup()} to report accurate timing
+     * information.
      */
     public final static String OPT_CONFIGURED_THREAD_COUNT = "actualThreads";
 
@@ -363,8 +364,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
                                 + cartesianProductFunctionType);
                 }
 
-            case PackedOpenClSparseMatrixVector:
-            case DenseVectorOpenClSparseMatrixVector:
+            case PackedOpenClSpmv:
+            case DenseVectorOpenClSpmv:
                 return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
 
             case CscSpmv:
@@ -380,15 +381,15 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
                                 + cartesianProductFunctionType);
                 }
 
-            case LeftChildMatrixLoop:
-            case CartesianProductBinarySearch:
-            case CartesianProductBinarySearchLeftChild:
-            case CartesianProductHash:
-            case CartesianProductLeftChildHash:
+            case LeftChildMl:
+            case CartesianProductBinarySearchMl:
+            case CartesianProductBinarySearchLeftChildMl:
+            case CartesianProductHashMl:
+            case CartesianProductLeftChildHashMl:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-            case RightChildMatrixLoop:
+            case RightChildMl:
                 return new RightCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-            case GrammarLoopMatrixLoop:
+            case GrammarLoopMl:
                 return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
 
             default:
@@ -467,25 +468,25 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
                 return new CscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
             case CellParallelCscSpmv:
                 return new CellParallelCscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
-            case DenseVectorOpenClSparseMatrixVector:
+            case DenseVectorOpenClSpmv:
                 return new DenseVectorOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-            case PackedOpenClSparseMatrixVector:
+            case PackedOpenClSpmv:
                 return new PackedOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
 
-            case LeftChildMatrixLoop:
+            case LeftChildMl:
                 return new LeftChildLoopSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-            case RightChildMatrixLoop:
+            case RightChildMl:
                 return new RightChildLoopSpmlParser(this, (RightCscSparseMatrixGrammar) grammar);
-            case GrammarLoopMatrixLoop:
+            case GrammarLoopMl:
                 return new GrammarLoopSpmlParser(this, (CsrSparseMatrixGrammar) grammar);
-            case CartesianProductBinarySearch:
+            case CartesianProductBinarySearchMl:
                 return new CartesianProductBinarySearchSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-            case CartesianProductBinarySearchLeftChild:
+            case CartesianProductBinarySearchLeftChildMl:
                 return new CartesianProductBinarySearchLeftChildSpmlParser(this,
                     (LeftCscSparseMatrixGrammar) grammar);
-            case CartesianProductHash:
+            case CartesianProductHashMl:
                 return new CartesianProductHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-            case CartesianProductLeftChildHash:
+            case CartesianProductLeftChildHashMl:
                 return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
 
             default:

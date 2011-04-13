@@ -37,8 +37,8 @@ public class TestPrunedCellParallelCscSpmvParser extends PrunedSpmvParserTestCas
     @Override
     protected PackedArraySpmvParser<LeftCscSparseMatrixGrammar> createParser(final ParserDriver opts,
             final LeftCscSparseMatrixGrammar grammar) {
-        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_ROW_THREAD_COUNT, "2");
-        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CELL_THREAD_COUNT, "4");
+        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CELL_THREAD_COUNT, "2");
+        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_GRAMMAR_THREAD_COUNT, "4");
         return new CellParallelCscSpmvParser(opts, grammar);
     }
 

@@ -70,7 +70,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
         // Split the binary grammar rules into segments of roughly equal size
-        final int requestedThreads = props.getIntProperty(ParserDriver.OPT_CELL_THREAD_COUNT);
+        final int requestedThreads = props.getIntProperty(ParserDriver.OPT_GRAMMAR_THREAD_COUNT);
         final int[] segments = new int[requestedThreads + 1];
         final int segmentSize = grammar.cscBinaryRowIndices.length / requestedThreads + 1;
         segments[0] = 0;
@@ -86,8 +86,8 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
 
         this.cellThreads = i;
         this.cpvSegments = cellThreads * 2;
-        final int configuredThreads = props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT) ? props
-            .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) * cellThreads : cellThreads;
+        final int configuredThreads = props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT) ? props
+            .getIntProperty(ParserDriver.OPT_CELL_THREAD_COUNT) * cellThreads : cellThreads;
         GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
             Integer.toString(configuredThreads));
 
