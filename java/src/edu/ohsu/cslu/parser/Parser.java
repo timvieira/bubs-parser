@@ -186,19 +186,19 @@ public abstract class Parser<G extends Grammar> {
         // BSCPBeamConf("beamconf"),
         CoarseCellAgenda("cc"),
         CoarseCellAgendaCSLUT("cccslut"),
-        DenseVectorOpenClSparseMatrixVector("dvopencl"),
-        PackedOpenClSparseMatrixVector("popencl"),
+        DenseVectorOpenClSpmv("dvopencl"),
+        PackedOpenClSpmv("popencl"),
         CsrSpmv("csr"),
         CellParallelCsrSpmv("cpcsr"),
         CscSpmv("csc"),
         CellParallelCscSpmv("cpcsc"),
-        LeftChildMatrixLoop("lcml"),
-        RightChildMatrixLoop("rcml"),
-        GrammarLoopMatrixLoop("glml"),
-        CartesianProductBinarySearch("cpbs"),
-        CartesianProductBinarySearchLeftChild("cplbs"),
-        CartesianProductHash("cph"),
-        CartesianProductLeftChildHash("cplch");
+        LeftChildMl("lcml"),
+        RightChildMl("rcml"),
+        GrammarLoopMl("glml"),
+        CartesianProductBinarySearchMl("cpbs"),
+        CartesianProductBinarySearchLeftChildMl("cplbs"),
+        CartesianProductHashMl("cph"),
+        CartesianProductLeftChildHashMl("cplch");
 
         private ResearchParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

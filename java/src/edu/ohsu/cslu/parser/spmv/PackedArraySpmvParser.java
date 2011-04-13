@@ -61,13 +61,13 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
 
-        if (props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT)
-                || props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT)) {
+        if (props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT)
+                || props.containsKey(ParserDriver.OPT_GRAMMAR_THREAD_COUNT)) {
 
-            this.rowThreads = props.containsKey(ParserDriver.OPT_ROW_THREAD_COUNT) ? props
-                .getIntProperty(ParserDriver.OPT_ROW_THREAD_COUNT) : 1;
-            final int cellThreads = props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT) ? props
+            this.rowThreads = props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT) ? props
                 .getIntProperty(ParserDriver.OPT_CELL_THREAD_COUNT) : 1;
+            final int cellThreads = props.containsKey(ParserDriver.OPT_GRAMMAR_THREAD_COUNT) ? props
+                .getIntProperty(ParserDriver.OPT_GRAMMAR_THREAD_COUNT) : 1;
 
             final int threads = rowThreads * cellThreads;
 

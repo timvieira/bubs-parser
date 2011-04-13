@@ -48,7 +48,7 @@ public class TestCellParallelCscSpmvParser extends
 
     @Override
     public void setUp() throws Exception {
-        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CELL_THREAD_COUNT, "8");
+        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_GRAMMAR_THREAD_COUNT, "8");
         BaseLogger.singleton().setLevel(Level.FINER);
         super.setUp();
     }

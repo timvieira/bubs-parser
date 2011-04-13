@@ -63,7 +63,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
 
         // Split the binary grammar rules into segments of roughly equal size
         final int requestedThreads = GlobalConfigProperties.singleton().getIntProperty(
-            ParserDriver.OPT_CELL_THREAD_COUNT);
+            ParserDriver.OPT_GRAMMAR_THREAD_COUNT);
         final int[] segments = new int[requestedThreads + 1];
         final int segmentSize = grammar.csrBinaryColumnIndices.length / requestedThreads + 1;
         segments[0] = 0;

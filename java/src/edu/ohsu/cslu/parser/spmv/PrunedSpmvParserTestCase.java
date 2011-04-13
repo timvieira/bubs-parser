@@ -77,7 +77,7 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
 
     @BeforeClass
     public static void configureThreads() throws Exception {
-        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_ROW_THREAD_COUNT, "2");
+        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CELL_THREAD_COUNT, "2");
     }
 
     @AfterClass
