@@ -16,33 +16,33 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.ella;
+package edu.ohsu.cslu.lela;
 
 import org.junit.Before;
 
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
- * Unit tests for {@link ConstrainedCountGrammar}.
+ * Unit tests for {@link MappedCountGrammar}.
  * 
  * @author Aaron Dunlop
  * @since Jan 13, 2011
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestConstrainedCountGrammar extends MappedCountGrammarTestCase {
+public class TestMappedCountGrammar extends MappedCountGrammarTestCase {
 
     @Before
     public void setUp() {
         g = SAMPLE_MAPPED_GRAMMAR();
     }
 
-    static ConstrainedCountGrammar SAMPLE_MAPPED_GRAMMAR() {
+    static MappedCountGrammar SAMPLE_MAPPED_GRAMMAR() {
         final SplitVocabulary vocabulary = new SplitVocabulary(new String[] { "top", "a", "b" });
         final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "c", "d" });
 
         // Build up the same grammar as that induced from the tree in AllElviTests
-        final ConstrainedCountGrammar g = new ConstrainedCountGrammar(vocabulary, lexicon);
+        final MappedCountGrammar g = new MappedCountGrammar(vocabulary, lexicon);
         g.incrementUnaryCount("top", "a");
         g.incrementBinaryCount("a", "a", "b");
         g.incrementBinaryCount("a", "a", "b");
@@ -57,5 +57,4 @@ public class TestConstrainedCountGrammar extends MappedCountGrammarTestCase {
 
         return g;
     }
-
 }

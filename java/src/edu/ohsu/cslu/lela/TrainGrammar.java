@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.ella;
+package edu.ohsu.cslu.lela;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,10 +28,10 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.ella.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.parser.ParserDriver;
 
 /**
