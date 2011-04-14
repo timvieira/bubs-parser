@@ -25,9 +25,9 @@ import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
-import edu.ohsu.cslu.parser.spmv.CellParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
+import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
 import edu.ohsu.cslu.tools.TreeTools;
 
 public abstract class Parser<G extends Grammar> {
@@ -137,7 +137,7 @@ public abstract class Parser<G extends Grammar> {
 
     /**
      * Closes any resources maintained by the parser (e.g. thread-pools as in
-     * {@link CellParallelCsrSpmvParser}.
+     * {@link GrammarParallelCsrSpmvParser}.
      */
     public void shutdown() {
     }
@@ -189,9 +189,9 @@ public abstract class Parser<G extends Grammar> {
         DenseVectorOpenClSpmv("dvopencl"),
         PackedOpenClSpmv("popencl"),
         CsrSpmv("csr"),
-        CellParallelCsrSpmv("cpcsr"),
+        GrammarParallelCsrSpmv("gpcsr"),
         CscSpmv("csc"),
-        CellParallelCscSpmv("cpcsc"),
+        GrammarParallelCscSpmv("gpcsc"),
         LeftChildMl("lcml"),
         RightChildMl("rcml"),
         GrammarLoopMl("glml"),

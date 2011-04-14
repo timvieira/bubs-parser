@@ -43,7 +43,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public final class CellParallelCscSpmvParser extends CscSpmvParser {
+public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
 
     /** The number of threads configured for cartesian-product and binary grammar intersection */
     private final int cellThreads;
@@ -65,7 +65,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
 
     protected final ThreadLocal<TemporaryChartCell[]> threadLocalTemporaryCells;
 
-    public CellParallelCscSpmvParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
+    public GrammarParallelCscSpmvParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
@@ -104,7 +104,7 @@ public final class CellParallelCscSpmvParser extends CscSpmvParser {
         }
 
         // Temporary cell storage for each row-level thread
-        this.threadLocalTemporaryCells = new ThreadLocal<CellParallelCscSpmvParser.TemporaryChartCell[]>() {
+        this.threadLocalTemporaryCells = new ThreadLocal<GrammarParallelCscSpmvParser.TemporaryChartCell[]>() {
 
             @Override
             protected TemporaryChartCell[] initialValue() {

@@ -60,7 +60,7 @@ public class ParserTrainer extends BaseCommandlineTool {
     public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
     private Grammar grammar;
 
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) {
         run(args);
     }
 

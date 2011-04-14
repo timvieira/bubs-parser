@@ -81,9 +81,10 @@ import edu.ohsu.cslu.util.StringPool;
  */
 public class Grammar implements Serializable {
 
+    private final static long serialVersionUID = 3L;
+
     /** Marks the switch from PCFG to lexicon entries in the grammar file */
     public final static String DELIMITER = "===== LEXICON =====";
-    private final static long serialVersionUID = 3L;
 
     // == Grammar Basics ==
     public GrammarFormatType grammarFormat;

@@ -74,11 +74,11 @@ import edu.ohsu.cslu.parser.ml.CartesianProductLeftChildHashSpmlParser;
 import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
-import edu.ohsu.cslu.parser.spmv.CellParallelCscSpmvParser;
-import edu.ohsu.cslu.parser.spmv.CellParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
+import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
+import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
@@ -126,8 +126,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     @Option(name = "-beamConfModel", usage = "Beam Confidence Model for beam-search parsers")
     private String beamConfModelFileName = null;
 
+    // TODO These default biases are specific to the 0,1,2,4 model, but defaulted here for the moment until we
+    // can move them into a combined model file. First, we should make it a -O option instead of a
+    // command-line parameter
     @Option(name = "-beamConfBias", usage = "comma seperated bias for each bin in model; default is no bias")
-    public String beamConfBias = null;
+    public String beamConfBias = "1000,1000,1000,1000";
 
     @Option(name = "-beamConfFeats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
     public static String featTemplate;
@@ -216,7 +219,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
      */
     public final static String OPT_CONFIGURED_THREAD_COUNT = "actualThreads";
 
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) {
         run(args);
     }
 
@@ -352,7 +355,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
                 return new LeftHashGrammar(genericGrammar);
 
             case CsrSpmv:
-            case CellParallelCsrSpmv:
+            case GrammarParallelCsrSpmv:
                 switch (cartesianProductFunctionType) {
                     case Simple:
                         return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
@@ -369,7 +372,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
                 return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
 
             case CscSpmv:
-            case CellParallelCscSpmv:
+            case GrammarParallelCscSpmv:
                 switch (cartesianProductFunctionType) {
                     case Simple:
                         return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
@@ -462,12 +465,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
 
             case CsrSpmv:
                 return new CsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-            case CellParallelCsrSpmv:
-                return new CellParallelCsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
+            case GrammarParallelCsrSpmv:
+                return new GrammarParallelCsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
             case CscSpmv:
                 return new CscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
-            case CellParallelCscSpmv:
-                return new CellParallelCscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
+            case GrammarParallelCscSpmv:
+                return new GrammarParallelCscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
             case DenseVectorOpenClSpmv:
                 return new DenseVectorOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
             case PackedOpenClSpmv:

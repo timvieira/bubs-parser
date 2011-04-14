@@ -26,15 +26,15 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFuncti
 import edu.ohsu.cslu.parser.ParserDriver;
 
 /**
- * Tests for {@link CellParallelCsrSpmvParser}.
+ * Tests for {@link GrammarParallelCsrSpmvParser}.
  * 
  * @author Aaron Dunlop
  * @since Mar 11, 2011
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class TestCellParallelCsrSpmvParser extends
-        SparseMatrixVectorParserTestCase<CellParallelCsrSpmvParser, PerfectIntPairHashPackingFunction> {
+public class TestGrammarParallelCsrSpmvParser extends
+        SparseMatrixVectorParserTestCase<GrammarParallelCsrSpmvParser, PerfectIntPairHashPackingFunction> {
 
     @Override
     @Test

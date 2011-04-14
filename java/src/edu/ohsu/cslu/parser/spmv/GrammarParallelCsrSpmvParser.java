@@ -41,7 +41,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
+public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
 
     /** The number of threads configured for binary grammar intersection */
     private final int threads;
@@ -58,7 +58,7 @@ public final class CellParallelCsrSpmvParser extends CsrSpmvParser {
     private final float[][] cpvProbabilities;
     private final short[][] cpvMidpoints;
 
-    public CellParallelCsrSpmvParser(final ParserDriver opts, final CsrSparseMatrixGrammar grammar) {
+    public GrammarParallelCsrSpmvParser(final ParserDriver opts, final CsrSparseMatrixGrammar grammar) {
         super(opts, grammar);
 
         // Split the binary grammar rules into segments of roughly equal size
