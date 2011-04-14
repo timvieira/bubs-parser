@@ -47,6 +47,9 @@
              the file exists, it will be packaged as META-INF/README.txt 
          * license-file (optional) Location of a license file for the tool. If
              the file exists, it will be packaged as META-INF/LICENSE.txt 
+         * default-options (optional) Location of a properties file specifying default 
+             options for the tool. If the file exists, it will be packaged as 
+             META-INF/defaults.properties
          * srcjar (optional) If true, build a source jar as well as the 
              class-file jar
              
@@ -69,6 +72,7 @@
         <property name="version" value="" />
         <property name="readme-file" value="none" />
         <property name="license-file" value="none" />
+        <property name="default-options" value="none" />
 
         <!-- If 'heap-size' is not specified, default it to 128m -->
         <property name="heap-size" value="128m" />
@@ -127,7 +131,9 @@
         <mkdir dir="package-jar-tmp/META-INF" />
         <copy file="${readme-file}" tofile="package-jar-tmp/META-INF/README.txt" failonerror="false" />
         <copy file="${license-file}" tofile="package-jar-tmp/META-INF/LICENSE.txt" failonerror="false" />
+        <copy file="${default-options}" tofile="package-jar-tmp/META-INF/defaults.properties" failonerror="false" />
 
+    	<echo message="Additional-root-classes: ${additional-root-classes}" />
         <!-- Package the jar -->
         <genjar jarfile="${dir.dist}/${tool-name}.jar">
             <class name="${root-class}" />
@@ -163,7 +169,7 @@
 
         <!-- Generate a runner script usable from Cygwin or from a true Unix shell -->
         <delete file="${dir.dist}/${tool-name}" />
-        <copy file="${dir.bubs.base}/java/tools/script-template.sh" tofile="${dir.dist}/${tool-name}" />
+        <copy file="java/tools/script-template.sh" tofile="${dir.dist}/${tool-name}" />
         <fixcrlf file="${dir.dist}/${tool-name}" eol="unix" />
         <replace file="${dir.dist}/${tool-name}">
             <replacefilter token="%JAR%" value="${tool-name}.jar" />

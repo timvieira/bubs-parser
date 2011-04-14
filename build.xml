@@ -7,6 +7,8 @@
     <property name="dir.build.doc" location="build-doc" />
     <property name="dir.dist" location="build-dist" />
 
+    <property name="dir.build.lib" location="build-lib" />
+
     <!-- Libraries are split by license. Not terribly important when packaging 
          GPL code, but more important if packaging a non-GPL version -->
     <property name="dir.bsd.lib" location="java/bsd-lib" />
@@ -91,6 +93,7 @@
 			<param name="additional-file-includes" value="**/*.cl" />
 			<param name="license-file" value="java/tools/license.txt" />
 			<param name="readme-file" value="java/tools/parser-readme.txt" />
+            <param name="default-options" value="java/tools/parser-defaults.properties" />
 			<param name="srcjar" value="true" />
 		</antcall>
 	</target>
