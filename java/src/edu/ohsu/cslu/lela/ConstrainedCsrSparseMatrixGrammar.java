@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.ella;
+package edu.ohsu.cslu.lela;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;

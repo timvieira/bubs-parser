@@ -16,13 +16,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.ella;
+package edu.ohsu.cslu.lela;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.ella.ConstrainedChart.ConstrainedChartCell;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.lela.ConstrainedChart.ConstrainedChartCell;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
