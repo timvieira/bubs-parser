@@ -25,8 +25,6 @@ package edu.ohsu.cslu.parser.cellselector;
  * 
  * @author Aaron Dunlop
  * @since Mar 10, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public interface CellSelectorFactory {
 

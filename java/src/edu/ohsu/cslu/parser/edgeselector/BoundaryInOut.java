@@ -307,6 +307,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
 
     public class BoundaryInOutSelector extends EdgeSelector {
 
+        private static final long serialVersionUID = 1L;
+
         // pre-computed left/right FOM outside scores for current sentence
         private float outsideLeft[][], outsideRight[][];
         private int bestPOSTag[];
@@ -537,6 +539,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
     // we are simply hi-jacking all of that and overwriting the calcFOM() function to
     // ignore most of the work that is done during setup.
     public class InsideWithFwdBkwd extends BoundaryInOutSelector {
+
+        private static final long serialVersionUID = 1L;
 
         public InsideWithFwdBkwd() {
         }

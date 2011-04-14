@@ -30,8 +30,6 @@ import edu.ohsu.cslu.parser.ParserDriver;
  * 
  * @author Aaron Dunlop
  * @since Mar 11, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class TestGrammarParallelCsrSpmvParser extends
         SparseMatrixVectorParserTestCase<GrammarParallelCsrSpmvParser, PerfectIntPairHashPackingFunction> {

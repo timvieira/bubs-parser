@@ -33,8 +33,6 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * 
  * @author Aaron Dunlop
  * @since Jun 14, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class CartesianProductBinarySearchSpmlParser extends
         SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, PackedArrayChart> {

@@ -35,8 +35,6 @@ import org.junit.runner.RunWith;
  * 
  * @author Aaron Dunlop
  * @since Sep 23, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
 public class TestBoundedPriorityQueue {

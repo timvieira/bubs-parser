@@ -33,8 +33,6 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  * 
  * @author Aaron Dunlop
  * @since Oct 15, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public abstract class FeatureExtractor {
 

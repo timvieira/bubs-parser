@@ -44,8 +44,6 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? extends ParallelArrayChart>, C extends PackingFunction>
         extends SparseMatrixVectorParserTestCase<P, C> {

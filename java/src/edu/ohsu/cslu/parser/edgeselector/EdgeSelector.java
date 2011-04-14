@@ -27,6 +27,8 @@ import edu.ohsu.cslu.parser.chart.Chart;
 
 public abstract class EdgeSelector implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     static public enum EdgeSelectorType {
         Inside, NormalizedInside, BoundaryInOut, InsideWithFwdBkwd, WeightedFeatures
     }

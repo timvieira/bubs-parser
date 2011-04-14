@@ -26,8 +26,6 @@ import org.junit.Test;
  * 
  * @author Aaron Dunlop
  * @since Dec 23, 2009
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class TestECPCellCrossHash extends ExhaustiveChartParserTestCase<ECPCellCrossHash> {
 

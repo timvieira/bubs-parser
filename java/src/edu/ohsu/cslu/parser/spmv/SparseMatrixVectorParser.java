@@ -42,8 +42,6 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
  * 
  * @author Aaron Dunlop
  * @since Mar 26, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart>
         extends SparseMatrixParser<G, C> {

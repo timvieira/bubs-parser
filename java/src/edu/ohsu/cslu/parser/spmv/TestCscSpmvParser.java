@@ -28,8 +28,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFuncti
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class TestCscSpmvParser extends
         SparseMatrixVectorParserTestCase<CscSpmvParser, PerfectIntPairHashPackingFunction> {

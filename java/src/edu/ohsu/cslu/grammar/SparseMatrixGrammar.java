@@ -51,11 +51,11 @@ import edu.ohsu.cslu.util.Strings;
  * 
  * @author Aaron Dunlop
  * @since Dec 31, 2009
- * 
- * @version $Revision$ $Date$ $Author$
  */
 
 public abstract class SparseMatrixGrammar extends Grammar {
+
+    private static final long serialVersionUID = 1L;
 
     public final PackingFunction packingFunction;
 

@@ -35,6 +35,11 @@ import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.tests.JUnit;
 
+/**
+ * Profiles the {@link BoundaryInOut} edge-selector.
+ * 
+ * @author Aaron Dunlop
+ */
 @RunWith(FilteredRunner.class)
 public class ProfileBoundaryInOut {
 

@@ -30,8 +30,6 @@ import edu.ohsu.cslu.tools.TreeTools;
  * 
  * @author Aaron Dunlop
  * @since May 20, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class TestParser {
 

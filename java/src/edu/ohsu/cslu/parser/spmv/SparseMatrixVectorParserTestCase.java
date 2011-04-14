@@ -47,8 +47,6 @@ import edu.ohsu.cslu.tests.JUnit;
  * 
  * @author Aaron Dunlop
  * @since Mar 2, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVectorParser<? extends SparseMatrixGrammar, ? extends ParallelArrayChart>, C extends PackingFunction>
         extends ExhaustiveChartParserTestCase<P> {

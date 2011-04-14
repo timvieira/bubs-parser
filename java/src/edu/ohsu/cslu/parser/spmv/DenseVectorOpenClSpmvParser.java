@@ -31,8 +31,6 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
  * 
  * @author Aaron Dunlop
  * @since Jun 8, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorChart> {
 

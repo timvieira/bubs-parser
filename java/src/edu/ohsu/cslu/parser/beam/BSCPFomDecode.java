@@ -89,7 +89,6 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
 
     @Override
     protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
-        final ChartEdge unaryEdge;
 
         agenda = new PriorityQueue<ChartEdge>();
         for (final ChartEdge viterbiEdge : bestEdges) {

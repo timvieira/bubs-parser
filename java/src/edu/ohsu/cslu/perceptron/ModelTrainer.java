@@ -45,8 +45,6 @@ import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
  * 
  * @author Aaron Dunlop
  * @since Oct 9, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class ModelTrainer extends BaseCommandlineTool {
 

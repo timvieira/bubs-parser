@@ -29,8 +29,6 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGrammar> {
 

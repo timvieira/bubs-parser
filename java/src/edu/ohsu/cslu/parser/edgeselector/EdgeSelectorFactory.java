@@ -29,8 +29,6 @@ import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
  * 
  * @author Aaron Dunlop
  * @since Mar 10, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class EdgeSelectorFactory {
 

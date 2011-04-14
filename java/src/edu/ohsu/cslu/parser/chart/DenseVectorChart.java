@@ -50,8 +50,6 @@ import edu.ohsu.cslu.parser.ParseTree;
  * @see PackedArrayChart
  * @author Aaron Dunlop
  * @since March 15, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class DenseVectorChart extends ParallelArrayChart {
 

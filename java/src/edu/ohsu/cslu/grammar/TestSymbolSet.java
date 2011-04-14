@@ -32,8 +32,6 @@ import org.junit.runner.RunWith;
  * 
  * @author Aaron Dunlop
  * @since Jan 12, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
 public class TestSymbolSet {

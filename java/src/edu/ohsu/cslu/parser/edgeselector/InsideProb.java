@@ -22,6 +22,8 @@ import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 public class InsideProb extends EdgeSelector {
 
+    private static final long serialVersionUID = 1L;
+
     @Override
     public float calcFOM(final ChartEdge edge) {
         return edge.inside();
