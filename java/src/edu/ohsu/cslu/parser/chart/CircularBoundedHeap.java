@@ -25,6 +25,8 @@ import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 // TODO Remove? This class appears to be unused.
 public class CircularBoundedHeap extends PriorityQueue<ChartEdge> {
 
+    private static final long serialVersionUID = 1L;
+
     int arraySize, maxHeapSize, startIndex = 0, endIndex = 0;
     ChartEdge[] heap;
 

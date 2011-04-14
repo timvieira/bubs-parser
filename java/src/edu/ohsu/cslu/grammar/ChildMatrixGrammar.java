@@ -24,6 +24,8 @@ import java.util.LinkedList;
 
 public class ChildMatrixGrammar extends Grammar {
 
+    private static final long serialVersionUID = 1L;
+
     public LinkedList<Production>[][] binaryProdMatrix;
 
     public ChildMatrixGrammar(final Reader grammarFile) throws Exception {

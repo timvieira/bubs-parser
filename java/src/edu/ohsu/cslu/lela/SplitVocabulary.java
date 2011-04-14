@@ -35,6 +35,8 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class SplitVocabulary extends SymbolSet<String> {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Maps non-terminal indices to positions within the sets of sub-categories derived from the same base
      * category. e.g. NP_0 -> 0, VP_3 -> 3, PP_5 -> 5.

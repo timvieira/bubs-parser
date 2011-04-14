@@ -353,6 +353,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     public abstract class PackingFunction implements Serializable {
 
+        private static final long serialVersionUID = 1L;
+
         // Shift lengths and masks for packing and unpacking non-terminals into an int
         public final int shift;
         protected final int lowOrderMask;
@@ -457,6 +459,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     public final class LeftShiftFunction extends PackingFunction {
 
+        private static final long serialVersionUID = 1L;
+
         public LeftShiftFunction() {
             super(rightChildrenEnd);
         }
@@ -500,6 +504,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     public class RightShiftFunction extends PackingFunction {
+
+        private static final long serialVersionUID = 1L;
 
         public RightShiftFunction() {
             super(leftChildrenEnd);
@@ -570,6 +576,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     public final class PerfectIntPairHashPackingFunction extends PackingFunction {
+
+        private static final long serialVersionUID = 1L;
 
         private final int maxLexicalProduction = -numNonTerms() - 1;
 

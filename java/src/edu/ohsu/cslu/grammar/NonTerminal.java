@@ -22,6 +22,8 @@ import java.io.Serializable;
 
 public class NonTerminal implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     public String label;
     public boolean isPOS, isFactored, isLeftChild, isRightChild;
 

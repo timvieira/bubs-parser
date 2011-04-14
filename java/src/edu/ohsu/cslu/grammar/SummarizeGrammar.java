@@ -84,6 +84,8 @@ public class SummarizeGrammar extends BaseCommandlineTool {
 
     private class SummaryGrammar extends Grammar {
 
+        private static final long serialVersionUID = 1L;
+
         private int V_l, V_r;
 
         private final Set<String> parents = new HashSet<String>();

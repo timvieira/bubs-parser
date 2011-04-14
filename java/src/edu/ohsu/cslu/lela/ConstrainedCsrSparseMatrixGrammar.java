@@ -30,6 +30,8 @@ import edu.ohsu.cslu.grammar.Production;
 
 public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
 
+    private static final long serialVersionUID = 1L;
+
     final int[][] csrBinaryBaseStartIndices;
     final int[][] csrUnaryBaseStartIndices;
 

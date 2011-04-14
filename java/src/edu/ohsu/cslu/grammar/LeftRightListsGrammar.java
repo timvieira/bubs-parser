@@ -24,6 +24,8 @@ import java.util.LinkedList;
 
 public class LeftRightListsGrammar extends LeftListGrammar {
 
+    private static final long serialVersionUID = 1L;
+
     private LinkedList<Production>[] binaryProdsByRightNonTerm;
 
     public LeftRightListsGrammar(final Reader grammarFile) throws Exception {

@@ -27,6 +27,8 @@ import java.util.LinkedList;
 
 public class LeftHashGrammar extends Grammar {
 
+    private static final long serialVersionUID = 1L;
+
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
     public LeftHashGrammar(final Reader grammarFile) throws Exception {
