@@ -130,7 +130,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
         return lexicon;
     }
 
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) {
         run(args);
     }
 

@@ -78,6 +78,10 @@ public class Tokenizer implements Serializable {
     }
 
     public String wordToUnkString(final String word, final int sentIndex) {
+        // TODO Remove this reference so Tokenizer won't depend on ParserDriver (and thus on pretty much
+        // everything else in the codebase). When doing reference-tracing at build time, this reference means
+        // we suck in all classes into all tools (and breaks the build for most tools, since we don't package
+        // OpenCL libraries by default).
         if (ParserDriver.oldUNK == true) {
             return wordToUnkStringVer1(word);
         }
