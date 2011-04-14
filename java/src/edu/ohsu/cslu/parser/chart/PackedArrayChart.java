@@ -52,8 +52,6 @@ import edu.ohsu.cslu.parser.ParseTree;
  * 
  * @author Aaron Dunlop
  * @since March 25, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class PackedArrayChart extends ParallelArrayChart {
 

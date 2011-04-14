@@ -37,8 +37,6 @@ import edu.ohsu.cslu.parser.ParserUtil;
  * 
  * @author Aaron Dunlop, Nathan Bodenstab
  * @since Oct 12, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class AveragedPerceptron extends Perceptron {
 

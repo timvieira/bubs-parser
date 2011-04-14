@@ -28,8 +28,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
  * 
  * @author Aaron Dunlop
  * @since Jun 2, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class TestPackedOpenClSpmvParser extends
         OpenClSpmvParserTestCase<PackedOpenClSpmvParser, LeftShiftFunction> {

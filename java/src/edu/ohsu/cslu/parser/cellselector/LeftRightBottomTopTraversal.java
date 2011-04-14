@@ -26,8 +26,6 @@ import edu.ohsu.cslu.parser.ChartParser;
  * 
  * @author Nathan Bodenstab
  * @since Dec 17, 2009
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class LeftRightBottomTopTraversal extends CellSelector {
 

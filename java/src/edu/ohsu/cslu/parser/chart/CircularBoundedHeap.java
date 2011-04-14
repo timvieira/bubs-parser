@@ -22,6 +22,7 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
+// TODO Remove? This class appears to be unused.
 public class CircularBoundedHeap extends PriorityQueue<ChartEdge> {
 
     int arraySize, maxHeapSize, startIndex = 0, endIndex = 0;

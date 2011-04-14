@@ -36,6 +36,8 @@ import edu.ohsu.cslu.parser.chart.GoldChart;
 
 public class WeightedFeatures extends EdgeSelector {
 
+    private static final long serialVersionUID = 1L;
+
     private Grammar grammar;
     private int numFeatures;
     private GoldChart goldChart;

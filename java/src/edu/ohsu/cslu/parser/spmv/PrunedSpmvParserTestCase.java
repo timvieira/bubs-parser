@@ -46,8 +46,6 @@ import edu.ohsu.cslu.tests.JUnit;
  * 
  * @author Aaron Dunlop
  * @since Mar 9, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
 

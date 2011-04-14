@@ -43,10 +43,10 @@ import java.util.Arrays;
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * Offsets into {@link #csrBinaryColumnIndices} for the start of each row, indexed by row index

@@ -37,8 +37,6 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @author Aaron Dunlop
  * @since Oct 15, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class BeginConstituentFeatureExtractor extends FeatureExtractor {
 

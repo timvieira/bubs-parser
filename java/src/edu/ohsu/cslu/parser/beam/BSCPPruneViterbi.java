@@ -103,6 +103,7 @@ public class BSCPPruneViterbi extends BeamSearchChartParser<LeftHashGrammar, Cel
         }
     }
 
+    @SuppressWarnings("unused")
     private void printBestEdgeStats(final HashSetChartCell cell) {
         System.out.println("INFO: [" + cell.start() + "," + cell.end() + "] agendaSize=" + agenda.size()
                 + " globalBestFOM=" + globalBestFOM);

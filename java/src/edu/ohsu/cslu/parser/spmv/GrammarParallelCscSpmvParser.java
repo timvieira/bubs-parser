@@ -40,8 +40,6 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * 
  * @author Aaron Dunlop
  * @since Mar 10, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
 

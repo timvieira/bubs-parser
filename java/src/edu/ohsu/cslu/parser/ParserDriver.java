@@ -89,8 +89,6 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFuncti
  * @author Nathan Bodenstab
  * @author Aaron Dunlop
  * @since 2009
- * 
- * @version $Revision$ $Date$ $Author$
  */
 @Threadable(defaultThreads = 1)
 public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResult> {

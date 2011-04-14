@@ -54,8 +54,6 @@ import edu.ohsu.cslu.tests.JUnit;
  * 
  * @author Aaron Dunlop
  * @since Dec 23, 2009
- * 
- * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
 public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? extends Grammar, ? extends Chart>> {

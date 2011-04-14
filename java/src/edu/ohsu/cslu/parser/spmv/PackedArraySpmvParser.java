@@ -38,8 +38,6 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  * 
  * @author Aaron Dunlop
  * @since Dec 23, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> extends
         SparseMatrixVectorParser<G, PackedArrayChart> {

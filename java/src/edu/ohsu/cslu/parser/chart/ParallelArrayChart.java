@@ -20,9 +20,9 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
-import edu.ohsu.cslu.ella.ConstrainedChart;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.lela.ConstrainedChart;
 
 /**
  * Represents a parse chart as a parallel array including:
@@ -36,8 +36,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
  * 
  * @author Aaron Dunlop
  * @since Jun 2, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public abstract class ParallelArrayChart extends Chart {
 

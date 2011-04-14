@@ -29,8 +29,6 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
  * 
  * @author Aaron Dunlop
  * @since Jun 13, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class RightChildLoopSpmlParser extends
         SparseMatrixLoopParser<RightCscSparseMatrixGrammar, DenseVectorChart> {

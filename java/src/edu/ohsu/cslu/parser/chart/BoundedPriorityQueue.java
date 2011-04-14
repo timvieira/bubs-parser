@@ -36,8 +36,6 @@ import edu.ohsu.cslu.grammar.Grammar;
  * 
  * @author Aaron Dunlop
  * @since Sep 10, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class BoundedPriorityQueue {
 

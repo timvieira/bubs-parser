@@ -43,8 +43,6 @@ import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
  * 
  * @author Aaron Dunlop
  * @since Sep 9, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class SerializeModel extends BaseCommandlineTool {
 

@@ -35,8 +35,6 @@ import edu.ohsu.cslu.perceptron.Classifier;
  * 
  * @author Nathan Bodenstab
  * @since 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class PerceptronBeamWidthFactory implements CellSelectorFactory {
 

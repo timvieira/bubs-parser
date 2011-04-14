@@ -26,10 +26,10 @@ import java.io.Serializable;
  * @author Nathan Bodenstab
  * @author Aaron Dunlop
  * @since 2009
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class Production implements Serializable, Cloneable {
+
+    private static final long serialVersionUID = 1L;
 
     // if rightChild == -1, it's a unary prod, if -2, it's a lexical prod
     public final static int UNARY_PRODUCTION = -1;

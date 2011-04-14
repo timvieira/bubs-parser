@@ -31,10 +31,10 @@ import java.util.Arrays;
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * Indices in {@link #cscBinaryPopulatedColumns} of initial columns for each non-terminal. Indexed by left

@@ -37,8 +37,6 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
  * 
  * @author Aaron Dunlop
  * @since Sep 9, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
 public class TestPackedArrayChart {
