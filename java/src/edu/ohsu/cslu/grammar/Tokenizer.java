@@ -27,6 +27,8 @@ import edu.ohsu.cslu.parser.ParserUtil;
 
 public class Tokenizer implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private SymbolSet<String> lexSet;
 
     public Tokenizer(final SymbolSet<String> lexSet) {

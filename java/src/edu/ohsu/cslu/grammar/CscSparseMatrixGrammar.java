@@ -31,6 +31,8 @@ import java.util.Collection;
 
 public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Parallel array with {@link #cscBinaryPopulatedColumnOffsets}, containing indices of populated columns
      * (child pairs) and the offsets into {@link #cscBinaryRowIndices} at which each column starts. Array size

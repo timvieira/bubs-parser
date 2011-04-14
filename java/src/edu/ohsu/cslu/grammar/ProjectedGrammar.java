@@ -22,6 +22,8 @@ import java.util.HashMap;
 
 public class ProjectedGrammar extends Grammar {
 
+    private static final long serialVersionUID = 1L;
+
     Grammar parentGrammar;
     int ntProjection[];
 
