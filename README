@@ -1,6 +1,9 @@
-Shared NLP Code
+BUBS Parser
 
-To build all NLP tools:
+To build Parser:
+  ant parse
+
+To build other tools:
   ant dist
 
   Tools will be packaged in 'build-dist'
@@ -10,7 +13,4 @@ To build documentation:
 
   Documentation will be built in HTML format in 'build-doc'. 
   See that generated documentation for more information. 
-
-
-To build OHSU Parser: "ant parse"
 
