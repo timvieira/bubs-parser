@@ -16,7 +16,7 @@ running  'java -jar parser.jar -help' (or, through the wrapper script,
 === Quick Start ===
 
 java -jar parse.jar -g berkeley-SM6.gz -fom berk.boundary.gz \
--beamConfModel multbinary.berk.bio.feats_v2.bins0_1_2_4.loss1_1000.no_base.gz \
+-beamConfModel berk.bcm.gz \
 [input files]
 
 Input: one sentence per line, tokenized according to standard Treebank
