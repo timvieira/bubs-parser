@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedList;
 
@@ -28,12 +29,12 @@ public class LeftListGrammar extends Grammar {
 
     protected LinkedList<Production>[] binaryProdsByLeftNonTerm;
 
-    public LeftListGrammar(final Reader grammarFile) throws Exception {
+    public LeftListGrammar(final Reader grammarFile) throws IOException {
         super(grammarFile);
         init();
     }
 
-    public LeftListGrammar(final String grammarFile) throws Exception {
+    public LeftListGrammar(final String grammarFile) throws IOException {
         this(new FileReader(grammarFile));
     }
 

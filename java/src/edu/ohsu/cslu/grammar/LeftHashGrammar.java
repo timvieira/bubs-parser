@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,16 +32,16 @@ public class LeftHashGrammar extends Grammar {
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
-    public LeftHashGrammar(final Reader grammarFile) throws Exception {
+    public LeftHashGrammar(final Reader grammarFile) throws IOException {
         super(grammarFile);
         init();
     }
 
-    public LeftHashGrammar(final String grammarFile) throws Exception {
+    public LeftHashGrammar(final String grammarFile) throws IOException {
         this(new FileReader(grammarFile));
     }
 
-    public LeftHashGrammar(final Grammar g) throws Exception {
+    public LeftHashGrammar(final Grammar g) {
         super(g);
         init();
     }

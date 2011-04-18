@@ -58,8 +58,8 @@ public class SerializeModel extends BaseCommandlineTool {
     @Option(name = "-fomModel", metaVar = "file", usage = "FOM model file")
     private String fomModelFileName;
 
-    @Option(name = "-m", metaVar = "metadata", multiValued = true, usage = "Metadata to be serialized into the file (key=value)")
-    private String[] options;
+    @Option(name = "-d", metaVar = "options", multiValued = true, usage = "Default options to be serialized into the file (key=value)")
+    private String[] defaultOptions;
 
     @Option(name = "-ser", required = true, metaVar = "filename", usage = "Serialized output file")
     private String serializedOutputFile;

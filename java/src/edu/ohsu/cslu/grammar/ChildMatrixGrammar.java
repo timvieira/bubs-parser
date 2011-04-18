@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedList;
 
@@ -28,16 +29,16 @@ public class ChildMatrixGrammar extends Grammar {
 
     public LinkedList<Production>[][] binaryProdMatrix;
 
-    public ChildMatrixGrammar(final Reader grammarFile) throws Exception {
+    public ChildMatrixGrammar(final Reader grammarFile) throws IOException {
         super(grammarFile);
         init();
     }
 
-    public ChildMatrixGrammar(final String grammarFile) throws Exception {
+    public ChildMatrixGrammar(final String grammarFile) throws IOException {
         this(new FileReader(grammarFile));
     }
 
-    public ChildMatrixGrammar(final Grammar g) throws Exception {
+    public ChildMatrixGrammar(final Grammar g) {
         super(g);
         init();
     }

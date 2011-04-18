@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.tools;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -73,7 +74,7 @@ public class TreeTools extends BaseCommandlineTool {
     }
 
     @Override
-    protected void run() throws Exception {
+    protected void run() throws IOException {
 
         for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
 
@@ -317,7 +318,7 @@ public class TreeTools extends BaseCommandlineTool {
         return allEmpty; // always true
     }
 
-    public static void countMaxSpanPerWord() throws Exception {
+    public static void countMaxSpanPerWord() throws IOException {
         // to compute cell constraint scores for kristy's code, we need to
         // provide the length of the longest span that starts and and longest
         // span that ends at each word in the training/dev/test corpora

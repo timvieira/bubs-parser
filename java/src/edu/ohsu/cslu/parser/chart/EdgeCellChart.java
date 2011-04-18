@@ -174,7 +174,7 @@ public class EdgeCellChart extends CellChart {
             return false;
         }
 
-        public boolean canBuild(final ChartEdge edge) throws Exception {
+        public boolean canBuild(final ChartEdge edge) {
             if (edge.prod.isBinaryProd()) {
                 final int midpt = edge.midpt();
                 if (getCell(start, midpt).hasNT(edge.prod.leftChild)

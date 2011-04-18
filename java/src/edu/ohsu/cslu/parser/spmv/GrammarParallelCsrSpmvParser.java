@@ -135,8 +135,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
                 futures[i] = executor.submit(new Callable<CartesianProductVector>() {
 
                     @Override
-                    public edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector call()
-                            throws Exception {
+                    public edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector call() {
                         return internalCartesianProduct(start, end, midpointStart, midpointEnd, pf,
                             nonTerminalIndices, insideProbabilities, probabilities, midpoints);
                     }

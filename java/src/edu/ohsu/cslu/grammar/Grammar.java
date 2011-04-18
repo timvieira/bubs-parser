@@ -1120,4 +1120,27 @@ public class Grammar implements Serializable {
         }
         return sb.toString();
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder(1024 * 1024);
+
+        sb.append(nonTermSet.getSymbol(startSymbol) + '\n');
+
+        for (final Production p : binaryProductions) {
+            sb.append(String.format("%s -> %s %s %.4f\n", nonTermSet.getSymbol(p.parent),
+                nonTermSet.getSymbol(p.leftChild), nonTermSet.getSymbol(p.rightChild), p.prob));
+        }
+
+        for (final Production p : unaryProductions) {
+            sb.append(String.format("%s -> %s %.4f\n", nonTermSet.getSymbol(p.parent),
+                nonTermSet.getSymbol(p.leftChild), p.prob));
+        }
+        sb.append("===Lexicon===\n");
+        for (final Production p : lexicalProductions) {
+            sb.append(String.format("%s -> %s %.4f\n", nonTermSet.getSymbol(p.parent),
+                lexSet.getSymbol(p.leftChild), p.prob));
+        }
+        return sb.toString();
+    }
 }

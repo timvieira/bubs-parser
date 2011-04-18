@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -503,14 +504,14 @@ public class PerceptronCellSelector extends CellSelector {
     }
 
     public void train(final BufferedReader inStream, final BSCPPerceptronCellTrainer parserToTrain)
-            throws Exception {
+            throws IOException {
         learningRate = (float) 1.0;
         initWeights();
         // parserToTrain.train(inStream);
         throw new RuntimeException("ERROR: PerceptronCellSelector.train() doesn't work anymore");
     }
 
-    public void readModel(final BufferedReader inStream) throws Exception {
+    public void readModel(final BufferedReader inStream) throws IOException {
         String line;
         while ((line = inStream.readLine()) != null) {
             // line format: weight1 weight2 weight3 ...
@@ -528,7 +529,7 @@ public class PerceptronCellSelector extends CellSelector {
     }
 
     @Override
-    public void writeModel(final BufferedWriter outStream) throws Exception {
+    public void writeModel(final BufferedWriter outStream) throws IOException {
         outStream.write(this.toString());
     }
 

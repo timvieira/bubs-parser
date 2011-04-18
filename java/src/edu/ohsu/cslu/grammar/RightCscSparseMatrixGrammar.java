@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.grammar;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
 
@@ -50,7 +51,7 @@ public class RightCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
     public final int[] cscBinaryRightChildEndIndices;
 
     public RightCscSparseMatrixGrammar(final Reader grammarFile,
-            final Class<? extends PackingFunction> cartesianProductFunctionClass) throws Exception {
+            final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
         super(grammarFile, cartesianProductFunctionClass);
 
         this.cscBinaryRightChildStartIndices = new int[numNonTerms() + 1];
@@ -58,11 +59,11 @@ public class RightCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         init();
     }
 
-    public RightCscSparseMatrixGrammar(final Reader grammarFile) throws Exception {
+    public RightCscSparseMatrixGrammar(final Reader grammarFile) throws IOException {
         this(grammarFile, RightShiftFunction.class);
     }
 
-    public RightCscSparseMatrixGrammar(final String grammarFile) throws Exception {
+    public RightCscSparseMatrixGrammar(final String grammarFile) throws IOException {
         this(new FileReader(grammarFile));
     }
 
