@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.Iterator;
 
 import edu.ohsu.cslu.parser.ChartParser;
@@ -28,11 +29,11 @@ public abstract class CellSelector implements Iterator<short[]> {
 
     public abstract void initSentence(final ChartParser<?, ?> parser);
 
-    public void train(final BufferedReader inStream) throws Exception {
+    public void train(final BufferedReader inStream) throws IOException {
         throw new UnsupportedOperationException();
     }
 
-    public void writeModel(final BufferedWriter outStream) throws Exception {
+    public void writeModel(final BufferedWriter outStream) throws IOException {
         throw new UnsupportedOperationException();
     }
 

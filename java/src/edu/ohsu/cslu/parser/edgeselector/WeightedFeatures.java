@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.parser.edgeselector;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.Arrays;
 
 import cltool4j.BaseLogger;
@@ -63,7 +64,7 @@ public class WeightedFeatures extends EdgeSelector {
     }
 
     @Override
-    public void train(final BufferedReader inStream) throws Exception {
+    public void train(final BufferedReader inStream) throws IOException {
         ParseTree goldTree;
         String line;
         final ParserDriver opts = new ParserDriver();

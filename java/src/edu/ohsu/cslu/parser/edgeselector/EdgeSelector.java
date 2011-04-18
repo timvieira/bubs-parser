@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser.edgeselector;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.Serializable;
 
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -48,17 +49,17 @@ public abstract class EdgeSelector implements Serializable {
         // default is to do nothing
     }
 
-    public void train(final BufferedReader inStream) throws Exception {
-        throw new Exception("Not implemented.");
+    public void train(final BufferedReader inStream) throws IOException {
+        throw new UnsupportedOperationException("Not implemented.");
     }
 
-    public void readModel(final BufferedReader inStream) throws Exception {
+    public void readModel(final BufferedReader inStream) throws IOException {
         // NOTE: some models have nothing to be read
         // throw new Exception("Not implemented.");
     }
 
-    public void writeModel(final BufferedWriter outStream) throws Exception {
-        throw new Exception("Not implemented.");
+    public void writeModel(final BufferedWriter outStream) throws IOException {
+        throw new UnsupportedOperationException("Not implemented.");
     }
 
 }

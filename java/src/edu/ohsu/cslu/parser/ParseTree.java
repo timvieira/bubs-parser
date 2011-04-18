@@ -18,6 +18,7 @@
  */
 package edu.ohsu.cslu.parser;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,13 +55,13 @@ public class ParseTree {
 
     // opposite of toString()
     // example treebank string: (TOP (NP (NNP Two-Way) (NNP Street)))
-    public static ParseTree readBracketFormat(final String str) throws Exception {
+    public static ParseTree readBracketFormat(final String str) throws IOException {
         ParseTree child;
         final Pattern WORD = Pattern.compile("\\s*([^\\s\\(\\)]*)\\s*");
         Matcher match;
 
         if (isBracketFormat(str) == false) {
-            throw new Exception("ERROR: Expecting tree in bracket format as input, got: " + str);
+            throw new RuntimeException("ERROR: Expecting tree in bracket format as input, got: " + str);
         }
 
         final LinkedList<ParseTree> stack = new LinkedList<ParseTree>();
@@ -82,7 +83,8 @@ public class ParseTree {
                 if (stack.size() == 1) {
                     // we're either done or dead
                     if (index != str.length()) {
-                        throw new Exception("Expecting end of string but found '" + str.charAt(index) + "'");
+                        throw new RuntimeException("Expecting end of string but found '" + str.charAt(index)
+                                + "'");
                     }
                     return stack.getLast();
                 }
@@ -97,7 +99,7 @@ public class ParseTree {
                 index += match.end();
             }
         }
-        throw new Exception();
+        throw new RuntimeException();
     }
 
     public void addChild(final String child) {
@@ -404,7 +406,7 @@ public class ParseTree {
         return str.trim();
     }
 
-    public void tokenizeLeaves(final Grammar grammar) throws Exception {
+    public void tokenizeLeaves(final Grammar grammar) {
         for (final ParseTree leaf : getLeafNodes()) {
             if (grammar.hasWord(leaf.contents) == false) {
                 leaf.contents = grammar.mapLexicalEntry(grammar.tokenizer.tokenizeToIndex(leaf.contents)[0]);
