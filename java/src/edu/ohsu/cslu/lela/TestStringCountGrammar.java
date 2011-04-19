@@ -40,8 +40,6 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @author Aaron Dunlop
  * @since Jan 12, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 @RunWith(FilteredRunner.class)
 public class TestStringCountGrammar extends CountGrammarTestCase {
@@ -50,14 +48,14 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
 
     @Before
     public void setUp() throws IOException {
-        sg = new StringCountGrammar(new StringReader(AllEllaTests.STRING_SAMPLE_TREE), null, null, 1);
+        sg = new StringCountGrammar(new StringReader(AllLelaTests.STRING_SAMPLE_TREE), null, null, 1);
         g = sg;
     }
 
     @Test
     public void testUnknownWordThreshold() throws IOException {
         // Two trees, differing only in two terminals which occur one time each
-        final String corpus = AllEllaTests.STRING_SAMPLE_TREE + '\n'
+        final String corpus = AllLelaTests.STRING_SAMPLE_TREE + '\n'
                 + "(s (a (a (a (a e) (a c)) (b d)) (b (b (b f)) (a d))))";
 
         // With an occurrence threshold of 1, all observed symbols will be in the lexicon

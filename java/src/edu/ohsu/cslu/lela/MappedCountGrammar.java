@@ -34,8 +34,6 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @author Aaron Dunlop
  * @since Jan 13, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class MappedCountGrammar extends FractionalCountGrammar {
 
@@ -129,6 +127,7 @@ public class MappedCountGrammar extends FractionalCountGrammar {
         }
     }
 
+    @Override
     public ArrayList<Production> binaryProductions() {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
@@ -163,6 +162,7 @@ public class MappedCountGrammar extends FractionalCountGrammar {
         return prods;
     }
 
+    @Override
     public ArrayList<Production> unaryProductions() {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
@@ -188,6 +188,7 @@ public class MappedCountGrammar extends FractionalCountGrammar {
         return prods;
     }
 
+    @Override
     public ArrayList<Production> lexicalProductions() {
 
         final ArrayList<Production> prods = new ArrayList<Production>();

@@ -21,6 +21,7 @@ package edu.ohsu.cslu.lela;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 
@@ -52,7 +53,7 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
     private boolean collectDetailedTimings;
 
     @Override
-    protected void run() throws Exception {
+    protected void run() throws IOException {
 
         // Induce M0 grammar from training corpus
         final long t0 = System.currentTimeMillis();

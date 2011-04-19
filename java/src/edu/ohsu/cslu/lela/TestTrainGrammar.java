@@ -37,14 +37,12 @@ import edu.ohsu.cslu.tests.JUnit;
  * 
  * @author Aaron Dunlop
  * @since Mar 9, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class TestTrainGrammar {
 
     /**
-     * Learns a 2-split grammar from a small corpus (WSJ section 24). Verifies that corpus likelihood
-     * increases with successive EM runs.
+     * Learns a 2-split grammar from a small corpus (WSJ section 24). Verifies that corpus likelihood increases with
+     * successive EM runs.
      * 
      * @throws IOException
      */
@@ -53,37 +51,67 @@ public class TestTrainGrammar {
         final TrainGrammar tg = new TrainGrammar();
         tg.factorization = Factorization.RIGHT;
         tg.grammarFormatType = GrammarFormatType.Berkeley;
-        final BufferedReader br = new BufferedReader(
-            JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"), 20 * 1024 * 1024);
+
+        // final BufferedReader br = new BufferedReader(
+        // new StringReader(
+        // "(TOP (S (NP (NNP FCC) (NN COUNSEL)) (VP (VBZ JOINS) (NP (NN FIRM))) (: :)))\n"
+        // + "(TOP (X (X (SYM z)) (: -) (ADJP (RB Not) (JJ available)) (. .)))\n"
+        // +
+        // "(TOP (S (S (CC But) (NP (NNS investors)) (VP (MD should) (VP (VB keep) (PP (IN in) (NP (NN mind))) (, ,) (PP (IN before) (S (VP (VBG paying) (ADVP (RB too) (JJ much))))) (, ,) (SBAR (IN that) (S (NP (NP (DT the) (JJ average) (JJ annual) (NN return)) (PP (IN for) (NP (NN stock) (NNS holdings)))) (, ,) (ADVP (JJ long-term)) (, ,) (VP (AUX is) (NP (NP (QP (CD 9) (NN %) (TO to) (CD 10) (NN %))) (NP (DT a) (NN year))))))))) (: ;) (S (NP (NP (DT a) (NN return)) (PP (IN of) (NP (CD 15) (NN %)))) (VP (AUX is) (VP (VBN considered) (S (ADJP (JJ praiseworthy)))))) (. .)))"),
+        // 1024);
+
+        final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"),
+                20 * 1024 * 1024);
+
         br.mark(20 * 1024 * 1024);
+
         final ProductionListGrammar plg0 = tg.induceGrammar(br);
         br.reset();
 
         tg.loadConstrainingCharts(br, plg0);
 
-        // Split 1
         final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
-        final ProductionListGrammar plg1 = plg0.split(noiseGenerator);
-        ConstrainedCsrSparseMatrixGrammar csr1 = csrGrammar(plg1);
 
+        // Split and train with the 1-split grammar
+        final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 10);
+
+        // Split again and train with the 2-split grammar
+        runEm(tg, plg1.split(noiseGenerator), 2, 10);
+    }
+
+    private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar plg, final int split,
+            final int iterations) {
+
+        ConstrainedCsrSparseMatrixGrammar csr = csrGrammar(plg);
+
+        final int lexiconSize = csr.lexSet.size();
         float previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
 
-        for (int i = 0; i < 10; i++) {
-            System.out.println("=== Split 1, iteration " + i);
+        EmIterationResult result = null;
+        for (int i = 0; i < iterations; i++) {
+            System.out.format("=== Split %d, iteration %d", split, i + 1);
 
-            final EmIterationResult result = tg.emIteration(csr1);
-            csr1 = csrGrammar(result.plGrammar);
-            assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f",
-                previousCorpusLikelihood, result.corpusLikelihood),
-                result.corpusLikelihood >= previousCorpusLikelihood);
+            result = tg.emIteration(csr);
+            csr = csrGrammar(result.plGrammar);
+
+            for (int j = 0; j < lexiconSize; j++) {
+                assertTrue("No parents found for " + csr.lexSet.getSymbol(j), csr.getLexicalProductionsWithChild(j)
+                        .size() > 0);
+            }
+
+            System.out.format("   Likelihood: %.3f\n", result.corpusLikelihood);
+
+            assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f on iteration %d",
+                    previousCorpusLikelihood, result.corpusLikelihood, i),
+                    result.corpusLikelihood >= previousCorpusLikelihood);
             previousCorpusLikelihood = result.corpusLikelihood;
         }
 
-        // TODO - Split again and train with the 2-split grammar
+        return result.plGrammar;
     }
 
     private ConstrainedCsrSparseMatrixGrammar csrGrammar(final ProductionListGrammar plg) {
         return new ConstrainedCsrSparseMatrixGrammar(plg, GrammarFormatType.Berkeley,
-            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 }

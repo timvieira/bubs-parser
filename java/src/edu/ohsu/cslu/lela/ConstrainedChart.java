@@ -37,8 +37,6 @@ import edu.ohsu.cslu.util.Math;
  * 
  * @author Aaron Dunlop
  * @since Jun 2, 2010
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class ConstrainedChart extends ParallelArrayChart {
 

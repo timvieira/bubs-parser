@@ -45,8 +45,6 @@ import edu.ohsu.cslu.grammar.Tokenizer;
  * 
  * @author Aaron Dunlop
  * @since Jan 13, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public final class StringCountGrammar implements CountGrammar {
 

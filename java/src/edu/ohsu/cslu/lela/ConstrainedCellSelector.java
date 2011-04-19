@@ -28,8 +28,6 @@ import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
  * 
  * @author Aaron Dunlop
  * @since Jan 15, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class ConstrainedCellSelector extends CellSelector {
 
@@ -77,7 +75,7 @@ public class ConstrainedCellSelector extends CellSelector {
 
     @Override
     public void reset() {
-        currentCell = 0;
+        currentCell = -1;
     }
 
     /**

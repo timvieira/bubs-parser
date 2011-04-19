@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.lela;
 
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 
 import cltool4j.BaseCommandlineTool;
@@ -41,7 +42,7 @@ public class InduceGrammar extends BaseCommandlineTool {
     private int lexicalUnkThreshold = 1;
 
     @Override
-    protected void run() throws Exception {
+    protected void run() throws IOException {
         final StringCountGrammar cg = new StringCountGrammar(new InputStreamReader(System.in), factorization,
             grammarFormatType, lexicalUnkThreshold);
         final ProductionListGrammar plg = new ProductionListGrammar(cg);

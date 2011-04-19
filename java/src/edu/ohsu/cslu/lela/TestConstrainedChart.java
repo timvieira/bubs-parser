@@ -40,8 +40,6 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @author Aaron Dunlop
  * @since Jan 15, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class TestConstrainedChart {
 
@@ -52,7 +50,7 @@ public class TestConstrainedChart {
     public void setUp() throws IOException {
         // Induce a grammar from the sample tree
         final StringCountGrammar sg = new StringCountGrammar(
-            new StringReader(AllEllaTests.STRING_SAMPLE_TREE), null, null, 1);
+            new StringReader(AllLelaTests.STRING_SAMPLE_TREE), null, null, 1);
 
         // Construct a SparseMatrixGrammar from the induced grammar
         plGrammar0 = new ProductionListGrammar(sg);
@@ -70,7 +68,7 @@ public class TestConstrainedChart {
     @Test
     public void testGoldTreeConstructor() throws IOException {
 
-        final ConstrainedChart cc = new ConstrainedChart(BinaryTree.read(AllEllaTests.STRING_SAMPLE_TREE,
+        final ConstrainedChart cc = new ConstrainedChart(BinaryTree.read(AllLelaTests.STRING_SAMPLE_TREE,
             String.class), csrGrammar0);
 
         // The chart should size itself according to the longest unary chain
@@ -101,7 +99,7 @@ public class TestConstrainedChart {
         assertEquals(Float.NEGATIVE_INFINITY, cc.getInside(3, 5, a), .001f);
 
         // And ensure that the extracted parse matches the input gold tree
-        assertEquals(AllEllaTests.STRING_SAMPLE_TREE, cc.extractBestParse(vocabulary.getIndex("top"))
+        assertEquals(AllLelaTests.STRING_SAMPLE_TREE, cc.extractBestParse(vocabulary.getIndex("top"))
             .toString());
     }
 
@@ -110,16 +108,16 @@ public class TestConstrainedChart {
         // Try from a problematic tree from the Penn Treebank
         // Induce a grammar from the tree and construct a SparseMatrixGrammar
         final ProductionListGrammar plg = new ProductionListGrammar(new StringCountGrammar(new StringReader(
-            AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN), Factorization.RIGHT, GrammarFormatType.Berkeley, 0));
+            AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN), Factorization.RIGHT, GrammarFormatType.Berkeley, 0));
         final CsrSparseMatrixGrammar csrg = new CsrSparseMatrixGrammar(plg.binaryProductions,
             plg.unaryProductions, plg.lexicalProductions, plg.vocabulary, plg.lexicon,
             GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final ConstrainedChart cc = new ConstrainedChart(NaryTree.read(
-            AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class).factor(GrammarFormatType.Berkeley,
+            AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class).factor(GrammarFormatType.Berkeley,
             Factorization.RIGHT), csrg);
         assertEquals(
-            AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN,
+            AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN,
             BinaryTree.read(cc.extractBestParse(0).toString(), String.class)
                 .unfactor(GrammarFormatType.Berkeley).toString());
     }

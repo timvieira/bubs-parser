@@ -51,8 +51,6 @@ import edu.ohsu.cslu.tests.JUnit;
  * 
  * @author Aaron Dunlop
  * @since Jan 15, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 @RunWith(Theories.class)
 public class TestConstrainedCsrSpmvParser {
@@ -77,13 +75,13 @@ public class TestConstrainedCsrSpmvParser {
 
         // Induce a grammar from the sample tree and construct a basic constraining chart
         final StringCountGrammar sg = new StringCountGrammar(
-            new StringReader(AllEllaTests.STRING_SAMPLE_TREE), null, null, 1);
+            new StringReader(AllLelaTests.STRING_SAMPLE_TREE), null, null, 1);
         plGrammar0 = new ProductionListGrammar(sg);
         // Create a basic constraining chart
         final ConstrainedCsrSparseMatrixGrammar unsplitGrammar = new ConstrainedCsrSparseMatrixGrammar(
             plGrammar0, GrammarFormatType.Berkeley,
             SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
-        chart0 = new ConstrainedChart(BinaryTree.read(AllEllaTests.STRING_SAMPLE_TREE, String.class),
+        chart0 = new ConstrainedChart(BinaryTree.read(AllLelaTests.STRING_SAMPLE_TREE, String.class),
             unsplitGrammar);
 
         // Split the grammar
@@ -195,7 +193,7 @@ public class TestConstrainedCsrSpmvParser {
         // And ensure that the extracted and unfactored parse matches the input gold tree
         final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree1.toString(), String.class)
             .unfactor(GrammarFormatType.Berkeley);
-        assertEquals(AllEllaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
+        assertEquals(AllLelaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
     }
 
     @Test
@@ -290,7 +288,7 @@ public class TestConstrainedCsrSpmvParser {
         // And ensure that the extracted and unfactored parse matches the input gold tree
         final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree2.toString(), String.class)
             .unfactor(GrammarFormatType.Berkeley);
-        assertEquals(AllEllaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
+        assertEquals(AllLelaTests.STRING_SAMPLE_TREE, unfactoredTree.toString());
     }
 
     @Theory
@@ -298,7 +296,7 @@ public class TestConstrainedCsrSpmvParser {
 
         // Induce a grammar from the corpus and construct a basic constraining chart
         final ProductionListGrammar plg0 = induceProductionListGrammar(new StringReader(
-            AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN));
+            AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN));
         final ConstrainedCsrSparseMatrixGrammar csr0 = csrGrammar(plg0);
 
         // Split the grammar
@@ -307,7 +305,7 @@ public class TestConstrainedCsrSpmvParser {
 
         // Construct a constraining chart
         final NaryTree<String> goldTree = NaryTree
-            .read(AllEllaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
+            .read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
         final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley,
             Factorization.RIGHT);
         final ConstrainedChart constrainingChart = new ConstrainedChart(factoredTree, csr0);
@@ -495,7 +493,7 @@ public class TestConstrainedCsrSpmvParser {
         // grammar
         parseWithGrammar1();
         ProductionListGrammar plg = new ProductionListGrammar(parser1.countRuleOccurrences(),
-            parser1.grammar.parentGrammar);
+            parser1.grammar.baseGrammar);
 
         // Verify that we find the same probabilities in the original split grammar
         assertLogFractionEquals(Math.log(1f / 2), plg.unaryLogProbability("top", "a_0"), .01f);
@@ -533,7 +531,7 @@ public class TestConstrainedCsrSpmvParser {
         parser1 = new ConstrainedCsrSpmvParser(opts, biasedCsrGrammar1);
         parser1.findBestParse(chart0);
 
-        plg = new ProductionListGrammar(parser1.countRuleOccurrences(), parser1.grammar.parentGrammar);
+        plg = new ProductionListGrammar(parser1.countRuleOccurrences(), parser1.grammar.baseGrammar);
 
         // Verify that we find the same probabilities in the original split grammar
         assertLogFractionEquals(Math.log(1), plg.unaryLogProbability("top", "a_0"), .01f);
