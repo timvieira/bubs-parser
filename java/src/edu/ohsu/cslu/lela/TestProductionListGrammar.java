@@ -35,8 +35,6 @@ import org.junit.runner.RunWith;
  * 
  * @author Aaron Dunlop
  * @since Jan 12, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 @RunWith(Theories.class)
 public class TestProductionListGrammar {
@@ -44,7 +42,7 @@ public class TestProductionListGrammar {
     @DataPoints
     public static ProductionListGrammar[] dataPoints() throws IOException {
         final ProductionListGrammar g1 = new ProductionListGrammar(new StringCountGrammar(new StringReader(
-            AllEllaTests.STRING_SAMPLE_TREE), null, null, 1));
+            AllLelaTests.STRING_SAMPLE_TREE), null, null, 1));
         final ProductionListGrammar g2 = new ProductionListGrammar(
             TestMappedCountGrammar.SAMPLE_MAPPED_GRAMMAR());
         return new ProductionListGrammar[] { g1, g2 };

@@ -27,8 +27,6 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @author Aaron Dunlop
  * @since Jan 13, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class TestConstrainedCountGrammar extends MappedCountGrammarTestCase {
 

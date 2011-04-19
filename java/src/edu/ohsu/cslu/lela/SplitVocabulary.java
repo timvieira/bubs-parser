@@ -30,8 +30,6 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @author Aaron Dunlop
  * @since Feb 3, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class SplitVocabulary extends SymbolSet<String> {
 

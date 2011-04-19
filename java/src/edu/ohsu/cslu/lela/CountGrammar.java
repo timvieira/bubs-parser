@@ -23,8 +23,6 @@ package edu.ohsu.cslu.lela;
  * 
  * @author Aaron Dunlop
  * @since Jan 13, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public interface CountGrammar {
 

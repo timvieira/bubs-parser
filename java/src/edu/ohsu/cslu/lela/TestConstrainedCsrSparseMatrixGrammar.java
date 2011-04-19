@@ -31,8 +31,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
  * 
  * @author Aaron Dunlop
  * @since Feb 20, 2011
- * 
- * @version $Revision$ $Date$ $Author$
  */
 public class TestConstrainedCsrSparseMatrixGrammar {
 
