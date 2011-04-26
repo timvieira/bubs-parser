@@ -26,8 +26,8 @@ import java.util.LinkedList;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
-import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -57,7 +57,9 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-rs", aliases = { "--random-seed" }, metaVar = "seed", usage = "Random seed (default = System.currentTimeMillis())")
     private long randomSeed;
 
+    final LinkedList<NaryTree<String>> goldTrees = new LinkedList<NaryTree<String>>();
     final LinkedList<ConstrainedChart> constrainingCharts = new LinkedList<ConstrainedChart>();
+
     private NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
 
     @Override
@@ -80,7 +82,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         final ProductionListGrammar plGrammar = induceGrammar(trainingCorpusReader);
 
         trainingCorpusReader.reset();
-        loadConstrainingCharts(trainingCorpusReader, plGrammar);
+        loadGoldTreesAndCharts(trainingCorpusReader, plGrammar);
         trainingCorpusReader.close();
 
     }
@@ -99,7 +101,7 @@ public class TrainGrammar extends BaseCommandlineTool {
 
     }
 
-    final void loadConstrainingCharts(final BufferedReader trainingCorpusReader, final ProductionListGrammar plGrammar)
+    final void loadGoldTreesAndCharts(final BufferedReader trainingCorpusReader, final ProductionListGrammar plGrammar)
             throws IOException {
         // Convert M0 grammar to CSR format
         System.out.println("Converting to CSR format...");
@@ -108,18 +110,20 @@ public class TrainGrammar extends BaseCommandlineTool {
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         // Load in constraining charts from training corpus
-        System.out.println("Loading constraining charts...");
+        System.out.println("Loading gold trees and constraining charts...");
         int count = 0;
         for (String line = trainingCorpusReader.readLine(); line != null; line = trainingCorpusReader.readLine()) {
-            final BinaryTree<String> goldTree = NaryTree.read(line, String.class).factor(grammarFormatType,
-                    factorization);
+            final NaryTree<String> goldTree = NaryTree.read(line, String.class);
+            goldTrees.add(goldTree);
+
+            final BinaryTree<String> factoredTree = goldTree.factor(grammarFormatType, factorization);
             try {
-                final ConstrainedChart c = new ConstrainedChart(goldTree, csrGrammar0);
+                final ConstrainedChart c = new ConstrainedChart(factoredTree, csrGrammar0);
                 constrainingCharts.add(c);
                 c.extractBestParse(0);
             } catch (final ArrayIndexOutOfBoundsException e) {
-                System.err.println("Failed on tree " + count + "(" + goldTree.leaves() + " words)");
-                System.err.println(goldTree.toString());
+                System.err.println("Failed on tree " + count + "(" + factoredTree.leaves() + " words)");
+                System.err.println(factoredTree.toString());
             }
             count++;
             // progressBar(count);

@@ -40,7 +40,7 @@ public class TestConstrainedCountGrammar extends MappedCountGrammarTestCase {
         final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "c", "d" });
 
         // Build up the same grammar as that induced from the tree in AllElviTests
-        final ConstrainedCountGrammar g = new ConstrainedCountGrammar(vocabulary, lexicon);
+        final ConstrainedCountGrammar g = new ConstrainedCountGrammar(vocabulary, lexicon, null);
         g.incrementUnaryCount("top", "a");
         g.incrementBinaryCount("a", "a", "b");
         g.incrementBinaryCount("a", "a", "b");

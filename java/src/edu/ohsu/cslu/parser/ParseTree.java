@@ -31,6 +31,7 @@ public class ParseTree {
     public String contents;
     public LinkedList<ParseTree> children;
     public ParseTree parent = null;
+    // TODO Can we compute these at runtime when needed?
     public ParseTree leftNeighbor = null, rightNeighbor = null; // used to connect lexical and POS leaf
 
     // entries
@@ -83,8 +84,7 @@ public class ParseTree {
                 if (stack.size() == 1) {
                     // we're either done or dead
                     if (index != str.length()) {
-                        throw new RuntimeException("Expecting end of string but found '" + str.charAt(index)
-                                + "'");
+                        throw new RuntimeException("Expecting end of string but found '" + str.charAt(index) + "'");
                     }
                     return stack.getLast();
                 }
@@ -111,6 +111,7 @@ public class ParseTree {
         children.add(childTree);
     }
 
+    // TODO Remove if we can compute at runtime
     public void linkLeavesLeftRight() {
         ParseTree lastLeaf = null, lastPOS = null;
 
@@ -144,6 +145,7 @@ public class ParseTree {
         return parent.getContents();
     }
 
+    // TODO Add as convenience method on Tree<E>
     public ParseTree getUnfactoredParent(final GrammarFormatType grammarType) {
         ParseTree parentNode = this.parent;
         while (parentNode != null && grammarType.isFactored(parentNode.contents)) {
@@ -156,10 +158,12 @@ public class ParseTree {
         return children.size() == 0;
     }
 
+    // TODO Add as convenience method on Tree<E>
     public boolean isNonTerminal() {
         return (isLeaf() == false) && (isPOS() == false);
     }
 
+    // TODO Use leaves() == 1 && height() == 2 methods on Tree<E>
     public boolean isPOS() {
         if (children.size() == 1 && isLeafParent()) {
             return true;
@@ -167,6 +171,7 @@ public class ParseTree {
         return false;
     }
 
+    // TODO Use height() == 2 on Tree<E>
     public boolean isLeafParent() {
         for (final ParseTree child : children) {
             if (child.isLeaf()) {
@@ -176,6 +181,7 @@ public class ParseTree {
         return false;
     }
 
+    // TODO Add as convenience method on Tree<E>
     public ParseTree leftMostLeaf() {
         if (isLeaf()) {
             return this;
@@ -183,10 +189,12 @@ public class ParseTree {
         return children.getFirst().leftMostLeaf();
     }
 
+    // TODO Inline in consumers
     public ParseTree leftMostPOS() {
         return leftMostLeaf().parent;
     }
 
+    // TODO Add as convenience method on Tree<E>
     public ParseTree rightMostLeaf() {
         if (isLeaf()) {
             return this;
@@ -194,14 +202,17 @@ public class ParseTree {
         return children.getLast().rightMostLeaf();
     }
 
+    // TODO Inline in consumers
     public ParseTree rightMostPOS() {
         return rightMostLeaf().parent;
     }
 
+    // TODO Inline in consumers
     public ParseTree leftBoundaryPOS() {
         return leftMostPOS().leftNeighbor;
     }
 
+    // TODO Inline in consumers
     public String leftBoundaryPOSContents() {
         final ParseTree pos = leftBoundaryPOS();
         if (pos == null) {
@@ -210,10 +221,12 @@ public class ParseTree {
         return pos.contents;
     }
 
+    // TODO Inline in consumers
     public ParseTree rightBoundaryPOS() {
         return rightMostPOS().rightNeighbor;
     }
 
+    // TODO Inline in consumers
     public String rightBoundaryPOSContents() {
         final ParseTree pos = rightBoundaryPOS();
         if (pos == null) {
@@ -222,6 +235,7 @@ public class ParseTree {
         return pos.contents;
     }
 
+    // TODO Remove (unused)
     public LinkedList<ParseTree> postOrderTraversal() {
         final LinkedList<ParseTree> nodes = new LinkedList<ParseTree>();
 
@@ -275,6 +289,7 @@ public class ParseTree {
         return isBinary;
     }
 
+    // TODO Add as convenience method on Tree<E>
     public void replaceLeafNodes(final String[] newLeafNodes) {
         int i = 0;
         for (final ParseTree node : getLeafNodes()) {
@@ -295,6 +310,7 @@ public class ParseTree {
         return list;
     }
 
+    // TODO Inline in consumers
     public LinkedList<String> getLeafNodesContent() {
         final LinkedList<String> list = new LinkedList<String>();
         for (final ParseTree node : getLeafNodes()) {
@@ -303,6 +319,8 @@ public class ParseTree {
         return list;
     }
 
+    // TODO Inline in consumer (ParseResult). Probably with a separate constructor for result when parsing from tree
+    // input
     public static boolean isBracketFormat(String inputStr) {
         inputStr = inputStr.trim();
         if (inputStr.length() > 0 && inputStr.startsWith("(") && inputStr.endsWith(")")) {
@@ -398,6 +416,7 @@ public class ParseTree {
     // return chart;
     // }
 
+    // TODO Inline in consumers
     public String childrenToString() {
         String str = "";
         for (final ParseTree node : children) {
@@ -406,6 +425,7 @@ public class ParseTree {
         return str.trim();
     }
 
+    // TODO Remove (unused)
     public void tokenizeLeaves(final Grammar grammar) {
         for (final ParseTree leaf : getLeafNodes()) {
             if (grammar.hasWord(leaf.contents) == false) {

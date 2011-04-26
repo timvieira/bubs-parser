@@ -20,10 +20,10 @@ package edu.ohsu.cslu.lela;
 
 import java.util.Arrays;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.lela.ConstrainedChart.ConstrainedChartCell;
-import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
@@ -92,7 +92,7 @@ public class ConstrainedCsrSpmvParser extends
         this(opts, grammar, false);
     }
 
-    public ParseTree findBestParse(final ConstrainedChart unsplitConstrainingChart) {
+    public BinaryTree<String> findBestParse(final ConstrainedChart unsplitConstrainingChart) {
         this.constrainingChart = unsplitConstrainingChart;
 
         final long t0 = System.nanoTime();
@@ -137,7 +137,7 @@ public class ConstrainedCsrSpmvParser extends
 
         if (collectDetailedTimings) {
             final long t4 = System.nanoTime();
-            final ParseTree parseTree = chart.extractBestParse(grammar.startSymbol);
+            final BinaryTree<String> parseTree = chart.extractBestParse(grammar.startSymbol);
             totalExtractionTime += (System.nanoTime() - t4);
             return parseTree;
         }

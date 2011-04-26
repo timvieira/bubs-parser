@@ -173,7 +173,7 @@ public class BoundaryInOut extends EdgeSelectorFactory {
         outStream.close();
     }
 
-    public void train(final BufferedReader inStream) throws Exception {
+    public void train(final BufferedReader inStream) throws IOException {
         String line, historyStr;
         final String joinString = " ";
         ParseTree tree;

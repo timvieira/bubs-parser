@@ -22,10 +22,10 @@ import java.util.Arrays;
 import java.util.PriorityQueue;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellConstraints;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory.PerceptronBeamWidth;
@@ -59,8 +59,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         setBeamTuneParams(opts.beamTune);
 
         BaseLogger.singleton().fine(
-            "INFO: beamWidth=" + origBeamWidth + " globalDelta=" + origGlobalBeamDelta + " localDelta="
-                    + origLocalBeamDelta + " factBeamWidth=" + origFactoredBeamWidth);
+                "INFO: beamWidth=" + origBeamWidth + " globalDelta=" + origGlobalBeamDelta + " localDelta="
+                        + origLocalBeamDelta + " factBeamWidth=" + origFactoredBeamWidth);
     }
 
     protected void setBeamTuneParams(final String beamTuneStr) {
@@ -102,7 +102,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final int[] tokens) {
         initSentence(tokens);
 
         numReparses = -1;
@@ -118,9 +118,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             localBeamDelta = Math.max(origLocalBeamDelta * reparseFactor, origLocalBeamDelta);
 
             BaseLogger.singleton().finest(
-                "INFO: reparseNum=" + (numReparses + 1) + "beamWidth=" + beamWidth + " globalThresh="
-                        + globalBeamDelta + " localThresh=" + localBeamDelta + " factBeamWidth="
-                        + factoredBeamWidth);
+                    "INFO: reparseNum=" + (numReparses + 1) + "beamWidth=" + beamWidth + " globalThresh="
+                            + globalBeamDelta + " localThresh=" + localBeamDelta + " factBeamWidth="
+                            + factoredBeamWidth);
 
             cellSelector.reset();
             while (cellSelector.hasNext()) {
