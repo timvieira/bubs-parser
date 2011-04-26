@@ -38,7 +38,7 @@ public abstract class Parser<G extends Grammar> {
     // TODO Make this reference final (once we work around the hack in CellChart)
     public EdgeSelector edgeSelector;
     public final CellSelector cellSelector;
-    public ParseResult currentInput; // temporary so I don't break too much stuff at once
+    public ParseContext currentInput; // temporary so I don't break too much stuff at once
 
     // TODO Move global state back out of Parser
     static volatile protected int sentenceNumber = 0;
@@ -86,8 +86,8 @@ public abstract class Parser<G extends Grammar> {
     // wraps parse tree from findBestParse() with additional stats and
     // cleans up output for consumption. Input can be a sentence string
     // or a parse tree
-    public ParseResult parseSentence(final String input) {
-        final ParseResult result = new ParseResult(input, grammar);
+    public ParseContext parseSentence(final String input) {
+        final ParseContext result = new ParseContext(input, grammar);
         currentInput = result; // get ride of currentInput (and chart?). Just pass these around
         result.sentenceNumber = sentenceNumber++;
         result.tokens = grammar.tokenizer.tokenizeToIndex(result.sentence);

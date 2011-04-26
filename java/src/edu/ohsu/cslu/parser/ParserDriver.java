@@ -91,7 +91,7 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFuncti
  * @since 2009
  */
 @Threadable(defaultThreads = 1)
-public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResult> {
+public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseContext> {
 
     // Global vars to create parser
     public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
@@ -496,18 +496,18 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseResu
     }
 
     @Override
-    protected FutureTask<ParseResult> lineTask(final String sentence) {
-        return new FutureTask<ParseResult>(new Callable<ParseResult>() {
+    protected FutureTask<ParseContext> lineTask(final String sentence) {
+        return new FutureTask<ParseContext>(new Callable<ParseContext>() {
 
             @Override
-            public ParseResult call() throws Exception {
+            public ParseContext call() throws Exception {
                 return getLocal().parseSentence(sentence);
             }
         });
     }
 
     @Override
-    protected void output(final ParseResult parseResult) {
+    protected void output(final ParseContext parseResult) {
 
         System.out.println(parseResult.parseBracketString);
         BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);

@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
@@ -31,8 +32,8 @@ public class GoldChart extends Chart {
     LinkedList<ChartEdge> goldEdges[][];
 
     @SuppressWarnings("unchecked")
-    public GoldChart(final ParseTree tree, final Grammar grammar) {
-        this.size = tree.getLeafNodes().size() + 1;
+    public GoldChart(final BinaryTree<String> tree, final Grammar grammar) {
+        this.size = tree.leaves() + 1;
 
         goldEdges = new LinkedList[size][size + 1];
         for (int start = 0; start < size; start++) {
@@ -43,7 +44,10 @@ public class GoldChart extends Chart {
         addParseTreeToChart(tree, grammar);
     }
 
-    private void addParseTreeToChart(final ParseTree tree, final Grammar grammar) {
+    private void addParseTreeToChart(final BinaryTree<String> goldTree, final Grammar grammar) {
+
+        // TODO Replace with NaryTree throughput this method
+        final ParseTree tree = new ParseTree(goldTree.toString());
 
         // NOTE: the purpose of this function is that I need to be able
         // to reference the constituents of a gold tree by reference to
@@ -87,12 +91,10 @@ public class GoldChart extends Chart {
                         // NOTE: don't want to add new words to the lexicon because they
                         // won't get mapped to UNK during decoding
                         B = grammar.tokenizer.mapToLexSetEntry(B, 1);
-                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, true, grammar.nonTermSet,
-                            grammar.lexSet);
+                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, true, grammar.nonTermSet, grammar.lexSet);
                     } else {
                         // prod = grammar.getUnaryProduction(A, B);
-                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, false, grammar.nonTermSet,
-                            grammar.lexSet);
+                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, false, grammar.nonTermSet, grammar.lexSet);
                     }
                     edge = new ChartEdge(prod, getCell(start, end));
                 } else {
@@ -102,8 +104,7 @@ public class GoldChart extends Chart {
 
                 // we can ignore unary nodes because they are always with a binary node or a lex node
                 if (numChildren == 2) {
-                    perCellStats += String.format("%d,%d=%d ", start, end,
-                        grammar.grammarFormat.isFactored(A) ? 2 : 4);
+                    perCellStats += String.format("%d,%d=%d ", start, end, grammar.grammarFormat.isFactored(A) ? 2 : 4);
                 } else if (numChildren == 1 && node.isPOS()) {
                     perCellStats += String.format("%d,%d=4 ", start, end);
                 }
@@ -147,8 +148,7 @@ public class GoldChart extends Chart {
     }
 
     @Override
-    public void updateInside(final int start, final int end, final int nonTerminal,
-            final float insideProbability) {
+    public void updateInside(final int start, final int end, final int nonTerminal, final float insideProbability) {
         throw new UnsupportedOperationException("updateInside() not implemented for GoldChart");
     }
 

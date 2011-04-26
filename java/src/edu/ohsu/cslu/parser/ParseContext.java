@@ -19,10 +19,13 @@
 package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.chart.GoldChart;
+import edu.ohsu.cslu.util.Strings;
 
-public class ParseResult {
+public class ParseContext {
 
     public String sentence;
     public String[] strTokens;
@@ -56,7 +59,7 @@ public class ParseResult {
 
     long startTime = System.currentTimeMillis();
 
-    public ParseResult(final String sentence, final Grammar grammar) {
+    public ParseContext(final String sentence, final Grammar grammar) {
 
         try {
             this.sentence = sentence.trim();
@@ -69,24 +72,23 @@ public class ParseResult {
         }
     }
 
-    // public ParseResult(BinaryTree<String> tree, final Grammar grammar) {
-    //
-    // try {
-    // inputTreeChart = new GoldChart(inputTree, grammar);
-    // input = ParserUtil.join(inputTree.getLeafNodesContent(), " ");
-    //
-    // this.sentence = input.trim();
-    // this.strTokens = ParserUtil.tokenize(sentence);
-    // this.sentenceLength = strTokens.length;
-    //
-    // } catch (final Exception e) {
-    // e.printStackTrace();
-    // }
-    // }
-    //
-    // public ParseResult(NaryTree<String> tree, final Grammar grammar, Factorization factorization) {
-    // this(tree.factor(grammar.grammarFormat, factorization), grammar);
-    // }
+    public ParseContext(final BinaryTree<String> tree, final Grammar grammar) {
+
+        try {
+            inputTreeChart = new GoldChart(inputTree, grammar);
+
+            this.strTokens = tree.leafLabels();
+            this.sentence = Strings.join(strTokens, " ");
+            this.sentenceLength = strTokens.length;
+
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public ParseContext(final NaryTree<String> tree, final Grammar grammar, final Factorization factorization) {
+        this(tree.factor(grammar.grammarFormat, factorization), grammar);
+    }
 
     @Override
     public String toString() {
