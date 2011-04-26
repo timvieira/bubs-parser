@@ -20,9 +20,9 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseTree;
 
 /**
  * Stores a chart in a 3-way parallel array indexed by non-terminal:
@@ -36,16 +36,16 @@ import edu.ohsu.cslu.parser.ParseTree;
  * 
  * Each parallel array entry consumes 4 + 4 + 2 = 10 bytes
  * 
- * Individual cells in the parallel array are indexed by cell offsets of fixed length (the number of
- * non-terminals in the grammar).
+ * Individual cells in the parallel array are indexed by cell offsets of fixed length (the number of non-terminals in
+ * the grammar).
  * 
- * The ancillary data structures are relatively small, so the total size consumed is approximately = n * (n-1)
- * / 2 * V * 10 bytes.
+ * The ancillary data structures are relatively small, so the total size consumed is approximately = n * (n-1) / 2 * V *
+ * 10 bytes.
  * 
- * Similar to {@link PackedArrayChart}, and slightly more space-efficient, but the observed non-terminals in a
- * cell are not `packed' together at the beginning of the cell's array range. This saves a packing scan in
- * {@link DenseVectorChartCell#finalizeCell()}, but may result in less efficient access when populating
- * subsequent cells.
+ * Similar to {@link PackedArrayChart}, and slightly more space-efficient, but the observed non-terminals in a cell are
+ * not `packed' together at the beginning of the cell's array range. This saves a packing scan in
+ * {@link DenseVectorChartCell#finalizeCell()}, but may result in less efficient access when populating subsequent
+ * cells.
  * 
  * @see PackedArrayChart
  * @author Aaron Dunlop
@@ -56,10 +56,8 @@ public class DenseVectorChart extends ParallelArrayChart {
     /**
      * Constructs a chart
      * 
-     * @param tokens
-     *            Sentence tokens, mapped to integer indices
-     * @param sparseMatrixGrammar
-     *            Grammar
+     * @param tokens Sentence tokens, mapped to integer indices
+     * @param sparseMatrixGrammar Grammar
      */
     public DenseVectorChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
         super(tokens, sparseMatrixGrammar);
@@ -75,7 +73,7 @@ public class DenseVectorChart extends ParallelArrayChart {
     }
 
     @Override
-    public ParseTree extractBestParse(final int start, final int end, final int parent) {
+    public BinaryTree<String> extractBestParse(final int start, final int end, final int parent) {
         // return super.extractBestParse(start, end, parent);
         final DenseVectorChartCell packedCell = getCell(start, end);
 
@@ -88,20 +86,20 @@ public class DenseVectorChart extends ParallelArrayChart {
         final int edgeChildren = packedChildren[parentIndex];
         final short edgeMidpoint = midpoints[parentIndex];
 
-        final ParseTree subtree = new ParseTree(sparseMatrixGrammar.nonTermSet.getSymbol(parent));
+        final BinaryTree<String> subtree = new BinaryTree<String>(sparseMatrixGrammar.nonTermSet.getSymbol(parent));
         final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(edgeChildren);
         final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(edgeChildren);
 
         if (rightChild == Production.UNARY_PRODUCTION) {
-            subtree.children.add(extractBestParse(start, end, leftChild));
+            subtree.addChild(extractBestParse(start, end, leftChild));
 
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-            subtree.addChild(new ParseTree(sparseMatrixGrammar.lexSet.getSymbol(leftChild)));
+            subtree.addChild(new BinaryTree<String>(sparseMatrixGrammar.lexSet.getSymbol(leftChild)));
 
         } else {
             // binary production
-            subtree.children.add(extractBestParse(start, edgeMidpoint, leftChild));
-            subtree.children.add(extractBestParse(edgeMidpoint, end, rightChild));
+            subtree.addChild(extractBestParse(start, edgeMidpoint, leftChild));
+            subtree.addChild(extractBestParse(edgeMidpoint, end, rightChild));
         }
         return subtree;
     }
@@ -143,14 +141,13 @@ public class DenseVectorChart extends ParallelArrayChart {
 
             if (insideProbability > insideProbabilities[index]) {
                 if (p.isBinaryProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().pack(
-                        (short) p.leftChild, (short) p.rightChild);
+                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().pack((short) p.leftChild,
+                            (short) p.rightChild);
                 } else if (p.isLexProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
-                        p.leftChild);
+                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packLexical(p.leftChild);
                 } else {
                     packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
-                        (short) p.leftChild);
+                            (short) p.leftChild);
                 }
                 insideProbabilities[index] = insideProbability;
 
@@ -171,13 +168,13 @@ public class DenseVectorChart extends ParallelArrayChart {
 
                 if (edge.prod.isBinaryProd()) {
                     packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().pack(
-                        (short) edge.prod.leftChild, (short) edge.prod.rightChild);
+                            (short) edge.prod.leftChild, (short) edge.prod.rightChild);
                 } else if (edge.prod.isLexProd()) {
                     packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
-                        edge.prod.leftChild);
+                            edge.prod.leftChild);
                 } else {
                     packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
-                        (short) edge.prod.leftChild);
+                            (short) edge.prod.leftChild);
                 }
                 insideProbabilities[index] = edge.inside();
 
@@ -195,14 +192,12 @@ public class DenseVectorChart extends ParallelArrayChart {
             final int edgeChildren = packedChildren[index];
             final short edgeMidpoint = midpoints[index];
 
-            final int leftChild = sparseMatrixGrammar.cartesianProductFunction()
-                .unpackLeftChild(edgeChildren);
-            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(
-                edgeChildren);
+            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(edgeChildren);
+            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(edgeChildren);
 
             final DenseVectorChartCell leftChildCell = getCell(start(), edgeMidpoint);
             final DenseVectorChartCell rightChildCell = edgeMidpoint < end ? (DenseVectorChartCell) getCell(
-                edgeMidpoint, end) : null;
+                    edgeMidpoint, end) : null;
 
             Production p;
             if (rightChild == Production.LEXICAL_PRODUCTION) {
@@ -236,8 +231,7 @@ public class DenseVectorChart extends ParallelArrayChart {
         }
 
         /**
-         * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same
-         * chart.
+         * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same chart.
          */
         @Override
         public boolean equals(final Object o) {

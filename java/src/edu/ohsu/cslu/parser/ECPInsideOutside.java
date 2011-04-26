@@ -21,6 +21,7 @@ package edu.ohsu.cslu.parser;
 import java.util.Arrays;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.ProjectedGrammar;
@@ -84,7 +85,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final int[] tokens) {
         final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
 
         initSentence(tokens);
@@ -281,9 +282,8 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                             for (final Production p : grammar.getBinaryProductionsWithLeftChild(leftNT)) {
                                 if (rightCell.hasNT(p.rightChild)) {
                                     final int A = p.parent;
-                                    final float ruleScore = cell.getOutside(A) + p.prob
-                                            + leftCell.getInside(leftNT) + rightCell.getInside(p.rightChild)
-                                            - stringProb;
+                                    final float ruleScore = cell.getOutside(A) + p.prob + leftCell.getInside(leftNT)
+                                            + rightCell.getInside(p.rightChild) - stringProb;
                                     final float gScore = ruleScore + maxcScore[start][mid][p.leftChild]
                                             + maxcScore[mid][end][p.rightChild];
                                     if (gScore > maxcScore[start][end][A]) {
@@ -303,8 +303,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                 for (final int childNT : cell.getNtArray()) {
                     for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                         final int A = p.parent;
-                        final float ruleScore = cell.getOutside(A) + p.prob + cell.getInside(p.child())
-                                - stringProb;
+                        final float ruleScore = cell.getOutside(A) + p.prob + cell.getInside(p.child()) - stringProb;
                         final float gScore = ruleScore + maxcScore[start][end][p.child()];
 
                         if (gScore > maxcUnaryScores[A]) {
@@ -369,7 +368,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
                 if (span == 1) {
                     addBackptrToChart(start, -1, end, bestNT[start][end], chart.tokens[start],
-                        Production.LEXICAL_PRODUCTION);
+                            Production.LEXICAL_PRODUCTION);
                 } else if (maxc[start][end] > Float.NEGATIVE_INFINITY) {
                     // find best midpoint
                     float maxSplitScore = Float.NEGATIVE_INFINITY;
@@ -385,14 +384,14 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                     if (maxSplitMid > -1) {
                         // add split cost for binary rules
                         maxc[start][end] = (float) ParserUtil.logSum(maxc[start][end], maxSplitScore);
-                        addBackptrToChart(start, maxSplitMid, end, bestNT[start][end],
-                            bestNT[start][maxSplitMid], bestNT[maxSplitMid][end]);
+                        addBackptrToChart(start, maxSplitMid, end, bestNT[start][end], bestNT[start][maxSplitMid],
+                                bestNT[maxSplitMid][end]);
                     }
                 }
 
                 if (span == n) {
                     addBackptrToChart(start, -1, end, grammar.startSymbol, bestNT[start][end],
-                        Production.UNARY_PRODUCTION);
+                            Production.UNARY_PRODUCTION);
                 }
             }
         }
@@ -427,7 +426,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
                 if (span == 1) {
                     addBackptrToChart(start, -1, end, bestNT[start][end], chart.tokens[start],
-                        Production.LEXICAL_PRODUCTION);
+                            Production.LEXICAL_PRODUCTION);
                 } else if (maxc[start][end] > Float.NEGATIVE_INFINITY) {
                     float maxSplitScore = Float.NEGATIVE_INFINITY;
                     int maxSplitMid = -1;
@@ -442,14 +441,14 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                     if (maxSplitMid > -1) {
                         // add split cost for binary rules
                         maxc[start][end] = (float) ParserUtil.logSum(maxc[start][end], maxSplitScore);
-                        addBackptrToChart(start, maxSplitMid, end, bestNT[start][end],
-                            bestNT[start][maxSplitMid], bestNT[maxSplitMid][end]);
+                        addBackptrToChart(start, maxSplitMid, end, bestNT[start][end], bestNT[start][maxSplitMid],
+                                bestNT[maxSplitMid][end]);
                     }
                 }
 
                 if (span == n) {
                     addBackptrToChart(start, -1, end, grammar.startSymbol, bestNT[start][end],
-                        Production.UNARY_PRODUCTION);
+                            Production.UNARY_PRODUCTION);
                 }
             }
         }
@@ -491,8 +490,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final Production p : grammar.getBinaryProductionsWithLeftChild(leftNT)) {
                     if (rightCell.hasNT(p.rightChild)) {
-                        insideScore = p.prob + getInside(start, mid, leftNT)
-                                + getInside(mid, end, p.rightChild);
+                        insideScore = p.prob + getInside(start, mid, leftNT) + getInside(mid, end, p.rightChild);
                         cell.updateInside(p.parent, insideScore);
                     }
                 }

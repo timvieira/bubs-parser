@@ -20,9 +20,9 @@ package edu.ohsu.cslu.parser.agenda;
 
 import java.util.Collection;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory.OHSUCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -39,7 +39,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final int[] tokens) {
         HashSetChartCell cell;
 
         initParser(tokens);
@@ -106,8 +106,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
         // System.out.println(" setSpanMax: " + leftCell + " && " + rightCell);
 
-        if (cellConstraints.hasCellConstraints()
-                && cellConstraints.getCellConstraints().isCellOpen(start, end)) {
+        if (cellConstraints.hasCellConstraints() && cellConstraints.getCellConstraints().isCellOpen(start, end)) {
             Collection<Production> possibleProds;
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {

@@ -18,19 +18,25 @@
  */
 package edu.ohsu.cslu.lela;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.List;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
 import edu.ohsu.cslu.tests.JUnit;
+import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
+import edu.ohsu.cslu.util.Evalb.EvalbResult;
 
 /**
  * Unified tests for training of a split-merge grammar.
@@ -68,7 +74,7 @@ public class TestTrainGrammar {
         final ProductionListGrammar plg0 = tg.induceGrammar(br);
         br.reset();
 
-        tg.loadConstrainingCharts(br, plg0);
+        tg.loadGoldTreesAndCharts(br, plg0);
 
         final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
 
@@ -79,6 +85,7 @@ public class TestTrainGrammar {
         runEm(tg, plg1.split(noiseGenerator), 2, 10);
     }
 
+    // TODO Pass in list of training trees as well as TrainGrammar
     private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar plg, final int split,
             final int iterations) {
 
@@ -99,7 +106,19 @@ public class TestTrainGrammar {
                         .size() > 0);
             }
 
-            System.out.format("   Likelihood: %.3f\n", result.corpusLikelihood);
+            verifyProbabilityDistribution(result.plGrammar);
+
+            // TODO Parse the training corpus with the new CSR grammar and report F-score as well as likelihood
+
+            final BracketEvaluator evaluator = new BracketEvaluator();
+            for (final NaryTree<String> goldTree : tg.goldTrees) {
+                // TODO Extract tokens from training tree and parse
+                final NaryTree<String> parsedTree = null;
+                evaluator.evaluate(goldTree, parsedTree);
+            }
+
+            final EvalbResult evalbResult = evaluator.accumulatedResult();
+            System.out.format("   Likelihood: %.3f  %.1f\n", result.corpusLikelihood, evalbResult.f1);
 
             assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f on iteration %d",
                     previousCorpusLikelihood, result.corpusLikelihood, i),
@@ -113,5 +132,19 @@ public class TestTrainGrammar {
     private ConstrainedCsrSparseMatrixGrammar csrGrammar(final ProductionListGrammar plg) {
         return new ConstrainedCsrSparseMatrixGrammar(plg, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+    }
+
+    /**
+     * Verifies that the grammar rules for each parent non-terminal sum to 1
+     */
+    private void verifyProbabilityDistribution(final ProductionListGrammar plg) {
+        final List<Production>[] prodsByParent = plg.productionsByParent();
+        for (int i = 0, j = 0; i < prodsByParent.length; i++, j = 0) {
+            final float[] probabilities = new float[prodsByParent[i].size()];
+            for (final Production p : prodsByParent[i]) {
+                probabilities[j++] = p.prob;
+            }
+            assertEquals("Invalid probability distribution", 0, edu.ohsu.cslu.util.Math.logSumExp(probabilities), .001);
+        }
     }
 }

@@ -21,6 +21,7 @@ package edu.ohsu.cslu.parser;
 import java.util.LinkedList;
 import java.util.List;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
@@ -42,7 +43,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final int[] tokens) {
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
         initSentence(tokens);
         addLexicalProductions(tokens);
@@ -73,7 +74,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
-            final ParseTree parseTree = chart.extractBestParse(grammar.startSymbol);
+            final BinaryTree<String> parseTree = chart.extractBestParse(grammar.startSymbol);
             extractTime = System.currentTimeMillis() - t3;
             return parseTree;
         }
@@ -117,9 +118,8 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     @Override
     public String getStats() {
         return chart.getStats()
-                + (collectDetailedStatistics ? String.format(
-                    " edgeSelectorInitTime=%d cellSelectorInitTime=%d", edgeSelectorInitTime,
-                    cellSelectorInitTime) : "");
+                + (collectDetailedStatistics ? String.format(" edgeSelectorInitTime=%d cellSelectorInitTime=%d",
+                        edgeSelectorInitTime, cellSelectorInitTime) : "");
     }
 
     public SparseBitVector getCellFeatures(final int start, final int end, final String featTemplate) {
@@ -228,8 +228,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                 numFeats++;
 
             } else {
-                throw new IllegalArgumentException("ERROR parsing feature template.  Not expecting '"
-                        + featStr + "'");
+                throw new IllegalArgumentException("ERROR parsing feature template.  Not expecting '" + featStr + "'");
             }
         }
 
@@ -254,8 +253,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                 // instance of BSCPBeamConfTrain?
                 // assert this instanceof BSCPBeamConfTrain;
 
-                for (final Chart.ChartEdge goldEdge : currentInput.inputTreeChart.getEdgeList(start,
-                    start + 1)) {
+                for (final Chart.ChartEdge goldEdge : currentInput.inputTreeChart.getEdgeList(start, start + 1)) {
                     if (goldEdge.prod.isLexProd()) {
                         index = goldEdge.prod.parent;
                     }
@@ -270,8 +268,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         }
 
         if (index == -1) {
-            throw new UnsupportedOperationException(
-                "ERROR: not able to get POS Index during feature extraction");
+            throw new UnsupportedOperationException("ERROR: not able to get POS Index during feature extraction");
         }
         return grammar.posSet.getIndex(index); // map from sparce POS index to compact ordering
     }

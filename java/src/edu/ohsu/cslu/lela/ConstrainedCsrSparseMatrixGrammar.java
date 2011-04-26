@@ -142,7 +142,8 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
 
                 final short leftChild = (short) packingFunction.unpackLeftChild(childPair);
 
-                // Fill the
+                // When we find a left child split from a new base non-terminal, fill the array mapping split NTs ->
+                // base NTs
                 if (splitVocabulary.baseCategoryIndices[leftChild] != baseLeftChild) {
                     Arrays.fill(baseStartIndices[parent], baseLeftChild + 1,
                             splitVocabulary.baseCategoryIndices[leftChild] + 1, i);

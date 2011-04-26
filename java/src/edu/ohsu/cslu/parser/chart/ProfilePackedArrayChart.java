@@ -26,8 +26,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedArraySpmvParser;
@@ -42,8 +42,7 @@ public class ProfilePackedArrayChart {
     @BeforeClass
     public static void suiteSetUp() throws Exception {
         if (grammar == null) {
-            grammar = new LeftCscSparseMatrixGrammar(
-                JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
+            grammar = new LeftCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
             parser = new CscSpmvParser(new ParserDriver(), grammar);
         }
 
@@ -68,7 +67,7 @@ public class ProfilePackedArrayChart {
                 + " (JJ_0 comforting))) (JJ_15 total)) (NN_8 employment)) (NNS_50 figures))) (PP_6 (IN_3 in)"
                 + " (NP_51 (PRP$_1 their) (NNS_18 calculations))))))))))))))))))) (._3 .)))";
         for (int i = 0; i < 20; i++) {
-            final ParseTree t = parser.chart.extractBestParse(grammar.startSymbol);
+            final BinaryTree<String> t = parser.chart.extractBestParse(grammar.startSymbol);
             assertEquals(expectedParse, t.toString());
         }
     }

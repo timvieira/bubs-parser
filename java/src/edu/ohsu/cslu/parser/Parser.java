@@ -22,6 +22,7 @@ import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
 import cltool4j.args4j.EnumAliasMap;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
@@ -72,12 +73,12 @@ public abstract class Parser<G extends Grammar> {
 
     public abstract String getStats();
 
-    protected abstract ParseTree findBestParse(int[] tokens);
+    protected abstract BinaryTree<String> findBestParse(int[] tokens);
 
     /**
      * Waits until all active parsing tasks have completed. Intended for multi-threaded parsers (e.g.
-     * {@link CsrSpmvParser}, {@link CscSpmvParser}) which may need to implement a barrier to synchronize all
-     * tasks before proceeding on to dependent tasks.
+     * {@link CsrSpmvParser}, {@link CscSpmvParser}) which may need to implement a barrier to synchronize all tasks
+     * before proceeding on to dependent tasks.
      */
     public void waitForActiveTasks() {
     }
@@ -93,8 +94,8 @@ public abstract class Parser<G extends Grammar> {
 
         if (result.sentenceLength > opts.maxLength) {
             BaseLogger.singleton().fine(
-                "INFO: Skipping sentence. Length of " + result.sentenceLength
-                        + " is greater than maxLength (" + opts.maxLength + ")");
+                    "INFO: Skipping sentence. Length of " + result.sentenceLength + " is greater than maxLength ("
+                            + opts.maxLength + ")");
             result.parseBracketString = "()";
             return result;
         }
@@ -110,7 +111,7 @@ public abstract class Parser<G extends Grammar> {
             }
 
             if (!opts.printUnkLabels) {
-                result.parse.replaceLeafNodes(result.strTokens);
+                result.parse.replaceLeafLabels(result.strTokens);
             }
 
             // stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
@@ -120,8 +121,7 @@ public abstract class Parser<G extends Grammar> {
 
             // TODO: we should be converting the tree in tree form, not in bracket string form
             if (opts.binaryTreeOutput == false) {
-                result.parseBracketString = TreeTools.unfactor(result.parseBracketString,
-                    grammar.grammarFormat);
+                result.parseBracketString = TreeTools.unfactor(result.parseBracketString, grammar.grammarFormat);
             }
 
             // TODO: could evaluate accuracy here if input is a gold tree
@@ -136,8 +136,7 @@ public abstract class Parser<G extends Grammar> {
     }
 
     /**
-     * Closes any resources maintained by the parser (e.g. thread-pools as in
-     * {@link GrammarParallelCsrSpmvParser}.
+     * Closes any resources maintained by the parser (e.g. thread-pools as in {@link GrammarParallelCsrSpmvParser}.
      */
     public void shutdown() {
     }

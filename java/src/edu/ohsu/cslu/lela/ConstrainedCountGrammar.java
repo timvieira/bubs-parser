@@ -40,6 +40,7 @@ import edu.ohsu.cslu.tests.JUnit;
  */
 public class ConstrainedCountGrammar extends FractionalCountGrammar {
 
+    // TODO Map to FloatList instead of directly to float, and use Math.logSumExp() to do all the log-summing at once
     /** Parent -> Left child -> Right child -> log(count) */
     private final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> binaryRuleLogCounts = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
     private final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> unaryRuleLogCounts = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
@@ -67,7 +68,7 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
 
     private final Int2IntOpenHashMap basePackedChildren;
 
-    private ConstrainedCountGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon,
+    public ConstrainedCountGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon,
             final PackingFunction packingFunction) {
 
         super(vocabulary, lexicon);
@@ -136,16 +137,9 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
         }
     }
 
-    public ConstrainedCountGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon) {
-        this(vocabulary, lexicon, null);
-    }
-
     public void incrementBinaryLogCount(final short parent, final short leftChild, final short rightChild,
             final float logIncrement) {
 
-        if (Float.isNaN(logIncrement)) {
-            System.out.println("NaN");
-        }
         incrementBinaryLogCount(binaryRuleLogCounts, parent, leftChild, rightChild, logIncrement);
 
         // Base grammar rule count
@@ -179,9 +173,6 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
 
     public void incrementBinaryLogCount(final short parent, final int packedChildren, final float logIncrement) {
 
-        if (Float.isNaN(logIncrement)) {
-            System.out.println("NaN");
-        }
         incrementBinaryLogCount(packedBinaryRuleLogCounts, parent, packedChildren, logIncrement);
 
         int baseChildren = basePackedChildren.get(packedChildren);
@@ -222,7 +213,6 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
     public void incrementUnaryLogCount(final short parent, final short child, final float logIncrement) {
 
         incrementUnaryLogCount(unaryRuleLogCounts, parent, child, logIncrement);
-
         // Base grammar rule count
         incrementUnaryLogCount(baseUnaryRuleLogCounts, parent, vocabulary.baseCategoryIndices[child], logIncrement);
     }
@@ -251,10 +241,7 @@ public class ConstrainedCountGrammar extends FractionalCountGrammar {
 
     public void incrementLexicalLogCount(final short parent, final int child, final float logIncrement) {
 
-        // final String sParent = vocabulary.getSymbol(parent);
-        // final String sChild = lexicon.getSymbol(child);
         incrementLexicalLogCount(lexicalRuleLogCounts, parent, child, logIncrement);
-
         // Base grammar rule count
         incrementLexicalLogCount(baseLexicalRuleLogCounts, parent, child, logIncrement);
     }

@@ -24,7 +24,7 @@ import java.io.InputStreamReader;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 
 public class InduceGrammar extends BaseCommandlineTool {
@@ -44,7 +44,7 @@ public class InduceGrammar extends BaseCommandlineTool {
     @Override
     protected void run() throws IOException {
         final StringCountGrammar cg = new StringCountGrammar(new InputStreamReader(System.in), factorization,
-            grammarFormatType, lexicalUnkThreshold);
+                grammarFormatType, lexicalUnkThreshold);
         final ProductionListGrammar plg = new ProductionListGrammar(cg);
 
         final FileWriter pcfgWriter = new FileWriter(grammarPrefix + ".pcfg");

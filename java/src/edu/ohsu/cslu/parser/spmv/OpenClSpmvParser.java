@@ -31,11 +31,11 @@ import com.nativelibs4java.opencl.CLProgram;
 import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
@@ -43,8 +43,8 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.util.OpenClUtils;
 
 /**
- * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format (
- * {@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication using OpenCL kernels.
+ * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ( {@link CsrSparseMatrixGrammar})
+ * and implements cross-product and SpMV multiplication using OpenCL kernels.
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
@@ -99,19 +99,18 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             final StringWriter prefix = new StringWriter();
             prefix.write("#define UNARY_PRODUCTION " + Production.UNARY_PRODUCTION + '\n');
             prefix.write("#define LEXICAL_PRODUCTION " + Production.LEXICAL_PRODUCTION + '\n');
-            prefix.write("#define PACKING_SHIFT "
-                    + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift + '\n');
-            prefix.write("#define MAX_PACKED_LEXICAL_PRODUCTION "
-                    + ((LeftShiftFunction) grammar.cartesianProductFunction()).maxPackedLexicalProduction
+            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift
                     + '\n');
-            prefix.write("#define PACKING_SHIFT "
-                    + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift + '\n');
+            prefix.write("#define MAX_PACKED_LEXICAL_PRODUCTION "
+                    + ((LeftShiftFunction) grammar.cartesianProductFunction()).maxPackedLexicalProduction + '\n');
+            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift
+                    + '\n');
             prefix.write(grammar.cartesianProductFunction().openClPackDefine() + '\n');
             prefix.write(grammar.cartesianProductFunction().openClUnpackLeftChild() + '\n');
 
             // Compile kernels shared by all implementing classes
             final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class,
-                prefix.toString());
+                    prefix.toString());
             fillFloatKernel = clSharedProgram.createKernel("fillFloat");
             cartesianProductUnionKernel = clSharedProgram.createKernel("cartesianProductUnion");
 
@@ -126,30 +125,28 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         }
 
         // Allocate OpenCL-hosted memory for binary rules and copy to the device
-        clBinaryRuleMatrixRowIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrBinaryRowIndices,
-            CLMem.Usage.Input);
+        clBinaryRuleMatrixRowIndices = OpenClUtils
+                .copyToDevice(clQueue, grammar.csrBinaryRowIndices, CLMem.Usage.Input);
         clBinaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrBinaryColumnIndices,
-            CLMem.Usage.Input);
+                CLMem.Usage.Input);
         clBinaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(clQueue, grammar.csrBinaryProbabilities,
-            CLMem.Usage.Input);
+                CLMem.Usage.Input);
 
         // Repeat for unary rules
         clCsrUnaryRowStartIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrUnaryRowStartIndices,
-            CLMem.Usage.Input);
-        clCsrUnaryColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrUnaryColumnIndices,
-            CLMem.Usage.Input);
-        clCsrUnaryProbabilities = OpenClUtils.copyToDevice(clQueue, grammar.csrUnaryProbabilities,
-            CLMem.Usage.Input);
+                CLMem.Usage.Input);
+        clCsrUnaryColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrUnaryColumnIndices, CLMem.Usage.Input);
+        clCsrUnaryProbabilities = OpenClUtils.copyToDevice(clQueue, grammar.csrUnaryProbabilities, CLMem.Usage.Input);
 
         // And for cross-product storage
         clCartesianProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
-            .cartesianProductFunction().packedArraySize());
+                .cartesianProductFunction().packedArraySize());
         clCartesianProductMidpoints0 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
-            .cartesianProductFunction().packedArraySize());
+                .cartesianProductFunction().packedArraySize());
         clCartesianProductProbabilities1 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
-            .cartesianProductFunction().packedArraySize());
+                .cartesianProductFunction().packedArraySize());
         clCartesianProductMidpoints1 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
-            .cartesianProductFunction().packedArraySize());
+                .cartesianProductFunction().packedArraySize());
     }
 
     @Override
@@ -164,13 +161,13 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     /**
-     * Duplicated here from {@link ChartParser} so we can copy the parse chart from the GPU to main memory
-     * after parsing.
+     * Duplicated here from {@link ChartParser} so we can copy the parse chart from the GPU to main memory after
+     * parsing.
      * 
      * TODO Call super.findBestParse() and just copy here?
      */
     @Override
-    public ParseTree findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final int[] tokens) {
         initSentence(tokens);
         addLexicalProductions(tokens);
         cellSelector.initSentence(this);
@@ -185,8 +182,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     /**
-     * De-allocates current OpenCL chart storage (if any) and allocates storage adequate for the current
-     * sentence length.
+     * De-allocates current OpenCL chart storage (if any) and allocates storage adequate for the current sentence
+     * length.
      */
     protected void allocateOpenClChart() {
 
@@ -200,8 +197,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         }
 
         // Allocate OpenCL-hosted memory for chart storage
-        clChartInsideProbabilities = context.createFloatBuffer(CLMem.Usage.InputOutput,
-            chart.chartArraySize());
+        clChartInsideProbabilities = context.createFloatBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
         clChartPackedChildren = context.createIntBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
         clChartMidpoints = context.createShortBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
         chartSize = chart.size();
@@ -259,10 +255,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     /**
-     * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together,
-     * saving the maximum probability child combinations. This version copies the chart into device memory
-     * before taking the cartesian product and copies the result back into main memory. Primarily to enable
-     * unit testing of {@link #internalCartesianProductUnion(int, int)}.
+     * Takes the cross-product of all potential child-cell combinations. Unions those cross-products together, saving
+     * the maximum probability child combinations. This version copies the chart into device memory before taking the
+     * cartesian product and copies the result back into main memory. Primarily to enable unit testing of
+     * {@link #internalCartesianProductUnion(int, int)}.
      * 
      * @param start
      * @param end
@@ -277,9 +273,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
         final int packedArraySize = grammar.cartesianProductFunction().packedArraySize();
         final float[] probabilities = OpenClUtils.copyFromDevice(clQueue, clCartesianProductProbabilities0,
-            packedArraySize);
-        final short[] midpoints = OpenClUtils.copyFromDevice(clQueue, clCartesianProductMidpoints0,
-            packedArraySize);
+                packedArraySize);
+        final short[] midpoints = OpenClUtils.copyFromDevice(clQueue, clCartesianProductMidpoints0, packedArraySize);
 
         int size = 0;
         for (int i = 0; i < probabilities.length; i++) {
@@ -302,16 +297,16 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         long t0 = System.currentTimeMillis();
 
         // Fill the buffer with negative infinity
-        fillFloatKernel.setArgs(clCartesianProductProbabilities0, grammar.cartesianProductFunction()
-            .packedArraySize(), Float.NEGATIVE_INFINITY);
-        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.cartesianProductFunction()
-            .packedArraySize(), LOCAL_WORK_SIZE);
+        fillFloatKernel.setArgs(clCartesianProductProbabilities0, grammar.cartesianProductFunction().packedArraySize(),
+                Float.NEGATIVE_INFINITY);
+        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(
+                grammar.cartesianProductFunction().packedArraySize(), LOCAL_WORK_SIZE);
         fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
         clQueue.finish();
 
         // Compute the cartesian-product of the first midpoint separately
         internalCartesianProduct(chart.getCell(start, start + 1), chart.getCell(start + 1, end),
-            clCartesianProductProbabilities0, clCartesianProductMidpoints0);
+                clCartesianProductProbabilities0, clCartesianProductMidpoints0);
 
         long t1 = System.currentTimeMillis();
         sentenceCartesianProductTime += (t1 - t0);
@@ -327,24 +322,23 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
             // Initialize the target cartesian product array
             fillFloatKernel.setArgs(clCartesianProductProbabilities1, grammar.cartesianProductFunction()
-                .packedArraySize(), Float.NEGATIVE_INFINITY);
-            fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
-                new int[] { LOCAL_WORK_SIZE });
+                    .packedArraySize(), Float.NEGATIVE_INFINITY);
+            fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
             clQueue.finish();
 
             // Perform the cartesian product
             internalCartesianProduct(leftCell, rightCell, clCartesianProductProbabilities1,
-                clCartesianProductMidpoints1);
+                    clCartesianProductMidpoints1);
 
             t1 = System.currentTimeMillis();
             sentenceCartesianProductTime += (t1 - t0);
 
             // Union the new cross-product with the existing cross-product
-            cartesianProductUnionKernel.setArgs(clCartesianProductProbabilities0,
-                clCartesianProductMidpoints0, clCartesianProductProbabilities1, clCartesianProductMidpoints1,
-                grammar.cartesianProductFunction().packedArraySize());
+            cartesianProductUnionKernel.setArgs(clCartesianProductProbabilities0, clCartesianProductMidpoints0,
+                    clCartesianProductProbabilities1, clCartesianProductMidpoints1, grammar.cartesianProductFunction()
+                            .packedArraySize());
             cartesianProductUnionKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
-                new int[] { LOCAL_WORK_SIZE });
+                    new int[] { LOCAL_WORK_SIZE });
             clQueue.finish();
 
             sentenceCartesianProductUnionTime += (System.currentTimeMillis() - t1);
@@ -364,11 +358,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             final CLShortBuffer tmpClCrossProductMidpoints);
 
     /**
-     * Performs the binary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL
-     * device.
+     * Performs the binary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL device.
      * 
-     * This version copies the cross-product to device memory and the resulting chart cell back into main
-     * memory. Primarily for unit testing of {@link #internalBinarySpmvMultiply(ParallelArrayChartCell)} .
+     * This version copies the cross-product to device memory and the resulting chart cell back into main memory.
+     * Primarily for unit testing of {@link #internalBinarySpmvMultiply(ParallelArrayChartCell)} .
      */
     @Override
     public void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
@@ -376,8 +369,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         copyChartToDevice();
 
         // Copy cross-product to OpenCL memory
-        OpenClUtils.copyToDevice(clQueue, clCartesianProductProbabilities0,
-            cartesianProductVector.probabilities);
+        OpenClUtils.copyToDevice(clQueue, clCartesianProductProbabilities0, cartesianProductVector.probabilities);
         OpenClUtils.copyToDevice(clQueue, clCartesianProductMidpoints0, cartesianProductVector.midpoints);
 
         internalBinarySpmvMultiply(((ParallelArrayChartCell) chartCell));
@@ -386,17 +378,15 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     /**
-     * Performs the binary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL
-     * device.
+     * Performs the binary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL device.
      */
     protected abstract void internalBinarySpmvMultiply(final ParallelArrayChartCell chartCell);
 
     /**
-     * Performs the unary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL
-     * device.
+     * Performs the unary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL device.
      * 
-     * This version copies the current cell population to device memory and the results back into main memory.
-     * Primarily for unit testing of {@link #internalUnarySpmvMultiply(ParallelArrayChartCell)}.
+     * This version copies the current cell population to device memory and the results back into main memory. Primarily
+     * for unit testing of {@link #internalUnarySpmvMultiply(ParallelArrayChartCell)}.
      */
     @Override
     public void unarySpmv(final ChartCell chartCell) {
@@ -410,8 +400,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     /**
-     * Performs the unary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL
-     * device.
+     * Performs the unary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL device.
      */
     protected abstract void internalUnarySpmvMultiply(final ParallelArrayChartCell chartCell);
 

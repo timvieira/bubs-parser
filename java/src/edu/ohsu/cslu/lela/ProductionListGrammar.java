@@ -29,6 +29,7 @@ import it.unimi.dsi.fastutil.shorts.ShortSet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -638,6 +639,37 @@ public class ProductionListGrammar {
             sb.append('\n');
         }
         return sb.toString();
+    }
+
+    /**
+     * @return an array of productions, indexed by the non-terminal parent of each
+     */
+    public List<Production>[] productionsByParent() {
+        @SuppressWarnings("unchecked")
+        final List<Production>[] prods = new List[vocabulary.size()];
+
+        for (final Production p : binaryProductions) {
+            if (prods[p.parent] == null) {
+                prods[p.parent] = new ArrayList<Production>();
+            }
+            prods[p.parent].add(p);
+        }
+
+        for (final Production p : unaryProductions) {
+            if (prods[p.parent] == null) {
+                prods[p.parent] = new ArrayList<Production>();
+            }
+            prods[p.parent].add(p);
+        }
+
+        for (final Production p : lexicalProductions) {
+            if (prods[p.parent] == null) {
+                prods[p.parent] = new ArrayList<Production>();
+            }
+            prods[p.parent].add(p);
+        }
+
+        return prods;
     }
 
     public static interface NoiseGenerator {

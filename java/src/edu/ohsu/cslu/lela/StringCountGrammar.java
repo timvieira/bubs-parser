@@ -28,20 +28,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
-import edu.ohsu.cslu.datastructs.narytree.BinaryTree.Factorization;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
 
 /**
- * Grammar computed from observation counts in a training corpus. Generally used for initial induction of a
- * Markov-0 grammar from a treebank.
+ * Grammar computed from observation counts in a training corpus. Generally used for initial induction of a Markov-0
+ * grammar from a treebank.
  * 
  * @author Aaron Dunlop
  * @since Jan 13, 2011
@@ -49,10 +48,10 @@ import edu.ohsu.cslu.grammar.Tokenizer;
 public final class StringCountGrammar implements CountGrammar {
 
     /**
-     * Contains occurrence counts for each non-terminal which occurs as a binary parent. When representing the
-     * grammar for inside-outside re-estimation, we may be able to save space by not creating certain data
-     * structures for non-terminals which don't occur as binary parents. And we may be able to save execution
-     * time by sorting other data structures according to frequency counts.
+     * Contains occurrence counts for each non-terminal which occurs as a binary parent. When representing the grammar
+     * for inside-outside re-estimation, we may be able to save space by not creating certain data structures for
+     * non-terminals which don't occur as binary parents. And we may be able to save execution time by sorting other
+     * data structures according to frequency counts.
      */
     final Object2IntMap<String> binaryParentCounts = new Object2IntOpenHashMap<String>();
 
@@ -76,19 +75,16 @@ public final class StringCountGrammar implements CountGrammar {
     private final Object2IntOpenHashMap<String> lexicalEntryOccurrences = new Object2IntOpenHashMap<String>();
 
     /**
-     * Induces a grammar from a treebank, formatted in standard Penn-Treebank format, one bracketed sentence
-     * per line.
+     * Induces a grammar from a treebank, formatted in standard Penn-Treebank format, one bracketed sentence per line.
      * 
-     * The non-terminal and terminal vocabularies induced (V and T) will be mapped in the order of observation
-     * in the original treebank.
+     * The non-terminal and terminal vocabularies induced (V and T) will be mapped in the order of observation in the
+     * original treebank.
      * 
      * @param reader
-     * @param factorization
-     *            Factorization direction. If null, the tree is assumed to be already binarized.
-     * @param grammarFormatType
-     *            Grammar format used in factorization. If null, the tree is assumed to be already binarized.
-     * @param lexicalUnkThreshold
-     *            The number of occurrences of a word which must be observed in order to add it to the
+     * @param factorization Factorization direction. If null, the tree is assumed to be already binarized.
+     * @param grammarFormatType Grammar format used in factorization. If null, the tree is assumed to be already
+     *            binarized.
+     * @param lexicalUnkThreshold The number of occurrences of a word which must be observed in order to add it to the
      *            lexicon. Words observed less than this threshold are instead mapped to UNK- tokens.
      * @throws IOException
      */
@@ -105,16 +101,14 @@ public final class StringCountGrammar implements CountGrammar {
         for (String line = br.readLine(); line != null; line = br.readLine()) {
 
             final BinaryTree<String> tree = factorization != null ? NaryTree.read(line, String.class).factor(
-                grammarFormatType, factorization) : BinaryTree.read(line, String.class);
+                    grammarFormatType, factorization) : BinaryTree.read(line, String.class);
 
             if (startSymbol == null) {
                 startSymbol = tree.label();
                 observedNonTerminals.add(startSymbol);
             }
 
-            for (final Iterator<BinaryTree<String>> i = tree.inOrderIterator(); i.hasNext();) {
-                final BinaryTree<String> node = i.next();
-
+            for (final BinaryTree<String> node : tree.inOrderTraversal()) {
                 // Skip leaf nodes - only internal nodes are parents
                 if (node.isLeaf()) {
                     continue;
@@ -218,8 +212,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     @Override
-    public final float binaryRuleObservations(final String parent, final String leftChild,
-            final String rightChild) {
+    public final float binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
 
         final HashMap<String, Object2IntMap<String>> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {
@@ -257,12 +250,10 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     /**
-     * @param comparator
-     *            Sort order for the induced vocabulary. If null, non-terminals will be ordered in the order
-     *            of their observation, starting with the start symbol.
+     * @param comparator Sort order for the induced vocabulary. If null, non-terminals will be ordered in the order of
+     *            their observation, starting with the start symbol.
      * 
-     * @return A {@link SymbolSet} induced from the observed non-terminals, sorted according to the supplied
-     *         comparator.
+     * @return A {@link SymbolSet} induced from the observed non-terminals, sorted according to the supplied comparator.
      */
     public final SplitVocabulary induceVocabulary(final Comparator<String> comparator) {
         final ArrayList<String> nts = new ArrayList<String>(observedNonTerminals);
@@ -305,8 +296,8 @@ public final class StringCountGrammar implements CountGrammar {
                         continue;
                     }
 
-                    final float probability = (float) Math.log(binaryRuleObservations(sParent, sLeftChild,
-                        sRightChild) * 1.0 / observations(sParent));
+                    final float probability = (float) Math.log(binaryRuleObservations(sParent, sLeftChild, sRightChild)
+                            * 1.0 / observations(sParent));
                     prods.add(new Production(parent, leftChild, rightChild, probability, vocabulary, null));
                 }
             }
@@ -348,8 +339,7 @@ public final class StringCountGrammar implements CountGrammar {
         return lexicalProductions(vocabulary, induceLexicon());
     }
 
-    public ArrayList<Production> lexicalProductions(final SymbolSet<String> vocabulary,
-            final SymbolSet<String> lexicon) {
+    public ArrayList<Production> lexicalProductions(final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
 
@@ -379,9 +369,8 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     /**
-     * @return a comparator which orders Strings based on the number of times each was observed as a binary
-     *         parent. The most frequent parents are ordered earlier, with the exception of the start symbol,
-     *         which is always first.
+     * @return a comparator which orders Strings based on the number of times each was observed as a binary parent. The
+     *         most frequent parents are ordered earlier, with the exception of the start symbol, which is always first.
      */
     public Comparator<String> binaryParentCountComparator() {
 

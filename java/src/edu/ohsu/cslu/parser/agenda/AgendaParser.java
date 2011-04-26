@@ -21,9 +21,9 @@ package edu.ohsu.cslu.parser.agenda;
 import java.util.PriorityQueue;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -48,7 +48,7 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
     }
 
     @Override
-    public ParseTree findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final int[] tokens) {
         ChartEdge edge;
         HashSetChartCell cell;
 

@@ -18,6 +18,7 @@
  */
 package edu.ohsu.cslu.parser.chart;
 
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTree;
 
@@ -71,10 +72,8 @@ public abstract class Chart {
      * 
      * @param start
      * @param end
-     * @param nonTerminal
-     *            Non-terminal index
-     * @param insideProbability
-     *            New inside probability
+     * @param nonTerminal Non-terminal index
+     * @param insideProbability New inside probability
      */
     public abstract void updateInside(int start, int end, int nonTerminal, float insideProbability);
 
@@ -83,8 +82,7 @@ public abstract class Chart {
      * 
      * @param start
      * @param end
-     * @param nonTerminal
-     *            Non-terminal index
+     * @param nonTerminal Non-terminal index
      * @return the inside probability of the specified non-terminal in the a cell.
      */
     public abstract float getInside(int start, int end, int nonTerminal);
@@ -93,26 +91,26 @@ public abstract class Chart {
         return getRootCell().getBestEdge(startSymbol) != null;
     }
 
-    public ParseTree extractBestParse(final int startSymbol) {
+    public BinaryTree<String> extractBestParse(final int startSymbol) {
         return extractBestParse(0, size, startSymbol);
     }
 
-    public ParseTree extractBestParse(final int start, final int end, final int nonTermIndex) {
+    public BinaryTree<String> extractBestParse(final int start, final int end, final int nonTermIndex) {
         ChartEdge bestEdge;
-        ParseTree curNode = null;
+        BinaryTree<String> curNode = null;
         final ChartCell cell = getCell(start, end);
 
         if (cell != null) {
             bestEdge = cell.getBestEdge(nonTermIndex);
             if (bestEdge != null) {
-                curNode = new ParseTree(bestEdge.prod.parentToString());
+                curNode = new BinaryTree<String>(bestEdge.prod.parentToString());
                 if (bestEdge.prod.isUnaryProd()) {
-                    curNode.children.add(extractBestParse(start, end, bestEdge.prod.leftChild));
+                    curNode.addChild(extractBestParse(start, end, bestEdge.prod.leftChild));
                 } else if (bestEdge.prod.isLexProd()) {
-                    curNode.addChild(new ParseTree(bestEdge.prod.childrenToString()));
+                    curNode.addChild(new BinaryTree<String>(bestEdge.prod.childrenToString()));
                 } else { // binary production
-                    curNode.children.add(extractBestParse(start, bestEdge.midpt(), bestEdge.prod.leftChild));
-                    curNode.children.add(extractBestParse(bestEdge.midpt(), end, bestEdge.prod.rightChild));
+                    curNode.addChild(extractBestParse(start, bestEdge.midpt(), bestEdge.prod.leftChild));
+                    curNode.addChild(extractBestParse(bestEdge.midpt(), end, bestEdge.prod.rightChild));
                 }
             }
         }
@@ -158,9 +156,9 @@ public abstract class Chart {
         public abstract float getInside(final int nonTerminal);
 
         /**
-         * Returns the most probable edge producing the specified non-terminal. Most {@link ChartCell}
-         * implementations will only maintain one edge per non-terminal, but some implementations may maintain
-         * multiple edges (e.g., for k-best parsing).
+         * Returns the most probable edge producing the specified non-terminal. Most {@link ChartCell} implementations
+         * will only maintain one edge per non-terminal, but some implementations may maintain multiple edges (e.g., for
+         * k-best parsing).
          * 
          * @param nonTerminal
          * @return the most probable populated edge producing the specified non-terminal
@@ -169,8 +167,8 @@ public abstract class Chart {
 
         public abstract void updateInside(final ChartEdge edge);
 
-        public abstract void updateInside(final Production p, final ChartCell leftCell,
-                final ChartCell rightCell, final float insideProb);
+        public abstract void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell,
+                final float insideProb);
 
         /**
          * @return the word index of the first word covered by this cell
@@ -261,11 +259,9 @@ public abstract class Chart {
         public final int midpt() {
             if (rightCell == null) {
                 if (leftCell == null) {
-                    throw new RuntimeException(
-                        "right/leftCell must be set to use start(), end(), and midpt()");
+                    throw new RuntimeException("right/leftCell must be set to use start(), end(), and midpt()");
                 }
-                throw new RuntimeException(
-                    "Do not use midpt() with unary productions.  They do not have midpoints.");
+                throw new RuntimeException("Do not use midpt() with unary productions.  They do not have midpoints.");
             }
             return leftCell.end();
         }
