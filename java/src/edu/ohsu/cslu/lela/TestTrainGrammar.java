@@ -34,9 +34,13 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
+import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.tests.JUnit;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
+import edu.ohsu.cslu.util.Strings;
 
 /**
  * Unified tests for training of a split-merge grammar.
@@ -85,7 +89,6 @@ public class TestTrainGrammar {
         runEm(tg, plg1.split(noiseGenerator), 2, 10);
     }
 
-    // TODO Pass in list of training trees as well as TrainGrammar
     private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar plg, final int split,
             final int iterations) {
 
@@ -107,24 +110,27 @@ public class TestTrainGrammar {
             }
 
             verifyProbabilityDistribution(result.plGrammar);
-
-            // TODO Parse the training corpus with the new CSR grammar and report F-score as well as likelihood
-
-            final BracketEvaluator evaluator = new BracketEvaluator();
-            for (final NaryTree<String> goldTree : tg.goldTrees) {
-                // TODO Extract tokens from training tree and parse
-                final NaryTree<String> parsedTree = null;
-                evaluator.evaluate(goldTree, parsedTree);
-            }
-
-            final EvalbResult evalbResult = evaluator.accumulatedResult();
-            System.out.format("   Likelihood: %.3f  %.1f\n", result.corpusLikelihood, evalbResult.f1);
+            System.out.format("   Likelihood: %.3f\n", result.corpusLikelihood);
 
             assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f on iteration %d",
                     previousCorpusLikelihood, result.corpusLikelihood, i),
                     result.corpusLikelihood >= previousCorpusLikelihood);
             previousCorpusLikelihood = result.corpusLikelihood;
         }
+
+        // Parse the training corpus with the new CSR grammar and report F-score as well as likelihood
+        final CsrSpmvParser parser = new CsrSpmvParser(new ParserDriver(), csr);
+
+        final BracketEvaluator evaluator = new BracketEvaluator();
+        for (final NaryTree<String> goldTree : tg.goldTrees) {
+            // Extract tokens from training tree, parse, and evaluate
+            final String sentence = Strings.join(goldTree.leafLabels(), " ");
+            final ParseContext context = parser.parseSentence(sentence);
+            evaluator.evaluate(goldTree, context.parse.unfactor(csr.grammarFormat));
+        }
+
+        final EvalbResult evalbResult = evaluator.accumulatedResult();
+        System.out.format("F-score: %.3f\n", evalbResult.f1);
 
         return result.plGrammar;
     }
