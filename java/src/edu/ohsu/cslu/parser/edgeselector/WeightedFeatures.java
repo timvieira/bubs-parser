@@ -22,18 +22,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Arrays;
 
-import cltool4j.BaseLogger;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.GoldChart;
+import edu.ohsu.cslu.util.Strings;
 
 public class WeightedFeatures extends EdgeSelector {
 
@@ -65,23 +64,17 @@ public class WeightedFeatures extends EdgeSelector {
 
     @Override
     public void train(final BufferedReader inStream) throws IOException {
-        ParseTree goldTree;
         String line;
         final ParserDriver opts = new ParserDriver();
         // opts.cellSelectorType = CellSelectorType.LeftRightBottomTop;
         final TrainingParser parser = new TrainingParser(opts, (LeftListGrammar) grammar);
 
         while ((line = inStream.readLine()) != null) {
-            goldTree = ParseTree.readBracketFormat(line);
-            if (goldTree.isBinaryTree() == false) {
-                BaseLogger.singleton().info(
-                    "ERROR: Training trees must be binarized exactly as used in decoding");
-                System.exit(1);
-            }
+            final BinaryTree<String> goldTree = BinaryTree.read(line, String.class);
             goldChart = new GoldChart(goldTree, grammar);
 
             // fill chart
-            final String sentence = ParserUtil.join(goldTree.getLeafNodesContent(), " ");
+            final String sentence = Strings.join(goldTree.leafLabels(), " ");
             parser.parseSentence(sentence);
 
         }
