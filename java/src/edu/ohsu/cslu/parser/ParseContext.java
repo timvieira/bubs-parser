@@ -75,11 +75,12 @@ public class ParseContext {
     public ParseContext(final BinaryTree<String> tree, final Grammar grammar) {
 
         try {
-            inputTreeChart = new GoldChart(inputTree, grammar);
+            // inputTreeChart = new GoldChart(inputTree, grammar);
 
             this.strTokens = tree.leafLabels();
             this.sentence = Strings.join(strTokens, " ");
             this.sentenceLength = strTokens.length;
+            this.inputTree = tree;
 
         } catch (final Exception e) {
             e.printStackTrace();
