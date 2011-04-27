@@ -40,14 +40,14 @@ import edu.ohsu.cslu.util.Strings;
  * 
  * Assumes fewer than 2^15 total non-terminals (so that a production pair will fit into a signed 32-bit int).
  * 
- * Implementations may store the binary rule matrix in a variety of formats (e.g. CSR (
- * {@link CsrSparseMatrixGrammar}) or CSC ({@link LeftCscSparseMatrixGrammar})).
+ * Implementations may store the binary rule matrix in a variety of formats (e.g. CSR ( {@link CsrSparseMatrixGrammar})
+ * or CSC ({@link LeftCscSparseMatrixGrammar})).
  * 
- * The unary rules are always stored in CSR format, with rows denoting rule parents and columns rule children.
- * We anticipate relatively few unary rules (the Berkeley grammar has only ~100k), and iteration order doesn't
- * matter greatly. CSC format would allow us to iterate through only the populated children, but CSR format
- * makes parallelization much simpler (e.g., we can execute one thread per row (parent); since we're only
- * updating the parent probability, we do not need to synchronize with other threads).
+ * The unary rules are always stored in CSR format, with rows denoting rule parents and columns rule children. We
+ * anticipate relatively few unary rules (the Berkeley grammar has only ~100k), and iteration order doesn't matter
+ * greatly. CSC format would allow us to iterate through only the populated children, but CSR format makes
+ * parallelization much simpler (e.g., we can execute one thread per row (parent); since we're only updating the parent
+ * probability, we do not need to synchronize with other threads).
  * 
  * @author Aaron Dunlop
  * @since Dec 31, 2009
@@ -60,15 +60,14 @@ public abstract class SparseMatrixGrammar extends Grammar {
     public final PackingFunction packingFunction;
 
     /**
-     * Offsets into {@link #cscUnaryRowIndices} for the start of each column (child), with one extra entry
-     * appended to prevent loops from falling off the end. Indexed by child non-terminal, so the length is 1
-     * greater than |V|.
+     * Offsets into {@link #cscUnaryRowIndices} for the start of each column (child), with one extra entry appended to
+     * prevent loops from falling off the end. Indexed by child non-terminal, so the length is 1 greater than |V|.
      */
     public final int[] cscUnaryColumnOffsets;
 
     /**
-     * Row indices of each matrix entry in {@link #cscUnaryProbabilities}. One entry for each unary rule; the
-     * same size as {@link #cscUnaryProbabilities}.
+     * Row indices of each matrix entry in {@link #cscUnaryProbabilities}. One entry for each unary rule; the same size
+     * as {@link #cscUnaryProbabilities}.
      */
     public final short[] cscUnaryRowIndices;
 
@@ -76,8 +75,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
     public final float[] cscUnaryProbabilities;
 
     /**
-     * Indices of the first and last non-terminals which can combine as the right sibling with each
-     * non-terminal (indexed by left-child index)
+     * Indices of the first and last non-terminals which can combine as the right sibling with each non-terminal
+     * (indexed by left-child index)
      */
     public final short[] minRightSiblingIndices;
     public final short[] maxRightSiblingIndices;
@@ -97,8 +96,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         cscUnaryRowIndices = new short[numUnaryProds()];
         cscUnaryProbabilities = new float[numUnaryProds()];
 
-        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices,
-            cscUnaryProbabilities);
+        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
     }
 
     public SparseMatrixGrammar(final Reader grammarFile) throws IOException {
@@ -120,8 +118,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         cscUnaryRowIndices = new short[numUnaryProds()];
         cscUnaryProbabilities = new float[numUnaryProds()];
 
-        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices,
-            cscUnaryProbabilities);
+        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
 
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
@@ -130,17 +127,16 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon,
-            final GrammarFormatType grammarFormat, final Class<? extends PackingFunction> functionClass) {
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final Class<? extends PackingFunction> functionClass) {
         this(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-            functionClass, true);
+                functionClass, true);
     }
 
     protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon,
-            final GrammarFormatType grammarFormat, final Class<? extends PackingFunction> functionClass,
-            final boolean initCscMatrices) {
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
@@ -153,7 +149,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         if (initCscMatrices) {
             storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices,
-                cscUnaryProbabilities);
+                    cscUnaryProbabilities);
         }
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
@@ -165,19 +161,18 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * Stores unary rules in Compressed-Sparse-Column (CSC) matrix format.
      * 
      * @param productions
-     * @param validChildPairs
-     *            Sorted array of valid child pairs
+     * @param validChildPairs Sorted array of valid child pairs
      * @param cscPopulatedColumns
      * @param cscColumnIndices
      * @param cscRowIndices
      * @param cscProbabilities
      */
-    private void storeUnaryRulesAsCscMatrix(final Collection<Production> productions,
-            final int[] cscColumnOffsets, final short[] cscRowIndices, final float[] cscProbabilities) {
+    protected void storeUnaryRulesAsCscMatrix(final Collection<Production> productions, final int[] cscColumnOffsets,
+            final short[] cscRowIndices, final float[] cscProbabilities) {
 
         // Bin all rules by child, mapping parent -> probability
         final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> maps = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>(
-            1000);
+                1000);
 
         for (final Production p : productions) {
             final short child = (short) p.leftChild;
@@ -237,10 +232,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
     /**
      * Returns the log probability of the specified parent / child production
      * 
-     * @param parent
-     *            Parent index
-     * @param childPair
-     *            Packed children
+     * @param parent Parent index
+     * @param childPair Packed children
      * @return Log probability
      */
     public abstract float binaryLogProbability(final int parent, final int childPair);
@@ -253,10 +246,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
     /**
      * Returns the log probability of the specified parent / child production
      * 
-     * @param parent
-     *            Parent index
-     * @param child
-     *            Child index
+     * @param parent Parent index
+     * @param child Child index
      * @return Log probability
      */
     @Override
@@ -308,14 +299,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     @Override
     public final boolean isValidRightChild(final int nonTerminal) {
-        return nonTerminal >= rightChildrenStart && nonTerminal <= rightChildrenEnd
-                && nonTerminal != nullSymbol;
+        return nonTerminal >= rightChildrenStart && nonTerminal <= rightChildrenEnd && nonTerminal != nullSymbol;
     }
 
     @Override
     public final boolean isValidLeftChild(final int nonTerminal) {
-        return nonTerminal >= leftChildrenStart && nonTerminal <= leftChildrenEnd
-                && nonTerminal != nullSymbol;
+        return nonTerminal >= leftChildrenStart && nonTerminal <= leftChildrenEnd && nonTerminal != nullSymbol;
     }
 
     /**
@@ -388,8 +377,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
          * 
          * @param leftChild
          * @param rightChild
-         * @return packed representation of the specified child pair or {@link Integer#MIN_VALUE} if the pair
-         *         is not permitted by the grammar.
+         * @return packed representation of the specified child pair or {@link Integer#MIN_VALUE} if the pair is not
+         *         permitted by the grammar.
          */
         public int pack(final short leftChild, final short rightChild) {
             return leftChild << shift | (rightChild & lowOrderMask);
@@ -432,8 +421,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
         public abstract short unpackRightChild(final int childPair);
 
         public final String openClPackDefine() {
-            return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask
-                    + "))\n" + "#define PACK_UNARY -winningChild - 1\n";
+            return "#define PACK ((leftNonTerminal  << " + shift + ") | (rightNonTerminal & " + lowOrderMask + "))\n"
+                    + "#define PACK_UNARY -winningChild - 1\n";
         }
 
         public final String openClUnpackLeftChild() {
@@ -660,12 +649,10 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
                 // Record the offsets
                 hashtableOffsets[k1 + 1] = hashtableOffsets[k1] + hs.hashtableSegment.length;
-                displacementTableOffsets[k1 + 1] = displacementTableOffsets[k1]
-                        + hs.displacementTableSegment.length;
+                displacementTableOffsets[k1 + 1] = displacementTableOffsets[k1] + hs.displacementTableSegment.length;
 
                 // Copy the segment into the temporary hash and displacement arrays
-                System.arraycopy(hs.hashtableSegment, 0, tmpHashtable, hashtableOffsets[k1],
-                    hs.hashtableSegment.length);
+                System.arraycopy(hs.hashtableSegment, 0, tmpHashtable, hashtableOffsets[k1], hs.hashtableSegment.length);
 
                 for (int j = 0; j < hs.displacementTableSegment.length; j++) {
                     tmpDisplacementTable[displacementTableOffsets[k1] + j] = hashtableOffsets[k1]
@@ -676,8 +663,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
             this.hashtable = new short[hashtableOffsets[parallelArraySize]];
             System.arraycopy(tmpHashtable, 0, this.hashtable, 0, this.hashtable.length);
             this.displacementTable = new int[displacementTableOffsets[parallelArraySize]];
-            System.arraycopy(tmpDisplacementTable, 0, this.displacementTable, 0,
-                this.displacementTable.length);
+            System.arraycopy(tmpDisplacementTable, 0, this.displacementTable, 0, this.displacementTable.length);
 
             this.packedArraySize = hashtableSize();
         }
@@ -698,7 +684,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
             // that will always resolve to the single (empty) entry
             if (k2s.length == 0) {
                 return new HashtableSegment(new short[] { Short.MIN_VALUE }, 1, new int[] { 0 }, 1, 32, 0x0,
-                    new short[][] { { Short.MIN_VALUE } });
+                        new short[][] { { Short.MIN_VALUE } });
             }
 
             // Compute the size of the square matrix (m)
@@ -742,11 +728,9 @@ public abstract class SparseMatrixGrammar extends Grammar {
             edu.ohsu.cslu.util.Arrays.sort(rowCounts, rowIndices);
 
             /*
-             * Store matrix rows in a single array, using the first-fit descending method. For each non-empty
-             * row:
+             * Store matrix rows in a single array, using the first-fit descending method. For each non-empty row:
              * 
-             * 1. Displace the row right until none of its items collide with any of the items in previous
-             * rows.
+             * 1. Displace the row right until none of its items collide with any of the items in previous rows.
              * 
              * 2. Record the displacement amount in displacementTableSegment.
              * 
@@ -771,13 +755,13 @@ public abstract class SparseMatrixGrammar extends Grammar {
             }
             final int segmentLength = maxPopulatedIndex + n;
 
-            return new HashtableSegment(hashtableSegment, segmentLength, displacementTableSegment, m,
-                hashBitShift, hashMask, tmpMatrix);
+            return new HashtableSegment(hashtableSegment, segmentLength, displacementTableSegment, m, hashBitShift,
+                    hashMask, tmpMatrix);
         }
 
         /**
-         * Returns true if the merged array, when shifted by s, will `collide' with the target array; i.e., if
-         * we right-shift merge by s, are any populated elements of merge also populated elements of target.
+         * Returns true if the merged array, when shifted by s, will `collide' with the target array; i.e., if we
+         * right-shift merge by s, are any populated elements of merge also populated elements of target.
          * 
          * @param target
          * @param merge
@@ -814,8 +798,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
             return k2Shifts[leftChild];
         }
 
-        public final int pack(final short rightChild, final int rightChildShift, final int mask,
-                final int offset) {
+        public final int pack(final short rightChild, final int rightChildShift, final int mask, final int offset) {
             final int x = rightChild >> rightChildShift & mask;
             final int y = rightChild & mask;
             final int hashcode = displacementTable[offset + x] + y;
@@ -873,10 +856,9 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         @Override
         public String toString() {
-            return String.format(
-                "keys: %d hashtable size: %d occupancy: %.2f%% shift-table size: %d totalMem: %d", size,
-                hashtableSize(), size * 100f / hashtableSize(), displacementTable.length, hashtable.length
-                        * 2 + displacementTable.length * 4);
+            return String.format("keys: %d hashtable size: %d occupancy: %.2f%% shift-table size: %d totalMem: %d",
+                    size, hashtableSize(), size * 100f / hashtableSize(), displacementTable.length, hashtable.length
+                            * 2 + displacementTable.length * 4);
         }
 
         private final class HashtableSegment {
@@ -896,7 +878,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 System.arraycopy(hashtableSegment, 0, this.hashtableSegment, 0, segmentLength);
                 this.displacementTableSegment = new int[displacementTableSegmentLength];
                 System.arraycopy(displacementTableSegment, 0, this.displacementTableSegment, 0,
-                    displacementTableSegmentLength);
+                        displacementTableSegmentLength);
                 this.hashShift = hashShift;
                 this.hashMask = hashMask;
                 this.squareMatrix = squareMatrix;
@@ -915,8 +897,10 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 for (int row = 0; row < squareMatrix.length; row++) {
                     sb.append(String.format("%2d |", row));
                     for (int col = 0; col < squareMatrix.length; col++) {
-                        sb.append(String.format(" %2s", squareMatrix[row][col] == Short.MIN_VALUE ? "-"
-                                : Short.toString(squareMatrix[row][col])));
+                        sb.append(String.format(
+                                " %2s",
+                                squareMatrix[row][col] == Short.MIN_VALUE ? "-" : Short
+                                        .toString(squareMatrix[row][col])));
                     }
                     sb.append('\n');
                 }
@@ -927,7 +911,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 sb.append("\nkeys : ");
                 for (int i = 0; i < hashtableSegment.length; i++) {
                     sb.append(String.format(" %2s",
-                        hashtableSegment[i] == Short.MIN_VALUE ? "-" : Short.toString(hashtableSegment[i])));
+                            hashtableSegment[i] == Short.MIN_VALUE ? "-" : Short.toString(hashtableSegment[i])));
                 }
                 sb.append('\n');
                 return sb.toString();

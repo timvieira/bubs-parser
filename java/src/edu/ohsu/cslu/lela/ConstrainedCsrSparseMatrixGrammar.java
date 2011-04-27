@@ -104,6 +104,8 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
         storeBinaryRulesAsCsrMatrix(mapBinaryRulesByParent(binaryProductionsByRightChild, rightChildPackingFunction),
                 rightChildCsrBinaryRowIndices, rightChildCsrBinaryColumnIndices, rightChildCsrBinaryProbabilities,
                 rightChildCsrBaseStartIndices, rightChildPackingFunction);
+
+        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
     }
 
     /**

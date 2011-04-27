@@ -46,8 +46,8 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.util.StringPool;
 
 /**
- * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or
- * may be inferred from a corpus of data.
+ * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or may be
+ * inferred from a corpus of data.
  * 
  * A PCFG consists of
  * <ul>
@@ -57,21 +57,19 @@ import edu.ohsu.cslu.util.StringPool;
  * <li>A set of rule productions P mapping from V to (V union T)</li>
  * </ul>
  * 
- * Such grammars are useful in modeling and analyzing the structure of natural language or the (secondary)
- * structure of many biological sequences.
+ * Such grammars are useful in modeling and analyzing the structure of natural language or the (secondary) structure of
+ * many biological sequences.
  * 
- * Although branching of arbitrary size is possible in a grammar under this definition, this class models
- * grammars which have been factored into binary-branching form, enabling much more efficient computational
- * approaches to be used.
+ * Although branching of arbitrary size is possible in a grammar under this definition, this class models grammars which
+ * have been factored into binary-branching form, enabling much more efficient computational approaches to be used.
  * 
  * TODO Fix this comment
  * 
- * Note - there will always be more productions than categories, but all categories except the special
- * S-dagger category are also productions. The index of a category will be the same when used as a production
- * as it is when used as a category.
+ * Note - there will always be more productions than categories, but all categories except the special S-dagger category
+ * are also productions. The index of a category will be the same when used as a production as it is when used as a
+ * category.
  * 
- * TODO Implement an even simpler grammar for use as an intermediate form when transforming one grammar to
- * another.
+ * TODO Implement an even simpler grammar for use as an intermediate form when transforming one grammar to another.
  * 
  * @author Nathan Bodenstab
  * @author Aaron Dunlop
@@ -167,15 +165,15 @@ public class Grammar implements Serializable {
     protected int maxPOSIndex = -1; // used when creating arrays to hold all POS entries
 
     /**
-     * A temporary String -> String map, used to conserve memory while reading and sorting the grammar. We
-     * don't need to internalize Strings indefinitely, so we map them ourselves and allow the map to be GC'd
-     * after we're done constructing the grammar.
+     * A temporary String -> String map, used to conserve memory while reading and sorting the grammar. We don't need to
+     * internalize Strings indefinitely, so we map them ourselves and allow the map to be GC'd after we're done
+     * constructing the grammar.
      */
     private StringPool stringPool;
 
     /**
-     * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same
-     * command-line option for serialized and text grammars and auto-detect the format
+     * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same command-line option
+     * for serialized and text grammars and auto-detect the format
      */
     private final static short OBJECT_SIGNATURE = (short) 0xACED;
 
@@ -185,14 +183,13 @@ public class Grammar implements Serializable {
     // }
 
     /**
-     * Default Constructor. This constructor does an inordinate amount of work directly in the constructor
-     * specifically so we can initialize final instance variables. Making the instance variables final allows
-     * the JIT to inline them everywhere we use them, improving runtime efficiency considerably.
+     * Default Constructor. This constructor does an inordinate amount of work directly in the constructor specifically
+     * so we can initialize final instance variables. Making the instance variables final allows the JIT to inline them
+     * everywhere we use them, improving runtime efficiency considerably.
      * 
-     * Reads the grammar into memory and sorts non-terminals (V) according to their occurrence in binary
-     * rules. This can allow more efficient iteration in grammar intersection (e.g., skipping NTs only valid
-     * as left children in the right cell) and more efficient chart storage (e.g., omitting storage for POS
-     * NTs in chart rows >= 2).
+     * Reads the grammar into memory and sorts non-terminals (V) according to their occurrence in binary rules. This can
+     * allow more efficient iteration in grammar intersection (e.g., skipping NTs only valid as left children in the
+     * right cell) and more efficient chart storage (e.g., omitting storage for POS NTs in chart rows >= 2).
      */
     public Grammar(final Reader grammarFile) throws IOException {
 
@@ -286,28 +283,9 @@ public class Grammar implements Serializable {
             // int evalNTIndex = evalNonTermSet.addSymbol(evalNT);
         }
 
-        // TODO Generalize these further for right-factored grammars
-
-        // Initialize indices
-        final int[] startAndEndIndices = comparator.startAndEndIndices(nonPosSet, leftChildrenSet,
-            rightChildrenSet, pos);
-        leftChildrenStart = startAndEndIndices[0];
-        leftChildrenEnd = startAndEndIndices[1];
-
-        rightChildrenStart = startAndEndIndices[2];
-        rightChildrenEnd = startAndEndIndices[3];
-
-        posStart = startAndEndIndices[4];
-        posEnd = startAndEndIndices[5];
-
-        parentEnd = startAndEndIndices[6];
-
-        numPosSymbols = posEnd - posStart + 1;
-        maxPOSIndex = posEnd;
-
-        startSymbol = nonTermSet.addSymbol(startSymbolStr);
-        nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
-        nullWord = lexSet.addSymbol(nullSymbolStr);
+        this.startSymbol = nonTermSet.addSymbol(startSymbolStr);
+        this.nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
+        this.nullWord = lexSet.addSymbol(nullSymbolStr);
 
         // Now that all NTs are mapped, we can create Production instances for lexical rules (we don't care
         // about sort order here)
@@ -316,7 +294,7 @@ public class Grammar implements Serializable {
         for (final StringProduction lexicalRule : lexicalRules) {
             final int lexIndex = lexSet.addSymbol(lexicalRule.leftChild);
             lexicalProductions.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexIndex,
-                lexicalRule.probability, true, this));
+                    lexicalRule.probability, true, this));
         }
         numLexProds = lexicalProductions.size();
 
@@ -327,10 +305,10 @@ public class Grammar implements Serializable {
         for (final StringProduction grammarRule : pcfgRules) {
             if (grammarRule instanceof BinaryStringProduction) {
                 binaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
-                    ((BinaryStringProduction) grammarRule).rightChild, grammarRule.probability, this));
+                        ((BinaryStringProduction) grammarRule).rightChild, grammarRule.probability, this));
             } else {
-                unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
-                    grammarRule.probability, false, nonTermSet, lexSet));
+                unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild, grammarRule.probability,
+                        false, nonTermSet, lexSet));
             }
         }
 
@@ -356,6 +334,19 @@ public class Grammar implements Serializable {
 
         this.tokenizer = new Tokenizer(lexSet);
 
+        // Initialize indices
+        final int[] startAndEndIndices = startAndEndIndices();
+        this.leftChildrenStart = startAndEndIndices[0];
+        this.leftChildrenEnd = startAndEndIndices[1];
+        this.rightChildrenStart = startAndEndIndices[2];
+        this.rightChildrenEnd = startAndEndIndices[3];
+        this.posStart = startAndEndIndices[4];
+        this.posEnd = startAndEndIndices[5];
+        this.parentEnd = startAndEndIndices[6];
+
+        this.numPosSymbols = posEnd - posStart + 1;
+        this.maxPOSIndex = posEnd;
+
         // reduce range of POS indicies so we can store the features more efficiently
         for (int i = 0; i < numNonTerms(); i++) {
             // TODO: I don't think this works for non-sorted grammars like Nate's
@@ -375,8 +366,8 @@ public class Grammar implements Serializable {
     }
 
     /**
-     * Construct a {@link Grammar} instance from an existing instance. This is used when constructing a
-     * subclass of {@link Grammar} from a binary-serialized {@link Grammar}.
+     * Construct a {@link Grammar} instance from an existing instance. This is used when constructing a subclass of
+     * {@link Grammar} from a binary-serialized {@link Grammar}.
      * 
      * @param g
      */
@@ -419,10 +410,9 @@ public class Grammar implements Serializable {
         this.tokenizer = g.tokenizer;
     }
 
-    protected Grammar(final ArrayList<Production> binaryProductions,
-            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon,
-            final GrammarFormatType grammarFormat) {
+    protected Grammar(final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
+            final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
+            final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat) {
         this.nonTermSet = vocabulary;
         this.lexSet = lexicon;
         this.startSymbol = 0;
@@ -433,14 +423,6 @@ public class Grammar implements Serializable {
 
         this.posSet = null;
         this.phraseSet = null;
-
-        this.leftChildrenStart = -1;
-        this.leftChildrenEnd = -1;
-        this.rightChildrenStart = -1;
-        this.rightChildrenEnd = -1;
-        this.posStart = -1;
-        this.posEnd = -1;
-        this.parentEnd = -1;
 
         this.numBinaryProds = binaryProductions.size();
         this.numUnaryProds = unaryProductions.size();
@@ -459,12 +441,22 @@ public class Grammar implements Serializable {
         this.numPosSymbols = -1;
         this.grammarFormat = grammarFormat;
 
+        // TODO Correct this; replace with Factorization.LEFT or Factorization.RIGHT
         this.isLeftFactored = false;
+
+        // Initialize start and end indices
+        final int[] startAndEndIndices = startAndEndIndices();
+        this.leftChildrenStart = startAndEndIndices[0];
+        this.leftChildrenEnd = startAndEndIndices[1];
+        this.rightChildrenStart = startAndEndIndices[2];
+        this.rightChildrenEnd = startAndEndIndices[3];
+        this.posStart = startAndEndIndices[4];
+        this.posEnd = startAndEndIndices[5];
+        this.parentEnd = startAndEndIndices[6];
     }
 
-    private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile,
-            final List<StringProduction> pcfgRules, final List<StringProduction> lexicalRules)
-            throws IOException {
+    private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile, final List<StringProduction> pcfgRules,
+            final List<StringProduction> lexicalRules) throws IOException {
         // Read in the grammar file.
 
         final BufferedReader br = new BufferedReader(grammarFile);
@@ -496,16 +488,16 @@ public class Grammar implements Serializable {
 
             if (tokens.length == 1) {
                 throw new IllegalArgumentException(
-                    "Grammar file must contain a single line with a single string representing the START SYMBOL.\n"
-                            + "More than one entry was found.  Last line: " + line);
+                        "Grammar file must contain a single line with a single string representing the START SYMBOL.\n"
+                                + "More than one entry was found.  Last line: " + line);
             } else if (tokens.length == 4) {
                 // Unary production: expecting: A -> B prob
                 // TODO: Should we make sure there aren't any duplicates?
                 pcfgRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
             } else if (tokens.length == 5) {
                 // Binary production: expecting: A -> B C prob
-                pcfgRules.add(new BinaryStringProduction(stringPool.intern(tokens[0]), stringPool
-                    .intern(tokens[2]), stringPool.intern(tokens[3]), Float.valueOf(tokens[4])));
+                pcfgRules.add(new BinaryStringProduction(stringPool.intern(tokens[0]), stringPool.intern(tokens[2]),
+                        stringPool.intern(tokens[3]), Float.valueOf(tokens[4])));
             } else {
                 throw new IllegalArgumentException("Unexpected line in grammar PCFG\n\t" + line);
             }
@@ -525,6 +517,66 @@ public class Grammar implements Serializable {
         }
 
         return gf;
+    }
+
+    private int[] startAndEndIndices() {
+
+        int leftChildrenStart = Integer.MAX_VALUE, leftChildrenEnd = 0;
+        int rightChildrenStart = Integer.MAX_VALUE, rightChildrenEnd = 0;
+        int posStart = Integer.MAX_VALUE, posEnd = 0;
+        int parentEnd = 0;
+
+        for (final Production p : binaryProductions) {
+            if (p.leftChild < leftChildrenStart) {
+                leftChildrenStart = p.leftChild;
+            }
+            if (p.leftChild > leftChildrenEnd) {
+                leftChildrenEnd = p.leftChild;
+            }
+            if (p.rightChild < rightChildrenStart) {
+                rightChildrenStart = p.rightChild;
+            }
+            if (p.rightChild > rightChildrenEnd) {
+                rightChildrenEnd = p.rightChild;
+            }
+            if (p.parent > parentEnd) {
+                parentEnd = p.parent;
+            }
+        }
+
+        for (final Production p : unaryProductions) {
+            if (p.leftChild < leftChildrenStart) {
+                leftChildrenStart = p.leftChild;
+            }
+            if (p.leftChild > leftChildrenEnd) {
+                leftChildrenEnd = p.leftChild;
+            }
+            if (p.parent > parentEnd) {
+                parentEnd = p.parent;
+            }
+        }
+
+        for (final Production p : lexicalProductions) {
+            if (p.parent > parentEnd) {
+                parentEnd = p.parent;
+            }
+            if (p.parent < posStart) {
+                posStart = p.parent;
+            }
+            if (p.parent > posEnd) {
+                posEnd = p.parent;
+            }
+        }
+
+        if (posStart > this.nullSymbol) {
+            posStart = nullSymbol;
+        }
+        if (posEnd < this.nullSymbol) {
+            posEnd = nullSymbol;
+        }
+
+        return new int[] { leftChildrenStart, leftChildrenEnd, rightChildrenStart, rightChildrenEnd, posStart, posEnd,
+                parentEnd };
     }
 
     public static Grammar read(final String grammarFile) throws IOException, ClassNotFoundException {
@@ -593,8 +645,7 @@ public class Grammar implements Serializable {
     }
 
     @SuppressWarnings({ "cast", "unchecked" })
-    public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods,
-            final int maxIndex) {
+    public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
         final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
 
         for (int i = 0; i < prodsByChild.length; i++) {
@@ -776,10 +827,9 @@ public class Grammar implements Serializable {
      * @return Log probability of the specified rule.
      */
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
-        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild)
-                && nonTermSet.hasSymbol(rightChild)) {
+        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
             return binaryLogProbability(nonTermSet.getIndex(parent), nonTermSet.getIndex(leftChild),
-                nonTermSet.getIndex(rightChild));
+                    nonTermSet.getIndex(rightChild));
         }
         return Float.NEGATIVE_INFINITY;
     }
@@ -885,8 +935,7 @@ public class Grammar implements Serializable {
     /**
      * Returns the log probability of a rule.
      * 
-     * @param p
-     *            Production
+     * @param p Production
      * @return Log probability of the specified rule.
      */
     protected float getProductionProb(final Production p) {
@@ -979,8 +1028,8 @@ public class Grammar implements Serializable {
         return sb.toString();
     }
 
-    private StringNonTerminal create(final String label, final HashSet<String> pos,
-            final Set<String> nonPosSet, final Set<String> rightChildren) {
+    private StringNonTerminal create(final String label, final HashSet<String> pos, final Set<String> nonPosSet,
+            final Set<String> rightChildren) {
         final String internLabel = stringPool.intern(label);
 
         if (startSymbolStr.equals(internLabel)) {
@@ -1029,13 +1078,6 @@ public class Grammar implements Serializable {
 
             return o1.label.compareTo(o2.label);
         }
-
-        /**
-         * @return an array containing leftChildStart, leftChildEnd, rightChildStart, rightChildEnd, posStart,
-         *         posEnd, parentEnd
-         */
-        public abstract int[] startAndEndIndices(HashSet<?> nonPosSet, HashSet<?> leftChildrenSet,
-                HashSet<?> rightChildrenSet, HashSet<?> posSet);
     }
 
     // private static class PosLastComparator extends StringNonTerminalComparator {
@@ -1045,27 +1087,6 @@ public class Grammar implements Serializable {
     // map.put(NonTerminalClass.EITHER_CHILD, 1);
     // map.put(NonTerminalClass.POS, 2);
     // }
-    //
-    // @Override
-    // public int[] startAndEndIndices(final HashSet<?> nonPosSet, final HashSet<?> leftChildrenSet,
-    // final HashSet<?> rightChildrenSet, final HashSet<?> posSet) {
-    //
-    // final int total = nonPosSet.size() + posSet.size();
-    //
-    // final int leftChildrenStart = 0;
-    // final int leftChildrenEnd = total - 1;
-    //
-    // final int rightChildrenStart = leftChildrenEnd - rightChildrenSet.size() + 1;
-    // final int rightChildrenEnd = total - 1;
-    //
-    // final int posStart = rightChildrenEnd + 1;
-    // final int posEnd = total - 1;
-    //
-    // final int parentEnd = nonPosSet.size() - 1;
-    //
-    // return new int[] { leftChildrenStart, leftChildrenEnd, rightChildrenStart, rightChildrenEnd, posStart,
-    // posEnd, parentEnd };
-    // }
     // }
 
     private static class PosEmbeddedComparator extends StringNonTerminalComparator {
@@ -1074,27 +1095,6 @@ public class Grammar implements Serializable {
             map.put(NonTerminalClass.EITHER_CHILD, 0);
             map.put(NonTerminalClass.POS, 1);
             map.put(NonTerminalClass.FACTORED_SIDE_CHILDREN_ONLY, 2);
-        }
-
-        @Override
-        public int[] startAndEndIndices(final HashSet<?> nonPosSet, final HashSet<?> leftChildrenSet,
-                final HashSet<?> rightChildrenSet, final HashSet<?> posSet) {
-
-            final int total = nonPosSet.size() + posSet.size();
-
-            final int leftChildrenStart = 0;
-            final int leftChildrenEnd = total - 1;
-
-            final int rightChildrenStart = 0;
-            final int rightChildrenEnd = rightChildrenStart + rightChildrenSet.size() + posSet.size();
-
-            final int posStart = rightChildrenStart + rightChildrenSet.size();
-            final int posEnd = posStart + posSet.size() - 1;
-
-            final int parentEnd = leftChildrenEnd;
-
-            return new int[] { leftChildrenStart, leftChildrenEnd, rightChildrenStart, rightChildrenEnd,
-                    posStart, posEnd, parentEnd };
         }
     }
 
@@ -1129,17 +1129,17 @@ public class Grammar implements Serializable {
 
         for (final Production p : binaryProductions) {
             sb.append(String.format("%s -> %s %s %.4f\n", nonTermSet.getSymbol(p.parent),
-                nonTermSet.getSymbol(p.leftChild), nonTermSet.getSymbol(p.rightChild), p.prob));
+                    nonTermSet.getSymbol(p.leftChild), nonTermSet.getSymbol(p.rightChild), p.prob));
         }
 
         for (final Production p : unaryProductions) {
             sb.append(String.format("%s -> %s %.4f\n", nonTermSet.getSymbol(p.parent),
-                nonTermSet.getSymbol(p.leftChild), p.prob));
+                    nonTermSet.getSymbol(p.leftChild), p.prob));
         }
         sb.append("===Lexicon===\n");
         for (final Production p : lexicalProductions) {
-            sb.append(String.format("%s -> %s %.4f\n", nonTermSet.getSymbol(p.parent),
-                lexSet.getSymbol(p.leftChild), p.prob));
+            sb.append(String.format("%s -> %s %.4f\n", nonTermSet.getSymbol(p.parent), lexSet.getSymbol(p.leftChild),
+                    p.prob));
         }
         return sb.toString();
     }
