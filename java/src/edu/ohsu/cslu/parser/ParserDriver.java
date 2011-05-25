@@ -93,8 +93,6 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFuncti
 @Threadable(defaultThreads = 1)
 public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseContext> {
 
-    // HG test...v2
-
     // Global vars to create parser
     public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
     public EdgeSelectorFactory edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
@@ -123,16 +121,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-fom", metaVar = "fom", hidden = true, usage = "Figure of Merit to use for parser (name or model file)")
     private String fomTypeOrModel = "Inside";
 
-    @Option(name = "-beamConfModel", usage = "Beam Confidence Model for beam-search parsers")
-    private String beamConfModelFileName = null;
+    @Option(name = "-beamModel", usage = "Beam-width prediction model (for beam-search parsers)")
+    private String beamModelFileName = null;
 
     // TODO These default biases are specific to the 0,1,2,4 model, but defaulted here for the moment until we
     // can move them into a combined model file. First, we should make it a -O option instead of a
     // command-line parameter
-    @Option(name = "-beamConfBias", usage = "comma seperated bias for each bin in model; default is no bias")
-    public String beamConfBias = "1000,1000,1000,1000";
+    @Option(name = "-beamModelBias", usage = "comma seperated bias for each bin in model")
+    public String beamModelBias = "1000,1000,1000,1000";
 
-    @Option(name = "-beamConfFeats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    @Option(name = "-beamModelFeats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
     public static String featTemplate;
 
     @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
@@ -274,9 +272,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                         chartConstraintsThresh, grammar.isLeftFactored());
             }
 
-            if (beamConfModelFileName != null) {
-                cellSelectorFactory = new PerceptronBeamWidthFactory(fileAsBufferedReader(beamConfModelFileName),
-                        beamConfBias);
+            if (beamModelFileName != null) {
+                cellSelectorFactory = new PerceptronBeamWidthFactory(fileAsBufferedReader(beamModelFileName),
+                        beamModelBias);
             }
         }
 

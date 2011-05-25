@@ -27,7 +27,6 @@ import java.util.PriorityQueue;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.beam.BSCPPerceptronCellTrainer;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory.OHSUCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -79,8 +78,7 @@ public class PerceptronCellSelector extends CellSelector {
         this.parser = p;
         DEBUG = (p.opts.param1 == -1);
 
-        cellConstraints.initSentence(parser.chart, parser.currentInput.sentenceNumber,
-            parser.currentInput.sentence);
+        cellConstraints.initSentence(parser.chart, parser.currentInput.sentenceNumber, parser.currentInput.sentence);
         final int chartSize = p.chart.size();
 
         // inits all to false
@@ -464,16 +462,16 @@ public class PerceptronCellSelector extends CellSelector {
 
         if (featList.size() != numFeats) {
             if (trainingMode == true) {
-                BaseLogger.singleton().info(
-                    "WARNING: len(featureList)=" + featList.size() + " but numFeats=" + numFeats
-                            + ".  Resizing...");
+                BaseLogger.singleton()
+                        .info("WARNING: len(featureList)=" + featList.size() + " but numFeats=" + numFeats
+                                + ".  Resizing...");
                 numFeats = featList.size();
                 weights = new float[numFeats];
                 initWeights();
             } else {
                 BaseLogger.singleton().info(
-                    "ERROR: len(featureList)=" + featList.size()
-                            + " but number features in model files is numFeats=" + numFeats);
+                        "ERROR: len(featureList)=" + featList.size()
+                                + " but number features in model files is numFeats=" + numFeats);
                 System.exit(1);
             }
         }
@@ -503,8 +501,7 @@ public class PerceptronCellSelector extends CellSelector {
         return bins;
     }
 
-    public void train(final BufferedReader inStream, final BSCPPerceptronCellTrainer parserToTrain)
-            throws IOException {
+    public void train(final BufferedReader inStream, final BSCPPerceptronCellTrainer parserToTrain) throws IOException {
         learningRate = (float) 1.0;
         initWeights();
         // parserToTrain.train(inStream);
@@ -515,7 +512,7 @@ public class PerceptronCellSelector extends CellSelector {
         String line;
         while ((line = inStream.readLine()) != null) {
             // line format: weight1 weight2 weight3 ...
-            final String[] tokens = ParserUtil.tokenize(line);
+            final String[] tokens = line.split("\\s+");
             if (tokens.length > 0 && !tokens[0].equals("#")) {
                 final int numModelFeatures = tokens.length;
                 numFeats = numModelFeatures;

@@ -63,7 +63,7 @@ public class ParseContext {
 
         try {
             this.sentence = sentence.trim();
-            this.strTokens = ParserUtil.tokenize(sentence);
+            this.strTokens = sentence.split("\\s+");
             this.sentenceLength = strTokens.length;
             this.inputTree = null;
 

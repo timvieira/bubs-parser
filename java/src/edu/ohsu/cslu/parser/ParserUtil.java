@@ -24,25 +24,9 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.StringTokenizer;
 import java.util.zip.GZIPInputStream;
 
 public class ParserUtil {
-
-    // TODO Replace with String.split() ?
-    // parse 'line' into tokens and return them in an array
-    public static String[] tokenize(final String line) {
-        final StringTokenizer st = new StringTokenizer(line);
-        final int numTokens = st.countTokens();
-        final String[] tokens = new String[numTokens];
-
-        int i = 0;
-        while (st.hasMoreTokens()) {
-            tokens[i++] = st.nextToken();
-        }
-
-        return tokens;
-    }
 
     public static String join(final Collection<String> s, final String delimiter) {
         final StringBuilder buffer = new StringBuilder();
@@ -141,8 +125,7 @@ public class ParserUtil {
         return strToIntArray(str, ",", 0, -1);
     }
 
-    public static int[] strToIntArray(final String str, final String delim, final float defaultVal,
-            final int numBins) {
+    public static int[] strToIntArray(final String str, final String delim, final float defaultVal, final int numBins) {
         final float[] floatArray = strToFloatArray(str, delim, defaultVal, numBins);
         final int[] intArray = new int[floatArray.length];
         for (int i = 0; i < floatArray.length; i++) {
@@ -156,8 +139,7 @@ public class ParserUtil {
     }
 
     // assuming str has the form: x,y,z
-    public static float[] strToFloatArray(final String str, final String delim, final float defaultVal,
-            int numBins) {
+    public static float[] strToFloatArray(final String str, final String delim, final float defaultVal, int numBins) {
         final String[] tokens = str.split(delim);
         if (numBins == -1) {
             numBins = tokens.length;
