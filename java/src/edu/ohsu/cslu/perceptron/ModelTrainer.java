@@ -40,8 +40,7 @@ import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
 
 /**
- * Trains a perceptron model from a corpus. Features and objective tags are derived using a
- * {@link FeatureExtractor}.
+ * Trains a perceptron model from a corpus. Features and objective tags are derived using a {@link FeatureExtractor}.
  * 
  * @author Aaron Dunlop
  * @since Oct 9, 2010
@@ -176,7 +175,7 @@ public class ModelTrainer extends BaseCommandlineTool {
 
         if (featTemplate == null) {
             BaseLogger.singleton().info(
-                "ERROR: Training a model from pre-computed features requires -feats to be non-empty");
+                    "ERROR: Training a model from pre-computed features requires -feats to be non-empty");
             System.exit(1);
         } else if (!featTemplate.contains(" ") && new File(featTemplate).exists()) {
             final BufferedReader featFileReader = new BufferedReader(new FileReader(featTemplate));
@@ -185,7 +184,7 @@ public class ModelTrainer extends BaseCommandlineTool {
 
         if (binsStr == null) {
             BaseLogger.singleton().info(
-                "ERROR: Training a model from pre-computed features requires -bins to be non-empty");
+                    "ERROR: Training a model from pre-computed features requires -bins to be non-empty");
             System.exit(1);
         }
 
@@ -195,11 +194,11 @@ public class ModelTrainer extends BaseCommandlineTool {
 
         Classifier model;
         if (multiBin) {
-            model = new AveragedPerceptron(alpha, new Perceptron.OverUnderLoss(overPenalty, underPenalty),
-                binsStr, featTemplate, null);
+            model = new AveragedPerceptron(alpha, new Perceptron.OverUnderLoss(overPenalty, underPenalty), binsStr,
+                    featTemplate, null);
         } else {
-            model = new BinaryPerceptronSet(alpha, new Perceptron.OverUnderLoss(overPenalty, underPenalty),
-                binsStr, featTemplate);
+            model = new BinaryPerceptronSet(alpha, new Perceptron.OverUnderLoss(overPenalty, underPenalty), binsStr,
+                    featTemplate);
         }
 
         // iterate over training data
@@ -267,8 +266,8 @@ public class ModelTrainer extends BaseCommandlineTool {
     public class DataSet {
 
         /**
-         * Parallel array of training examples; gold classes (classifications) and the feature vectors
-         * associated with each example
+         * Parallel array of training examples; gold classes (classifications) and the feature vectors associated with
+         * each example
          */
         public ArrayList<Integer> classification = new ArrayList<Integer>();
         public ArrayList<SparseBitVector> features = new ArrayList<SparseBitVector>();
@@ -288,17 +287,16 @@ public class ModelTrainer extends BaseCommandlineTool {
 
         /**
          * 
-         * Expected format (goldClass : featLen posFeat1 posFeat2 ...) 9 : 98695 0 38 68 136 179 237 1067 2684
-         * 2714 2782 2825 2883 7348 30622 55242 95299 0 : 98695 0 19 87 117 185 228 1342 2665 2733 2763 2831
-         * 2874 23458 31295 71352 79105 2 : 98695 0 38 68 136 166 234 430 2684 2714 2782 2812 2880 7264 47405
-         * 55158 95299 ....
+         * Expected format (goldClass : featLen posFeat1 posFeat2 ...) 9 : 98695 0 38 68 136 179 237 1067 2684 2714 2782
+         * 2825 2883 7348 30622 55242 95299 0 : 98695 0 19 87 117 185 228 1342 2665 2733 2763 2831 2874 23458 31295
+         * 71352 79105 2 : 98695 0 38 68 136 166 234 430 2684 2714 2782 2812 2880 7264 47405 55158 95299 ....
          */
         // private void readDataSet(final InputStream is, final Perceptron perceptron) throws Exception {
         private void readDataSet(final InputStream is) throws Exception {
             final BufferedReader br = new BufferedReader(new InputStreamReader(is));
             numExamples = 0;
             for (String line = br.readLine(); line != null; line = br.readLine()) {
-                final String[] tokens = ParserUtil.tokenize(line);
+                final String[] tokens = line.split("\\s+");
                 assert numFeatures == tokens.length - 1 || numFeatures == -1;
                 numFeatures = Integer.parseInt(tokens[2]);
                 final int numPosFeats = tokens.length - 3;
@@ -323,7 +321,7 @@ public class ModelTrainer extends BaseCommandlineTool {
             // Expected format: classification featVal1 featVal2 featVal3 ...
             numExamples = 0;
             for (String line = br.readLine(); line != null; line = br.readLine()) {
-                final String[] tokens = ParserUtil.tokenize(line);
+                final String[] tokens = line.split("\\s+");
                 assert numFeatures == tokens.length - 1 || numFeatures == -1;
                 numFeatures = tokens.length - 1;
                 numExamples++;
@@ -339,9 +337,8 @@ public class ModelTrainer extends BaseCommandlineTool {
                     } else if (val == 1.0) {
                         feats[i] = true;
                     } else {
-                        throw new Exception(
-                            "ERROR: expecting binary 0/1 values in feature vector but found '" + tokens[i]
-                                    + "'");
+                        throw new Exception("ERROR: expecting binary 0/1 values in feature vector but found '"
+                                + tokens[i] + "'");
                     }
                 }
                 features.add(new SparseBitVector(feats));
@@ -362,8 +359,8 @@ public class ModelTrainer extends BaseCommandlineTool {
         // Previous tags
         for (int i = 0; i < markovOrder * 2; i = i + 2) {
             final int trueFeature = grammar.numLexSymbols() * (markovOrder * 2 + 1) + i;
-            sb.append(String.format("_t_%d_T : %s\n", i / 2 - markovOrder,
-                featureVector.getBoolean(trueFeature) ? "T" : "F"));
+            sb.append(String.format("_t_%d_T : %s\n", i / 2 - markovOrder, featureVector.getBoolean(trueFeature) ? "T"
+                    : "F"));
         }
         return sb.toString();
     }

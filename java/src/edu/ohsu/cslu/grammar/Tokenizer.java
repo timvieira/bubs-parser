@@ -22,7 +22,6 @@ import java.io.Serializable;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.ParserUtil;
 
 public class Tokenizer implements Serializable {
 
@@ -34,8 +33,9 @@ public class Tokenizer implements Serializable {
         this.lexSet = lexSet;
     }
 
+    // TODO: tokenize according to treebank conventions (split don't to do n't, etc.)
     public String[] tokenize(final String sentence) {
-        final String tokens[] = ParserUtil.tokenize(sentence);
+        final String tokens[] = sentence.split("\\s+");
         for (int i = 0; i < tokens.length; i++) {
             tokens[i] = mapToLexSetEntry(tokens[i], i);
         }
@@ -43,7 +43,7 @@ public class Tokenizer implements Serializable {
     }
 
     public int[] tokenizeToIndex(final String sentence) {
-        final String tokens[] = ParserUtil.tokenize(sentence);
+        final String tokens[] = sentence.split("\\s+");
         final int tokenIndices[] = new int[tokens.length];
         for (int i = 0; i < tokens.length; i++) {
             tokenIndices[i] = lexSet.getIndex(mapToLexSetEntry(tokens[i], i));

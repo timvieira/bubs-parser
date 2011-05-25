@@ -133,7 +133,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         // CellSelector.initSentence()) and make this a large switch statement. Should help with
         // initialization time,
         // although it's not a huge priority, since that init time is only ~5% of the total time.
-        for (final String featStr : ParserUtil.tokenize(featTemplate)) {
+        for (final String featStr : featTemplate.split("\\s+")) {
 
             // Left tags
             if (featStr.equals("lt")) {
