@@ -16,7 +16,7 @@ public class APWMHistPrune extends APWithMemory {
     public APWMHistPrune(final ParserDriver opts, final LeftRightListsGrammar grammar) {
         super(opts, grammar);
         // TODO Auto-generated constructor stub
-        // Test of commit
+        // Test of commit ... again
     }
 
 }
