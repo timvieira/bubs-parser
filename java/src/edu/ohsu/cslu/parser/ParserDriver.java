@@ -93,6 +93,8 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFuncti
 @Threadable(defaultThreads = 1)
 public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseContext> {
 
+    // HG test...
+
     // Global vars to create parser
     public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
     public EdgeSelectorFactory edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
