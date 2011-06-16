@@ -59,6 +59,7 @@
          *  dir.bsd.lib
          *  dir.lgpl.lib
          *  dir.gpl.lib
+         *  dir.src (if srcjar is specified)
     ========================================================================
     -->
     <target name="package-tool">
@@ -113,6 +114,7 @@
                     <fileset dir="${dir.bsd.lib}" includes="*-src.jar" />
                     <fileset dir="${dir.lgpl.lib}" includes="*-src.jar" />
                     <fileset dir="${dir.gpl.lib}" includes="*-src.jar" />
+                    <pathelement location="${dir.src}" />
                 </path>
             </then>
             <else>
@@ -122,6 +124,7 @@
                 </path>
                 <path id="sourcepath">
                     <fileset dir="${dir.bsd.lib}" includes="*-src.jar" />
+                    <pathelement location="${dir.src}" />
                 </path>
             </else>
         </if>
