@@ -37,10 +37,9 @@ public class TestConstrainedCsrSparseMatrixGrammar {
     @Test
     public void testBinaryLeftChildStartIndices() {
         final ProductionListGrammar plGrammar0 = new ProductionListGrammar(
-            TestMappedCountGrammar.SAMPLE_MAPPED_GRAMMAR());
-        final ConstrainedCsrSparseMatrixGrammar csrGrammar0 = new ConstrainedCsrSparseMatrixGrammar(
-            plGrammar0, GrammarFormatType.Berkeley,
-            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+                FractionalCountGrammarTestCase.SAMPLE_GRAMMAR());
+        final ConstrainedCsrSparseMatrixGrammar csrGrammar0 = new ConstrainedCsrSparseMatrixGrammar(plGrammar0,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         // 'top' has no binary children
         assertNull(csrGrammar0.csrBinaryBaseStartIndices[0]);
@@ -50,10 +49,9 @@ public class TestConstrainedCsrSparseMatrixGrammar {
         assertArrayEquals(new int[] { 2, 2, 2, 3 }, csrGrammar0.csrBinaryBaseStartIndices[2]);
 
         final ProductionListGrammar plGrammar1 = plGrammar0
-            .split(new ProductionListGrammar.RandomNoiseGenerator(0.01f));
-        final ConstrainedCsrSparseMatrixGrammar csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(
-            plGrammar1, GrammarFormatType.Berkeley,
-            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+                .split(new ProductionListGrammar.RandomNoiseGenerator(0.01f));
+        final ConstrainedCsrSparseMatrixGrammar csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(plGrammar1,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         // 'top' has no binary children
         assertNull(csrGrammar1.csrBinaryBaseStartIndices[0]);
@@ -66,10 +64,9 @@ public class TestConstrainedCsrSparseMatrixGrammar {
 
         // Split again, and then merge a_2 into a_1 and b_3 into b_2
         final ProductionListGrammar mergedGrammar2 = plGrammar1.split(
-            new ProductionListGrammar.RandomNoiseGenerator(0.01f)).merge(new short[] { 3, 7 });
-        final ConstrainedCsrSparseMatrixGrammar csrGrammar2 = new ConstrainedCsrSparseMatrixGrammar(
-            mergedGrammar2, GrammarFormatType.Berkeley,
-            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+                new ProductionListGrammar.RandomNoiseGenerator(0.01f)).merge(new short[] { 3, 7 });
+        final ConstrainedCsrSparseMatrixGrammar csrGrammar2 = new ConstrainedCsrSparseMatrixGrammar(mergedGrammar2,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         // Children of a_0, a_1, a_2, b_0, b_1, b_2
         assertArrayEquals(new int[] { 0, 0, 18, 18 }, csrGrammar2.csrBinaryBaseStartIndices[1]);

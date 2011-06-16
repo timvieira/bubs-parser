@@ -185,6 +185,7 @@ public class ConstrainedChart extends ParallelArrayChart {
         final int fillLength = chartArraySize(constrainingChart.size, constrainingChart.maxUnaryChainLength, maxSplits);
         Arrays.fill(nonTerminalIndices, 0, fillLength, Short.MIN_VALUE);
         Arrays.fill(packedChildren, 0, fillLength, 0);
+        Arrays.fill(outsideProbabilities, 0, fillLength, Float.NEGATIVE_INFINITY);
         computeOffsets();
 
         this.openCells = constrainingChart.openCells;
@@ -274,7 +275,7 @@ public class ConstrainedChart extends ParallelArrayChart {
         return subtree;
     }
 
-    public void countRuleObservations(final MappedCountGrammar grammar) {
+    public void countRuleObservations(final FractionalCountGrammar grammar) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

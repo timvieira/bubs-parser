@@ -28,7 +28,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * @author Aaron Dunlop
  * @since Jan 13, 2011
  */
-public class TestConstrainedCountGrammar extends MappedCountGrammarTestCase {
+public class TestConstrainedCountGrammar extends FractionalCountGrammarTestCase {
 
     @Before
     public void setUp() {
@@ -41,17 +41,17 @@ public class TestConstrainedCountGrammar extends MappedCountGrammarTestCase {
 
         // Build up the same grammar as that induced from the tree in AllElviTests
         final ConstrainedCountGrammar g = new ConstrainedCountGrammar(vocabulary, lexicon, null);
-        g.incrementUnaryCount("top", "a");
-        g.incrementBinaryCount("a", "a", "b");
-        g.incrementBinaryCount("a", "a", "b");
-        g.incrementBinaryCount("a", "a", "a");
-        g.incrementLexicalCount("a", "c");
-        g.incrementLexicalCount("a", "c");
-        g.incrementLexicalCount("b", "d");
-        g.incrementBinaryCount("b", "b", "a");
-        g.incrementUnaryCount("b", "b");
-        g.incrementLexicalCount("b", "d");
-        g.incrementLexicalCount("a", "d");
+        g.incrementUnaryCount("top", "a", 1);
+        g.incrementBinaryCount("a", "a", "b", 1);
+        g.incrementBinaryCount("a", "a", "b", 1);
+        g.incrementBinaryCount("a", "a", "a", 1);
+        g.incrementLexicalCount("a", "c", 1);
+        g.incrementLexicalCount("a", "c", 1);
+        g.incrementLexicalCount("b", "d", 1);
+        g.incrementBinaryCount("b", "b", "a", 1);
+        g.incrementUnaryCount("b", "b", 1);
+        g.incrementLexicalCount("b", "d", 1);
+        g.incrementLexicalCount("a", "d", 1);
 
         return g;
     }
