@@ -51,6 +51,9 @@ public class Production implements Serializable, Cloneable {
         this.parent = parent;
         this.leftChild = leftChild;
         this.rightChild = rightChild;
+        if (Float.isNaN(prob)) {
+            throw new IllegalArgumentException("Probability is NaN");
+        }
         this.prob = prob;
 
         this.vocabulary = vocabulary;
@@ -69,15 +72,15 @@ public class Production implements Serializable, Cloneable {
     // Binary production
     public Production(final String parent, final String leftChild, final String rightChild, final float prob,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
-        this(vocabulary.addSymbol(parent), vocabulary.addSymbol(leftChild), vocabulary.addSymbol(rightChild),
-            prob, vocabulary, lexicon);
+        this(vocabulary.addSymbol(parent), vocabulary.addSymbol(leftChild), vocabulary.addSymbol(rightChild), prob,
+                vocabulary, lexicon);
     }
 
     // Binary production
     public Production(final String parent, final String leftChild, final String rightChild, final float prob,
             final Grammar grammar) {
-        this(grammar.nonTermSet.addSymbol(parent), grammar.nonTermSet.addSymbol(leftChild),
-            grammar.nonTermSet.addSymbol(rightChild), prob, grammar);
+        this(grammar.nonTermSet.addSymbol(parent), grammar.nonTermSet.addSymbol(leftChild), grammar.nonTermSet
+                .addSymbol(rightChild), prob, grammar);
 
     }
 
@@ -94,8 +97,7 @@ public class Production implements Serializable, Cloneable {
     }
 
     // Unary or lexical production
-    public Production(final int parent, final int child, final float prob, final boolean isLex,
-            final Grammar grammar) {
+    public Production(final int parent, final int child, final float prob, final boolean isLex, final Grammar grammar) {
         this(parent, child, prob, isLex, grammar.nonTermSet, grammar.lexSet);
         if (isLex) {
             grammar.getNonterminal(parent).isPOS = true;
@@ -108,8 +110,8 @@ public class Production implements Serializable, Cloneable {
     // Unary or lexical production
     public Production(final String parent, final String child, final float prob, final boolean isLex,
             final Grammar grammar) {
-        this(grammar.nonTermSet.addSymbol(parent), isLex ? grammar.lexSet.addSymbol(child)
-                : grammar.nonTermSet.addSymbol(child), prob, isLex, grammar);
+        this(grammar.nonTermSet.addSymbol(parent), isLex ? grammar.lexSet.addSymbol(child) : grammar.nonTermSet
+                .addSymbol(child), prob, isLex, grammar);
     }
 
     // Unary or lexical production
@@ -177,17 +179,15 @@ public class Production implements Serializable, Cloneable {
         }
 
         if (isBinaryProd()) {
-            return String.format("%s -> %s %s %.4f", vocabulary.getSymbol(parent),
-                vocabulary.getSymbol(leftChild), vocabulary.getSymbol(rightChild), prob);
+            return String.format("%s -> %s %s %.4f", vocabulary.getSymbol(parent), vocabulary.getSymbol(leftChild),
+                    vocabulary.getSymbol(rightChild), prob);
         }
 
         if (isLexProd()) {
-            return String.format("%s -> %s %.4f", vocabulary.getSymbol(parent), lexicon.getSymbol(leftChild),
-                prob);
+            return String.format("%s -> %s %.4f", vocabulary.getSymbol(parent), lexicon.getSymbol(leftChild), prob);
         }
 
         // Unary
-        return String.format("%s -> %s %.4f", vocabulary.getSymbol(parent), vocabulary.getSymbol(leftChild),
-            prob);
+        return String.format("%s -> %s %.4f", vocabulary.getSymbol(parent), vocabulary.getSymbol(leftChild), prob);
     }
 }

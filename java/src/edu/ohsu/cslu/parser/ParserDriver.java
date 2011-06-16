@@ -42,6 +42,7 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.Parser.ParserType;
@@ -112,7 +113,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     // "function", usage =
     // "Cartesian-product function (only used for SpMV parsers)")
     @Option(name = "-cpf", hidden = true, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
-    private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash2;
+    private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash;
 
     // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage =
     // "Chart cell processing type")
@@ -353,7 +354,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             switch (cartesianProductFunctionType) {
             case Simple:
                 return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-            case PerfectHash2:
+            case PerfectHash:
                 return new CsrSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
             default:
                 throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
@@ -368,7 +369,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             switch (cartesianProductFunctionType) {
             case Simple:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-            case PerfectHash2:
+            case PerfectHash:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
             default:
                 throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
@@ -379,7 +380,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         case CartesianProductBinarySearchLeftChildMl:
         case CartesianProductHashMl:
         case CartesianProductLeftChildHashMl:
-            return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+            switch (cartesianProductFunctionType) {
+            case Simple:
+                return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+            case Hash:
+                return new LeftCscSparseMatrixGrammar(genericGrammar, Int2IntHashPackingFunction.class);
+            case PerfectHash:
+                return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
+            }
         case RightChildMl:
             return new RightCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
         case GrammarLoopMl:
@@ -531,7 +539,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         BaseLogger.singleton().info(sb.toString());
 
         for (final Parser<?> p : parserInstances) {
-            p.shutdown();
+            try {
+                p.shutdown();
+            } catch (final Exception ignore) {
+            }
         }
     }
 

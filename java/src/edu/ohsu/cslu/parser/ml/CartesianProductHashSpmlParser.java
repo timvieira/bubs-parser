@@ -19,16 +19,16 @@
 package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CscHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.hash.PerfectInt2IntHash;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * Parser implementation which loops over all combinations of left and right child cell populations (cartesian
- * product of observed left and right non-terminals) and probes into the grammar for each combination using a
- * lookup into a perfect hash.
+ * Parser implementation which loops over all combinations of left and right child cell populations (cartesian product
+ * of observed left and right non-terminals) and probes into the grammar for each combination using a lookup into a
+ * perfect hash.
  * 
  * @author Aaron Dunlop
  * @since Jun 14, 2010
@@ -36,18 +36,8 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 public class CartesianProductHashSpmlParser extends
         SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, PackedArrayChart> {
 
-    private final PerfectInt2IntHash childPair2ColumnOffsetHash;
-    private final int[] hashedCscParallelArrayIndices;
-
     public CartesianProductHashSpmlParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
-
-        childPair2ColumnOffsetHash = new PerfectInt2IntHash(grammar.cscBinaryPopulatedColumns);
-        hashedCscParallelArrayIndices = new int[childPair2ColumnOffsetHash.hashtableSize()];
-        for (int i = 0; i < grammar.cscBinaryPopulatedColumns.length; i++) {
-            final int childPair = grammar.cscBinaryPopulatedColumns[i];
-            hashedCscParallelArrayIndices[childPair2ColumnOffsetHash.hashcode(childPair)] = i;
-        }
     }
 
     @Override
@@ -66,6 +56,7 @@ public class CartesianProductHashSpmlParser extends
     protected void visitCell(final short start, final short end) {
 
         final PackingFunction cpf = grammar.cartesianProductFunction();
+        final int[] cscColumnOffsets = ((CscHashPackingFunction) cpf).cscColumnOffsets();
         final PackedArrayChartCell targetCell = chart.getCell(start, end);
         targetCell.allocateTemporaryStorage();
 
@@ -87,34 +78,25 @@ public class CartesianProductHashSpmlParser extends
 
             for (int i = leftStart; i <= leftEnd; i++) {
                 final short leftChild = chart.nonTerminalIndices[i];
-
-                // TODO Skip non-terminals which never occur as left children
-
                 final float leftProbability = chart.insideProbabilities[i];
 
                 // And over children in the right child cell
                 for (int j = rightStart; j <= rightEnd; j++) {
 
-                    final int childPair = cpf.pack(leftChild, chart.nonTerminalIndices[j]);
-                    if (childPair == Integer.MIN_VALUE) {
+                    final int column = cpf.pack(leftChild, chart.nonTerminalIndices[j]);
+                    if (column == Integer.MIN_VALUE) {
                         continue;
                     }
-
-                    final int hashcode = childPair2ColumnOffsetHash.hashcode(childPair);
-                    if (hashcode < 0) {
-                        continue;
-                    }
-                    final int index = hashedCscParallelArrayIndices[hashcode];
 
                     final float childProbability = leftProbability + chart.insideProbabilities[j];
 
-                    for (int k = grammar.cscBinaryPopulatedColumnOffsets[index]; k < grammar.cscBinaryPopulatedColumnOffsets[index + 1]; k++) {
+                    for (int k = cscColumnOffsets[column]; k < cscColumnOffsets[column + 1]; k++) {
 
                         final float jointProbability = grammar.cscBinaryProbabilities[k] + childProbability;
                         final int parent = grammar.cscBinaryRowIndices[k];
 
                         if (jointProbability > targetCellProbabilities[parent]) {
-                            targetCellChildren[parent] = childPair;
+                            targetCellChildren[parent] = column;
                             targetCellProbabilities[parent] = jointProbability;
                             targetCellMidpoints[parent] = midpoint;
                         }

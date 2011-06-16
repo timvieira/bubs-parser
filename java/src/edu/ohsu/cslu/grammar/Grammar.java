@@ -116,8 +116,6 @@ public class Grammar implements Serializable {
 
     // == Grammar stats ==
     public int numPosSymbols;
-    public int numFactoredSymbols;
-    public int numNonFactoredSymbols;
     private boolean isLeftFactored;
     // public boolean isLatentVariableGrammar;
     // public boolean annotatePOS;
@@ -125,7 +123,7 @@ public class Grammar implements Serializable {
     // public int verticalMarkov;
 
     // == Aaron's Grammar variables ==
-    /** String representation of the start symbol (s-dagger) */
+    /** TODO Is this really needed? String representation of the start symbol (s-dagger) */
     public String startSymbolStr;
 
     /** The first NT valid as a left child. */
@@ -145,18 +143,6 @@ public class Grammar implements Serializable {
 
     /** The last POS. */
     public final int posEnd;
-
-    /** The last NT valid as a parent */
-    public final int parentEnd;
-
-    /** The number of binary productions modeled in this Grammar */
-    protected final int numBinaryProds;
-
-    /** The number of unary productions modeled in this Grammar */
-    protected final int numUnaryProds;
-
-    /** The number of lexical productions modeled in this Grammar */
-    protected final int numLexProds;
 
     // == Nate's Grammar variables ==
     // Nate's way of keeping meta data on each NonTerm; Aaron orders them and returns
@@ -296,7 +282,6 @@ public class Grammar implements Serializable {
             lexicalProductions.add(new Production(nonTermSet.getIndex(lexicalRule.parent), lexIndex,
                     lexicalRule.probability, true, this));
         }
-        numLexProds = lexicalProductions.size();
 
         // And unary and binary rules
         binaryProductions = new ArrayList<Production>();
@@ -311,9 +296,6 @@ public class Grammar implements Serializable {
                         false, nonTermSet, lexSet));
             }
         }
-
-        numBinaryProds = binaryProductions.size();
-        numUnaryProds = unaryProductions.size();
 
         unaryProductionsByChild = storeProductionByChild(unaryProductions, nonTermSet.size() - 1);
         lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
@@ -342,23 +324,18 @@ public class Grammar implements Serializable {
         this.rightChildrenEnd = startAndEndIndices[3];
         this.posStart = startAndEndIndices[4];
         this.posEnd = startAndEndIndices[5];
-        this.parentEnd = startAndEndIndices[6];
 
         this.numPosSymbols = posEnd - posStart + 1;
         this.maxPOSIndex = posEnd;
 
-        // reduce range of POS indicies so we can store the features more efficiently
+        // reduce range of POS indices so we can store the features more efficiently
         for (int i = 0; i < numNonTerms(); i++) {
-            // TODO: I don't think this works for non-sorted grammars like Nate's
-            // if (isPos(i)) {
             if (pos.contains(nonTermSet.getSymbol(i))) {
                 posSet.addSymbol(i);
             } else {
                 phraseSet.addSymbol(i);
             }
         }
-
-        // BaseLogger.singleton().fine("done.");
     }
 
     public Grammar(final String grammarFile) throws IOException {
@@ -379,10 +356,6 @@ public class Grammar implements Serializable {
         this.rightChildrenEnd = g.rightChildrenEnd;
         this.posStart = g.posStart;
         this.posEnd = g.posEnd;
-        this.parentEnd = g.parentEnd;
-        this.numBinaryProds = g.numBinaryProds;
-        this.numUnaryProds = g.numUnaryProds;
-        this.numLexProds = g.numLexProds;
 
         this.binaryProductions = g.binaryProductions;
         this.unaryProductions = g.unaryProductions;
@@ -424,10 +397,6 @@ public class Grammar implements Serializable {
         this.posSet = null;
         this.phraseSet = null;
 
-        this.numBinaryProds = binaryProductions.size();
-        this.numUnaryProds = unaryProductions.size();
-        this.numLexProds = lexicalProductions.size();
-
         this.binaryProductions = binaryProductions;
         this.unaryProductions = unaryProductions;
         this.lexicalProductions = lexicalProductions;
@@ -452,7 +421,6 @@ public class Grammar implements Serializable {
         this.rightChildrenEnd = startAndEndIndices[3];
         this.posStart = startAndEndIndices[4];
         this.posEnd = startAndEndIndices[5];
-        this.parentEnd = startAndEndIndices[6];
     }
 
     private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile, final List<StringProduction> pcfgRules,
@@ -626,15 +594,15 @@ public class Grammar implements Serializable {
     }
 
     public int numBinaryProds() {
-        return numBinaryProds;
+        return binaryProductions.size();
     }
 
     public int numUnaryProds() {
-        return numUnaryProds;
+        return unaryProductions.size();
     }
 
     public int numLexProds() {
-        return numLexProds;
+        return lexicalProductions.size();
     }
 
     /**
