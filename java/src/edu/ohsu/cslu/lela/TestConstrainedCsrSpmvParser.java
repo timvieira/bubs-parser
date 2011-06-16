@@ -118,7 +118,6 @@ public class TestConstrainedCsrSpmvParser {
         final BinaryTree<String> parseTree1 = parseWithGrammar1();
         final ConstrainedChart chart1 = parser1.chart;
 
-        // Verify expected probabilities in a few cells
         final SymbolSet<String> vocabulary = plGrammar1.vocabulary;
         final short top = (short) vocabulary.getIndex("top");
         final short a_0 = (short) vocabulary.getIndex("a_0");
@@ -126,7 +125,7 @@ public class TestConstrainedCsrSpmvParser {
         final short b_0 = (short) vocabulary.getIndex("b_0");
         final short b_1 = (short) vocabulary.getIndex("b_1");
 
-        // Verify inside probabilities
+        // Verify expected inside probabilities in a few cells
         assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(0, 1, a_0), .001f);
         assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(0, 1, a_1), .001f);
         assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(1, 2, a_0), .001f);
@@ -478,8 +477,7 @@ public class TestConstrainedCsrSpmvParser {
     public void testCountRuleOccurrences() {
 
         // Parse with an equal-split grammar, count (fractional) rule occurrences, and convert those counts
-        // into a
-        // grammar
+        // into a grammar
         parseWithGrammar1();
         ProductionListGrammar plg = new ProductionListGrammar(parser1.countRuleOccurrences(),
                 parser1.grammar.baseGrammar);

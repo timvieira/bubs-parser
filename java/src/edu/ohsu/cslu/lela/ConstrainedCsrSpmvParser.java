@@ -41,7 +41,7 @@ import edu.ohsu.cslu.util.Math;
  * 
  * --The Cartesian-product should only be taken over the known child cells.
  * 
- * Note that it is <em>not</em>b further limited to only the splits of the constraining child in each cell? e.g., on the
+ * Note that it is <em>not</em>b further limited to only the splits of the constraining child in each cell. e.g., on the
  * second iteration, when child A has been split into A_1 and A_2, and then to A_1a, A_1b, A_2a, and A_2b, and child B
  * similarly to B_1a, B_1b, B_2a, and B_2b, we allow A_1a and A_1b to combine with B_2a and B_2b.
  * 
@@ -443,9 +443,6 @@ public class ConstrainedCsrSpmvParser extends
 
                 // Parent outside x child inside
                 cartesianProductProbabilities[childPair] = parentOutsideProbability + insideProbabilities[j];
-                if (cartesianProductProbabilities[childPair] == Float.POSITIVE_INFINITY) {
-                    System.out.println("Infinity");
-                }
             }
         }
 
@@ -544,8 +541,12 @@ public class ConstrainedCsrSpmvParser extends
                     // X-product contains parent outside x sibling inside
                     final float jointProbability = grammar.leftChildCsrBinaryProbabilities[j]
                             + cartesianProductVector.probabilities[grammarChildren];
-                    chart.outsideProbabilities[childIndex] = Math.logSum(jointProbability,
-                            chart.outsideProbabilities[childIndex]);
+                    final float outsideSum = Math.logSum(jointProbability, chart.outsideProbabilities[childIndex]);
+                    // TODO
+                    if (outsideSum > 0) {
+                        System.out.println("Error");
+                    }
+                    chart.outsideProbabilities[childIndex] = outsideSum;
                 }
             }
 
@@ -560,7 +561,7 @@ public class ConstrainedCsrSpmvParser extends
             // foreach child in target (right) cell
             for (short child = childStartSplit; child < childStartSplit + splitVocabulary.splitCount[childStartSplit]; child++) {
 
-                final int childEntryIndex = offset + splitVocabulary.subcategoryIndices[child];
+                final int childIndex = offset + splitVocabulary.subcategoryIndices[child];
 
                 // Iterate over grammar rules and update outside probability of child
                 for (int j = grammar.rightChildCsrBaseStartIndices[child][constrainingParent]; j < grammar.rightChildCsrBaseStartIndices[child][constrainingParent + 1]; j++) {
@@ -575,8 +576,12 @@ public class ConstrainedCsrSpmvParser extends
                     // X-product contains parent outside x sibling inside
                     final float jointProbability = grammar.rightChildCsrBinaryProbabilities[j]
                             + cartesianProductVector.probabilities[grammarChildren];
-                    chart.outsideProbabilities[childEntryIndex] = Math.logSum(jointProbability,
-                            chart.outsideProbabilities[childEntryIndex]);
+                    final float outsideSum = Math.logSum(jointProbability, chart.outsideProbabilities[childIndex]);
+                    // TODO
+                    if (outsideSum > 0) {
+                        System.out.println("Error");
+                    }
+                    chart.outsideProbabilities[childIndex] = outsideSum;
                 }
             }
         }
@@ -629,11 +634,16 @@ public class ConstrainedCsrSpmvParser extends
                     continue;
                 }
 
-                final int entryIndex = offset + splitVocabulary.subcategoryIndices[splitChild];
+                final int childIndex = offset + splitVocabulary.subcategoryIndices[splitChild];
 
                 // Outside probability = sum(production probability x parent outside)
-                chart.outsideProbabilities[entryIndex] = Math.logSum(grammar.csrUnaryProbabilities[j]
-                        + parentOutsideProbability, chart.outsideProbabilities[entryIndex]);
+                final float outsideSum = Math.logSum(grammar.csrUnaryProbabilities[j] + parentOutsideProbability,
+                        chart.outsideProbabilities[childIndex]);
+                // TODO
+                if (outsideSum > 0) {
+                    System.out.println("Error");
+                }
+                chart.outsideProbabilities[childIndex] = outsideSum;
             }
         }
 
@@ -736,9 +746,9 @@ public class ConstrainedCsrSpmvParser extends
         for (int childUnaryDepth = 1; childUnaryDepth < constrainingCellUnaryDepth; childUnaryDepth++) {
 
             final int parentStartIndex = offset + (childUnaryDepth - 1) * splitVocabulary.maxSplits;
-            final short parentStartSplit = chart.nonTerminalIndices[parentStartIndex];
-            final int parentEndIndex = parentStartIndex + splitVocabulary.splitCount[parentStartSplit];
-            final short parentEndSplit = (short) (parentStartSplit + splitVocabulary.splitCount[parentStartSplit]);
+            final int parentEndIndex = parentStartIndex
+                    + splitVocabulary.splitCount[chart.nonTerminalIndices[parentStartIndex]];
+            // final short parentEndSplit = (short) (parentStartSplit + splitVocabulary.splitCount[parentStartSplit]);
 
             final short childStartSplit = chart.nonTerminalIndices[offset + childUnaryDepth * splitVocabulary.maxSplits];
             final short childEndSplit = (short) (childStartSplit + splitVocabulary.splitCount[childStartSplit]);
@@ -749,7 +759,7 @@ public class ConstrainedCsrSpmvParser extends
                 final float parentOutside = chart.outsideProbabilities[parentIndex];
 
                 // Iterate over grammar rows headed by the parent and compute unary outside probability
-                for (int j = grammar.csrUnaryRowStartIndices[parentStartSplit]; j < grammar.csrUnaryRowStartIndices[parentEndSplit]; j++) {
+                for (int j = grammar.csrUnaryRowStartIndices[parent]; j < grammar.csrUnaryRowStartIndices[parent + 1]; j++) {
 
                     // Skip grammar rules which don't match the populated children
                     final short child = grammar.csrUnaryColumnIndices[j];
@@ -783,6 +793,7 @@ public class ConstrainedCsrSpmvParser extends
 
         final int offset = cellOffset + (chart.unaryChainDepth(cellOffset) - 1) * splitVocabulary.maxSplits;
         final int lexicalChild = grammar.packingFunction.unpackLeftChild(chart.packedChildren[offset]);
+        // final String sLexicalChild = grammar.lexSet.getSymbol(lexicalChild);
 
         // TODO Map lexical productions by both child and unsplit (M-0) parent, so we only have to iterate
         // through the productions of interest.
@@ -795,8 +806,6 @@ public class ConstrainedCsrSpmvParser extends
                         + splitVocabulary.subcategoryIndices[lexProd.parent]]
                         + lexProd.prob;
 
-                // System.out.format("%s -> %s %s\n", splitVocabulary.getSymbol(lexProd.parent),
-                // grammar.lexSet.getSymbol(lexicalChild), Assert.fraction(jointProbability));
                 countGrammar.incrementLexicalLogCount((short) lexProd.parent, lexicalChild, jointProbability);
             }
         }
