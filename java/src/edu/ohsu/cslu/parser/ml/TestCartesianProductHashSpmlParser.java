@@ -18,16 +18,61 @@
  */
 package edu.ohsu.cslu.parser.ml;
 
+import java.io.Reader;
+
 import org.cjunit.PerformanceTest;
+import org.junit.Before;
 import org.junit.Test;
 
-public class TestCartesianProductHashSpmlParser extends
-        SparseMatrixLoopParserTestCase<CartesianProductHashSpmlParser> {
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
+
+public class TestCartesianProductHashSpmlParser extends ExhaustiveChartParserTestCase<CartesianProductHashSpmlParser> {
+
+    private final static Class<? extends PackingFunction> PACKING_FUNCTION_CLASS = SparseMatrixGrammar.Int2IntHashPackingFunction.class;
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "70211", "d820", "100000" })
+    @PerformanceTest({ "mbp", "54472", "d820", "100000" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
+    }
+
+    @Override
+    public Grammar createGrammar(final Reader grammarReader) throws Exception {
+        return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
+                new Object[] { grammarReader, PACKING_FUNCTION_CLASS });
+    }
+
+    /**
+     * Ensure the grammar is constructed with the Constructs the grammar (if necessary) and a new parser instance. Run
+     * prior to each test method.
+     * 
+     * @throws Exception if unable to construct grammar or parser.
+     */
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        if (f2_21_grammar != null
+                && (f2_21_grammar.getClass() != grammarClass() || ((SparseMatrixGrammar) f2_21_grammar)
+                        .cartesianProductFunction().getClass() != PACKING_FUNCTION_CLASS)) {
+            f2_21_grammar = null;
+        }
+
+        if (simpleGrammar1 != null
+                && (simpleGrammar1.getClass() != grammarClass() || ((SparseMatrixGrammar) simpleGrammar1)
+                        .cartesianProductFunction().getClass() != PACKING_FUNCTION_CLASS)) {
+            simpleGrammar1 = null;
+        }
+
+        if (simpleGrammar2 != null
+                && (simpleGrammar2.getClass() != grammarClass() || ((SparseMatrixGrammar) simpleGrammar2)
+                        .cartesianProductFunction().getClass() != PACKING_FUNCTION_CLASS)) {
+            simpleGrammar2 = null;
+        }
+
+        super.setUp();
     }
 }

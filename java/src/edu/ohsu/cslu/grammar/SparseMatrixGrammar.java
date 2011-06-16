@@ -18,6 +18,8 @@
  */
 package edu.ohsu.cslu.grammar;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2IntRBTreeMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
@@ -371,9 +373,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
 
         /**
-         * Returns a single int representing a child pair.
-         * 
-         * TODO Refactor to take short parameters instead of ints
+         * Returns a single int representing a child pair, the <i>column<i> of a V x V^2 grammar matrix.
          * 
          * @param leftChild
          * @param rightChild
@@ -443,7 +443,14 @@ public abstract class SparseMatrixGrammar extends Grammar {
             sb.append("}\n");
             return sb.toString();
         }
+    }
 
+    public interface CscHashPackingFunction {
+        /**
+         * @return Offsets into the CSC binary rule matrix of each matrix column. Length is the number of columns + 1
+         *         (to simplify loops). Unpopulated columns are represented by {@link Integer#MIN_VALUE}.
+         */
+        public int[] cscColumnOffsets();
     }
 
     public final class LeftShiftFunction extends PackingFunction {
@@ -564,7 +571,86 @@ public abstract class SparseMatrixGrammar extends Grammar {
         // }
     }
 
-    public final class PerfectIntPairHashPackingFunction extends PackingFunction {
+    public final class Int2IntHashPackingFunction extends PackingFunction implements CscHashPackingFunction {
+
+        private static final long serialVersionUID = 1L;
+
+        /** Maps from non-terminal pair (e.g. left, right child) to column in the sparse grammar matrix */
+        private final Int2IntOpenHashMap map = new Int2IntOpenHashMap();
+        private final short[] leftChildren;
+        private final short[] rightChildren;
+
+        private final int[] cscColumnOffsets;
+
+        public Int2IntHashPackingFunction() {
+            super(rightChildrenEnd);
+            map.defaultReturnValue(Integer.MIN_VALUE);
+
+            // Compute the starting offset in binary grammar arrays of each column
+            final Int2IntRBTreeMap childPairCounts = new Int2IntRBTreeMap();
+            childPairCounts.defaultReturnValue(0);
+            for (final Production p : binaryProductions) {
+                final int column = p.leftChild << shift | (p.rightChild & lowOrderMask);
+                childPairCounts.put(column, childPairCounts.get(column) + 1);
+            }
+            leftChildren = new short[childPairCounts.size()];
+            rightChildren = new short[childPairCounts.size()];
+            cscColumnOffsets = new int[packedArraySize() + 1];
+
+            int column = 0;
+            for (final int childPair : childPairCounts.keySet()) {
+                map.put(childPair, column);
+                leftChildren[column] = (short) (childPair >> shift);
+                rightChildren[column] = (short) (childPair & lowOrderMask);
+                column++;
+            }
+
+            for (column = 0; column < packedArraySize(); column++) {
+                cscColumnOffsets[column + 1] = cscColumnOffsets[column] + childPairCounts.get(column);
+            }
+        }
+
+        @Override
+        public final int pack(final short leftChild, final short rightChild) {
+            final int childPair = leftChild << shift | (rightChild & lowOrderMask);
+            return map.get(childPair);
+        }
+
+        @Override
+        public int[] cscColumnOffsets() {
+            return cscColumnOffsets;
+        }
+
+        @Override
+        public final int unpackLeftChild(final int childPair) {
+            if (childPair < 0) {
+                // Unary or lexical production
+                if (childPair <= maxPackedLexicalProduction) {
+                    // Lexical production
+                    return -childPair + maxPackedLexicalProduction;
+                }
+                // Unary production
+                return -childPair - 1;
+            }
+            return leftChildren[childPair];
+        }
+
+        @Override
+        public final short unpackRightChild(final int childPair) {
+            if (childPair < 0) {
+                // Unary or lexical production
+                if (childPair <= maxPackedLexicalProduction) {
+                    // Lexical production
+                    return Production.LEXICAL_PRODUCTION;
+                }
+                // Unary production
+                return Production.UNARY_PRODUCTION;
+            }
+            return rightChildren[childPair];
+        }
+    }
+
+    public final class PerfectIntPairHashPackingFunction extends PackingFunction implements CscHashPackingFunction {
 
         private static final long serialVersionUID = 1L;
 
@@ -586,6 +672,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
         private final int[] displacementTableOffsets;
 
         private final int size;
+
+        private final int[] cscColumnOffsets;
 
         public PerfectIntPairHashPackingFunction() {
             this(binaryProductions, rightChildrenEnd);
@@ -666,6 +754,21 @@ public abstract class SparseMatrixGrammar extends Grammar {
             System.arraycopy(tmpDisplacementTable, 0, this.displacementTable, 0, this.displacementTable.length);
 
             this.packedArraySize = hashtableSize();
+
+            // Compute the starting offset in binary grammar arrays of each column
+            final Int2IntRBTreeMap childPairCounts = new Int2IntRBTreeMap();
+            childPairCounts.defaultReturnValue(0);
+            for (final Production p : binaryProductions) {
+                final int column = pack((short) p.leftChild, (short) p.rightChild);
+                if (column >= 0) {
+                    childPairCounts.put(column, childPairCounts.get(column) + 1);
+                }
+            }
+            cscColumnOffsets = new int[packedArraySize + 1];
+
+            for (int column = 0; column < packedArraySize; column++) {
+                cscColumnOffsets[column + 1] = cscColumnOffsets[column] + childPairCounts.get(column);
+            }
         }
 
         private int findDisplacement(final short[] target, final short[] merge) {
@@ -803,6 +906,11 @@ public abstract class SparseMatrixGrammar extends Grammar {
             final int y = rightChild & mask;
             final int hashcode = displacementTable[offset + x] + y;
             return hashtable[hashcode] == rightChild ? hashcode : Integer.MIN_VALUE;
+        }
+
+        @Override
+        public int[] cscColumnOffsets() {
+            return cscColumnOffsets;
         }
 
         @Override
