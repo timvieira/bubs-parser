@@ -45,9 +45,9 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
     private final int threads;
 
     /**
-     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into
-     * segments of roughly equal size for distribution between threads. Length is {@link #threads} + 1 (to
-     * avoid falling off the end)
+     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into segments of
+     * roughly equal size for distribution between threads. Length is {@link #threads} + 1 (to avoid falling off the
+     * end)
      */
     private final int[] binaryRowSegments;
 
@@ -61,7 +61,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
 
         // Split the binary grammar rules into segments of roughly equal size
         final int requestedThreads = GlobalConfigProperties.singleton().getIntProperty(
-            ParserDriver.OPT_GRAMMAR_THREAD_COUNT);
+                ParserDriver.OPT_GRAMMAR_THREAD_COUNT);
         final int[] segments = new int[requestedThreads + 1];
         final int segmentSize = grammar.csrBinaryColumnIndices.length / requestedThreads + 1;
         segments[0] = 0;
@@ -75,7 +75,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
 
         this.threads = i;
         GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
-            Integer.toString(threads));
+                Integer.toString(threads));
         this.binaryRowSegments = new int[i + 1];
         System.arraycopy(segments, 0, binaryRowSegments, 0, binaryRowSegments.length);
 
@@ -102,8 +102,8 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
     }
 
     /**
-     * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products
-     * together, saving the maximum probability child combinations.
+     * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products together,
+     * saving the maximum probability child combinations.
      * 
      * @param start
      * @param end
@@ -113,7 +113,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
         final PerfectIntPairHashPackingFunction pf = (PerfectIntPairHashPackingFunction) grammar
-            .cartesianProductFunction();
+                .cartesianProductFunction();
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 
@@ -136,14 +136,14 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
 
                     @Override
                     public edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductVector call() {
-                        return internalCartesianProduct(start, end, midpointStart, midpointEnd, pf,
-                            nonTerminalIndices, insideProbabilities, probabilities, midpoints);
+                        return internalCartesianProduct(start, end, midpointStart, midpointEnd, pf, nonTerminalIndices,
+                                insideProbabilities, probabilities, midpoints);
                     }
                 });
             }
         } else {
             return internalCartesianProduct(start, end, start + 1, end - 1, pf, nonTerminalIndices,
-                insideProbabilities, cpvProbabilities[0], cpvMidpoints[0]);
+                    insideProbabilities, cpvProbabilities[0], cpvMidpoints[0]);
         }
 
         // Wait for the first task to complete (the first one uses the 'main' arrays, so we can't begin the
@@ -254,6 +254,9 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
 
     @Override
     public void shutdown() {
-        executor.shutdown();
+        try {
+            executor.shutdown();
+        } catch (final Exception ignore) {
+        }
     }
 }

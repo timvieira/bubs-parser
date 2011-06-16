@@ -373,20 +373,14 @@ public class PackedArrayChart extends ParallelArrayChart {
                 // operation.
 
                 // The cell population is likely to be biased toward a specific range of non-terminals, but we
-                // still
-                // have to use fixed segment boundaries (instead of splitting the actual population range
-                // equally) so
-                // that individual x-product threads can operate on different regions of the x-product vector
-                // without
-                // interfering with one another.
+                // still have to use fixed segment boundaries (instead of splitting the actual population range
+                // equally) so that individual x-product threads can operate on different regions of the x-product
+                // vector without interfering with one another.
 
                 // We use equal segment ranges, with the exception of POS. POS will occur only in one midpoint
-                // per cell.
-                // Since many non-terms are POS (particularly in latent-variable grammars) and the threads
-                // allocated to
-                // POS would be mostly idle, we include all POS in the segment containing the first segment
-                // containing
-                // POS.
+                // per cell. Since many non-terms are POS (particularly in latent-variable grammars) and the threads
+                // allocated to POS would be mostly idle, we include all POS in the segment containing the first segment
+                // containing POS.
                 final int cellSegmentStartIndex = cellIndex * (leftChildSegments + 1);
                 leftChildSegmentStartIndices[cellSegmentStartIndex] = minLeftChildIndex[cellIndex];
 

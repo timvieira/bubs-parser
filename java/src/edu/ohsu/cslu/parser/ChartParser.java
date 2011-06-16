@@ -270,7 +270,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (index == -1) {
             throw new UnsupportedOperationException("ERROR: not able to get POS Index during feature extraction");
         }
-        return grammar.posSet.getIndex(index); // map from sparce POS index to compact ordering
+        return grammar.posSet.getIndex(index); // map from sparse POS index to compact ordering
     }
 
     private int getWordIndex(final int start) {

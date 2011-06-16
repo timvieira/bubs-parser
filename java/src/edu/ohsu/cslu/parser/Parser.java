@@ -89,6 +89,7 @@ public abstract class Parser<G extends Grammar> {
     public ParseContext parseSentence(final String input) {
         final ParseContext result = new ParseContext(input, grammar);
         currentInput = result; // get ride of currentInput (and chart?). Just pass these around
+        // TODO This isn't thread-safe
         result.sentenceNumber = sentenceNumber++;
         result.tokens = grammar.tokenizer.tokenizeToIndex(result.sentence);
 
