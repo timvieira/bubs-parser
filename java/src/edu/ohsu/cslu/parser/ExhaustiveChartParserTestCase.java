@@ -47,10 +47,9 @@ import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple
- * trivial sentences using very simple grammars and the first 10 sentences of WSJ section 24 using a slightly
- * more reasonable PCFG. Profiles sentences 11-20 to aid in performance tuning and prevent performance
- * regressions.
+ * Base test case for all exhaustive parsers (or agenda-based parsers run to exhaustion). Tests a couple trivial
+ * sentences using very simple grammars and the first 10 sentences of WSJ section 24 using a slightly more reasonable
+ * PCFG. Profiles sentences 11-20 to aid in performance tuning and prevent performance regressions.
  * 
  * @author Aaron Dunlop
  * @since Dec 23, 2009
@@ -80,8 +79,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * Creates the appropriate parser options for each test class.
      * 
      * @return options
-     * @throws Exception
-     *             if something breaks while constructing the options instance (e.g. failing to find a model
+     * @throws Exception if something breaks while constructing the options instance (e.g. failing to find a model
      *             file).
      */
     protected ParserDriver parserOptions() throws Exception {
@@ -99,8 +97,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * Returns parser configuration options.
      * 
      * @return options
-     * @throws Exception
-     *             if something breaks while constructing the options instance (e.g. failing to find a model
+     * @throws Exception if something breaks while constructing the options instance (e.g. failing to find a model
      *             file).
      */
     protected ConfigProperties configProperties() throws Exception {
@@ -108,13 +105,10 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     }
 
     /**
-     * Creates the appropriate parser for each test class. Ugly reflection code, but at least it's all
-     * localized here.
+     * Creates the appropriate parser for each test class. Ugly reflection code, but at least it's all localized here.
      * 
-     * @param grammar
-     *            The grammar to use when parsing
-     * @param cellSelectorFactory
-     *            Factory to produce {@link CellSelector} controlling chart traversal
+     * @param grammar The grammar to use when parsing
+     * @param cellSelectorFactory Factory to produce {@link CellSelector} controlling chart traversal
      * @return Parser instance
      */
     @SuppressWarnings("unchecked")
@@ -125,17 +119,17 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         }
         try {
             final Class<P> parserClass = ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass())
-                .getActualTypeArguments()[0]);
+                    .getActualTypeArguments()[0]);
             try {
                 // First, try for a constructor that takes both ParserDriver (options) and ConfigProperties
                 return parserClass.getConstructor(
-                    new Class[] { ParserDriver.class, ConfigProperties.class, grammarClass() }).newInstance(
-                    new Object[] { options, configProperties, grammar });
+                        new Class[] { ParserDriver.class, ConfigProperties.class, grammarClass() }).newInstance(
+                        new Object[] { options, configProperties, grammar });
 
             } catch (final NoSuchMethodException e) {
                 // If not found, use a constructor that takes only a ParserDriver instance.
-                return parserClass.getConstructor(new Class[] { ParserDriver.class, grammarClass() })
-                    .newInstance(new Object[] { options, grammar });
+                return parserClass.getConstructor(new Class[] { ParserDriver.class, grammarClass() }).newInstance(
+                        new Object[] { options, grammar });
             }
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -143,18 +137,17 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     }
 
     /**
-     * Find the appropriate grammar class for the parser under test. Even more ugly reflection code. Dragons
-     * be here...
+     * Find the appropriate grammar class for the parser under test. Even more ugly reflection code. Dragons be here...
      * 
      * @return the grammar class appropriate for the parser under test
      */
     @SuppressWarnings("unchecked")
     protected final Class<? extends Grammar> grammarClass() {
         Class<P> parserClass = ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass())
-            .getActualTypeArguments()[0]);
+                .getActualTypeArguments()[0]);
         try {
             final Class<? extends Grammar> grammarClass = ((Class<? extends Grammar>) ((ParameterizedType) parserClass
-                .getGenericSuperclass()).getActualTypeArguments()[0]);
+                    .getGenericSuperclass()).getActualTypeArguments()[0]);
 
             // If the grammar class is not annotated on this parser class, look up one level
             if (!Grammar.class.isAssignableFrom(grammarClass)) {
@@ -168,36 +161,33 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
             // Look up one level in the parser hierarchy
             parserClass = (Class<P>) parserClass.getSuperclass();
             final Class<? extends Grammar> grammarClass = ((Class<? extends Grammar>) ((ParameterizedType) parserClass
-                .getGenericSuperclass()).getActualTypeArguments()[0]);
+                    .getGenericSuperclass()).getActualTypeArguments()[0]);
             return grammarClass;
         }
 
     }
 
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class }).newInstance(
-            new Object[] { grammarReader });
+        return grammarClass().getConstructor(new Class[] { Reader.class }).newInstance(new Object[] { grammarReader });
     }
 
     /**
-     * Reads in the first 20 sentences of WSJ section 24. Run once for the class, prior to execution of the
-     * first test method.
+     * Reads in the first 20 sentences of WSJ section 24. Run once for the class, prior to execution of the first test
+     * method.
      * 
-     * @throws Exception
-     *             if unable to read
+     * @throws Exception if unable to read
      */
     @BeforeClass
     public static void suiteSetUp() throws Exception {
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
         final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-            JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
         final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-            JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
+                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20")));
 
-        for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader
-            .readLine()) {
+        for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
             sentences.add(new String[] { sentence, parsedSentence });
         }
@@ -206,8 +196,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     /**
      * Constructs the grammar (if necessary) and a new parser instance. Run prior to each test method.
      * 
-     * @throws Exception
-     *             if unable to construct grammar or parser.
+     * @throws Exception if unable to construct grammar or parser.
      */
     @Before
     public void setUp() throws Exception {
@@ -223,8 +212,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
             simpleGrammar2 = createGrammar(simpleGrammar2());
         }
 
-        parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
-            configProperties());
+        parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
     }
 
     public static Reader simpleGrammar2() throws Exception {
@@ -262,37 +250,31 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     /**
      * Tests parsing with a _very_ simple grammar.
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     public void testSimpleGrammar1() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        parser = createParser(simpleGrammar1, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
-            configProperties());
+        parser = createParser(simpleGrammar1, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
-        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))",
-            bestParseTree);
+        assertEquals("(TOP (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree);
     }
 
     /**
      * Tests parsing with a slightly larger grammar.
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     public void testSimpleGrammar2() throws Exception {
         final String sentence = "The fish market stands last";
 
-        parser = createParser(simpleGrammar2, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
-            configProperties());
+        parser = createParser(simpleGrammar2, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
-        assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))",
-            bestParseTree);
+        assertEquals("(TOP (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);
     }
 
     @Test
