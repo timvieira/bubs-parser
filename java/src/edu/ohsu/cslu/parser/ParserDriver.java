@@ -500,6 +500,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
             @Override
             public ParseContext call() throws Exception {
+                if (sentence.matches("^\\s*$")) {
+                    return null;
+                }
                 return getLocal().parseSentence(sentence);
             }
         });
@@ -507,9 +510,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
     @Override
     protected void output(final ParseContext parseResult) {
-
-        System.out.println(parseResult.parseBracketString);
-        BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);
+        if (parseResult == null) {
+            System.out.println("()");
+            BaseLogger.singleton().info("WARNING: blank line in input.");
+        } else {
+            System.out.println(parseResult.parseBracketString);
+            BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);
+        }
     }
 
     @Override
