@@ -73,9 +73,9 @@ The default options are:
   grammarThreads : 1
     (see below for details on threading)
 
-  maxBeamWidth=30
-  lexicalRowBeamWidth=60
-  lexicalRowUnaries=20
+  maxBeamWidth        : 30
+  lexicalRowBeamWidth : 60
+  lexicalRowUnaries   : 20
 
     These beam limits assume a boundary FOM and Beam Confidence Model
     (see below). maxBeamWidth applies to cells of span > 1. For
@@ -90,9 +90,9 @@ The default options are:
 The BUBS parser supports threading at several levels. Sentence-level
 threading assigns each sentence of the input to a separate thread as
 one becomes available). The number of threads is controlled by the 
-'-xt <count>' option. In general, you want to use the same number of
-threads as CPU cores (or slightly lower, to reserve some CPU capacity
-for OS or other simultaneous tasks).
+'-xt <count>' option. In general, if threading only at the sentence level, 
+you want to use the same number of threads as CPU cores (or slightly lower, 
+to reserve some CPU capacity for OS or other simultaneous tasks).
 
 Cell-level and grammar-level threading are also supported. Cell-level
 threading assigns the processing of individual chart cells to threads
@@ -107,8 +107,10 @@ Cell-level and grammar-level threading are specified with the
   parse -O cellThreads=4 -O grammarThreads=2
 
 The three levels of threading can interact safely (i.e., you can use
--xt, cellThreads, and grammarThreads simultaneously), but we make no
-claims about the efficiency effects.
+-xt, cellThreads, and grammarThreads simultaneously), and we have shown 
+that cell-level and grammar-level threading can provide additive benefits, 
+but we make no claims about the efficiency impact of combining sentence-level 
+threading with other parallelization methods.
 
 
 === Research Parser Implementations ===
@@ -160,5 +162,5 @@ If you use the BUBS parser in research, please cite:
 
 Adaptive Beam-Width Prediction for Efficient CYK Parsing
 Nathan Bodenstab, Aaron Dunlop, Keith Hall, and Brian Roark - 
-ACL/HLT 2011
+ACL/HLT 2011, pages 440-449.
 
