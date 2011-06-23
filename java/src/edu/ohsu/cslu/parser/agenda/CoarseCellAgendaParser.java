@@ -30,6 +30,9 @@ import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
 
     float[][] maxEdgeFOM;

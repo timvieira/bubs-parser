@@ -23,6 +23,9 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class BSCPWeakThresh extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
     float localWorstFOM;

@@ -21,6 +21,13 @@ package edu.ohsu.cslu.parser.ml;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 
+/**
+ * Exhaustive matrix-loop parser which performs grammar intersection by iterating over grammar rules matching the
+ * observed child pairs in the cartesian product of non-terminals observed in child cells. Queries grammar using a
+ * binary search.
+ * 
+ * @author Aaron Dunlop
+ */
 public class CartesianProductBinarySearchLeftChildSpmlParser extends CartesianProductBinarySearchSpmlParser {
 
     public CartesianProductBinarySearchLeftChildSpmlParser(final ParserDriver opts,

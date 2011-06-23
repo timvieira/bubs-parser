@@ -26,12 +26,11 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * Parser implementation which loops over all combinations of left and right child cell populations (cartesian product
- * of observed left and right non-terminals) and probes into the grammar for each combination using a lookup into a
+ * Exhaustive matrix-loop parser which performs grammar intersection by iterating over grammar rules matching the
+ * observed child pairs in the cartesian product of non-terminals observed in child cells. Queries grammar using a
  * perfect hash.
  * 
  * @author Aaron Dunlop
- * @since Jun 14, 2010
  */
 public class CartesianProductHashSpmlParser extends
         SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, PackedArrayChart> {

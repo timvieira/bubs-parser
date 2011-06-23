@@ -22,6 +22,11 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 
+/**
+ * Base class for all matrix-loop parsers which use a dense vector chart structure ({@link DenseVectorChart}).
+ * 
+ * @author Aaron Dunlop
+ */
 public abstract class DenseVectorMlParser<G extends SparseMatrixGrammar> extends
         SparseMatrixLoopParser<G, DenseVectorChart> {
 

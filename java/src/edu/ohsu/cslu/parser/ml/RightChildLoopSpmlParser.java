@@ -24,14 +24,12 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
- * Right-child loop exhaustive parser using a sparse-matrix grammar representation (
- * {@link RightCscSparseMatrixGrammar} ).
+ * Exhaustive matrix-loop parser which performs grammar intersection by iterating over grammar rules matching the
+ * observed non-terminals in the right child cell.
  * 
  * @author Aaron Dunlop
- * @since Jun 13, 2010
  */
-public class RightChildLoopSpmlParser extends
-        SparseMatrixLoopParser<RightCscSparseMatrixGrammar, DenseVectorChart> {
+public class RightChildLoopSpmlParser extends SparseMatrixLoopParser<RightCscSparseMatrixGrammar, DenseVectorChart> {
 
     public RightChildLoopSpmlParser(final ParserDriver opts, final RightCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -88,8 +86,7 @@ public class RightChildLoopSpmlParser extends
                     final float childProbability = leftInsideProbability + rightInsideProbability;
 
                     for (int entryIndex = grammar.cscBinaryPopulatedColumnOffsets[j]; entryIndex < grammar.cscBinaryPopulatedColumnOffsets[j + 1]; entryIndex++) {
-                        final float jointProbability = childProbability
-                                + grammar.cscBinaryProbabilities[entryIndex];
+                        final float jointProbability = childProbability + grammar.cscBinaryProbabilities[entryIndex];
                         final int parent = grammar.cscBinaryRowIndices[entryIndex];
 
                         final int targetCellParentIndex = targetCellOffset + parent;

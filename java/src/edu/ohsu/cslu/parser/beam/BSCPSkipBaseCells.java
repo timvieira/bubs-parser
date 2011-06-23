@@ -28,6 +28,9 @@ import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
     public BSCPSkipBaseCells(final ParserDriver opts, final LeftHashGrammar grammar) {
@@ -141,7 +144,7 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
             }
         }
 
-        return super.getStats() + " agendaPush=" + cellPushed + " #cells=" + cells + " #visited="
-                + cellsVisited + " #skipped=" + cellsSkipped + " #totalVisits=" + cellVisits;
+        return super.getStats() + " agendaPush=" + cellPushed + " #cells=" + cells + " #visited=" + cellsVisited
+                + " #skipped=" + cellsSkipped + " #totalVisits=" + cellVisits;
     }
 }

@@ -47,7 +47,7 @@ import edu.ohsu.cslu.util.StringPool;
 
 /**
  * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or may be
- * inferred from a corpus of data.
+ * inferred from a corpus of data. Various PCFG representations are implemented in subclasses.
  * 
  * A PCFG consists of
  * <ul>
@@ -60,8 +60,9 @@ import edu.ohsu.cslu.util.StringPool;
  * Such grammars are useful in modeling and analyzing the structure of natural language or the (secondary) structure of
  * many biological sequences.
  * 
- * Although branching of arbitrary size is possible in a grammar under this definition, this class models grammars which
- * have been factored into binary-branching form, enabling much more efficient computational approaches to be used.
+ * Although branching of arbitrary size is possible in a grammar under this definition, this class hierarchy models
+ * grammars which have been factored into binary-branching form, enabling much more efficient computational approaches
+ * to be used.
  * 
  * TODO Fix this comment
  * 

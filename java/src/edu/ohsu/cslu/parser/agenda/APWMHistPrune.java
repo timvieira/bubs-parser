@@ -3,6 +3,9 @@ package edu.ohsu.cslu.parser.agenda;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class APWMHistPrune extends APWithMemory {
 
     // Agenda parsing can be slow because the global agenda contains
