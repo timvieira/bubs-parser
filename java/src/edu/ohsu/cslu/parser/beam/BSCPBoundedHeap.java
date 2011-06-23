@@ -26,8 +26,9 @@ import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 /**
+ * This is currently slower than BSCPPruneViterbi.
  * 
- * @author Nate Bodenstab This is currently slower than BSCPPruneViterbi.
+ * @author Nate Bodenstab
  */
 public class BSCPBoundedHeap extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 

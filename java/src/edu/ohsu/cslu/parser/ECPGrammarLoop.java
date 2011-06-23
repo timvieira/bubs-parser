@@ -23,6 +23,11 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * Exhaustive chart parser which performs grammar intersection by iterating over all grammar rules at each midpoint.
+ * 
+ * @author Nathan Bodenstab
+ */
 public class ECPGrammarLoop extends ChartParser<Grammar, CellChart> {
 
     public ECPGrammarLoop(final ParserDriver opts, final Grammar grammar) {

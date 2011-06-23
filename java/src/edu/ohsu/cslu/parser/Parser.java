@@ -28,20 +28,46 @@ import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
+import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
 import edu.ohsu.cslu.tools.TreeTools;
 
+/**
+ * Implements common data structures and operations shared by all parser implementations. Child classes implement
+ * including various context-free parsing methods, including exhaustive and pruned CYK algorithms and several forms of
+ * agenda parsing.
+ * 
+ * Note that Parser instances should be reused for multiple sentences, but are not expected to be thread-safe or
+ * reentrant, so a separate Parser instance should be created for each thread if parsing multiple sentences in parallel.
+ * 
+ * Some Parser implementations are threaded internally, using multiple threads to speed parsing of a single sentence
+ * (e.g. {@link CscSpmvParser}, {@link GrammarParallelCscSpmvParser}, {@link GrammarParallelCsrSpmvParser}).
+ * 
+ * Important methods and implementation notes:
+ * <ul>
+ * <li>The primary entry point is {@link #parseSentence(String)}, which expects a single sentence, with words delimited
+ * by spaces.
+ * <li>If a subclass allocates persistent resources which will not be cleaned up by normal garbage collection (e.g. a
+ * thread pool), it should override {@link #shutdown()} to release those resources.
+ * </ul>
+ */
 public abstract class Parser<G extends Grammar> {
 
     public final G grammar;
+
+    /** Parser configuration */
     public ParserDriver opts;
+
     // TODO Make this reference final (once we work around the hack in CellChart)
     public EdgeSelector edgeSelector;
     public final CellSelector cellSelector;
+
     public ParseContext currentInput; // temporary so I don't break too much stuff at once
 
     // TODO Move global state back out of Parser
     static volatile protected int sentenceNumber = 0;
+
+    /** Summary statistics over all sentences parsed by this Parser instance */
     protected float totalParseTimeSec = 0;
     protected float totalInsideScore = 0;
     protected long totalMaxMemoryMB = 0;
@@ -137,7 +163,8 @@ public abstract class Parser<G extends Grammar> {
     }
 
     /**
-     * Closes any resources maintained by the parser (e.g. thread-pools as in {@link GrammarParallelCsrSpmvParser}.
+     * Closes any resources maintained by the parser (e.g. thread-pools, socket connections, etc.). Subclasses which
+     * allocate persistent resources should override {@link #shutdown()} to release those resources.
      */
     public void shutdown() {
     }

@@ -33,6 +33,12 @@ import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * Beam search chart parser which performs grammar intersection by iterating over grammar rules matching the observed
+ * non-terminals in the left child child pairs in the cartesian product of non-terminals observed in child cells.
+ * 
+ * @author Nathan Bodenstab
+ */
 public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChart> extends
         ChartParser<LeftHashGrammar, CellChart> {
 

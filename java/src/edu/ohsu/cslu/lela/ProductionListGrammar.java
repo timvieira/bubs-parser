@@ -93,7 +93,7 @@ public class ProductionListGrammar {
     }
 
     /**
-     * Constructs a production-list grammar based on a {@link MappedCountGrammar}.
+     * Constructs a production-list grammar based on a {@link FractionalCountGrammar}.
      * 
      * @param countGrammar
      */

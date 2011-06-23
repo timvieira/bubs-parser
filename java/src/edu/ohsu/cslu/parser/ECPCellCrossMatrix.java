@@ -26,6 +26,12 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * Exhaustive chart parser which performs grammar intersection by iterating over grammar rules matching the observed
+ * non-terminals in the left child child pairs in the cartesian product of non-terminals observed in child cells.
+ * 
+ * @author Nathan Bodenstab
+ */
 public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChart> {
 
     public ECPCellCrossMatrix(final ParserDriver opts, final ChildMatrixGrammar grammar) {
@@ -47,8 +53,7 @@ public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChar
                     final List<Production> validProductions = gramByLeft[rightNT];
                     if (validProductions != null) {
                         for (final Production p : validProductions) {
-                            final float prob = p.prob + leftCell.getInside(leftNT)
-                                    + rightCell.getInside(rightNT);
+                            final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
                             cell.updateInside(p, leftCell, rightCell, prob);
                         }
                     }

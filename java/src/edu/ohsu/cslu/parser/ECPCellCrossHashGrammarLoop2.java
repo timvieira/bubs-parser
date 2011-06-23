@@ -26,6 +26,12 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * Exhaustive chart parser which performs grammar intersection by iterating over grammar rules matching the observed
+ * child pairs in the cartesian product of non-terminals observed in child cells.
+ * 
+ * @author Nathan Bodenstab
+ */
 public class ECPCellCrossHashGrammarLoop2 extends ChartParser<LeftHashGrammar, CellChart> {
 
     HashMap<Integer, Container> childHash;

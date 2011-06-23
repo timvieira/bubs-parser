@@ -27,18 +27,16 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * Parser implementation which loops over all combinations of left and right child cell populations (cartesian
- * product of observed left and right non-terminals) and probes into the grammar for each combination using a
+ * Exhaustive matrix-loop parser which performs grammar intersection by iterating over grammar rules matching the
+ * observed child pairs in the cartesian product of non-terminals observed in child cells. Queries grammar using a
  * binary search.
  * 
  * @author Aaron Dunlop
- * @since Jun 14, 2010
  */
 public class CartesianProductBinarySearchSpmlParser extends
         SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, PackedArrayChart> {
 
-    public CartesianProductBinarySearchSpmlParser(final ParserDriver opts,
-            final LeftCscSparseMatrixGrammar grammar) {
+    public CartesianProductBinarySearchSpmlParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
     }
 
@@ -106,8 +104,8 @@ public class CartesianProductBinarySearchSpmlParser extends
                     }
 
                     // Search in the grammar for the child pair
-                    final int index = Arrays.binarySearch(grammar.cscBinaryPopulatedColumns,
-                        binarySearchStart, binarySearchEnd, childPair);
+                    final int index = Arrays.binarySearch(grammar.cscBinaryPopulatedColumns, binarySearchStart,
+                            binarySearchEnd, childPair);
                     if (index < 0) {
                         continue;
                     }

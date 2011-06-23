@@ -267,8 +267,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     }
 
     static public enum CartesianProductFunctionType {
-        Simple("d", "default"), Unfiltered("u", "unfiltered"), PosFactoredFiltered("pf"), BitMatrixExactFilter("bme",
-                "bitmatrixexact"), Hash("hash"), PerfectHash("ph", "ph2", "perfecthash");
+        Simple("d", "default"), Hash("hash"), PerfectHash("ph", "ph2", "perfecthash");
 
         private CartesianProductFunctionType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

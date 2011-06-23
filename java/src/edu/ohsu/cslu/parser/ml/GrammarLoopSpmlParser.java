@@ -24,12 +24,10 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
- * Grammar loop exhaustive parser using a sparse-matrix grammar representation (
- * {@link CsrSparseMatrixGrammar}). Loops over the entire grammar for each midpoint, probing child cells for
- * non-terminals matching each grammar rule.
+ * Exhaustive matrix-loop parser which performs grammar intersection by iterating over all grammar rules for each pair
+ * of child cells.
  * 
  * @author Aaron Dunlop
- * @since Jun 13, 2010
  */
 public class GrammarLoopSpmlParser extends SparseMatrixLoopParser<CsrSparseMatrixGrammar, DenseVectorChart> {
 
@@ -78,15 +76,13 @@ public class GrammarLoopSpmlParser extends SparseMatrixLoopParser<CsrSparseMatri
                     final int packedChildPair = grammar.csrBinaryColumnIndices[i];
 
                     final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(packedChildPair);
-                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(
-                        packedChildPair);
+                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(packedChildPair);
 
                     final float leftInsideProbability = chartInsideProbabilities[leftCellOffset + leftChild];
                     if (leftInsideProbability == Float.NEGATIVE_INFINITY) {
                         continue;
                     }
-                    final float rightInsideProbability = chartInsideProbabilities[rightCellOffset
-                            + rightChild];
+                    final float rightInsideProbability = chartInsideProbabilities[rightCellOffset + rightChild];
                     if (rightInsideProbability == Float.NEGATIVE_INFINITY) {
                         continue;
                     }
