@@ -4,18 +4,18 @@
 	<property name="dir.build" location="build" />
 	<property name="dir.src" location="java/src" />
 	<property name="dir.doc" location="doc" />
-    <property name="dir.build.doc" location="build-doc" />
-    <property name="dir.dist" location="build-dist" />
+	<property name="dir.build.doc" location="build-doc" />
+	<property name="dir.dist" location="build-dist" />
 
-    <property name="dir.build.lib" location="build-lib" />
+	<property name="dir.build.lib" location="build-lib" />
 
-    <!-- Libraries are split by license. Not terribly important when packaging 
+	<!-- Libraries are split by license. Not terribly important when packaging 
          GPL code, but more important if packaging a non-GPL version -->
-    <property name="dir.bsd.lib" location="java/bsd-lib" />
+	<property name="dir.bsd.lib" location="java/bsd-lib" />
 	<property name="dir.lgpl.lib" location="java/lgpl-lib" />
 	<property name="dir.gpl.lib" location="java/gpl-lib" />
 
-    <import file="genjar-targets.xml" />
+	<import file="genjar-targets.xml" />
 
 	<path id="classpath.libs">
 		<fileset dir="${dir.bsd.lib}" includes="*.jar" />
@@ -51,14 +51,11 @@
        Package documentation 
     ========================================================================
     -->
-	<target name="doc">
+	<target name="docs">
 		<javadoc destdir="${dir.build.doc}/javadoc">
 			<fileset dir="${dir.src}" includes="**/*.java" excludes="**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
 			<classpath refid="classpath.libs" />
 		</javadoc>
-		<copy todir="${dir.build.doc}">
-			<fileset dir="${dir.doc}" excludes="package-template.html" />
-		</copy>
 	</target>
 
 	<!-- 
@@ -93,7 +90,7 @@
 			<param name="additional-file-includes" value="**/*.cl" />
 			<param name="license-file" value="java/tools/license.txt" />
 			<param name="readme-file" value="java/tools/README.txt" />
-            <param name="default-options" value="java/tools/parser-defaults.properties" />
+			<param name="default-options" value="java/tools/parser-defaults.properties" />
 			<param name="srcjar" value="true" />
 		</antcall>
 	</target>
@@ -138,10 +135,17 @@
 
 	<!-- 
     ========================================================================
-       Package all NLP applications
+       Package all training tools and utilities
     ========================================================================
     -->
-	<!-- TODO: Re-add compile-native -->
-	<target name="dist" depends="summarize-grammar,serialize-model,parse,tree-tools,train-perceptron,parser-trainer" />
+	<target name="tools" depends="summarize-grammar,serialize-model,tree-tools,train-perceptron,parser-trainer" />
 
+	<!-- 
+    ========================================================================
+       Package parser and models as a zip file for release
+    ========================================================================
+    -->
+	<target name="dist" depends="parse">
+	    
+	</target>
 </project>
