@@ -20,6 +20,11 @@ package edu.ohsu.cslu.parser.edgeselector;
 
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
+/**
+ * Simple edge ranking by inside grammar probability.
+ * 
+ * @author Nathan Bodenstab
+ */
 public class InsideProb extends EdgeSelector {
 
     private static final long serialVersionUID = 1L;
@@ -35,8 +40,7 @@ public class InsideProb extends EdgeSelector {
     }
 
     @Override
-    public float calcLexicalFOM(final int start, final int end, final short parent,
-            final float insideProbability) {
+    public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
         return insideProbability;
     }
 }

@@ -21,6 +21,11 @@ package edu.ohsu.cslu.parser.edgeselector;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
+/**
+ * Normalizes inside grammar probability by span length.
+ * 
+ * @author Nathan Bodenstab
+ */
 public class NormalizedInsideProb extends InsideProb {
 
     private static final long serialVersionUID = 1L;
