@@ -5,6 +5,7 @@
 	<property name="dir.src" location="java/src" />
 	<property name="dir.doc" location="doc" />
 	<property name="dir.build.doc" location="build-doc" />
+    <property name="dir.models" location="models" />
 	<property name="dir.dist" location="build-dist" />
 
 	<property name="dir.build.lib" location="build-lib" />
@@ -53,7 +54,7 @@
     -->
 	<target name="docs">
 		<javadoc destdir="${dir.build.doc}/javadoc">
-			<fileset dir="${dir.src}" includes="**/*.java" excludes="**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
+			<fileset dir="${dir.src}" includes="**/*.java" excludes="edu/ohsu/cslu/lela/**,**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
 			<classpath refid="classpath.libs" />
 		</javadoc>
 	</target>
@@ -142,10 +143,16 @@
 
 	<!-- 
     ========================================================================
-       Package parser and models as a zip file for release
+       Package parser and models as a .tgz file for release
     ========================================================================
     -->
 	<target name="dist" depends="parse">
-	    
+        <tstamp />
+        <property name="file.dist" value="${dir.dist}/bubs-parser-${DSTAMP}.tgz" />
+        <tar destfile="${file.dist}" compression="gzip">
+        	<tarfileset dir="${dir.dist}" includes="parse,parse.jar,parse-src.jar" prefix="bubs-parser" />
+        	<tarfileset dir="${dir.models}" includes="*.gz" prefix="bubs-parser" />
+        </tar>
 	</target>
+	
 </project>
