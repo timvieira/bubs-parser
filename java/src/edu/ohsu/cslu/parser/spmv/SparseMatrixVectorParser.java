@@ -133,7 +133,6 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         // work, although it's a big-time hack.
         final boolean factoredOnly = cellSelector.hasCellConstraints()
                 && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
-        // if (!cellSelector.factoredParentsOnly(start, end)) {
         if (!factoredOnly) {
             unarySpmv(spvChartCell);
         }

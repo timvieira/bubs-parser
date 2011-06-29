@@ -37,6 +37,8 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.SparseMatrixParser;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.tests.JUnit;
@@ -47,17 +49,17 @@ import edu.ohsu.cslu.tests.JUnit;
  * @author Aaron Dunlop
  * @since Mar 9, 2011
  */
-public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
+public abstract class PrunedSparseMatrixParserTestCase<G extends SparseMatrixGrammar> {
 
-    private PackedArraySpmvParser<G> parser;
+    private SparseMatrixParser<G, PackedArrayChart> parser;
 
     @Before
     public void setUp() throws IOException {
         final G grammar = createGrammar(JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.R2-p1.gz"),
-            PerfectIntPairHashPackingFunction.class);
+                PerfectIntPairHashPackingFunction.class);
         final ParserDriver opts = new ParserDriver();
-        opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar,
-            new BufferedReader(JUnit.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
+        opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, new BufferedReader(
+                JUnit.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
         props.put("maxBeamWidth", "20");
@@ -83,10 +85,10 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
         GlobalConfigProperties.singleton().clear();
     }
 
-    protected abstract G createGrammar(Reader grammarReader,
-            Class<? extends PackingFunction> packingFunctionClass) throws IOException;
+    protected abstract G createGrammar(Reader grammarReader, Class<? extends PackingFunction> packingFunctionClass)
+            throws IOException;
 
-    protected abstract PackedArraySpmvParser<G> createParser(ParserDriver opts, G grammar);
+    protected abstract SparseMatrixParser<G, PackedArrayChart> createParser(ParserDriver opts, G grammar);
 
     /**
      * TODO Make this a PerformanceTest
@@ -97,17 +99,15 @@ public abstract class PrunedSpmvParserTestCase<G extends SparseMatrixGrammar> {
     public void testPruned() throws IOException {
 
         final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-            JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
 
         final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-            JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.fom")));
+                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.fom")));
 
         int i = 1;
-        for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader
-            .readLine()) {
+        for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
-            assertEquals("Failed on sentence " + i, parsedSentence,
-                parser.parseSentence(sentence).parse.toString());
+            assertEquals("Failed on sentence " + i, parsedSentence, parser.parseSentence(sentence).parse.toString());
             i++;
         }
     }
