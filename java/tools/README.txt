@@ -13,10 +13,10 @@ running  'java -jar parser.jar -help' (or, through the wrapper script,
 'parse -help')
 
 
-=== Quick Start ===
+== Quick Start ==
 
-java -jar parse.jar -g berkeley-SM6.gz -fom berk.boundary.gz \
--beamConfModel berk.bcm.gz \
+java -jar parse.jar -g models/berkeley-SM6.gz -fom models/berk.boundary.gz \
+-beamModel models/berk.bcm.gz \
 [input files]
 
 Input: one sentence per line, tokenized according to standard Treebank
@@ -25,7 +25,7 @@ Input: one sentence per line, tokenized according to standard Treebank
 Output: parse trees, one sentence per line
 
 
-=== Standard Parser Implementations ===
+== Standard Parser Implementations ==
 
 The BUBS Parser implements many distinct parsing algorithms, including
 several methods of efficient pruned search as well as a number of
@@ -56,7 +56,7 @@ Timings listed are all using the Berkeley grammar
     at approximately 20 sentences/second.
 
 
-=== Configuration Options ===
+== Configuration Options ==
 
 Some parser implementations accept or require configuration
 options. All configuration is specified with the '-O' option, using
@@ -85,7 +85,7 @@ The default options are:
     beam widths.
 
 
-=== Multithreading ===
+== Multithreading ==
 
 The BUBS parser supports threading at several levels. Sentence-level
 threading assigns each sentence of the input to a separate thread as
@@ -113,9 +113,9 @@ but we make no claims about the efficiency impact of combining sentence-level
 threading with other parallelization methods.
 
 
-=== Research Parser Implementations ===
+== Research Parser Implementations ==
 
-In addition to the standard implementions described above, many other
+In addition to the standard implementations described above, many other
 parsing algorithms are available using the -researchParserType
 option. The general classes are:
 
@@ -138,7 +138,7 @@ option. The general classes are:
     minutes per sentence.
 
 
-=== Pruning (Figure of Merit and Beam Confidence Model) ===
+== Pruning (Figure of Merit and Beam Confidence Model) ==
 
 A figure-of-merit (FOM) ranks chart edges locally within a cell or
 globally across the entire chart. All agenda parsers and bottom-up
@@ -156,7 +156,7 @@ further limits the search space and speeds parsing (see Bodenstab
 et. al, 2011).
 
 
-=== Citing ===
+== Citing ==
 
 If you use the BUBS parser in research, please cite:
 
