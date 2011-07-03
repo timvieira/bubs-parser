@@ -43,8 +43,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     int origFactoredBeamWidth, factoredBeamWidth, reparseFactor;
     boolean hasPerceptronBeamWidth;
 
-    // int addToBeamWidth = 0;
-
     public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
         origBeamWidth = Integer.MAX_VALUE;
