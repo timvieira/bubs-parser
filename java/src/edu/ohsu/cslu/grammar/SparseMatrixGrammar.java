@@ -163,9 +163,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * Stores unary rules in Compressed-Sparse-Column (CSC) matrix format.
      * 
      * @param productions
-     * @param validChildPairs Sorted array of valid child pairs
-     * @param cscPopulatedColumns
-     * @param cscColumnIndices
+     * @param cscColumnOffsets
      * @param cscRowIndices
      * @param cscProbabilities
      */
@@ -571,6 +569,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         // }
     }
 
+    // TODO Doesn't work correctly
     public final class Int2IntHashPackingFunction extends PackingFunction implements CscHashPackingFunction {
 
         private static final long serialVersionUID = 1L;

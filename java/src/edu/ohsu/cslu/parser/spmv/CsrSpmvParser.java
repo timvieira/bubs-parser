@@ -24,10 +24,9 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format (
- * {@link CsrSparseMatrixGrammar}) and implements cross-product and SpMV multiplication in Java.
+ * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSR format ( {@link CsrSparseMatrixGrammar}).
  * 
- * @see OpenClSpmvParser
+ * @see CscSpmvParser
  * 
  * @author Aaron Dunlop
  * @since Feb 11, 2010
@@ -44,7 +43,7 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
         binarySpmvMultiply(cartesianProductVector, packedArrayCell.tmpPackedChildren,
-            packedArrayCell.tmpInsideProbabilities, packedArrayCell.tmpMidpoints);
+                packedArrayCell.tmpInsideProbabilities, packedArrayCell.tmpMidpoints);
     }
 
     protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,
@@ -127,7 +126,7 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
     @Override
     public String getStats() {
         return super.getStats()
-                + (collectDetailedStatistics ? String.format(" avgXprod=%.1f", sentenceCartesianProductSize
-                        * 1.0f / chart.cells) : "");
+                + (collectDetailedStatistics ? String.format(" avgXprod=%.1f", sentenceCartesianProductSize * 1.0f
+                        / chart.cells) : "");
     }
 }

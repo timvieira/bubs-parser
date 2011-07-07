@@ -13,10 +13,10 @@ running  'java -jar parser.jar -help' (or, through the wrapper script,
 'parse -help')
 
 
-=== Quick Start ===
+== Quick Start ==
 
-java -jar parse.jar -g berkeley-SM6.gz -fom berk.boundary.gz \
--beamConfModel berk.bcm.gz \
+java -jar parse.jar -g models/berkeley-SM6.gz -fom models/berk.boundary.gz \
+-beamModel models/berk.bcm.gz \
 [input files]
 
 Input: one sentence per line, tokenized according to standard Treebank
@@ -25,7 +25,7 @@ Input: one sentence per line, tokenized according to standard Treebank
 Output: parse trees, one sentence per line
 
 
-=== Standard Parser Implementations ===
+== Standard Parser Implementations ==
 
 The BUBS Parser implements many distinct parsing algorithms, including
 several methods of efficient pruned search as well as a number of
@@ -56,7 +56,7 @@ Timings listed are all using the Berkeley grammar
     at approximately 20 sentences/second.
 
 
-=== Configuration Options ===
+== Configuration Options ==
 
 Some parser implementations accept or require configuration
 options. All configuration is specified with the '-O' option, using
@@ -73,9 +73,9 @@ The default options are:
   grammarThreads : 1
     (see below for details on threading)
 
-  maxBeamWidth=30
-  lexicalRowBeamWidth=60
-  lexicalRowUnaries=20
+  maxBeamWidth        : 30
+  lexicalRowBeamWidth : 60
+  lexicalRowUnaries   : 20
 
     These beam limits assume a boundary FOM and Beam Confidence Model
     (see below). maxBeamWidth applies to cells of span > 1. For
@@ -85,14 +85,14 @@ The default options are:
     beam widths.
 
 
-=== Multithreading ===
+== Multithreading ==
 
 The BUBS parser supports threading at several levels. Sentence-level
 threading assigns each sentence of the input to a separate thread as
 one becomes available). The number of threads is controlled by the 
-'-xt <count>' option. In general, you want to use the same number of
-threads as CPU cores (or slightly lower, to reserve some CPU capacity
-for OS or other simultaneous tasks).
+'-xt <count>' option. In general, if threading only at the sentence level, 
+you want to use the same number of threads as CPU cores (or slightly lower, 
+to reserve some CPU capacity for OS or other simultaneous tasks).
 
 Cell-level and grammar-level threading are also supported. Cell-level
 threading assigns the processing of individual chart cells to threads
@@ -107,13 +107,15 @@ Cell-level and grammar-level threading are specified with the
   parse -O cellThreads=4 -O grammarThreads=2
 
 The three levels of threading can interact safely (i.e., you can use
--xt, cellThreads, and grammarThreads simultaneously), but we make no
-claims about the efficiency effects.
+-xt, cellThreads, and grammarThreads simultaneously), and we have shown 
+that cell-level and grammar-level threading can provide additive benefits, 
+but we make no claims about the efficiency impact of combining sentence-level 
+threading with other parallelization methods.
 
 
-=== Research Parser Implementations ===
+== Research Parser Implementations ==
 
-In addition to the standard implementions described above, many other
+In addition to the standard implementations described above, many other
 parsing algorithms are available using the -researchParserType
 option. The general classes are:
 
@@ -136,7 +138,7 @@ option. The general classes are:
     minutes per sentence.
 
 
-=== Pruning (Figure of Merit and Beam Confidence Model) ===
+== Pruning (Figure of Merit and Beam Confidence Model) ==
 
 A figure-of-merit (FOM) ranks chart edges locally within a cell or
 globally across the entire chart. All agenda parsers and bottom-up
@@ -154,11 +156,11 @@ further limits the search space and speeds parsing (see Bodenstab
 et. al, 2011).
 
 
-=== Citing ===
+== Citing ==
 
 If you use the BUBS parser in research, please cite:
 
 Adaptive Beam-Width Prediction for Efficient CYK Parsing
 Nathan Bodenstab, Aaron Dunlop, Keith Hall, and Brian Roark - 
-ACL/HLT 2011
+ACL/HLT 2011, pages 440-449.
 

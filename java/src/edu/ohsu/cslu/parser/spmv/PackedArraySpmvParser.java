@@ -45,6 +45,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     protected final int beamWidth;
     protected final int lexicalRowBeamWidth;
     protected final int lexicalRowUnaries;
+    private final boolean exhaustiveSearch;
 
     protected final ForkJoinPool threadPool;
     protected final LinkedList<ForkJoinTask<?>> currentTasks;
@@ -106,10 +107,12 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
             beamWidth = props.getIntProperty("maxBeamWidth");
             lexicalRowBeamWidth = props.getIntProperty("lexicalRowBeamWidth");
             lexicalRowUnaries = props.getIntProperty("lexicalRowUnaries");
+            this.exhaustiveSearch = false;
         } else {
             beamWidth = grammar.numNonTerms();
             lexicalRowBeamWidth = grammar.numNonTerms();
             lexicalRowUnaries = 0;
+            this.exhaustiveSearch = true;
         }
     }
 
@@ -153,13 +156,12 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     }
 
     @Override
-    protected void internalVisitCell(final short start, final short end) {
+    protected final void internalVisitCell(final short start, final short end) {
 
-        final long t0 = System.currentTimeMillis();
+        final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
+        long t1 = t0, t2 = t0;
 
         final PackedArrayChartCell spvChartCell = chart.getCell(start, end);
-
-        long t1 = t0;
 
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
@@ -179,20 +181,37 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         }
 
         if (collectDetailedStatistics) {
-            final long spMVTime = (System.currentTimeMillis() - t1);
+            t2 = System.currentTimeMillis();
+            final long spMVTime = t2 - t1;
             sentenceBinarySpMVTime += spMVTime;
             totalBinarySpMVTime += spMVTime;
         }
 
-        final int[] cellPackedChildren = new int[grammar.numNonTerms()];
-        final float[] cellInsideProbabilities = new float[grammar.numNonTerms()];
-        final short[] cellMidpoints = new short[grammar.numNonTerms()];
-        internalUnaryAndPruning(spvChartCell, start, end, cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+        // We don't need to process unaries in cells only open to factored non-terminals
+        if (cellSelector.hasCellConstraints() && cellSelector.getCellConstraints().isCellOnlyFactored(start, end)) {
+            spvChartCell.finalizeCell();
 
-        spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+        } else {
+            if (exhaustiveSearch) {
+                unarySpmv(spvChartCell);
+                spvChartCell.finalizeCell();
+
+            } else {
+                final int[] cellPackedChildren = new int[grammar.numNonTerms()];
+                final float[] cellInsideProbabilities = new float[grammar.numNonTerms()];
+                final short[] cellMidpoints = new short[grammar.numNonTerms()];
+                unaryAndPruning(spvChartCell, start, end, cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+
+                spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+            }
+        }
+
+        if (collectDetailedStatistics) {
+            sentenceUnaryTime = System.currentTimeMillis() - t2;
+        }
     }
 
-    protected void internalUnaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end,
+    protected void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end,
             final int[] cellPackedChildren, final float[] cellInsideProbabilities, final short[] cellMidpoints) {
 
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
@@ -336,7 +355,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
                 threadLocalCpvMidpoints.get());
     }
 
-    protected final CartesianProductVector internalCartesianProduct(final int start, final int end,
+    private final CartesianProductVector internalCartesianProduct(final int start, final int end,
             final int midpointStart, final int midpointEnd, final PackingFunction pf, final short[] nonTerminalIndices,
             final float[] insideProbabilities, final float[] probabilities, final short[] midpoints) {
 

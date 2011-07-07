@@ -28,6 +28,9 @@ import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory.OHSUCellCons
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
     protected OHSUCellConstraints cellConstraints;

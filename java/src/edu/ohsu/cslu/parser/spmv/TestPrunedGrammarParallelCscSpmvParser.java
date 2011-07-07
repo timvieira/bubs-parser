@@ -26,7 +26,14 @@ import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 
-public class TestPrunedCellParallelCscSpmvParser extends PrunedSpmvParserTestCase<LeftCscSparseMatrixGrammar> {
+/**
+ * Tests FOM-pruned parsing using both cell and grammar-level threading.
+ * 
+ * @author Aaron Dunlop
+ * @since Mar 9, 2011
+ */
+public class TestPrunedGrammarParallelCscSpmvParser extends
+        PrunedSparseMatrixParserTestCase<LeftCscSparseMatrixGrammar> {
 
     @Override
     protected LeftCscSparseMatrixGrammar createGrammar(final Reader grammarReader,

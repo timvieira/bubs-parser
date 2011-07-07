@@ -23,6 +23,11 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * Beam search chart parser which prunes search space using exponential decay (see Bodenstab, 2010).
+ * 
+ * @author Nathan Bodenstab
+ */
 public class BSCPExpDecay extends BSCPPruneViterbi {
 
     boolean resultRun = false;

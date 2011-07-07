@@ -26,6 +26,9 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class APDecodeFOM extends APWithMemory {
 
     // only change from APWithMemory is that we are using the edge's

@@ -23,6 +23,12 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * Exhaustive chart parser which performs grammar intersection by iterating over grammar rules matching the observed
+ * left child non-terminals.
+ * 
+ * @author Nathan Bodenstab
+ */
 public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
 
     public ECPCellCrossList(final ParserDriver opts, final LeftListGrammar grammar) {
@@ -58,8 +64,7 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
         }
 
         int nUnaryConsidered = 0, nUnaryInCell = 0;
-        if (cellSelector.hasCellConstraints() == false
-                || cellSelector.getCellConstraints().isUnaryOpen(start, end)) {
+        if (cellSelector.hasCellConstraints() == false || cellSelector.getCellConstraints().isUnaryOpen(start, end)) {
             for (final int childNT : cell.getNtArray()) {
                 for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                     if (!cell.hasNT(p.parent))

@@ -30,6 +30,9 @@ import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class BSCPFomDecode extends BSCPPruneViterbi {
 
     // NOTE: this isn't exactly the same as the exaustive method since
@@ -68,7 +71,7 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
                         + maxcFOM[midpt][end][edge.prod.rightChild];
             } else {
                 score = (float) ParserUtil.logSum(edge.fom, ParserUtil.logSum(
-                    maxcFOM[start][midpt][edge.prod.leftChild], maxcFOM[midpt][end][edge.prod.rightChild]));
+                        maxcFOM[start][midpt][edge.prod.leftChild], maxcFOM[midpt][end][edge.prod.rightChild]));
             }
         } else if (edge.prod.isUnaryProd()) {
             if (maxProduct) {

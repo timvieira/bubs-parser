@@ -23,9 +23,15 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
 
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart;
 
+/**
+ * An edge selector for a particular parser. {@link EdgeSelector} instances are not required (or expected) to be
+ * thread-safe across multiple simultaneous sentences, so an instance should not be shared by multiple {@link Parser}
+ * instances. Model parameters should be stored in a shared {@link EdgeSelectorFactory}.
+ */
 public abstract class EdgeSelector implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -40,8 +46,7 @@ public abstract class EdgeSelector implements Serializable {
         throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
     }
 
-    public float calcLexicalFOM(final int start, final int end, final short parent,
-            final float insideProbability) {
+    public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
         throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
     }
 

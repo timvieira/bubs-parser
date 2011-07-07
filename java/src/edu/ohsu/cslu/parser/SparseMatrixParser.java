@@ -25,6 +25,12 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 
+/**
+ * Base class for all chart parsers which represent the chart as a parallel array and operate on matrix-encoded
+ * grammars.
+ * 
+ * @author Aaron Dunlop
+ */
 public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart> extends
         ChartParser<G, C> {
 
@@ -33,8 +39,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
     }
 
     /**
-     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely),
-     * and populates this chart cell. Used to populate unary rules.
+     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and
+     * populates this chart cell. Used to populate unary rules.
      * 
      * @param chartCell
      */
@@ -45,12 +51,12 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             packedArrayCell.allocateTemporaryStorage();
 
             unarySpmv(packedArrayCell.tmpPackedChildren, packedArrayCell.tmpInsideProbabilities,
-                packedArrayCell.tmpMidpoints, 0, chartCell.end());
+                    packedArrayCell.tmpMidpoints, 0, chartCell.end());
         } else {
             final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
 
-            unarySpmv(chart.packedChildren, chart.insideProbabilities, chart.midpoints,
-                denseVectorCell.offset(), chartCell.end());
+            unarySpmv(chart.packedChildren, chart.insideProbabilities, chart.midpoints, denseVectorCell.offset(),
+                    chartCell.end());
         }
     }
 
