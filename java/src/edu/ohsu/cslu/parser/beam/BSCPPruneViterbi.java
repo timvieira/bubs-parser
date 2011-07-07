@@ -30,6 +30,9 @@ import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class BSCPPruneViterbi extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
     ChartEdge[] bestEdges;
@@ -48,8 +51,7 @@ public class BSCPPruneViterbi extends BeamSearchChartParser<LeftHashGrammar, Cel
     @Override
     protected boolean fomCheckAndUpdate(final ChartEdge edge) {
         final int parent = edge.prod.parent;
-        return super.fomCheckAndUpdate(edge)
-                && (bestEdges[parent] == null || edge.fom >= bestEdges[parent].fom);
+        return super.fomCheckAndUpdate(edge) && (bestEdges[parent] == null || edge.fom >= bestEdges[parent].fom);
     }
 
     @Override
@@ -113,12 +115,12 @@ public class BSCPPruneViterbi extends BeamSearchChartParser<LeftHashGrammar, Cel
             final float score2 = agenda.peek().fom;
             agenda.add(bestEdge);
             final LinkedList<edu.ohsu.cslu.parser.chart.Chart.ChartEdge> goldEdges = currentInput.inputTreeChart
-                .getEdgeList(cell.start(), cell.end());
+                    .getEdgeList(cell.start(), cell.end());
             final boolean hasGold = goldEdges.size() > 0;
             final boolean underThresh = fomCheckAndUpdate(bestEdge);
 
-            System.out.println("INFO: agendaOneTwo gold=" + hasGold + " prune1=" + underThresh + " " + score1
-                    + " " + score2 + " " + (score2 - score1));
+            System.out.println("INFO: agendaOneTwo gold=" + hasGold + " prune1=" + underThresh + " " + score1 + " "
+                    + score2 + " " + (score2 - score1));
         }
     }
 }

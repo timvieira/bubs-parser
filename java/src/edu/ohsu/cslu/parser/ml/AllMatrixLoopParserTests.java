@@ -21,10 +21,14 @@ package edu.ohsu.cslu.parser.ml;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+/**
+ * Unit test suite for all matrix-loop parsers
+ * 
+ * @author Aaron Dunlop
+ */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ TestLeftChildLoopSpmlParser.class, TestRightChildLoopSpmlParser.class,
-        TestCartesianProductBinarySearchSpmlParser.class,
-        TestCartesianProductBinarySearchLeftChildSpmlParser.class, TestCartesianProductHashSpmlParser.class,
-        TestGrammarLoopSpmlParser.class })
+        TestCartesianProductBinarySearchSpmlParser.class, TestCartesianProductBinarySearchLeftChildSpmlParser.class,
+        TestCartesianProductHashSpmlParser.class, TestGrammarLoopSpmlParser.class })
 public class AllMatrixLoopParserTests {
 }

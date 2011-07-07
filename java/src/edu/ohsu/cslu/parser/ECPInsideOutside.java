@@ -29,6 +29,11 @@ import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 
+/**
+ * Exhaustive chart parser which performs inside-outside inference
+ * 
+ * @author Nathan Bodenstab
+ */
 public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChart> {
 
     ProjectedGrammar evalGrammar;

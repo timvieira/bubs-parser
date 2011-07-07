@@ -59,6 +59,9 @@ public class TreeTools extends BaseCommandlineTool {
     @Option(name = "-countMaxSpans", usage = "Count the longest span that starts and ends at each non-terminal")
     private boolean countMaxSpans = false;
 
+    @Option(name = "-extractBEULabels", usage = "Output 'word B E U' for each word where B, E, and U are 0 or 1 if the word begins a multi-word constituent (B), ends a multi-word constituent (E) or contains a span-1 unary (U).")
+    private boolean extractBEULabels = false;
+
     @Option(name = "-extractUnaries", usage = "Extract unary productions from trees")
     private boolean extractUnaries = false;
 
@@ -96,6 +99,8 @@ public class TreeTools extends BaseCommandlineTool {
                 countMinBeginEndConstraints(tree);
             } else if (extractUnaries) {
                 extractUnariesFromTree(tree);
+            } else if (extractBEULabels) {
+                extractBEULabelsFromTree(tree);
             } else {
                 System.err.println("ERROR: action required.  See -h");
                 System.exit(1);
@@ -107,6 +112,37 @@ public class TreeTools extends BaseCommandlineTool {
                 System.out.println(tree.toString());
             }
         }
+    }
+
+    public static void extractBEULabelsFromTree(final ParseTree tree) {
+        final LinkedList<String> sent = tree.getLeafNodesContent();
+        final int n = sent.size();
+        final String[] leafCount = new String[n];
+        for (int i = 0; i < n; i++) {
+            leafCount[i] = Integer.toString(i);
+        }
+        tree.replaceLeafNodes(leafCount);
+
+        final boolean[] B = new boolean[n], E = new boolean[n], U = new boolean[n];
+
+        for (final ParseTree node : tree.preOrderTraversal()) {
+            if (node.span() > 1) {
+                B[Integer.parseInt(node.leftMostLeaf().getContents())] = true;
+                E[Integer.parseInt(node.rightMostLeaf().getContents())] = true;
+            } else if (node.isLeafParent()) {
+                U[Integer.parseInt(node.rightMostLeaf().getContents())] = true;
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            System.out.println(sent.get(i) + "\t" + bool2int(B[i]) + "\t" + bool2int(E[i]) + "\t" + bool2int(U[i]));
+        }
+    }
+
+    public static int bool2int(final boolean x) {
+        if (x)
+            return 1;
+        return 0;
     }
 
     public static void extractUnariesFromTree(final ParseTree tree) {
@@ -189,8 +225,7 @@ public class TreeTools extends BaseCommandlineTool {
                 }
             }
 
-            final String newChildStr = grammarFormatType
-                .createFactoredNT(unfactoredParent, markovChildrenStr);
+            final String newChildStr = grammarFormatType.createFactoredNT(unfactoredParent, markovChildrenStr);
             final ParseTree newNode = new ParseTree(newChildStr, tree, remainingChildren);
             if (rightFactor) {
                 tree.children.addFirst(newNode);
@@ -205,13 +240,11 @@ public class TreeTools extends BaseCommandlineTool {
     }
 
     /**
-     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening
-     * binary-factored subtrees.
+     * 'Un-factors' a binary-factored parse tree by removing category split labels and flattening binary-factored
+     * subtrees.
      * 
-     * @param bracketedTree
-     *            Bracketed string parse tree
-     * @param grammarFormatType
-     *            Grammar format
+     * @param bracketedTree Bracketed string parse tree
+     * @param grammarFormatType Grammar format
      * @return Bracketed string representation of the un-factored tree
      */
     public static String unfactor(final String bracketedTree, final GrammarFormatType grammarFormatType) {

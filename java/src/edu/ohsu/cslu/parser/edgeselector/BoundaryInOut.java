@@ -34,6 +34,11 @@ import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 
+/**
+ * Implements Caraballo and Charniak's (1998) boundary in-out figure-of-merit.
+ * 
+ * @author Nathan Bodenstab
+ */
 public class BoundaryInOut extends EdgeSelectorFactory {
 
     private Grammar grammar;

@@ -4,7 +4,7 @@ To build Parser:
   ant parse
 
 To build other tools:
-  ant dist
+  ant tools
 
   Tools will be packaged in 'build-dist'
   

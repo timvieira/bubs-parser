@@ -26,12 +26,11 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * Parser implementation which loops over all combinations of left and right child cell populations (cartesian
- * product of observed left and right non-terminals) and probes into the grammar for each combination using a
- * lookup into a segmented perfect hash.
+ * Exhaustive matrix-loop parser which performs grammar intersection by iterating over grammar rules matching the
+ * observed child pairs in the cartesian product of non-terminals observed in child cells. Queries grammar using a
+ * segmented perfect hash.
  * 
  * @author Aaron Dunlop
- * @since Jun 14, 2010
  */
 public class CartesianProductLeftChildHashSpmlParser extends
         SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, PackedArrayChart> {
@@ -39,16 +38,13 @@ public class CartesianProductLeftChildHashSpmlParser extends
     private final PerfectIntPair2IntHash childPair2ColumnOffsetHash;
     private final int[] hashedCscParallelArrayIndices;
 
-    public CartesianProductLeftChildHashSpmlParser(final ParserDriver opts,
-            final LeftCscSparseMatrixGrammar grammar) {
+    public CartesianProductLeftChildHashSpmlParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
 
         final int[][] keyPairs = new int[2][grammar.cscBinaryPopulatedColumns.length];
         for (int i = 0; i < grammar.cscBinaryPopulatedColumns.length; i++) {
-            keyPairs[0][i] = grammar.cartesianProductFunction().unpackLeftChild(
-                grammar.cscBinaryPopulatedColumns[i]);
-            keyPairs[1][i] = grammar.cartesianProductFunction().unpackRightChild(
-                grammar.cscBinaryPopulatedColumns[i]);
+            keyPairs[0][i] = grammar.cartesianProductFunction().unpackLeftChild(grammar.cscBinaryPopulatedColumns[i]);
+            keyPairs[1][i] = grammar.cartesianProductFunction().unpackRightChild(grammar.cscBinaryPopulatedColumns[i]);
         }
 
         childPair2ColumnOffsetHash = new PerfectIntPair2IntHash(keyPairs);
@@ -101,8 +97,7 @@ public class CartesianProductLeftChildHashSpmlParser extends
                 // And over children in the right child cell
                 for (int j = rightStart; j <= rightEnd; j++) {
 
-                    final int hashcode = childPair2ColumnOffsetHash.hashcode(leftChild,
-                        chart.nonTerminalIndices[j]);
+                    final int hashcode = childPair2ColumnOffsetHash.hashcode(leftChild, chart.nonTerminalIndices[j]);
                     if (hashcode < 0) {
                         continue;
                     }

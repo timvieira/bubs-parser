@@ -25,6 +25,9 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class APWithMemory extends AgendaParser {
 
     private ChartEdge agendaMemory[][][];

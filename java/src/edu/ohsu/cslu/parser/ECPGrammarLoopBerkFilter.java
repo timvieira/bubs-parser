@@ -27,6 +27,12 @@ import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * Exhaustive chart parser which performs grammar intersection by iterating over a filtered list of grammar rules at
+ * each midpoint.
+ * 
+ * @author Nathan Bodenstab
+ */
 public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
 
     // tracks the spans of nonTerms in the chart so we don't have to consider them

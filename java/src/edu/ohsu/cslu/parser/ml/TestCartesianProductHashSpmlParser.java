@@ -31,7 +31,7 @@ import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 
 public class TestCartesianProductHashSpmlParser extends ExhaustiveChartParserTestCase<CartesianProductHashSpmlParser> {
 
-    private final static Class<? extends PackingFunction> PACKING_FUNCTION_CLASS = SparseMatrixGrammar.Int2IntHashPackingFunction.class;
+    private final static Class<? extends PackingFunction> PACKING_FUNCTION_CLASS = SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class;
 
     @Override
     @Test

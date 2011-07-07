@@ -85,7 +85,8 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
 
 /**
- * Driver class for all parser implementations.
+ * Driver class for all parser implementations. Based on the cltool4j command-line tool infrastructure
+ * (http://code.google.com/p/cltool4j/).
  * 
  * @author Nathan Bodenstab
  * @author Aaron Dunlop
@@ -97,7 +98,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     // Global vars to create parser
     public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
     public EdgeSelectorFactory edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
-    private Grammar grammar;
+    Grammar grammar;
 
     // == Parser options ==
     @Option(name = "-p", aliases = { "--parser" }, metaVar = "parser", usage = "Parser implementation")
@@ -129,7 +130,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     // can move them into a combined model file. First, we should make it a -O option instead of a
     // command-line parameter
     @Option(name = "-beamModelBias", usage = "comma seperated bias for each bin in model")
-    public String beamModelBias = "1000,1000,1000,1000";
+    public String beamModelBias = "200,200,200,200";
 
     @Option(name = "-beamModelFeats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
     public static String featTemplate;
@@ -387,6 +388,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                 return new LeftCscSparseMatrixGrammar(genericGrammar, Int2IntHashPackingFunction.class);
             case PerfectHash:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
+            default:
+                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
             }
         case RightChildMl:
             return new RightCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);

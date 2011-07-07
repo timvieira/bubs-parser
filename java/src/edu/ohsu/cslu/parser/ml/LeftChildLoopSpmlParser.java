@@ -24,14 +24,12 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
 /**
- * Left-child loop exhaustive parser using a sparse-matrix grammar representation (
- * {@link LeftCscSparseMatrixGrammar}).
+ * Exhaustive matrix-loop parser which performs grammar intersection by iterating over grammar rules matching the
+ * observed non-terminals in the left child cell.
  * 
  * @author Aaron Dunlop
- * @since Jun 13, 2010
  */
-public class LeftChildLoopSpmlParser extends
-        SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, DenseVectorChart> {
+public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<LeftCscSparseMatrixGrammar, DenseVectorChart> {
 
     public LeftChildLoopSpmlParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -77,12 +75,10 @@ public class LeftChildLoopSpmlParser extends
 
                     // Unpack the grammar rule's right child
                     final int packedChildPair = grammar.cscBinaryPopulatedColumns[j];
-                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(
-                        packedChildPair);
+                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(packedChildPair);
 
                     // Look up the right child NT's probability in the right child cell
-                    final float rightInsideProbability = chart.insideProbabilities[rightCellOffset
-                            + rightChild];
+                    final float rightInsideProbability = chart.insideProbabilities[rightCellOffset + rightChild];
 
                     if (rightInsideProbability == Float.NEGATIVE_INFINITY) {
                         continue;
@@ -90,8 +86,7 @@ public class LeftChildLoopSpmlParser extends
                     final float childProbability = leftInsideProbability + rightInsideProbability;
 
                     for (int entryIndex = grammar.cscBinaryPopulatedColumnOffsets[j]; entryIndex < grammar.cscBinaryPopulatedColumnOffsets[j + 1]; entryIndex++) {
-                        final float jointProbability = childProbability
-                                + grammar.cscBinaryProbabilities[entryIndex];
+                        final float jointProbability = childProbability + grammar.cscBinaryProbabilities[entryIndex];
                         final int parent = grammar.cscBinaryRowIndices[entryIndex];
 
                         final int targetCellParentIndex = targetCellOffset + parent;

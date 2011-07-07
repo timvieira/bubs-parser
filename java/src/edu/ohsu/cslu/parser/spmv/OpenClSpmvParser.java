@@ -361,7 +361,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
      * Performs the binary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL device.
      * 
      * This version copies the cross-product to device memory and the resulting chart cell back into main memory.
-     * Primarily for unit testing of {@link #internalBinarySpmvMultiply(ParallelArrayChartCell)} .
+     * Primarily for unit testing of the internal implementation.
      */
     @Override
     public void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
@@ -386,7 +386,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
      * Performs the unary-rule grammar intersection by Sparse Matrix-Vector multiplication on the OpenCL device.
      * 
      * This version copies the current cell population to device memory and the results back into main memory. Primarily
-     * for unit testing of {@link #internalUnarySpmvMultiply(ParallelArrayChartCell)}.
+     * for unit testing of the internal implementation.
      */
     @Override
     public void unarySpmv(final ChartCell chartCell) {

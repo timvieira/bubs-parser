@@ -27,6 +27,9 @@ import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
     float bestFOM, onlineBeam;

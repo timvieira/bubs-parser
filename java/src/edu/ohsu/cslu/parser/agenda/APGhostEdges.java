@@ -27,6 +27,9 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
+/**
+ * @author Nathan Bodenstab
+ */
 public class APGhostEdges extends AgendaParser {
 
     protected LinkedList<ChartEdge>[][] needLeftGhostEdges, needRightGhostEdges;
@@ -84,8 +87,7 @@ public class APGhostEdges extends AgendaParser {
             possibleEdges = needLeftGhostEdges[nt][cell.end()];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
-                    curBestEdge = chart.getCell(cell.start(), ghostEdge.end()).getBestEdge(
-                        ghostEdge.prod.parent);
+                    curBestEdge = chart.getCell(cell.start(), ghostEdge.end()).getBestEdge(ghostEdge.prod.parent);
                     if (curBestEdge == null) {
                         // ghost edge inside prob = grammar rule prob + ONE
                         // CHILD inside prob
@@ -98,8 +100,7 @@ public class APGhostEdges extends AgendaParser {
             possibleEdges = needRightGhostEdges[nt][cell.start()];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
-                    curBestEdge = chart.getCell(ghostEdge.start(), cell.end()).getBestEdge(
-                        ghostEdge.prod.parent);
+                    curBestEdge = chart.getCell(ghostEdge.start(), cell.end()).getBestEdge(ghostEdge.prod.parent);
                     if (curBestEdge == null) {
                         addEdgeToFrontier(chart.new ChartEdge(ghostEdge.prod, ghostEdge.leftCell, cell));
                     }
