@@ -300,6 +300,10 @@ public class ParseTree {
         assert i == newLeafNodes.length;
     }
 
+    public int span() {
+        return getLeafNodes().size();
+    }
+
     public LinkedList<ParseTree> getLeafNodes() {
         final LinkedList<ParseTree> list = new LinkedList<ParseTree>();
         for (final ParseTree node : preOrderTraversal()) {
