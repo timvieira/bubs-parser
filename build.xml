@@ -70,6 +70,8 @@
 			<param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
 			<param name="tool-name" value="summarize-grammar" />
 			<param name="heap-size" value="512m" />
+			<!-- TODO We currently have to include all the GPL libraries (including OpenCL4J) because all parsers are referenced statically -->
+            <param name="package-gpl-libs" value="true" />
 		</antcall>
 	</target>
 
@@ -78,6 +80,7 @@
 			<param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
 			<param name="tool-name" value="serialize-model" />
 			<param name="heap-size" value="1200m" />
+            <param name="package-gpl-libs" value="true" />
 		</antcall>
 	</target>
 
@@ -100,6 +103,7 @@
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.grammar.GrammarTrainer" />
 			<param name="tool-name" value="grammar-train" />
+            <param name="package-gpl-libs" value="true" />
 		</antcall>
 	</target>
 
@@ -108,21 +112,16 @@
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.tools.TreeTools" />
 			<param name="tool-name" value="tree-tools" />
+            <param name="package-gpl-libs" value="true" />
 		</antcall>
 	</target>
 
-
-	<target name="induce-grammar" depends="compile">
-		<antcall target="package-tool">
-			<param name="root-class" value="edu.ohsu.cslu.elvi.InduceGrammar" />
-			<param name="tool-name" value="induce-grammar" />
-		</antcall>
-	</target>
 
 	<target name="train-perceptron" depends="compile">
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.perceptron.ModelTrainer" />
 			<param name="tool-name" value="train-perceptron" />
+            <param name="package-gpl-libs" value="true" />
 		</antcall>
 	</target>
 
@@ -130,6 +129,7 @@
 		<antcall target="package-tool">
 			<param name="root-class" value="edu.ohsu.cslu.parser.ParserTrainer" />
 			<param name="tool-name" value="parser-trainer" />
+            <param name="package-gpl-libs" value="true" />
 		</antcall>
 	</target>
 
