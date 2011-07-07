@@ -136,7 +136,6 @@
         <copy file="${license-file}" tofile="package-jar-tmp/META-INF/LICENSE.txt" failonerror="false" />
         <copy file="${default-options}" tofile="package-jar-tmp/META-INF/defaults.properties" failonerror="false" />
 
-    	<echo message="Additional-root-classes: ${additional-root-classes}" />
         <!-- Package the jar -->
         <genjar jarfile="${dir.dist}/${tool-name}.jar">
             <class name="${root-class}" />
