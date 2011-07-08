@@ -52,8 +52,9 @@ public class ParseContext {
     public long nBinaryConsidered = 0;
 
     public float parseTimeSec = 0;
-    public float fomInitSec = 0;
-    public float ccInitSec = 0;
+    public float fomInitMs = 0;
+    public float ccInitMs = 0;
+    public float unaryAndPruningMs = 0;
     public float insideScore = 0;
     public long maxMemoryMB = 0;
 
@@ -103,8 +104,9 @@ public class ParseContext {
         result += " pushes=" + totalPushes;
         result += " considered=" + totalConsidered;
 
-        result += " fomInit=" + fomInitSec;
-        result += " ccInitSec=" + ccInitSec;
+        result += " fomInit=" + fomInitMs;
+        result += " ccInit=" + ccInitMs;
+        result += " unaryAndPruning=" + unaryAndPruningMs;
 
         result += " nLex=" + nLex;
         result += " nLexUnary=" + nLexUnaryConsidered;

@@ -34,9 +34,6 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     public C chart;
     protected long extractTime;
-    protected long initTime;
-    protected long edgeSelectorInitTime;
-    protected long cellSelectorInitTime;
 
     public ChartParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -44,16 +41,14 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public BinaryTree<String> findBestParse(final int[] tokens) {
-        final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
         initSentence(tokens);
         addLexicalProductions(tokens);
 
         if (edgeSelector != null) {
             if (collectDetailedStatistics) {
                 final long t1 = System.currentTimeMillis();
-                initTime = t1 - t0;
                 edgeSelector.init(chart);
-                edgeSelectorInitTime = System.currentTimeMillis() - t1;
+                currentInput.fomInitMs = System.currentTimeMillis() - t1;
             } else {
                 edgeSelector.init(chart);
             }
@@ -62,7 +57,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (collectDetailedStatistics) {
             final long t2 = System.currentTimeMillis();
             cellSelector.initSentence(this);
-            cellSelectorInitTime = System.currentTimeMillis() - t2;
+            currentInput.ccInitMs = System.currentTimeMillis() - t2;
         } else {
             cellSelector.initSentence(this);
         }
@@ -118,8 +113,8 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     @Override
     public String getStats() {
         return chart.getStats()
-                + (collectDetailedStatistics ? String.format(" edgeSelectorInitTime=%d cellSelectorInitTime=%d",
-                        edgeSelectorInitTime, cellSelectorInitTime) : "");
+                + (collectDetailedStatistics ? String.format(" edgeSelectorInitTime=%.0f cellSelectorInitTime=%.0f",
+                        currentInput.fomInitMs, currentInput.ccInitMs) : "");
     }
 
     public SparseBitVector getCellFeatures(final int start, final int end, final String featTemplate) {
