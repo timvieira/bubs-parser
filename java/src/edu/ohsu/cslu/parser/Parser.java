@@ -231,4 +231,16 @@ public abstract class Parser<G extends Grammar> {
             EnumAliasMap.singleton().addAliases(this, aliases);
         }
     }
+
+    /**
+     * Various input formats are supported, including free text, pre-tokenized text, and (possibly eventually), gold POS
+     * tags and gold trees
+     */
+    static public enum InputFormat {
+        Text, Tokenized("tok", "pretok");
+
+        private InputFormat(final String... aliases) {
+            EnumAliasMap.singleton().addAliases(this, aliases);
+        }
+    }
 }

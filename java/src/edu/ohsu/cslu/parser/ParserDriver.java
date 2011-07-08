@@ -45,6 +45,8 @@ import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.grammar.Tokenizer;
+import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.agenda.APDecodeFOM;
@@ -174,6 +176,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
     @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
     public boolean binaryTreeOutput = false;
+
+    @Option(name = "-if", aliases = { "--input-format" }, metaVar = "Input Format", usage = "Format of input file(s).")
+    public InputFormat inputFormat = InputFormat.Text;
 
     // == Other options ==
     // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance
@@ -506,7 +511,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                 if (sentence.matches("^\\s*$")) {
                     return null;
                 }
-                return getLocal().parseSentence(sentence);
+                // TODO Support other input formats
+                return getLocal().parseSentence(
+                        inputFormat == InputFormat.Text ? Tokenizer.treebankTokenize(sentence) : sentence);
             }
         });
     }
