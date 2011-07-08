@@ -22,6 +22,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestSymbolSet.class })
+@Suite.SuiteClasses({ TestSymbolSet.class, TestTokenizer.class, TestArrayGrammar.class,
+        TestCscSparseMatrixGrammar.class, TestCsrSparseMatrixGrammar.class })
 public class AllGrammarTests {
 }

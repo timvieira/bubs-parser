@@ -33,57 +33,73 @@ public class Tokenizer implements Serializable {
         this.lexSet = lexSet;
     }
 
-    public String text2PTBTokenize(final String s) {
+    public static String treebankTokenize(final String sentence) {
+        String s = sentence;
+        // Directional open and close quotes
+        s = s.replaceAll("^\"", "`` ");
+        s = s.replaceAll("([ \\(\\[{<])\"", "$1 `` ");
+        s = s.replaceAll("\"", "''");
 
-        return s;
+        // Add spaces around question marks, exclamation points, and other punctuation
+        s = s.replaceAll("([.,;@#$%&?!\\]])", " $1 ");
 
-        // attempt to get correct directional quotes
+        // Re-collapse ellipses
+        s = s.replaceAll("\\.  \\.  \\.", "...");
 
-        /*
-         * translated from http://www.cis.upenn.edu/~treebank/tokenizer.sed
-         * 
-         * # attempt to get correct directional quotes s=^"=`` =g s=\([ ([{<]\)"=\1 `` =g # close quotes handled at end
-         * 
-         * s=\.\.\.= ... =g s=[,;:@#$%&]= & =g
-         * 
-         * # Assume sentence tokenization has been done first, so split FINAL periods # only.
-         * s=\([^.]\)\([.]\)\([])}>"']*\)[ ]*$=\1 \2\3 =g # however, we may as well split ALL question marks and
-         * exclamation points, # since they shouldn't have the abbrev.-marker ambiguity problem s=[?!]= & =g
-         * 
-         * # parentheses, brackets, etc. s=[][(){}<>]= & =g # Some taggers, such as Adwait Ratnaparkhi's MXPOST, use the
-         * parsed-file # version of these symbols. # UNCOMMENT THE FOLLOWING 6 LINES if you're using MXPOST. #
-         * s/(/-LRB-/g # s/)/-RRB-/g # s/\[/-LSB-/g # s/\]/-RSB-/g # s/{/-LCB-/g # s/}/-RCB-/g
-         * 
-         * s=--= -- =g
-         * 
-         * # NOTE THAT SPLIT WORDS ARE NOT MARKED. Obviously this isn't great, since # you might someday want to know
-         * how the words originally fit together -- # but it's too late to make a better system now, given the millions
-         * of # words we've already done "wrong".
-         * 
-         * # First off, add a space to the beginning and end of each line, to reduce # necessary number of regexps. s=$=
-         * = s=^= =
-         * 
-         * s="= '' =g # possessive or close-single-quote s=\([^']\)' =\1 ' =g # as in it's, I'm, we'd s='\([sSmMdD]\) =
-         * '\1 =g s='ll = 'll =g s='re = 're =g s='ve = 've =g s=n't = n't =g s='LL = 'LL =g s='RE = 'RE =g s='VE = 'VE
-         * =g s=N'T = N'T =g
-         * 
-         * s= \([Cc]\)annot = \1an not =g s= \([Dd]\)'ye = \1' ye =g s= \([Gg]\)imme = \1im me =g s= \([Gg]\)onna = \1on
-         * na =g s= \([Gg]\)otta = \1ot ta =g s= \([Ll]\)emme = \1em me =g s= \([Mm]\)ore'n = \1ore 'n =g s= '\([Tt]\)is
-         * = '\1 is =g s= '\([Tt]\)was = '\1 was =g s= \([Ww]\)anna = \1an na =g # s= \([Ww]\)haddya = \1ha dd ya =g #
-         * s= \([Ww]\)hatcha = \1ha t cha =g
-         * 
-         * # clean out extra spaces s= *= =g s=^ *==g
-         */
+        // // Split _final_ periods only
+        // s = s.replaceAll("([^.])([.])([\\])}>\"']*)\\s*$", "$1 $2$3 ");
 
+        // Parentheses, brackets, etc.
+        s = s.replaceAll("\\(", "-LRB- ");
+        s = s.replaceAll("\\)", " -RRB-");
+        s = s.replaceAll("\\[", "-LSB- ");
+        s = s.replaceAll("\\]", " -RSB-");
+        s = s.replaceAll("\\{", "-LCB- ");
+        s = s.replaceAll("\\}", " -RCB-");
+        s = s.replaceAll("--", " -- ");
+
+        s = s.replaceAll("$", " ");
+        s = s.replaceAll("^", " ");
+
+        s = s.replaceAll("([^'])' ", "$1 ' ");
+
+        // Possessives, contractions, etc.
+        s = s.replaceAll("'([sSmMdD]) ", " '$1 ");
+        s = s.replaceAll("'ll ", " 'll ");
+        s = s.replaceAll("'re ", " 're ");
+        s = s.replaceAll("'ve ", " 've ");
+        s = s.replaceAll("n't ", " n't ");
+        s = s.replaceAll("'LL ", " 'LL ");
+        s = s.replaceAll("'RE ", " 'RE ");
+        s = s.replaceAll("'VE ", " 'VE ");
+        s = s.replaceAll("N'T ", " N'T ");
+
+        // Contractions and pseudo-words
+        s = s.replaceAll(" ([Cc])annot ", " $1an not ");
+        s = s.replaceAll(" ([Dd])'ye ", " $1' ye ");
+        s = s.replaceAll(" ([Gg])imme ", " $1im me ");
+        s = s.replaceAll(" ([Gg])onna ", " $1on na ");
+        s = s.replaceAll(" ([Gg])otta ", " $1ot ta ");
+        s = s.replaceAll(" ([Ll])emme ", " $1em me ");
+        s = s.replaceAll(" ([Mm])ore'n ", " $1ore 'n ");
+        s = s.replaceAll(" '([Tt])is ", " $1 is ");
+        s = s.replaceAll(" '([Tt])was ", " $1 was ");
+        s = s.replaceAll(" ([Ww])anna ", " $1an na ");
+
+        // Remove spaces from abbreviations
+        s = s.replaceAll(" ([A-Z]) \\.", " $1. ");
+
+        // Collapse multiple spaces and trim whitespace from beginning and end
+        return s.replaceAll("\\s+", " ").trim();
     }
 
-    // TODO: tokenize according to treebank conventions (split don't => do n't, etc.)
+    // TODO: tokenize according to treebank conventions (split don't to do n't, etc.)
     public String[] tokenize(final String sentence) {
-        final String tokens[] = sentence.split("\\s+");
-        for (int i = 0; i < tokens.length; i++) {
-            tokens[i] = mapToLexSetEntry(tokens[i], i);
+        final String treebankTokens[] = treebankTokenize(sentence).split(" ");
+        for (int i = 0; i < treebankTokens.length; i++) {
+            treebankTokens[i] = mapToLexSetEntry(treebankTokens[i], i);
         }
-        return tokens;
+        return treebankTokens;
     }
 
     public int[] tokenizeToIndex(final String sentence) {
@@ -324,82 +340,4 @@ public class Tokenizer implements Serializable {
         }
         return false;
     }
-
-    // public Token[] tokenize(final String sentence) throws Exception {
-    // final String tokens[] = ParserUtil.tokenize(sentence);
-    // final Token[] sentTokens = new Token[tokens.length];
-    //
-    // for (int i = 0; i < tokens.length; i++) {
-    // sentTokens[i] = new Token(tokens[i]);
-    // }
-    // return sentTokens;
-    // }
-
-    // public class Token {
-    //
-    // public String word, origWord;
-    // public int index;
-    // private boolean isUnk;
-    //
-    // public Token(final String word) throws Exception {
-    // this.origWord = word;
-    // setIndexAndUnk();
-    // }
-    //
-    // @Override
-    // public String toString() {
-    // return this.toString(false);
-    // }
-    //
-    // public boolean isUnk() {
-    // return this.isUnk;
-    // }
-    //
-    // public String toString(final boolean appendUnkStr) {
-    // if (appendUnkStr == true && isUnk() == true) {
-    // return origWord + "::" + word;
-    // }
-    // return origWord;
-    // }
-    //
-    // // public String getToken(String wordStr) {
-    // // if (lexSet.hasSymbol(word)) {
-    // // return wordStr;
-    // // }
-    // // wordStr = wordToUnkString(wordStr);
-    // // // remove last feature from unk string until we find a matching entry in the lexicon
-    // // while (!lexSet.hasSymbol(wordStr) && wordStr.contains("-")) {
-    // // wordStr = wordStr.substring(0, wordStr.lastIndexOf('-'));
-    // // }
-    // //
-    // // if (lexSet.hasSymbol(wordStr) == false) {
-    // // throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
-    // // }
-    // // return wordStr;
-    // // }
-    //
-    // private void setIndexAndUnk() throws Exception {
-    // assert this.origWord != null;
-    // String unkStr;
-    //
-    // if (lexSet.hasSymbol(origWord)) {
-    // this.index = lexSet.getIndex(origWord);
-    // this.isUnk = false;
-    // } else {
-    // this.isUnk = true;
-    // unkStr = wordToUnkString(origWord);
-    // // remove last feature from unk string until we find a matching entry in the lexicon
-    // while (!lexSet.hasSymbol(unkStr) && unkStr.contains("-")) {
-    // unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
-    // }
-    //
-    // if (lexSet.hasSymbol(unkStr) == false) {
-    // throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
-    // }
-    //
-    // this.word = unkStr;
-    // this.index = lexSet.getIndex(unkStr);
-    // }
-    // }
-    // }
 }
