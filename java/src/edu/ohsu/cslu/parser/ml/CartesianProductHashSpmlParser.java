@@ -46,7 +46,7 @@ public class CartesianProductHashSpmlParser extends
             chart.clear(sentLength);
         } else {
             // TODO Consolidate chart construction in a superclass using the genericized grammar
-            chart = new PackedArrayChart(tokens, grammar);
+            chart = new PackedArrayChart(tokens, grammar, beamWidth, lexicalRowBeamWidth);
         }
         super.initSentence(tokens);
     }
@@ -81,7 +81,6 @@ public class CartesianProductHashSpmlParser extends
 
                 // And over children in the right child cell
                 for (int j = rightStart; j <= rightEnd; j++) {
-
                     final int column = cpf.pack(leftChild, chart.nonTerminalIndices[j]);
                     if (column == Integer.MIN_VALUE) {
                         continue;
@@ -105,8 +104,16 @@ public class CartesianProductHashSpmlParser extends
         }
 
         // Apply unary rules
-        unarySpmv(targetCell);
+        if (exhaustiveSearch) {
+            unarySpmv(targetCell);
+            targetCell.finalizeCell();
+        } else {
+            final int[] cellPackedChildren = new int[grammar.numNonTerms()];
+            final float[] cellInsideProbabilities = new float[grammar.numNonTerms()];
+            final short[] cellMidpoints = new short[grammar.numNonTerms()];
+            unaryAndPruning(targetCell, start, end, cellPackedChildren, cellInsideProbabilities, cellMidpoints);
 
-        targetCell.finalizeCell();
+            targetCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+        }
     }
 }

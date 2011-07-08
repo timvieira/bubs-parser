@@ -23,8 +23,8 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 
-public abstract class SparseMatrixLoopParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart>
-        extends SparseMatrixParser<G, C> {
+public abstract class SparseMatrixLoopParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart> extends
+        SparseMatrixParser<G, C> {
 
     public long startTime = 0;
 
@@ -35,6 +35,7 @@ public abstract class SparseMatrixLoopParser<G extends SparseMatrixGrammar, C ex
     @Override
     protected void initSentence(final int[] tokens) {
         startTime = System.currentTimeMillis();
+        chart.tokens = tokens;
     }
 
 }

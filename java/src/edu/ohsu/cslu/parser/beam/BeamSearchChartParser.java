@@ -101,10 +101,10 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final double startTimeMS = System.currentTimeMillis();
         edgeSelector.init(chart);
         final double endTimeMS = System.currentTimeMillis();
-        currentInput.fomInitSec = (float) ((endTimeMS - startTimeMS) / 1000.0);
+        currentInput.fomInitMs = (float) ((endTimeMS - startTimeMS) / 1000.0);
 
         cellSelector.initSentence(this);
-        currentInput.ccInitSec = (float) ((System.currentTimeMillis() - endTimeMS) / 1000.0);
+        currentInput.ccInitMs = (float) ((System.currentTimeMillis() - endTimeMS) / 1000.0);
     }
 
     @Override
