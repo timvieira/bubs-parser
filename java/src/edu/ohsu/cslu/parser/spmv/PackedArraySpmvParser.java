@@ -29,7 +29,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
@@ -41,11 +40,6 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
  */
 public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> extends
         SparseMatrixVectorParser<G, PackedArrayChart> {
-
-    protected final int beamWidth;
-    protected final int lexicalRowBeamWidth;
-    protected final int lexicalRowUnaries;
-    private final boolean exhaustiveSearch;
 
     protected final ForkJoinPool threadPool;
     protected final LinkedList<ForkJoinTask<?>> currentTasks;
@@ -101,19 +95,6 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
                 return m;
             }
         };
-
-        // Pruning Parameters
-        if (props.containsKey("maxBeamWidth") && props.getIntProperty("maxBeamWidth") > 0) {
-            beamWidth = props.getIntProperty("maxBeamWidth");
-            lexicalRowBeamWidth = props.getIntProperty("lexicalRowBeamWidth");
-            lexicalRowUnaries = props.getIntProperty("lexicalRowUnaries");
-            this.exhaustiveSearch = false;
-        } else {
-            beamWidth = grammar.numNonTerms();
-            lexicalRowBeamWidth = grammar.numNonTerms();
-            lexicalRowUnaries = 0;
-            this.exhaustiveSearch = true;
-        }
     }
 
     @Override
@@ -208,128 +189,6 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
         if (collectDetailedStatistics) {
             sentenceUnaryTime = System.currentTimeMillis() - t2;
-        }
-    }
-
-    protected void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end,
-            final int[] cellPackedChildren, final float[] cellInsideProbabilities, final short[] cellMidpoints) {
-
-        final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
-
-        // final boolean factoredOnly = cellSelector.factoredParentsOnly(start, end);
-        final boolean factoredOnly = cellSelector.hasCellConstraints()
-                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
-
-        /*
-         * Populate the chart cell with the most probable n edges (n = beamWidth).
-         * 
-         * This operation depends on 3 data structures:
-         * 
-         * A) The temporary edge storage already populated with binary inside probabilities and (viterbi) backpointers
-         * 
-         * B) A bounded priority queue of non-terminal indices, prioritized by their figure-of-merit scores
-         * 
-         * C) A parallel array of edges. We will pop a limited number of edges off the priority queue into this array,
-         * so this storage represents the actual cell population.
-         * 
-         * First, we push all binary edges onto the priority queue (if we're pruning significantly, most will not make
-         * the queue). We then begin popping edges off the queue. With each edge popped, we 1) Add the edge to the array
-         * of cell edges (C); and 2) Iterate through unary grammar rules with the edge parent as a child, inserting any
-         * resulting unary edges to the queue. This insertion replaces the existing queue entry for the parent
-         * non-terminal, if greater, and updates the inside probability and backpointer in (A).
-         */
-
-        // Push all binary or lexical edges onto a bounded priority queue
-        final int cellBeamWidth = (end - start == 1 ? lexicalRowBeamWidth : Math.min(
-                cellSelector.getBeamWidth(start, end), beamWidth));
-        final BoundedPriorityQueue q = new BoundedPriorityQueue(cellBeamWidth, grammar);
-
-        final float[] tmpFoms = new float[grammar.numNonTerms()];
-        Arrays.fill(tmpFoms, Float.NEGATIVE_INFINITY);
-
-        if (end - start == 1) {
-            // Limit the queue to the number of non-unary productions allowed
-            q.setMaxSize(lexicalRowBeamWidth - lexicalRowUnaries);
-
-            for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
-                if (spvChartCell.tmpInsideProbabilities[nt] != Float.NEGATIVE_INFINITY) {
-                    final float fom = edgeSelector.calcLexicalFOM(start, end, nt,
-                            spvChartCell.tmpInsideProbabilities[nt]);
-                    q.insert(nt, fom);
-                    tmpFoms[nt] = fom;
-                }
-            }
-            // Expand the queue to allow a few entries for unary productions
-            q.setMaxSize(lexicalRowBeamWidth);
-
-        } else {
-            for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
-                if (spvChartCell.tmpInsideProbabilities[nt] != Float.NEGATIVE_INFINITY) {
-                    final float fom = edgeSelector.calcFOM(start, end, nt, spvChartCell.tmpInsideProbabilities[nt]);
-                    q.insert(nt, fom);
-                    tmpFoms[nt] = fom;
-                }
-            }
-        }
-
-        final float[] cellFoms = new float[grammar.numNonTerms()];
-        Arrays.fill(cellInsideProbabilities, Float.NEGATIVE_INFINITY);
-        Arrays.fill(cellFoms, Float.NEGATIVE_INFINITY);
-
-        // Pop edges off the queue until we fill the beam width. With each non-terminal popped off the queue,
-        // push
-        // unary edges for each unary grammar rule with the non-terminal as a child
-        for (int edgesPopulated = 0; edgesPopulated < cellBeamWidth && q.size() > 0;) {
-
-            final int headIndex = q.headIndex();
-            final short nt = q.parentIndices[headIndex];
-            final float fom = q.foms[headIndex];
-            q.popHead();
-
-            if (cellFoms[nt] == Float.NEGATIVE_INFINITY) {
-                cellPackedChildren[nt] = spvChartCell.tmpPackedChildren[nt];
-                cellInsideProbabilities[nt] = spvChartCell.tmpInsideProbabilities[nt];
-                cellFoms[nt] = fom;
-                cellMidpoints[nt] = spvChartCell.tmpMidpoints[nt];
-
-                // Process unary edges for cells which are open to non-factored parents
-                if (!factoredOnly) {
-                    // Insert all unary edges with the current parent as child into the queue
-                    final short child = nt;
-
-                    // Iterate over possible parents of the child (rows with non-zero entries)
-                    for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
-
-                        final short parent = grammar.cscUnaryRowIndices[i];
-                        final float jointProbability = grammar.cscUnaryProbabilities[i]
-                                + spvChartCell.tmpInsideProbabilities[child];
-                        final float parentFom = edgeSelector.calcFOM(start, end, parent, jointProbability);
-
-                        if (parentFom > tmpFoms[parent] && parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
-                            // The FOM was high enough that the edge was added to the queue; update temporary
-                            // storage
-                            // (A) to reflect the new unary child and probability
-                            spvChartCell.tmpPackedChildren[parent] = grammar.cartesianProductFunction()
-                                    .packUnary(child);
-                            spvChartCell.tmpInsideProbabilities[parent] = jointProbability;
-                        }
-                    }
-                }
-
-                edgesPopulated++;
-
-            } else if (fom > cellFoms[nt]) {
-                // We just re-popped a non-terminal we've already seen (meaning a unary which was added to the
-                // queue). Replace the existing edge with the new unary edge.
-                cellPackedChildren[nt] = spvChartCell.tmpPackedChildren[nt];
-                cellInsideProbabilities[nt] = spvChartCell.tmpInsideProbabilities[nt];
-                cellMidpoints[nt] = end;
-                cellFoms[nt] = fom;
-            }
-        }
-
-        if (collectDetailedStatistics) {
-            sentencePruningTime += System.currentTimeMillis() - t0;
         }
     }
 

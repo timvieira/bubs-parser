@@ -29,6 +29,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ TestLeftChildLoopSpmlParser.class, TestRightChildLoopSpmlParser.class,
         TestCartesianProductBinarySearchSpmlParser.class, TestCartesianProductBinarySearchLeftChildSpmlParser.class,
-        TestCartesianProductHashSpmlParser.class, TestGrammarLoopSpmlParser.class })
+        TestCartesianProductHashSpmlParser.class, TestGrammarLoopSpmlParser.class,
+        TestPrunedCartesianProductHashSpmlParser.class })
 public class AllMatrixLoopParserTests {
 }

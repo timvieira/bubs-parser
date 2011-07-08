@@ -47,7 +47,6 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     public long startTime = 0;
     public long sentenceCartesianProductTime = 0;
     public long sentenceBinarySpMVTime = 0;
-    public long sentencePruningTime = 0;
     public long sentenceUnaryTime = 0;
     public long sentenceFinalizeTime = 0;
 
