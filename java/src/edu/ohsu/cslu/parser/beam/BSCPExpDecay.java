@@ -35,14 +35,18 @@ public class BSCPExpDecay extends BSCPPruneViterbi {
 
     public BSCPExpDecay(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
+        throw new IllegalArgumentException("Parser requires tuning and cannot be used");
     }
 
     @Override
     protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
 
-        int maxPops = (int) opts.param1;
-        int minPops = (int) opts.param2;
-        float lambda = opts.param3;
+        // int maxPops = (int) opts.param1;
+        // int minPops = (int) opts.param2;
+        // float lambda = opts.param3;
+        int maxPops = -1;
+        int minPops = -1;
+        float lambda = -1;
 
         if (maxPops < 0)
             maxPops = 15;

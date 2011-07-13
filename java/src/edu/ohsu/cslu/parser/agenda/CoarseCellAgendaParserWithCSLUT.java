@@ -39,6 +39,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
             final OHSUCellConstraints cellConstraints) {
         super(opts, grammar);
         this.cellConstraints = cellConstraints;
+        throw new IllegalArgumentException("Parser requires tuning and cannot be used");
     }
 
     @Override
@@ -72,7 +73,9 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         ChartEdge edge;
         final ChartEdge[] bestEdges = new ChartEdge[grammar.numNonTerms()]; // inits to null
 
-        final int maxEdgesToAdd = (int) opts.param2;
+        // final int maxEdgesToAdd = (int) opts.param2;
+        final int maxEdgesToAdd = Integer.MAX_VALUE;
+
         final int midStart = cellSelector.getMidStart(start, end);
         final int midEnd = cellSelector.getMidEnd(start, end);
         final boolean onlyFactored = cellConstraints.hasCellConstraints()

@@ -237,9 +237,17 @@ public abstract class Parser<G extends Grammar> {
      * tags and gold trees
      */
     static public enum InputFormat {
-        Text, Tokenized("tok", "pretok");
+        Text, Tokens;
 
         private InputFormat(final String... aliases) {
+            EnumAliasMap.singleton().addAliases(this, aliases);
+        }
+    }
+
+    static public enum DecodeMethod {
+        Viterbi, MaxRecall, MaxRule, FOMSum, FOMProd;
+
+        private DecodeMethod(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
         }
     }

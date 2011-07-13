@@ -24,6 +24,7 @@ import java.util.PriorityQueue;
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -45,7 +46,7 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
     public BSCPFomDecode(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
 
-        if (ParserDriver.param3 != -1) {
+        if (opts.decodeMethod == Parser.DecodeMethod.FOMSum) {
             maxProduct = false;
         }
     }
