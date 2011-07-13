@@ -186,9 +186,11 @@ public class BoundaryInOut extends EdgeSelectorFactory {
         final SimpleCounterSet<String> posTransitionCount = new SimpleCounterSet<String>();
 
         // TODO: note that we have to have the same training grammar as decoding grammar here
-        // so the input needs to be bianarized. How are we going to get gold trees in the
-        // Berkeley grammar format? Can we just use the 1-best? Or maybe an inside/outside
-        // estimate. See Caraballo/Charniak 1998 for (what I think is) their inside/outside solution
+        // so the input needs to be bianarized. If we are parsing with the Berkeley latent-variable
+        // grammar then we can't work with Gold trees. As an approximation we will take the
+        // 1-best from the Berkeley parser output (although constraining the coarse labels to match
+        // the true gold tree would pobably be a little better)
+        // See Caraballo/Charniak 1998 for (what I think is) their inside/outside solution
         // to the same (or a similar) problem.
         while ((line = inStream.readLine()) != null) {
             tree = ParseTree.readBracketFormat(line);
@@ -207,6 +209,10 @@ public class BoundaryInOut extends EdgeSelectorFactory {
                 // -- #(*[i:*], POS[i-1]) -- number of times POS occurs just to the left of any span
 
                 if (node.isNonTerminal() == true) {
+                    if (grammar.nonTermSet.contains(node.contents) == false) {
+                        throw new IOException("Nonterminal '" + node.contents
+                                + "' in input tree not found in grammar.  Exiting.");
+                    }
                     leftBoundaryCount.increment(node.contents, convertNull(node.leftBoundaryPOSContents()));
                     rightBoundaryCount.increment(convertNull(node.rightBoundaryPOSContents()), node.contents);
                 }
@@ -220,6 +226,10 @@ public class BoundaryInOut extends EdgeSelectorFactory {
 
             // iterate through POS tags using .rightNeighbor
             for (ParseTree posNode = tree.leftMostPOS(); posNode != null; posNode = posNode.rightNeighbor) {
+                if (grammar.nonTermSet.contains(posNode.contents) == false) {
+                    throw new IOException("Nonterminal '" + posNode.contents
+                            + "' in input tree not found in grammar.  Exiting.");
+                }
                 historyStr = ParserUtil.join(history, joinString);
                 posTransitionCount.increment(posNode.contents, historyStr);
                 history.removeFirst();

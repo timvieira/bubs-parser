@@ -37,8 +37,8 @@ public class CellChart extends Chart {
 
     }
 
-    public CellChart(final int[] tokens, final boolean viterbiMax, final Parser<?> parser) {
-        super(tokens, viterbiMax);
+    public CellChart(final int[] tokens, final Parser<?> parser) {
+        super(tokens);
         this.parser = parser;
         allocateChart(tokens.length);
     }

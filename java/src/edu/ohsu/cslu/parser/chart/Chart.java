@@ -31,10 +31,9 @@ public abstract class Chart {
     protected Chart() {
     }
 
-    public Chart(final int[] tokens, final boolean viterbiMax) {
+    public Chart(final int[] tokens) {
         this.tokens = tokens;
         this.size = tokens.length;
-        this.viterbiMax = viterbiMax;
     }
 
     // public Chart(final int size, final boolean viterbiMax) {

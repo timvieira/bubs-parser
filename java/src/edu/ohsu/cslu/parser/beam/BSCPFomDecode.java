@@ -53,7 +53,7 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
 
     @Override
     protected void initSentence(final int[] tokens) {
-        chart = new CellChart(tokens, opts.viterbiMax(), this);
+        chart = new CellChart(tokens, this);
 
         final int n = tokens.length;
         maxcFOM = new float[n][n + 1][grammar.numNonTerms()];

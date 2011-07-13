@@ -97,7 +97,7 @@ public class TestConstrainedCsrSpmvParser {
         // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
-        opts.realSemiring = true;
+        // opts.realSemiring = true;
         parser1 = new ConstrainedCsrSpmvParser(opts, csrGrammar1);
         return parser1.findBestParse(chart0);
     }
@@ -209,7 +209,7 @@ public class TestConstrainedCsrSpmvParser {
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
 
-        opts.realSemiring = true;
+        // opts.realSemiring = true;
         final ConstrainedCsrSpmvParser parser2 = new ConstrainedCsrSpmvParser(opts, csrGrammar2);
         final BinaryTree<String> parseTree2 = parser2.findBestParse(chart0);
         final ConstrainedChart chart2 = parser2.chart;
@@ -513,7 +513,7 @@ public class TestConstrainedCsrSpmvParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
-        opts.realSemiring = true;
+        // opts.realSemiring = true;
         parser1 = new ConstrainedCsrSpmvParser(opts, biasedCsrGrammar1);
         parser1.findBestParse(chart0);
 

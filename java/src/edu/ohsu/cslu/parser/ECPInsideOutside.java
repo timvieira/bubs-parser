@@ -74,7 +74,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
     @Override
     protected void initSentence(final int[] tokens) {
-        chart = new InOutCellChart(tokens, opts.viterbiMax(), this);
+        chart = new InOutCellChart(tokens, this);
 
         // TODO: compress this so it's n*(n/2) instead of n*n
         // final int n = tokens.length + 1;
@@ -110,7 +110,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
         if (opts.decodeMethod == Parser.DecodeMethod.MaxRecall) {
             goodmanMaximizeLabelRecall();
-        } else if (opts.decodeMethod == Parser.DecodeMethod.MaxRule) {
+        } else if (opts.decodeMethod == Parser.DecodeMethod.MaxRuleProd) {
             // berkeleyMaxRule(tokens);
             berkeleyMaxRuleNoMarginalize(tokens);
         } else {

@@ -139,7 +139,7 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
-        opts.realSemiring = true;
+        // opts.realSemiring = true;
         final ConstrainedCsrSpmvParser parser = new ConstrainedCsrSpmvParser(opts, csrGrammar);
 
         final ConstrainedCountGrammar countGrammar = new ConstrainedCountGrammar(csrGrammar);
