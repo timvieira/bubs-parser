@@ -24,7 +24,6 @@ import java.io.IOException;
 
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
-import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
 
@@ -35,8 +34,8 @@ public class BinaryPerceptronSet extends Classifier {
     String binsStr;
     boolean smallestBeamFirst = true;
 
-    public BinaryPerceptronSet(final float learningRate, final LossFunction lossFunction,
-            final String binsStr, final String featureTemplate) {
+    public BinaryPerceptronSet(final float learningRate, final LossFunction lossFunction, final String binsStr,
+            final String featureTemplate) {
 
         this.binsStr = binsStr;
         bins = ParserUtil.strToIntArray(binsStr);
@@ -47,9 +46,9 @@ public class BinaryPerceptronSet extends Classifier {
             classifiers[i] = new AveragedPerceptron(learningRate, lossFunction, "0", featureTemplate, null);
         }
 
-        if (ParserDriver.param1 != -1) {
-            smallestBeamFirst = false;
-        }
+        // if (ParserDriver.param1 != -1) {
+        // smallestBeamFirst = false;
+        // }
     }
 
     public BinaryPerceptronSet(final BufferedReader stream) {
@@ -141,8 +140,8 @@ public class BinaryPerceptronSet extends Classifier {
         final String[] tokens = biasString.split(",");
         if (tokens.length != numClassifiers) {
             throw new IllegalArgumentException(
-                "ERROR: if BinaryPerceptronSet bias term is specified, must contain a bias for each model.  numBias="
-                        + tokens.length + " numModels=" + numClassifiers);
+                    "ERROR: if BinaryPerceptronSet bias term is specified, must contain a bias for each model.  numBias="
+                            + tokens.length + " numModels=" + numClassifiers);
         }
         for (int i = 0; i < tokens.length; i++) {
             classifiers[i].setBias("0," + tokens[i]);

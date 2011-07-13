@@ -41,6 +41,7 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
 
     public CoarseCellAgendaParser(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
+        throw new IllegalArgumentException("Parser requires tuning and cannot be used");
     }
 
     protected void initParser(final int[] tokens) {
@@ -85,7 +86,8 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
         ChartEdge edge;
         final ChartEdge[] bestEdges = new ChartEdge[grammar.numNonTerms()]; // inits to null
 
-        final int maxEdgesToAdd = (int) opts.param2;
+        // final int maxEdgesToAdd = (int) opts.param2;
+        final int maxEdgesToAdd = Integer.MAX_VALUE;
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final HashSetChartCell leftCell = chart.getCell(start, mid);

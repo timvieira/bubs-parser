@@ -76,7 +76,7 @@ public class PerceptronCellSelector extends CellSelector {
     public void initSentence(final ChartParser<?, ?> p) {
         // run at the beginning of each sentence
         this.parser = p;
-        DEBUG = (p.opts.param1 == -1);
+        // DEBUG = (p.opts.param1 == -1);
 
         cellConstraints.initSentence(parser.chart, parser.currentInput.sentenceNumber, parser.currentInput.sentence);
         final int chartSize = p.chart.size();

@@ -46,6 +46,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.Tokenizer;
+import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
@@ -103,68 +104,27 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     Grammar grammar;
 
     // == Parser options ==
-    @Option(name = "-p", aliases = { "--parser" }, metaVar = "parser", usage = "Parser implementation")
+    @Option(name = "-p", aliases = { "--parser" }, metaVar = "PARSER", usage = "Parser implementation (cyk|beam|agenda|matrix)")
     private ParserType parserType = ParserType.Matrix;
 
-    @Option(name = "-rp", aliases = { "--research-parser" }, hidden = true, metaVar = "parser", usage = "Research Parser implementation")
+    @Option(name = "-rp", hidden = true, metaVar = "PARSER", usage = "Research Parser implementation")
     private ResearchParserType researchParserType = null;
 
-    @Option(name = "-real", usage = "Use real semiring (sum) instead of tropical (max) for inside/outside calculations")
-    public boolean realSemiring = false;
-
-    // @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar =
-    // "function", usage =
-    // "Cartesian-product function (only used for SpMV parsers)")
-    @Option(name = "-cpf", hidden = true, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
-    private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash;
-
-    // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage =
-    // "Chart cell processing type")
-    // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
-
-    @Option(name = "-fom", metaVar = "fom", hidden = true, usage = "Figure of Merit to use for parser (name or model file)")
-    private String fomTypeOrModel = "Inside";
-
-    @Option(name = "-beamModel", usage = "Beam-width prediction model (for beam-search parsers)")
-    private String beamModelFileName = null;
-
-    // TODO These default biases are specific to the 0,1,2,4 model, but defaulted here for the moment until we
-    // can move them into a combined model file. First, we should make it a -O option instead of a
-    // command-line parameter
-    @Option(name = "-beamModelBias", usage = "comma seperated bias for each bin in model")
-    public String beamModelBias = "200,200,200,200";
-
-    @Option(name = "-beamModelFeats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
-    public static String featTemplate;
-
-    @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
-    public int reparse = 2;
-
-    @Option(name = "-beamTune", usage = "Tuning params for beam search: maxBeamWidth,globalScoreDelta,localScoreDelta,factoredCellBeamWidth")
-    public String beamTune = "30,20,8";
-
-    @Option(name = "-ccModel", metaVar = "file", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2009)")
-    private String chartConstraintsModel = null;
-
-    @Option(name = "-ccTune", metaVar = "val", usage = "CSLU Chart Constraints for Absolute (A), High Precision (P), or Linear (N): A,start,end,unary | P,pct | N,int")
-    public String chartConstraintsThresh = "A,120,120,inf";
-
-    // (1) absolute thresh A,start,end,unary
-    // (2) high precision P,pct (pct cells closed score > 0)
-    // (3) linear complexity N,int (x*N max open)
-
-    @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
-    public static boolean chartConstraintsPrint = false;
-
     // == Grammar options ==
-    @Option(name = "-g", metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
+    @Option(name = "-g", metaVar = "FILE", usage = "Grammar file (text, gzipped text, or binary serialized)")
     private String grammarFile = null;
 
-    @Option(name = "-m", metaVar = "file", usage = "Model file (binary serialized")
+    @Option(name = "-m", metaVar = "FILE", usage = "Model file (binary serialized)")
     private File modelFile = null;
 
+    @Option(name = "-real", hidden = true, usage = "Use real semiring (sum) instead of tropical (max) for inside/outside calculations")
+    public boolean realSemiring = false;
+
+    @Option(name = "-decode", metaVar = "TYPE", hidden = true, usage = "Method to extract best tree from forest")
+    public DecodeMethod decodeMethod = DecodeMethod.Viterbi;
+
     // == Output options ==
-    @Option(name = "-max", aliases = { "--max-length" }, metaVar = "len", usage = "Skip sentences longer than LEN")
+    @Option(name = "-max", metaVar = "LEN", usage = "Skip sentences longer than LEN")
     int maxLength = 200;
 
     // TODO: option doesn't work anymore
@@ -174,26 +134,69 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-unk", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
 
+    @Option(name = "-oldUNK", hidden = true, usage = "Use old UNK function")
+    public static boolean oldUNK = false;
+
     @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
     public boolean binaryTreeOutput = false;
 
-    @Option(name = "-if", aliases = { "--input-format" }, metaVar = "Input Format", usage = "Format of input file(s).")
+    @Option(name = "-if", metaVar = "FORMAT", usage = "Input format type")
     public InputFormat inputFormat = InputFormat.Text;
+
+    @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
+    public int reparse = 2;
+
+    // == Specific parser options ==
+    @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
+    private String fomTypeOrModel = "Inside";
+
+    @Option(name = "-beamTune", usage = "Tuning params for beam search: maxBeamWidth,globalScoreDelta,localScoreDelta,factoredCellBeamWidth")
+    public String beamTune = "30,20,8,30";
+
+    // @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar =
+    // "function", usage = "Cartesian-product function (only used for SpMV parsers)")
+    @Option(name = "-cpf", hidden = true, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
+    private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash;
+
+    // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage =
+    // "Chart cell processing type")
+    // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
+
+    @Option(name = "-beamModel", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
+    private String beamModelFileName = null;
+
+    // TODO These default biases are specific to the 0,1,2,4 model, but defaulted here for the moment until we
+    // can move them into a combined model file. First, we should make it a -O option instead of a
+    // command-line parameter
+    @Option(name = "-beamModelBias", usage = "Bias for each bin in model, seperated by commas")
+    public String beamModelBias = "200,200,200,200";
+
+    @Option(name = "-beamModelFeats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    public static String featTemplate;
+
+    @Option(name = "-ccModel", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
+    private String chartConstraintsModel = null;
+
+    @Option(name = "-ccTune", metaVar = "VAL", usage = "CSLU Chart Constraints for Absolute (A), High Precision (P), or Linear (N): A,start,end,unary | P,pct | N,int")
+    public String chartConstraintsThresh = "A,120,120,inf";
+
+    // (1) absolute thresh A,start,end,unary
+    // (2) high precision P,pct (pct cells closed score > 0)
+    // (3) linear complexity N,int (x*N max open)
+
+    @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
+    public static boolean chartConstraintsPrint = false;
 
     // == Other options ==
     // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance
     // passed in
-    @Option(name = "-x1", hidden = true, usage = "Tuning param #1")
-    public static float param1 = -1;
-
-    @Option(name = "-x2", hidden = true, usage = "Tuning param #2")
-    public static float param2 = -1;
-
-    @Option(name = "-x3", hidden = true, usage = "Tuning param #3")
-    public static float param3 = -1;
-
-    @Option(name = "-oldUNK", hidden = true, usage = "Use old UNK function")
-    public static boolean oldUNK = false;
+    /*
+     * @Option(name = "-x1", hidden = true, usage = "Tuning param #1") public static float param1 = -1;
+     * 
+     * @Option(name = "-x2", hidden = true, usage = "Tuning param #2") public static float param2 = -1;
+     * 
+     * @Option(name = "-x3", hidden = true, usage = "Tuning param #3") public static float param3 = -1;
+     */
 
     private long parseStartTime;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
@@ -569,9 +572,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         // s += prefix + "CellSelector=" + cellSelectorType + "\n";
         s += " FOM=" + fomTypeOrModel;
         s += " ViterbiMax=" + viterbiMax();
-        s += " x1=" + param1;
-        s += " x2=" + param2;
-        s += " x3=" + param3;
+        // s += " x1=" + param1;
+        // s += " x2=" + param2;
+        // s += " x3=" + param3;
         return s;
     }
 

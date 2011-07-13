@@ -108,11 +108,14 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
             computeOutsideProbsInCell(cell);
         }
 
-        if (ParserDriver.param1 == -1) {
+        if (opts.decodeMethod == Parser.DecodeMethod.MaxRecall) {
             goodmanMaximizeLabelRecall();
-        } else {
+        } else if (opts.decodeMethod == Parser.DecodeMethod.MaxRule) {
             // berkeleyMaxRule(tokens);
             berkeleyMaxRuleNoMarginalize(tokens);
+        } else {
+            throw new IllegalArgumentException("Expecting -decode to be MaxRecall or MaxRule but found "
+                    + opts.decodeMethod);
         }
 
         // return chart.extractBestParse(evalGrammar.startSymbol);
@@ -252,10 +255,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
         final int n = chart.size();
         final float maxcScore[][][] = new float[n][n + 1][grammar.numNonTerms()];
 
-        float stringProb = 0;
-        if (ParserDriver.param3 == -1) {
-            stringProb = chart.getInside(0, n, grammar.startSymbol);
-        }
+        final float stringProb = chart.getInside(0, n, grammar.startSymbol);
 
         for (int span = 1; span <= n; span++) {
             for (int start = 0; start < n - span + 1; start++) {
