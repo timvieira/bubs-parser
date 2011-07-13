@@ -104,7 +104,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     Grammar grammar;
 
     // == Parser options ==
-    @Option(name = "-p", aliases = { "--parser" }, metaVar = "PARSER", usage = "Parser implementation (cyk|beam|agenda|matrix)")
+    @Option(name = "-p", metaVar = "PARSER", usage = "Parser implementation (cyk|beam|agenda|matrix)")
     private ParserType parserType = ParserType.Matrix;
 
     @Option(name = "-rp", hidden = true, metaVar = "PARSER", usage = "Research Parser implementation")
@@ -117,21 +117,22 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-m", metaVar = "FILE", usage = "Model file (binary serialized)")
     private File modelFile = null;
 
-    @Option(name = "-real", hidden = true, usage = "Use real semiring (sum) instead of tropical (max) for inside/outside calculations")
-    public boolean realSemiring = false;
+    // @Option(name = "-real", hidden = true, usage =
+    // "Use real semiring (sum) instead of tropical (max) for inside/outside calculations")
+    // public boolean realSemiring = false;
 
     @Option(name = "-decode", metaVar = "TYPE", hidden = true, usage = "Method to extract best tree from forest")
-    public DecodeMethod decodeMethod = DecodeMethod.Viterbi;
+    public DecodeMethod decodeMethod = DecodeMethod.ViterbiMax;
 
     // == Output options ==
-    @Option(name = "-max", metaVar = "LEN", usage = "Skip sentences longer than LEN")
+    @Option(name = "-maxLength", metaVar = "LEN", usage = "Skip sentences longer than LEN")
     int maxLength = 200;
 
     // TODO: option doesn't work anymore
     // @Option(name = "-scores", usage = "Print inside scores for each non-term in result tree")
     // boolean printInsideProbs = false;
 
-    @Option(name = "-unk", usage = "Print unknown words as their UNK replacement class")
+    @Option(name = "-printUNK", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
 
     @Option(name = "-oldUNK", hidden = true, usage = "Use old UNK function")
@@ -140,8 +141,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
     public boolean binaryTreeOutput = false;
 
-    @Option(name = "-if", metaVar = "FORMAT", usage = "Input format type")
-    public InputFormat inputFormat = InputFormat.Text;
+    @Option(name = "-if", metaVar = "FORMAT", usage = "Input format type.  Choosing 'text' will tokenize the input before parsing.")
+    public InputFormat inputFormat = InputFormat.Tokens;
 
     @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
     public int reparse = 2;
@@ -150,7 +151,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
     private String fomTypeOrModel = "Inside";
 
-    @Option(name = "-beamTune", usage = "Tuning params for beam search: maxBeamWidth,globalScoreDelta,localScoreDelta,factoredCellBeamWidth")
+    @Option(name = "-beamTune", metaVar = "VAL", usage = "Tuning params for beam search: maxBeamWidth,globalScoreDelta,localScoreDelta,factoredCellBeamWidth")
     public String beamTune = "30,20,8,30";
 
     // @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar =
@@ -162,16 +163,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     // "Chart cell processing type")
     // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
 
-    @Option(name = "-beamModel", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
+    @Option(name = "-beamModel", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
 
     // TODO These default biases are specific to the 0,1,2,4 model, but defaulted here for the moment until we
     // can move them into a combined model file. First, we should make it a -O option instead of a
     // command-line parameter
-    @Option(name = "-beamModelBias", usage = "Bias for each bin in model, seperated by commas")
+    @Option(name = "-beamModelBias", metaVar = "VAL", usage = "Bias for each bin in model, seperated by commas")
     public String beamModelBias = "200,200,200,200";
 
-    @Option(name = "-beamModelFeats", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    @Option(name = "-beamModelFeats", metaVar = "VAL", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
     public static String featTemplate;
 
     @Option(name = "-ccModel", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
@@ -239,9 +240,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             researchParserType = parserType.researchParserType;
         }
 
-        if (researchParserType == ResearchParserType.ECPInsideOutside) {
-            this.realSemiring = true;
-        }
+        // if (researchParserType == ResearchParserType.ECPInsideOutside) {
+        // this.realSemiring = true;
+        // }
 
         grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
 
@@ -571,7 +572,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         s += " ParserType=" + researchParserType;
         // s += prefix + "CellSelector=" + cellSelectorType + "\n";
         s += " FOM=" + fomTypeOrModel;
-        s += " ViterbiMax=" + viterbiMax();
+        s += " Decode=" + decodeMethod;
+        // s += " ViterbiMax=" + viterbiMax();
         // s += " x1=" + param1;
         // s += " x2=" + param2;
         // s += " x3=" + param3;
@@ -584,7 +586,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         return opts;
     }
 
-    public boolean viterbiMax() {
-        return !this.realSemiring;
-    }
+    // public boolean viterbiMax() {
+    // return !this.realSemiring;
+    // }
 }

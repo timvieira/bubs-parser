@@ -87,7 +87,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @SuppressWarnings("unchecked")
     protected void initSentence(final int[] tokens) {
-        chart = (C) new CellChart(tokens, opts.viterbiMax(), this);
+        chart = (C) new CellChart(tokens, this);
     }
 
     protected void addLexicalProductions(final int sent[]) {

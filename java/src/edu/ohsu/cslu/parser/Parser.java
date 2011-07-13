@@ -245,7 +245,7 @@ public abstract class Parser<G extends Grammar> {
     }
 
     static public enum DecodeMethod {
-        Viterbi, MaxRecall, MaxRule, FOMSum, FOMProd;
+        ViterbiMax, ViterbiSum, MaxRecall, MaxRuleSum, MaxRuleProd, FOMSum, FOMProd;
 
         private DecodeMethod(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

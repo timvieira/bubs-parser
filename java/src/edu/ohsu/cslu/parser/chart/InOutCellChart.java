@@ -26,8 +26,8 @@ import edu.ohsu.cslu.parser.ParserUtil;
 
 public class InOutCellChart extends CellChart {
 
-    public InOutCellChart(final int[] tokens, final boolean viterbiMax, final Parser<?> parser) {
-        super(tokens, viterbiMax, parser);
+    public InOutCellChart(final int[] tokens, final Parser<?> parser) {
+        super(tokens, parser);
 
         chart = new ChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
@@ -58,8 +58,7 @@ public class InOutCellChart extends CellChart {
             if (start == 0 && end == size()) {
                 outside[parser.grammar.startSymbol] = 0; // log(1)
                 BaseLogger.singleton().finest(
-                    "setting " + parser.grammar.startSymbol() + " index=" + parser.grammar.startSymbol
-                            + " to 0");
+                        "setting " + parser.grammar.startSymbol() + " index=" + parser.grammar.startSymbol + " to 0");
             }
         }
 
