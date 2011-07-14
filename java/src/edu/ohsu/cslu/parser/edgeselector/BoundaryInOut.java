@@ -39,7 +39,7 @@ import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
  * 
  * @author Nathan Bodenstab
  */
-public class BoundaryInOut extends EdgeSelectorFactory {
+public final class BoundaryInOut extends EdgeSelectorFactory {
 
     private Grammar grammar;
     private int posNgramOrder = 2;
@@ -354,7 +354,8 @@ public class BoundaryInOut extends EdgeSelectorFactory {
         }
 
         @Override
-        public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
+        public final float calcLexicalFOM(final int start, final int end, final short parent,
+                final float insideProbability) {
             return insideProbability;
         }
 
@@ -409,7 +410,7 @@ public class BoundaryInOut extends EdgeSelectorFactory {
                 outsideRight = new float[fbSize][grammar.numNonTerms()];
             }
 
-            final int[][] fwdBackptr = new int[fbSize][posSize];
+            final int[][] backPointer = new int[fbSize][posSize];
             bestPOSTag = new int[chart.size()];
 
             for (int i = 0; i < fbSize; i++) {
@@ -421,41 +422,43 @@ public class BoundaryInOut extends EdgeSelectorFactory {
             final short[] NULL_LIST = new short[] { nullSymbol };
             final float[] NULL_PROBABILITIES = new float[] { 0f };
 
-            short[] prevFwdPOSList = NULL_LIST;
-            float[] prevFwdScores = new float[posSize];
-            prevFwdScores[nullSymbol] = 0f;
+            short[] prevPOSList = NULL_LIST;
+            float[] scores = new float[posSize];
+            float[] prevScores = new float[posSize];
 
-            for (int fwdIndex = 0; fwdIndex < fbSize; fwdIndex++) {
-                final int fwdChartIndex = fwdIndex - 1; // -1 because the fbChart is one off from the parser
-                                                        // chart
+            // Forward pass
+            prevScores[nullSymbol] = 0f;
 
-                if (fwdIndex > 0) {
-                    // moving from left to right =======>>
-                    final short[] fwdPOSList = fwdChartIndex >= chart.size() ? NULL_LIST : grammar
-                            .lexicalParents(chart.tokens[fwdChartIndex]);
-                    final float[] fwdPOSProbs = fwdChartIndex >= chart.size() ? NULL_PROBABILITIES : grammar
-                            .lexicalLogProbabilities(chart.tokens[fwdChartIndex]);
+            for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
+                outsideLeft[0][nonTerm] = leftBoundaryLogProb[nonTerm][nullSymbol];
+            }
 
-                    final int[] currentFwdBackptr = fwdBackptr[fwdIndex];
+            for (int fwdIndex = 1; fwdIndex < fbSize; fwdIndex++) {
 
-                    final float[] fwdScores = new float[posSize];
-                    Arrays.fill(fwdScores, Float.NEGATIVE_INFINITY);
+                Arrays.fill(scores, Float.NEGATIVE_INFINITY);
 
-                    for (int i = 0; i < fwdPOSList.length; i++) {
-                        final short curPOS = fwdPOSList[i];
-                        final float posEmissionLogProb = fwdPOSProbs[i];
+                // Forward-backward Chart is one off from the parser chart
+                final int fwdChartIndex = fwdIndex - 1;
 
-                        for (final short prevPOS : prevFwdPOSList) {
-                            final float score = prevFwdScores[prevPOS] + posTransitionLogProb[curPOS][prevPOS]
-                                    + posEmissionLogProb;
-                            if (score > fwdScores[curPOS]) {
-                                fwdScores[curPOS] = score;
-                                currentFwdBackptr[curPOS] = prevPOS;
-                            }
+                final short[] posList = fwdChartIndex >= chart.size() ? NULL_LIST : grammar
+                        .lexicalParents(chart.tokens[fwdChartIndex]);
+                final float[] fwdPOSProbs = fwdChartIndex >= chart.size() ? NULL_PROBABILITIES : grammar
+                        .lexicalLogProbabilities(chart.tokens[fwdChartIndex]);
+
+                final int[] currentBackpointer = backPointer[fwdIndex];
+
+                for (int i = 0; i < posList.length; i++) {
+                    final short curPOS = posList[i];
+                    final float posEmissionLogProb = fwdPOSProbs[i];
+
+                    for (final short prevPOS : prevPOSList) {
+                        final float score = prevScores[prevPOS] + posTransitionLogProb[curPOS][prevPOS]
+                                + posEmissionLogProb;
+                        if (score > scores[curPOS]) {
+                            scores[curPOS] = score;
+                            currentBackpointer[curPOS] = prevPOS;
                         }
                     }
-                    prevFwdScores = fwdScores;
-                    prevFwdPOSList = fwdPOSList;
                 }
 
                 // compute left and right outside scores to be used during decoding
@@ -463,65 +466,72 @@ public class BoundaryInOut extends EdgeSelectorFactory {
                 final float[] fwdOutsideLeft = outsideLeft[fwdIndex];
                 for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
 
-                    for (final short pos : prevFwdPOSList) {
-                        final float score = prevFwdScores[pos] + leftBoundaryLogProb[nonTerm][pos];
+                    for (final short pos : posList) {
+                        final float score = scores[pos] + leftBoundaryLogProb[nonTerm][pos];
                         if (score > fwdOutsideLeft[nonTerm]) {
                             fwdOutsideLeft[nonTerm] = score;
                         }
                     }
                 }
+
+                final float[] tmp = prevScores;
+                prevScores = scores;
+                scores = tmp;
+                prevPOSList = posList;
             }
 
-            short[] prevBkwPOSList = NULL_LIST;
-            float[] prevBkwScores = new float[posSize];
-            prevBkwScores[nullSymbol] = 0f;
+            // Backward pass
+            System.arraycopy(rightBoundaryLogProb[nullSymbol], 0, outsideRight[fbSize - 1], 0, grammar.numNonTerms());
 
-            for (int bkwIndex = fbSize - 1; bkwIndex >= 0; bkwIndex--) {
-                if (bkwIndex < fbSize - 1) {
-                    final int bkwChartIndex = bkwIndex - 1;
+            prevPOSList = NULL_LIST;
+            prevScores[nullSymbol] = 0f;
 
-                    // moving from right to left <<=======
-                    final short[] bkwPOSList = bkwChartIndex < 0 ? NULL_LIST : grammar
-                            .lexicalParents(chart.tokens[bkwChartIndex]);
-                    final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
-                            .lexicalLogProbabilities(chart.tokens[bkwChartIndex]);
-                    final float[] bkwScores = new float[posSize];
-                    Arrays.fill(bkwScores, Float.NEGATIVE_INFINITY);
+            for (int bkwIndex = fbSize - 2; bkwIndex >= 0; bkwIndex--) {
 
-                    for (final short prevPOS : prevBkwPOSList) {
+                Arrays.fill(scores, Float.NEGATIVE_INFINITY);
 
-                        for (int i = 0; i < bkwPOSList.length; i++) {
-                            final short curPOS = bkwPOSList[i];
+                final int bkwChartIndex = bkwIndex - 1;
+                final short[] posList = bkwChartIndex < 0 ? NULL_LIST : grammar
+                        .lexicalParents(chart.tokens[bkwChartIndex]);
+                final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
+                        .lexicalLogProbabilities(chart.tokens[bkwChartIndex]);
 
-                            final float score = prevBkwScores[prevPOS] + posTransitionLogProb[prevPOS][curPOS]
-                                    + bkwPOSProbs[i];
-                            if (score > bkwScores[curPOS]) {
-                                bkwScores[curPOS] = score;
-                            }
+                for (final short prevPOS : prevPOSList) {
+
+                    for (int i = 0; i < posList.length; i++) {
+                        final short curPOS = posList[i];
+
+                        final float score = prevScores[prevPOS] + posTransitionLogProb[prevPOS][curPOS]
+                                + bkwPOSProbs[i];
+                        if (score > scores[curPOS]) {
+                            scores[curPOS] = score;
                         }
                     }
-                    prevBkwScores = bkwScores;
-                    prevBkwPOSList = bkwPOSList;
                 }
 
                 // compute right outside scores to be used during decoding
                 // to calculate the FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
                 final float[] bkwOutsideRight = outsideRight[bkwIndex];
-                for (final short pos : prevBkwPOSList) {
+                for (final short pos : posList) {
                     for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
-                        final float score = prevBkwScores[pos] + rightBoundaryLogProb[pos][nonTerm];
+                        final float score = scores[pos] + rightBoundaryLogProb[pos][nonTerm];
                         if (score > bkwOutsideRight[nonTerm]) {
                             bkwOutsideRight[nonTerm] = score;
                         }
                     }
                 }
+
+                final float[] tmp = prevScores;
+                prevScores = scores;
+                scores = tmp;
+                prevPOSList = posList;
             }
 
             // track backpointers to extract best POS sequence
             // start at the end of the sentence with the nullSymbol and trace backwards
             int bestPOS = nullSymbol;
             for (int i = chart.size() - 1; i >= 0; i--) {
-                bestPOS = fwdBackptr[i + 2][bestPOS];
+                bestPOS = backPointer[i + 2][bestPOS];
                 bestPOSTag[i] = bestPOS;
                 // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
             }
