@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
@@ -110,7 +111,6 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
         }
 
         private void computeBeamWidthValues() {
-            SparseBitVector feats;
             int guessBeamWidth, guessClass;
             final int n = parser.currentInput.sentenceLength;
             beamWidthValues = new int[n][n + 1];
@@ -118,8 +118,11 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
             openCells = 0;
             // cellList = new LinkedList<ChartCell>();
 
-            final int[] beamClassCounts = new int[beamWidthModel.numClasses()];
+            final boolean countClasses = BaseLogger.singleton().isLoggable(Level.FINE);
+            final int[] beamClassCounts = countClasses ? new int[beamWidthModel.numClasses()] : null;
             // Arrays.fill(beamClassCounts, 0);
+
+            final String[] featureNames = beamWidthModel.getFeatureTemplate().split("\\s+");
 
             // traverse in a top-down order so we can remember when we first see a non-empty cell
             // only works for right factored (berkeley) grammars right now.
@@ -134,9 +137,11 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
                         // beamWidthValues[start][end] = maxBeamWidth;
                         // cellStats += String.format("%d,%d=%d ", start, end, maxBeamWidth);
                     } else {
-                        feats = parser.getCellFeatures(start, end, beamWidthModel.getFeatureTemplate());
+                        final SparseBitVector feats = parser.getCellFeatures(start, end, featureNames);
                         guessClass = beamWidthModel.classify(feats);
-                        beamClassCounts[guessClass]++;
+                        if (countClasses) {
+                            beamClassCounts[guessClass]++;
+                        }
                         // guessBeamWidth = (int) Math.min(beamWidthModel.class2value(guessClass),
                         // maxBeamWidth);
                         guessBeamWidth = (int) beamWidthModel.class2value(guessClass);
@@ -176,13 +181,19 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
                 }
             }
 
-            String classCounts = "";
-            for (i = 0; i < beamWidthModel.numClasses(); i++) {
-                classCounts += String.format(" class%d:%d", i, beamClassCounts[i]);
+            if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+                BaseLogger.singleton().finer("INFO: beamconf: " + toString());
             }
 
-            BaseLogger.singleton().finer("INFO: beamconf: " + toString());
-            BaseLogger.singleton().info("INFO: beamconf: " + classCounts);
+            if (countClasses) {
+                final StringBuilder classCounts = new StringBuilder(1024);
+                for (i = 0; i < beamWidthModel.numClasses(); i++) {
+                    classCounts.append(" class%d:%d");
+                    classCounts.append(i);
+                    classCounts.append(beamClassCounts[i]);
+                }
+                BaseLogger.singleton().fine("INFO: beamconf: " + classCounts);
+            }
             nextCell = 0;
         }
 
@@ -243,20 +254,28 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
         @Override
         public String toString() {
             final int n = beamWidthValues.length;
-            String cellStats = "";
+            final StringBuilder cellStats = new StringBuilder(4096);
             for (int start = 0; start < n; start++) {
                 for (int end = n; end > start; end--) {
                     final int x = beamWidthValues[start][end];
                     if (x > 0) {
                         if (onlyFactored[start][end]) {
-                            cellStats += String.format("%d,%d=FACT ", start, end);
+                            cellStats.append(start);
+                            cellStats.append(',');
+                            cellStats.append(end);
+                            cellStats.append("=FACT ");
                         } else {
-                            cellStats += String.format("%d,%d=%d ", start, end, x);
+                            cellStats.append(start);
+                            cellStats.append(',');
+                            cellStats.append(end);
+                            cellStats.append('=');
+                            cellStats.append(x);
+                            cellStats.append(' ');
                         }
                     }
                 }
             }
-            return cellStats;
+            return cellStats.toString();
         }
 
         @Override

@@ -192,7 +192,7 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
             edge = agenda.poll();
         }
 
-        final SparseBitVector cellFeats = getCellFeatures(cell.start(), cell.end(), this.featTemplate);
+        final SparseBitVector cellFeats = getCellFeatures(cell.start(), cell.end(), this.featTemplate.split("\\s+"));
 
         // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
         System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),
