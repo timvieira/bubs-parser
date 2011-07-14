@@ -36,6 +36,7 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -62,9 +63,10 @@ public abstract class PrunedSparseMatrixParserTestCase<G extends SparseMatrixGra
                 JUnit.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
-        props.put("maxBeamWidth", "20");
-        props.put("lexicalRowBeamWidth", "60");
-        props.put("lexicalRowUnaries", "20");
+        props.put(Parser.PROPERTY_MAX_BEAM_WIDTH, "20");
+        props.put(Parser.PROPERTY_LEXICAL_ROW_BEAM_WIDTH, "60");
+        props.put(Parser.PROPERTY_LEXICAL_ROW_UNARIES, "20");
+        props.put(Parser.PROPERTY_MAX_LOCAL_DELTA, "15");
         parser = createParser(opts, grammar);
     }
 
