@@ -52,6 +52,18 @@ import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
  */
 public abstract class Parser<G extends Grammar> {
 
+    /** Local cell beam width (0 = exhaustive) */
+    public final static String PROPERTY_MAX_BEAM_WIDTH = "maxBeamWidth";
+
+    /** The lexical (span-1) row often needs a larger beam width */
+    public final static String PROPERTY_LEXICAL_ROW_BEAM_WIDTH = "lexicalRowBeamWidth";
+
+    /** Reserve a portion of the lexical row entries for unary productions (span-1 constituents) */
+    public final static String PROPERTY_LEXICAL_ROW_UNARIES = "lexicalRowUnaries";
+
+    /** The maximum differential (in log inside probability) between the most and least probable constituents in a cell */
+    public final static String PROPERTY_MAX_LOCAL_DELTA = "maxLocalDelta";
+
     public final G grammar;
 
     /** Parser configuration */
