@@ -26,12 +26,14 @@ import java.util.List;
 import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.ParserUtil;
 
 public class CellChart extends Chart {
 
     protected Parser<?> parser;
     protected HashSetChartCell chart[][];
+    protected boolean viterbiMax;
 
     protected CellChart() {
 
@@ -40,6 +42,7 @@ public class CellChart extends Chart {
     public CellChart(final int[] tokens, final Parser<?> parser) {
         super(tokens);
         this.parser = parser;
+        this.viterbiMax = (parser.opts.decodeMethod == DecodeMethod.ViterbiMax);
         allocateChart(tokens.length);
     }
 

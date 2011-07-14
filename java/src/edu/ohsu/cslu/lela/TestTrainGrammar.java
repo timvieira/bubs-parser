@@ -214,7 +214,7 @@ public class TestTrainGrammar {
             // TODO Parse from tree instead
             final String sentence = Strings.join(goldTree.leafLabels(), " ");
             final ParseContext context = parser.parseSentence(sentence);
-            evaluator.evaluate(goldTree, context.parse.unfactor(cscGrammar.grammarFormat));
+            evaluator.evaluate(goldTree, context.binaryParse.unfactor(cscGrammar.grammarFormat));
         }
 
         final EvalbResult evalbResult = evaluator.accumulatedResult();

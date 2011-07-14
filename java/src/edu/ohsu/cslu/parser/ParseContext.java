@@ -20,9 +20,11 @@ package edu.ohsu.cslu.parser;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.Tokenizer;
+import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.chart.GoldChart;
+import edu.ohsu.cslu.util.Evalb.EvalbResult;
 import edu.ohsu.cslu.util.Strings;
 
 public class ParseContext {
@@ -32,14 +34,17 @@ public class ParseContext {
     public int[] tokens;
 
     public String sentenceMD5;
-    public BinaryTree<String> inputTree = null;
+    // public BinaryTree<String> inputTree = null;
+    public NaryTree<String> inputTree = null;
     public GoldChart inputTreeChart = null;
     public int sentenceNumber = -1;
     public int sentenceLength = -1;
-    public BinaryTree<String> parse = null;
-    public String parseBracketString;
+    public BinaryTree<String> binaryParse = null;
+    public NaryTree<String> naryParse = null;
+    public String parseBracketString = "()";
     public float insideProbability = Float.NEGATIVE_INFINITY;
     public String parserStats = null;
+    public EvalbResult evalb = null;
 
     public long totalPops = 0;
     public long totalPushes = 0;
@@ -60,20 +65,27 @@ public class ParseContext {
 
     long startTime = System.currentTimeMillis();
 
-    public ParseContext(final String sentence, final Grammar grammar) {
-
+    public ParseContext(final String input, final InputFormat inputFormat, final Grammar grammar) {
         try {
-            this.sentence = sentence.trim();
+            this.inputTree = null;
+            if (inputFormat == InputFormat.Token) {
+                this.sentence = input.trim();
+            } else if (inputFormat == InputFormat.Text) {
+                this.sentence = Tokenizer.treebankTokenize(input.trim());
+            } else if (inputFormat == InputFormat.Tree) {
+                this.inputTree = NaryTree.read(input.trim(), String.class);
+                this.sentence = Strings.join(inputTree.leafLabels(), " ");
+            }
             this.strTokens = sentence.split("\\s+");
             this.sentenceLength = strTokens.length;
-            this.inputTree = null;
 
         } catch (final Exception e) {
             e.printStackTrace();
         }
     }
 
-    public ParseContext(final BinaryTree<String> tree, final Grammar grammar) {
+    // public ParseContext(final BinaryTree<String> tree, final Grammar grammar) {
+    public ParseContext(final NaryTree<String> tree, final Grammar grammar) {
 
         try {
             // inputTreeChart = new GoldChart(inputTree, grammar);
@@ -88,9 +100,9 @@ public class ParseContext {
         }
     }
 
-    public ParseContext(final NaryTree<String> tree, final Grammar grammar, final Factorization factorization) {
-        this(tree.factor(grammar.grammarFormat, factorization), grammar);
-    }
+    // public ParseContext(final NaryTree<String> tree, final Grammar grammar, final Factorization factorization) {
+    // this(tree.factor(grammar.grammarFormat, factorization), grammar);
+    // }
 
     @Override
     public String toString() {
@@ -113,6 +125,12 @@ public class ParseContext {
         result += " nUnary=" + nUnaryConsidered;
         result += " nBinary=" + nBinaryConsidered;
 
+        if (evalb != null) {
+            result += " f1=" + evalb.f1;
+            result += " prec=" + evalb.precision;
+            result += " recall=" + evalb.recall;
+        }
+
         return result;
     }
 
@@ -127,5 +145,4 @@ public class ParseContext {
     public void stopTime() {
         parseTimeSec = (System.currentTimeMillis() - startTime) / 1000f;
     }
-
 }

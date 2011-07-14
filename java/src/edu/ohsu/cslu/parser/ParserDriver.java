@@ -45,7 +45,6 @@ import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
@@ -55,7 +54,6 @@ import edu.ohsu.cslu.parser.agenda.APGhostEdges;
 import edu.ohsu.cslu.parser.agenda.APWithMemory;
 import edu.ohsu.cslu.parser.agenda.AgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
-import edu.ohsu.cslu.parser.beam.BSCPBeamConfTrain;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
 import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
@@ -86,6 +84,8 @@ import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
+import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
+import edu.ohsu.cslu.util.Evalb.EvalbResult;
 
 /**
  * Driver class for all parser implementations. Based on the cltool4j command-line tool infrastructure
@@ -142,7 +142,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     public boolean binaryTreeOutput = false;
 
     @Option(name = "-if", metaVar = "FORMAT", usage = "Input format type.  Choosing 'text' will tokenize the input before parsing.")
-    public InputFormat inputFormat = InputFormat.Tokens;
+    public InputFormat inputFormat = InputFormat.Token;
 
     @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
     public int reparse = 2;
@@ -172,8 +172,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-beamModelBias", metaVar = "VAL", usage = "Bias for each bin in model, seperated by commas")
     public String beamModelBias = "200,200,200,200";
 
-    @Option(name = "-beamModelFeats", metaVar = "VAL", hidden = true, usage = "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
-    public static String featTemplate;
+    // @Option(name = "-beamModelFeats", metaVar = "VAL", hidden = true, usage =
+    // "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    // public static String featTemplate;
 
     @Option(name = "-ccModel", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
@@ -201,6 +202,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
     private long parseStartTime;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
+    private final BracketEvaluator evaluator = new BracketEvaluator();
 
     /**
      * Configuration property key for the number of cell-level threads requested by the user. We handle threading at
@@ -274,9 +276,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
 
-            if (researchParserType == ResearchParserType.BSCPBeamConfTrain && featTemplate == null) {
-                throw new IllegalArgumentException("ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
-            }
+            // if (researchParserType == ResearchParserType.BSCPBeamConfTrain && featTemplate == null) {
+            // throw new IllegalArgumentException("ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
+            // }
 
             if (chartConstraintsModel != null) {
                 cellSelectorFactory = new OHSUCellConstraintsFactory(fileAsBufferedReader(chartConstraintsModel),
@@ -462,8 +464,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             return new BSCPFomDecode(this, (LeftHashGrammar) grammar);
             // case BSCPBeamConf:
             // return new BSCPBeamConf(this, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
-        case BSCPBeamConfTrain:
-            return new BSCPBeamConfTrain(this, (LeftHashGrammar) grammar);
+            // case BSCPBeamConfTrain:
+            // return new BSCPBeamConfTrain(this, (LeftHashGrammar) grammar);
 
         case CoarseCellAgenda:
             return new CoarseCellAgendaParser(this, (LeftHashGrammar) grammar);
@@ -507,17 +509,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     }
 
     @Override
-    protected FutureTask<ParseContext> lineTask(final String sentence) {
+    protected FutureTask<ParseContext> lineTask(final String input) {
         return new FutureTask<ParseContext>(new Callable<ParseContext>() {
 
             @Override
             public ParseContext call() throws Exception {
-                if (sentence.matches("^\\s*$")) {
-                    return null;
-                }
-                // TODO Support other input formats
-                return getLocal().parseSentence(
-                        inputFormat == InputFormat.Text ? Tokenizer.treebankTokenize(sentence) : sentence);
+                return getLocal().parseSentence(input);
             }
         });
     }
@@ -529,6 +526,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             BaseLogger.singleton().info("WARNING: blank line in input.");
         } else {
             System.out.println(parseResult.parseBracketString);
+
+            if (inputFormat == InputFormat.Tree && parseResult.naryParse != null) {
+                // TODO: can't output per-tree accuracy until evaluate() returns correct result
+                // parseResult.evalb = evaluator.evaluate(parseResult.naryParse, parseResult.inputTree);
+                evaluator.evaluate(parseResult.naryParse, parseResult.inputTree);
+            }
             BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);
         }
     }
@@ -552,9 +555,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         // throughput)
         sb.append(String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
                 sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
+
         if (parserInstances.getFirst() instanceof SparseMatrixVectorParser) {
             sb.append(String.format(" totalXProductTime=%d totalBinarySpMVTime=%d",
                     SparseMatrixVectorParser.totalCartesianProductTime, SparseMatrixVectorParser.totalBinarySpMVTime));
+        }
+
+        if (inputFormat == InputFormat.Tree) {
+            final EvalbResult evalbResult = evaluator.accumulatedResult();
+            sb.append(String.format(" f1=%.2f prec=%.2f recall=%.2f", evalbResult.f1 * 100,
+                    evalbResult.precision * 100, evalbResult.recall * 100));
         }
 
         BaseLogger.singleton().info(sb.toString());

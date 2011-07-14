@@ -33,10 +33,13 @@ import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.BaseLogger;
+import cltool4j.args4j.CmdLineException;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
+import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
 
 /**
@@ -47,6 +50,17 @@ import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
  */
 public class ModelTrainer extends BaseCommandlineTool {
 
+    // === Possible models to train ===
+    @Option(name = "-boundaryFOM", usage = "Train a Boundary Figure of Merit model")
+    public boolean boundaryFOM = false;
+
+    @Option(name = "-beamConf", usage = "Train Beam Confidence model")
+    public boolean beamConf = false;
+
+    @Option(name = "-cellConstraints", usage = "Train a Cell Constraints model")
+    public boolean cellConstraints = false;
+
+    // === Other options ===
     @Option(name = "-g", metaVar = "file", usage = "Grammar file")
     private File grammarFile;
     private Grammar grammar;
@@ -84,16 +98,41 @@ public class ModelTrainer extends BaseCommandlineTool {
     // TODO: This class should take a "feature template" as input and learn a model based on that
     // example: t t-1 t-2 t+1 t+2 w w-1 w+1 t_w t_t-1 t-1_t-2 ... t=tag w=word _=joint
 
+    public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
+    public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
+
+    @Override
+    public void setup() throws Exception {
+        // grammar = ParserDriver.readGrammar(grammarFile.toString(), Parser.ResearchParserType.ECPCellCrossList, null);
+        grammar = Grammar.read(grammarFile.getName());
+    }
+
     @Override
     protected void run() throws Exception {
-        natesTraining();
+
+        if (boundaryFOM == true) {
+            // To train a BoundaryInOut FOM model we need a grammar and
+            // binarized gold input trees with NTs from same grammar
+            final BoundaryInOut edgeSelectorModel = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, null);
+            edgeSelectorModel.train(inputStream);
+            edgeSelectorModel.writeModel(outputStream);
+        } else if (beamConf == true) {
+            final ModelTrainer m = new ModelTrainer();
+            m.natesTraining();
+        } else if (cellConstraints == true) {
+            throw new CmdLineException("Cell Constraints training not implemented.");
+        } else {
+            throw new CmdLineException("Please choose a model to train.  Exiting.");
+        }
+
+        // natesTraining();
         // aaronsTraining();
     }
 
     public void aaronsTraining() throws IOException, ClassNotFoundException {
 
         // Read grammar
-        grammar = Grammar.read(grammarFile.getName());
+        // grammar = Grammar.read(grammarFile.getName());
 
         final ArrayList<SparseBitVector[]> trainingCorpusFeatures = new ArrayList<SparseBitVector[]>();
         final ArrayList<boolean[]> trainingCorpusGoldTags = new ArrayList<boolean[]>();
@@ -188,9 +227,9 @@ public class ModelTrainer extends BaseCommandlineTool {
             System.exit(1);
         }
 
-        final DataSet train = new DataSet(System.in);
+        final DataSet train = new DataSet(inputStream);
         final InputStream devStream = ParserUtil.file2inputStream(devSet.getAbsolutePath());
-        final DataSet dev = new DataSet(devStream);
+        final DataSet dev = new DataSet(new BufferedReader(new InputStreamReader(devStream)));
 
         Classifier model;
         if (multiBin) {
@@ -218,7 +257,7 @@ public class ModelTrainer extends BaseCommandlineTool {
         evalDataSetAvgLoss(dev, model, true);
 
         // System.out.print(model.toString());
-        model.writeModel(new BufferedWriter(new OutputStreamWriter(System.out)));
+        model.writeModel(outputStream);
     }
 
     public float evalDataSetAvgLoss(final DataSet data, final Classifier model, final boolean confMatrix) {
@@ -275,8 +314,8 @@ public class ModelTrainer extends BaseCommandlineTool {
         public int numExamples;
         public int numFeatures = -1;
 
-        public DataSet(final InputStream is) throws Exception {
-            readDataSet(is);
+        public DataSet(final BufferedReader dataStream) throws Exception {
+            readDataSet(dataStream);
             // readDataSet(is, null);
             // readOldFormat(is);
         }
@@ -292,10 +331,10 @@ public class ModelTrainer extends BaseCommandlineTool {
          * 71352 79105 2 : 98695 0 38 68 136 166 234 430 2684 2714 2782 2812 2880 7264 47405 55158 95299 ....
          */
         // private void readDataSet(final InputStream is, final Perceptron perceptron) throws Exception {
-        private void readDataSet(final InputStream is) throws Exception {
-            final BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        private void readDataSet(final BufferedReader dataStream) throws Exception {
+            // final BufferedReader br = new BufferedReader(new InputStreamReader(is));
             numExamples = 0;
-            for (String line = br.readLine(); line != null; line = br.readLine()) {
+            for (String line = dataStream.readLine(); line != null; line = dataStream.readLine()) {
                 final String[] tokens = line.split("\\s+");
                 assert numFeatures == tokens.length - 1 || numFeatures == -1;
                 numFeatures = Integer.parseInt(tokens[2]);

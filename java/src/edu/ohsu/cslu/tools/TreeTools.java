@@ -28,6 +28,7 @@ import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
+import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTree;
 
 public class TreeTools extends BaseCommandlineTool {
@@ -68,6 +69,12 @@ public class TreeTools extends BaseCommandlineTool {
     @Option(name = "-minBE", usage = "Count minimum begin and end constraints for each sentence")
     private boolean minimumBeginEndConstraints = false;
 
+    @Option(name = "-leavesToUNK", usage = "Map words to their UNK class.  Used as preprocessing to PCFG induction (with other scripts)")
+    private boolean leavesToUNK = false;
+
+    @Option(name = "-unkMaxFreq", usage = "Max frequency word can occur to be mapped to UNK for -leavesToUNK")
+    private int unkMaxFreq = 2;
+
     private static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
     // private static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
@@ -79,8 +86,11 @@ public class TreeTools extends BaseCommandlineTool {
     @Override
     protected void run() throws IOException {
 
-        for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
+        // if (leavesToUNK) {
+        // convertLeavesToUNK();
+        // }
 
+        for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
             final ParseTree tree = ParseTree.readBracketFormat(sentence);
 
             if (unbinarize) {
@@ -112,6 +122,37 @@ public class TreeTools extends BaseCommandlineTool {
                 System.out.println(tree.toString());
             }
         }
+    }
+
+    public void convertLeavesToUNK(final int unkMaxFreq) throws IOException {
+        final HashMap<String, Integer> wordCount = new HashMap<String, Integer>();
+        for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
+            final ParseTree tree = ParseTree.readBracketFormat(sentence);
+            for (final ParseTree node : tree.getLeafNodes()) {
+                if (wordCount.containsKey(node.contents)) {
+                    wordCount.put(node.contents, wordCount.get(node.contents) + 1);
+                } else {
+                    wordCount.put(node.contents, 1);
+                }
+            }
+        }
+
+        final SymbolSet<String> knownWords = new SymbolSet<String>();
+        final SymbolSet<String> unkWords = new SymbolSet<String>();
+        // HashMap<String,String> unkMap = new HashMap<String,String>();
+        for (final String word : wordCount.keySet()) {
+            if (wordCount.get(word) < unkMaxFreq) {
+                // unkMap.put(word, "");
+                unkWords.addSymbol(word);
+            } else {
+                knownWords.addSymbol(word);
+            }
+        }
+
+        // for (String word : unkMap.keySet()) {
+        // unkMap.set(word, Tokenizer.berkeleyGetSignature(word, wordIndex, lexSet));
+        // }
+
     }
 
     public static void extractBEULabelsFromTree(final ParseTree tree) {

@@ -25,7 +25,6 @@ import edu.ohsu.cslu.parser.ParseTree;
 public abstract class Chart {
 
     protected int size;
-    protected boolean viterbiMax;
     public int[] tokens;
 
     protected Chart() {
@@ -35,11 +34,6 @@ public abstract class Chart {
         this.tokens = tokens;
         this.size = tokens.length;
     }
-
-    // public Chart(final int size, final boolean viterbiMax) {
-    // this.size = size;
-    // this.viterbiMax = viterbiMax;
-    // }
 
     /**
      * The number of cells in the bottom (lexical) row of this chart
