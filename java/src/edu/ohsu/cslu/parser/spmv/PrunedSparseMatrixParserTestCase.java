@@ -107,7 +107,8 @@ public abstract class PrunedSparseMatrixParserTestCase<G extends SparseMatrixGra
         int i = 1;
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();
-            assertEquals("Failed on sentence " + i, parsedSentence, parser.parseSentence(sentence).parse.toString());
+            assertEquals("Failed on sentence " + i, parsedSentence,
+                    parser.parseSentence(sentence).binaryParse.toString());
             i++;
         }
     }

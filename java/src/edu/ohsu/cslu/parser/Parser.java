@@ -30,7 +30,6 @@ import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
-import edu.ohsu.cslu.tools.TreeTools;
 
 /**
  * Implements common data structures and operations shared by all parser implementations. Child classes implement
@@ -86,11 +85,6 @@ public abstract class Parser<G extends Grammar> {
         this.cellSelector = opts.cellSelectorFactory.createCellSelector();
 
         this.collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINER);
-
-        // if (this.cellSelector instanceof CellConstraints) {
-        // this.hasCellConstraints = true;
-        // cellConstraints = (CellConstraints) cellSelector;
-        // }
     }
 
     public abstract float getInside(int start, int end, int nt);
@@ -113,8 +107,13 @@ public abstract class Parser<G extends Grammar> {
     // cleans up output for consumption. Input can be a sentence string
     // or a parse tree
     public ParseContext parseSentence(final String input) {
-        final ParseContext result = new ParseContext(input, grammar);
-        currentInput = result; // get ride of currentInput (and chart?). Just pass these around
+        if (input.matches("^\\s*$")) {
+            return null;
+        }
+
+        final ParseContext result = new ParseContext(input, opts.inputFormat, grammar);
+        currentInput = result; // get rid of currentInput (and chart?). Just pass these around
+
         // TODO This isn't thread-safe
         result.sentenceNumber = sentenceNumber++;
         result.tokens = grammar.tokenizer.tokenizeToIndex(result.sentence);
@@ -123,41 +122,34 @@ public abstract class Parser<G extends Grammar> {
             BaseLogger.singleton().fine(
                     "INFO: Skipping sentence. Length of " + result.sentenceLength + " is greater than maxLength ("
                             + opts.maxLength + ")");
-            result.parseBracketString = "()";
             return result;
         }
 
         try {
             result.startTime();
-            result.parse = findBestParse(result.tokens);
+            result.binaryParse = findBestParse(result.tokens);
             result.stopTime();
 
-            if (result.parse == null) {
-                result.parseBracketString = "()";
-                return result;
+            if (result.binaryParse != null) {
+                if (!opts.printUnkLabels) {
+                    result.binaryParse.replaceLeafLabels(result.strTokens);
+                }
+                result.naryParse = result.binaryParse.unfactor(grammar.grammarFormat);
+
+                if (opts.binaryTreeOutput) {
+                    result.parseBracketString = result.binaryParse.toString();
+                } else {
+                    result.parseBracketString = result.naryParse.toString();
+                }
             }
 
-            if (!opts.printUnkLabels) {
-                result.parse.replaceLeafLabels(result.strTokens);
-            }
-
-            // stats.parseBracketString = stats.parse.toString(opts.printInsideProbs);
-            result.parseBracketString = result.parse.toString();
             result.insideProbability = getInside(0, result.sentenceLength, grammar.startSymbol);
             result.parserStats = getStats();
-
-            // TODO: we should be converting the tree in tree form, not in bracket string form
-            if (opts.binaryTreeOutput == false) {
-                result.parseBracketString = TreeTools.unfactor(result.parseBracketString, grammar.grammarFormat);
-            }
-
-            // TODO: could evaluate accuracy here if input is a gold tree
 
             return result;
 
         } catch (final Exception e) {
             BaseLogger.singleton().fine("ERROR: " + e.getMessage());
-            result.parseBracketString = "()";
             return result;
         }
     }
@@ -237,7 +229,7 @@ public abstract class Parser<G extends Grammar> {
      * tags and gold trees
      */
     static public enum InputFormat {
-        Text, Tokens;
+        Text, Token, Tree;
 
         private InputFormat(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
