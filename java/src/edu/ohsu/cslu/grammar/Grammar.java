@@ -253,6 +253,7 @@ public class Grammar implements Serializable {
         nonPosSet.removeAll(pos);
 
         // Add the NTs to `nonTermSet' in sorted order
+        // TODO Sorting with the PosFirstComparator might speed up FOM initialization a bit, but breaks OpenCL parsers. Make it an option.
         final StringNonTerminalComparator comparator = new PosEmbeddedComparator();
         final TreeSet<StringNonTerminal> sortedNonTerminals = new TreeSet<StringNonTerminal>(comparator);
         for (final String nt : nonTerminals) {
@@ -1049,14 +1050,14 @@ public class Grammar implements Serializable {
         }
     }
 
-    // private static class PosLastComparator extends StringNonTerminalComparator {
-    //
-    // public PosLastComparator() {
-    // map.put(NonTerminalClass.FACTORED_SIDE_CHILDREN_ONLY, 0);
-    // map.put(NonTerminalClass.EITHER_CHILD, 1);
-    // map.put(NonTerminalClass.POS, 2);
-    // }
-    // }
+    private static class PosFirstComparator extends StringNonTerminalComparator {
+
+        public PosFirstComparator() {
+            map.put(NonTerminalClass.POS, 0);
+            map.put(NonTerminalClass.EITHER_CHILD, 1);
+            map.put(NonTerminalClass.FACTORED_SIDE_CHILDREN_ONLY, 1);
+        }
+    }
 
     private static class PosEmbeddedComparator extends StringNonTerminalComparator {
 
