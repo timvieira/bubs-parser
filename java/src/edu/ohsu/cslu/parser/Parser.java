@@ -184,7 +184,7 @@ public abstract class Parser<G extends Grammar> {
     static public enum ParserType {
 
         CYK(ResearchParserType.ECPCellCrossList), Agenda(ResearchParserType.APWithMemory), Beam(
-                ResearchParserType.BeamSearchChartParser), Matrix(ResearchParserType.CscSpmv);
+                ResearchParserType.BeamSearchChartParser), Matrix(ResearchParserType.CartesianProductHashMl);
 
         public ResearchParserType researchParserType;
 
