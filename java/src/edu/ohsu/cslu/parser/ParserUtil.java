@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.zip.GZIPInputStream;
 
@@ -159,5 +160,15 @@ public class ParserUtil {
             return Float.POSITIVE_INFINITY;
         }
         return Float.parseFloat(s);
+    }
+
+    public static HashMap<String, String> readKeyValuePairs(final String line) {
+        final HashMap<String, String> keyVals = new HashMap<String, String>();
+        final String[] toks = line.trim().split(" +");
+        for (final String item : toks) {
+            final String[] keyValStr = item.split("=");
+            keyVals.put(keyValStr[0], keyValStr[1]);
+        }
+        return keyVals;
     }
 }

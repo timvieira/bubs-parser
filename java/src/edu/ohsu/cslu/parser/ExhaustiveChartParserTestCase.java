@@ -231,7 +231,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         sb.append("VP => VB -1.386294361\n");
         sb.append("VP|VB => NP 0\n");
 
-        sb.append(Grammar.DELIMITER);
+        sb.append(Grammar.LEXICON_DELIMITER);
         sb.append('\n');
 
         sb.append("DT => The 0\n");

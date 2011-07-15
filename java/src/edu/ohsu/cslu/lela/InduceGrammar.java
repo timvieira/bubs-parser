@@ -18,7 +18,6 @@
  */
 package edu.ohsu.cslu.lela;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -29,16 +28,17 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
 
 public class InduceGrammar extends BaseCommandlineTool {
 
-    @Option(name = "-gp", aliases = { "--grammar-file-prefix" }, required = true, metaVar = "prefix", usage = "Grammar file prefix")
-    private String grammarPrefix;
+    // @Option(name = "-gp", aliases = { "--grammar-file-prefix" }, required = true, metaVar = "prefix", usage =
+    // "Grammar file prefix")
+    // private String grammarPrefix;
 
-    @Option(name = "-f", aliases = { "--factorization" }, metaVar = "type", usage = "Factorizes unfactored trees. If not specified, assumes trees are already binarized")
+    @Option(name = "-fact", metaVar = "TYPE", usage = "Factorizes unfactored trees. If not specified, assumes trees are already binarized")
     private Factorization factorization = null;
 
-    @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Grammar Format (required if factorization is specified)")
-    private GrammarFormatType grammarFormatType = null;
+    @Option(name = "-gf", metaVar = "FORMAT", usage = "Grammar Format (required if factorization is specified)")
+    private GrammarFormatType grammarFormatType = GrammarFormatType.CSLU;
 
-    @Option(name = "-unk", aliases = { "--unk-threshold" }, metaVar = "threshold", usage = "The number of observations of a word required in order to add it to the lexicon.")
+    @Option(name = "-unkThresh", metaVar = "THRESH", usage = "The number of observations of a word required in order to add it to the lexicon.")
     private int lexicalUnkThreshold = 1;
 
     @Override
@@ -46,14 +46,8 @@ public class InduceGrammar extends BaseCommandlineTool {
         final StringCountGrammar cg = new StringCountGrammar(new InputStreamReader(System.in), factorization,
                 grammarFormatType, lexicalUnkThreshold);
         final ProductionListGrammar plg = new ProductionListGrammar(cg);
-
-        final FileWriter pcfgWriter = new FileWriter(grammarPrefix + ".pcfg");
-        pcfgWriter.write(plg.pcfgString());
-        pcfgWriter.close();
-
-        final FileWriter lexiconWriter = new FileWriter(grammarPrefix + ".lex");
-        lexiconWriter.write(plg.lexiconString());
-        lexiconWriter.close();
+        System.out.println(plg.toString(false, "lang=UNK format=" + grammarFormatType + " unkThresh="
+                + lexicalUnkThreshold + " hMarkov=UNK vMarkov=UNK"));
     }
 
     public static void main(final String[] args) {

@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.parser.ParserUtil;
 import edu.ohsu.cslu.util.StringPool;
 
 /**
@@ -83,7 +84,8 @@ public class Grammar implements Serializable {
     private final static long serialVersionUID = 3L;
 
     /** Marks the switch from PCFG to lexicon entries in the grammar file */
-    public final static String DELIMITER = "===== LEXICON =====";
+    public final static String GRAMMAR_DELIMITER = "===== GRAMMAR =====";
+    public final static String LEXICON_DELIMITER = "===== LEXICON =====";
 
     // == Grammar Basics ==
     public GrammarFormatType grammarFormat;
@@ -253,7 +255,8 @@ public class Grammar implements Serializable {
         nonPosSet.removeAll(pos);
 
         // Add the NTs to `nonTermSet' in sorted order
-        // TODO Sorting with the PosFirstComparator might speed up FOM initialization a bit, but breaks OpenCL parsers. Make it an option.
+        // TODO Sorting with the PosFirstComparator might speed up FOM initialization a bit, but breaks OpenCL parsers.
+        // Make it an option.
         final StringNonTerminalComparator comparator = new PosEmbeddedComparator();
         final TreeSet<StringNonTerminal> sortedNonTerminals = new TreeSet<StringNonTerminal>(comparator);
         for (final String nt : nonTerminals) {
@@ -425,41 +428,42 @@ public class Grammar implements Serializable {
         this.posEnd = startAndEndIndices[5];
     }
 
+    // Read in the grammar file.
     private GrammarFormatType readPcfgAndLexicon(final Reader grammarFile, final List<StringProduction> pcfgRules,
             final List<StringProduction> lexicalRules) throws IOException {
-        // Read in the grammar file.
 
+        GrammarFormatType gf;
         final BufferedReader br = new BufferedReader(grammarFile);
         br.mark(50);
 
-        GrammarFormatType gf;
-
-        // Read the first line and try to induce the grammar format from it
-        final String sDagger = br.readLine();
-
-        if (sDagger.matches("[A-Z]+_[0-9]+")) {
+        // Read the first line and try to guess the grammar format
+        final String firstLine = br.readLine();
+        if (firstLine.matches("^[A-Z]+_[0-9]+")) {
             gf = GrammarFormatType.Berkeley;
-            startSymbolStr = sDagger;
-        } else if (sDagger.split(" ").length > 1) {
+            startSymbolStr = firstLine;
+        } else if (firstLine.contains("format=CSLU")) {
+            gf = GrammarFormatType.CSLU;
+            // final Pattern p = Pattern.compile("^.*start=([^ ]+).*$");
+            // startSymbolStr = p.matcher(firstLine).group(1);
+            final HashMap<String, String> keyVals = ParserUtil.readKeyValuePairs(firstLine.trim());
+            startSymbolStr = keyVals.get("start");
+        } else if (firstLine.split(" ").length > 1) {
             // The first line was not a start symbol.
             // Roark-format assumes 'TOP'. Reset the reader and re-process that line
             gf = GrammarFormatType.Roark;
             startSymbolStr = "TOP";
             br.reset();
         } else {
-            gf = GrammarFormatType.CSLU;
-            startSymbolStr = sDagger;
+            throw new IllegalArgumentException("Unexpected first line of grammar file: " + firstLine);
         }
 
         // for (String line = br.readLine(); line != null && !line.equals(DELIMITER); line = br.readLine()) {
         final Pattern p = Pattern.compile("\\s");
-        for (String line = br.readLine(); !line.equals(DELIMITER); line = br.readLine()) {
+        for (String line = br.readLine(); !line.equals(LEXICON_DELIMITER); line = br.readLine()) {
             final String[] tokens = p.split(line);
 
-            if (tokens.length == 1) {
-                throw new IllegalArgumentException(
-                        "Grammar file must contain a single line with a single string representing the START SYMBOL.\n"
-                                + "More than one entry was found.  Last line: " + line);
+            if ((tokens.length > 0 && tokens[0].equals("#")) || line.trim().equals("")) {
+                // '#' indicates a comment. Skip line.
             } else if (tokens.length == 4) {
                 // Unary production: expecting: A -> B prob
                 // TODO: Should we make sure there aren't any duplicates?
@@ -477,7 +481,9 @@ public class Grammar implements Serializable {
         for (String line = br.readLine(); line != null || lexicalRules.size() == 0; line = br.readLine()) {
             if (line != null) {
                 final String[] tokens = p.split(line);
-                if (tokens.length == 4) {
+                if ((tokens.length > 0 && tokens[0].equals("#")) || line.trim().equals("")) {
+                    // '#' indicates a comment. Skip line.
+                } else if (tokens.length == 4) {
                     // expecting: A -> B prob
                     lexicalRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
                 } else {

@@ -299,7 +299,7 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
         }
 
         sb.append(unaryRulesAsString(fraction));
-        sb.append(Grammar.DELIMITER);
+        sb.append(Grammar.LEXICON_DELIMITER);
         sb.append('\n');
         sb.append(lexicalRulesAsString(fraction));
 
@@ -334,7 +334,7 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
         }
 
         sb.append(unaryRulesAsString(fraction));
-        sb.append(Grammar.DELIMITER);
+        sb.append(Grammar.LEXICON_DELIMITER);
         sb.append('\n');
         sb.append(lexicalRulesAsString(fraction));
 
@@ -368,7 +368,7 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
         }
 
         sb.append(unaryRulesAsString(fraction));
-        sb.append(Grammar.DELIMITER);
+        sb.append(Grammar.LEXICON_DELIMITER);
         sb.append('\n');
         sb.append(lexicalRulesAsString(fraction));
 

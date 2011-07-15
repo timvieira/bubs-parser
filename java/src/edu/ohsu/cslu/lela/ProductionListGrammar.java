@@ -29,8 +29,11 @@ import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.TreeSet;
@@ -83,11 +86,9 @@ public class ProductionListGrammar {
         this.startSymbol = countGrammar.startSymbol;
         this.baseGrammar = this;
         this.parentVocabularyMap = null;
-        //
-        // // This grammar was induced from a treebank and has not (yet) been split or merged, so each
-        // non-terminal is
-        // its
-        // // own base category.
+
+        // This grammar was induced from a treebank and has not (yet) been split or merged, so each
+        // non-terminal is its own base category.
         // this.subcategoryIndices = new short[vocabulary.size()];
         // Arrays.fill(subcategoryIndices, (short) 0);
     }
@@ -669,10 +670,10 @@ public class ProductionListGrammar {
     @Override
     public String toString() {
         // TODO Switch from fractions to logs
-        return toString(true);
+        return toString(true, "");
     }
 
-    public String toString(final boolean fraction) {
+    public String toString(final boolean fraction, final String gramStatsStr) {
         final TreeSet<String> binaryRules = new TreeSet<String>();
         for (final Production p : binaryProductions) {
             if (fraction) {
@@ -706,22 +707,22 @@ public class ProductionListGrammar {
             }
         }
 
+        final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+        final String dateNowStr = dateFormat.format(new Date());
+
         final StringBuilder sb = new StringBuilder(1024);
+        sb.append(gramStatsStr + " start=" + startSymbol + " date=" + dateNowStr + " nBinary=" + binaryRules.size()
+                + " nUnary=" + unaryRules.size() + " nLex=" + lexicalRules.size() + "\n");
         for (final String rule : binaryRules) {
-            sb.append(rule);
-            sb.append('\n');
+            sb.append(rule + '\n');
         }
         for (final String rule : unaryRules) {
-            sb.append(rule);
-            sb.append('\n');
+            sb.append(rule + '\n');
         }
 
-        sb.append(Grammar.DELIMITER);
-        sb.append('\n');
-
+        sb.append(Grammar.LEXICON_DELIMITER + '\n');
         for (final String rule : lexicalRules) {
-            sb.append(rule);
-            sb.append('\n');
+            sb.append(rule + '\n');
         }
         return sb.toString();
     }

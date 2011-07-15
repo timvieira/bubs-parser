@@ -549,7 +549,7 @@ public class FractionalCountGrammar implements CountGrammar {
             sb.append('\n');
         }
 
-        sb.append(Grammar.DELIMITER);
+        sb.append(Grammar.LEXICON_DELIMITER);
         sb.append('\n');
 
         for (final String rule : lexicalRules) {
