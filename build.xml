@@ -132,6 +132,14 @@
             <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
+	
+    <target name="grammar-induce" depends="compile">
+            <antcall target="package-tool">
+                    <param name="root-class" value="edu.ohsu.cslu.lela.InduceGrammar" />
+                    <param name="tool-name" value="grammar-induce" />
+        <param name="package-gpl-libs" value="true" />
+            </antcall>
+    </target>
 
     <target name="bubs-all" depends="compile">
         <jar file="${dir.dist}/bubs-all.jar">

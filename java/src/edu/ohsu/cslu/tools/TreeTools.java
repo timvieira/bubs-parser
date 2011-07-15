@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.tools;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.ParseTree;
 
 public class TreeTools extends BaseCommandlineTool {
@@ -72,8 +74,8 @@ public class TreeTools extends BaseCommandlineTool {
     @Option(name = "-leavesToUNK", usage = "Map words to their UNK class.  Used as preprocessing to PCFG induction (with other scripts)")
     private boolean leavesToUNK = false;
 
-    @Option(name = "-unkMaxFreq", usage = "Max frequency word can occur to be mapped to UNK for -leavesToUNK")
-    private int unkMaxFreq = 2;
+    @Option(name = "-knownWords", metaVar = "FILE", usage = "File listing words NOT to be labeled with UNK class, one per line.")
+    private String knownWordsFile = null;
 
     private static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
@@ -86,9 +88,19 @@ public class TreeTools extends BaseCommandlineTool {
     @Override
     protected void run() throws IOException {
 
-        // if (leavesToUNK) {
-        // convertLeavesToUNK();
-        // }
+        // Read in unkWords and knownWords into file
+        SymbolSet<String> knownWords = null;
+        if (leavesToUNK) {
+            if (knownWordsFile == null) {
+                System.err.println("ERROR: -knownWords must be specified with -leavesToUNK");
+                System.exit(1);
+            }
+            knownWords = new SymbolSet<String>();
+            final BufferedReader fileStream = new BufferedReader(new FileReader(knownWordsFile));
+            for (String line = fileStream.readLine(); line != null; line = fileStream.readLine()) {
+                knownWords.addSymbol(line.trim());
+            }
+        }
 
         for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
             final ParseTree tree = ParseTree.readBracketFormat(sentence);
@@ -111,6 +123,8 @@ public class TreeTools extends BaseCommandlineTool {
                 extractUnariesFromTree(tree);
             } else if (extractBEULabels) {
                 extractBEULabelsFromTree(tree);
+            } else if (leavesToUNK) {
+                convertLeavesToUNK(tree, knownWords);
             } else {
                 System.err.println("ERROR: action required.  See -h");
                 System.exit(1);
@@ -124,35 +138,14 @@ public class TreeTools extends BaseCommandlineTool {
         }
     }
 
-    public void convertLeavesToUNK(final int unkMaxFreq) throws IOException {
-        final HashMap<String, Integer> wordCount = new HashMap<String, Integer>();
-        for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
-            final ParseTree tree = ParseTree.readBracketFormat(sentence);
-            for (final ParseTree node : tree.getLeafNodes()) {
-                if (wordCount.containsKey(node.contents)) {
-                    wordCount.put(node.contents, wordCount.get(node.contents) + 1);
-                } else {
-                    wordCount.put(node.contents, 1);
-                }
+    private void convertLeavesToUNK(final ParseTree tree, final SymbolSet<String> knownWords) {
+        int wordIndex = 0;
+        for (final ParseTree node : tree.getLeafNodes()) {
+            if (!knownWords.contains(node.contents)) {
+                node.contents = Tokenizer.berkeleyGetSignature(node.contents, wordIndex, knownWords);
             }
+            wordIndex += 1;
         }
-
-        final SymbolSet<String> knownWords = new SymbolSet<String>();
-        final SymbolSet<String> unkWords = new SymbolSet<String>();
-        // HashMap<String,String> unkMap = new HashMap<String,String>();
-        for (final String word : wordCount.keySet()) {
-            if (wordCount.get(word) < unkMaxFreq) {
-                // unkMap.put(word, "");
-                unkWords.addSymbol(word);
-            } else {
-                knownWords.addSymbol(word);
-            }
-        }
-
-        // for (String word : unkMap.keySet()) {
-        // unkMap.set(word, Tokenizer.berkeleyGetSignature(word, wordIndex, lexSet));
-        // }
-
     }
 
     public static void extractBEULabelsFromTree(final ParseTree tree) {

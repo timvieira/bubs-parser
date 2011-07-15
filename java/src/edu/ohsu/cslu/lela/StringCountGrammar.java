@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -91,23 +92,63 @@ public final class StringCountGrammar implements CountGrammar {
     public StringCountGrammar(final Reader reader, final Factorization factorization,
             final GrammarFormatType grammarFormatType, final int lexicalUnkThreshold) throws IOException {
 
-        // Temporary string-based maps recording counts of binary, unary, and lexical rules. We will transfer
-        // these
-        // counts to more compact index-mapped maps after collapsing unknown words in the lexicon
+        // Temporary string-based maps recording counts of binary, unary, and
+        // lexical rules. We will transfer these counts to more compact index-mapped
+        // maps after collapsing unknown words in the lexicon
 
+        LinkedList<BinaryTree<String>> trees = new LinkedList<BinaryTree<String>>();
+        final HashMap<String, Integer> wordCounts = new HashMap<String, Integer>();
         final BufferedReader br = new BufferedReader(reader);
 
-        // Add counts for each rule to temporary String maps
+        // Get word counts from corpus
         for (String line = br.readLine(); line != null; line = br.readLine()) {
+            BinaryTree<String> tree;
+            if (factorization == null) {
+                tree = BinaryTree.read(line, String.class);
+            } else {
+                tree = NaryTree.read(line, String.class).factor(grammarFormatType, factorization);
+            }
 
-            final BinaryTree<String> tree = factorization != null ? NaryTree.read(line, String.class).factor(
-                    grammarFormatType, factorization) : BinaryTree.read(line, String.class);
-
+            trees.add(tree);
             if (startSymbol == null) {
                 startSymbol = tree.label();
                 observedNonTerminals.add(startSymbol);
             }
 
+            for (final BinaryTree<String> leaf : tree.leafTraversal()) {
+                if (wordCounts.containsKey(leaf.label())) {
+                    wordCounts.put(leaf.label(), wordCounts.get(leaf.label()) + 1);
+                } else {
+                    wordCounts.put(leaf.label(), 1);
+                }
+            }
+        }
+
+        // build set of words that have frequency greater than lexicalUnkThreshold
+        final SymbolSet<String> knownWords = new SymbolSet<String>();
+        for (final String word : wordCounts.keySet()) {
+            if (wordCounts.get(word) > lexicalUnkThreshold) {
+                knownWords.addSymbol(word);
+            }
+        }
+
+        // Map word to UNK symbol in corpus
+        for (final BinaryTree<String> tree : trees) {
+            // final String[] leaves = tree.leafLabels();
+            final String[] leaves = new String[tree.leaves()];
+            int k = 0;
+            for (final BinaryTree<String> leaf : tree.leafTraversal()) {
+                leaves[k++] = leaf.label();
+            }
+            for (int i = 0; i < leaves.length; i++) {
+                if (knownWords.contains(leaves[i]) == false) {
+                    leaves[i] = Tokenizer.berkeleyGetSignature(leaves[i], i, knownWords);
+                }
+            }
+            tree.replaceLeafLabels(leaves);
+        }
+
+        for (final BinaryTree<String> tree : trees) {
             for (final BinaryTree<String> node : tree.inOrderTraversal()) {
                 // Skip leaf nodes - only internal nodes are parents
                 if (node.isLeaf()) {
@@ -139,19 +180,8 @@ public final class StringCountGrammar implements CountGrammar {
             }
         }
 
-        // Iterate through lexical counts and collapse any terminals which occur < threshold into UNK
-        // categories
-        for (final String word : lexicalEntryOccurrences.keySet()) {
-            final int occurrences = lexicalEntryOccurrences.getInt(word);
-            if (occurrences < lexicalUnkThreshold) {
-                // TODO For the moment, we don't treat sentence-initial words any differently; we should
-                // probably handle
-                // those separately while reading the corpus
-                final String unk = Tokenizer.berkeleyGetSignature(word, 1, null);
-                lexicalEntryOccurrences.put(unk, lexicalEntryOccurrences.getInt(unk) + occurrences);
-                lexicalEntryOccurrences.remove(word);
-            }
-        }
+        // We have the counts so we can delete the orignal trees
+        trees = null;
     }
 
     private void incrementBinaryCount(final String parent, final String leftChild, final String rightChild) {

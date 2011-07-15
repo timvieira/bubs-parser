@@ -34,21 +34,19 @@ public abstract class GrammarTestCase {
 
     public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader)
             throws Exception {
-        return grammarClass.getConstructor(new Class[] { Reader.class, GrammarFormatType.class })
-            .newInstance(new Object[] { grammarReader, GrammarFormatType.CSLU });
+        return grammarClass.getConstructor(new Class[] { Reader.class, GrammarFormatType.class }).newInstance(
+                new Object[] { grammarReader, GrammarFormatType.CSLU });
     }
 
-    public static <C extends Grammar> C createGrammar(final Class<C> grammarClass,
-            final Reader grammarReader,
-            final Class<? extends SparseMatrixGrammar.PackingFunction> cartesianProductFunctionClass)
-            throws Exception {
+    public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader,
+            final Class<? extends SparseMatrixGrammar.PackingFunction> cartesianProductFunctionClass) throws Exception {
 
         try {
             return grammarClass.getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
-                new Object[] { grammarReader, cartesianProductFunctionClass });
+                    new Object[] { grammarReader, cartesianProductFunctionClass });
         } catch (final NoSuchMethodException e) {
-            return grammarClass.getConstructor(new Class[] { Reader.class }).newInstance(
-                new Object[] { grammarReader });
+            return grammarClass.getConstructor(new Class[] { Reader.class })
+                    .newInstance(new Object[] { grammarReader });
         }
     }
 
@@ -64,7 +62,7 @@ public abstract class GrammarTestCase {
         // Add a fake factored category just to keep Grammar happy
         sb.append("NP => NP|NN NP -Infinity\n");
 
-        sb.append(Grammar.DELIMITER);
+        sb.append(Grammar.LEXICON_DELIMITER);
         sb.append('\n');
 
         sb.append("NN => systems 0\n");
@@ -81,8 +79,7 @@ public abstract class GrammarTestCase {
      * 
      * TODO Share grammar creation with GrammarTestCase
      * 
-     * @throws Exception
-     *             if something bad happens
+     * @throws Exception if something bad happens
      */
     @Test
     public void testSimpleGrammar() throws Exception {

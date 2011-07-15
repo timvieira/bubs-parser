@@ -52,6 +52,8 @@ import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
  */
 public abstract class Parser<G extends Grammar> {
 
+    public final G grammar;
+
     /** Local cell beam width (0 = exhaustive) */
     public final static String PROPERTY_MAX_BEAM_WIDTH = "maxBeamWidth";
 
@@ -63,8 +65,6 @@ public abstract class Parser<G extends Grammar> {
 
     /** The maximum differential (in log inside probability) between the most and least probable constituents in a cell */
     public final static String PROPERTY_MAX_LOCAL_DELTA = "maxLocalDelta";
-
-    public final G grammar;
 
     /** Parser configuration */
     public ParserDriver opts;
@@ -254,5 +254,14 @@ public abstract class Parser<G extends Grammar> {
         private DecodeMethod(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
         }
+    }
+
+    static public enum Language {
+        English, Chinese, German, French;
+
+        private Language(final String... aliases) {
+            EnumAliasMap.singleton().addAliases(this, aliases);
+        }
+
     }
 }
