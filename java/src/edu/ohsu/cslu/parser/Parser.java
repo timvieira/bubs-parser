@@ -118,9 +118,14 @@ public abstract class Parser<G extends Grammar> {
     // wraps parse tree from findBestParse() with additional stats and
     // cleans up output for consumption. Input can be a sentence string
     // or a parse tree
-    public ParseContext parseSentence(final String input) {
-        if (input.matches("^\\s*$")) {
+    public ParseContext parseSentence(String input) {
+        input = input.trim();
+        if (input.length() == 0) {
             return null;
+        } else if (input.matches("^\\([^ ].*[^ ]\\)$") && opts.inputFormat != InputFormat.Tree) {
+            BaseLogger.singleton().fine(
+                    "INFO: Auto-detecting inputFormat as Tree (originally " + opts.inputFormat + ")");
+            opts.inputFormat = InputFormat.Tree;
         }
 
         final ParseContext result = new ParseContext(input, opts.inputFormat, grammar);
