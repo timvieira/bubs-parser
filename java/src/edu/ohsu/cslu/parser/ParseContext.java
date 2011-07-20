@@ -67,7 +67,6 @@ public class ParseContext {
 
     public ParseContext(final String input, final InputFormat inputFormat, final Grammar grammar) {
         try {
-            this.inputTree = null;
             if (inputFormat == InputFormat.Token) {
                 this.sentence = input.trim();
             } else if (inputFormat == InputFormat.Text) {
@@ -100,15 +99,8 @@ public class ParseContext {
         }
     }
 
-    // public ParseContext(final NaryTree<String> tree, final Grammar grammar, final Factorization factorization) {
-    // this(tree.factor(grammar.grammarFormat, factorization), grammar);
-    // }
-
     @Override
     public String toString() {
-        // String result = String.format("STAT: sentNum=%d  sentLen=%d md5=%s seconds=%.3f inside=%.5f",
-        // sentenceNumber,
-        // sentenceLength, sentenceMD5, parseTimeSec, insideProbability);
         String result = String.format("INFO: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f", sentenceNumber,
                 sentenceLength, parseTimeSec, insideProbability);
 

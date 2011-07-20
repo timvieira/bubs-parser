@@ -22,9 +22,9 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.grammar.ProjectedGrammar;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
@@ -36,7 +36,7 @@ import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
  */
 public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChart> {
 
-    ProjectedGrammar evalGrammar;
+    CoarseGrammar evalGrammar;
 
     // notes:
     // keep a single maxc[start][end][nt] array for each cell

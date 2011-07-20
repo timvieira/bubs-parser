@@ -77,6 +77,7 @@ public abstract class Parser<G extends Grammar> {
 
     // TODO Move global state back out of Parser
     static volatile protected int sentenceNumber = 0;
+    static volatile protected int failedParses = 0;
 
     /** Summary statistics over all sentences parsed by this Parser instance */
     protected float totalParseTimeSec = 0;
@@ -121,6 +122,7 @@ public abstract class Parser<G extends Grammar> {
     public ParseContext parseSentence(String input) {
         input = input.trim();
         if (input.length() == 0) {
+            BaseLogger.singleton().info("WARNING: blank line in input.");
             return null;
         } else if (input.matches("^\\([^ ].*[^ ]\\)$") && opts.inputFormat != InputFormat.Tree) {
             BaseLogger.singleton().fine(
@@ -147,7 +149,12 @@ public abstract class Parser<G extends Grammar> {
             result.binaryParse = findBestParse(result.tokens);
             result.stopTime();
 
-            if (result.binaryParse != null) {
+            if (result.binaryParse == null) {
+                failedParses++;
+                // result.binaryParse = new BinaryTree<String>("");
+                // result.naryParse = new NaryTree<String>("");
+                result.parseBracketString = "()";
+            } else {
                 if (!opts.printUnkLabels) {
                     result.binaryParse.replaceLeafLabels(result.strTokens);
                 }
@@ -188,7 +195,7 @@ public abstract class Parser<G extends Grammar> {
 
     static public enum ParserType {
 
-        CYK(ResearchParserType.ECPCellCrossList), Agenda(ResearchParserType.APWithMemory), Beam(
+        CYK(ResearchParserType.LeftChildMl), Agenda(ResearchParserType.APWithMemory), Beam(
                 ResearchParserType.BeamSearchChartParser), Matrix(ResearchParserType.CartesianProductHashMl);
 
         public ResearchParserType researchParserType;
@@ -212,6 +219,7 @@ public abstract class Parser<G extends Grammar> {
         APGhostEdges("apge"),
         APDecodeFOM("apfom"),
         BeamSearchChartParser("beam"),
+        BSCPSplitUnary("bscpsu"),
         BSCPPruneViterbi("beampv"),
         BSCPOnlineBeam("beamob"),
         BSCPBoundedHeap("beambh"),

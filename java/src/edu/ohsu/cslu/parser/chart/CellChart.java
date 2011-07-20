@@ -301,7 +301,9 @@ public class CellChart extends Chart {
             super(prod, leftCell, rightCell);
 
             if (parser.edgeSelector != null) {
-                this.fom = parser.edgeSelector.calcFOM(this);
+                // this.fom = parser.edgeSelector.calcFOM(this);
+                this.fom = parser.edgeSelector.calcFOM(this.start(), this.end(), (short) this.prod.parent,
+                        this.inside());
             }
         }
 
@@ -310,7 +312,8 @@ public class CellChart extends Chart {
             super(prod, childCell);
 
             if (parser.edgeSelector != null) {
-                this.fom = parser.edgeSelector.calcFOM(this);
+                this.fom = parser.edgeSelector.calcFOM(this.start(), this.end(), (short) this.prod.parent,
+                        this.inside());
             }
         }
 
