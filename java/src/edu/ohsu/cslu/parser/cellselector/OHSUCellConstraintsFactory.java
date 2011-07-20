@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Vector;
 
 import cltool4j.BaseLogger;
+import cltool4j.ConfigProperties;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ParserUtil;
@@ -84,14 +86,14 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
     protected LinkedList<ChartCell> cellList;
     protected Iterator<ChartCell> cellListIterator;
 
-    public OHSUCellConstraintsFactory(final BufferedReader modelStream, final String constraintArgs,
-            final boolean grammarLeftFactored) {
+    public OHSUCellConstraintsFactory(final BufferedReader modelStream, final boolean grammarLeftFactored) {
         this.grammarLeftFactored = grammarLeftFactored;
         try {
-            parseConstraintArgs(constraintArgs);
+            final ConfigProperties props = GlobalConfigProperties.singleton();
+            parseConstraintArgs(props.getProperty("chartConstraintsTune"));
             BaseLogger.singleton().fine(
-                "CC_PARAM: startThresh=" + globalBegin + " endThresh=" + globalEnd + " unaryThresh="
-                        + globalUnary + " precisionPct=" + precisionPct + " linearN=" + linearOpen);
+                    "CC_PARAM: startThresh=" + globalBegin + " endThresh=" + globalEnd + " unaryThresh=" + globalUnary
+                            + " precisionPct=" + precisionPct + " linearN=" + linearOpen);
 
             readModel(modelStream);
         } catch (final Exception e) {
@@ -111,7 +113,7 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
                 precisionPct = ParserUtil.str2float(tokens[++i]);
                 if (precisionPct < 0.0 || precisionPct > 1.0) {
                     BaseLogger.singleton().severe(
-                        "Precision constraint must be btwn 0 and 1 inclusive.  Found value: " + precisionPct);
+                            "Precision constraint must be btwn 0 and 1 inclusive.  Found value: " + precisionPct);
                 }
             } else if (tokens[i].equals("N")) {
                 this.linearOpen = ParserUtil.str2float(tokens[++i]);
@@ -146,8 +148,7 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
                         allUnaryScores.lastElement().add(Float.parseFloat(tokens[3]));
                     }
                 } else {
-                    throw new Exception("ERROR: incorrect format for cellConstraintsFile on line: '" + line
-                            + "'");
+                    throw new Exception("ERROR: incorrect format for cellConstraintsFile on line: '" + line + "'");
                 }
             }
         }
@@ -390,8 +391,8 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
             }
 
             final int nOpen = total - nClosed - nFact - nUnaryClosed;
-            String stats = "CC_STATS: total=" + total + " nOpen=" + nOpen + " nFact=" + nFact + " nClosed="
-                    + nClosed + " nUnaryClosed=" + nUnaryClosed;
+            String stats = "CC_STATS: total=" + total + " nOpen=" + nOpen + " nFact=" + nFact + " nClosed=" + nClosed
+                    + " nUnaryClosed=" + nUnaryClosed;
             if (perCell) {
                 stats += "\nCC_CELLS: " + s;
             }
