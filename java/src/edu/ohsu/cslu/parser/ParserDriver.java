@@ -160,13 +160,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-ccModel", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
 
-    @Option(name = "-ccTune", metaVar = "VAL", usage = "CSLU Chart Constraints for Absolute (A), High Precision (P), or Linear (N): A,start,end,unary | P,pct | N,int")
-    public String chartConstraintsThresh = "A,120,120,inf";
-
-    // (1) absolute thresh A,start,end,unary
-    // (2) high precision P,pct (pct cells closed score > 0)
-    // (3) linear complexity N,int (x*N max open)
-
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
 
@@ -254,7 +247,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
             if (chartConstraintsModel != null) {
                 cellSelectorFactory = new OHSUCellConstraintsFactory(fileAsBufferedReader(chartConstraintsModel),
-                        chartConstraintsThresh, grammar.isLeftFactored());
+                        grammar.isLeftFactored());
             }
 
             if (beamModelFileName != null) {
