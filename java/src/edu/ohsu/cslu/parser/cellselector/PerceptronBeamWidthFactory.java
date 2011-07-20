@@ -118,7 +118,7 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
             openCells = 0;
             // cellList = new LinkedList<ChartCell>();
 
-            final boolean countClasses = BaseLogger.singleton().isLoggable(Level.FINE);
+            final boolean countClasses = BaseLogger.singleton().isLoggable(Level.FINER);
             final int[] beamClassCounts = countClasses ? new int[beamWidthModel.numClasses()] : null;
             // Arrays.fill(beamClassCounts, 0);
 
@@ -181,18 +181,13 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
                 }
             }
 
-            if (BaseLogger.singleton().isLoggable(Level.FINER)) {
-                BaseLogger.singleton().finer("INFO: beamconf: " + toString());
-            }
-
             if (countClasses) {
                 final StringBuilder classCounts = new StringBuilder(1024);
                 for (i = 0; i < beamWidthModel.numClasses(); i++) {
-                    classCounts.append(" class%d:%d");
-                    classCounts.append(i);
-                    classCounts.append(beamClassCounts[i]);
+                    classCounts.append(" class" + i + "=" + beamClassCounts[i]);
                 }
-                BaseLogger.singleton().fine("INFO: beamconf: " + classCounts);
+                BaseLogger.singleton().finer("INFO: beamconf: " + classCounts);
+                // BaseLogger.singleton().finer("INFO: beamconf: " + toString());
             }
             nextCell = 0;
         }

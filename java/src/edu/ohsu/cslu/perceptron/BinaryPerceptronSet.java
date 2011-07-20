@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.ParserUtil;
@@ -60,11 +61,11 @@ public class BinaryPerceptronSet extends Classifier {
             final String[] tokens = stream.readLine().split("\\s");
 
             bins = ParserUtil.strToIntArray(tokens[0].split("=")[1]);
-            System.out.println("reading BinaryPerceptronSet w/ bins=" + tokens[0].split("=")[1]);
+            BaseLogger.singleton().fine("INFO: Reading BinaryPerceptronSet with bins=" + tokens[0].split("=")[1]);
             numClassifiers = bins.length;
             classifiers = new Perceptron[numClassifiers];
             for (int i = 0; i < numClassifiers; i++) {
-                System.out.println("reading binary model " + i);
+                BaseLogger.singleton().finer("INFO: Reading binary model " + i);
                 classifiers[i] = new AveragedPerceptron(stream);
             }
         } catch (final IOException e) {
