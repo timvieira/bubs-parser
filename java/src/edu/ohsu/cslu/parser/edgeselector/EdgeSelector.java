@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart;
 
 /**
@@ -40,7 +39,7 @@ public abstract class EdgeSelector implements Serializable {
         Inside, NormalizedInside, BoundaryInOut, InsideWithFwdBkwd, WeightedFeatures
     }
 
-    public abstract float calcFOM(ChartEdge edge);
+    // public abstract float calcFOM(ChartEdge edge);
 
     public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
         throw new UnsupportedOperationException("Not implemented in " + getClass().getName());

@@ -18,7 +18,6 @@
  */
 package edu.ohsu.cslu.parser.edgeselector;
 
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 /**
  * Normalizes inside grammar probability by span length.
@@ -29,11 +28,21 @@ public class NormalizedInsideProb extends InsideProb {
 
     private static final long serialVersionUID = 1L;
 
+    // @Override
+    // public float calcFOM(final ChartEdge edge) {
+    // final int spanLength = edge.end() - edge.start();
+    // // return edge.inside() + spanLength * ParserDriver.param1;
+    // return edge.inside() + spanLength;
+    // }
+
     @Override
-    public float calcFOM(final ChartEdge edge) {
-        final int spanLength = edge.end() - edge.start();
-        // return edge.inside() + spanLength * ParserDriver.param1;
-        return edge.inside() + spanLength;
+    public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
+        return insideProbability;
+    }
+
+    @Override
+    public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
+        return insideProbability;
     }
 
 }
