@@ -713,7 +713,7 @@ public class ProductionListGrammar {
         final String dateNowStr = dateFormat.format(new Date());
 
         final StringBuilder sb = new StringBuilder(1024);
-        sb.append("lang=UNK ");
+        sb.append("lang=UNK");
         sb.append(" format=" + grammarFormatType);
         sb.append(" unkThresh=" + lexicalUnkThreshold);
         sb.append(" start=" + startSymbol);
