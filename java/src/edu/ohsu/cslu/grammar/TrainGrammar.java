@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.lela;
+package edu.ohsu.cslu.grammar;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -24,19 +24,16 @@ import java.io.InputStreamReader;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
-import edu.ohsu.cslu.grammar.GrammarFormatType;
+import edu.ohsu.cslu.lela.ProductionListGrammar;
+import edu.ohsu.cslu.lela.StringCountGrammar;
 
-public class InduceGrammar extends BaseCommandlineTool {
-
-    // @Option(name = "-gp", aliases = { "--grammar-file-prefix" }, required = true, metaVar = "prefix", usage =
-    // "Grammar file prefix")
-    // private String grammarPrefix;
+public class TrainGrammar extends BaseCommandlineTool {
 
     @Option(name = "-fact", metaVar = "TYPE", usage = "Factorizes unfactored trees. If not specified, assumes trees are already binarized")
     private Factorization factorization = null;
 
     @Option(name = "-gf", metaVar = "FORMAT", usage = "Grammar Format (required if factorization is specified)")
-    private GrammarFormatType grammarFormatType = GrammarFormatType.CSLU;
+    private GrammarFormatType grammarFormatType = GrammarFormatType.Berkeley;
 
     @Option(name = "-unkThresh", metaVar = "THRESH", usage = "The number of observations of a word required in order to add it to the lexicon.")
     private int lexicalUnkThreshold = 1;
@@ -46,8 +43,8 @@ public class InduceGrammar extends BaseCommandlineTool {
         final StringCountGrammar cg = new StringCountGrammar(new InputStreamReader(System.in), factorization,
                 grammarFormatType, lexicalUnkThreshold);
         final ProductionListGrammar plg = new ProductionListGrammar(cg);
-        System.out.println(plg.toString(false, "lang=UNK format=" + grammarFormatType + " unkThresh="
-                + lexicalUnkThreshold + " hMarkov=UNK vMarkov=UNK"));
+
+        System.out.println(plg.toString(false, grammarFormatType, lexicalUnkThreshold));
     }
 
     public static void main(final String[] args) {

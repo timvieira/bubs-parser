@@ -99,10 +99,10 @@
         </antcall>
     </target>
 
-    <target name="grammar-train" depends="compile">
+    <target name="train-grammar" depends="compile">
         <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.GrammarTrainer" />
-            <param name="tool-name" value="grammar-train" />
+            <param name="root-class" value="edu.ohsu.cslu.grammar.TrainGrammar" />
+            <param name="tool-name" value="train-grammar" />
             <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
@@ -119,26 +119,18 @@
 
     <target name="train-perceptron" depends="compile">
         <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.perceptron.ModelTrainer" />
+            <param name="root-class" value="edu.ohsu.cslu.perceptron.TrainPerceptron" />
             <param name="tool-name" value="train-perceptron" />
             <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
 
-    <target name="parser-trainer" depends="compile">
+    <target name="train-fom" depends="compile">
         <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.parser.ParserTrainer" />
-            <param name="tool-name" value="parser-trainer" />
+            <param name="root-class" value="edu.ohsu.cslu.parser.edgeselector.TrainFOM" />
+            <param name="tool-name" value="train-fom" />
             <param name="package-gpl-libs" value="true" />
         </antcall>
-    </target>
-	
-    <target name="grammar-induce" depends="compile">
-            <antcall target="package-tool">
-                    <param name="root-class" value="edu.ohsu.cslu.lela.InduceGrammar" />
-                    <param name="tool-name" value="grammar-induce" />
-        <param name="package-gpl-libs" value="true" />
-            </antcall>
     </target>
 
     <target name="bubs-all" depends="compile">
@@ -156,7 +148,7 @@
        Package all training tools and utilities
     ========================================================================
     -->
-    <target name="tools" depends="summarize-grammar,serialize-model,tree-tools,train-perceptron,parser-trainer" />
+    <target name="tools" depends="summarize-grammar,serialize-model,tree-tools,train-perceptron,train-fom,train-grammar" />
 
     <!-- 
     ========================================================================
