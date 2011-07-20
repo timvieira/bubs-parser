@@ -266,7 +266,7 @@ public class Tokenizer implements Serializable {
         if (Character.isUpperCase(ch0) || Character.isTitleCase(ch0)) {
             if (wordIndex == 0 && numCaps == 1) {
                 sb.append("-INITC");
-                // if (isKnown(lowered)) {
+                // Condition assures word != lowered
                 if (lexSet != null && lexSet.hasSymbol(lowered)) {
                     sb.append("-KNOWNLC");
                 }
