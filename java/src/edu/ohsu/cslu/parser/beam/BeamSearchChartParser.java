@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.PriorityQueue;
 
 import cltool4j.BaseLogger;
+import cltool4j.ConfigProperties;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
@@ -32,7 +34,6 @@ import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory.PerceptronBe
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
 
 /**
  * Beam search chart parser which performs grammar intersection by iterating over grammar rules matching the observed
@@ -52,20 +53,40 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     public BeamSearchChartParser(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
-        origBeamWidth = Integer.MAX_VALUE;
-        origGlobalBeamDelta = Float.POSITIVE_INFINITY;
-        origLocalBeamDelta = Float.POSITIVE_INFINITY;
         hasPerceptronBeamWidth = this.cellSelector instanceof PerceptronBeamWidth;
-        // hasCellConstraints = this.cellSelector instanceof OHSUCellConstraints;
-        // if (hasCellConstraints) {
-        // cellConstraints = (OHSUCellConstraints) cellSelector;
-        // }
 
-        setBeamTuneParams(opts.beamTune);
+        // setBeamTuneParams(opts.beamTune);
+        setBeamTuneParamsFromOptions();
 
         BaseLogger.singleton().fine(
                 "INFO: beamWidth=" + origBeamWidth + " globalDelta=" + origGlobalBeamDelta + " localDelta="
                         + origLocalBeamDelta + " factBeamWidth=" + origFactoredBeamWidth);
+    }
+
+    protected void setBeamTuneParamsFromOptions() {
+        final ConfigProperties props = GlobalConfigProperties.singleton();
+        origBeamWidth = props.getIntProperty("maxBeamWidth");
+        if (origBeamWidth <= 0) {
+            BaseLogger.singleton().info(
+                    "maxBeamWidth must be greater than zero for specified parser.  Current value is '" + origBeamWidth
+                            + "'");
+            System.exit(1);
+        }
+
+        origLocalBeamDelta = props.getFloatProperty("maxLocalDelta");
+        if (origLocalBeamDelta <= 0) {
+            origLocalBeamDelta = Float.POSITIVE_INFINITY;
+        }
+
+        origGlobalBeamDelta = props.getFloatProperty("maxGlobalDelta");
+        if (origGlobalBeamDelta <= 0) {
+            origGlobalBeamDelta = Float.POSITIVE_INFINITY;
+        }
+
+        origFactoredBeamWidth = props.getIntProperty("maxFactoredBeamWidth");
+        if (origFactoredBeamWidth <= 0) {
+            origFactoredBeamWidth = origBeamWidth;
+        }
     }
 
     protected void setBeamTuneParams(final String beamTuneStr) {
@@ -234,10 +255,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     protected void addEdgeToCollection(final ChartEdge edge) {
         cellConsidered++;
 
-        BaseLogger.singleton().finest(
-                "Adding: "
-                        + ((BoundaryInOutSelector) edgeSelector).calcFOMToString(edge.start(), edge.end(),
-                                (short) edge.prod.parent, edge.inside()));
+        // BaseLogger.singleton().finest("Adding: " + ((BoundaryInOutSelector)
+        // edgeSelector).calcFOMToString(edge.start(), edge.end(),(short) edge.prod.parent, edge.inside()));
 
         if (fomCheckAndUpdate(edge)) {
             agenda.add(edge);
@@ -251,10 +270,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         while (edge != null && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
             cellPopped++;
 
-            BaseLogger.singleton().finer(
-                    "Popping: "
-                            + ((BoundaryInOutSelector) edgeSelector).calcFOMToString(edge.start(), edge.end(),
-                                    (short) edge.prod.parent, edge.inside()));
+            // BaseLogger.singleton().finer("Popping: "+ ((BoundaryInOutSelector)
+            // edgeSelector).calcFOMToString(edge.start(), edge.end(),(short) edge.prod.parent, edge.inside()));
 
             if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);

@@ -36,7 +36,7 @@ public class EmbeddedExample {
 
         // Create EdgeSelectorFactory and CellSelectorFactory instances and load models from disk
         opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, uncompressFile(args[1]));
-        opts.cellSelectorFactory = new PerceptronBeamWidthFactory(uncompressFile(args[2]), "200,200,200,200");
+        opts.cellSelectorFactory = new PerceptronBeamWidthFactory(uncompressFile(args[2]));
 
         // Create a Parser instance
         final CscSpmvParser parser = new CscSpmvParser(opts, grammar);

@@ -227,7 +227,6 @@ public abstract class Parser<G extends Grammar> {
         BSCPPerceptronCell("beampc"),
         BSCPFomDecode("beamfom"),
         BSCPBeamConfTrain("beamconftrain"),
-        // BSCPBeamConf("beamconf"),
         CoarseCellAgenda("cc"),
         CoarseCellAgendaCSLUT("cccslut"),
         DenseVectorOpenClSpmv("dvopencl"),

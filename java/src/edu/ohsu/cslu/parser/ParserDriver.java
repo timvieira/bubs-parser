@@ -151,30 +151,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
     private String fomTypeOrModel = "Inside";
 
-    @Option(name = "-beamTune", metaVar = "VAL", usage = "Tuning params for beam search: maxBeamWidth,globalScoreDelta,localScoreDelta,factoredCellBeamWidth")
-    public String beamTune = "30,20,8,30";
-
-    // @Option(name = "-cpf", hidden = true, aliases = { "--cartesian-product-function" }, metaVar =
-    // "function", usage = "Cartesian-product function (only used for SpMV parsers)")
     @Option(name = "-cpf", hidden = true, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
     private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash;
 
-    // @Option(name = "-cp", aliases = { "--cell-processing-type" }, metaVar = "type", usage =
-    // "Chart cell processing type")
-    // private ChartCellProcessingType chartCellProcessingType = ChartCellProcessingType.CellCrossList;
-
     @Option(name = "-beamModel", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
-
-    // TODO These default biases are specific to the 0,1,2,4 model, but defaulted here for the moment until we
-    // can move them into a combined model file. First, we should make it a -O option instead of a
-    // command-line parameter
-    @Option(name = "-beamModelBias", metaVar = "VAL", usage = "Bias for each bin in model, seperated by commas")
-    public String beamModelBias = "200,200,200,200";
-
-    // @Option(name = "-beamModelFeats", metaVar = "VAL", hidden = true, usage =
-    // "Feature template string: lt rt lt_lt-1 rw_rt loc ...")
-    // public static String featTemplate;
 
     @Option(name = "-ccModel", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
@@ -277,8 +258,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             }
 
             if (beamModelFileName != null) {
-                cellSelectorFactory = new PerceptronBeamWidthFactory(fileAsBufferedReader(beamModelFileName),
-                        beamModelBias);
+                cellSelectorFactory = new PerceptronBeamWidthFactory(fileAsBufferedReader(beamModelFileName));
             }
         }
 
