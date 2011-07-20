@@ -40,6 +40,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.tests.JUnit;
@@ -670,10 +671,11 @@ public class ProductionListGrammar {
     @Override
     public String toString() {
         // TODO Switch from fractions to logs
-        return toString(true, "");
+        return toString(true, null, -1);
     }
 
-    public String toString(final boolean fraction, final String gramStatsStr) {
+    public String toString(final boolean fraction, final GrammarFormatType grammarFormatType,
+            final int lexicalUnkThreshold) {
         final TreeSet<String> binaryRules = new TreeSet<String>();
         for (final Production p : binaryProductions) {
             if (fraction) {
@@ -711,8 +713,18 @@ public class ProductionListGrammar {
         final String dateNowStr = dateFormat.format(new Date());
 
         final StringBuilder sb = new StringBuilder(1024);
-        sb.append(gramStatsStr + " start=" + startSymbol + " date=" + dateNowStr + " nBinary=" + binaryRules.size()
-                + " nUnary=" + unaryRules.size() + " nLex=" + lexicalRules.size() + "\n");
+        sb.append("lang=UNK ");
+        sb.append(" format=" + grammarFormatType);
+        sb.append(" unkThresh=" + lexicalUnkThreshold);
+        sb.append(" start=" + startSymbol);
+        sb.append(" hMarkov=UNK");
+        sb.append(" vMarkov=UNK");
+        sb.append(" date=" + dateNowStr);
+        sb.append(" nBinary=" + binaryRules.size());
+        sb.append(" nUnary=" + unaryRules.size());
+        sb.append(" nLex=" + lexicalRules.size());
+        sb.append("\n");
+
         for (final String rule : binaryRules) {
             sb.append(rule + '\n');
         }
