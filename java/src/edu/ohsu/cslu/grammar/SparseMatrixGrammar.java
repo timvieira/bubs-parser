@@ -335,8 +335,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
     public String getStats() {
         final StringBuilder sb = new StringBuilder(1024);
         sb.append(super.getStats());
-        sb.append("Cartesian Product Function: " + packingFunction.getClass().getName() + '\n');
-        sb.append("Packed Array Size: " + packingFunction.packedArraySize() + '\n');
+        sb.append(" cartesianProductFunction=" + packingFunction.getClass().getName());
+        sb.append(" packedArraySize=" + packingFunction.packedArraySize());
         return sb.toString();
     }
 
