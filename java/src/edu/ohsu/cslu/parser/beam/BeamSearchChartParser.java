@@ -32,6 +32,7 @@ import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory.PerceptronBe
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
 
 /**
  * Beam search chart parser which performs grammar intersection by iterating over grammar rules matching the observed
@@ -118,7 +119,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             localBeamDelta = Math.max(origLocalBeamDelta * reparseFactor, origLocalBeamDelta);
 
             BaseLogger.singleton().finest(
-                    "INFO: reparseNum=" + (numReparses + 1) + "beamWidth=" + beamWidth + " globalThresh="
+                    "INFO: reparseNum=" + (numReparses + 1) + " beamWidth=" + beamWidth + " globalThresh="
                             + globalBeamDelta + " localThresh=" + localBeamDelta + " factBeamWidth="
                             + factoredBeamWidth);
 
@@ -232,6 +233,12 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     protected void addEdgeToCollection(final ChartEdge edge) {
         cellConsidered++;
+
+        BaseLogger.singleton().finest(
+                "Adding: "
+                        + ((BoundaryInOutSelector) edgeSelector).calcFOMToString(edge.start(), edge.end(),
+                                (short) edge.prod.parent, edge.inside()));
+
         if (fomCheckAndUpdate(edge)) {
             agenda.add(edge);
             cellPushed++;
@@ -240,14 +247,15 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
 
-        // int cellBeamWidth = beamWidth;
-        // if (hasCellConstraints && cellConstraints.factoredParentsOnly(cell.start(), cell.end())) {
-        // cellBeamWidth = factoredBeamWidth;
-        // }
-
         ChartEdge edge = agenda.poll();
         while (edge != null && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
             cellPopped++;
+
+            BaseLogger.singleton().finer(
+                    "Popping: "
+                            + ((BoundaryInOutSelector) edgeSelector).calcFOMToString(edge.start(), edge.end(),
+                                    (short) edge.prod.parent, edge.inside()));
+
             if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
 
