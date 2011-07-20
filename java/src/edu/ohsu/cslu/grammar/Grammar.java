@@ -21,8 +21,6 @@ package edu.ohsu.cslu.grammar;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -40,7 +38,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ParserUtil;
@@ -90,10 +87,14 @@ public class Grammar implements Serializable {
     // == Grammar Basics ==
     public GrammarFormatType grammarFormat;
     public final SymbolSet<String> nonTermSet;
-    public SymbolSet<String> lexSet;
-    public final Tokenizer tokenizer;
-    // maps from 0-based index to entry in nonTermSet. Used to reduce absolute index value for feature
-    // extraction
+
+    // The lexSet and tokenizer need to be shared across multiple grammars so that
+    // token indicies are identical.
+    public static SymbolSet<String> lexSet = new SymbolSet<String>();
+    public static Tokenizer tokenizer = new Tokenizer(lexSet);
+
+    // maps from 0-based index to entry in nonTermSet. Used to reduce absolute
+    // index value for feature extraction
     public final SymbolSet<Integer> posSet;
     public final SymbolSet<Integer> phraseSet; // phraseSet + posSet == nonTermSet
     // TODO: factored/non-factored phraseSet?
@@ -128,24 +129,12 @@ public class Grammar implements Serializable {
     // == Aaron's Grammar variables ==
     /** TODO Is this really needed? String representation of the start symbol (s-dagger) */
     public String startSymbolStr;
-
-    /** The first NT valid as a left child. */
-    public final int leftChildrenStart;
-
-    /** The last non-POS NT valid as a left child. */
-    public final int leftChildrenEnd;
-
-    /** The first non-POS NT valid as a right child. */
-    public final int rightChildrenStart;
-
-    /** The last non-POS NT valid as a right child. */
-    public final int rightChildrenEnd;
-
-    /** The first POS. */
-    public final int posStart;
-
-    /** The last POS. */
-    public final int posEnd;
+    public final int leftChildrenStart; // The first NT valid as a left child.
+    public final int leftChildrenEnd; // The last non-POS NT valid as a left child.
+    public final int rightChildrenStart; // The first non-POS NT valid as a right child.
+    public final int rightChildrenEnd; // The last non-POS NT valid as a right child.
+    public final int posStart; // The first POS.
+    public final int posEnd; // The last POS.
 
     // == Nate's Grammar variables ==
     // Nate's way of keeping meta data on each NonTerm; Aaron orders them and returns
@@ -183,10 +172,9 @@ public class Grammar implements Serializable {
     public Grammar(final Reader grammarFile) throws IOException {
 
         nonTermSet = new SymbolSet<String>();
-        lexSet = new SymbolSet<String>();
+        // lexSet = new SymbolSet<String>();
         posSet = new SymbolSet<Integer>();
         phraseSet = new SymbolSet<Integer>();
-        // evalNonTermSet = new SymbolSet<String>();
 
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
@@ -319,7 +307,7 @@ public class Grammar implements Serializable {
 
         stringPool = null; // We no longer need the String intern map, so let it be GC'd
 
-        this.tokenizer = new Tokenizer(lexSet);
+        // this.tokenizer = new Tokenizer(lexSet);
 
         // Initialize indices
         final int[] startAndEndIndices = startAndEndIndices();
@@ -344,7 +332,7 @@ public class Grammar implements Serializable {
     }
 
     public Grammar(final String grammarFile) throws IOException {
-        this(new FileReader(grammarFile));
+        this(new InputStreamReader(ParserUtil.file2inputStream(grammarFile)));
     }
 
     /**
@@ -380,23 +368,24 @@ public class Grammar implements Serializable {
         this.isLeftFactored = g.isLeftFactored;
 
         this.nonTermSet = g.nonTermSet;
-        this.lexSet = g.lexSet;
         this.posSet = g.posSet;
         this.phraseSet = g.phraseSet;
         this.nonTermInfo = g.nonTermInfo;
 
-        this.tokenizer = g.tokenizer;
+        // this.lexSet = g.lexSet;
+        // this.tokenizer = g.tokenizer;
     }
 
     protected Grammar(final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
             final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
             final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat) {
         this.nonTermSet = vocabulary;
-        this.lexSet = lexicon;
         this.startSymbol = 0;
         this.nullSymbol = -1;
         this.startSymbolStr = vocabulary.getSymbol(startSymbol);
         this.nonTermInfo = null;
+
+        this.lexSet = lexicon;
         this.tokenizer = new Tokenizer(lexicon);
 
         this.posSet = null;
@@ -438,10 +427,14 @@ public class Grammar implements Serializable {
 
         // Read the first line and try to guess the grammar format
         final String firstLine = br.readLine();
-        if (firstLine.matches("^[A-Z]+_[0-9]+")) {
+        if (firstLine.contains("format=Berkeley")) {
+            gf = GrammarFormatType.Berkeley;
+            final HashMap<String, String> keyVals = ParserUtil.readKeyValuePairs(firstLine.trim());
+            startSymbolStr = keyVals.get("start");
+        } else if (firstLine.matches("^[A-Z]+_[0-9]+")) {
             gf = GrammarFormatType.Berkeley;
             startSymbolStr = firstLine;
-        } else if (firstLine.contains("format=CSLU")) {
+        } else if (firstLine.contains("format=CSLU") || firstLine.contains("format=BUBS")) {
             gf = GrammarFormatType.CSLU;
             // final Pattern p = Pattern.compile("^.*start=([^ ]+).*$");
             // startSymbolStr = p.matcher(firstLine).group(1);
@@ -556,10 +549,7 @@ public class Grammar implements Serializable {
     }
 
     public static Grammar read(final String grammarFile) throws IOException, ClassNotFoundException {
-        InputStream is = new FileInputStream(grammarFile);
-        if (grammarFile.endsWith(".gz")) {
-            is = new GZIPInputStream(is);
-        }
+        final InputStream is = ParserUtil.file2inputStream(grammarFile);
         final Grammar grammar = Grammar.read(is);
         is.close();
         return grammar;
@@ -1118,5 +1108,9 @@ public class Grammar implements Serializable {
                     p.prob));
         }
         return sb.toString();
+    }
+
+    public boolean isCoarseGrammar() {
+        return false;
     }
 }
