@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
+import cltool4j.ConfigProperties;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserUtil;
@@ -42,14 +44,8 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
     private boolean inferFactoredCells = false, classifyBaseCells = false;
     protected boolean grammarLeftFactored;
 
-    public PerceptronBeamWidthFactory(final BufferedReader modelStream, final String beamConfBias) {
+    public PerceptronBeamWidthFactory(final BufferedReader modelStream) {
 
-        // if (ParserDriver.param2 != -1) {
-        // inferFactoredCells = true;
-        // }
-        // if (ParserDriver.param3 != -1) {
-        // classifyBaseCells = true;
-        // }
         if (inferFactoredCells == false && classifyBaseCells == true) {
             throw new IllegalArgumentException("ERROR: got that wrong -- no models -fact +base");
         }
@@ -79,9 +75,9 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
         // beamWidthModel = new BinaryPerceptronSet(modelStream);
         // }
 
-        if (beamConfBias != null) {
-            beamWidthModel.setBias(beamConfBias);
-        }
+        final ConfigProperties props = GlobalConfigProperties.singleton();
+        final String beamModelBias = props.getProperty("beamModelBias");
+        beamWidthModel.setBias(beamModelBias);
 
         BaseLogger.singleton().finer(
                 "INFO: beamconf: inferFactoredCells=" + ParserUtil.bool2int(inferFactoredCells) + " classifyBaseCells="
