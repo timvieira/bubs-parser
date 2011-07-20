@@ -47,11 +47,11 @@ public class WeightedFeatures extends EdgeSelector {
         this.numFeatures = 4;
     }
 
-    @Override
-    public float calcFOM(final ChartEdge edge) {
-        // final double[] featVector = getFeatureVector(edge);
-        return 0; // model.score(featVector); // we want a regressor here, not a classifier
-    }
+    // @Override
+    // public float calcFOM(final ChartEdge edge) {
+    // // final double[] featVector = getFeatureVector(edge);
+    // return 0; // model.score(featVector); // we want a regressor here, not a classifier
+    // }
 
     public double[] getFeatureVector(final ChartEdge edge) {
         final double[] feats = new double[numFeatures];

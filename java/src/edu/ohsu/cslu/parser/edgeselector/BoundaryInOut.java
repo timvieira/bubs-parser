@@ -23,14 +23,13 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.Map.Entry;
 
-import edu.ohsu.cslu.counters.SimpleCounter;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
+import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 
@@ -43,12 +42,10 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
 
     private Grammar grammar;
     private int posNgramOrder = 2;
+    private CoarseGrammar coarseGrammar = null;
 
     // Model params learned from training data
     private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
-
-    // private IntOpenHashSet posSet = new IntOpenHashSet();
-    // private IntOpenHashSet phraseNonTermSet = new IntOpenHashSet();
 
     public BoundaryInOut(final EdgeSelectorType type, final Grammar grammar, final BufferedReader modelStream)
             throws IOException {
@@ -56,6 +53,9 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
         super(type);
 
         this.grammar = grammar;
+        if (grammar.isCoarseGrammar()) {
+            coarseGrammar = (CoarseGrammar) grammar;
+        }
         final int numNT = grammar.numNonTerms();
         final int maxPOSIndex = grammar.maxPOSIndex();
         leftBoundaryLogProb = new float[numNT][maxPOSIndex + 1];
@@ -115,8 +115,18 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
 
                 numStr = ParserUtil.join(numerator, " ");
                 numIndex = grammar.mapNonterminal(numStr);
+                if (numIndex < 0) {
+                    BaseLogger.singleton().info(
+                            "ERROR: non-terminal '" + numStr + "' from FOM model not found in grammar.");
+                    System.exit(1);
+                }
                 denomStr = ParserUtil.join(denom, " ");
                 denomIndex = grammar.mapNonterminal(denomStr);
+                if (denomIndex < 0) {
+                    BaseLogger.singleton().info(
+                            "ERROR: non-terminal '" + denomStr + "' from FOM model not found in grammar.");
+                    System.exit(1);
+                }
                 prob = Float.parseFloat(tokens[tokens.length - 1]);
 
                 if (tokens[0].equals("#")) {
@@ -135,49 +145,12 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
         }
     }
 
-    public void writeModel(final BufferedWriter outStream) throws IOException {
-
-        outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder + "\n");
-
-        // left boundary = P(NT | POS-1)
-        for (final int leftPOSIndex : grammar.posSet) {
-            final String posStr = grammar.mapNonterminal(leftPOSIndex);
-            for (final int ntIndex : grammar.phraseSet) {
-                final String ntStr = grammar.mapNonterminal(ntIndex);
-                final float logProb = leftBoundaryLogProb[ntIndex][leftPOSIndex];
-                if (logProb > Float.NEGATIVE_INFINITY) {
-                    outStream.write("LB " + ntStr + " | " + posStr + " " + logProb + "\n");
-                }
-            }
-        }
-
-        // right boundary = P(POS+1 | NT)
-        for (final int ntIndex : grammar.phraseSet) {
-            final String ntStr = grammar.mapNonterminal(ntIndex);
-            for (final int rightPOSIndex : grammar.posSet) {
-                final String posStr = grammar.mapNonterminal(rightPOSIndex);
-                final float logProb = rightBoundaryLogProb[rightPOSIndex][ntIndex];
-                if (logProb > Float.NEGATIVE_INFINITY) {
-                    outStream.write("RB " + posStr + " | " + ntStr + " " + logProb + "\n");
-                }
-            }
-        }
-
-        // pos n-gram = P(POS | POS-1)
-        for (final int histPos : grammar.posSet) {
-            final String histPosStr = grammar.mapNonterminal(histPos);
-            for (final int pos : grammar.posSet) {
-                final String posStr = grammar.mapNonterminal(pos);
-                final float logProb = posTransitionLogProb[pos][histPos];
-                if (logProb > Float.NEGATIVE_INFINITY) {
-                    outStream.write("PN " + posStr + " | " + histPosStr + " " + logProb + "\n");
-                }
-            }
-        }
-        outStream.close();
+    public void train(final BufferedReader inStream, final BufferedWriter outStream) throws IOException {
+        train(inStream, outStream, 0.5, false);
     }
 
-    public void train(final BufferedReader inStream) throws IOException {
+    public void train(final BufferedReader inStream, final BufferedWriter outStream, final double smoothingCount,
+            final boolean writeCounts) throws IOException {
         String line, historyStr;
         final String joinString = " ";
         ParseTree tree;
@@ -195,7 +168,7 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
         while ((line = inStream.readLine()) != null) {
             tree = ParseTree.readBracketFormat(line);
             if (tree.isBinaryTree() == false) {
-                System.err.println("ERROR: Training trees must be binarized exactly as used in decoding");
+                System.err.println("ERROR: Training trees must be binarized exactly as used in decoding grammar");
                 System.exit(1);
             }
             tree.linkLeavesLeftRight();
@@ -245,28 +218,80 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
         final int numPOS = grammar.posSet.size();
 
         // smooth counts
-        leftBoundaryCount.smoothAddConst(0.5, numPOS);
-        rightBoundaryCount.smoothAddConst(0.5, numNT);
-        posTransitionCount.smoothAddConst(0.5, numPOS);
+        if (smoothingCount > 0) {
+            leftBoundaryCount.smoothAddConst(smoothingCount, numPOS);
+            rightBoundaryCount.smoothAddConst(smoothingCount, numNT);
+            posTransitionCount.smoothAddConst(smoothingCount, numPOS);
+        }
 
-        // turn counts into probs
+        // writeModelCounts(new BufferedWriter(new FileWriter("fom.counts")), leftBoundaryCount, rightBoundaryCount,
+        // posTransitionCount);
+
+        // // turn counts into probs
+        //
+        // // left boundary = P(NT | POS-1)
+        // for (final int leftPOSIndex : grammar.posSet) {
+        // final String posStr = grammar.mapNonterminal(leftPOSIndex);
+        // for (int ntIndex = 0; ntIndex < numNT; ntIndex++) {
+        // final String ntStr = grammar.mapNonterminal(ntIndex);
+        // leftBoundaryLogProb[ntIndex][leftPOSIndex] = (float) Math.log(leftBoundaryCount.getProb(ntStr, posStr));
+        // }
+        // }
+        //
+        // // right boundary = P(POS+1 | NT)
+        // for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
+        // final String ntStr = grammar.mapNonterminal(ntIndex);
+        // for (final int rightPOSIndex : grammar.posSet) {
+        // final String posStr = grammar.mapNonterminal(rightPOSIndex);
+        // rightBoundaryLogProb[rightPOSIndex][ntIndex] = (float) Math.log(rightBoundaryCount.getProb(posStr,
+        // ntStr));
+        // }
+        // }
+        //
+        // // pos n-gram = P(POS | POS-1)
+        // for (final int histPos : grammar.posSet) {
+        // final String histPosStr = grammar.mapNonterminal(histPos);
+        // for (final int pos : grammar.posSet) {
+        // final String posStr = grammar.mapNonterminal(pos);
+        // posTransitionLogProb[pos][histPos] = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
+        // }
+        // }
+
+        // Write model to file
+        float score;
+        outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder + "\n");
 
         // left boundary = P(NT | POS-1)
         for (final int leftPOSIndex : grammar.posSet) {
             final String posStr = grammar.mapNonterminal(leftPOSIndex);
-            for (int ntIndex = 0; ntIndex < numNT; ntIndex++) {
+            for (final int ntIndex : grammar.phraseSet) {
                 final String ntStr = grammar.mapNonterminal(ntIndex);
-                leftBoundaryLogProb[ntIndex][leftPOSIndex] = (float) Math.log(leftBoundaryCount.getProb(ntStr, posStr));
+                // final float logProb = leftBoundaryLogProb[ntIndex][leftPOSIndex];
+                if (writeCounts) {
+                    score = leftBoundaryCount.getCount(ntStr, posStr);
+                } else {
+                    score = (float) Math.log(leftBoundaryCount.getProb(ntStr, posStr));
+                }
+                if (score > Float.NEGATIVE_INFINITY) {
+                    outStream.write("LB " + ntStr + " | " + posStr + " " + score + "\n");
+                }
             }
         }
 
         // right boundary = P(POS+1 | NT)
-        for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
+        for (final int ntIndex : grammar.phraseSet) {
             final String ntStr = grammar.mapNonterminal(ntIndex);
             for (final int rightPOSIndex : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(rightPOSIndex);
-                rightBoundaryLogProb[rightPOSIndex][ntIndex] = (float) Math.log(rightBoundaryCount.getProb(posStr,
-                        ntStr));
+                // final float logProb = rightBoundaryLogProb[rightPOSIndex][ntIndex];
+                if (writeCounts) {
+                    score = rightBoundaryCount.getCount(posStr, ntStr);
+                } else {
+                    score = (float) Math.log(rightBoundaryCount.getProb(posStr, ntStr));
+                }
+                if (score > Float.NEGATIVE_INFINITY) {
+                    outStream.write("RB " + posStr + " | " + ntStr + " " + score + "\n");
+                }
             }
         }
 
@@ -275,9 +300,18 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
             final String histPosStr = grammar.mapNonterminal(histPos);
             for (final int pos : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(pos);
-                posTransitionLogProb[pos][histPos] = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
+                // final float logProb = posTransitionLogProb[pos][histPos];
+                if (writeCounts) {
+                    score = posTransitionCount.getCount(posStr, histPosStr);
+                } else {
+                    score = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
+                }
+                if (score > Float.NEGATIVE_INFINITY) {
+                    outStream.write("PN " + posStr + " | " + histPosStr + " " + score + "\n");
+                }
             }
         }
+        outStream.close();
     }
 
     private String convertNull(final String nonTerm) {
@@ -287,33 +321,33 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
         return nonTerm;
     }
 
-    public void writeModelCounts(final BufferedWriter outStream, final SimpleCounterSet<String> leftBoundaryCount,
-            final SimpleCounterSet<String> rightBoundaryCount, final SimpleCounterSet<String> posNgramCount)
-            throws IOException {
-
-        outStream.write("# columns: <type> X1 X2 ... | Y1 Y2 ... negLogProb = -1*log(P(X1,X2,..|Y1,Y2,..)) \n");
-        outStream.write("# type = LB (left boundary), RB (right boundary), PN (POS n-gram)\n");
-
-        for (final Entry<String, SimpleCounter<String>> posCounter : leftBoundaryCount.items.entrySet()) {
-            for (final Entry<String, Float> ntCount : posCounter.getValue().entrySet()) {
-                outStream.write("LB " + ntCount.getKey() + " " + ntCount.getValue() + "\n");
-            }
-        }
-
-        for (final Entry<String, SimpleCounter<String>> ntCounter : rightBoundaryCount.items.entrySet()) {
-            for (final Entry<String, Float> posCount : ntCounter.getValue().entrySet()) {
-                outStream.write("RB " + posCount.getKey() + " " + posCount.getValue() + "\n");
-            }
-        }
-
-        for (final Entry<String, SimpleCounter<String>> denomCounter : posNgramCount.items.entrySet()) {
-            for (final Entry<String, Float> numerCount : denomCounter.getValue().entrySet()) {
-                outStream.write("PN " + numerCount.getKey() + " " + numerCount.getValue() + "\n");
-            }
-        }
-
-        outStream.close();
-    }
+    // private void writeModelCounts(final BufferedWriter outStream, final SimpleCounterSet<String> leftBoundaryCount,
+    // final SimpleCounterSet<String> rightBoundaryCount, final SimpleCounterSet<String> posTransitionCount)
+    // throws IOException {
+    //
+    // outStream.write("# columns: <type> X1 X2 ... | Y1 Y2 ... negLogProb = -1*log(P(X1,X2,..|Y1,Y2,..)) \n");
+    // outStream.write("# type = LB (left boundary), RB (right boundary), PN (POS n-gram)\n");
+    //
+    // for (final Entry<String, SimpleCounter<String>> posCounter : leftBoundaryCount.items.entrySet()) {
+    // for (final Entry<String, Float> ntCount : posCounter.getValue().entrySet()) {
+    // outStream.write("LB " + ntCount.getKey() + " " + ntCount.getValue() + "\n");
+    // }
+    // }
+    //
+    // for (final Entry<String, SimpleCounter<String>> ntCounter : rightBoundaryCount.items.entrySet()) {
+    // for (final Entry<String, Float> posCount : ntCounter.getValue().entrySet()) {
+    // outStream.write("RB " + posCount.getKey() + " " + posCount.getValue() + "\n");
+    // }
+    // }
+    //
+    // for (final Entry<String, SimpleCounter<String>> denomCounter : posTransitionCount.items.entrySet()) {
+    // for (final Entry<String, Float> numerCount : denomCounter.getValue().entrySet()) {
+    // outStream.write("PN " + numerCount.getKey() + " " + numerCount.getValue() + "\n");
+    // }
+    // }
+    //
+    // outStream.close();
+    // }
 
     public class BoundaryInOutSelector extends EdgeSelector {
 
@@ -327,28 +361,14 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
         }
 
         @Override
-        public float calcFOM(final ChartEdge edge) {
-
-            if (edge.prod.isLexProd()) {
-                return edge.inside();
+        public float calcFOM(final int start, final int end, short parent, final float insideProbability) {
+            if (coarseGrammar != null) {
+                parent = (short) coarseGrammar.fineToCoarseNonTerm(parent);
             }
 
             // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
             // are padded with a begin and end <null> value which shifts the entire array to
             // the right by one
-            // final int spanLength = edge.end() - edge.start();
-            final float outside = outsideLeft[edge.start()][edge.prod.parent]
-                    + outsideRight[edge.end() + 1][edge.prod.parent];
-            return edge.inside() + outside;
-        }
-
-        @Override
-        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
-            // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
-            // are padded with a begin and end <null> value which shifts the entire array to
-            // the right by one
-            // final int spanLength = edge.end() - edge.start();
-
             final float outside = outsideLeft[start][parent] + outsideRight[end + 1][parent];
             return insideProbability + outside;
         }
@@ -359,28 +379,26 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
             return insideProbability;
         }
 
-        public String calcFOMToString(final ChartEdge edge) {
-            final int spanLength = edge.end() - edge.start();
-            final float outside = outsideLeft[edge.start() - 1 + 1][edge.prod.parent]
-                    + outsideRight[edge.end() + 1][edge.prod.parent];
-            final float fom = edge.inside() + outside;
+        public String calcFOMToString(final int start, final int end, final short parent, final float inside) {
+            Grammar fineGrammar = grammar;
+            short coarseParent = parent;
+            if (coarseGrammar != null) {
+                coarseParent = (short) coarseGrammar.fineToCoarseNonTerm(parent);
+                fineGrammar = coarseGrammar.getFineGrammar();
+            }
 
-            // String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]" + " n=" + spanLength + " p=" +
-            // edge.p.toString() + " i=" + edge.insideProb + " o=" + outside
-            // + " oL[" + (edge.start() - 1 + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" +
-            // outsideLeft[edge.start() - 1 + 1][edge.p.parent] + " oR["
-            // + (edge.end() + 1) + "][" + grammar.nonTermSet.getSymbol(edge.p.parent) + "]=" +
-            // outsideRight[edge.end() + 1][edge.p.parent] + " fom=" + fom;
+            final int spanLength = end - start;
+            final float outside = outsideLeft[start][coarseParent] + outsideRight[end + 1][coarseParent];
+            final float fom = inside + outside;
 
-            String s = "FOM: chart[" + edge.start() + "," + edge.end() + "]";
+            String s = "FOM: chart[" + start + "," + end + "]";
             s += " n=" + spanLength;
-            s += " p=" + edge.prod.toString();
-            s += " i=" + edge.inside();
+            // s += " p=" + edge.prod.toString();
+            s += " i=" + inside;
             s += " o=" + outside;
-            s += " oL[" + (edge.start() - 1 + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]="
-                    + outsideLeft[edge.start() - 1 + 1][edge.prod.parent];
-            s += " oR[" + (edge.end() + 1) + "][" + grammar.mapNonterminal(edge.prod.parent) + "]="
-                    + outsideRight[edge.end() + 1][edge.prod.parent];
+            s += " oL[" + start + "][" + fineGrammar.mapNonterminal(parent) + "]=" + outsideLeft[start][coarseParent];
+            s += " oR[" + (end + 1) + "][" + fineGrammar.mapNonterminal(parent) + "]="
+                    + outsideRight[end + 1][coarseParent];
             s += " fom=" + fom;
 
             return s;
@@ -392,17 +410,14 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
 
         @Override
         public void init(final Chart chart) {
-            // outsideLeftRight(chart);
-            outsideLeftRightAndBestPOS(chart);
+            outsideLeftRightAndBestPOS(chart.tokens);
         }
 
         // Computes forward-backward and left/right boundary probs across ambiguous
-        // POS tags. Assumes all POS tags have already been placed in the chart and the
-        // inside prob of the tag is the emission probability.
-        // Also computes 1-best POS tag sequence based on viterbi-max decoding
-        private void outsideLeftRightAndBestPOS(final Chart chart) {
-
-            final int fbSize = chart.size() + 2;
+        // POS tags. Also computes 1-best POS tag sequence based on viterbi-max decoding
+        private void outsideLeftRightAndBestPOS(final int[] tokens) {
+            final int sentLen = tokens.length;
+            final int fbSize = sentLen + 2;
             final int posSize = grammar.maxPOSIndex() + 1;
 
             if (outsideLeft == null || outsideLeft.length < fbSize) {
@@ -411,7 +426,7 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
             }
 
             final int[][] backPointer = new int[fbSize][posSize];
-            bestPOSTag = new int[chart.size()];
+            bestPOSTag = new int[sentLen];
 
             for (int i = 0; i < fbSize; i++) {
                 Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
@@ -440,10 +455,10 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
                 // Forward-backward Chart is one off from the parser chart
                 final int fwdChartIndex = fwdIndex - 1;
 
-                final short[] posList = fwdChartIndex >= chart.size() ? NULL_LIST : grammar
-                        .lexicalParents(chart.tokens[fwdChartIndex]);
-                final float[] fwdPOSProbs = fwdChartIndex >= chart.size() ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(chart.tokens[fwdChartIndex]);
+                final short[] posList = fwdChartIndex >= sentLen ? NULL_LIST : grammar
+                        .lexicalParents(tokens[fwdChartIndex]);
+                final float[] fwdPOSProbs = fwdChartIndex >= sentLen ? NULL_PROBABILITIES : grammar
+                        .lexicalLogProbabilities(tokens[fwdChartIndex]);
 
                 final int[] currentBackpointer = backPointer[fwdIndex];
 
@@ -491,10 +506,9 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
                 Arrays.fill(scores, Float.NEGATIVE_INFINITY);
 
                 final int bkwChartIndex = bkwIndex - 1;
-                final short[] posList = bkwChartIndex < 0 ? NULL_LIST : grammar
-                        .lexicalParents(chart.tokens[bkwChartIndex]);
+                final short[] posList = bkwChartIndex < 0 ? NULL_LIST : grammar.lexicalParents(tokens[bkwChartIndex]);
                 final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(chart.tokens[bkwChartIndex]);
+                        .lexicalLogProbabilities(tokens[bkwChartIndex]);
 
                 for (final short prevPOS : prevPOSList) {
 
@@ -530,24 +544,24 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
             // track backpointers to extract best POS sequence
             // start at the end of the sentence with the nullSymbol and trace backwards
             int bestPOS = nullSymbol;
-            for (int i = chart.size() - 1; i >= 0; i--) {
+            for (int i = sentLen - 1; i >= 0; i--) {
                 bestPOS = backPointer[i + 2][bestPOS];
                 bestPOSTag[i] = bestPOS;
                 // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
             }
         }
 
-        public final float leftBoundaryLogProb(final int nonTerm, final int pos) {
-            return leftBoundaryLogProb[nonTerm][pos];
-        }
-
-        public final float rightBoundaryLogProb(final int pos, final int nonTerm) {
-            return rightBoundaryLogProb[pos][nonTerm];
-        }
-
-        public final float posTransitionLogProb(final int pos, final int histPos) {
-            return posTransitionLogProb[pos][histPos];
-        }
+        // public final float leftBoundaryLogProb(final int nonTerm, final int pos) {
+        // return leftBoundaryLogProb[nonTerm][pos];
+        // }
+        //
+        // public final float rightBoundaryLogProb(final int pos, final int nonTerm) {
+        // return rightBoundaryLogProb[pos][nonTerm];
+        // }
+        //
+        // public final float posTransitionLogProb(final int pos, final int histPos) {
+        // return posTransitionLogProb[pos][histPos];
+        // }
 
     }
 
@@ -562,11 +576,6 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
         private static final long serialVersionUID = 1L;
 
         public InsideWithFwdBkwd() {
-        }
-
-        @Override
-        public float calcFOM(final ChartEdge edge) {
-            return edge.inside();
         }
 
         @Override
