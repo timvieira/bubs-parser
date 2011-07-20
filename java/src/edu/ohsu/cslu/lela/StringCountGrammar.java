@@ -96,9 +96,9 @@ public final class StringCountGrammar implements CountGrammar {
         // lexical rules. We will transfer these counts to more compact index-mapped
         // maps after collapsing unknown words in the lexicon
 
-        LinkedList<BinaryTree<String>> trees = new LinkedList<BinaryTree<String>>();
-        final HashMap<String, Integer> wordCounts = new HashMap<String, Integer>();
         final BufferedReader br = new BufferedReader(reader);
+        LinkedList<BinaryTree<String>> trees = new LinkedList<BinaryTree<String>>();
+        final SymbolSet<String> knownWords = new SymbolSet<String>();
 
         // Get word counts from corpus
         for (String line = br.readLine(); line != null; line = br.readLine()) {
@@ -108,13 +108,67 @@ public final class StringCountGrammar implements CountGrammar {
             } else {
                 tree = NaryTree.read(line, String.class).factor(grammarFormatType, factorization);
             }
-
             trees.add(tree);
+
             if (startSymbol == null) {
                 startSymbol = tree.label();
                 observedNonTerminals.add(startSymbol);
             }
 
+            for (final BinaryTree<String> node : tree.inOrderTraversal()) {
+                // Skip leaf nodes - only internal nodes are parents
+                if (node.isLeaf()) {
+                    continue;
+                }
+
+                final String parent = node.label().intern();
+                observedNonTerminals.add(parent);
+                final String leftChild = node.leftChild().label().intern();
+
+                if (node.rightChild() != null) {
+                    // Binary rule
+                    final String rightChild = node.rightChild().label().intern();
+                    observedNonTerminals.add(leftChild);
+                    observedNonTerminals.add(rightChild);
+                    incrementBinaryCount(parent, leftChild, rightChild);
+
+                } else {
+                    if (node.leftChild().isLeaf()) {
+                        // Lexical rule
+                        incrementLexicalCount(parent, leftChild);
+                        lexicalEntryOccurrences.put(leftChild, lexicalEntryOccurrences.getInt(leftChild) + 1);
+                        knownWords.addSymbol(leftChild);
+                    } else {
+                        // Unary rule
+                        incrementUnaryCount(parent, leftChild);
+                        observedNonTerminals.add(leftChild);
+                    }
+                }
+            }
+        }
+
+        // add UNK production counts. Note that words that occur <= lexicalUnkThreshold times
+        // will also be included in their lexicalized form above.
+        for (final BinaryTree<String> tree : trees) {
+            int i = 0;
+            for (final BinaryTree<String> leaf : tree.leafTraversal()) {
+                final String word = leaf.label();
+                if (lexicalEntryOccurrences.get(word) <= lexicalUnkThreshold) {
+                    final String unkStr = Tokenizer.berkeleyGetSignature(word, i, knownWords);
+                    incrementLexicalCount(leaf.parentLabel(), unkStr);
+                    lexicalEntryOccurrences.put(unkStr, lexicalEntryOccurrences.getInt(unkStr) + 1);
+                }
+                i++;
+            }
+        }
+        trees = null;
+
+    }
+
+    private void addUnkLeavesToTrees(final LinkedList<BinaryTree<String>> trees, final int lexicalUnkThreshold) {
+
+        final HashMap<String, Integer> wordCounts = new HashMap<String, Integer>();
+        for (final BinaryTree<String> tree : trees) {
             for (final BinaryTree<String> leaf : tree.leafTraversal()) {
                 if (wordCounts.containsKey(leaf.label())) {
                     wordCounts.put(leaf.label(), wordCounts.get(leaf.label()) + 1);
@@ -147,41 +201,6 @@ public final class StringCountGrammar implements CountGrammar {
             }
             tree.replaceLeafLabels(leaves);
         }
-
-        for (final BinaryTree<String> tree : trees) {
-            for (final BinaryTree<String> node : tree.inOrderTraversal()) {
-                // Skip leaf nodes - only internal nodes are parents
-                if (node.isLeaf()) {
-                    continue;
-                }
-
-                final String parent = node.label().intern();
-                observedNonTerminals.add(parent);
-                final String leftChild = node.leftChild().label().intern();
-
-                if (node.rightChild() != null) {
-                    // Binary rule
-                    final String rightChild = node.rightChild().label().intern();
-                    observedNonTerminals.add(leftChild);
-                    observedNonTerminals.add(rightChild);
-                    incrementBinaryCount(parent, leftChild, rightChild);
-
-                } else {
-                    if (node.leftChild().isLeaf()) {
-                        // Lexical rule
-                        incrementLexicalCount(parent, leftChild);
-                        lexicalEntryOccurrences.put(leftChild, lexicalEntryOccurrences.getInt(leftChild) + 1);
-                    } else {
-                        // Unary rule
-                        incrementUnaryCount(parent, leftChild);
-                        observedNonTerminals.add(leftChild);
-                    }
-                }
-            }
-        }
-
-        // We have the counts so we can delete the orignal trees
-        trees = null;
     }
 
     private void incrementBinaryCount(final String parent, final String leftChild, final String rightChild) {
