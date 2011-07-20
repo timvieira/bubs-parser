@@ -19,14 +19,11 @@
 package edu.ohsu.cslu.parser;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
-import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
@@ -34,7 +31,9 @@ import cltool4j.GlobalConfigProperties;
 import cltool4j.ThreadLocalLinewiseClTool;
 import cltool4j.Threadable;
 import cltool4j.args4j.Option;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
+import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
@@ -59,6 +58,7 @@ import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
 import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
 import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
 import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
+import edu.ohsu.cslu.parser.beam.BSCPSplitUnary;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
@@ -101,7 +101,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     // Global vars to create parser
     public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
     public EdgeSelectorFactory edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
-    Grammar grammar;
+    Grammar grammar, coarseGrammar;
 
     // == Parser options ==
     @Option(name = "-p", metaVar = "PARSER", usage = "Parser implementation (cyk|beam|agenda|matrix)")
@@ -113,6 +113,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     // == Grammar options ==
     @Option(name = "-g", metaVar = "FILE", usage = "Grammar file (text, gzipped text, or binary serialized)")
     private String grammarFile = null;
+
+    @Option(name = "-coarseGrammar", hidden = true, metaVar = "FILE", usage = "Coarse grammar file (text, gzipped text, or binary serialized)")
+    private String coarseGrammarFile = null;
 
     @Option(name = "-m", metaVar = "FILE", usage = "Model file (binary serialized)")
     private File modelFile = null;
@@ -270,7 +273,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                 edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.InsideWithFwdBkwd);
             } else if (new File(fomTypeOrModel).exists()) {
                 // Assuming boundary FOM
-                edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar,
+                Grammar fomGrammar = grammar;
+                if (this.coarseGrammarFile != null) {
+                    // coarseGrammar = readGrammar(coarseGrammarFile, researchParserType, cartesianProductFunctionType);
+                    coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
+                    BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
+                    fomGrammar = coarseGrammar;
+                }
+                edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, fomGrammar,
                         fileAsBufferedReader(fomTypeOrModel));
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
@@ -301,11 +311,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
 
         // Handle gzipped and non-gzipped grammar files
-        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
-                grammarFile)) : new FileInputStream(grammarFile);
-
         // Read the generic grammar in either text or binary-serialized format.
-        final Grammar genericGrammar = Grammar.read(grammarInputStream);
+        final Grammar genericGrammar = Grammar.read(grammarFile);
 
         // Construct the requested grammar type from the generic grammar
         return createGrammar(genericGrammar, researchParserType, cartesianProductFunctionType);
@@ -349,6 +356,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             return new LeftRightListsGrammar(genericGrammar);
 
         case BeamSearchChartParser:
+        case BSCPSplitUnary:
         case BSCPPruneViterbi:
         case BSCPOnlineBeam:
         case BSCPBoundedHeap:
@@ -450,6 +458,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
         case BeamSearchChartParser:
             return new BeamSearchChartParser<LeftHashGrammar, CellChart>(this, (LeftHashGrammar) grammar);
+        case BSCPSplitUnary:
+            return new BSCPSplitUnary(this, (LeftHashGrammar) grammar);
         case BSCPPruneViterbi:
             return new BSCPPruneViterbi(this, (LeftHashGrammar) grammar);
         case BSCPOnlineBeam:
@@ -521,13 +531,17 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
     @Override
     protected void output(final ParseContext parseResult) {
-        if (parseResult == null) {
-            System.out.println("()");
-            BaseLogger.singleton().info("WARNING: blank line in input.");
-        } else {
+        if (parseResult != null) {
             System.out.println(parseResult.parseBracketString);
 
-            if (inputFormat == InputFormat.Tree && parseResult.naryParse != null) {
+            if (inputFormat == InputFormat.Tree) {
+                // If parse failed, replace with ROOT => all-lexical-nodes
+                if (parseResult.naryParse == null) {
+                    parseResult.naryParse = new NaryTree<String>(grammar.startSymbolStr);
+                    for (final NaryTree<String> leaf : parseResult.inputTree.leafTraversal()) {
+                        parseResult.naryParse.addChild(leaf);
+                    }
+                }
                 // TODO: can't output per-tree accuracy until evaluate() returns correct result
                 // parseResult.evalb = evaluator.evaluate(parseResult.naryParse, parseResult.inputTree);
                 evaluator.evaluate(parseResult.naryParse, parseResult.inputTree);
@@ -553,8 +567,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         final StringBuilder sb = new StringBuilder();
         // TODO Add cpuSecondsPerSent and switch avgSecondsPerSent to report mean latency (not mean
         // throughput)
-        sb.append(String.format("INFO: numSentences=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
-                sentencesParsed, parseTime, cpuTime, cpuTime / sentencesParsed));
+        sb.append(String.format(
+                "INFO: numSentences=%d numFail=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
+                sentencesParsed, Parser.failedParses, parseTime, cpuTime, cpuTime / sentencesParsed));
 
         if (parserInstances.getFirst() instanceof SparseMatrixVectorParser) {
             sb.append(String.format(" totalXProductTime=%d totalBinarySpMVTime=%d",
@@ -583,10 +598,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         // s += prefix + "CellSelector=" + cellSelectorType + "\n";
         s += " FOM=" + fomTypeOrModel;
         s += " Decode=" + decodeMethod;
-        // s += " ViterbiMax=" + viterbiMax();
-        // s += " x1=" + param1;
-        // s += " x2=" + param2;
-        // s += " x3=" + param3;
         return s;
     }
 
@@ -595,8 +606,4 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         BaseLogger.singleton().setLevel(Level.FINER);
         return opts;
     }
-
-    // public boolean viterbiMax() {
-    // return !this.realSemiring;
-    // }
 }

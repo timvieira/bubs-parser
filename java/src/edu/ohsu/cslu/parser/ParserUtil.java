@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.parser;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -99,12 +100,11 @@ public class ParserUtil {
         return b + Math.log(Math.exp(a - b) + 1);
     }
 
-    public static InputStream file2inputStream(final String fileName) throws IOException {
-        InputStream is = new FileInputStream(fileName);
+    public static InputStream file2inputStream(final String fileName) throws FileNotFoundException, IOException {
         if (fileName.endsWith(".gz")) {
-            is = new GZIPInputStream(is);
+            return new GZIPInputStream(new FileInputStream(fileName));
         }
-        return is;
+        return new FileInputStream(fileName);
     }
 
     public static String intArray2Str(final int[] data) {
