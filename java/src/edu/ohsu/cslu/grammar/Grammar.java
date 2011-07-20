@@ -179,11 +179,10 @@ public class Grammar implements Serializable {
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
 
-        BaseLogger.singleton().fine("INFO: Reading grammar ... ");
+        BaseLogger.singleton().finer("INFO: Reading grammar ... ");
         this.stringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
-        // BaseLogger.singleton().fine("transforming ... ");
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 

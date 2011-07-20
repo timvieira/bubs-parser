@@ -102,6 +102,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
     public EdgeSelectorFactory edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
     Grammar grammar, coarseGrammar;
+    static String commandLineArgStr = "";
 
     // == Parser options ==
     @Option(name = "-p", metaVar = "PARSER", usage = "Parser implementation (cyk|beam|agenda|matrix)")
@@ -119,10 +120,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
     @Option(name = "-m", metaVar = "FILE", usage = "Model file (binary serialized)")
     private File modelFile = null;
-
-    // @Option(name = "-real", hidden = true, usage =
-    // "Use real semiring (sum) instead of tropical (max) for inside/outside calculations")
-    // public boolean realSemiring = false;
 
     @Option(name = "-decode", metaVar = "TYPE", hidden = true, usage = "Method to extract best tree from forest")
     public DecodeMethod decodeMethod = DecodeMethod.ViterbiMax;
@@ -192,17 +189,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
 
-    // == Other options ==
-    // TODO These shouldn't really be static. Parser implementations should use the ParserDriver instance
-    // passed in
-    /*
-     * @Option(name = "-x1", hidden = true, usage = "Tuning param #1") public static float param1 = -1;
-     * 
-     * @Option(name = "-x2", hidden = true, usage = "Tuning param #2") public static float param2 = -1;
-     * 
-     * @Option(name = "-x3", hidden = true, usage = "Tuning param #3") public static float param3 = -1;
-     */
-
     private long parseStartTime;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
     private final BracketEvaluator evaluator = new BracketEvaluator();
@@ -233,6 +219,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     public final static String OPT_CONFIGURED_THREAD_COUNT = "actualThreads";
 
     public static void main(final String[] args) {
+        commandLineArgStr = ParserUtil.join(args, " ");
         run(args);
     }
 
@@ -245,10 +232,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             researchParserType = parserType.researchParserType;
         }
 
-        // if (researchParserType == ResearchParserType.ECPInsideOutside) {
-        // this.realSemiring = true;
-        // }
-
+        BaseLogger.singleton().fine("INFO: " + commandLineArgStr);
+        BaseLogger.singleton().fine(
+                "INFO: parser=" + researchParserType + " fom=" + fomTypeOrModel + " decode=" + decodeMethod);
         grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
 
         if (modelFile != null) {
@@ -257,10 +243,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             final ConfigProperties props = (ConfigProperties) ois.readObject();
             GlobalConfigProperties.singleton().mergeUnder(props);
 
-            BaseLogger.singleton().fine("Reading grammar...");
+            BaseLogger.singleton().finer("Reading grammar...");
             this.grammar = (Grammar) ois.readObject();
 
-            BaseLogger.singleton().fine("Reading FOM...");
+            BaseLogger.singleton().finer("Reading FOM...");
             edgeSelectorFactory = (EdgeSelectorFactory) ois.readObject();
 
         } else {
@@ -275,7 +261,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                 // Assuming boundary FOM
                 Grammar fomGrammar = grammar;
                 if (this.coarseGrammarFile != null) {
-                    // coarseGrammar = readGrammar(coarseGrammarFile, researchParserType, cartesianProductFunctionType);
                     coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
                     BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
                     fomGrammar = coarseGrammar;
@@ -285,10 +270,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
-
-            // if (researchParserType == ResearchParserType.BSCPBeamConfTrain && featTemplate == null) {
-            // throw new IllegalArgumentException("ERROR: BSCPTrainFOMConfidence requires -feats to be non-empty");
-            // }
 
             if (chartConstraintsModel != null) {
                 cellSelectorFactory = new OHSUCellConstraintsFactory(fileAsBufferedReader(chartConstraintsModel),
@@ -302,7 +283,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         }
 
         BaseLogger.singleton().fine(grammar.getStats());
-        BaseLogger.singleton().fine(optionsToString());
 
         parseStartTime = System.currentTimeMillis();
     }
@@ -590,15 +570,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             } catch (final Exception ignore) {
             }
         }
-    }
-
-    public String optionsToString() {
-        String s = "INFO:";
-        s += " ParserType=" + researchParserType;
-        // s += prefix + "CellSelector=" + cellSelectorType + "\n";
-        s += " FOM=" + fomTypeOrModel;
-        s += " Decode=" + decodeMethod;
-        return s;
     }
 
     static public ParserDriver defaultTestOptions() {
