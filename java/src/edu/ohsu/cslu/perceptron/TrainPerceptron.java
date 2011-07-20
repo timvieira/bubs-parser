@@ -33,13 +33,10 @@ import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.BaseLogger;
-import cltool4j.args4j.CmdLineException;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
 
 /**
@@ -48,19 +45,8 @@ import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
  * @author Aaron Dunlop
  * @since Oct 9, 2010
  */
-public class ModelTrainer extends BaseCommandlineTool {
+public class TrainPerceptron extends BaseCommandlineTool {
 
-    // === Possible models to train ===
-    @Option(name = "-boundaryFOM", usage = "Train a Boundary Figure of Merit model")
-    public boolean boundaryFOM = false;
-
-    @Option(name = "-beamConf", usage = "Train Beam Confidence model")
-    public boolean beamConf = false;
-
-    @Option(name = "-cellConstraints", usage = "Train a Cell Constraints model")
-    public boolean cellConstraints = false;
-
-    // === Other options ===
     @Option(name = "-g", metaVar = "file", usage = "Grammar file")
     private File grammarFile;
     private Grammar grammar;
@@ -110,23 +96,8 @@ public class ModelTrainer extends BaseCommandlineTool {
     @Override
     protected void run() throws Exception {
 
-        if (boundaryFOM == true) {
-            // To train a BoundaryInOut FOM model we need a grammar and
-            // binarized gold input trees with NTs from same grammar
-            final BoundaryInOut edgeSelectorModel = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, null);
-            edgeSelectorModel.train(inputStream);
-            edgeSelectorModel.writeModel(outputStream);
-        } else if (beamConf == true) {
-            final ModelTrainer m = new ModelTrainer();
-            m.natesTraining();
-        } else if (cellConstraints == true) {
-            throw new CmdLineException("Cell Constraints training not implemented.");
-        } else {
-            throw new CmdLineException("Please choose a model to train.  Exiting.");
-        }
-
-        // natesTraining();
-        // aaronsTraining();
+        final TrainPerceptron m = new TrainPerceptron();
+        m.natesTraining();
     }
 
     public void aaronsTraining() throws IOException, ClassNotFoundException {
