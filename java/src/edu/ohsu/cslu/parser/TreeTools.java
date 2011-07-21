@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.tools;
+package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -31,7 +31,6 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
-import edu.ohsu.cslu.parser.ParseTree;
 
 public class TreeTools extends BaseCommandlineTool {
 
@@ -64,6 +63,9 @@ public class TreeTools extends BaseCommandlineTool {
 
     @Option(name = "-extractBEULabels", usage = "Output 'word B E U' for each word where B, E, and U are 0 or 1 if the word begins a multi-word constituent (B), ends a multi-word constituent (E) or contains a span-1 unary (U).")
     private boolean extractBEULabels = false;
+
+    @Option(name = "-extractProds", usage = "Convert input trees to a list of their productions/nodes")
+    private boolean extractProds = false;
 
     @Option(name = "-extractUnaries", usage = "Extract unary productions from trees")
     private boolean extractUnaries = false;
@@ -119,6 +121,8 @@ public class TreeTools extends BaseCommandlineTool {
                 countMaxSpanPerWord();
             } else if (minimumBeginEndConstraints) {
                 countMinBeginEndConstraints(tree);
+            } else if (extractProds) {
+                extractProductionsFromTree(tree);
             } else if (extractUnaries) {
                 extractUnariesFromTree(tree);
             } else if (extractBEULabels) {
@@ -132,10 +136,17 @@ public class TreeTools extends BaseCommandlineTool {
 
             // this wasn't writing anything to stdout???
             // outputStream.write(tree.toString());
-            if (extractUnaries == false) {
+            if (extractUnaries == false && extractProds == false) {
                 System.out.println(tree.toString());
             }
         }
+    }
+
+    private void extractProductionsFromTree(final ParseTree tree) {
+        for (final ParseTree node : tree.preOrderTraversal()) {
+            System.out.println(node.contents + " -> " + node.childrenToString());
+        }
+
     }
 
     private void convertLeavesToUNK(final ParseTree tree, final SymbolSet<String> knownWords) {

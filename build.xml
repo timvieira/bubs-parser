@@ -110,7 +110,7 @@
 
     <target name="tree-tools" depends="compile">
         <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.TreeTools" />
+            <param name="root-class" value="edu.ohsu.cslu.parser.TreeTools" />
             <param name="tool-name" value="tree-tools" />
             <param name="package-gpl-libs" value="true" />
         </antcall>
