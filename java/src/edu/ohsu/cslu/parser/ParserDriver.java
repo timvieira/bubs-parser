@@ -31,7 +31,6 @@ import cltool4j.GlobalConfigProperties;
 import cltool4j.ThreadLocalLinewiseClTool;
 import cltool4j.Threadable;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
@@ -145,7 +144,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     public InputFormat inputFormat = InputFormat.Token;
 
     @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
-    public int reparse = 2;
+    public int reparse = 0;
 
     // == Specific parser options ==
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
@@ -488,16 +487,17 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             System.out.println(parseResult.parseBracketString);
 
             if (inputFormat == InputFormat.Tree) {
-                // If parse failed, replace with ROOT => all-lexical-nodes
-                if (parseResult.naryParse == null) {
-                    parseResult.naryParse = new NaryTree<String>(grammar.startSymbolStr);
-                    for (final NaryTree<String> leaf : parseResult.inputTree.leafTraversal()) {
-                        parseResult.naryParse.addChild(leaf);
-                    }
+                // // If parse failed, replace with ROOT => all-lexical-nodes
+                // if (parseResult.naryParse == null) {
+                // parseResult.naryParse = new NaryTree<String>(grammar.startSymbolStr);
+                // for (final NaryTree<String> leaf : parseResult.inputTree.leafTraversal()) {
+                // parseResult.naryParse.addChild(leaf);
+                // }
+                // }
+                // To match EVALB, we have to ignore sentences where we fail
+                if (parseResult.naryParse != null) {
+                    parseResult.evalb = evaluator.evaluate(parseResult.naryParse, parseResult.inputTree);
                 }
-                // TODO: can't output per-tree accuracy until evaluate() returns correct result
-                // parseResult.evalb = evaluator.evaluate(parseResult.naryParse, parseResult.inputTree);
-                evaluator.evaluate(parseResult.naryParse, parseResult.inputTree);
             }
             BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);
         }

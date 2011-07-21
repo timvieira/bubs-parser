@@ -118,9 +118,8 @@ public class ParseContext {
         result += " nBinary=" + nBinaryConsidered;
 
         if (evalb != null) {
-            result += " f1=" + evalb.f1;
-            result += " prec=" + evalb.precision;
-            result += " recall=" + evalb.recall;
+            result += String.format(" f1=%.2f prec=%.2f recall=%.2f", evalb.f1 * 100, evalb.precision * 100,
+                    evalb.recall * 100);
         }
 
         return result;
