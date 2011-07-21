@@ -56,14 +56,14 @@ public abstract class PrunedSparseMatrixParserTestCase<G extends SparseMatrixGra
 
     @Before
     public void setUp() throws IOException {
-        final G grammar = createGrammar(JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.R2-p1.gz"),
+        final G grammar = createGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"),
                 PerfectIntPairHashPackingFunction.class);
         final ParserDriver opts = new ParserDriver();
         opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, new BufferedReader(
-                JUnit.unitTestDataAsReader("fom/R2-p1.boundary.gz")));
+                JUnit.unitTestDataAsReader("fom/eng.R2.fom.gz")));
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
-        props.put(Parser.PROPERTY_MAX_BEAM_WIDTH, "20");
+        props.put(Parser.PROPERTY_MAX_BEAM_WIDTH, "50");
         props.put(Parser.PROPERTY_LEXICAL_ROW_BEAM_WIDTH, "60");
         props.put(Parser.PROPERTY_LEXICAL_ROW_UNARIES, "20");
         props.put(Parser.PROPERTY_MAX_LOCAL_DELTA, "15");
@@ -101,10 +101,10 @@ public abstract class PrunedSparseMatrixParserTestCase<G extends SparseMatrixGra
     public void testPruned() throws IOException {
 
         final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.tokens.1-20")));
+                JUnit.unitTestDataAsStream("parsing/wsj.24.tokens.1-20")));
 
         final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                JUnit.unitTestDataAsStream("parsing/wsj_24.mrgEC.parsed.1-20.fom")));
+                JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.beam.fom.1-20")));
 
         int i = 1;
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {

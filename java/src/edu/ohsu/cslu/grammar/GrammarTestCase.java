@@ -53,8 +53,8 @@ public abstract class GrammarTestCase {
     public static Reader simpleGrammar() throws Exception {
         final StringBuilder sb = new StringBuilder(256);
 
-        sb.append("TOP\n");
-        sb.append("TOP => NP 0\n");
+        sb.append("format=Berkeley start=ROOT\n");
+        sb.append("ROOT => NP 0\n");
         sb.append("NP => NN NN -0.693147\n");
         sb.append("NP => NP NN -1.203972\n");
         sb.append("NP => NN NP -2.302585\n");
