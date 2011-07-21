@@ -1,5 +1,5 @@
-TOP
-TOP => NP 0
+format=Berkeley start=ROOT
+ROOT => NP 0
 NP => NN NN -0.693147
 NP => NP NN -1.203972
 NP => NN NP -2.302585

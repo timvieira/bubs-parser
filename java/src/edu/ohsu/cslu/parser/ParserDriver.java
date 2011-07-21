@@ -206,9 +206,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             researchParserType = parserType.researchParserType;
         }
 
-        BaseLogger.singleton().fine("INFO: " + commandLineArgStr);
-        BaseLogger.singleton().fine(
+        BaseLogger.singleton().info(
                 "INFO: parser=" + researchParserType + " fom=" + fomTypeOrModel + " decode=" + decodeMethod);
+        BaseLogger.singleton().info("INFO: " + commandLineArgStr);
         grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
 
         if (modelFile != null) {
