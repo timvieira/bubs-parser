@@ -218,6 +218,6 @@ public class TestTrainGrammar {
         }
 
         final EvalbResult evalbResult = evaluator.accumulatedResult();
-        return evalbResult.f1;
+        return evalbResult.f1();
     }
 }
