@@ -496,7 +496,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                 // }
                 // To match EVALB, we have to ignore sentences where we fail
                 if (parseResult.naryParse != null) {
-                    parseResult.evalb = evaluator.evaluate(parseResult.naryParse, parseResult.inputTree);
+                    parseResult.evalb = evaluator.evaluate(parseResult.inputTree, parseResult.naryParse);
                 }
             }
             BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);
@@ -531,8 +531,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
         if (inputFormat == InputFormat.Tree) {
             final EvalbResult evalbResult = evaluator.accumulatedResult();
-            sb.append(String.format(" f1=%.2f prec=%.2f recall=%.2f", evalbResult.f1 * 100,
-                    evalbResult.precision * 100, evalbResult.recall * 100));
+            sb.append(String.format(" f1=%.2f prec=%.2f recall=%.2f", evalbResult.f1() * 100,
+                    evalbResult.precision() * 100, evalbResult.recall() * 100));
         }
 
         BaseLogger.singleton().info(sb.toString());

@@ -399,7 +399,9 @@ public class ProductionListGrammar {
         Arrays.fill(normalization, Float.NEGATIVE_INFINITY);
         for (int i = 0; i < normalization.length; i++) {
             if (probabilitiesByParent[i].size() > 0) {
-                final double totalProbability = edu.ohsu.cslu.util.Math.sumExp(probabilitiesByParent[i].toFloatArray());
+                // TODO: I changed this from sumExp() to logSumExp(). Aaron, is that OK?
+                final double totalProbability = edu.ohsu.cslu.util.Math.logSumExp(probabilitiesByParent[i]
+                        .toFloatArray());
                 // Total 'noise' added
                 final double x = totalProbability - 1;
                 normalization[i] = (float) Math.log(1 - x / totalProbability);
