@@ -443,14 +443,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
-    public interface CscHashPackingFunction {
-        /**
-         * @return Offsets into the CSC binary rule matrix of each matrix column. Length is the number of columns + 1
-         *         (to simplify loops). Unpopulated columns are represented by {@link Integer#MIN_VALUE}.
-         */
-        public int[] cscColumnOffsets();
-    }
-
     public final class LeftShiftFunction extends PackingFunction {
 
         private static final long serialVersionUID = 1L;
@@ -570,7 +562,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     // TODO Doesn't work correctly
-    public final class Int2IntHashPackingFunction extends PackingFunction implements CscHashPackingFunction {
+    public final class Int2IntHashPackingFunction extends PackingFunction {
 
         private static final long serialVersionUID = 1L;
 
@@ -616,11 +608,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
 
         @Override
-        public int[] cscColumnOffsets() {
-            return cscColumnOffsets;
-        }
-
-        @Override
         public final int unpackLeftChild(final int childPair) {
             if (childPair < 0) {
                 // Unary or lexical production
@@ -649,7 +636,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
-    public final class PerfectIntPairHashPackingFunction extends PackingFunction implements CscHashPackingFunction {
+    public final class PerfectIntPairHashPackingFunction extends PackingFunction {
 
         private static final long serialVersionUID = 1L;
 
@@ -671,8 +658,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         private final int[] displacementTableOffsets;
 
         private final int size;
-
-        private final int[] cscColumnOffsets;
 
         public PerfectIntPairHashPackingFunction() {
             this(binaryProductions, rightChildrenEnd);
@@ -759,14 +744,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
             childPairCounts.defaultReturnValue(0);
             for (final Production p : binaryProductions) {
                 final int column = pack((short) p.leftChild, (short) p.rightChild);
-                if (column >= 0) {
-                    childPairCounts.put(column, childPairCounts.get(column) + 1);
-                }
-            }
-            cscColumnOffsets = new int[packedArraySize + 1];
-
-            for (int column = 0; column < packedArraySize; column++) {
-                cscColumnOffsets[column + 1] = cscColumnOffsets[column] + childPairCounts.get(column);
+                childPairCounts.put(column, childPairCounts.get(column) + 1);
             }
         }
 
@@ -905,11 +883,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
             final int y = rightChild & mask;
             final int hashcode = displacementTable[offset + x] + y;
             return hashtable[hashcode] == rightChild ? hashcode : Integer.MIN_VALUE;
-        }
-
-        @Override
-        public int[] cscColumnOffsets() {
-            return cscColumnOffsets;
         }
 
         @Override
