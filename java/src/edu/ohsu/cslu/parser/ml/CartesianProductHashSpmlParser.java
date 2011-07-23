@@ -19,7 +19,6 @@
 package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.CscHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -55,7 +54,6 @@ public class CartesianProductHashSpmlParser extends
     protected void visitCell(final short start, final short end) {
 
         final PackingFunction cpf = grammar.cartesianProductFunction();
-        final int[] cscColumnOffsets = ((CscHashPackingFunction) cpf).cscColumnOffsets();
         final PackedArrayChartCell targetCell = chart.getCell(start, end);
         targetCell.allocateTemporaryStorage();
 
@@ -88,7 +86,7 @@ public class CartesianProductHashSpmlParser extends
 
                     final float childProbability = leftProbability + chart.insideProbabilities[j];
 
-                    for (int k = cscColumnOffsets[column]; k < cscColumnOffsets[column + 1]; k++) {
+                    for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
 
                         final float jointProbability = grammar.cscBinaryProbabilities[k] + childProbability;
                         final int parent = grammar.cscBinaryRowIndices[k];
