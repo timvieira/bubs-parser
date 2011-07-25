@@ -120,6 +120,7 @@ public abstract class Parser<G extends Grammar> {
     // cleans up output for consumption. Input can be a sentence string
     // or a parse tree
     public ParseContext parseSentence(String input) {
+
         input = input.trim();
         if (input.length() == 0) {
             BaseLogger.singleton().info("WARNING: blank line in input.");

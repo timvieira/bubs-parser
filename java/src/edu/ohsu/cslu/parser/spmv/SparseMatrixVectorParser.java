@@ -189,10 +189,9 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     @Override
     public String getStats() {
         return super.getStats()
-                + (collectDetailedStatistics ? String
-                        .format(" xProductTime=%d binarySpMVTime=%d unaryTime=%d finalizeTime=%d extractTime=%d pruningTime=%d",
-                                sentenceCartesianProductTime, sentenceBinarySpMVTime, sentenceUnaryTime,
-                                sentenceFinalizeTime, extractTime, sentencePruningTime)
+                + (collectDetailedStatistics ? String.format(
+                        " xProductTime=%d binarySpMVTime=%d unaryTime=%d finalizeTime=%d",
+                        sentenceCartesianProductTime, sentenceBinarySpMVTime, sentenceUnaryTime, sentenceFinalizeTime)
                         : "");
     }
 

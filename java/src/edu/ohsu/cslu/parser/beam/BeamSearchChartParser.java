@@ -114,13 +114,13 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         chart = new CellChart(tokens, this);
         numReparses = -1;
 
-        final double startTimeMS = System.currentTimeMillis();
+        final long startTimeMS = System.currentTimeMillis();
         edgeSelector.init(chart);
-        final double endTimeMS = System.currentTimeMillis();
-        currentInput.fomInitMs = (float) ((endTimeMS - startTimeMS) / 1000.0);
+        final long endTimeMS = System.currentTimeMillis();
+        currentInput.fomInitMs = endTimeMS - startTimeMS;
 
         cellSelector.initSentence(this);
-        currentInput.ccInitMs = (float) ((System.currentTimeMillis() - endTimeMS) / 1000.0);
+        currentInput.ccInitMs = System.currentTimeMillis() - endTimeMS;
     }
 
     @Override
