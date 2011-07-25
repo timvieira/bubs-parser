@@ -32,7 +32,6 @@ import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
 public abstract class ChartParser<G extends Grammar, C extends Chart> extends Parser<G> {
 
     public C chart;
-    protected long extractTime;
 
     public ChartParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -69,7 +68,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
             final BinaryTree<String> parseTree = chart.extractBestParse(grammar.startSymbol);
-            extractTime = System.currentTimeMillis() - t3;
+            currentInput.extractTimeMs = System.currentTimeMillis() - t3;
             return parseTree;
         }
 
@@ -112,7 +111,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     @Override
     public String getStats() {
         return chart.getStats()
-                + (collectDetailedStatistics ? String.format(" edgeSelectorInitTime=%.0f cellSelectorInitTime=%.0f",
+                + (collectDetailedStatistics ? String.format(" edgeSelectorInitTime=%d cellSelectorInitTime=%d",
                         currentInput.fomInitMs, currentInput.ccInitMs) : "");
     }
 

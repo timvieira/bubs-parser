@@ -499,7 +499,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                     parseResult.evalb = evaluator.evaluate(parseResult.inputTree, parseResult.naryParse);
                 }
             }
-            BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);
+            if (BaseLogger.singleton().isLoggable(Level.FINE)) {
+                BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);
+            }
         }
     }
 

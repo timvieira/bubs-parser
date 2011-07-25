@@ -56,17 +56,20 @@ public class ParseContext {
     public long nUnaryConsidered = 0;
     public long nBinaryConsidered = 0;
 
-    public float parseTimeSec = 0;
-    public float fomInitMs = 0;
-    public float ccInitMs = 0;
-    public float unaryAndPruningMs = 0;
     public float insideScore = 0;
     public long maxMemoryMB = 0;
 
-    long startTime = System.currentTimeMillis();
+    public float parseTimeSec = 0;
+    public long fomInitMs = 0;
+    public long ccInitMs = 0;
+    public long unaryAndPruningMs = 0;
+    public long extractTimeMs = 0;
+
+    long startTime;
 
     public ParseContext(final String input, final InputFormat inputFormat, final Grammar grammar) {
         try {
+            // TODO We don't really need to trim both here and in Parser.parseSentence()
             if (inputFormat == InputFormat.Token) {
                 this.sentence = input.trim();
             } else if (inputFormat == InputFormat.Text) {
@@ -83,44 +86,35 @@ public class ParseContext {
         }
     }
 
-    // public ParseContext(final BinaryTree<String> tree, final Grammar grammar) {
-    public ParseContext(final NaryTree<String> tree, final Grammar grammar) {
-
-        try {
-            // inputTreeChart = new GoldChart(inputTree, grammar);
-
-            this.strTokens = tree.leafLabels();
-            this.sentence = Strings.join(strTokens, " ");
-            this.sentenceLength = strTokens.length;
-            this.inputTree = tree;
-
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-    }
+    // // public ParseContext(final BinaryTree<String> tree, final Grammar grammar) {
+    // public ParseContext(final NaryTree<String> tree, final Grammar grammar) {
+    //
+    // try {
+    // // inputTreeChart = new GoldChart(inputTree, grammar);
+    //
+    // this.strTokens = tree.leafLabels();
+    // this.sentence = Strings.join(strTokens, " ");
+    // this.sentenceLength = strTokens.length;
+    // this.inputTree = tree;
+    //
+    // } catch (final Exception e) {
+    // e.printStackTrace();
+    // }
+    // }
 
     @Override
     public String toString() {
-        String result = String.format("INFO: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f", sentenceNumber,
-                sentenceLength, parseTimeSec, insideProbability);
-
-        result += " pops=" + totalPops;
-        result += " pushes=" + totalPushes;
-        result += " considered=" + totalConsidered;
-
-        result += " fomInit=" + fomInitMs;
-        result += " ccInit=" + ccInitMs;
-        result += " unaryAndPruning=" + unaryAndPruningMs;
-
-        result += " nLex=" + nLex;
-        result += " nLexUnary=" + nLexUnaryConsidered;
-        result += " nUnary=" + nUnaryConsidered;
-        result += " nBinary=" + nBinaryConsidered;
+        final String result = String
+                .format("INFO: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f pops=%d pushes=%d considered=%d fomInit=%d ccInit=%d unaryAndPruning=%d extract=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d",
+                        sentenceNumber, sentenceLength, parseTimeSec, insideProbability, totalPops, totalPushes,
+                        totalConsidered, fomInitMs, ccInitMs, unaryAndPruningMs, extractTimeMs, nLex,
+                        nLexUnaryConsidered, nUnaryConsidered, nBinaryConsidered);
 
         if (evalb != null) {
-            result += String.format(" f1=%.2f prec=%.2f recall=%.2f matched=%d gold=%d parse=%d", evalb.f1() * 100,
-                    evalb.precision() * 100, evalb.recall() * 100, evalb.matchedBrackets, evalb.goldBrackets,
-                    evalb.parseBrackets);
+            return result
+                    + String.format(" f1=%.2f prec=%.2f recall=%.2f matched=%d gold=%d parse=%d", evalb.f1() * 100,
+                            evalb.precision() * 100, evalb.recall() * 100, evalb.matchedBrackets, evalb.goldBrackets,
+                            evalb.parseBrackets);
         }
 
         return result;
