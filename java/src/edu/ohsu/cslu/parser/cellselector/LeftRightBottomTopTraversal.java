@@ -18,11 +18,13 @@
  */
 package edu.ohsu.cslu.parser.cellselector;
 
+import java.util.Iterator;
+
 import edu.ohsu.cslu.parser.ChartParser;
 
 /**
- * Traverses each chart row sequentially from from left to right, beginning at the bottom (span-1) row and
- * working upward through each row in order.
+ * Traverses each chart row sequentially from from left to right, beginning at the bottom (span-1) row and working
+ * upward through each row in order.
  * 
  * @author Nathan Bodenstab
  * @since Dec 17, 2009
@@ -74,8 +76,7 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     @Override
     public boolean hasNext() {
         // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active
-        // tasks
-        // (if any) before proceeding on to the next row and before returning false when parsing is complete.
+        // tasks (if any) before proceeding on to the next row and before returning false when parsing is complete.
         if (nextCell >= 1) {
             if (nextCell >= cells) {
                 parser.waitForActiveTasks();
@@ -95,4 +96,28 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     public void reset() {
         nextCell = 0;
     }
+
+    @Override
+    public Iterator<short[]> reverseIterator() {
+        return new Iterator<short[]>() {
+
+            private int nextCell = cells;
+
+            @Override
+            public boolean hasNext() {
+                return nextCell > 0;
+            }
+
+            @Override
+            public short[] next() {
+                return cellIndices[--nextCell];
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
 }

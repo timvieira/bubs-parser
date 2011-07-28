@@ -39,6 +39,24 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public BinaryTree<String> findBestParse(final int[] tokens) {
+        if (collectDetailedStatistics) {
+            final long t0 = System.currentTimeMillis();
+            init(tokens);
+            currentInput.chartInitMs = System.currentTimeMillis() - t0;
+        } else {
+            init(tokens);
+        }
+
+        insidePass();
+        return extract();
+    }
+
+    /**
+     * Initialize the chart structure, edge selector, and cell selector
+     * 
+     * @param tokens
+     */
+    protected void init(final int[] tokens) {
         initSentence(tokens);
         addLexicalProductions(tokens);
 
@@ -59,12 +77,19 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         } else {
             cellSelector.initSentence(this);
         }
+    }
 
+    /**
+     * Executes the inside / viterbi parsing pass
+     */
+    protected final void insidePass() {
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
             visitCell(startAndEnd[0], startAndEnd[1]);
         }
+    }
 
+    protected final BinaryTree<String> extract() {
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
             final BinaryTree<String> parseTree = chart.extractBestParse(grammar.startSymbol);

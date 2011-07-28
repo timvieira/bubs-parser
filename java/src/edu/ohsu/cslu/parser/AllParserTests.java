@@ -25,9 +25,11 @@ import edu.ohsu.cslu.parser.ml.AllMatrixLoopParserTests;
 import edu.ohsu.cslu.parser.spmv.AllSparseMatrixVectorParserTests;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestParser.class, TestECPGramLoop.class, TestECPGramLoopBerkFilter.class,
-        TestECPCellCrossHash.class, TestECPCellCrossList.class, TestECPCellCrossMatrix.class,
-        AllSparseMatrixVectorParserTests.class, AllMatrixLoopParserTests.class })
+@Suite.SuiteClasses({
+        // TODO AllGrammarTests.class,
+        TestParser.class, TestECPGramLoop.class, TestECPGramLoopBerkFilter.class, TestECPCellCrossHash.class,
+        TestECPCellCrossList.class, TestECPCellCrossMatrix.class, AllSparseMatrixVectorParserTests.class,
+        AllMatrixLoopParserTests.class })
 public class AllParserTests {
 
 }

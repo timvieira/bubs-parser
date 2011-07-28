@@ -35,6 +35,7 @@ import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
@@ -73,6 +74,7 @@ import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductLeftChildHashSpmlParser;
 import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
+import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
@@ -366,6 +368,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             return new RightCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
         case GrammarLoopMl:
             return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+        case InsideOutsideCartesianProductHash:
+            return new InsideOutsideCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
 
         default:
             throw new Exception("Unsupported parser type: " + researchParserType);
@@ -464,6 +468,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             return new CartesianProductHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
         case CartesianProductLeftChildHashMl:
             return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+        case InsideOutsideCartesianProductHash:
+            return new InsideOutsideCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
 
         default:
             throw new IllegalArgumentException("Unsupported parser type");

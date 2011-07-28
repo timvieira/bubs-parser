@@ -57,8 +57,8 @@ public abstract class CellSelector implements Iterator<short[]> {
     }
 
     /**
-     * Returns true if the cell selector has more cells available. The parser should call {@link #hasNext()}
-     * until it returns <code>false</code> to ensure the sentence is fully parsed.
+     * Returns true if the cell selector has more cells available. The parser should call {@link #hasNext()} until it
+     * returns <code>false</code> to ensure the sentence is fully parsed.
      * 
      * @return true if the cell selector has more cells.
      */
@@ -90,8 +90,8 @@ public abstract class CellSelector implements Iterator<short[]> {
     // }
 
     /**
-     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated
-     * with a complete constituent).
+     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
+     * complete constituent).
      * 
      * @param start
      * @param end
@@ -103,12 +103,20 @@ public abstract class CellSelector implements Iterator<short[]> {
 
     /**
      * Returns the beam width for the current cell. Consumers generally set the cell beam width to
-     * java.lang.Math.min(getCelValue(), beamWidth), so they will not attempt to search a range larger than
-     * the maximum beam width of the parser.
+     * java.lang.Math.min(getCelValue(), beamWidth), so they will not attempt to search a range larger than the maximum
+     * beam width of the parser.
      * 
      * TODO The naming and interface still aren't great.
      */
     public int getBeamWidth(final short start, final short end) {
         return Integer.MAX_VALUE;
+    }
+
+    /**
+     * @return an iterator which supplies cells in the reverse order of this {@link CellSelector} (e.g. for populating
+     *         outside probabilities in inside-outside parsing after a normal inside pass).
+     */
+    public Iterator<short[]> reverseIterator() {
+        throw new UnsupportedOperationException();
     }
 }

@@ -59,10 +59,19 @@ public class ParseContext {
     public float insideScore = 0;
     public long maxMemoryMB = 0;
 
+    /** Total time to parse the sentence (note that this time is in seconds rather than milliseconds). */
     public float parseTimeSec = 0;
+    /** Chart initialization and lexical production time */
+    public long chartInitMs = 0;
+    /** Figure-of-merit initialization time */
     public long fomInitMs = 0;
+    /** Cell-selector initialization time */
     public long ccInitMs = 0;
+    /** Total unary and pruning time */
     public long unaryAndPruningMs = 0;
+    /** Total outside-pass */
+    public long outsidePassMs = 0;
+    /** Time to extract the parse tree from the chart, including unfactoring, if necessary. */
     public long extractTimeMs = 0;
 
     long startTime;
@@ -105,10 +114,10 @@ public class ParseContext {
     @Override
     public String toString() {
         final String result = String
-                .format("INFO: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f pops=%d pushes=%d considered=%d fomInit=%d ccInit=%d unaryAndPruning=%d extract=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d",
+                .format("INFO: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f pops=%d pushes=%d considered=%d chartInit=%d, fomInit=%d ccInit=%d unaryAndPruning=%d outsidePass=%d extract=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d",
                         sentenceNumber, sentenceLength, parseTimeSec, insideProbability, totalPops, totalPushes,
-                        totalConsidered, fomInitMs, ccInitMs, unaryAndPruningMs, extractTimeMs, nLex,
-                        nLexUnaryConsidered, nUnaryConsidered, nBinaryConsidered);
+                        totalConsidered, chartInitMs, fomInitMs, ccInitMs, unaryAndPruningMs, outsidePassMs,
+                        extractTimeMs, nLex, nLexUnaryConsidered, nUnaryConsidered, nBinaryConsidered);
 
         if (evalb != null) {
             return result
