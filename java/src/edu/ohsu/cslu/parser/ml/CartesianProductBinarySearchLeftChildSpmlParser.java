@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 
 /**
  * Exhaustive matrix-loop parser which performs grammar intersection by iterating over grammar rules matching the
@@ -43,6 +44,18 @@ public class CartesianProductBinarySearchLeftChildSpmlParser extends CartesianPr
     @Override
     protected final int binarySearchEnd(final int leftChild) {
         return grammar.cscBinaryLeftChildEndIndices[leftChild] + 1;
+    }
+
+    // Override default implementation, since this is a sub-subclass
+    @Override
+    protected void initSentence(final int[] tokens) {
+        final int sentLength = tokens.length;
+        if (chart != null && chart.size() >= sentLength) {
+            chart.clear(sentLength);
+        } else {
+            chart = new PackedArrayChart(tokens, grammar, beamWidth, lexicalRowBeamWidth);
+        }
+        super.initSentence(tokens);
     }
 
 }

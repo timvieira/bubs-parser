@@ -55,18 +55,6 @@ public class CartesianProductLeftChildHashSpmlParser extends
     }
 
     @Override
-    protected void initSentence(final int[] tokens) {
-        final int sentLength = tokens.length;
-        if (chart != null && chart.size() >= sentLength) {
-            chart.clear(sentLength);
-        } else {
-            // TODO Consolidate chart construction in a superclass using the genericized grammar
-            chart = new PackedArrayChart(tokens, grammar);
-        }
-        super.initSentence(tokens);
-    }
-
-    @Override
     protected void visitCell(final short start, final short end) {
 
         final PackingFunction cpf = grammar.cartesianProductFunction();
