@@ -69,7 +69,7 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
 
         // Convert M0 grammar to CSR format
         System.out.println("Converting to CSR format...");
-        final CsrSparseMatrixGrammar csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions,
+        final SparseMatrixGrammar csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions,
                 plGrammar0.unaryProductions, plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon,
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
         final long t2 = System.currentTimeMillis();

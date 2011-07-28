@@ -340,6 +340,34 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return sb.toString();
     }
 
+    protected void storeUnaryRulesAsCsrMatrix(final int[] rowStartIndices, final short[] columnIndices,
+            final float[] probabilities) {
+
+        // Bin all rules by parent, mapping child -> probability
+        final Short2FloatOpenHashMap[] maps = new Short2FloatOpenHashMap[numNonTerms()];
+        for (int i = 0; i < numNonTerms(); i++) {
+            maps[i] = new Short2FloatOpenHashMap(1000);
+        }
+
+        for (final Production p : unaryProductions) {
+            maps[p.parent].put((short) p.leftChild, p.prob);
+        }
+
+        // Store rules in CSR matrix
+        int i = 0;
+        for (int parent = 0; parent < numNonTerms(); parent++) {
+            rowStartIndices[parent] = i;
+
+            final short[] children = maps[parent].keySet().toShortArray();
+            Arrays.sort(children);
+            for (int j = 0; j < children.length; j++) {
+                columnIndices[i] = children[j];
+                probabilities[i++] = maps[parent].get(children[j]);
+            }
+        }
+        rowStartIndices[rowStartIndices.length - 1] = i;
+    }
+
     public abstract class PackingFunction implements Serializable {
 
         private static final long serialVersionUID = 1L;

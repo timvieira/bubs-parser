@@ -74,7 +74,7 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
                 grammarFormat, functionClass, false);
 
         this.csrUnaryBaseStartIndices = new int[numNonTerms()][];
-        storeUnaryRulesAsCsrMatrix();
+        storeUnaryRulesAsCsrMatrix(csrUnaryRowStartIndices, csrUnaryColumnIndices, csrUnaryProbabilities);
         this.baseGrammar = plg.baseGrammar;
 
         this.csrBinaryBaseStartIndices = new int[numNonTerms()][];
@@ -178,7 +178,7 @@ public class ConstrainedCsrSparseMatrixGrammar extends CsrSparseMatrixGrammar {
     }
 
     @Override
-    protected void storeUnaryRulesAsCsrMatrix() {
+    protected void storeUnaryRulesAsCsrMatrix(int[] unaryRowStartIndices, short[] unaryColumnIndices, float[] unaryProbabilities) {
 
         // Bin all rules by parent, mapping child -> probability
         final Short2FloatOpenHashMap[] maps = new Short2FloatOpenHashMap[numNonTerms()];
