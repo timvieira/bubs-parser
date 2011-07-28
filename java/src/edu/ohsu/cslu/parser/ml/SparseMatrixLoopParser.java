@@ -18,6 +18,8 @@
  */
 package edu.ohsu.cslu.parser.ml;
 
+import java.lang.reflect.ParameterizedType;
+
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
@@ -26,16 +28,37 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 public abstract class SparseMatrixLoopParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart> extends
         SparseMatrixParser<G, C> {
 
-    public long startTime = 0;
-
     public SparseMatrixLoopParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void initSentence(final int[] tokens) {
-        startTime = System.currentTimeMillis();
-        chart.tokens = tokens;
+
+        final int sentLength = tokens.length;
+        if (chart != null && chart.size() >= sentLength) {
+            chart.clear(sentLength);
+        } else {
+            // Construct a chart of the appropriate type
+            try {
+                final Class<C> chartClass = ((Class<C>) ((ParameterizedType) getClass().getGenericSuperclass())
+                        .getActualTypeArguments()[1]);
+                try {
+                    // First, try for a constructor that takes tokens, grammar, beamWidth, and lexicalRowBeamWidth
+                    chart = chartClass.getConstructor(
+                            new Class[] { int[].class, SparseMatrixGrammar.class, int.class, int.class }).newInstance(
+                            new Object[] { tokens, grammar, beamWidth, lexicalRowBeamWidth });
+
+                } catch (final NoSuchMethodException e) {
+                    // If not found, use a constructor that takes only tokens and grammar
+                    chart = chartClass.getConstructor(new Class[] { int[].class, SparseMatrixGrammar.class })
+                            .newInstance(new Object[] { tokens, grammar });
+                }
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
 }
