@@ -105,7 +105,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             throws IOException {
         // Convert M0 grammar to CSR format
         System.out.println("Converting to CSR format...");
-        final CsrSparseMatrixGrammar csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar.binaryProductions,
+        final SparseMatrixGrammar csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar.binaryProductions,
                 plGrammar.unaryProductions, plGrammar.lexicalProductions, plGrammar.vocabulary, plGrammar.lexicon,
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 

@@ -44,7 +44,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
 public class TestConstrainedChart {
 
     ProductionListGrammar plGrammar0;
-    CsrSparseMatrixGrammar csrGrammar0;
+    SparseMatrixGrammar csrGrammar0;
 
     @Before
     public void setUp() throws IOException {
@@ -107,7 +107,7 @@ public class TestConstrainedChart {
         // Induce a grammar from the tree and construct a SparseMatrixGrammar
         final ProductionListGrammar plg = new ProductionListGrammar(new StringCountGrammar(new StringReader(
                 AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN), Factorization.RIGHT, GrammarFormatType.Berkeley, 0));
-        final CsrSparseMatrixGrammar csrg = new CsrSparseMatrixGrammar(plg.binaryProductions, plg.unaryProductions,
+        final SparseMatrixGrammar csrg = new CsrSparseMatrixGrammar(plg.binaryProductions, plg.unaryProductions,
                 plg.lexicalProductions, plg.vocabulary, plg.lexicon, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
