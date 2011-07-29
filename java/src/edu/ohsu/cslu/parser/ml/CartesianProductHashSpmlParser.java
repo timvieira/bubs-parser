@@ -41,6 +41,16 @@ public class CartesianProductHashSpmlParser extends
     @Override
     protected void visitCell(final short start, final short end) {
 
+        final boolean factoredOnly = cellSelector.hasCellConstraints()
+                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
+
+        final int[] binaryColumnOffsets = factoredOnly ? grammar.factoredCscBinaryColumnOffsets
+                : grammar.cscBinaryColumnOffsets;
+        final float[] binaryProbabilities = factoredOnly ? grammar.factoredCscBinaryProbabilities
+                : grammar.cscBinaryProbabilities;
+        final short[] binaryRowIndices = factoredOnly ? grammar.factoredCscBinaryRowIndices
+                : grammar.cscBinaryRowIndices;
+
         final PackingFunction cpf = grammar.cartesianProductFunction();
         final PackedArrayChartCell targetCell = chart.getCell(start, end);
         targetCell.allocateTemporaryStorage();
@@ -74,10 +84,10 @@ public class CartesianProductHashSpmlParser extends
 
                     final float childProbability = leftProbability + chart.insideProbabilities[j];
 
-                    for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
+                    for (int k = binaryColumnOffsets[column]; k < binaryColumnOffsets[column + 1]; k++) {
 
-                        final float jointProbability = grammar.cscBinaryProbabilities[k] + childProbability;
-                        final int parent = grammar.cscBinaryRowIndices[k];
+                        final float jointProbability = binaryProbabilities[k] + childProbability;
+                        final int parent = binaryRowIndices[k];
 
                         if (jointProbability > targetCellProbabilities[parent]) {
                             targetCellChildren[parent] = column;
