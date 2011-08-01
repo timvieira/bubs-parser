@@ -108,15 +108,14 @@ public class TreeTools extends BaseCommandlineTool {
             final ParseTree tree = ParseTree.readBracketFormat(sentence);
 
             if (unbinarize) {
-                // outputStream.write(sentence);
                 unbinarizeTree(tree, grammarFormat);
+                System.out.println(tree.toString());
             } else if (cleanRawTreebank) {
-                // removeTmpLabels(tree);
-                // removeEmptyNodes(tree);
-                // removeSpuriousUnaries(tree);
                 removeTmpLabelsEmptyNodesAndSpuriousUnaries(tree);
+                System.out.println(tree.toString());
             } else if (binarize) {
                 binarizeTree(tree, rightFactor, horizontalMarkov, verticalMarkov, annotatePOS, grammarFormat);
+                System.out.println(tree.toString());
             } else if (countMaxSpans) {
                 countMaxSpanPerWord();
             } else if (minimumBeginEndConstraints) {
@@ -127,17 +126,13 @@ public class TreeTools extends BaseCommandlineTool {
                 extractUnariesFromTree(tree);
             } else if (extractBEULabels) {
                 extractBEULabelsFromTree(tree);
+                System.out.println("");
             } else if (leavesToUNK) {
                 convertLeavesToUNK(tree, knownWords);
+                System.out.println(tree.toString());
             } else {
                 System.err.println("ERROR: action required.  See -h");
                 System.exit(1);
-            }
-
-            // this wasn't writing anything to stdout???
-            // outputStream.write(tree.toString());
-            if (extractUnaries == false && extractProds == false) {
-                System.out.println(tree.toString());
             }
         }
     }
@@ -162,6 +157,9 @@ public class TreeTools extends BaseCommandlineTool {
     public static void extractBEULabelsFromTree(final ParseTree tree) {
         final LinkedList<String> sent = tree.getLeafNodesContent();
         final int n = sent.size();
+
+        // replace leaf nodes with integers so we can index the words
+        // of rightmost/leftmost children w/ respect to the entire tree
         final String[] leafCount = new String[n];
         for (int i = 0; i < n; i++) {
             leafCount[i] = Integer.toString(i);
@@ -174,7 +172,7 @@ public class TreeTools extends BaseCommandlineTool {
             if (node.span() > 1) {
                 B[Integer.parseInt(node.leftMostLeaf().getContents())] = true;
                 E[Integer.parseInt(node.rightMostLeaf().getContents())] = true;
-            } else if (node.isLeafParent()) {
+            } else if (node.isNonTerminal()) {
                 U[Integer.parseInt(node.rightMostLeaf().getContents())] = true;
             }
         }

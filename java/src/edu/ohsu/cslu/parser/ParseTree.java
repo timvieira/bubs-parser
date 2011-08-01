@@ -301,7 +301,11 @@ public class ParseTree {
     }
 
     public int span() {
-        return getLeafNodes().size();
+        final int n = getLeafNodes().size();
+        if (n == 0) {
+            return 1;
+        }
+        return n;
     }
 
     public LinkedList<ParseTree> getLeafNodes() {
