@@ -35,8 +35,8 @@ import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
@@ -331,7 +331,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             case PerfectHash:
                 return new CsrSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
             default:
-                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
+                throw new IllegalArgumentException("Unsupported cartesian-product-function type: "
+                        + cartesianProductFunctionType);
             }
 
         case PackedOpenClSpmv:
@@ -346,7 +347,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             case PerfectHash:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
             default:
-                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
+                throw new IllegalArgumentException("Unsupported cartesian-product-function type: "
+                        + cartesianProductFunctionType);
             }
 
         case LeftChildMl:
@@ -362,17 +364,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             case PerfectHash:
                 return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
             default:
-                throw new Exception("Unsupported cartesian-product-function type: " + cartesianProductFunctionType);
+                throw new IllegalArgumentException("Unsupported cartesian-product-function type: "
+                        + cartesianProductFunctionType);
             }
         case RightChildMl:
             return new RightCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
         case GrammarLoopMl:
             return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
-        case InsideOutsideCartesianProductHash:
-            return new InsideOutsideCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
 
         default:
-            throw new Exception("Unsupported parser type: " + researchParserType);
+            throw new IllegalArgumentException("Unsupported parser type: " + researchParserType);
         }
     }
 
