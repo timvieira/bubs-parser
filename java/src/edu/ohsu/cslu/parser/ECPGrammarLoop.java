@@ -35,7 +35,7 @@ public class ECPGrammarLoop extends ChartParser<Grammar, CellChart> {
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
         final HashSetChartCell cell = chart.getCell(start, end);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point

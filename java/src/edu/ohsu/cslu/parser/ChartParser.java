@@ -85,7 +85,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     protected final void insidePass() {
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
-            visitCell(startAndEnd[0], startAndEnd[1]);
+            computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
         }
     }
 
@@ -106,7 +106,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
      * @param start
      * @param end
      */
-    protected abstract void visitCell(short start, short end);
+    protected abstract void computeInsideProbabilities(short start, short end);
 
     @SuppressWarnings("unchecked")
     protected void initSentence(final int[] tokens) {

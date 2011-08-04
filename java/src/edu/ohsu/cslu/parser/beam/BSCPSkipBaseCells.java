@@ -58,7 +58,7 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
         final HashSetChartCell cell = chart.getCell(start, end);
         Collection<Production> possibleProds;
         ChartEdge edge;
