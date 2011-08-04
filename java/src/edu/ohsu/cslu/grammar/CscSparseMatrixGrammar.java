@@ -207,26 +207,33 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             final int[] cscColumnOffsets, final short[] cscRowIndices, final float[] cscProbabilities) {
 
         // Bin all rules by child pair, mapping parent -> probability
-        final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps1 = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(1000);
+        final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(1000);
+        final IntSet populatedColumnSet = new IntOpenHashSet(productions.size() / 8);
 
         for (final Production p : productions) {
+            // if (nonTermSet.getSymbol(p.leftChild).equals("NP") && nonTermSet.getSymbol(p.rightChild).equals("DT")) {
+            // System.out.println("NP,DT");
+            // }
             final int childPair = pf.pack((short) p.leftChild, (short) p.rightChild);
-            Int2FloatOpenHashMap map1 = maps1.get(childPair);
+            populatedColumnSet.add(childPair);
+            Int2FloatOpenHashMap map1 = maps.get(childPair);
             if (map1 == null) {
                 map1 = new Int2FloatOpenHashMap(20);
-                maps1.put(childPair, map1);
+                maps.put(childPair, map1);
             }
             map1.put(p.parent, p.prob);
         }
-        final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = maps1;
 
         // Store rules in CSC matrix
+        final int[] populatedColumns = populatedColumnSet.toIntArray();
+        Arrays.sort(populatedColumns);
         int j = 0;
-        for (int i = 0; i < validPackedChildPairs.length; i++) {
-            final int childPair = validPackedChildPairs[i];
+        for (int i = 0; i < populatedColumns.length; i++) {
+            final int childPair = populatedColumns[i];
 
             cscPopulatedColumns[i] = childPair;
             cscPopulatedColumnOffsets[i] = j;
+            cscColumnOffsets[childPair] = j;
 
             final Int2FloatOpenHashMap map = maps.get(childPair);
             final int[] parents = map.keySet().toIntArray();
@@ -239,10 +246,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         }
         cscPopulatedColumnOffsets[cscPopulatedColumnOffsets.length - 1] = j;
 
-        for (int i = 0; i < cscPopulatedColumns.length; i++) {
-            cscColumnOffsets[cscPopulatedColumns[i]] = cscPopulatedColumnOffsets[i];
-        }
-        for (int i = cscColumnOffsets.length - 1, lastOffset = cscPopulatedColumnOffsets[cscPopulatedColumnOffsets.length - 1]; i > 0; i--) {
+        for (int i = cscColumnOffsets.length - 1, lastOffset = j; i > populatedColumns[0]; i--) {
             if (cscColumnOffsets[i] == 0) {
                 cscColumnOffsets[i] = lastOffset;
             } else {

@@ -30,7 +30,7 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
 
     /**
      * A copy of the CSC grammar, mapped by right child -> parent,left child (note that this confuses the arguments to
-     * pack/unpack method of the PackingFunction, swapping the parent and the right child)
+     * pack/unpack method of the PackingFunction, shifting the positions of parent, left child, and right child)
      */
     public final int[] rightChildCscBinaryPopulatedColumns;
     public final int[] rightChildCscBinaryPopulatedColumnOffsets;

@@ -1,5 +1,7 @@
 package edu.ohsu.cslu.parser.ml;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -26,18 +28,43 @@ public class InsideOutsideCphSpmlParser extends
         // Outside pass
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
 
-        chart.outsideProbabilities[grammar.startSymbol] = 0;
         final Iterator<short[]> reverseIterator = cellSelector.reverseIterator();
+
+        // Populate start-symbol unaries in the top cell. Assume that the top cell will be first; this might not be
+        // exactly be the reverse of the original iteration order (e.g., for an agenda parser), but there isn't another
+        // sensible order in which to compute outside probabilities.
+        final float[] tmpOutsideProbabilities = new float[grammar.numNonTerms()];
+        Arrays.fill(tmpOutsideProbabilities, Float.NEGATIVE_INFINITY);
+        tmpOutsideProbabilities[grammar.startSymbol] = 0;
+
         while (reverseIterator.hasNext()) {
             final short[] startAndEnd = reverseIterator.next();
-            computeOutsideProbabilities(startAndEnd[0], startAndEnd[1]);
+            computeOutsideProbabilities(startAndEnd[0], startAndEnd[1], tmpOutsideProbabilities);
+            Arrays.fill(tmpOutsideProbabilities, Float.NEGATIVE_INFINITY);
         }
-
         if (collectDetailedStatistics) {
             currentInput.outsidePassMs = System.currentTimeMillis() - t0;
         }
 
-        return extract();
+        // For now, we always perform Goodman's max-recall decoding. We also need max-precision and a trade-off between
+        // the two
+        if (collectDetailedStatistics) {
+            final long t3 = System.currentTimeMillis();
+            chart.computeMaxc();
+            final BinaryTree<String> parseTree = chart.extractMaxcParse(0, chart.size());
+            currentInput.extractTimeMs = System.currentTimeMillis() - t3;
+            return parseTree;
+        }
+
+        try {
+            final FileWriter fw = new FileWriter("/tmp/io_chart.txt");
+            fw.write(chart.toString());
+            fw.close();
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+        chart.computeMaxc();
+        return chart.extractMaxcParse(0, chart.size());
     }
 
     /**
@@ -121,30 +148,37 @@ public class InsideOutsideCphSpmlParser extends
      * @param start
      * @param end
      */
-    private void computeOutsideProbabilities(final short start, final short end) {
-
-        // TODO Reuse this array
-        final float[] tmpOutsideProbabilities = new float[grammar.numNonTerms()];
-        Arrays.fill(tmpOutsideProbabilities, Float.NEGATIVE_INFINITY);
-
-        // Compute unary outside probabilities at each unary child level
-        computeUnaryOutsideProbabilities(tmpOutsideProbabilities);
-
-        // No siblings for the top cell
-        if (start == 0 && end == chart.size()) {
-            return;
-        }
+    private void computeOutsideProbabilities(final short start, final short end, final float[] tmpOutsideProbabilities) {
 
         // Left-side siblings first
 
         // foreach parent-start in {0..start - 1}
         for (int parentStart = 0; parentStart < start; parentStart++) {
             final int parentCellIndex = chart.cellIndex(parentStart, end);
-            final int parentStartIndex = chart.minLeftChildIndex(parentCellIndex);
-            final int parentEndIndex = chart.maxLeftChildIndex(parentCellIndex);
+            final int parentStartIndex = chart.offset(parentCellIndex);
+            final int parentEndIndex = parentStartIndex + chart.numNonTerminals()[parentCellIndex] - 1;
 
             // Sibling (left) cell
             final int siblingCellIndex = chart.cellIndex(parentStart, start);
+            final int siblingStartIndex = chart.minLeftChildIndex(siblingCellIndex);
+            final int siblingEndIndex = chart.maxLeftChildIndex(siblingCellIndex);
+
+            computeSiblingOutsideProbabilities(tmpOutsideProbabilities, grammar.rightChildPackingFunction,
+                    grammar.rightChildCscBinaryProbabilities, grammar.rightChildCscBinaryRowIndices,
+                    grammar.rightChildCscBinaryColumnOffsets, parentStartIndex, parentEndIndex, siblingStartIndex,
+                    siblingEndIndex);
+        }
+
+        // Right-side siblings
+
+        // foreach parent-end in {end + 1..n}
+        for (int parentEnd = end + 1; parentEnd <= chart.size(); parentEnd++) {
+            final int parentCellIndex = chart.cellIndex(start, parentEnd);
+            final int parentStartIndex = chart.offset(parentCellIndex);
+            final int parentEndIndex = parentStartIndex + chart.numNonTerminals()[parentCellIndex] - 1;
+
+            // Sibling (right) cell
+            final int siblingCellIndex = chart.cellIndex(end, parentEnd);
             final int siblingStartIndex = chart.minRightChildIndex(siblingCellIndex);
             final int siblingEndIndex = chart.maxRightChildIndex(siblingCellIndex);
 
@@ -154,24 +188,8 @@ public class InsideOutsideCphSpmlParser extends
                     siblingEndIndex);
         }
 
-        // Right-side siblings
-
-        // foreach parent-end in {end + 1..n}
-        for (int parentEnd = end + 1; parentEnd < chart.size(); parentEnd++) {
-            final int parentCellIndex = chart.cellIndex(start, parentEnd);
-            final int parentStartIndex = chart.minLeftChildIndex(parentCellIndex);
-            final int parentEndIndex = chart.maxLeftChildIndex(parentCellIndex);
-
-            // Sibling (right) cell
-            final int siblingCellIndex = chart.cellIndex(end, parentEnd);
-            final int siblingStartIndex = chart.minRightChildIndex(siblingCellIndex);
-            final int siblingEndIndex = chart.maxRightChildIndex(siblingCellIndex);
-
-            computeSiblingOutsideProbabilities(tmpOutsideProbabilities, grammar.rightChildPackingFunction,
-                    grammar.rightChildCscBinaryProbabilities, grammar.rightChildCscBinaryRowIndices,
-                    grammar.rightChildCscBinaryColumnOffsets, parentStartIndex, parentEndIndex, siblingStartIndex,
-                    siblingEndIndex);
-        }
+        // Unary outside probabilities
+        computeUnaryOutsideProbabilities(tmpOutsideProbabilities);
 
         chart.finalizeOutside(tmpOutsideProbabilities, chart.offset(chart.cellIndex(start, end)));
     }
@@ -188,7 +206,7 @@ public class InsideOutsideCphSpmlParser extends
             // foreach entry in the parent cell
             for (int j = parentStartIndex; j <= parentEndIndex; j++) {
 
-                final int column = cpf.pack(siblingEntry, chart.nonTerminalIndices[j]);
+                final int column = cpf.pack(chart.nonTerminalIndices[j], siblingEntry);
                 if (column == Integer.MIN_VALUE) {
                     continue;
                 }
@@ -202,7 +220,6 @@ public class InsideOutsideCphSpmlParser extends
                 for (int k = cscColumnOffsets[column]; k < cscColumnOffsets[column + 1]; k++) {
 
                     // Outside probability = sum(production probability x parent outside x sibling inside)
-                    // X-product contains parent outside x sibling inside
                     final float outsideProbability = cscBinaryProbabilities[k] + jointProbability;
                     final int target = cscBinaryRowIndices[k];
                     final float outsideSum = Math.logSum(outsideProbability, tmpOutsideProbabilities[target]);
@@ -212,7 +229,6 @@ public class InsideOutsideCphSpmlParser extends
         }
     }
 
-    // TODO We probably need a CSR matrix to compute outside probabilities
     private void computeUnaryOutsideProbabilities(final float[] tmpOutsideProbabilities) {
 
         // Iterate over populated parents (matrix rows)
@@ -222,11 +238,11 @@ public class InsideOutsideCphSpmlParser extends
                 continue;
             }
 
-            // Iterate over possible children (rows with non-zero entries)
-            for (int i = grammar.cscUnaryColumnOffsets[parent]; i < grammar.cscUnaryColumnOffsets[parent + 1]; i++) {
+            // Iterate over possible children (columns with non-zero entries)
+            for (int i = grammar.csrUnaryRowStartIndices[parent]; i < grammar.csrUnaryRowStartIndices[parent + 1]; i++) {
 
-                final short child = grammar.cscUnaryRowIndices[i];
-                final float jointProbability = grammar.cscUnaryProbabilities[i] + tmpOutsideProbabilities[parent];
+                final short child = grammar.csrUnaryColumnIndices[i];
+                final float jointProbability = grammar.csrUnaryProbabilities[i] + tmpOutsideProbabilities[parent];
                 tmpOutsideProbabilities[child] = Math.logSum(tmpOutsideProbabilities[child], jointProbability);
             }
         }
