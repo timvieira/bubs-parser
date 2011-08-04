@@ -191,7 +191,7 @@ public class InsideOutsideCphSpmlParser extends
         // Unary outside probabilities
         computeUnaryOutsideProbabilities(tmpOutsideProbabilities);
 
-        chart.finalizeOutside(tmpOutsideProbabilities, chart.offset(chart.cellIndex(start, end)));
+        chart.finalizeOutside(tmpOutsideProbabilities, chart.cellIndex(start, end));
     }
 
     private void computeSiblingOutsideProbabilities(final float[] tmpOutsideProbabilities, final PackingFunction cpf,
