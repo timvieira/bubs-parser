@@ -63,10 +63,10 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (edgeSelector != null) {
             if (collectDetailedStatistics) {
                 final long t1 = System.currentTimeMillis();
-                edgeSelector.init(chart);
+                edgeSelector.init(tokens);
                 currentInput.fomInitMs = System.currentTimeMillis() - t1;
             } else {
-                edgeSelector.init(chart);
+                edgeSelector.init(tokens);
             }
         }
 

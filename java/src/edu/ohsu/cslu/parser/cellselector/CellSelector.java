@@ -29,6 +29,8 @@ public abstract class CellSelector implements Iterator<short[]> {
 
     public abstract void initSentence(final ChartParser<?, ?> parser);
 
+    // public abstract void initSentence(final int sentenceLength);
+
     public void train(final BufferedReader inStream) throws IOException {
         throw new UnsupportedOperationException();
     }
@@ -75,31 +77,6 @@ public abstract class CellSelector implements Iterator<short[]> {
     public void reset() {
         throw new UnsupportedOperationException();
     }
-
-    // open to factored and non-factored productions
-    // public boolean isOpenAll(final short start, final short end) {
-    // return true;
-    // }
-    //
-    // public boolean isOpenOnlyFactored(final short start, final short end) {
-    // return false;
-    // }
-    //
-    // public boolean isOpenUnary(final short start, final short end) {
-    // return isOpenAll(start, end);
-    // }
-
-    /**
-     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
-     * complete constituent).
-     * 
-     * @param start
-     * @param end
-     * @return true if the specified cell is 'open' only to factored parents
-     */
-    // public boolean factoredParentsOnly(final short start, final short end) {
-    // return isOpenOnlyFactored(start, end);
-    // }
 
     /**
      * Returns the beam width for the current cell. Consumers generally set the cell beam width to
