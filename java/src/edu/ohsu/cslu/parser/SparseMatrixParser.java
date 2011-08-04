@@ -148,7 +148,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
         final boolean factoredOnly = cellSelector.hasCellConstraints()
                 && cellSelector.getCellConstraints().isCellOnlyFactored(start, end) && (end - start > 1);
-        final boolean allowSpanOneUnaries = cellSelector.getCellConstraints().isUnaryOpen(start, end);
+        final boolean allowUnaries = !cellSelector.hasCellConstraints()
+                || cellSelector.getCellConstraints().isUnaryOpen(start, end);
         final float minInsideProbability = edu.ohsu.cslu.util.Math.max(spvChartCell.tmpInsideProbabilities)
                 - maxLocalDelta;
 
@@ -228,7 +229,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                 cellMidpoints[nt] = spvChartCell.tmpMidpoints[nt];
 
                 // Process unary edges for cells which are open to non-factored parents
-                if (!factoredOnly && allowSpanOneUnaries) {
+                if (!factoredOnly && allowUnaries) {
                     // Insert all unary edges with the current parent as child into the queue
                     final short child = nt;
                     final float insideProbability = spvChartCell.tmpInsideProbabilities[child];
@@ -249,6 +250,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                                 spvChartCell.tmpPackedChildren[parent] = grammar.cartesianProductFunction().packUnary(
                                         child);
                                 spvChartCell.tmpInsideProbabilities[parent] = jointProbability;
+                                spvChartCell.tmpMidpoints[parent] = end;
                             }
                         }
                     }

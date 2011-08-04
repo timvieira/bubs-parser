@@ -65,7 +65,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     /**
      * The number of non-terminals populated in each cell. Indexed by cell index ({@link #cellIndex(int, int)} ).
      */
-    private final int[] numNonTerminals;
+    protected final int[] numNonTerminals;
 
     /**
      * The index in the main chart array of the first non-terminal in each cell which is valid as a left child. Indexed
@@ -405,22 +405,6 @@ public class PackedArrayChart extends ParallelArrayChart {
                 }
                 Arrays.fill(leftChildSegmentStartIndices, cellSegmentStartIndex + i + 1, cellSegmentStartIndex
                         + leftChildSegments + 1, maxLeftChildIndex[cellIndex] + 1);
-
-                // final short[] ntBoundaries = new short[leftChildSegments + 1];
-                // final int[] ntCounts = new int[leftChildSegments];
-                // for (int j = 0; j < ntBoundaries.length - 1; j++) {
-                // ntBoundaries[j] = nonTerminalIndices[leftChildSegmentStartIndices[cellSegmentStartIndex +
-                // j]];
-                // if (j < ntCounts.length) {
-                // ntCounts[j] = leftChildSegmentStartIndices[cellSegmentStartIndex + j + 1]
-                // - leftChildSegmentStartIndices[cellSegmentStartIndex + j];
-                // }
-                // }
-                // ntBoundaries[ntBoundaries.length - 1] = nonTerminalIndices[maxLeftChildIndex[cellIndex]];
-                //
-                // System.out.println(start + "," + end + "   " + ParserUtil.join(ntBoundaries, ",") + "    "
-                // + ParserUtil.join(ntCounts, ",") + "    "
-                // + (maxLeftChildIndex[cellIndex] - minLeftChildIndex[cellIndex] + 1));
             }
         }
 
@@ -648,8 +632,8 @@ public class PackedArrayChart extends ParallelArrayChart {
 
                     sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint));
                 }
-            } else {
 
+            } else {
                 // Format entries from temporary cell storage
                 for (int nonTerminal = 0; nonTerminal < sparseMatrixGrammar.numNonTerms(); nonTerminal++) {
 
@@ -661,7 +645,6 @@ public class PackedArrayChart extends ParallelArrayChart {
                         sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint));
                     }
                 }
-
             }
             return sb.toString();
         }
