@@ -244,7 +244,7 @@ public class DenseVectorChart extends ParallelArrayChart {
         }
 
         @Override
-        public String toString() {
+        public String toString(final boolean formatFractions) {
             final StringBuilder sb = new StringBuilder(256);
 
             sb.append("DenseVectorChartCell[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
@@ -258,7 +258,8 @@ public class DenseVectorChart extends ParallelArrayChart {
                 if (insideProbability > Float.NEGATIVE_INFINITY) {
                     final int childProductions = packedChildren[index];
                     final int midpoint = midpoints[index];
-                    sb.append(formatCellEntry(index - offset, childProductions, insideProbability, midpoint));
+                    sb.append(formatCellEntry(index - offset, childProductions, insideProbability, midpoint,
+                            formatFractions));
                 }
             }
             return sb.toString();
