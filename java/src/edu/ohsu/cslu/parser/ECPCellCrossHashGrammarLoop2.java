@@ -41,7 +41,7 @@ public class ECPCellCrossHashGrammarLoop2 extends ChartParser<LeftHashGrammar, C
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
         final HashSetChartCell cell = chart.getCell(start, end);
         float insideProb;
 

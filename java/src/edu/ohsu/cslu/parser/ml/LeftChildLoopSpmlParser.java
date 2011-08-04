@@ -36,7 +36,7 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<LeftCscSpars
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
 
         final DenseVectorChartCell targetCell = chart.getCell(start, end);
         final int targetCellOffset = targetCell.offset();

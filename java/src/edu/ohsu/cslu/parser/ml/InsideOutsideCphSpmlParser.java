@@ -44,7 +44,7 @@ public class InsideOutsideCphSpmlParser extends
      * Identical to {@link CartesianProductHashSpmlParser}, but computes sum instead of viterbi max.
      */
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
 
         final PackingFunction cpf = grammar.cartesianProductFunction();
         final PackedArrayChartCell targetCell = chart.getCell(start, end);

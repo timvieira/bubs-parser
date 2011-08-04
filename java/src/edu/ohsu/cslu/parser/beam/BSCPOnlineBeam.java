@@ -40,7 +40,7 @@ public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellC
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
         final HashSetChartCell cell = chart.getCell(start, end);
         final int spanWidth = end - start;
         Collection<Production> possibleProds;
