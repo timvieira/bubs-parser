@@ -30,7 +30,6 @@ import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
 
 /**
@@ -409,8 +408,8 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
         }
 
         @Override
-        public void init(final Chart chart) {
-            outsideLeftRightAndBestPOS(chart.tokens);
+        public void init(final int[] tokens) {
+            outsideLeftRightAndBestPOS(tokens);
         }
 
         // Computes forward-backward and left/right boundary probs across ambiguous
