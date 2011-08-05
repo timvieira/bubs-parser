@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser.edgeselector;
+package edu.ohsu.cslu.parser.fom;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -26,11 +26,11 @@ import java.io.Serializable;
 import edu.ohsu.cslu.parser.Parser;
 
 /**
- * An edge selector for a particular parser. {@link EdgeSelector} instances are not required (or expected) to be
+ * An edge selector for a particular parser. {@link FigureOfMerit} instances are not required (or expected) to be
  * thread-safe across multiple simultaneous sentences, so an instance should not be shared by multiple {@link Parser}
- * instances. Model parameters should be stored in a shared {@link EdgeSelectorFactory}.
+ * instances. Model parameters should be stored in a shared {@link FigureOfMeritFactory}.
  */
-public abstract class EdgeSelector implements Serializable {
+public abstract class FigureOfMerit implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

@@ -27,7 +27,7 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
+import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
 
 public abstract class ChartParser<G extends Grammar, C extends Chart> extends Parser<G> {
 

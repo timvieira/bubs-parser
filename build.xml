@@ -127,7 +127,7 @@
 
     <target name="train-fom" depends="compile">
         <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.parser.edgeselector.TrainFOM" />
+            <param name="root-class" value="edu.ohsu.cslu.parser.fom.TrainFOM" />
             <param name="tool-name" value="train-fom" />
             <param name="package-gpl-libs" value="true" />
         </antcall>

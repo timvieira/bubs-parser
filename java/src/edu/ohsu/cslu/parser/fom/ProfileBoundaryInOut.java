@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser.edgeselector;
+package edu.ohsu.cslu.parser.fom;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,8 +31,8 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**

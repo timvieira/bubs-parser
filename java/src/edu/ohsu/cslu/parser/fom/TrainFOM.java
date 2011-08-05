@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser.edgeselector;
+package edu.ohsu.cslu.parser.fom;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -28,7 +28,7 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
 
 public class TrainFOM extends BaseCommandlineTool {
 

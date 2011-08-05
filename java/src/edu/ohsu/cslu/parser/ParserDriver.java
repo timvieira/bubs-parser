@@ -66,9 +66,9 @@ import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelectorFactory;
+import edu.ohsu.cslu.parser.fom.BoundaryInOut;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritFactory;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
@@ -101,7 +101,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
     // Global vars to create parser
     public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
-    public EdgeSelectorFactory edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
+    public FigureOfMeritFactory edgeSelectorFactory = new FigureOfMeritFactory(EdgeSelectorType.Inside);
     Grammar grammar, coarseGrammar;
     static String commandLineArgStr = "";
 
@@ -222,16 +222,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             this.grammar = (Grammar) ois.readObject();
 
             BaseLogger.singleton().finer("Reading FOM...");
-            edgeSelectorFactory = (EdgeSelectorFactory) ois.readObject();
+            edgeSelectorFactory = (FigureOfMeritFactory) ois.readObject();
 
         } else {
 
             if (fomTypeOrModel.equals("Inside")) {
-                edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.Inside);
+                edgeSelectorFactory = new FigureOfMeritFactory(EdgeSelectorType.Inside);
             } else if (fomTypeOrModel.equals("NormalizedInside")) {
-                edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.NormalizedInside);
+                edgeSelectorFactory = new FigureOfMeritFactory(EdgeSelectorType.NormalizedInside);
             } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
-                edgeSelectorFactory = new EdgeSelectorFactory(EdgeSelectorType.InsideWithFwdBkwd);
+                edgeSelectorFactory = new FigureOfMeritFactory(EdgeSelectorType.InsideWithFwdBkwd);
             } else if (new File(fomTypeOrModel).exists()) {
                 // Assuming boundary FOM
                 Grammar fomGrammar = grammar;

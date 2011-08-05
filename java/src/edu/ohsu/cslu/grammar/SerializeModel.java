@@ -34,9 +34,9 @@ import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
 import cltool4j.args4j.Argument;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.BoundaryInOut;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
 
 /**
  * Command-line tool to convert textual grammar formats to Java serialized object format.
@@ -95,7 +95,7 @@ public class SerializeModel extends BaseCommandlineTool {
             g = (Grammar) Class.forName(grammarClass).getConstructor(Grammar.class).newInstance(g);
         }
 
-        EdgeSelector fom = null;
+        FigureOfMerit fom = null;
         if (fomModelFileName != null) {
             BaseLogger.singleton().info("Reading FOM...");
             // Handle gzipped and non-gzipped model files

@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser.edgeselector;
+package edu.ohsu.cslu.parser.fom;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,7 +34,7 @@ import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.util.Strings;
 
-public class WeightedFeatures extends EdgeSelector {
+public class WeightedFeatures extends FigureOfMerit {
 
     private static final long serialVersionUID = 1L;
 

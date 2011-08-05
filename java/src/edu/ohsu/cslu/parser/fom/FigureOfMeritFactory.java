@@ -16,29 +16,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser.edgeselector;
+package edu.ohsu.cslu.parser.fom;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
 
 /**
- * Represents a model for edge selection and creates edge selector instances using that model (see {@link EdgeSelector}
+ * Represents a model for edge selection and creates edge selector instances using that model (see {@link FigureOfMerit}
  * ). Implementations may constrain parse forest population (for agenda parsers) or cell population (for chart parsers)
  * by lexical analysis of the sentence or other outside information.
  */
-public class EdgeSelectorFactory {
+public class FigureOfMeritFactory {
 
     protected EdgeSelectorType type;
 
-    public EdgeSelectorFactory(final EdgeSelectorType type) {
+    public FigureOfMeritFactory(final EdgeSelectorType type) {
         this.type = type;
     }
 
     /**
-     * @return a new {@link EdgeSelector} instance based on this model.
+     * @return a new {@link FigureOfMerit} instance based on this model.
      */
-    public EdgeSelector createEdgeSelector(final Grammar grammar) {
+    public FigureOfMerit createEdgeSelector(final Grammar grammar) {
         switch (type) {
         case Inside:
             return new InsideProb();

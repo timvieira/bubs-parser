@@ -9,8 +9,8 @@ import java.util.zip.GZIPInputStream;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.BoundaryInOut;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 
 /**

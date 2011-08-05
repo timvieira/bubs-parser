@@ -16,21 +16,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser.edgeselector;
+package edu.ohsu.cslu.parser.fom;
 
 
 /**
- * Simple edge ranking by inside grammar probability.
+ * Normalizes inside grammar probability by span length.
  * 
  * @author Nathan Bodenstab
  */
-public class InsideProb extends EdgeSelector {
+public class NormalizedInsideProb extends InsideProb {
 
     private static final long serialVersionUID = 1L;
 
     // @Override
     // public float calcFOM(final ChartEdge edge) {
-    // return edge.inside();
+    // final int spanLength = edge.end() - edge.start();
+    // // return edge.inside() + spanLength * ParserDriver.param1;
+    // return edge.inside() + spanLength;
     // }
 
     @Override
@@ -42,4 +44,5 @@ public class InsideProb extends EdgeSelector {
     public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
         return insideProbability;
     }
+
 }
