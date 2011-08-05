@@ -38,7 +38,7 @@ public class FigureOfMeritFactory {
     /**
      * @return a new {@link FigureOfMerit} instance based on this model.
      */
-    public FigureOfMerit createEdgeSelector(final Grammar grammar) {
+    public FigureOfMerit createFOM(final Grammar grammar) {
         switch (type) {
         case Inside:
             return new InsideProb();
@@ -47,7 +47,7 @@ public class FigureOfMeritFactory {
         case WeightedFeatures:
             return new WeightedFeatures(grammar);
         default:
-            BaseLogger.singleton().info("ERROR: EdgeSelectorType " + type + " not supported.");
+            BaseLogger.singleton().info("ERROR: FOMType " + type + " not supported.");
             System.exit(1);
             return null;
         }

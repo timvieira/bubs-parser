@@ -27,7 +27,7 @@ import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.BinaryPerceptronSet;
 import edu.ohsu.cslu.perceptron.Classifier;
@@ -80,8 +80,8 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
         beamWidthModel.setBias(beamModelBias);
 
         BaseLogger.singleton().finer(
-                "INFO: beamconf: inferFactoredCells=" + ParserUtil.bool2int(inferFactoredCells) + " classifyBaseCells="
-                        + ParserUtil.bool2int(classifyBaseCells));
+                "INFO: beamconf: inferFactoredCells=" + Util.bool2int(inferFactoredCells) + " classifyBaseCells="
+                        + Util.bool2int(classifyBaseCells));
     }
 
     public CellSelector createCellSelector() {

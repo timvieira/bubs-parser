@@ -433,7 +433,7 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // for (final ChartEdge possUnaryChild : chart.getCell(start, end).getEdges()) {
     // for (final Production p : grammar.getUnaryProductionsWithChild(possUnaryChild.prod.parent)) {
     // final float prob = p.prob + possUnaryChild.inside;
-    // edge = chart.new ChartEdge(p, cell, prob, edgeSelector);
+    // edge = chart.new ChartEdge(p, cell, prob, fomModel);
     // addEdgeToArray(edge, bestEdges);
     // // addEdgeToAgenda(edge, agenda);
     // // addEdgeToAgenda(edge, agenda, goldEdges);
@@ -450,7 +450,7 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // if (possibleProds != null) {
     // for (final Production p : possibleProds) {
     // final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
-    // edge = chart.new ChartEdge(p, leftCell, rightCell, prob, edgeSelector);
+    // edge = chart.new ChartEdge(p, leftCell, rightCell, prob, fomModel);
     // addEdgeToArray(edge, bestEdges);
     // // addEdgeToAgenda(edge, agenda);
     // // addEdgeToAgenda(edge, agenda, goldEdges);
@@ -520,7 +520,7 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // numAdded++;
     // // Add unary productions to agenda so they can compete with binary productions
     // for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-    // unaryEdge = chart.new ChartEdge(p, cell, p.prob + edge.inside, edgeSelector);
+    // unaryEdge = chart.new ChartEdge(p, cell, p.prob + edge.inside, fomModel);
     // addEdgeToAgenda(unaryEdge, agenda);
     // }
     // }
@@ -618,7 +618,7 @@ public class BSCPPerceptronCellTrainer extends BeamSearchChartParser<LeftHashGra
     // numAdded++;
     // // Add unary productions to agenda so they can compete with binary productions
     // for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-    // unaryEdge = chart.new ChartEdge(p, cell, p.prob + edge.inside, edgeSelector);
+    // unaryEdge = chart.new ChartEdge(p, cell, p.prob + edge.inside, fomModel);
     // addEdgeToAgenda(unaryEdge, agenda);
     // }
     // }

@@ -202,7 +202,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     public final static String OPT_CONFIGURED_THREAD_COUNT = "actualThreads";
 
     public static void main(final String[] args) {
-        commandLineArgStr = ParserUtil.join(args, " ");
+        commandLineArgStr = Util.join(args, " ");
         run(args);
     }
 

@@ -48,7 +48,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
         initParser(tokens);
         addLexicalProductions(tokens);
-        edgeSelector.init(tokens);
+        fomModel.init(tokens);
         cellConstraints.initSentence(chart, currentInput.sentenceNumber, currentInput.sentence);
         addUnaryExtensionsToLexProds();
 

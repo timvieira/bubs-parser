@@ -57,7 +57,7 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
 
         initParser(tokens);
         addLexicalProductions(tokens);
-        edgeSelector.init(tokens);
+        fomModel.init(tokens);
 
         // for (final ChartEdge lexEdge : edgesToExpand) {
         // expandFrontier(lexEdge, chart.getCell(lexEdge.start(), lexEdge.end()));

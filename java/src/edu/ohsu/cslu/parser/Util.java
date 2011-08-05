@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.zip.GZIPInputStream;
 
-public class ParserUtil {
+public class Util {
 
     public static String join(final Collection<String> s, final String delimiter) {
         final StringBuilder buffer = new StringBuilder();

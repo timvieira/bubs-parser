@@ -25,7 +25,7 @@ import java.util.Arrays;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 
 public class Perceptron extends Classifier {
 
@@ -51,7 +51,7 @@ public class Perceptron extends Classifier {
         this.featureTemplate = featureTemplate;
         // initBins(binsStr);
         this.binsStr = binsStr;
-        this.bins = ParserUtil.strToIntArray(binsStr);
+        this.bins = Util.strToIntArray(binsStr);
 
         bias = new float[numClasses()];
         Arrays.fill(bias, 0.0f); // default to no bias

@@ -115,7 +115,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         numReparses = -1;
 
         final long startTimeMS = System.currentTimeMillis();
-        edgeSelector.init(tokens);
+        fomModel.init(tokens);
         final long endTimeMS = System.currentTimeMillis();
         currentInput.fomInitMs = endTimeMS - startTimeMS;
 
@@ -174,8 +174,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final boolean hasCellConstraints = cellSelector.hasCellConstraints();
         final CellConstraints cc = cellSelector.getCellConstraints();
 
-        // final boolean only1BestPOS = ParserDriver.param1 == 1 && (edgeSelector instanceof BoundaryInOut);
-
         if (end - start == 1) {
             // lexical and unary productions can't compete in the same agenda until their FOM
             // scores are changed to be comparable
@@ -183,7 +181,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 currentInput.nLex += 1;
                 // TODO: need to be able to get POS posteriors. We could use this as the FOM and rank just
                 // like others
-                // if (!only1BestPOS || ((BoundaryInOut) edgeSelector).get1bestPOSTag(start) ==
+                // if (!only1BestPOS || ((BoundaryInOut) fomModel).get1bestPOSTag(start) ==
                 // lexProd.parent) {
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
                 if (hasCellConstraints == false || cc.isUnaryOpen(start, end)) {
@@ -256,7 +254,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         cellConsidered++;
 
         // BaseLogger.singleton().finest("Adding: " + ((BoundaryInOutSelector)
-        // edgeSelector).calcFOMToString(edge.start(), edge.end(),(short) edge.prod.parent, edge.inside()));
+        // fomModel).calcFOMToString(edge.start(), edge.end(),(short) edge.prod.parent, edge.inside()));
 
         if (fomCheckAndUpdate(edge)) {
             agenda.add(edge);
@@ -271,7 +269,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             cellPopped++;
 
             // BaseLogger.singleton().finer("Popping: "+ ((BoundaryInOutSelector)
-            // edgeSelector).calcFOMToString(edge.start(), edge.end(),(short) edge.prod.parent, edge.inside()));
+            // fomModel).calcFOMToString(edge.start(), edge.end(),(short) edge.prod.parent, edge.inside()));
 
             if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
