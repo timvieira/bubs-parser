@@ -260,7 +260,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
 
         parser = createParser(simpleGrammar1, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
 
-        final String bestParseTree = parser.parseSentence(sentence).parseBracketString(false, false);
+        final String bestParseTree = parser.parseSentence(sentence).parseBracketString(true, false);
         assertEquals("(ROOT (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree);
     }
 
@@ -275,7 +275,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
 
         parser = createParser(simpleGrammar2, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
 
-        final String bestParseTree = parser.parseSentence(sentence).parseBracketString(false, false);
+        final String bestParseTree = parser.parseSentence(sentence).parseBracketString(true, false);
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);
     }
 
@@ -355,8 +355,8 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     }
 
     protected void parseTreebankSentence(final int index) throws Exception {
-        final String bestParseTree = parser.parseSentence(sentences.get(index)[0]).parseBracketString(false, false);
-        assertEquals(sentences.get(index)[1], bestParseTree.toString());
+        final String bestParseTree = parser.parseSentence(sentences.get(index)[0]).parseBracketString(true, false);
+        assertEquals(sentences.get(index)[1], bestParseTree);
     }
 
 }
