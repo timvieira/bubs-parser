@@ -616,6 +616,11 @@ public class PackedArrayChart extends ParallelArrayChart {
 
         @Override
         public String toString() {
+            return toString(false);
+        }
+
+        @Override
+        public String toString(final boolean formatFractions) {
             final StringBuilder sb = new StringBuilder(256);
 
             sb.append("PackedArrayChartCell[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
@@ -630,7 +635,8 @@ public class PackedArrayChart extends ParallelArrayChart {
 
                     final int nonTerminal = nonTerminalIndices[index];
 
-                    sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint));
+                    sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint,
+                            formatFractions));
                 }
 
             } else {
@@ -642,7 +648,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                         final float insideProbability = tmpInsideProbabilities[nonTerminal];
                         final int midpoint = tmpMidpoints[nonTerminal];
 
-                        sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint));
+                        sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint,
+                                formatFractions));
                     }
                 }
             }
