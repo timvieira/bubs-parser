@@ -30,7 +30,7 @@ import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 /**
  * Implements Caraballo and Charniak's (1998) boundary in-out figure-of-merit.
@@ -46,7 +46,7 @@ public final class BoundaryInOut extends FigureOfMeritFactory {
     // Model params learned from training data
     private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
 
-    public BoundaryInOut(final EdgeSelectorType type, final Grammar grammar, final BufferedReader modelStream)
+    public BoundaryInOut(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
             throws IOException {
 
         super(type);

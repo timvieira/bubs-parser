@@ -32,7 +32,7 @@ import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -58,7 +58,7 @@ public class ProfileBoundaryInOut {
             parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
                     JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
         }
-        final BoundaryInOut parentBioFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut,
+        final BoundaryInOut parentBioFactory = new BoundaryInOut(FOMType.BoundaryInOut,
                 parentAnnotatedGrammar, new BufferedReader(
                         JUnit.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
 
@@ -68,7 +68,7 @@ public class ProfileBoundaryInOut {
             berkeleyGrammar = new LeftCscSparseMatrixGrammar(
                     JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
         }
-        final BoundaryInOut berkeleyBioFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, berkeleyGrammar,
+        final BoundaryInOut berkeleyBioFactory = new BoundaryInOut(FOMType.BoundaryInOut, berkeleyGrammar,
                 new BufferedReader(JUnit.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
         berkeleyBio = (BoundaryInOutSelector) berkeleyBioFactory.createEdgeSelector(berkeleyGrammar);
     }

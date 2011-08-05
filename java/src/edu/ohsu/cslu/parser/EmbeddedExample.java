@@ -10,7 +10,7 @@ import java.util.zip.GZIPInputStream;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 
 /**
@@ -34,8 +34,8 @@ public class EmbeddedExample {
         final LeftCscSparseMatrixGrammar grammar = new LeftCscSparseMatrixGrammar(uncompressFile(args[0]));
         opts.grammar = grammar;
 
-        // Create EdgeSelectorFactory and CellSelectorFactory instances and load models from disk
-        opts.edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, uncompressFile(args[1]));
+        // Create FOMFactory and CellSelectorFactory instances and load models from disk
+        opts.fomFactory = new BoundaryInOut(FOMType.BoundaryInOut, grammar, uncompressFile(args[1]));
         opts.cellSelectorFactory = new PerceptronBeamWidthFactory(uncompressFile(args[2]));
 
         // Create a Parser instance

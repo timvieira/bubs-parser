@@ -29,8 +29,8 @@ import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.ecp.ExhaustiveChartParserTestCase;
 
 /**
  * Unit tests for {@link PackedArrayChart}
@@ -47,13 +47,12 @@ public class TestPackedArrayChart {
     /**
      * Constructs the grammar (if necessary) and a new parser instance. Run prior to each test method.
      * 
-     * @throws Exception
-     *             if unable to construct grammar or parser.
+     * @throws Exception if unable to construct grammar or parser.
      */
     @Before
     public void setUp() throws Exception {
         simpleGrammar2 = GrammarTestCase.createGrammar(LeftCscSparseMatrixGrammar.class,
-            ExhaustiveChartParserTestCase.simpleGrammar2());
+                ExhaustiveChartParserTestCase.simpleGrammar2());
     }
 
     @Test
