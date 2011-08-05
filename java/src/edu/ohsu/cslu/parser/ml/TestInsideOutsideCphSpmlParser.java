@@ -97,7 +97,7 @@ public class TestInsideOutsideCphSpmlParser {
         sb.append("NP => NN RB -1.791759469\n"); // 1/6
         sb.append("@NP => NN NN 0\n"); // 1
         sb.append("VP => VB RB -0.693147181\n"); // 1/2
-        sb.append("VP => VB -1.386294361\n"); // 1/2
+        sb.append("VP => VB -0.693147181\n"); // 1/2
 
         sb.append(Grammar.LEXICON_DELIMITER);
         sb.append('\n');
@@ -127,6 +127,7 @@ public class TestInsideOutsideCphSpmlParser {
                 simpleGrammar2(), PerfectIntPairHashPackingFunction.class));
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString;
+        System.out.println(parser.chart.toString(true));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);
     }
 

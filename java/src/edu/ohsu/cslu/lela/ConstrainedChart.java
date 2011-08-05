@@ -432,6 +432,11 @@ public class ConstrainedChart extends ParallelArrayChart {
 
         @Override
         public String toString() {
+            return toString(false);
+        }
+
+        @Override
+        public String toString(final boolean formatFractions) {
             return extractBestParse(0).toString();
         }
     }

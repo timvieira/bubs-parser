@@ -208,12 +208,16 @@ public abstract class ParallelArrayChart extends Chart {
 
     @Override
     public String toString() {
+        return toString(false);
+    }
+
+    public String toString(final boolean formatFractions) {
         final StringBuilder sb = new StringBuilder();
 
         for (int span = 1; span <= size; span++) {
             for (int start = 0; start <= size - span; start++) {
                 final int end = start + span;
-                sb.append(getCell(start, end).toString());
+                sb.append(getCell(start, end).toString(formatFractions));
                 sb.append("\n\n");
             }
         }
@@ -243,7 +247,7 @@ public abstract class ParallelArrayChart extends Chart {
         }
 
         protected String formatCellEntry(final int nonterminal, final int childProductions,
-                final float insideProbability, final int midpoint) {
+                final float insideProbability, final int midpoint, final boolean formatFractions) {
             final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
             final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
 
@@ -261,5 +265,7 @@ public abstract class ParallelArrayChart extends Chart {
                         insideProbability, midpoint);
             }
         }
+
+        public abstract String toString(final boolean formatFractions);
     }
 }

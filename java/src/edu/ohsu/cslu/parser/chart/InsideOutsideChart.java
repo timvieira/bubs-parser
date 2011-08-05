@@ -6,6 +6,7 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.tests.JUnit;
 
 public class InsideOutsideChart extends PackedArrayChart {
 
@@ -28,14 +29,17 @@ public class InsideOutsideChart extends PackedArrayChart {
         this.maxcUnaryChildren = new short[maxcArraySize];
     }
 
-    public void finalizeOutside(final float[] tmpOutsideProbabilities, final int offset) {
+    public void finalizeOutside(final float[] tmpOutsideProbabilities, final int cellIndex) {
 
-        // Copy all populated entries from temporary storage
-        int nonTerminalOffset = offset;
-        for (short nonTerminal = 0; nonTerminal < tmpOutsideProbabilities.length; nonTerminal++) {
+        // Copy from temporary storage all entries which have non-0 inside and outside probabilities
+        final int startIndex = offset(cellIndex);
+        final int endIndex = startIndex + numNonTerminals[cellIndex];
 
+        for (int i = startIndex; i < endIndex; i++) {
+
+            final int nonTerminal = nonTerminalIndices[i];
             if (tmpOutsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
-                outsideProbabilities[nonTerminalOffset++] = tmpOutsideProbabilities[nonTerminal];
+                outsideProbabilities[i] = tmpOutsideProbabilities[nonTerminal];
             }
         }
     }
@@ -47,7 +51,8 @@ public class InsideOutsideChart extends PackedArrayChart {
 
         // Start symbol inside-probability (e)
         final int topCellIndex = cellIndex(0, size);
-        final float startSymbolInsideProbability = insideProbabilities[entryIndex(offset(topCellIndex), numNonTerminals[topCellIndex], (short) sparseMatrixGrammar.startSymbol)];
+        final float startSymbolInsideProbability = insideProbabilities[entryIndex(offset(topCellIndex),
+                numNonTerminals[topCellIndex], (short) sparseMatrixGrammar.startSymbol)];
 
         Arrays.fill(maxcEntries, Short.MIN_VALUE);
         Arrays.fill(maxcScores, Float.NEGATIVE_INFINITY);
@@ -196,6 +201,11 @@ public class InsideOutsideChart extends PackedArrayChart {
 
         @Override
         public String toString() {
+            return toString(false);
+        }
+
+        @Override
+        public String toString(final boolean formatFractions) {
             final StringBuilder sb = new StringBuilder(256);
 
             sb.append("InsideOutsideChartCell[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
@@ -227,7 +237,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                     final int nonTerminal = nonTerminalIndices[index];
 
                     sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint,
-                            outsideProbability));
+                            outsideProbability, formatFractions));
                 }
             } else {
                 // Format entries from temporary cell storage
@@ -240,36 +250,59 @@ public class InsideOutsideChart extends PackedArrayChart {
                         final int midpoint = tmpMidpoints[nonTerminal];
 
                         sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint,
-                                outsideProbability));
+                                outsideProbability, formatFractions));
                     }
                 }
             }
             return sb.toString();
         }
 
-        protected String formatCellEntry(final int nonterminal, final int childProductions,
-                final float insideProbability, final int midpoint, final float outsideProbability) {
+        private String formatCellEntry(final int nonterminal, final int childProductions,
+                final float insideProbability, final int midpoint, final float outsideProbability,
+                final boolean formatFractions) {
             final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
             final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
 
-            if (rightChild == Production.UNARY_PRODUCTION) {
-                // Unary Production
-                return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
-                        sparseMatrixGrammar.mapNonterminal(nonterminal), sparseMatrixGrammar.mapNonterminal(leftChild),
-                        insideProbability, midpoint, outsideProbability);
-            } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-                // Lexical Production
-                return String
-                        .format("%s -> %s (%.5f, %d) outside=%.5f\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
-                                sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint,
-                                outsideProbability);
+            if (formatFractions) {
+                if (rightChild == Production.UNARY_PRODUCTION) {
+                    // Unary Production
+                    return String.format("%s -> %s (%s, %d) outside=%s\n",
+                            sparseMatrixGrammar.mapNonterminal(nonterminal),
+                            sparseMatrixGrammar.mapNonterminal(leftChild), JUnit.fraction(insideProbability), midpoint,
+                            JUnit.fraction(outsideProbability));
+                } else if (rightChild == Production.LEXICAL_PRODUCTION) {
+                    // Lexical Production
+                    return String.format("%s -> %s (%s, %d) outside=%s\n",
+                            sparseMatrixGrammar.mapNonterminal(nonterminal),
+                            sparseMatrixGrammar.mapLexicalEntry(leftChild), JUnit.fraction(insideProbability),
+                            midpoint, JUnit.fraction(outsideProbability));
+                } else {
+                    return String.format("%s -> %s %s (%s, %d) outside=%s\n",
+                            sparseMatrixGrammar.mapNonterminal(nonterminal),
+                            sparseMatrixGrammar.mapNonterminal(leftChild),
+                            sparseMatrixGrammar.mapNonterminal(rightChild), JUnit.fraction(insideProbability),
+                            midpoint, JUnit.fraction(outsideProbability));
+                }
             } else {
-                return String
-                        .format("%s -> %s %s (%.5f, %d) outside=%.5f\n",
-                                sparseMatrixGrammar.mapNonterminal(nonterminal),
-                                sparseMatrixGrammar.mapNonterminal(leftChild),
-                                sparseMatrixGrammar.mapNonterminal(rightChild), insideProbability, midpoint,
-                                outsideProbability);
+                if (rightChild == Production.UNARY_PRODUCTION) {
+                    // Unary Production
+                    return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
+                            sparseMatrixGrammar.mapNonterminal(nonterminal),
+                            sparseMatrixGrammar.mapNonterminal(leftChild), insideProbability, midpoint,
+                            outsideProbability);
+                } else if (rightChild == Production.LEXICAL_PRODUCTION) {
+                    // Lexical Production
+                    return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
+                            sparseMatrixGrammar.mapNonterminal(nonterminal),
+                            sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint,
+                            outsideProbability);
+                } else {
+                    return String.format("%s -> %s %s (%.5f, %d) outside=%.5f\n",
+                            sparseMatrixGrammar.mapNonterminal(nonterminal),
+                            sparseMatrixGrammar.mapNonterminal(leftChild),
+                            sparseMatrixGrammar.mapNonterminal(rightChild), insideProbability, midpoint,
+                            outsideProbability);
+                }
             }
         }
     }
