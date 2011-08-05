@@ -26,7 +26,7 @@ import java.io.Serializable;
 import edu.ohsu.cslu.parser.Parser;
 
 /**
- * An edge selector for a particular parser. {@link FigureOfMerit} instances are not required (or expected) to be
+ * A figure-of-merit model for a particular parser. {@link FigureOfMerit} instances are not required (or expected) to be
  * thread-safe across multiple simultaneous sentences, so an instance should not be shared by multiple {@link Parser}
  * instances. Model parameters should be stored in a shared {@link FigureOfMeritFactory}.
  */

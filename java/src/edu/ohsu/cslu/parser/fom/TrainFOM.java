@@ -26,28 +26,20 @@ import java.io.OutputStreamWriter;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
+import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
+import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
 
 public class TrainFOM extends BaseCommandlineTool {
 
     @Option(name = "-fom", required = true, usage = "FOM to train.  Supports BoundaryInOut,Discriminative")
     private FOMType fomType = null;
 
-    // == Parser options ==
-    // @Option(name = "-p", aliases = { "--parser" }, metaVar = "parser", usage = "Parser implementation")
-    // public ParserType parserType = ParserType.CKY;
-
-    // @Option(name = "-rp", metaVar = "parser", usage = "Research Parser implementation")
-    private ResearchParserType researchParserType = ResearchParserType.ECPCellCrossList;
-
     @Option(name = "-g", required = true, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
     private String grammarFile = null;
-
-    // @Option(name = "-boundaryFOM", usage = "Train a Boundary Figure of Merit model")
-    // public boolean boundaryFOM = false;
-    // public EdgeSelectorType edgeFOMType = null;
 
     @Option(name = "-counts", usage = "Write model counts instead of log probabilities (only BoundaryInOut)")
     public boolean writeCounts = false;
@@ -55,15 +47,8 @@ public class TrainFOM extends BaseCommandlineTool {
     @Option(name = "-smooth", metaVar = "N", usage = "Apply add-N smoothing to model (only BoundaryInOut)")
     public float smoothingCount = (float) 0.5;
 
-    // @Option(name = "-beamConf", usage = "Train Beam Confidence model")
-    // public boolean beamConf = false;
-
-    // @Option(name = "-cellConstraints", usage = "Train a Cell Constraints model")
-    // public boolean cellConstraints = false;
-
     public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
     public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
-    private Grammar grammar;
 
     public static void main(final String[] args) {
         run(args);
@@ -71,11 +56,22 @@ public class TrainFOM extends BaseCommandlineTool {
 
     @Override
     public void run() throws Exception {
-        // To train a BoundaryInOut FOM model we need a grammar and
-        // binarized gold input trees with NTs from same grammar
-        grammar = ParserDriver.readGrammar(grammarFile, researchParserType, null);
-        final BoundaryInOut edgeSelectorModel = new BoundaryInOut(FOMType.BoundaryInOut, grammar, null);
-        edgeSelectorModel.train(inputStream, outputStream, smoothingCount, writeCounts);
+        if (fomType == FOMType.BoundaryInOut) {
+            // To train a BoundaryInOut FOM model we need a grammar and
+            // binarized gold input trees with NTs from same grammar
+            final Grammar grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
+            final BoundaryInOut fomModel = new BoundaryInOut(FOMType.BoundaryInOut, grammar, null);
+            fomModel.train(inputStream, outputStream, smoothingCount, writeCounts);
+        } else if (fomType == FOMType.Discriminative) {
+            final Grammar grammar = ParserDriver.readGrammar(grammarFile,
+                    ResearchParserType.InsideOutsideCartesianProductHash, CartesianProductFunctionType.PerfectHash);
+            final ParserDriver opts = new ParserDriver();
+            final InsideOutsideCphSpmlParser parser = new InsideOutsideCphSpmlParser(opts,
+                    (InsideOutsideCscSparseMatrixGrammar) grammar);
+
+        } else {
+            throw new IllegalArgumentException("FOM type '" + fomType + "' not supported.");
+        }
 
         // } else if (beamConf == true) {
         // final ModelTrainer m = new ModelTrainer();
