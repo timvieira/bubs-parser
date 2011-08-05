@@ -90,11 +90,11 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
-        internalVisitCell(start, end);
+    protected void computeInsideProbabilities(final short start, final short end) {
+        internalComputeInsideProbabilities(start, end);
     }
 
-    protected void internalVisitCell(final short start, final short end) {
+    protected void internalComputeInsideProbabilities(final short start, final short end) {
 
         final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
 

@@ -115,7 +115,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         numReparses = -1;
 
         final long startTimeMS = System.currentTimeMillis();
-        edgeSelector.init(chart);
+        edgeSelector.init(tokens);
         final long endTimeMS = System.currentTimeMillis();
         currentInput.fomInitMs = endTimeMS - startTimeMS;
 
@@ -148,7 +148,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             while (cellSelector.hasNext()) {
 
                 final short[] startAndEnd = cellSelector.next();
-                visitCell(startAndEnd[0], startAndEnd[1]);
+                computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
 
                 currentInput.totalPushes += cellPushed;
                 currentInput.totalPops += cellPopped;
@@ -167,7 +167,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
         final HashSetChartCell cell = chart.getCell(start, end);
         ChartEdge edge;
         initCell(start, end);

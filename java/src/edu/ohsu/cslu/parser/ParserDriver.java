@@ -290,7 +290,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
         case ECPCellCrossList:
             return new LeftListGrammar(genericGrammar);
 
-            // case ECPInsideOutside:
         case ECPCellCrossHashGrammarLoop:
         case ECPCellCrossHashGrammarLoop2:
         case ECPCellCrossHash:

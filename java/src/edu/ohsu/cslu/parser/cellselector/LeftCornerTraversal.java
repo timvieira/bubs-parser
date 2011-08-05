@@ -43,9 +43,8 @@ public class LeftCornerTraversal extends CellSelector {
     public void initSentence(final ChartParser<?, ?> parser) {
         // cellList = new LinkedList<ArrayChartCell>();
         /*
-         * for (int span=2; span<=this.parser.chartSize; span++) { for (int beg=0;
-         * beg<this.parser.chartSize-span+1; beg++) { // beginning cellList.add(parser.chart[beg][beg+span]);
-         * } }
+         * for (int span=2; span<=this.parser.chartSize; span++) { for (int beg=0; beg<this.parser.chartSize-span+1;
+         * beg++) { // beginning cellList.add(parser.chart[beg][beg+span]); } }
          */
         BaseLogger.singleton().info("ERROR: LeftCornerTraversal() not implemented.");
         System.exit(1);
