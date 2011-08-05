@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser.edgeselector;
+package edu.ohsu.cslu.parser.fom;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -30,14 +30,14 @@ import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.ParserUtil;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
 
 /**
  * Implements Caraballo and Charniak's (1998) boundary in-out figure-of-merit.
  * 
  * @author Nathan Bodenstab
  */
-public final class BoundaryInOut extends EdgeSelectorFactory {
+public final class BoundaryInOut extends FigureOfMeritFactory {
 
     private Grammar grammar;
     private int posNgramOrder = 2;
@@ -76,7 +76,7 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
     }
 
     @Override
-    public EdgeSelector createEdgeSelector(final Grammar grammar) {
+    public FigureOfMerit createEdgeSelector(final Grammar grammar) {
         switch (type) {
         case BoundaryInOut:
             return new BoundaryInOutSelector();
@@ -348,7 +348,7 @@ public final class BoundaryInOut extends EdgeSelectorFactory {
     // outStream.close();
     // }
 
-    public class BoundaryInOutSelector extends EdgeSelector {
+    public class BoundaryInOutSelector extends FigureOfMerit {
 
         private static final long serialVersionUID = 1L;
 

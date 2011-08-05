@@ -25,7 +25,7 @@ import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.edgeselector.EdgeSelector;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
@@ -70,7 +70,7 @@ public abstract class Parser<G extends Grammar> {
     public ParserDriver opts;
 
     // TODO Make this reference final (once we work around the hack in CellChart)
-    public EdgeSelector edgeSelector;
+    public FigureOfMerit edgeSelector;
     public final CellSelector cellSelector;
 
     public ParseContext currentInput; // temporary so I don't break too much stuff at once

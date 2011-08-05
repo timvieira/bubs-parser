@@ -23,7 +23,7 @@ import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.edgeselector.BoundaryInOut.BoundaryInOutSelector;
+import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
 
 /**
  * @author Nathan Bodenstab
