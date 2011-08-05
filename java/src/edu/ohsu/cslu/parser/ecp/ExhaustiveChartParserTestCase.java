@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.ecp;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,6 +40,8 @@ import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
+import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;

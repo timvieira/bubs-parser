@@ -27,7 +27,7 @@ import org.junit.Test;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.parser.ExhaustiveChartParserTestCase;
+import edu.ohsu.cslu.parser.ecp.ExhaustiveChartParserTestCase;
 
 public class TestCartesianProductHashSpmlParser extends ExhaustiveChartParserTestCase<CartesianProductHashSpmlParser> {
 

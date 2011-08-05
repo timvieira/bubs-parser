@@ -36,7 +36,7 @@ import cltool4j.args4j.Argument;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 /**
  * Command-line tool to convert textual grammar formats to Java serialized object format.
@@ -53,7 +53,7 @@ public class SerializeModel extends BaseCommandlineTool {
     public String grammarClass;
 
     @Option(name = "-fom", metaVar = "fom", usage = "Figure of Merit")
-    public EdgeSelectorType fomType;
+    public FOMType fomType;
 
     @Option(name = "-fomModel", metaVar = "file", usage = "FOM model file")
     private String fomModelFileName;
@@ -104,7 +104,7 @@ public class SerializeModel extends BaseCommandlineTool {
                     : new BufferedReader(new FileReader(fomModelFileName));
             switch (fomType) {
                 case BoundaryInOut:
-                    fom = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, g, fomModelReader)
+                    fom = new BoundaryInOut(FOMType.BoundaryInOut, g, fomModelReader)
                         .createEdgeSelector(g);
                     break;
                 default:

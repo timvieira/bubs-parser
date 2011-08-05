@@ -16,22 +16,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.ecp;
 
 import org.cjunit.PerformanceTest;
 import org.junit.Test;
 
 /**
- * Unit and performance tests for {@link TestECPGramLoop}
+ * Unit and performance tests for {@link TestECPCellCrossMatrix}
  * 
  * @author Aaron Dunlop
  * @since Dec 23, 2009
  */
-public class TestECPGramLoop extends ExhaustiveChartParserTestCase<ECPGrammarLoop> {
+public class TestECPCellCrossMatrix extends ExhaustiveChartParserTestCase<ECPCellCrossMatrix> {
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "20382", "d820", "31297" })
+    @PerformanceTest({ "mbp", "64582", "d820", "120416" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

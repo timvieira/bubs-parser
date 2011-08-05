@@ -28,11 +28,12 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 public class TrainFOM extends BaseCommandlineTool {
 
-    // TODO: should combine this with ModelTrainer
+    @Option(name = "-fom", required = true, usage = "FOM to train.  Supports BoundaryInOut,Discriminative")
+    private FOMType fomType = null;
 
     // == Parser options ==
     // @Option(name = "-p", aliases = { "--parser" }, metaVar = "parser", usage = "Parser implementation")
@@ -48,10 +49,10 @@ public class TrainFOM extends BaseCommandlineTool {
     // public boolean boundaryFOM = false;
     // public EdgeSelectorType edgeFOMType = null;
 
-    @Option(name = "-counts", usage = "Write model counts instead of log probabilities")
+    @Option(name = "-counts", usage = "Write model counts instead of log probabilities (only BoundaryInOut)")
     public boolean writeCounts = false;
 
-    @Option(name = "-smooth", metaVar = "N", usage = "Apply add-N smoothing to model")
+    @Option(name = "-smooth", metaVar = "N", usage = "Apply add-N smoothing to model (only BoundaryInOut)")
     public float smoothingCount = (float) 0.5;
 
     // @Option(name = "-beamConf", usage = "Train Beam Confidence model")
@@ -73,7 +74,7 @@ public class TrainFOM extends BaseCommandlineTool {
         // To train a BoundaryInOut FOM model we need a grammar and
         // binarized gold input trees with NTs from same grammar
         grammar = ParserDriver.readGrammar(grammarFile, researchParserType, null);
-        final BoundaryInOut edgeSelectorModel = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, grammar, null);
+        final BoundaryInOut edgeSelectorModel = new BoundaryInOut(FOMType.BoundaryInOut, grammar, null);
         edgeSelectorModel.train(inputStream, outputStream, smoothingCount, writeCounts);
 
         // } else if (beamConf == true) {

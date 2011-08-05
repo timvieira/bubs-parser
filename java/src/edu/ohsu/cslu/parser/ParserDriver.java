@@ -66,9 +66,17 @@ import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory;
 import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossHash;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop2;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossList;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossMatrix;
+import edu.ohsu.cslu.parser.ecp.ECPGrammarLoop;
+import edu.ohsu.cslu.parser.ecp.ECPGrammarLoopBerkFilter;
+import edu.ohsu.cslu.parser.ecp.ECPInsideOutside;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritFactory;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
@@ -101,7 +109,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
     // Global vars to create parser
     public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
-    public FigureOfMeritFactory edgeSelectorFactory = new FigureOfMeritFactory(EdgeSelectorType.Inside);
+    public FigureOfMeritFactory fomFactory = new FigureOfMeritFactory(FOMType.Inside);
     Grammar grammar, coarseGrammar;
     static String commandLineArgStr = "";
 
@@ -222,16 +230,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             this.grammar = (Grammar) ois.readObject();
 
             BaseLogger.singleton().finer("Reading FOM...");
-            edgeSelectorFactory = (FigureOfMeritFactory) ois.readObject();
+            fomFactory = (FigureOfMeritFactory) ois.readObject();
 
         } else {
 
             if (fomTypeOrModel.equals("Inside")) {
-                edgeSelectorFactory = new FigureOfMeritFactory(EdgeSelectorType.Inside);
+                fomFactory = new FigureOfMeritFactory(FOMType.Inside);
             } else if (fomTypeOrModel.equals("NormalizedInside")) {
-                edgeSelectorFactory = new FigureOfMeritFactory(EdgeSelectorType.NormalizedInside);
+                fomFactory = new FigureOfMeritFactory(FOMType.NormalizedInside);
             } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
-                edgeSelectorFactory = new FigureOfMeritFactory(EdgeSelectorType.InsideWithFwdBkwd);
+                fomFactory = new FigureOfMeritFactory(FOMType.InsideWithFwdBkwd);
             } else if (new File(fomTypeOrModel).exists()) {
                 // Assuming boundary FOM
                 Grammar fomGrammar = grammar;
@@ -240,8 +248,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                     BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
                     fomGrammar = coarseGrammar;
                 }
-                edgeSelectorFactory = new BoundaryInOut(EdgeSelectorType.BoundaryInOut, fomGrammar,
-                        fileAsBufferedReader(fomTypeOrModel));
+                fomFactory = new BoundaryInOut(FOMType.BoundaryInOut, fomGrammar, fileAsBufferedReader(fomTypeOrModel));
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }

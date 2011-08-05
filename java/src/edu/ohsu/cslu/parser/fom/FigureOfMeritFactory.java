@@ -20,7 +20,7 @@ package edu.ohsu.cslu.parser.fom;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
+import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 /**
  * Represents a model for edge selection and creates edge selector instances using that model (see {@link FigureOfMerit}
@@ -29,9 +29,9 @@ import edu.ohsu.cslu.parser.fom.FigureOfMerit.EdgeSelectorType;
  */
 public class FigureOfMeritFactory {
 
-    protected EdgeSelectorType type;
+    protected FOMType type;
 
-    public FigureOfMeritFactory(final EdgeSelectorType type) {
+    public FigureOfMeritFactory(final FOMType type) {
         this.type = type;
     }
 

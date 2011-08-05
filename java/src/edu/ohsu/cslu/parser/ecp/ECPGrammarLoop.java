@@ -16,25 +16,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
-package edu.ohsu.cslu.parser;
+package edu.ohsu.cslu.parser.ecp;
 
-import java.util.LinkedList;
-import java.util.List;
-
-import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 
 /**
- * Exhaustive chart parser which performs grammar intersection by iterating over grammar rules matching the observed
- * non-terminals in the left child child pairs in the cartesian product of non-terminals observed in child cells.
+ * Exhaustive chart parser which performs grammar intersection by iterating over all grammar rules at each midpoint.
  * 
  * @author Nathan Bodenstab
  */
-public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChart> {
+public class ECPGrammarLoop extends ChartParser<Grammar, CellChart> {
 
-    public ECPCellCrossMatrix(final ParserDriver opts, final ChildMatrixGrammar grammar) {
+    public ECPGrammarLoop(final ParserDriver opts, final Grammar grammar) {
         super(opts, grammar);
     }
 
@@ -43,20 +41,15 @@ public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChar
         final HashSetChartCell cell = chart.getCell(start, end);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
+            // naive traversal through all grammar rules
             final HashSetChartCell leftCell = chart.getCell(start, mid);
             final HashSetChartCell rightCell = chart.getCell(mid, end);
-            for (final int leftNT : leftCell.getLeftChildNTs()) {
-                // gramByLeft = GrammarMatrix.binaryProdMatrix.get(leftEdge.p.parent);
-                final LinkedList<Production>[] gramByLeft = grammar.binaryProdMatrix[leftNT];
-                for (final int rightNT : rightCell.getRightChildNTs()) {
-                    // validProductions = gramByLeft.get(rightEdge.p.parent);
-                    final List<Production> validProductions = gramByLeft[rightNT];
-                    if (validProductions != null) {
-                        for (final Production p : validProductions) {
-                            final float prob = p.prob + leftCell.getInside(leftNT) + rightCell.getInside(rightNT);
-                            cell.updateInside(p, leftCell, rightCell, prob);
-                        }
-                    }
+            for (final Production p : grammar.getBinaryProductions()) {
+                final float leftInside = leftCell.getInside(p.leftChild);
+                final float rightInside = rightCell.getInside(p.rightChild);
+                final float prob = p.prob + leftInside + rightInside;
+                if (prob > Float.NEGATIVE_INFINITY) {
+                    cell.updateInside(p, leftCell, rightCell, prob);
                 }
             }
         }

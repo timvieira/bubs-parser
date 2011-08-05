@@ -94,7 +94,7 @@ public abstract class Parser<G extends Grammar> {
     public Parser(final ParserDriver opts, final G grammar) {
         this.grammar = grammar;
         this.opts = opts;
-        this.edgeSelector = opts.edgeSelectorFactory.createEdgeSelector(grammar);
+        this.edgeSelector = opts.fomFactory.createEdgeSelector(grammar);
         this.cellSelector = opts.cellSelectorFactory.createCellSelector();
 
         this.collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINER);

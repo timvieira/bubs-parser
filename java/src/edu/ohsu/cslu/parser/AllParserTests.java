@@ -21,6 +21,11 @@ package edu.ohsu.cslu.parser;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+import edu.ohsu.cslu.parser.ecp.TestECPCellCrossHash;
+import edu.ohsu.cslu.parser.ecp.TestECPCellCrossList;
+import edu.ohsu.cslu.parser.ecp.TestECPCellCrossMatrix;
+import edu.ohsu.cslu.parser.ecp.TestECPGramLoop;
+import edu.ohsu.cslu.parser.ecp.TestECPGramLoopBerkFilter;
 import edu.ohsu.cslu.parser.ml.AllMatrixLoopParserTests;
 import edu.ohsu.cslu.parser.spmv.AllSparseMatrixVectorParserTests;
 
