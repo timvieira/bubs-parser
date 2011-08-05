@@ -174,7 +174,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
-            visitCell(startAndEnd[0], startAndEnd[1]);
+            computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
         }
 
         copyChartFromDevice();
@@ -215,7 +215,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
      * TODO If possible, merge or share code with {@link SparseMatrixVectorParser#visitCell}
      */
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
 
         // TODO If possible, merge or share code with SparseMat
         final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);

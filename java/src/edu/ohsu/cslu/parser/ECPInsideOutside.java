@@ -95,12 +95,12 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
         initSentence(tokens);
         cellSelector.initSentence(this);
-        edgeSelector.init(chart);
+        edgeSelector.init(tokens);
         addLexicalProductions(tokens);
 
         while (cellSelector.hasNext()) {
             final short[] startEnd = cellSelector.next();
-            visitCell(startEnd[0], startEnd[1]);
+            computeInsideProbabilities(startEnd[0], startEnd[1]);
             topDownTraversal.addFirst(chart.getCell(startEnd[0], startEnd[1]));
         }
 
@@ -481,7 +481,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
         computeInsideProbsInCell(chart.getCell(start, end));
     }
 

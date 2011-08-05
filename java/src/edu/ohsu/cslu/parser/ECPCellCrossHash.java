@@ -36,7 +36,7 @@ public class ECPCellCrossHash extends ChartParser<LeftHashGrammar, CellChart> {
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
         final HashSetChartCell cell = chart.getCell(start, end);
         float insideProb;
 

@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.chart.Chart;
 
 /**
  * An edge selector for a particular parser. {@link EdgeSelector} instances are not required (or expected) to be
@@ -49,7 +48,7 @@ public abstract class EdgeSelector implements Serializable {
         throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
     }
 
-    public void init(final Chart chart) {
+    public void init(final int[] tokens) {
         // default is to do nothing
     }
 

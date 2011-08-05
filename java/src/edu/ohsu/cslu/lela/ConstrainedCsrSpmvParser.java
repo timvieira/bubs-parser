@@ -124,7 +124,7 @@ public class ConstrainedCsrSpmvParser extends
 
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
-            visitCell(startAndEnd[0], startAndEnd[1]);
+            computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
         }
 
         long t3 = 0;

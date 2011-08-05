@@ -110,19 +110,19 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     }
 
     @Override
-    protected void visitCell(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end) {
 
         if (threadPool != null && rowThreads > 1) {
             currentTasks.add(threadPool.submit(new Runnable() {
 
                 @Override
                 public void run() {
-                    internalVisitCell(start, end);
+                    internalComputeInsideProbabilities(start, end);
                 }
             }));
 
         } else {
-            internalVisitCell(start, end);
+            internalComputeInsideProbabilities(start, end);
         }
     }
 
@@ -137,7 +137,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     }
 
     @Override
-    protected final void internalVisitCell(final short start, final short end) {
+    protected final void internalComputeInsideProbabilities(final short start, final short end) {
 
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
         long t1 = t0, t2 = t0;
