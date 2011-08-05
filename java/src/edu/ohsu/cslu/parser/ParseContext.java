@@ -18,33 +18,29 @@
  */
 package edu.ohsu.cslu.parser;
 
+import java.util.logging.Level;
+
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
-import edu.ohsu.cslu.parser.chart.GoldChart;
+import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 import edu.ohsu.cslu.util.Strings;
 
 public class ParseContext {
 
     public String sentence;
-    public String[] strTokens;
     public int[] tokens;
 
-    public String sentenceMD5;
-    // public BinaryTree<String> inputTree = null;
     public NaryTree<String> inputTree = null;
-    public GoldChart inputTreeChart = null;
-    public int sentenceNumber = -1;
-    public int sentenceLength = -1;
     public BinaryTree<String> binaryParse = null;
-    public NaryTree<String> naryParse = null;
-    public String parseBracketString = "()";
     public float insideProbability = Float.NEGATIVE_INFINITY;
-    public String parserStats = null;
-    public EvalbResult evalb = null;
+    private EvalbResult evalb = null;
+    public String chartStats = ""; // move all of these stats into this class
 
     public long totalPops = 0;
     public long totalPushes = 0;
@@ -75,8 +71,9 @@ public class ParseContext {
     public long extractTimeMs = 0;
 
     long startTime;
+    private GrammarFormatType grammarFormat;
 
-    public ParseContext(final String input, final InputFormat inputFormat, final Grammar grammar) {
+    public ParseContext(final String input, final InputFormat inputFormat, final GrammarFormatType grammarFormat) {
         try {
             // TODO We don't really need to trim both here and in Parser.parseSentence()
             if (inputFormat == InputFormat.Token) {
@@ -87,50 +84,56 @@ public class ParseContext {
                 this.inputTree = NaryTree.read(input.trim(), String.class);
                 this.sentence = Strings.join(inputTree.leafLabels(), " ");
             }
-            this.strTokens = sentence.split("\\s+");
-            this.sentenceLength = strTokens.length;
+
+            this.tokens = Grammar.tokenizer.tokenizeToIndex(sentence);
+            this.grammarFormat = grammarFormat;
 
         } catch (final Exception e) {
             e.printStackTrace();
         }
     }
 
-    // // public ParseContext(final BinaryTree<String> tree, final Grammar grammar) {
-    // public ParseContext(final NaryTree<String> tree, final Grammar grammar) {
-    //
-    // try {
-    // // inputTreeChart = new GoldChart(inputTree, grammar);
-    //
-    // this.strTokens = tree.leafLabels();
-    // this.sentence = Strings.join(strTokens, " ");
-    // this.sentenceLength = strTokens.length;
-    // this.inputTree = tree;
-    //
-    // } catch (final Exception e) {
-    // e.printStackTrace();
-    // }
-    // }
+    public String statsString() {
+        String result = "";
+        if (BaseLogger.singleton().isLoggable(Level.FINE)) {
+            result += String.format("\nINFO: sentLen=%d seconds=%.3f inside=%.5f %s ", sentenceLength(), parseTimeSec,
+                    insideProbability, chartStats);
+            if (evalb != null) {
+                result += String.format("f1=%.2f prec=%.2f recall=%.2f matched=%d gold=%d parse=%d ", evalb.f1() * 100,
+                        evalb.precision() * 100, evalb.recall() * 100, evalb.matchedBrackets, evalb.goldBrackets,
+                        evalb.parseBrackets);
+            }
+        }
 
-    @Override
-    public String toString() {
-        final String result = String
-                .format("INFO: sentNum=%d  sentLen=%d seconds=%.3f inside=%.5f pops=%d pushes=%d considered=%d chartInit=%d, fomInit=%d ccInit=%d unaryAndPruning=%d outsidePass=%d extract=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d",
-                        sentenceNumber, sentenceLength, parseTimeSec, insideProbability, totalPops, totalPushes,
-                        totalConsidered, chartInitMs, fomInitMs, ccInitMs, unaryAndPruningMs, outsidePassMs,
-                        extractTimeMs, nLex, nLexUnaryConsidered, nUnaryConsidered, nBinaryConsidered);
-
-        if (evalb != null) {
-            return result
-                    + String.format(" f1=%.2f prec=%.2f recall=%.2f matched=%d gold=%d parse=%d", evalb.f1() * 100,
-                            evalb.precision() * 100, evalb.recall() * 100, evalb.matchedBrackets, evalb.goldBrackets,
-                            evalb.parseBrackets);
+        if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+            result += String
+                    .format("pops=%d pushes=%d considered=%d chartInit=%d, fomInit=%d ccInit=%d unaryAndPruning=%d outsidePass=%d extract=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d",
+                            totalPops, totalPushes, totalConsidered, chartInitMs, fomInitMs, ccInitMs,
+                            unaryAndPruningMs, outsidePassMs, extractTimeMs, nLex, nLexUnaryConsidered,
+                            nUnaryConsidered, nBinaryConsidered);
         }
 
         return result;
     }
 
-    public String toStringWithParse() {
-        return this.parseBracketString + "\n" + toString();
+    public String parseBracketString(final boolean binaryTree, final boolean printUnkLabels) {
+        if (binaryParse == null) {
+            return "()";
+        }
+        if (printUnkLabels == false) {
+            binaryParse.replaceLeafLabels(sentence.split("\\s+"));
+        }
+        if (binaryTree) {
+            return binaryParse.toString();
+        }
+        return naryParse().toString();
+    }
+
+    public NaryTree<String> naryParse() {
+        if (binaryParse == null) {
+            return null;
+        }
+        return binaryParse.unfactor(grammarFormat);
     }
 
     public void startTime() {
@@ -139,5 +142,20 @@ public class ParseContext {
 
     public void stopTime() {
         parseTimeSec = (System.currentTimeMillis() - startTime) / 1000f;
+    }
+
+    public int sentenceLength() {
+        return tokens.length;
+    }
+
+    public boolean parseFailed() {
+        return binaryParse == null;
+    }
+
+    public void evaluate(final BracketEvaluator evaluator) {
+        if (inputTree != null && !parseFailed()) {
+            evalb = evaluator.evaluate(inputTree, naryParse());
+        }
+
     }
 }

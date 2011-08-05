@@ -108,7 +108,7 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
     protected void initSentence(final int[] tokens) {
         super.initSentence(tokens);
 
-        if (currentInput.inputTreeChart == null) {
+        if (parseTask.inputTree == null) {
             BaseLogger.singleton().info("ERROR: BSCPTrainFOMConfidence requires gold trees as input");
             System.exit(1);
         }
@@ -126,8 +126,14 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
             }
         }
 
-        final List<Chart.ChartEdge> goldEdges = (List<edu.ohsu.cslu.parser.chart.Chart.ChartEdge>) currentInput.inputTreeChart
-                .getEdgeList(cell.start(), cell.end()).clone();
+        if (true)
+            throw new IllegalArgumentException(
+                    "InputTreeChart no longer exists.  Add code to BinaryTree to get nodes from a span");
+
+        final List<Chart.ChartEdge> goldEdges = null;
+        // final List<Chart.ChartEdge> goldEdges = (List<edu.ohsu.cslu.parser.chart.Chart.ChartEdge>)
+        // currentInput.inputTreeChart
+        // .getEdgeList(cell.start(), cell.end()).clone();
 
         // remove lexical entries (we're adding them all by default) but keep unaries in span=1 cells
         if (cell.width() == 1) {
@@ -192,7 +198,8 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
             edge = agenda.poll();
         }
 
-        final SparseBitVector cellFeats = getCellFeatures(cell.start(), cell.end(), this.featTemplate.split("\\s+"));
+        final SparseBitVector cellFeats = getCellFeatures(cell.start(), cell.end(), this.featTemplate.split("\\s+"),
+                parseTask.inputTree);
 
         // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
         System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),

@@ -21,6 +21,7 @@ package edu.ohsu.cslu.parser;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
@@ -42,7 +43,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (collectDetailedStatistics) {
             final long t0 = System.currentTimeMillis();
             init(tokens);
-            currentInput.chartInitMs = System.currentTimeMillis() - t0;
+            parseTask.chartInitMs = System.currentTimeMillis() - t0;
         } else {
             init(tokens);
         }
@@ -64,7 +65,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
             if (collectDetailedStatistics) {
                 final long t1 = System.currentTimeMillis();
                 fomModel.init(tokens);
-                currentInput.fomInitMs = System.currentTimeMillis() - t1;
+                parseTask.fomInitMs = System.currentTimeMillis() - t1;
             } else {
                 fomModel.init(tokens);
             }
@@ -73,7 +74,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (collectDetailedStatistics) {
             final long t2 = System.currentTimeMillis();
             cellSelector.initSentence(this);
-            currentInput.ccInitMs = System.currentTimeMillis() - t2;
+            parseTask.ccInitMs = System.currentTimeMillis() - t2;
         } else {
             cellSelector.initSentence(this);
         }
@@ -93,7 +94,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
             final BinaryTree<String> parseTree = chart.extractBestParse(grammar.startSymbol);
-            currentInput.extractTimeMs = System.currentTimeMillis() - t3;
+            parseTask.extractTimeMs = System.currentTimeMillis() - t3;
             return parseTree;
         }
 
@@ -113,11 +114,11 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         chart = (C) new CellChart(tokens, this);
     }
 
-    protected void addLexicalProductions(final int sent[]) {
+    protected void addLexicalProductions(final int tokens[]) {
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
             final ChartCell cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(tokens[i])) {
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
             }
         }
@@ -137,15 +138,20 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     public String getStats() {
         return chart.getStats()
                 + (collectDetailedStatistics ? String.format(" fomInitTime=%d cellSelectorInitTime=%d",
-                        currentInput.fomInitMs, currentInput.ccInitMs) : "");
+                        parseTask.fomInitMs, parseTask.ccInitMs) : "");
     }
 
     public SparseBitVector getCellFeatures(final int start, final int end, final String[] featureNames) {
+        return getCellFeatures(start, end, featureNames, null);
+    }
+
+    public SparseBitVector getCellFeatures(final int start, final int end, final String[] featureNames,
+            final NaryTree<String> goldTree) {
         int numFeats = 0;
         final IntList featIndices = new IntArrayList(10);
 
         final int numTags = grammar.posSet.size();
-        final int numWords = grammar.lexSet.size();
+        final int numWords = Grammar.lexSet.size();
 
         // TODO Create a feature enum. Pre-tokenize the feature template once per sentence into an EnumSet (in
         // CellSelector.initSentence()) and make this a large switch statement. Should help with
@@ -156,44 +162,45 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
             // Left tags
             if (featStr.startsWith("lt")) {
                 if (featStr.equals("lt")) {
-                    featIndices.add(numFeats + getPOSIndex(start));
+                    featIndices.add(numFeats + getPOSIndex(start, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("lt+1")) {
-                    featIndices.add(numFeats + getPOSIndex(start + 1));
+                    featIndices.add(numFeats + getPOSIndex(start + 1, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("lt+2")) {
-                    featIndices.add(numFeats + getPOSIndex(start + 2));
+                    featIndices.add(numFeats + getPOSIndex(start + 2, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("lt-1")) {
-                    featIndices.add(numFeats + getPOSIndex(start - 1));
+                    featIndices.add(numFeats + getPOSIndex(start - 1, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("lt-2")) {
-                    featIndices.add(numFeats + getPOSIndex(start - 2));
+                    featIndices.add(numFeats + getPOSIndex(start - 2, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("lt_lt-1")) {
-                    featIndices.add(numFeats + getPOSIndex(start) + numTags * getPOSIndex(start - 1));
+                    featIndices.add(numFeats + getPOSIndex(start, goldTree) + numTags
+                            * getPOSIndex(start - 1, goldTree));
                     numFeats += numTags * numTags;
                 }
 
             } else if (featStr.startsWith("rt")) {
                 // Right tags -- to get the last tag inside the constituent, we need to subtract 1
                 if (featStr.equals("rt")) {
-                    featIndices.add(numFeats + getPOSIndex(end - 1));
+                    featIndices.add(numFeats + getPOSIndex(end - 1, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("rt+1")) {
-                    featIndices.add(numFeats + getPOSIndex(end));
+                    featIndices.add(numFeats + getPOSIndex(end, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("rt+2")) {
-                    featIndices.add(numFeats + getPOSIndex(end + 1));
+                    featIndices.add(numFeats + getPOSIndex(end + 1, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("rt-1")) {
-                    featIndices.add(numFeats + getPOSIndex(end - 2));
+                    featIndices.add(numFeats + getPOSIndex(end - 2, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("rt-2")) {
-                    featIndices.add(numFeats + getPOSIndex(end - 3));
+                    featIndices.add(numFeats + getPOSIndex(end - 3, goldTree));
                     numFeats += numTags;
                 } else if (featStr.equals("rt_rt+1")) {
-                    featIndices.add(numFeats + getPOSIndex(end) + numTags * getPOSIndex(end + 1));
+                    featIndices.add(numFeats + getPOSIndex(end, goldTree) + numTags * getPOSIndex(end + 1, goldTree));
                     numFeats += numTags * numTags;
                 }
 
@@ -206,10 +213,10 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                     featIndices.add(numFeats + getWordIndex(start - 1));
                     numFeats += numWords;
                 } else if (featStr.equals("lw_lt")) {
-                    featIndices.add(numFeats + getWordIndex(start) + numWords * getPOSIndex(start));
+                    featIndices.add(numFeats + getWordIndex(start) + numWords * getPOSIndex(start, goldTree));
                     numFeats += numWords * numTags;
                 } else if (featStr.equals("lw-1_lt-1")) {
-                    featIndices.add(numFeats + getWordIndex(start - 1) + numWords * getPOSIndex(start - 1));
+                    featIndices.add(numFeats + getWordIndex(start - 1) + numWords * getPOSIndex(start - 1, goldTree));
                     numFeats += numWords * numTags;
                 }
 
@@ -222,16 +229,16 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                     featIndices.add(numFeats + getWordIndex(end));
                     numFeats += numWords;
                 } else if (featStr.equals("rw_rt")) {
-                    featIndices.add(numFeats + getWordIndex(end - 1) + numWords * getPOSIndex(end - 1));
+                    featIndices.add(numFeats + getWordIndex(end - 1) + numWords * getPOSIndex(end - 1, goldTree));
                     numFeats += numWords * numTags;
                 } else if (featStr.equals("rw+1_rt+1")) {
-                    featIndices.add(numFeats + getWordIndex(end) + numWords * getPOSIndex(end));
+                    featIndices.add(numFeats + getWordIndex(end) + numWords * getPOSIndex(end, goldTree));
                     numFeats += numWords * numTags;
                 }
             } else if (featStr.equals("loc")) { // cell location
 
                 final int span = end - start;
-                final int sentLen = currentInput.sentenceLength;
+                final int sentLen = parseTask.sentenceLength();
                 for (int i = 1; i <= 5; i++) {
                     if (span == i) {
                         featIndices.add(numFeats); // span length 1-5
@@ -260,28 +267,31 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         return new SparseBitVector(numFeats, featIndices.toIntArray());
     }
 
-    private int getPOSIndex(final int start) {
+    private int getPOSIndex(final int tokIndex, final NaryTree<String> goldTree) {
         int index = -1;
 
-        if (start < 0 || start >= this.currentInput.sentenceLength) {
+        if (tokIndex < 0 || tokIndex >= this.parseTask.sentenceLength()) {
             index = grammar.nullSymbol;
         } else {
-            if (currentInput.inputTreeChart != null) {
+            if (goldTree != null) {
                 // if the input was a tree, we are training from gold trees. Get the gold POS tag.
-                // TODO: should we be more robust here; check to see if this parser is an
-                // instance of BSCPBeamConfTrain?
-                // assert this instanceof BSCPBeamConfTrain;
-
-                for (final Chart.ChartEdge goldEdge : currentInput.inputTreeChart.getEdgeList(start, start + 1)) {
-                    if (goldEdge.prod.isLexProd()) {
-                        index = goldEdge.prod.parent;
+                final int i = 0;
+                for (final NaryTree<String> leaf : goldTree.leafTraversal()) {
+                    if (i == tokIndex) {
+                        return grammar.nonTermSet.getIndex(leaf.parent().label());
                     }
                 }
+                // for (final Chart.ChartEdge goldEdge : currentInput.inputTreeChart.getEdgeList(tokIndex, tokIndex +
+                // 1)) {
+                // if (goldEdge.prod.isLexProd()) {
+                // index = goldEdge.prod.parent;
+                // }
+                // }
             } else {
                 // we are decoding -- there are a number of things we could do here to get the "best"
                 // POS tag for this index; I'm choosing to tag the input sentence with a XX tagger
                 // and use the 1-best output.
-                index = ((BoundaryInOutSelector) this.fomModel).get1bestPOSTag(start);
+                index = ((BoundaryInOutSelector) this.fomModel).get1bestPOSTag(tokIndex);
                 // NOTE: this also works with InsideWithFwdBkwd since it inherits from BoundaryInOut
             }
         }
@@ -293,9 +303,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     }
 
     private int getWordIndex(final int start) {
-        if (start < 0 || start >= this.currentInput.sentenceLength) {
+        if (start < 0 || start >= this.parseTask.sentenceLength()) {
             return grammar.nullWord;
         }
-        return currentInput.tokens[start];
+        return parseTask.tokens[start];
     }
 }

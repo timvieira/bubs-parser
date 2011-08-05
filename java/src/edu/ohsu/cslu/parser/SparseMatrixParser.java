@@ -269,7 +269,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         }
 
         if (collectDetailedStatistics) {
-            currentInput.unaryAndPruningMs += System.currentTimeMillis() - t0;
+            parseTask.unaryAndPruningMs += System.currentTimeMillis() - t0;
         }
     }
 }

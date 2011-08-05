@@ -108,7 +108,7 @@ public class PerceptronBeamWidthFactory implements CellSelectorFactory {
 
         private void computeBeamWidthValues() {
             int guessBeamWidth, guessClass;
-            final int n = parser.currentInput.sentenceLength;
+            final int n = parser.parseTask.sentenceLength();
             beamWidthValues = new int[n][n + 1];
             onlyFactored = new boolean[n][n + 1];
             openCells = 0;

@@ -23,9 +23,9 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 /**
- * Represents a model for edge selection and creates edge selector instances using that model (see {@link FigureOfMerit}
- * ). Implementations may constrain parse forest population (for agenda parsers) or cell population (for chart parsers)
- * by lexical analysis of the sentence or other outside information.
+ * Represents a figure of merit model and creates instances using that model (see {@link FigureOfMerit} ).
+ * Implementations may constrain parse forest population (for agenda parsers) or cell population (for chart parsers) by
+ * lexical analysis of the sentence or other outside information.
  */
 public class FigureOfMeritFactory {
 

@@ -173,6 +173,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     public static boolean chartConstraintsPrint = false;
 
     private long parseStartTime;
+    private int sentencesParsed = 0, failedParses = 0;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
     private final BracketEvaluator evaluator = new BracketEvaluator();
 
@@ -499,23 +500,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Override
     protected void output(final ParseContext parseResult) {
         if (parseResult != null) {
-            System.out.println(parseResult.parseBracketString);
-
-            if (inputFormat == InputFormat.Tree) {
-                // // If parse failed, replace with ROOT => all-lexical-nodes
-                // if (parseResult.naryParse == null) {
-                // parseResult.naryParse = new NaryTree<String>(grammar.startSymbolStr);
-                // for (final NaryTree<String> leaf : parseResult.inputTree.leafTraversal()) {
-                // parseResult.naryParse.addChild(leaf);
-                // }
-                // }
-                // To match EVALB, we have to ignore sentences where we fail
-                if (parseResult.naryParse != null) {
-                    parseResult.evalb = evaluator.evaluate(parseResult.inputTree, parseResult.naryParse);
-                }
-            }
-            if (BaseLogger.singleton().isLoggable(Level.FINE)) {
-                BaseLogger.singleton().fine(parseResult.toString() + " " + parseResult.parserStats);
+            parseResult.evaluate(evaluator);
+            System.out.println(parseResult.parseBracketString(binaryTreeOutput, printUnkLabels)
+                    + parseResult.statsString());
+            sentencesParsed++;
+            if (parseResult.parseFailed()) {
+                failedParses++;
             }
         }
     }
@@ -532,14 +522,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
 
         // Note that this CPU-time computation does not include GC time
         final float cpuTime = parseTime * threads;
-        final int sentencesParsed = Parser.sentenceNumber;
 
         final StringBuilder sb = new StringBuilder();
         // TODO Add cpuSecondsPerSent and switch avgSecondsPerSent to report mean latency (not mean
         // throughput)
         sb.append(String.format(
                 "INFO: numSentences=%d numFail=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
-                sentencesParsed, Parser.failedParses, parseTime, cpuTime, cpuTime / sentencesParsed));
+                sentencesParsed, failedParses, parseTime, cpuTime, cpuTime / sentencesParsed));
 
         if (parserInstances.getFirst() instanceof SparseMatrixVectorParser) {
             sb.append(String.format(" totalXProductTime=%d totalBinarySpMVTime=%d",
