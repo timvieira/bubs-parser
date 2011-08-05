@@ -73,15 +73,10 @@ public abstract class Parser<G extends Grammar> {
     public FigureOfMerit fomModel;
     public final CellSelector cellSelector;
 
-    public ParseContext currentInput; // temporary so I don't break too much stuff at once
-
-    // TODO Move global state back out of Parser
-    static volatile protected int sentenceNumber = 0;
-    static volatile protected int failedParses = 0;
+    public ParseContext parseTask; // temporary so I don't break too much stuff at once
 
     /** Summary statistics over all sentences parsed by this Parser instance */
     protected float totalParseTimeSec = 0;
-    protected float totalInsideScore = 0;
     protected long totalMaxMemoryMB = 0;
 
     /**
@@ -131,52 +126,27 @@ public abstract class Parser<G extends Grammar> {
             opts.inputFormat = InputFormat.Tree;
         }
 
-        final ParseContext result = new ParseContext(input, opts.inputFormat, grammar);
-        currentInput = result; // get rid of currentInput (and chart?). Just pass these around
+        // TODO: make parseTask local and pass it around to required methods. Will probably need to add
+        // instance methods of CellSelector, FOM, and Chart to it. Should make parse thread-safe.
+        parseTask = new ParseContext(input, opts.inputFormat, grammar.grammarFormat);
 
-        // TODO This isn't thread-safe
-        result.sentenceNumber = sentenceNumber++;
-        result.tokens = grammar.tokenizer.tokenizeToIndex(result.sentence);
-
-        if (result.sentenceLength > opts.maxLength) {
-            BaseLogger.singleton().fine(
-                    "INFO: Skipping sentence. Length of " + result.sentenceLength + " is greater than maxLength ("
+        if (parseTask.sentenceLength() > opts.maxLength) {
+            BaseLogger.singleton().info(
+                    "INFO: Skipping sentence. Length of " + parseTask.sentenceLength() + " is greater than maxLength ("
                             + opts.maxLength + ")");
-            return result;
-        }
-
-        try {
-            result.startTime();
-            result.binaryParse = findBestParse(result.tokens);
-            result.stopTime();
-
-            if (result.binaryParse == null) {
-                failedParses++;
-                // result.binaryParse = new BinaryTree<String>("");
-                // result.naryParse = new NaryTree<String>("");
-                result.parseBracketString = "()";
-            } else {
-                if (!opts.printUnkLabels) {
-                    result.binaryParse.replaceLeafLabels(result.strTokens);
-                }
-                result.naryParse = result.binaryParse.unfactor(grammar.grammarFormat);
-
-                if (opts.binaryTreeOutput) {
-                    result.parseBracketString = result.binaryParse.toString();
-                } else {
-                    result.parseBracketString = result.naryParse.toString();
-                }
+        } else {
+            parseTask.startTime();
+            try {
+                parseTask.binaryParse = findBestParse(parseTask.tokens);
+            } catch (final Exception e) {
+                BaseLogger.singleton().fine("ERROR: " + e.getMessage());
             }
-
-            result.insideProbability = getInside(0, result.sentenceLength, grammar.startSymbol);
-            result.parserStats = getStats();
-
-            return result;
-
-        } catch (final Exception e) {
-            BaseLogger.singleton().fine("ERROR: " + e.getMessage());
-            return result;
+            parseTask.stopTime();
+            parseTask.insideProbability = getInside(0, parseTask.sentenceLength(), grammar.startSymbol);
+            parseTask.chartStats = getStats();
         }
+
+        return parseTask;
     }
 
     /**

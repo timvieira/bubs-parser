@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,6 +75,12 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
     private Vector<Vector<Float>> allBeginScores = new Vector<Vector<Float>>();
     private Vector<Vector<Float>> allEndScores = new Vector<Vector<Float>>();
     private Vector<Vector<Float>> allUnaryScores = new Vector<Vector<Float>>();
+
+    // Because we're getting the Cell Constraints scores pre-computed from Kristy for
+    // certain sections, we can only parse sentences we have scores for. And when this
+    // is done over the grid or threaded, then we need to keep track of which sentences is which
+    private HashMap<String, Integer> sentToIndex = new HashMap<String, Integer>();
+
     boolean[] beginClosed, endClosed, unaryClosed;
     protected boolean grammarLeftFactored;
     private int currentSentNumber;
@@ -128,11 +135,13 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
     }
 
     public void readModel(final BufferedReader inStream) throws Exception {
+        final List<String> sentenceTokens = new LinkedList<String>();
         String line = null;
         while ((line = inStream.readLine()) != null) {
             line = line.trim();
             if (line.equals("") || allBeginScores.size() == 0) {
                 // new sentence
+                sentToIndex.put(Util.join(sentenceTokens, " "), allBeginScores.size());
                 allBeginScores.add(new Vector<Float>());
                 allEndScores.add(new Vector<Float>());
                 allUnaryScores.add(new Vector<Float>());
@@ -141,7 +150,7 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
             if (!line.equals("")) {
                 final String[] tokens = line.split("[ \t]+");
                 if (tokens.length >= 3) {
-                    // ignore the word at tokens[0]
+                    sentenceTokens.add(tokens[0]);
                     allBeginScores.lastElement().add(Float.parseFloat(tokens[1]));
                     allEndScores.lastElement().add(Float.parseFloat(tokens[2]));
                     if (tokens.length == 4) {
@@ -163,10 +172,15 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
         @Override
         public void initSentence(final ChartParser<?, ?> parser) {
             // might have to hash the sentence number for the grid
-            initSentence(parser.chart, parser.currentInput.sentenceNumber, parser.currentInput.sentence);
+            initSentence(parser.chart, parser.parseTask.sentence);
         }
 
-        public void initSentence(final Chart chart, final int sentNumber, final String sentence) {
+        public void initSentence(final Chart chart, final String sentence) {
+            final Integer sentNumber = sentToIndex.get(sentence);
+            if (sentNumber == null) {
+                throw new IllegalArgumentException("ERROR: Sentence not found in Cell Constraints model:\n  "
+                        + sentence);
+            }
             final Vector<Float> beginScores = allBeginScores.get(sentNumber);
             final Vector<Float> endScores = allEndScores.get(sentNumber);
             final Vector<Float> unaryScores = allUnaryScores.get(sentNumber);

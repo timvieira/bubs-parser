@@ -57,7 +57,7 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
                         rightInside = rightCell.getInside(p.rightChild);
                         if (rightInside > Float.NEGATIVE_INFINITY) {
                             cell.updateInside(p, leftCell, rightCell, p.prob + leftInside + rightInside);
-                            currentInput.totalConsidered++;
+                            parseTask.totalConsidered++;
                         }
                     }
                 }
@@ -68,9 +68,9 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
             for (final int childNT : cell.getNtArray()) {
                 for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                     cell.updateInside(p, p.prob + cell.getInside(childNT));
-                    currentInput.totalConsidered++;
+                    parseTask.totalConsidered++;
                     if (end - start == 1) {
-                        currentInput.nLexUnaryConsidered++;
+                        parseTask.nLexUnaryConsidered++;
                     }
                 }
             }

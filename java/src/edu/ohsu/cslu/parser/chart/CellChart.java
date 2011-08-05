@@ -136,13 +136,13 @@ public class CellChart extends Chart {
 
         private void updateCounts(final Production p) {
             if (p.isBinaryProd()) {
-                parser.currentInput.nBinaryConsidered++;
+                parser.parseTask.nBinaryConsidered++;
             } else if (p.isLexProd()) {
-                parser.currentInput.nLex++;
+                parser.parseTask.nLex++;
             } else {
-                parser.currentInput.nUnaryConsidered++;
+                parser.parseTask.nUnaryConsidered++;
                 if (this.width() == 1) {
-                    parser.currentInput.nLexUnary++;
+                    parser.parseTask.nLexUnary++;
                 }
             }
         }

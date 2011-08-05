@@ -44,11 +44,11 @@ public class EmbeddedExample {
         // Parse example sentences and write output to STDOUT
         ParseContext result = parser
                 .parseSentence("The economy 's temperature will be taken from several vantage points this week , with readings on trade , output , housing and inflation .");
-        System.out.println(result.parseBracketString);
+        System.out.println(result.parseBracketString(false, false));
 
         result = parser
                 .parseSentence("The most troublesome report may be the August merchandise trade deficit due out tomorrow .");
-        System.out.println(result.parseBracketString);
+        System.out.println(result.parseBracketString(false, false));
     }
 
     // Open and uncompress a gzipped file, returning a BufferedReader

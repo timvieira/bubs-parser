@@ -19,7 +19,6 @@
 package edu.ohsu.cslu.parser.beam;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.PriorityQueue;
 
 import cltool4j.BaseLogger;
@@ -114,13 +113,15 @@ public class BSCPPruneViterbi extends BeamSearchChartParser<LeftHashGrammar, Cel
             final float score1 = bestEdge.fom;
             final float score2 = agenda.peek().fom;
             agenda.add(bestEdge);
-            final LinkedList<edu.ohsu.cslu.parser.chart.Chart.ChartEdge> goldEdges = currentInput.inputTreeChart
-                    .getEdgeList(cell.start(), cell.end());
-            final boolean hasGold = goldEdges.size() > 0;
+            // TODO: inputTreeChart doesn't exist anymore -- maybe we should add a method to BinaryTree that can
+            // return all nodes that span indicies (start,end)
+            // final LinkedList<edu.ohsu.cslu.parser.chart.Chart.ChartEdge> goldEdges = currentInput.inputTreeChart
+            // .getEdgeList(cell.start(), cell.end());
+            // final boolean hasGold = goldEdges.size() > 0;
             final boolean underThresh = fomCheckAndUpdate(bestEdge);
 
-            System.out.println("INFO: agendaOneTwo gold=" + hasGold + " prune1=" + underThresh + " " + score1 + " "
-                    + score2 + " " + (score2 - score1));
+            // System.out.println("INFO: agendaOneTwo gold=" + hasGold + " prune1=" + underThresh + " " + score1 + " "
+            // + score2 + " " + (score2 - score1));
         }
     }
 }

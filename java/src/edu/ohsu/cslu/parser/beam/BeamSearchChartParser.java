@@ -117,10 +117,10 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final long startTimeMS = System.currentTimeMillis();
         fomModel.init(tokens);
         final long endTimeMS = System.currentTimeMillis();
-        currentInput.fomInitMs = endTimeMS - startTimeMS;
+        parseTask.fomInitMs = endTimeMS - startTimeMS;
 
         cellSelector.initSentence(this);
-        currentInput.ccInitMs = System.currentTimeMillis() - endTimeMS;
+        parseTask.ccInitMs = System.currentTimeMillis() - endTimeMS;
     }
 
     @Override
@@ -150,9 +150,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 final short[] startAndEnd = cellSelector.next();
                 computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
 
-                currentInput.totalPushes += cellPushed;
-                currentInput.totalPops += cellPopped;
-                currentInput.totalConsidered += cellConsidered;
+                parseTask.totalPushes += cellPushed;
+                parseTask.totalPops += cellPopped;
+                parseTask.totalConsidered += cellConsidered;
 
                 // if (opts.collectDetailedStatistics) {
                 // final HashSetChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
@@ -178,7 +178,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             // lexical and unary productions can't compete in the same agenda until their FOM
             // scores are changed to be comparable
             for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
-                currentInput.nLex += 1;
+                parseTask.nLex += 1;
                 // TODO: need to be able to get POS posteriors. We could use this as the FOM and rank just
                 // like others
                 // if (!only1BestPOS || ((BoundaryInOut) fomModel).get1bestPOSTag(start) ==
@@ -186,7 +186,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
                 if (hasCellConstraints == false || cc.isUnaryOpen(start, end)) {
                     for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
-                        currentInput.nLexUnary += 1;
+                        parseTask.nLexUnary += 1;
                         addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
                     }
                 }

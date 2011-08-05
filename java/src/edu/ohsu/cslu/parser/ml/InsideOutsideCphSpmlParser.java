@@ -43,7 +43,7 @@ public class InsideOutsideCphSpmlParser extends
             Arrays.fill(tmpOutsideProbabilities, Float.NEGATIVE_INFINITY);
         }
         if (collectDetailedStatistics) {
-            currentInput.outsidePassMs = System.currentTimeMillis() - t0;
+            parseTask.outsidePassMs = System.currentTimeMillis() - t0;
         }
 
         // For now, we always perform Goodman's max-recall decoding. We also need max-precision and a trade-off between
@@ -52,7 +52,7 @@ public class InsideOutsideCphSpmlParser extends
             final long t3 = System.currentTimeMillis();
             chart.computeMaxc();
             final BinaryTree<String> parseTree = chart.extractMaxcParse(0, chart.size());
-            currentInput.extractTimeMs = System.currentTimeMillis() - t3;
+            parseTask.extractTimeMs = System.currentTimeMillis() - t3;
             return parseTree;
         }
 
