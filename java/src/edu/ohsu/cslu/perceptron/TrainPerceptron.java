@@ -36,7 +36,7 @@ import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
 
 /**
@@ -199,7 +199,7 @@ public class TrainPerceptron extends BaseCommandlineTool {
         }
 
         final DataSet train = new DataSet(inputStream);
-        final InputStream devStream = ParserUtil.file2inputStream(devSet.getAbsolutePath());
+        final InputStream devStream = Util.file2inputStream(devSet.getAbsolutePath());
         final DataSet dev = new DataSet(new BufferedReader(new InputStreamReader(devStream)));
 
         Classifier model;

@@ -22,7 +22,7 @@ import java.util.Arrays;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 
 public class InOutCellChart extends CellChart {
 
@@ -76,7 +76,7 @@ public class InOutCellChart extends CellChart {
                 // + " : " +
                 // outside[nt] + " + " + outsideProb + " = "+
                 // ParserUtil.logSum(outside[nt], outsideProb));
-                outside[nt] = (float) ParserUtil.logSum(outside[nt], outsideProb);
+                outside[nt] = (float) Util.logSum(outside[nt], outsideProb);
             }
         }
     }

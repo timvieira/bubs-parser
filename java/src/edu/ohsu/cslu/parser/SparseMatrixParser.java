@@ -190,7 +190,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 if (spvChartCell.tmpInsideProbabilities[nt] > minInsideProbability) {
-                    final float fom = edgeSelector.calcLexicalFOM(start, end, nt,
+                    final float fom = fomModel.calcLexicalFOM(start, end, nt,
                             spvChartCell.tmpInsideProbabilities[nt]);
                     q.insert(nt, fom);
                     tmpFoms[nt] = fom;
@@ -202,7 +202,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         } else { // Span >= 2
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 if (spvChartCell.tmpInsideProbabilities[nt] > minInsideProbability) {
-                    final float fom = edgeSelector.calcFOM(start, end, nt, spvChartCell.tmpInsideProbabilities[nt]);
+                    final float fom = fomModel.calcFOM(start, end, nt, spvChartCell.tmpInsideProbabilities[nt]);
                     q.insert(nt, fom);
                     tmpFoms[nt] = fom;
                 }
@@ -241,7 +241,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
                         if (jointProbability > minInsideProbability) {
                             final short parent = grammar.cscUnaryRowIndices[i];
-                            final float parentFom = edgeSelector.calcFOM(start, end, parent, jointProbability);
+                            final float parentFom = fomModel.calcFOM(start, end, parent, jointProbability);
 
                             if (parentFom > tmpFoms[parent] && parentFom > cellFoms[parent]
                                     && q.replace(parent, parentFom)) {

@@ -29,7 +29,7 @@ import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTree;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 /**
@@ -76,14 +76,14 @@ public final class BoundaryInOut extends FigureOfMeritFactory {
     }
 
     @Override
-    public FigureOfMerit createEdgeSelector(final Grammar grammar) {
+    public FigureOfMerit createFOM(final Grammar grammar) {
         switch (type) {
         case BoundaryInOut:
             return new BoundaryInOutSelector();
         case InsideWithFwdBkwd:
             return new InsideWithFwdBkwd();
         default:
-            return super.createEdgeSelector(grammar);
+            return super.createFOM(grammar);
         }
     }
 
@@ -112,14 +112,14 @@ public final class BoundaryInOut extends FigureOfMeritFactory {
                     }
                 }
 
-                numStr = ParserUtil.join(numerator, " ");
+                numStr = Util.join(numerator, " ");
                 numIndex = grammar.mapNonterminal(numStr);
                 if (numIndex < 0) {
                     BaseLogger.singleton().info(
                             "ERROR: non-terminal '" + numStr + "' from FOM model not found in grammar.");
                     System.exit(1);
                 }
-                denomStr = ParserUtil.join(denom, " ");
+                denomStr = Util.join(denom, " ");
                 denomIndex = grammar.mapNonterminal(denomStr);
                 if (denomIndex < 0) {
                     BaseLogger.singleton().info(
@@ -202,14 +202,14 @@ public final class BoundaryInOut extends FigureOfMeritFactory {
                     throw new IOException("Nonterminal '" + posNode.contents
                             + "' in input tree not found in grammar.  Exiting.");
                 }
-                historyStr = ParserUtil.join(history, joinString);
+                historyStr = Util.join(history, joinString);
                 posTransitionCount.increment(posNode.contents, historyStr);
                 history.removeFirst();
                 history.addLast(posNode.contents);
             }
 
             // finish up with final transition to <null>
-            historyStr = ParserUtil.join(history, joinString);
+            historyStr = Util.join(history, joinString);
             posTransitionCount.increment(Grammar.nullSymbolStr, historyStr);
         }
 

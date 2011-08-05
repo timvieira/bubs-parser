@@ -100,15 +100,14 @@ public class SerializeModel extends BaseCommandlineTool {
             BaseLogger.singleton().info("Reading FOM...");
             // Handle gzipped and non-gzipped model files
             final BufferedReader fomModelReader = fomModelFileName.endsWith(".gz") ? new BufferedReader(
-                new InputStreamReader(new GZIPInputStream(new FileInputStream(fomModelFileName))))
+                    new InputStreamReader(new GZIPInputStream(new FileInputStream(fomModelFileName))))
                     : new BufferedReader(new FileReader(fomModelFileName));
             switch (fomType) {
-                case BoundaryInOut:
-                    fom = new BoundaryInOut(FOMType.BoundaryInOut, g, fomModelReader)
-                        .createEdgeSelector(g);
-                    break;
-                default:
-                    throw new UnsupportedOperationException("FOM type not supported");
+            case BoundaryInOut:
+                fom = new BoundaryInOut(FOMType.BoundaryInOut, g, fomModelReader).createFOM(g);
+                break;
+            default:
+                throw new UnsupportedOperationException("FOM type not supported");
             }
         }
 

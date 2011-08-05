@@ -40,7 +40,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import cltool4j.BaseLogger;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.util.StringPool;
 
 /**
@@ -331,7 +331,7 @@ public class Grammar implements Serializable {
     }
 
     public Grammar(final String grammarFile) throws IOException {
-        this(new InputStreamReader(ParserUtil.file2inputStream(grammarFile)));
+        this(new InputStreamReader(Util.file2inputStream(grammarFile)));
     }
 
     /**
@@ -428,7 +428,7 @@ public class Grammar implements Serializable {
         final String firstLine = br.readLine();
         if (firstLine.contains("format=Berkeley")) {
             gf = GrammarFormatType.Berkeley;
-            final HashMap<String, String> keyVals = ParserUtil.readKeyValuePairs(firstLine.trim());
+            final HashMap<String, String> keyVals = Util.readKeyValuePairs(firstLine.trim());
             startSymbolStr = keyVals.get("start");
         } else if (firstLine.matches("^[A-Z]+_[0-9]+")) {
             gf = GrammarFormatType.Berkeley;
@@ -437,7 +437,7 @@ public class Grammar implements Serializable {
             gf = GrammarFormatType.CSLU;
             // final Pattern p = Pattern.compile("^.*start=([^ ]+).*$");
             // startSymbolStr = p.matcher(firstLine).group(1);
-            final HashMap<String, String> keyVals = ParserUtil.readKeyValuePairs(firstLine.trim());
+            final HashMap<String, String> keyVals = Util.readKeyValuePairs(firstLine.trim());
             startSymbolStr = keyVals.get("start");
         } else if (firstLine.split(" ").length > 1) {
             // The first line was not a start symbol.
@@ -548,7 +548,7 @@ public class Grammar implements Serializable {
     }
 
     public static Grammar read(final String grammarFile) throws IOException, ClassNotFoundException {
-        final InputStream is = ParserUtil.file2inputStream(grammarFile);
+        final InputStream is = Util.file2inputStream(grammarFile);
         final Grammar grammar = Grammar.read(is);
         is.close();
         return grammar;

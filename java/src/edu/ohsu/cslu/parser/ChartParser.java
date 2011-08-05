@@ -60,13 +60,13 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         initSentence(tokens);
         addLexicalProductions(tokens);
 
-        if (edgeSelector != null) {
+        if (fomModel != null) {
             if (collectDetailedStatistics) {
                 final long t1 = System.currentTimeMillis();
-                edgeSelector.init(tokens);
+                fomModel.init(tokens);
                 currentInput.fomInitMs = System.currentTimeMillis() - t1;
             } else {
-                edgeSelector.init(tokens);
+                fomModel.init(tokens);
             }
         }
 
@@ -136,7 +136,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     @Override
     public String getStats() {
         return chart.getStats()
-                + (collectDetailedStatistics ? String.format(" edgeSelectorInitTime=%d cellSelectorInitTime=%d",
+                + (collectDetailedStatistics ? String.format(" fomInitTime=%d cellSelectorInitTime=%d",
                         currentInput.fomInitMs, currentInput.ccInitMs) : "");
     }
 
@@ -281,7 +281,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                 // we are decoding -- there are a number of things we could do here to get the "best"
                 // POS tag for this index; I'm choosing to tag the input sentence with a XX tagger
                 // and use the 1-best output.
-                index = ((BoundaryInOutSelector) this.edgeSelector).get1bestPOSTag(start);
+                index = ((BoundaryInOutSelector) this.fomModel).get1bestPOSTag(start);
                 // NOTE: this also works with InsideWithFwdBkwd since it inherits from BoundaryInOut
             }
         }

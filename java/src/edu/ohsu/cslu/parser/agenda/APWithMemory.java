@@ -56,7 +56,7 @@ public class APWithMemory extends AgendaParser {
 
     public void printTreeEdgeStats(final ParseTree tree, final Parser<?> parser) {
 
-        assert edgeSelector instanceof BoundaryInOutSelector;
+        assert fomModel instanceof BoundaryInOutSelector;
 
         for (final ParseTree node : tree.preOrderTraversal()) {
             if (node.isNonTerminal()) {

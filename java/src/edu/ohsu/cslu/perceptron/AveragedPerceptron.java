@@ -26,7 +26,7 @@ import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 
 /**
  * Represents an averaged perceptron (see Collins, 2002). The model should be trained with
@@ -192,7 +192,7 @@ public class AveragedPerceptron extends Perceptron {
         // final String biasString = tokens[3].split("=")[1];
         // this.initBins(binsString);
         this.binsStr = binsString;
-        this.bins = ParserUtil.strToIntArray(binsStr);
+        this.bins = Util.strToIntArray(binsStr);
         this.avgWeights = new FloatVector[numClasses()];
         this.featureTemplate = inputReader.readLine().replace("featTemplate: ", "");
 

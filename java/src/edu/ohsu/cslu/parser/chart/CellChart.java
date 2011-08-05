@@ -27,7 +27,7 @@ import edu.ohsu.cslu.grammar.NonTerminal;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 
 public class CellChart extends Chart {
 
@@ -129,7 +129,7 @@ public class CellChart extends Chart {
                     addToHashSets(nt);
                 }
             } else {
-                inside[nt] = (float) ParserUtil.logSum(inside[nt], insideProb);
+                inside[nt] = (float) Util.logSum(inside[nt], insideProb);
                 addToHashSets(nt);
             }
         }
@@ -301,10 +301,9 @@ public class CellChart extends Chart {
         public ChartEdge(final Production prod, final ChartCell leftCell, final ChartCell rightCell) {
             super(prod, leftCell, rightCell);
 
-            if (parser.edgeSelector != null) {
-                // this.fom = parser.edgeSelector.calcFOM(this);
-                this.fom = parser.edgeSelector.calcFOM(this.start(), this.end(), (short) this.prod.parent,
-                        this.inside());
+            if (parser.fomModel != null) {
+                // this.fom = parser.fomModel.calcFOM(this);
+                this.fom = parser.fomModel.calcFOM(this.start(), this.end(), (short) this.prod.parent, this.inside());
             }
         }
 
@@ -312,9 +311,8 @@ public class CellChart extends Chart {
         public ChartEdge(final Production prod, final HashSetChartCell childCell) {
             super(prod, childCell);
 
-            if (parser.edgeSelector != null) {
-                this.fom = parser.edgeSelector.calcFOM(this.start(), this.end(), (short) this.prod.parent,
-                        this.inside());
+            if (parser.fomModel != null) {
+                this.fom = parser.fomModel.calcFOM(this.start(), this.end(), (short) this.prod.parent, this.inside());
             }
         }
 

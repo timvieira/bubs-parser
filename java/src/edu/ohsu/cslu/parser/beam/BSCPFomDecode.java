@@ -26,7 +26,7 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
@@ -71,14 +71,14 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
                 score = edge.fom + maxcFOM[start][midpt][edge.prod.leftChild]
                         + maxcFOM[midpt][end][edge.prod.rightChild];
             } else {
-                score = (float) ParserUtil.logSum(edge.fom, ParserUtil.logSum(
+                score = (float) Util.logSum(edge.fom, Util.logSum(
                         maxcFOM[start][midpt][edge.prod.leftChild], maxcFOM[midpt][end][edge.prod.rightChild]));
             }
         } else if (edge.prod.isUnaryProd()) {
             if (maxProduct) {
                 score = edge.fom + maxcFOM[start][end][edge.prod.child()];
             } else {
-                score = (float) ParserUtil.logSum(edge.fom, maxcFOM[start][end][edge.prod.child()]);
+                score = (float) Util.logSum(edge.fom, maxcFOM[start][end][edge.prod.child()]);
             }
         } else {
             score = edge.fom;

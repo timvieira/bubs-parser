@@ -53,7 +53,7 @@ public class GoldChart extends Chart {
         // to reference the constituents of a gold tree by reference to
         // a <start,end> position. I was hoping to reuse the chart class
         // since this is exactly what it does, but am running into problems
-        // of just instantiating a "basic" version (edgeSelector, inside prob,
+        // of just instantiating a "basic" version (fomModel, inside prob,
         // etc). Maybe it would be easier just to create an 2-dim array of
         // lists of ChartEdges (list because there can be gold unary AND binary
         // edges in each cell)
@@ -124,7 +124,7 @@ public class GoldChart extends Chart {
         }
 
         BaseLogger.singleton().finer("INFO: goldCells: " + perCellStats);
-        // parser.edgeSelector = saveEdgeSelector;
+        // parser.fomModel = savefomModel;
     }
 
     // private int[] extractTokensFromParseTree(final ParseTree tree, final Grammar grammar) {

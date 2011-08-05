@@ -30,7 +30,7 @@ import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
@@ -106,17 +106,17 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
         int i = 0;
         while (i < tokens.length) {
             if (tokens[i].equals("A")) {
-                globalBegin = ParserUtil.str2float(tokens[++i]);
-                globalEnd = ParserUtil.str2float(tokens[++i]);
-                globalUnary = ParserUtil.str2float(tokens[++i]);
+                globalBegin = Util.str2float(tokens[++i]);
+                globalEnd = Util.str2float(tokens[++i]);
+                globalUnary = Util.str2float(tokens[++i]);
             } else if (tokens[i].equals("P")) {
-                precisionPct = ParserUtil.str2float(tokens[++i]);
+                precisionPct = Util.str2float(tokens[++i]);
                 if (precisionPct < 0.0 || precisionPct > 1.0) {
                     BaseLogger.singleton().severe(
                             "Precision constraint must be btwn 0 and 1 inclusive.  Found value: " + precisionPct);
                 }
             } else if (tokens[i].equals("N")) {
-                this.linearOpen = ParserUtil.str2float(tokens[++i]);
+                this.linearOpen = Util.str2float(tokens[++i]);
                 if (linearOpen <= 0) {
                     BaseLogger.singleton().severe("Linear open cells constrain must be greater than zero");
                 }

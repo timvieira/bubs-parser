@@ -70,7 +70,7 @@ public abstract class Parser<G extends Grammar> {
     public ParserDriver opts;
 
     // TODO Make this reference final (once we work around the hack in CellChart)
-    public FigureOfMerit edgeSelector;
+    public FigureOfMerit fomModel;
     public final CellSelector cellSelector;
 
     public ParseContext currentInput; // temporary so I don't break too much stuff at once
@@ -94,7 +94,7 @@ public abstract class Parser<G extends Grammar> {
     public Parser(final ParserDriver opts, final G grammar) {
         this.grammar = grammar;
         this.opts = opts;
-        this.edgeSelector = opts.fomFactory.createEdgeSelector(grammar);
+        this.fomModel = opts.fomFactory.createFOM(grammar);
         this.cellSelector = opts.cellSelectorFactory.createCellSelector();
 
         this.collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINER);

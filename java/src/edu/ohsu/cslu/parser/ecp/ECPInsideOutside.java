@@ -28,7 +28,7 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.ParserUtil;
+import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
@@ -99,7 +99,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
         initSentence(tokens);
         cellSelector.initSentence(this);
-        edgeSelector.init(tokens);
+        fomModel.init(tokens);
         addLexicalProductions(tokens);
 
         while (cellSelector.hasNext()) {
@@ -383,7 +383,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                     float maxSplitScore = Float.NEGATIVE_INFINITY;
                     int maxSplitMid = -1;
                     for (int mid = start + 1; mid < end; mid++) {
-                        final float split = (float) ParserUtil.logSum(maxc[start][mid], maxc[mid][end]);
+                        final float split = (float) Util.logSum(maxc[start][mid], maxc[mid][end]);
                         if (split > maxSplitScore) {
                             maxSplitScore = split;
                             maxSplitMid = mid;
@@ -392,7 +392,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
                     if (maxSplitMid > -1) {
                         // add split cost for binary rules
-                        maxc[start][end] = (float) ParserUtil.logSum(maxc[start][end], maxSplitScore);
+                        maxc[start][end] = (float) Util.logSum(maxc[start][end], maxSplitScore);
                         addBackptrToChart(start, maxSplitMid, end, bestNT[start][end], bestNT[start][maxSplitMid],
                                 bestNT[maxSplitMid][end]);
                     }
@@ -440,7 +440,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                     float maxSplitScore = Float.NEGATIVE_INFINITY;
                     int maxSplitMid = -1;
                     for (int mid = start + 1; mid < end; mid++) {
-                        final float split = (float) ParserUtil.logSum(maxc[start][mid], maxc[mid][end]);
+                        final float split = (float) Util.logSum(maxc[start][mid], maxc[mid][end]);
                         if (split > maxSplitScore) {
                             maxSplitScore = split;
                             maxSplitMid = mid;
@@ -449,7 +449,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
                     if (maxSplitMid > -1) {
                         // add split cost for binary rules
-                        maxc[start][end] = (float) ParserUtil.logSum(maxc[start][end], maxSplitScore);
+                        maxc[start][end] = (float) Util.logSum(maxc[start][end], maxSplitScore);
                         addBackptrToChart(start, maxSplitMid, end, bestNT[start][end], bestNT[start][maxSplitMid],
                                 bestNT[maxSplitMid][end]);
                     }
@@ -511,7 +511,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
         for (final int childNT : cell.getNTs()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
                 insideScore = p.prob + cell.getInside(childNT);
-                unaryScores[p.parent] = (float) ParserUtil.logSum(unaryScores[p.parent], insideScore);
+                unaryScores[p.parent] = (float) Util.logSum(unaryScores[p.parent], insideScore);
                 // cell.updateInside(p.parent, insideProb);
                 // unaryInside[start][end][p.parent] = (float)
                 // ParserUtil.logSum(unaryInside[start][end][p.parent],insideProb);
@@ -536,7 +536,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
         for (final int nt : cell.getNTs()) {
             for (final Production p : grammar.getUnaryProductionsWithChild(nt)) {
                 outsideScore = p.prob + cell.getOutside(p.parent);
-                unaryScores[nt] = (float) ParserUtil.logSum(unaryScores[nt], outsideScore);
+                unaryScores[nt] = (float) Util.logSum(unaryScores[nt], outsideScore);
                 // if (unaryOutside[start][end][p.parent] > Float.NEGATIVE_INFINITY) {
                 // if (cell.hasNT(p.parent)) {
                 // parentOutside = cell.getOutside(p.parent);
