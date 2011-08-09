@@ -20,6 +20,10 @@ package edu.ohsu.cslu.parser;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+
+import java.util.logging.Level;
+
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
@@ -49,6 +53,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         }
 
         insidePass();
+        if (BaseLogger.singleton().isLoggable(Level.FINEST)) {
+            BaseLogger.singleton().finest(chart.toString());
+        }
         return extract();
     }
 

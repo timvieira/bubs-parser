@@ -41,11 +41,14 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
+import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -166,7 +169,14 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
                     .getGenericSuperclass()).getActualTypeArguments()[0]);
             return grammarClass;
         }
+    }
 
+    /**
+     * @return the parser class under test
+     */
+    @SuppressWarnings("unchecked")
+    protected final Class<P> parserClass() {
+        return ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
     }
 
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
@@ -186,12 +196,23 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
                 JUnit.unitTestDataAsStream("parsing/wsj.24.tokens.1-20")));
 
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.cyk.1-20")));
+        // We have two major hierarchies of chart structures, one which stores constituents in a sorted array and one
+        // which uses a HashSet. Parsers which use different chart implementations iterate over child constituents in
+        // differing orders, which produces variances in tie-breaking behavior. For testing, we store two versions of
+        // the 'correct' parse.
+        final BufferedReader hscParsedReader = new BufferedReader(new InputStreamReader(
+                JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.hsccyk.1-20")));
+
+        // TODO Reconcile differing parse output between sparse-matrix-vector and sparse-matrix-loop parser hierarchies
+        final BufferedReader spmvParsedReader = new BufferedReader(new InputStreamReader(
+                JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.spmvcyk.1-20")));
+
+        final BufferedReader spmlParsedReader = new BufferedReader(new InputStreamReader(
+                JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.spmlcyk.1-20")));
 
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
-            final String parsedSentence = parsedReader.readLine();
-            sentences.add(new String[] { sentence, parsedSentence });
+            sentences.add(new String[] { sentence, hscParsedReader.readLine(), spmvParsedReader.readLine(),
+                    spmlParsedReader.readLine() });
         }
     }
 
@@ -214,6 +235,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
             simpleGrammar2 = createGrammar(simpleGrammar2());
         }
 
+        GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAX_BEAM_WIDTH, "0");
         parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
     }
 
@@ -296,11 +318,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         parseTreebankSentence(2);
     }
 
-    // @Test
-    // @DetailedTest
-    // public void testSentence4() throws Exception {
-    // parseTreebankSentence(3);
-    // }
+    @Test
+    @DetailedTest
+    public void testSentence4() throws Exception {
+        parseTreebankSentence(3);
+    }
 
     @Test
     @DetailedTest
@@ -325,11 +347,11 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         parseTreebankSentence(7);
     }
 
-    // @Test
-    // @DetailedTest
-    // public void testSentence9() throws Exception {
-    // parseTreebankSentence(8);
-    // }
+    @Test
+    @DetailedTest
+    public void testSentence9() throws Exception {
+        parseTreebankSentence(8);
+    }
 
     @Test
     @DetailedTest
@@ -355,8 +377,20 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     }
 
     protected void parseTreebankSentence(final int index) throws Exception {
-        final String bestParseTree = parser.parseSentence(sentences.get(index)[0]).parseBracketString(true, false);
-        assertEquals(sentences.get(index)[1], bestParseTree);
+        final String parse = parser.parseSentence(sentences.get(index)[0]).parseBracketString(true, false);
+
+        String correctParse;
+        final Class<P> parserClass = parserClass();
+        if (SparseMatrixVectorParser.class.isAssignableFrom(parserClass)) {
+            correctParse = sentences.get(index)[2];
+        } else if (SparseMatrixLoopParser.class.isAssignableFrom(parserClass)) {
+            correctParse = sentences.get(index)[3];
+        } else {
+            correctParse = sentences.get(index)[1];
+        }
+
+        // System.out.println(parse);
+        assertEquals(correctParse, parse);
     }
 
 }

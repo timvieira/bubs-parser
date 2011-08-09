@@ -48,7 +48,7 @@ public class TestInsideOutsideCphSpmlParser {
                 JUnit.unitTestDataAsStream("parsing/wsj.24.tokens.1-20")));
 
         final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.cyk.1-20")));
+                JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.spmlcyk.1-20")));
 
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
             final String parsedSentence = parsedReader.readLine();

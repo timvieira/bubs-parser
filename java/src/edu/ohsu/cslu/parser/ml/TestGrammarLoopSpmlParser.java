@@ -18,8 +18,6 @@
  */
 package edu.ohsu.cslu.parser.ml;
 
-import static org.junit.Assert.fail;
-
 import org.cjunit.PerformanceTest;
 import org.junit.Test;
 
@@ -27,8 +25,8 @@ public class TestGrammarLoopSpmlParser extends SparseMatrixLoopParserTestCase<Gr
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "1", "d820", "1" })
+    @PerformanceTest({ "mbp", "1", "d820", "10321" })
     public void profileSentences11Through20() throws Exception {
-        fail("Too inefficient to profile");
+        internalProfileSentences11Through20();
     }
 }
