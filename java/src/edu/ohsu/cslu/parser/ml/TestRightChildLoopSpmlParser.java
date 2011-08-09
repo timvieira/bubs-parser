@@ -31,12 +31,12 @@ public class TestRightChildLoopSpmlParser extends SparseMatrixLoopParserTestCase
     @Override
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
-            new Object[] { grammarReader, RightShiftFunction.class });
+                new Object[] { grammarReader, RightShiftFunction.class });
     }
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "7714", "d820", "10000" })
+    @PerformanceTest({ "mbp", "7714", "d820", "7983" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

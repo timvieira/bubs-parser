@@ -15,5 +15,5 @@
 <stringAttribute key="org.eclipse.jdt.junit.TEST_KIND" value="org.eclipse.jdt.junit.loader.junit4"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.ohsu.cslu.parser.AllParserTests"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="bubs-parser"/>
-<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xmx1024m -server -XX:+UseParallelGC -Djunit.filter.class=org.cjunit.PerformanceTestFilter -Dtest.hardware=mbp"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="${build_files}-Xmx1024m -server -XX:+UseParallelGC -Djunit.filter.class=org.cjunit.PerformanceTestFilter -Dtest.hardware=${test.hardware}"/>
 </launchConfiguration>

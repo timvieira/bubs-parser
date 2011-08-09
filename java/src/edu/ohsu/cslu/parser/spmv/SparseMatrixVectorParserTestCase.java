@@ -364,11 +364,4 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
     // bestParseTree);
     // System.out.println(parser.getStats());
     // }
-
-    @Override
-    protected void parseTreebankSentence(final int index) throws Exception {
-        final String bestParseTree = parser.parseSentence(sentences.get(index)[0]).parseBracketString(true, false);
-        assertEquals(sentences.get(index)[1], bestParseTree);
-        System.out.println(parser.getStats());
-    }
 }
