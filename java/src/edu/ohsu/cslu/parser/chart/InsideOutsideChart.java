@@ -8,10 +8,17 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.tests.JUnit;
 
+/**
+ * Chart structure including outside probabilities and various decoding methods dependent on posterior probabilities.
+ */
 public class InsideOutsideChart extends PackedArrayChart {
 
     public final float[] outsideProbabilities;
 
+    /**
+     * Parallel array of max-c scores (see Goodman, 1996). Stored as instance variables instead of locals purely for
+     * debugging and visualization via {@link #toString()}.
+     */
     private final short[] maxcEntries;
     private final float[] maxcScores;
     private final short[] maxcMidpoints;
@@ -45,7 +52,7 @@ public class InsideOutsideChart extends PackedArrayChart {
     }
 
     /**
-     * Implemented per the algorithm in Figure 1 of Joshua Goodman, 1996, Parsing Algorithms and Metrics.
+     * Computes 'maxc', per the algorithm in Figure 1 of Joshua Goodman, 1996, Parsing Algorithms and Metrics.
      */
     public void computeMaxc() {
 
@@ -64,6 +71,7 @@ public class InsideOutsideChart extends PackedArrayChart {
             final int cellIndex = cellIndex(start, start + 1);
             final int offset = offset(cellIndex);
 
+            // maxc = max(posterior probability)
             for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
                 final float c = insideProbabilities[i] + outsideProbabilities[i];
                 if (c > maxcScores[cellIndex]) {
@@ -80,6 +88,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                 final int cellIndex = cellIndex(start, end);
                 final int offset = offset(cellIndex);
 
+                // maxg = max(posterior probability / e)
                 float maxg = Float.NEGATIVE_INFINITY;
                 for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
 
@@ -90,10 +99,15 @@ public class InsideOutsideChart extends PackedArrayChart {
                     }
                 }
 
+                if (maxg == Float.NEGATIVE_INFINITY) {
+                    continue;
+                }
                 // Iterate over possible binary child cells, computing maxc
                 final float bestSplit = Float.NEGATIVE_INFINITY;
                 for (short midpoint = (short) (start + 1); midpoint < end; midpoint++) {
 
+                    // maxc = max(posterior probability) + max(maxc()). Store observed midpoints for use when extracting
+                    // the parse tree
                     final float split = maxcScores[cellIndex(start, midpoint)] + maxcScores[cellIndex(midpoint, end)];
                     if (split > bestSplit) {
                         maxcScores[cellIndex] = maxg + split;
@@ -104,18 +118,24 @@ public class InsideOutsideChart extends PackedArrayChart {
                 // Addition to Goodman's algorithm: if the Viterbi best path to the highest-scoring non-terminal was
                 // through a unary production, record the unary child as well. Note that this requires we store Viterbi
                 // inside scores and backpointers as well as summed inside probabilities during the inside parsing pass.
-                if (maxg > Float.NEGATIVE_INFINITY) {
-                    final int maxcEntryIndex = entryIndex(offset, numNonTerminals[cellIndex], maxcEntries[cellIndex]);
-                    if (midpoints[maxcEntryIndex] == end) {
-                        maxcUnaryChildren[cellIndex] = (short) sparseMatrixGrammar.packingFunction
-                                .unpackLeftChild(packedChildren[maxcEntryIndex]);
-                    }
+                final int maxcEntryIndex = entryIndex(offset, numNonTerminals[cellIndex], maxcEntries[cellIndex]);
+                if (midpoints[maxcEntryIndex] == end) {
+                    maxcUnaryChildren[cellIndex] = (short) sparseMatrixGrammar.packingFunction
+                            .unpackLeftChild(packedChildren[maxcEntryIndex]);
                 }
             }
         }
     }
 
-    public BinaryTree<String> extractMaxcParse(final int start, final int end) {
+    /**
+     * Extracts the max-recall parse (Goodman's 'Labeled Recall' algorithm), using the maxc values computed by
+     * {@link #computeMaxc()}.
+     * 
+     * @param start
+     * @param end
+     * @return extracted binary tree
+     */
+    public BinaryTree<String> extractMaxRecallParse(final int start, final int end) {
         final int cellIndex = cellIndex(start, end);
         final int offset = offset(cellIndex);
         final int numNonTerms = numNonTerminals[cellIndex];
@@ -153,8 +173,8 @@ public class InsideOutsideChart extends PackedArrayChart {
         }
 
         // Binary production
-        subtree.addChild(extractMaxcParse(start, edgeMidpoint));
-        subtree.addChild(extractMaxcParse(edgeMidpoint, end));
+        subtree.addChild(extractMaxRecallParse(start, edgeMidpoint));
+        subtree.addChild(extractMaxRecallParse(edgeMidpoint, end));
 
         return tree;
     }

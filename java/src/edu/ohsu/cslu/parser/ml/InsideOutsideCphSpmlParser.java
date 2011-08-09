@@ -51,7 +51,7 @@ public class InsideOutsideCphSpmlParser extends
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
             chart.computeMaxc();
-            final BinaryTree<String> parseTree = chart.extractMaxcParse(0, chart.size());
+            final BinaryTree<String> parseTree = chart.extractMaxRecallParse(0, chart.size());
             parseTask.extractTimeMs = System.currentTimeMillis() - t3;
             return parseTree;
         }
@@ -64,7 +64,7 @@ public class InsideOutsideCphSpmlParser extends
             e.printStackTrace();
         }
         chart.computeMaxc();
-        return chart.extractMaxcParse(0, chart.size());
+        return chart.extractMaxRecallParse(0, chart.size());
     }
 
     /**
