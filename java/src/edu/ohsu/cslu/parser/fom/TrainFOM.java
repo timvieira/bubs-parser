@@ -27,8 +27,11 @@ import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.cellselector.CellSelector;
+import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
@@ -63,27 +66,36 @@ public class TrainFOM extends BaseCommandlineTool {
             final BoundaryInOut fomModel = new BoundaryInOut(FOMType.BoundaryInOut, grammar, null);
             fomModel.train(inputStream, outputStream, smoothingCount, writeCounts);
         } else if (fomType == FOMType.Discriminative) {
-            final Grammar grammar = ParserDriver.readGrammar(grammarFile,
-                    ResearchParserType.InsideOutsideCartesianProductHash, CartesianProductFunctionType.PerfectHash);
+            final InsideOutsideCscSparseMatrixGrammar grammar = (InsideOutsideCscSparseMatrixGrammar) ParserDriver
+                    .readGrammar(grammarFile, ResearchParserType.InsideOutsideCartesianProductHash,
+                            CartesianProductFunctionType.PerfectHash);
             final ParserDriver opts = new ParserDriver();
-            final InsideOutsideCphSpmlParser parser = new InsideOutsideCphSpmlParser(opts,
-                    (InsideOutsideCscSparseMatrixGrammar) grammar);
+            opts.cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
+
+            final InsideOutsideCphSpmlParser parser = new InsideOutsideCphSpmlParser(opts, grammar);
+            String line;
+            while ((line = inputStream.readLine()) != null) {
+                final ParseContext result = parser.parseSentence(line);
+                System.out.println("Result:" + result.parseBracketString(false, false));
+
+                final CellSelector cellSelector = opts.cellSelectorFactory.createCellSelector();
+                cellSelector.reset();
+                while (cellSelector.hasNext()) {
+                    final short[] startAndEnd = cellSelector.next();
+                    final short start = startAndEnd[0];
+                    final short end = startAndEnd[1];
+
+                    for (int nt = 0; nt < 20; nt++) {
+                        System.out.println(String.format("[%d,%d] %s in=%f out=%f", start, end,
+                                grammar.nonTermSet.getSymbol(nt), parser.getInside(start, end, nt),
+                                parser.getOutside(start, end, nt)));
+                    }
+                }
+            }
 
         } else {
             throw new IllegalArgumentException("FOM type '" + fomType + "' not supported.");
         }
-
-        // } else if (beamConf == true) {
-        // final ModelTrainer m = new ModelTrainer();
-        // m.natesTraining();
-        // // final PerceptronCellSelector perceptronCellSelector = (PerceptronCellSelector)
-        // // CellSelector.create(cellSelectorType, cellModelStream, cslutScoresStream);
-        // // final BSCPPerceptronCellTrainer parser = new BSCPPerceptronCellTrainer(opts, (LeftHashGrammar)
-        // // grammar);
-        // // perceptronCellSelector.train(inputStream, parser);
-        // } else {
-        // System.out.println("ERROR.");
-        // }
     }
 
 }
