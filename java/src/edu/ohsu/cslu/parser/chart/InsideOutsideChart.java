@@ -14,24 +14,25 @@ import edu.ohsu.cslu.tests.JUnit;
 public class InsideOutsideChart extends PackedArrayChart {
 
     public final float[] outsideProbabilities;
+    public final float[] viterbiInsideProbabilities;
 
     /**
      * Parallel array of max-c scores (see Goodman, 1996). Stored as instance variables instead of locals purely for
      * debugging and visualization via {@link #toString()}.
      */
     private final short[] maxcEntries;
-    private final float[] maxcScores;
+    private final double[] maxcScores;
     private final short[] maxcMidpoints;
     private final short[] maxcUnaryChildren;
 
     public InsideOutsideChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
         super(tokens, sparseMatrixGrammar);
         this.outsideProbabilities = new float[chartArraySize];
-        Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
+        this.viterbiInsideProbabilities = new float[chartArraySize];
 
-        final int maxcArraySize = tokens.length * ((tokens.length + 1) / 2);
+        final int maxcArraySize = tokens.length * (tokens.length + 1) / 2;
         this.maxcEntries = new short[maxcArraySize];
-        this.maxcScores = new float[maxcArraySize];
+        this.maxcScores = new double[maxcArraySize];
         this.maxcMidpoints = new short[maxcArraySize];
         this.maxcUnaryChildren = new short[maxcArraySize];
     }
@@ -43,11 +44,7 @@ public class InsideOutsideChart extends PackedArrayChart {
         final int endIndex = startIndex + numNonTerminals[cellIndex];
 
         for (int i = startIndex; i < endIndex; i++) {
-
-            final int nonTerminal = nonTerminalIndices[i];
-            if (tmpOutsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
-                outsideProbabilities[i] = tmpOutsideProbabilities[nonTerminal];
-            }
+            outsideProbabilities[i] = tmpOutsideProbabilities[nonTerminalIndices[i]];
         }
     }
 
@@ -62,7 +59,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                 numNonTerminals[topCellIndex], (short) sparseMatrixGrammar.startSymbol)];
 
         Arrays.fill(maxcEntries, Short.MIN_VALUE);
-        Arrays.fill(maxcScores, Float.NEGATIVE_INFINITY);
+        Arrays.fill(maxcScores, Double.NEGATIVE_INFINITY);
         Arrays.fill(maxcMidpoints, Short.MIN_VALUE);
         Arrays.fill(maxcUnaryChildren, Short.MIN_VALUE);
 
@@ -71,9 +68,10 @@ public class InsideOutsideChart extends PackedArrayChart {
             final int cellIndex = cellIndex(start, start + 1);
             final int offset = offset(cellIndex);
 
-            // maxc = max(posterior probability)
+            // maxc = max(posterior probability / e)
             for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
-                final float c = insideProbabilities[i] + outsideProbabilities[i];
+                final double c = Math.exp(insideProbabilities[i] + outsideProbabilities[i]
+                        - startSymbolInsideProbability);
                 if (c > maxcScores[cellIndex]) {
                     maxcEntries[cellIndex] = nonTerminalIndices[i];
                     maxcScores[cellIndex] = c;
@@ -89,37 +87,46 @@ public class InsideOutsideChart extends PackedArrayChart {
                 final int offset = offset(cellIndex);
 
                 // maxg = max(posterior probability / e)
-                float maxg = Float.NEGATIVE_INFINITY;
+                float maxLogG = Float.NEGATIVE_INFINITY;
                 for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
 
-                    final float g = insideProbabilities[i] + outsideProbabilities[i] - startSymbolInsideProbability;
-                    if (g > maxg) {
+                    // final String nt = sparseMatrixGrammar.nonTermSet.getSymbol(nonTerminalIndices[i]);
+                    final float logG = insideProbabilities[i] + outsideProbabilities[i] - startSymbolInsideProbability;
+                    // final double g = Math.exp(logG);
+                    // Bias toward recovering unary parents in the case of a tie
+                    if ((logG > maxLogG)
+                            || (logG == maxLogG && sparseMatrixGrammar.packingFunction
+                                    .unpackRightChild(packedChildren[i]) == Production.UNARY_PRODUCTION)) {
+                        maxLogG = logG;
                         maxcEntries[cellIndex] = nonTerminalIndices[i];
-                        maxg = g;
                     }
                 }
 
-                if (maxg == Float.NEGATIVE_INFINITY) {
+                if (maxLogG == Float.NEGATIVE_INFINITY) {
                     continue;
                 }
-                // Iterate over possible binary child cells, computing maxc
-                final float bestSplit = Float.NEGATIVE_INFINITY;
+
+                final double maxg = Math.exp(maxLogG);
+
+                // Iterate over possible binary child cells, to find the maximum midpoint ('max split')
+                double bestSplit = Double.NEGATIVE_INFINITY;
                 for (short midpoint = (short) (start + 1); midpoint < end; midpoint++) {
 
-                    // maxc = max(posterior probability) + max(maxc()). Store observed midpoints for use when extracting
-                    // the parse tree
-                    final float split = maxcScores[cellIndex(start, midpoint)] + maxcScores[cellIndex(midpoint, end)];
+                    // maxc = max(posterior probability) + max(maxc(children)). Store observed midpoints for use when
+                    // extracting the parse tree
+                    final double split = maxcScores[cellIndex(start, midpoint)] + maxcScores[cellIndex(midpoint, end)];
                     if (split > bestSplit) {
+                        bestSplit = split;
                         maxcScores[cellIndex] = maxg + split;
                         maxcMidpoints[cellIndex] = midpoint;
                     }
                 }
 
-                // Addition to Goodman's algorithm: if the Viterbi best path to the highest-scoring non-terminal was
-                // through a unary production, record the unary child as well. Note that this requires we store Viterbi
-                // inside scores and backpointers as well as summed inside probabilities during the inside parsing pass.
+                // Addition to Goodman's algorithm: if the best path to the highest-scoring non-terminal was through a
+                // unary child, record that unary child as well. Note that this requires we store unary backpointers
+                // during the inside parsing pass.
                 final int maxcEntryIndex = entryIndex(offset, numNonTerminals[cellIndex], maxcEntries[cellIndex]);
-                if (midpoints[maxcEntryIndex] == end) {
+                if (sparseMatrixGrammar.packingFunction.unpackRightChild(packedChildren[maxcEntryIndex]) == Production.UNARY_PRODUCTION) {
                     maxcUnaryChildren[cellIndex] = (short) sparseMatrixGrammar.packingFunction
                             .unpackLeftChild(packedChildren[maxcEntryIndex]);
                 }
@@ -135,7 +142,7 @@ public class InsideOutsideChart extends PackedArrayChart {
      * @param end
      * @return extracted binary tree
      */
-    public BinaryTree<String> extractMaxRecallParse(final int start, final int end) {
+    public BinaryTree<String> extractMaxcParse(final int start, final int end) {
         final int cellIndex = cellIndex(start, end);
         final int offset = offset(cellIndex);
         final int numNonTerms = numNonTerminals[cellIndex];
@@ -173,12 +180,20 @@ public class InsideOutsideChart extends PackedArrayChart {
         }
 
         // Binary production
-        subtree.addChild(extractMaxRecallParse(start, edgeMidpoint));
-        subtree.addChild(extractMaxRecallParse(edgeMidpoint, end));
+        subtree.addChild(extractMaxcParse(start, edgeMidpoint));
+        subtree.addChild(extractMaxcParse(edgeMidpoint, end));
 
         return tree;
     }
 
+    /**
+     * Returns the index in the parallel chart array of the specified parent in the cell with the specified offset
+     * 
+     * @param offset The offset of the target cell
+     * @param numNonTerminals Number of non-terminals populated in the target cell
+     * @param parent The parent to search for in the target cell
+     * @return the index in the parallel chart array of the specified parent in the cell with the specified offset
+     */
     private int entryIndex(final int offset, final int numNonTerminals, final short parent) {
         return Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals, parent);
     }
