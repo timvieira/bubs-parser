@@ -75,10 +75,6 @@ public abstract class Parser<G extends Grammar> {
 
     public ParseContext parseTask; // temporary so I don't break too much stuff at once
 
-    /** Summary statistics over all sentences parsed by this Parser instance */
-    protected float totalParseTimeSec = 0;
-    protected long totalMaxMemoryMB = 0;
-
     /**
      * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
      * {@link ParserDriver}, but duplicated here as a final variable, so that the JIT can eliminate
