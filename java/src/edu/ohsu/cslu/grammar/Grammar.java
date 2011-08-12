@@ -18,6 +18,9 @@
  */
 package edu.ohsu.cslu.grammar;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -87,6 +90,7 @@ public class Grammar implements Serializable {
     // == Grammar Basics ==
     public GrammarFormatType grammarFormat;
     public final SymbolSet<String> nonTermSet;
+    private final IntSet factoredIndices = new IntOpenHashSet();
 
     // The lexSet and tokenizer need to be shared across multiple grammars so that
     // token indicies are identical.
@@ -255,8 +259,12 @@ public class Grammar implements Serializable {
             final int ntIndex = nonTermSet.addSymbol(nt.label);
 
             // Added by nate to make Cell Constraints work again
-            getNonterminal(ntIndex).isFactored = grammarFormat.isFactored(nt.label);
+            final boolean isFactored = getNonterminal(ntIndex).isFactored = grammarFormat.isFactored(nt.label);
 
+            // Added by Aaron for (reasonably) fast access to factored non-terminals
+            if (isFactored) {
+                factoredIndices.add(ntIndex);
+            }
             // final String evalNT = grammarFormat.getEvalNonTerminal(nt.label);
             // int evalNTIndex = evalNonTermSet.addSymbol(evalNT);
         }
@@ -908,6 +916,14 @@ public class Grammar implements Serializable {
             return p.prob;
         }
         return Float.NEGATIVE_INFINITY;
+    }
+
+    /**
+     * @param nonTerminal
+     * @return true if the specified non-terminal is a factored category.
+     */
+    public final boolean isFactored(final int nonTerminal) {
+        return factoredIndices.contains(nonTerminal);
     }
 
     /**

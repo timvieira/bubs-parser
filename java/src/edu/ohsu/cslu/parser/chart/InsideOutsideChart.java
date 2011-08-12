@@ -2,6 +2,7 @@ package edu.ohsu.cslu.parser.chart;
 
 import java.util.Arrays;
 
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -15,6 +16,8 @@ public class InsideOutsideChart extends PackedArrayChart {
 
     public final float[] outsideProbabilities;
     public final float[] viterbiInsideProbabilities;
+
+    private final double lambda;
 
     /**
      * Parallel array of max-c scores (see Goodman, 1996). Stored as instance variables instead of locals purely for
@@ -35,6 +38,8 @@ public class InsideOutsideChart extends PackedArrayChart {
         this.maxcScores = new double[maxcArraySize];
         this.maxcMidpoints = new short[maxcArraySize];
         this.maxcUnaryChildren = new short[maxcArraySize];
+
+        this.lambda = GlobalConfigProperties.singleton().getFloatProperty("lambda", 0f);
     }
 
     public void finalizeOutside(final float[] tmpOutsideProbabilities, final int cellIndex) {
@@ -87,26 +92,26 @@ public class InsideOutsideChart extends PackedArrayChart {
                 final int offset = offset(cellIndex);
 
                 // maxg = max(posterior probability / e)
-                float maxLogG = Float.NEGATIVE_INFINITY;
+                double maxg = Double.NEGATIVE_INFINITY;
                 for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
 
                     // final String nt = sparseMatrixGrammar.nonTermSet.getSymbol(nonTerminalIndices[i]);
-                    final float logG = insideProbabilities[i] + outsideProbabilities[i] - startSymbolInsideProbability;
-                    // final double g = Math.exp(logG);
+
+                    // Do not subtract lambda from a factored non-terminal.
+                    final double g = Math.exp(insideProbabilities[i] + outsideProbabilities[i]
+                            - startSymbolInsideProbability)
+                            - (sparseMatrixGrammar.isFactored(nonTerminalIndices[i]) ? 0 : lambda);
                     // Bias toward recovering unary parents in the case of a tie
-                    if ((logG > maxLogG)
-                            || (logG == maxLogG && sparseMatrixGrammar.packingFunction
-                                    .unpackRightChild(packedChildren[i]) == Production.UNARY_PRODUCTION)) {
-                        maxLogG = logG;
+                    if ((g > maxg)
+                            || (g == maxg && sparseMatrixGrammar.packingFunction.unpackRightChild(packedChildren[i]) == Production.UNARY_PRODUCTION)) {
+                        maxg = g;
                         maxcEntries[cellIndex] = nonTerminalIndices[i];
                     }
                 }
 
-                if (maxLogG == Float.NEGATIVE_INFINITY) {
+                if (maxg == Double.NEGATIVE_INFINITY) {
                     continue;
                 }
-
-                final double maxg = Math.exp(maxLogG);
 
                 // Iterate over possible binary child cells, to find the maximum midpoint ('max split')
                 double bestSplit = Double.NEGATIVE_INFINITY;
