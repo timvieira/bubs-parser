@@ -126,26 +126,23 @@ public class TestInsideOutsideCphSpmlParser {
         parser = new InsideOutsideCphSpmlParser(new ParserDriver(), new InsideOutsideCscSparseMatrixGrammar(
                 simpleGrammar2(), PerfectIntPairHashPackingFunction.class));
 
-        final String bestParseTree = parser.parseSentence(sentence).parseBracketString(false, false);
-        System.out.println(parser.chart.toString(true));
-        assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);
+        assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
+                .parseSentence(sentence).parseBracketString(false, false));
     }
 
     @Test
     public void testPartialSentence2() throws Exception {
         final String sentence = "The report is due out tomorrow .";
-        System.out.println(parser.parseSentence(sentence).binaryParse.toString());
-        System.out.println(parser.parseSentence(sentence).parseBracketString(false, false));
+        assertEquals(
+                "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
+                parser.parseSentence(sentence).parseBracketString(false, false));
     }
 
     @Test
     public void testSentence2() throws Exception {
-        parseTreebankSentence(1);
-    }
-
-    protected void parseTreebankSentence(final int index) throws Exception {
-        final String bestParseTree = parser.parseSentence(sentences.get(index)[0]).parseBracketString(false, false);
-        assertEquals(sentences.get(index)[1], bestParseTree.toString());
+        assertEquals(
+                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (PP (JJ due) (PP (IN out) (NP (NN tomorrow)))))) (. .)))",
+                parser.parseSentence(sentences.get(1)[0]).parseBracketString(false, false));
     }
 
     @Test
