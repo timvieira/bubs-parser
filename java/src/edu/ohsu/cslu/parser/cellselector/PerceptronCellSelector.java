@@ -28,7 +28,7 @@ import java.util.PriorityQueue;
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.beam.BSCPPerceptronCellTrainer;
-import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory.OHSUCellConstraints;
+import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel.OHSUCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 

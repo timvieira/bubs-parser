@@ -44,7 +44,7 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
+import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
@@ -113,14 +113,14 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * Creates the appropriate parser for each test class. Ugly reflection code, but at least it's all localized here.
      * 
      * @param grammar The grammar to use when parsing
-     * @param cellSelectorFactory Factory to produce {@link CellSelector} controlling chart traversal
+     * @param cellSelectorModel Model to produce {@link CellSelector} controlling chart traversal
      * @return Parser instance
      */
     @SuppressWarnings("unchecked")
-    protected final P createParser(final Grammar grammar, final CellSelectorFactory cellSelectorFactory,
+    protected final P createParser(final Grammar grammar, final CellSelectorModel cellSelectorModel,
             final ParserDriver options, final ConfigProperties configProperties) {
         if (options != null) {
-            options.cellSelectorFactory = cellSelectorFactory;
+            options.cellSelectorModel = cellSelectorModel;
         }
         try {
             final Class<P> parserClass = ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass())
@@ -236,7 +236,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         }
 
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAX_BEAM_WIDTH, "0");
-        parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
+        parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
     }
 
     public static Reader simpleGrammar2() throws Exception {
@@ -280,7 +280,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar1() throws Exception {
         final String sentence = "systems analyst arbitration chef";
 
-        parser = createParser(simpleGrammar1, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
+        parser = createParser(simpleGrammar1, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString(true, false);
         assertEquals("(ROOT (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree);
@@ -295,7 +295,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar2() throws Exception {
         final String sentence = "The fish market stands last";
 
-        parser = createParser(simpleGrammar2, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
+        parser = createParser(simpleGrammar2, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
 
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString(true, false);
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);

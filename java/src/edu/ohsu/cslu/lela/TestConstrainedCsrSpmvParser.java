@@ -96,7 +96,7 @@ public class TestConstrainedCsrSpmvParser {
         // Parse with the split-1 grammar
         // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
         final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
+        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         // opts.realSemiring = true;
         parser1 = new ConstrainedCsrSpmvParser(opts, csrGrammar1);
         return parser1.findBestParse(chart0);
@@ -207,7 +207,7 @@ public class TestConstrainedCsrSpmvParser {
         // Parse with the split-2 grammar, constrained by the split-1 chart
         // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
         final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
+        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
 
         // opts.realSemiring = true;
         final ConstrainedCsrSpmvParser parser2 = new ConstrainedCsrSpmvParser(opts, csrGrammar2);
@@ -304,7 +304,7 @@ public class TestConstrainedCsrSpmvParser {
 
         // Parse with the split-1 grammar
         final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
+        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         final ConstrainedCsrSpmvParser parser = new ConstrainedCsrSpmvParser(opts, csr1);
 
         // TODO Eliminate multiple conversions
@@ -345,7 +345,7 @@ public class TestConstrainedCsrSpmvParser {
         final BufferedReader br = new BufferedReader(corpus);
 
         final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
+        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         final ConstrainedCsrSpmvParser parser = new ConstrainedCsrSpmvParser(opts, splitGrammar);
 
         int count = 0;
@@ -392,7 +392,7 @@ public class TestConstrainedCsrSpmvParser {
         // matches the split-1 parse
 
         final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
+        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         final ConstrainedCsrSpmvParser p1 = new ConstrainedCsrSpmvParser(opts, csr1);
         final ConstrainedCsrSpmvParser p2 = new ConstrainedCsrSpmvParser(opts, csr2);
 
@@ -443,7 +443,7 @@ public class TestConstrainedCsrSpmvParser {
         // matches the split-1 parse
 
         final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
+        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         final ConstrainedCsrSpmvParser p1 = new ConstrainedCsrSpmvParser(opts, csr1);
         final ConstrainedCsrSpmvParser p2 = new ConstrainedCsrSpmvParser(opts, csr2);
         final ConstrainedCsrSpmvParser p3 = new ConstrainedCsrSpmvParser(opts, csr3);
@@ -512,7 +512,7 @@ public class TestConstrainedCsrSpmvParser {
                 biasedGrammar1, GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
+        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         // opts.realSemiring = true;
         parser1 = new ConstrainedCsrSpmvParser(opts, biasedCsrGrammar1);
         parser1.findBestParse(chart0);

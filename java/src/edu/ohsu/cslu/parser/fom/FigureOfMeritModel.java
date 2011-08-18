@@ -26,12 +26,17 @@ import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
  * Represents a figure of merit model and creates instances using that model (see {@link FigureOfMerit} ).
  * Implementations may constrain parse forest population (for agenda parsers) or cell population (for chart parsers) by
  * lexical analysis of the sentence or other outside information.
+ * 
+ * Implementations of this model class should be thread-safe; i.e., after reading in or initializing the model, it must
+ * be safe to call {@link #createFOM(Grammar)} simultaneously from multiple threads. Note that the {@link FigureOfMerit}
+ * instances returned are not expected to be thread-safe. To parse multiple sentences simultaneously, the user should
+ * obtain a {@link FigureOfMerit} instance for each thread, using {@link #createFOM(Grammar)}.
  */
-public class FigureOfMeritFactory {
+public class FigureOfMeritModel {
 
     protected FOMType type;
 
-    public FigureOfMeritFactory(final FOMType type) {
+    public FigureOfMeritModel(final FOMType type) {
         this.type = type;
     }
 

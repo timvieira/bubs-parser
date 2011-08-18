@@ -70,7 +70,7 @@ public class TrainFOM extends BaseCommandlineTool {
                     .readGrammar(grammarFile, ResearchParserType.InsideOutsideCartesianProductHash,
                             CartesianProductFunctionType.PerfectHash);
             final ParserDriver opts = new ParserDriver();
-            opts.cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
+            opts.cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
 
             final InsideOutsideCphSpmlParser parser = new InsideOutsideCphSpmlParser(opts, grammar);
             String line;
@@ -78,7 +78,7 @@ public class TrainFOM extends BaseCommandlineTool {
                 final ParseContext result = parser.parseSentence(line);
                 System.out.println("Result:" + result.parseBracketString(false, false));
 
-                final CellSelector cellSelector = opts.cellSelectorFactory.createCellSelector();
+                final CellSelector cellSelector = opts.cellSelectorModel.createCellSelector();
                 cellSelector.reset();
                 while (cellSelector.hasNext()) {
                     final short[] startAndEnd = cellSelector.next();

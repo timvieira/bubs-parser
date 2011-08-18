@@ -58,18 +58,18 @@ public class ProfileBoundaryInOut {
             parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
                     JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
         }
-        final BoundaryInOut parentBioFactory = new BoundaryInOut(FOMType.BoundaryInOut, parentAnnotatedGrammar,
+        final BoundaryInOut parentBioModel = new BoundaryInOut(FOMType.BoundaryInOut, parentAnnotatedGrammar,
                 new BufferedReader(JUnit.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
 
-        parentAnnotatedBio = (BoundaryInOutSelector) parentBioFactory.createFOM(parentAnnotatedGrammar);
+        parentAnnotatedBio = (BoundaryInOutSelector) parentBioModel.createFOM(parentAnnotatedGrammar);
 
         if (berkeleyGrammar == null) {
             berkeleyGrammar = new LeftCscSparseMatrixGrammar(
                     JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
         }
-        final BoundaryInOut berkeleyBioFactory = new BoundaryInOut(FOMType.BoundaryInOut, berkeleyGrammar,
+        final BoundaryInOut berkeleyBioModel = new BoundaryInOut(FOMType.BoundaryInOut, berkeleyGrammar,
                 new BufferedReader(JUnit.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
-        berkeleyBio = (BoundaryInOutSelector) berkeleyBioFactory.createFOM(berkeleyGrammar);
+        berkeleyBio = (BoundaryInOutSelector) berkeleyBioModel.createFOM(berkeleyGrammar);
     }
 
     @Before

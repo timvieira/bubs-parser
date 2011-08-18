@@ -61,10 +61,10 @@ import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
 import edu.ohsu.cslu.parser.beam.BSCPSplitUnary;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
-import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
+import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
-import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory;
-import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory;
+import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
+import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHash;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop;
@@ -76,7 +76,7 @@ import edu.ohsu.cslu.parser.ecp.ECPGrammarLoopBerkFilter;
 import edu.ohsu.cslu.parser.ecp.ECPInsideOutside;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
-import edu.ohsu.cslu.parser.fom.FigureOfMeritFactory;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
@@ -108,8 +108,8 @@ import edu.ohsu.cslu.util.Evalb.EvalbResult;
 public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseContext> {
 
     // Global vars to create parser
-    public CellSelectorFactory cellSelectorFactory = LeftRightBottomTopTraversal.FACTORY;
-    public FigureOfMeritFactory fomFactory = new FigureOfMeritFactory(FOMType.Inside);
+    public CellSelectorModel cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
+    public FigureOfMeritModel fomModel = new FigureOfMeritModel(FOMType.Inside);
     Grammar grammar, coarseGrammar;
     static String commandLineArgStr = "";
 
@@ -231,16 +231,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
             this.grammar = (Grammar) ois.readObject();
 
             BaseLogger.singleton().finer("Reading FOM...");
-            fomFactory = (FigureOfMeritFactory) ois.readObject();
+            fomModel = (FigureOfMeritModel) ois.readObject();
 
         } else {
 
             if (fomTypeOrModel.equals("Inside")) {
-                fomFactory = new FigureOfMeritFactory(FOMType.Inside);
+                fomModel = new FigureOfMeritModel(FOMType.Inside);
             } else if (fomTypeOrModel.equals("NormalizedInside")) {
-                fomFactory = new FigureOfMeritFactory(FOMType.NormalizedInside);
+                fomModel = new FigureOfMeritModel(FOMType.NormalizedInside);
             } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
-                fomFactory = new FigureOfMeritFactory(FOMType.InsideWithFwdBkwd);
+                fomModel = new FigureOfMeritModel(FOMType.InsideWithFwdBkwd);
             } else if (new File(fomTypeOrModel).exists()) {
                 // Assuming boundary FOM
                 Grammar fomGrammar = grammar;
@@ -249,18 +249,18 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
                     BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
                     fomGrammar = coarseGrammar;
                 }
-                fomFactory = new BoundaryInOut(FOMType.BoundaryInOut, fomGrammar, fileAsBufferedReader(fomTypeOrModel));
+                fomModel = new BoundaryInOut(FOMType.BoundaryInOut, fomGrammar, fileAsBufferedReader(fomTypeOrModel));
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
 
             if (chartConstraintsModel != null) {
-                cellSelectorFactory = new OHSUCellConstraintsFactory(fileAsBufferedReader(chartConstraintsModel),
+                cellSelectorModel = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel),
                         grammar.isLeftFactored());
             }
 
             if (beamModelFileName != null) {
-                cellSelectorFactory = new PerceptronBeamWidthFactory(fileAsBufferedReader(beamModelFileName));
+                cellSelectorModel = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
             }
         }
 

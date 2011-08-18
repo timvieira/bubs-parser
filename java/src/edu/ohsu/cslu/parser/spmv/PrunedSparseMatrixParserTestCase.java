@@ -59,7 +59,7 @@ public abstract class PrunedSparseMatrixParserTestCase<G extends SparseMatrixGra
         final G grammar = createGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"),
                 PerfectIntPairHashPackingFunction.class);
         final ParserDriver opts = new ParserDriver();
-        opts.fomFactory = new BoundaryInOut(FOMType.BoundaryInOut, grammar, new BufferedReader(
+        opts.fomModel = new BoundaryInOut(FOMType.BoundaryInOut, grammar, new BufferedReader(
                 JUnit.unitTestDataAsReader("fom/eng.R2.fom.gz")));
 
         final ConfigProperties props = GlobalConfigProperties.singleton();

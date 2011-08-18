@@ -37,7 +37,7 @@ import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
  * 
  * @author Nathan Bodenstab
  */
-public final class BoundaryInOut extends FigureOfMeritFactory {
+public final class BoundaryInOut extends FigureOfMeritModel {
 
     private Grammar grammar;
     private int posNgramOrder = 2;

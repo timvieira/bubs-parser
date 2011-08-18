@@ -30,7 +30,7 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellConstraints;
-import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthFactory.PerceptronBeamWidth;
+import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel.PerceptronBeamWidth;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;

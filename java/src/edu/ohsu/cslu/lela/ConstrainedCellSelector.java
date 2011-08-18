@@ -20,7 +20,7 @@ package edu.ohsu.cslu.lela;
 
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
+import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 
 /**
  * {@link CellSelector} implementation which constrains parsing according to a gold tree represented in a
@@ -31,7 +31,7 @@ import edu.ohsu.cslu.parser.cellselector.CellSelectorFactory;
  */
 public class ConstrainedCellSelector extends CellSelector {
 
-    public static CellSelectorFactory FACTORY = new CellSelectorFactory() {
+    public static CellSelectorModel MODEL = new CellSelectorModel() {
 
         @Override
         public CellSelector createCellSelector() {
