@@ -4,9 +4,11 @@ import java.util.Arrays;
 
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -17,7 +19,8 @@ public class InsideOutsideChart extends PackedArrayChart {
     public final float[] outsideProbabilities;
     public final float[] viterbiInsideProbabilities;
 
-    private final double lambda;
+    // Default lambda to 0 (max-recall) if unset
+    private final double lambda = GlobalConfigProperties.singleton().getFloatProperty(Parser.PROPERTY_MAXC_LAMBDA, 0f);
 
     /**
      * Parallel array of max-c scores (see Goodman, 1996). Stored as instance variables instead of locals purely for
@@ -38,8 +41,6 @@ public class InsideOutsideChart extends PackedArrayChart {
         this.maxcScores = new double[maxcArraySize];
         this.maxcMidpoints = new short[maxcArraySize];
         this.maxcUnaryChildren = new short[maxcArraySize];
-
-        this.lambda = GlobalConfigProperties.singleton().getFloatProperty("lambda", 0f);
     }
 
     public void finalizeOutside(final float[] tmpOutsideProbabilities, final int cellIndex) {
@@ -97,10 +98,10 @@ public class InsideOutsideChart extends PackedArrayChart {
 
                     // final String nt = sparseMatrixGrammar.nonTermSet.getSymbol(nonTerminalIndices[i]);
 
-                    // Do not subtract lambda from a factored non-terminal.
-                    final double g = Math.exp(insideProbabilities[i] + outsideProbabilities[i]
-                            - startSymbolInsideProbability)
-                            - (sparseMatrixGrammar.isFactored(nonTerminalIndices[i]) ? 0 : lambda);
+                    // Factored non-terminals do not contribute to the final parse tree, so their maxc score is 0
+                    final double g = sparseMatrixGrammar.isFactored(nonTerminalIndices[i]) ? 0 : Math
+                            .exp(insideProbabilities[i] + outsideProbabilities[i] - startSymbolInsideProbability)
+                            - lambda;
                     // Bias toward recovering unary parents in the case of a tie
                     if ((g > maxg)
                             || (g == maxg && sparseMatrixGrammar.packingFunction.unpackRightChild(packedChildren[i]) == Production.UNARY_PRODUCTION)) {
@@ -154,7 +155,12 @@ public class InsideOutsideChart extends PackedArrayChart {
 
         // Find the non-terminal which maximizes Goodman's max-constituent metric
         short parent = maxcEntries[cellIndex];
-        final BinaryTree<String> tree = new BinaryTree<String>(sparseMatrixGrammar.nonTermSet.getSymbol(parent));
+
+        // If the maxc score of the parent is negative (except for start symbol), add a 'dummy' symbol instead, which
+        // will be removed when the tree is unfactored.
+        final String sParent = (maxcScores[cellIndex] > 0 || parent == sparseMatrixGrammar.startSymbol) ? sparseMatrixGrammar.nonTermSet
+                .getSymbol(parent) : Tree.NULL_LABEL;
+        final BinaryTree<String> tree = new BinaryTree<String>(sParent);
         BinaryTree<String> subtree = tree;
 
         if (end - start == 1) {
@@ -180,8 +186,9 @@ public class InsideOutsideChart extends PackedArrayChart {
 
         if (maxcUnaryChildren[cellIndex] >= 0) {
             // Unary production - we currently only allow one level of unary in span > 1 cells.
-            subtree = subtree.addChild(new BinaryTree<String>(sparseMatrixGrammar.nonTermSet
-                    .getSymbol(maxcUnaryChildren[cellIndex])));
+            subtree = subtree
+                    .addChild((maxcScores[cellIndex] > 0 || parent == sparseMatrixGrammar.startSymbol) ? sparseMatrixGrammar.nonTermSet
+                            .getSymbol(maxcUnaryChildren[cellIndex]) : Tree.NULL_LABEL);
         }
 
         // Binary production

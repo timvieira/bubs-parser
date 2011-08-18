@@ -90,10 +90,10 @@ public class Grammar implements Serializable {
     // == Grammar Basics ==
     public GrammarFormatType grammarFormat;
     public final SymbolSet<String> nonTermSet;
-    private final IntSet factoredIndices = new IntOpenHashSet();
+    private final IntSet factoredIndices;
 
     // The lexSet and tokenizer need to be shared across multiple grammars so that
-    // token indicies are identical.
+    // token indices are identical.
     public static SymbolSet<String> lexSet = new SymbolSet<String>();
     public static Tokenizer tokenizer = new Tokenizer(lexSet);
 
@@ -255,6 +255,7 @@ public class Grammar implements Serializable {
         }
 
         // nt2evalntMap = new int[sortedNonTerminals.size()];
+        this.factoredIndices = new IntOpenHashSet();
         for (final StringNonTerminal nt : sortedNonTerminals) {
             final int ntIndex = nonTermSet.addSymbol(nt.label);
 
@@ -379,6 +380,7 @@ public class Grammar implements Serializable {
         this.phraseSet = g.phraseSet;
         this.nonTermInfo = g.nonTermInfo;
 
+        this.factoredIndices = g.factoredIndices;
         // this.lexSet = g.lexSet;
         // this.tokenizer = g.tokenizer;
     }
@@ -422,6 +424,13 @@ public class Grammar implements Serializable {
         this.rightChildrenEnd = startAndEndIndices[3];
         this.posStart = startAndEndIndices[4];
         this.posEnd = startAndEndIndices[5];
+
+        this.factoredIndices = new IntOpenHashSet();
+        for (int nt = 0; nt < nonTermSet.size(); nt++) {
+            if (grammarFormat.isFactored(nonTermSet.getSymbol(nt))) {
+                factoredIndices.add(nt);
+            }
+        }
     }
 
     // Read in the grammar file.

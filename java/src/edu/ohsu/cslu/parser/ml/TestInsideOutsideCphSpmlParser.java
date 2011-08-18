@@ -3,7 +3,6 @@ package edu.ohsu.cslu.parser.ml;
 import static org.junit.Assert.assertEquals;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
@@ -13,7 +12,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import cltool4j.ConfigProperties;
@@ -43,16 +41,11 @@ public class TestInsideOutsideCphSpmlParser {
     @BeforeClass
     public static void suiteSetUp() throws Exception {
         // Read test sentences
-        // TODO Parameterize test sentences (this will require a custom Runner implementation)
         final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
                 JUnit.unitTestDataAsStream("parsing/wsj.24.tokens.1-20")));
 
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.spmlcyk.1-20")));
-
         for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
-            final String parsedSentence = parsedReader.readLine();
-            sentences.add(new String[] { sentence, parsedSentence });
+            sentences.add(new String[] { sentence });
         }
     }
 
@@ -66,10 +59,9 @@ public class TestInsideOutsideCphSpmlParser {
         props.put(Parser.PROPERTY_LEXICAL_ROW_BEAM_WIDTH, "30");
         props.put(Parser.PROPERTY_LEXICAL_ROW_UNARIES, "10");
         props.put(Parser.PROPERTY_MAX_LOCAL_DELTA, "15");
+        props.put(Parser.PROPERTY_MAXC_LAMBDA, "0.5");
 
-        final ParserDriver opts = new ParserDriver();
-        // opts.binaryTreeOutput = true;
-        parser = new InsideOutsideCphSpmlParser(opts, grammar);
+        parser = new InsideOutsideCphSpmlParser(new ParserDriver(), grammar);
     }
 
     @After
@@ -123,11 +115,21 @@ public class TestInsideOutsideCphSpmlParser {
 
         final String sentence = "The fish market stands last";
 
+        // Max-recall decoding
+        GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "0");
         parser = new InsideOutsideCphSpmlParser(new ParserDriver(), new InsideOutsideCscSparseMatrixGrammar(
                 simpleGrammar2(), PerfectIntPairHashPackingFunction.class));
 
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
                 .parseSentence(sentence).parseBracketString(false, false));
+
+        // Max-precision decoding
+        GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
+        parser = new InsideOutsideCphSpmlParser(new ParserDriver(), new InsideOutsideCscSparseMatrixGrammar(
+                simpleGrammar2(), PerfectIntPairHashPackingFunction.class));
+
+        assertEquals("(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))",
+                parser.parseSentence(sentence).parseBracketString(false, false));
     }
 
     @Test
@@ -141,25 +143,25 @@ public class TestInsideOutsideCphSpmlParser {
     @Test
     public void testSentence2() throws Exception {
         assertEquals(
-                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (PP (JJ due) (PP (IN out) (NP (NN tomorrow)))))) (. .)))",
+                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (PP (JJ due) (IN out) (NP (NN tomorrow))))) (. .)))",
                 parser.parseSentence(sentences.get(1)[0]).parseBracketString(false, false));
     }
 
-    @Test
-    @Ignore
-    public void testAll() throws IOException {
-
-        final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
-                JUnit.unitTestDataAsStream("parsing/wsj.24.tokens.1-20")));
-
-        final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
-                JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.beam.fom.1-20")));
-
-        int i = 1;
-        for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
-            final String parsedSentence = parsedReader.readLine();
-            System.out.println(parser.parseSentence(sentence).binaryParse.toString());
-            i++;
-        }
-    }
+    // @Test
+    // @Ignore
+    // public void testAll() throws IOException {
+    //
+    // final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(
+    // JUnit.unitTestDataAsStream("parsing/wsj.24.tokens.1-20")));
+    //
+    // final BufferedReader parsedReader = new BufferedReader(new InputStreamReader(
+    // JUnit.unitTestDataAsStream("parsing/wsj.24.parsed.R2.beam.fom.1-20")));
+    //
+    // int i = 1;
+    // for (String sentence = tokenizedReader.readLine(); sentence != null; sentence = tokenizedReader.readLine()) {
+    // final String parsedSentence = parsedReader.readLine();
+    // System.out.println(parser.parseSentence(sentence).binaryParse.toString());
+    // i++;
+    // }
+    // }
 }
