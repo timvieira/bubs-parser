@@ -24,7 +24,7 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsFactory.OHSUCellConstraints;
+import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel.OHSUCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 

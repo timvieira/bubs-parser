@@ -38,13 +38,13 @@ import edu.ohsu.cslu.perceptron.Classifier;
  * @author Nathan Bodenstab
  * @since 2011
  */
-public class PerceptronBeamWidthFactory implements CellSelectorFactory {
+public class PerceptronBeamWidthModel implements CellSelectorModel {
 
     protected Classifier beamWidthModel;
     private boolean inferFactoredCells = false, classifyBaseCells = false;
     protected boolean grammarLeftFactored;
 
-    public PerceptronBeamWidthFactory(final BufferedReader modelStream) {
+    public PerceptronBeamWidthModel(final BufferedReader modelStream) {
 
         if (inferFactoredCells == false && classifyBaseCells == true) {
             throw new IllegalArgumentException("ERROR: got that wrong -- no models -fact +base");

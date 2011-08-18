@@ -28,7 +28,7 @@ import edu.ohsu.cslu.parser.Parser;
 /**
  * A figure-of-merit model for a particular parser. {@link FigureOfMerit} instances are not required (or expected) to be
  * thread-safe across multiple simultaneous sentences, so an instance should not be shared by multiple {@link Parser}
- * instances. Model parameters should be stored in a shared {@link FigureOfMeritFactory}.
+ * instances. Model parameters should be stored in a shared {@link FigureOfMeritModel}.
  */
 public abstract class FigureOfMerit implements Serializable {
 

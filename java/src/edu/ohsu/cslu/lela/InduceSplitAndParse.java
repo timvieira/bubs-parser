@@ -122,7 +122,7 @@ public class InduceSplitAndParse extends BaseCommandlineTool {
         System.out.println("Parsing with split grammar...");
         count = 0;
         final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorFactory = ConstrainedCellSelector.FACTORY;
+        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         final ConstrainedCsrSpmvParser parser1 = new ConstrainedCsrSpmvParser(opts, csrGrammar1, collectDetailedTimings);
 
         for (final ConstrainedChart constrainingChart : constrainingCharts) {

@@ -86,7 +86,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
+        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(),
                 configProperties());
         p.initSentence(new int[5]);
         final Chart chart = p.chart;
@@ -196,7 +196,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
+        final P p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
         p.initSentence(new int[4]);
         final Chart chart = p.chart;
 
@@ -268,7 +268,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
                 PerfectIntPairHashPackingFunction.class);
 
         // Create the parser
-        final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
+        final P p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
         p.initSentence(new int[5]);
         final Chart chart = p.chart;
 
@@ -337,7 +337,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(), LeftShiftFunction.class);
 
         // Create the parser
-        final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
+        final P p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
         p.initSentence(new int[5]);
         final Chart chart = p.chart;
 

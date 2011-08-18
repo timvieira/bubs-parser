@@ -40,7 +40,7 @@ public class LeftRightBottomTopTraversal extends CellSelector {
 
     private ChartParser<?, ?> parser;
 
-    public static CellSelectorFactory FACTORY = new CellSelectorFactory() {
+    public static CellSelectorModel MODEL = new CellSelectorModel() {
 
         @Override
         public CellSelector createCellSelector() {

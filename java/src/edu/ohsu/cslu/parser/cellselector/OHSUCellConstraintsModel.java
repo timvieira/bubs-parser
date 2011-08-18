@@ -70,7 +70,7 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
  */
 
-public class OHSUCellConstraintsFactory implements CellSelectorFactory {
+public class OHSUCellConstraintsModel implements CellSelectorModel {
 
     private Vector<Vector<Float>> allBeginScores = new Vector<Vector<Float>>();
     private Vector<Vector<Float>> allEndScores = new Vector<Vector<Float>>();
@@ -93,7 +93,7 @@ public class OHSUCellConstraintsFactory implements CellSelectorFactory {
     protected LinkedList<ChartCell> cellList;
     protected Iterator<ChartCell> cellListIterator;
 
-    public OHSUCellConstraintsFactory(final BufferedReader modelStream, final boolean grammarLeftFactored) {
+    public OHSUCellConstraintsModel(final BufferedReader modelStream, final boolean grammarLeftFactored) {
         this.grammarLeftFactored = grammarLeftFactored;
         try {
             final ConfigProperties props = GlobalConfigProperties.singleton();

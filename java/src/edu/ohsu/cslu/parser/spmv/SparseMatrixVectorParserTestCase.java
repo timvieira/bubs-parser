@@ -91,7 +91,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
             simpleGrammar2 = createGrammar(simpleGrammar2());
         }
 
-        parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
+        parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
     }
 
     @After
@@ -111,7 +111,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final P p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(), configProperties());
+        final P p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
         p.initSentence(new int[4]);
         final Chart chart = p.chart;
 
@@ -171,7 +171,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
+        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(),
                 configProperties());
         p.initSentence(new int[4]);
 
@@ -308,7 +308,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.FACTORY, parserOptions(),
+        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(),
                 configProperties());
         p.initSentence(new int[5]);
 
