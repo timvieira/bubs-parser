@@ -46,16 +46,17 @@ public class InsideOutsideCphSpmlParser extends
 
         // For now, we always perform Goodman's max-recall decoding. We also need max-precision and a trade-off between
         // the two
+        final DecodingMethod decodingMethod = DecodingMethod.SplitSum;
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
-            chart.computeMaxc();
-            final BinaryTree<String> parseTree = chart.extractMaxcParse(0, chart.size());
+            chart.decode(decodingMethod);
+            final BinaryTree<String> parseTree = chart.extract(0, chart.size(), decodingMethod);
             parseTask.extractTimeMs = System.currentTimeMillis() - t3;
             return parseTree;
         }
 
-        chart.computeMaxc();
-        return chart.extractMaxcParse(0, chart.size());
+        chart.decode(decodingMethod);
+        return chart.extract(0, chart.size(), decodingMethod);
     }
 
     /**
@@ -367,5 +368,24 @@ public class InsideOutsideCphSpmlParser extends
                 }
             }
         }
+    }
+
+    /**
+     * Methods of decoding a populated chart.
+     */
+    public static enum DecodingMethod {
+        // Depends only on inside probabilities and viterbi backpointers
+        Viterbi,
+
+        // Requires posterior probabilities, but ignores backpointers except for unary productions
+        Goodman,
+
+        // Goodman decoding using a projection onto an unsplit grammar; sums over non-terminal splits (latent
+        // annotations in a latent-variable grammar)
+        SplitSum,
+
+        // Petrov's max-rule-product decoding. Requires inside/outside posterior probabilities and sums over
+        // non-terminal splits.
+        MaxRule;
     }
 }

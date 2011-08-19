@@ -8,7 +8,9 @@ import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser.DecodingMethod;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -54,10 +56,52 @@ public class InsideOutsideChart extends PackedArrayChart {
         }
     }
 
+    public void decode(final DecodingMethod decodingMethod) {
+        switch (decodingMethod) {
+        case Viterbi:
+            // No decoding necessary
+            break;
+
+        case Goodman:
+        case SplitSum:
+            computeSplitSumMaxc(decodingMethod);
+            break;
+
+        default:
+            throw new UnsupportedOperationException("Decoding method " + decodingMethod + " not implemented");
+        }
+    }
+
     /**
-     * Computes 'maxc', per the algorithm in Figure 1 of Joshua Goodman, 1996, Parsing Algorithms and Metrics.
+     * Computes 'maxc', per the algorithm in Figure 1 of Joshua Goodman, 1996, Parsing Algorithms and Metrics, using
+     * lambda as per Equation 7, Appendix A of Hollingshead and Roark, Pipeline Iteration.
+     * 
+     * If decodingMethod is {@link DecodingMethod#Goodman}, the maxc computation is identical to that presented in
+     * Goodman, with the addition of a unary processing step described further below. If the decodingMethod is
+     * {@link DecodingMethod#SplitSum}, we instead sum over unsplit categories.
+     * 
+     * @param decodingMethod
      */
-    public void computeMaxc() {
+    private void computeSplitSumMaxc(final DecodingMethod decodingMethod) {
+
+        final PackingFunction pf = sparseMatrixGrammar.packingFunction;
+        Vocabulary vocabulary;
+        Short2ShortMap nonTermMap;
+
+        switch (decodingMethod) {
+        case Goodman:
+            vocabulary = sparseMatrixGrammar.nonTermSet;
+            nonTermMap = new IdentityMap();
+            break;
+
+        case SplitSum:
+            vocabulary = sparseMatrixGrammar.nonTermSet.baseVocabulary();
+            nonTermMap = new BaseNonterminalMap(vocabulary);
+            break;
+
+        default:
+            throw new UnsupportedOperationException("Decoding method " + decodingMethod + " is not supported");
+        }
 
         // Start symbol inside-probability (e)
         final int topCellIndex = cellIndex(0, size);
@@ -74,15 +118,17 @@ public class InsideOutsideChart extends PackedArrayChart {
             final int cellIndex = cellIndex(start, start + 1);
             final int offset = offset(cellIndex);
 
-            // maxc = max(posterior probability / e)
+            // maxc = max(posterior probability / e). If nonTermMap is an IdentityMap, this will compute Goodman's maxc;
+            // if it is an instance of BaseNonterminalMap, we will instead compute sums over unsplit non-terminals
+            final double[] splitSum = new double[vocabulary.size()];
             for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
                 final double c = Math.exp(insideProbabilities[i] + outsideProbabilities[i]
                         - startSymbolInsideProbability);
-                if (c > maxcScores[cellIndex]) {
-                    maxcEntries[cellIndex] = nonTerminalIndices[i];
-                    maxcScores[cellIndex] = c;
-                }
+                splitSum[nonTermMap.get(nonTerminalIndices[i])] += c;
             }
+            final int maxcEntry = edu.ohsu.cslu.util.Math.argmax(splitSum);
+            maxcEntries[cellIndex] = (short) maxcEntry;
+            maxcScores[cellIndex] = splitSum[maxcEntry];
         }
 
         // Span > 1 cells
@@ -92,27 +138,47 @@ public class InsideOutsideChart extends PackedArrayChart {
                 final int cellIndex = cellIndex(start, end);
                 final int offset = offset(cellIndex);
 
-                // maxg = max(posterior probability / e)
-                double maxg = Double.NEGATIVE_INFINITY;
+                // maxg = max(posterior probability / e). If nonTermMap is an IdentityMap, this will compute Goodman's
+                // maxg; if it is an instance of BaseNonterminalMap, we will instead compute sums over unsplit
+                // non-terminals
+                final double[] splitSumG = new double[vocabulary.size()];
+                final double[] splitMaxG = new double[vocabulary.size()];
+                final short[] unaryChildren = new short[vocabulary.size()];
+
+                Arrays.fill(splitMaxG, Double.NEGATIVE_INFINITY);
                 for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
 
-                    // final String nt = sparseMatrixGrammar.nonTermSet.getSymbol(nonTerminalIndices[i]);
+                    final short nt = nonTermMap.get(nonTerminalIndices[i]);
 
                     // Factored non-terminals do not contribute to the final parse tree, so their maxc score is 0
-                    final double g = sparseMatrixGrammar.isFactored(nonTerminalIndices[i]) ? 0 : Math
-                            .exp(insideProbabilities[i] + outsideProbabilities[i] - startSymbolInsideProbability)
+                    final double g = vocabulary.isFactored(nonTerminalIndices[i]) ? 0 : Math.exp(insideProbabilities[i]
+                            + outsideProbabilities[i] - startSymbolInsideProbability)
                             - lambda;
-                    // Bias toward recovering unary parents in the case of a tie
-                    if ((g > maxg)
-                            || (g == maxg && sparseMatrixGrammar.packingFunction.unpackRightChild(packedChildren[i]) == Production.UNARY_PRODUCTION)) {
-                        maxg = g;
-                        maxcEntries[cellIndex] = nonTerminalIndices[i];
+
+                    // Bias toward recovering unary parents in the case of a tie (e.g., when ROOT and S are tied in the
+                    // top cell)
+                    final boolean unaryParent = pf.unpackRightChild(packedChildren[i]) == Production.UNARY_PRODUCTION;
+                    if (g > splitMaxG[nt] || (g == splitMaxG[nt] && unaryParent)) {
+                        splitMaxG[nt] = g;
+                        maxcEntries[cellIndex] = nt;
+
+                        // Addition to Goodman's algorithm: if the best path to the highest-scoring non-terminal was
+                        // through a unary child, record that unary child as well. Note that this requires we store
+                        // unary backpointers during the inside parsing pass.
+                        if (unaryParent) {
+                            unaryChildren[nt] = (short) pf.unpackLeftChild(packedChildren[i]);
+                        } else {
+                            unaryChildren[nt] = Short.MIN_VALUE;
+                        }
                     }
+
+                    splitSumG[nt] = splitSumG[nt] == Double.NEGATIVE_INFINITY ? g : splitSumG[nt] + g;
                 }
 
-                if (maxg == Double.NEGATIVE_INFINITY) {
-                    continue;
-                }
+                final short maxNt = (short) edu.ohsu.cslu.util.Math.argmax(splitMaxG);
+                maxcEntries[cellIndex] = maxNt;
+                maxcUnaryChildren[cellIndex] = unaryChildren[maxNt];
+                final double maxg = splitMaxG[maxNt];
 
                 // Iterate over possible binary child cells, to find the maximum midpoint ('max split')
                 double bestSplit = Double.NEGATIVE_INFINITY;
@@ -127,45 +193,58 @@ public class InsideOutsideChart extends PackedArrayChart {
                         maxcMidpoints[cellIndex] = midpoint;
                     }
                 }
-
-                // Addition to Goodman's algorithm: if the best path to the highest-scoring non-terminal was through a
-                // unary child, record that unary child as well. Note that this requires we store unary backpointers
-                // during the inside parsing pass.
-                final int maxcEntryIndex = entryIndex(offset, numNonTerminals[cellIndex], maxcEntries[cellIndex]);
-                if (sparseMatrixGrammar.packingFunction.unpackRightChild(packedChildren[maxcEntryIndex]) == Production.UNARY_PRODUCTION) {
-                    maxcUnaryChildren[cellIndex] = (short) sparseMatrixGrammar.packingFunction
-                            .unpackLeftChild(packedChildren[maxcEntryIndex]);
-                }
             }
         }
     }
 
     /**
      * Extracts the max-recall parse (Goodman's 'Labeled Recall' algorithm), using the maxc values computed by
-     * {@link #computeMaxc()}.
+     * {@link #decode()}.
      * 
      * @param start
      * @param end
+     * @param decodingMethod TODO
      * @return extracted binary tree
      */
-    public BinaryTree<String> extractMaxcParse(final int start, final int end) {
+    public BinaryTree<String> extract(final int start, final int end, final DecodingMethod decodingMethod) {
+
+        Vocabulary vocabulary;
+        Short2ShortMap nonTermMap;
+
+        switch (decodingMethod) {
+        case Goodman:
+            vocabulary = sparseMatrixGrammar.nonTermSet;
+            nonTermMap = new IdentityMap();
+            break;
+        case SplitSum:
+            vocabulary = sparseMatrixGrammar.nonTermSet;
+            nonTermMap = new BaseNonterminalMap(vocabulary);
+            break;
+
+        default:
+            throw new UnsupportedOperationException("Decoding method " + decodingMethod + " is not supported");
+        }
+
+        final short startSymbol = vocabulary.startSymbol();
+        final PackingFunction pf = sparseMatrixGrammar.packingFunction;
+
         final int cellIndex = cellIndex(start, end);
         final int offset = offset(cellIndex);
         final int numNonTerms = numNonTerminals[cellIndex];
 
-        // Find the non-terminal which maximizes Goodman's max-constituent metric
+        // Find the non-terminal which maximizes the decoding metric (e.g. Goodman's max-constituent or Petrov's
+        // max-rule)
         short parent = maxcEntries[cellIndex];
 
         // If the maxc score of the parent is negative (except for start symbol), add a 'dummy' symbol instead, which
         // will be removed when the tree is unfactored.
-        final String sParent = (maxcScores[cellIndex] > 0 || parent == sparseMatrixGrammar.startSymbol) ? sparseMatrixGrammar.nonTermSet
-                .getSymbol(parent) : Tree.NULL_LABEL;
+        final String sParent = (maxcScores[cellIndex] > 0 || parent == startSymbol) ? vocabulary.getSymbol(parent)
+                : Tree.NULL_LABEL;
         final BinaryTree<String> tree = new BinaryTree<String>(sParent);
         BinaryTree<String> subtree = tree;
 
         if (end - start == 1) {
 
-            final PackingFunction pf = sparseMatrixGrammar.packingFunction;
             BinaryTree<String> unaryTree = subtree;
 
             // Find the index of the current parent in the chart storage and follow the unary productions down to the
@@ -174,8 +253,7 @@ public class InsideOutsideChart extends PackedArrayChart {
             for (i = entryIndex(offset, numNonTerms, parent); pf.unpackRightChild(packedChildren[i]) != Production.LEXICAL_PRODUCTION; i = entryIndex(
                     offset, numNonTerms, parent)) {
                 parent = (short) pf.unpackLeftChild(packedChildren[i]);
-                unaryTree = unaryTree
-                        .addChild(new BinaryTree<String>(sparseMatrixGrammar.nonTermSet.getSymbol(parent)));
+                unaryTree = unaryTree.addChild(new BinaryTree<String>(vocabulary.getSymbol(parent)));
             }
             unaryTree.addChild(new BinaryTree<String>(sparseMatrixGrammar.lexSet.getSymbol(pf
                     .unpackLeftChild(packedChildren[i]))));
@@ -186,14 +264,13 @@ public class InsideOutsideChart extends PackedArrayChart {
 
         if (maxcUnaryChildren[cellIndex] >= 0) {
             // Unary production - we currently only allow one level of unary in span > 1 cells.
-            subtree = subtree
-                    .addChild((maxcScores[cellIndex] > 0 || parent == sparseMatrixGrammar.startSymbol) ? sparseMatrixGrammar.nonTermSet
-                            .getSymbol(maxcUnaryChildren[cellIndex]) : Tree.NULL_LABEL);
+            subtree = subtree.addChild((maxcScores[cellIndex] > 0 || parent == startSymbol) ? vocabulary
+                    .getSymbol(maxcUnaryChildren[cellIndex]) : Tree.NULL_LABEL);
         }
 
         // Binary production
-        subtree.addChild(extractMaxcParse(start, edgeMidpoint));
-        subtree.addChild(extractMaxcParse(edgeMidpoint, end));
+        subtree.addChild(extract(start, edgeMidpoint, decodingMethod));
+        subtree.addChild(extract(edgeMidpoint, end, decodingMethod));
 
         return tree;
     }
@@ -216,6 +293,31 @@ public class InsideOutsideChart extends PackedArrayChart {
             return (InsideOutsideChartCell) temporaryCells[start][end];
         }
         return new InsideOutsideChartCell(start, end);
+    }
+
+    private interface Short2ShortMap {
+        public short get(short k);
+    }
+
+    private final class IdentityMap implements Short2ShortMap {
+        @Override
+        public final short get(final short k) {
+            return k;
+        }
+    }
+
+    private final class BaseNonterminalMap implements Short2ShortMap {
+        private final Vocabulary vocabulary;
+
+        public BaseNonterminalMap(final Vocabulary vocabulary) {
+            this.vocabulary = vocabulary;
+        }
+
+        @Override
+        public short get(final short k) {
+            return vocabulary.getBaseIndex(k);
+        }
+
     }
 
     public class InsideOutsideChartCell extends PackedArrayChartCell {
