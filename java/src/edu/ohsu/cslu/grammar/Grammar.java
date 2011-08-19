@@ -18,9 +18,6 @@
  */
 package edu.ohsu.cslu.grammar;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -89,8 +86,7 @@ public class Grammar implements Serializable {
 
     // == Grammar Basics ==
     public GrammarFormatType grammarFormat;
-    public final SymbolSet<String> nonTermSet;
-    private final IntSet factoredIndices;
+    public final Vocabulary nonTermSet;
 
     // The lexSet and tokenizer need to be shared across multiple grammars so that
     // token indices are identical.
@@ -175,17 +171,16 @@ public class Grammar implements Serializable {
      */
     public Grammar(final Reader grammarFile) throws IOException {
 
-        nonTermSet = new SymbolSet<String>();
-        // lexSet = new SymbolSet<String>();
-        posSet = new SymbolSet<Integer>();
-        phraseSet = new SymbolSet<Integer>();
-
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
 
         BaseLogger.singleton().finer("INFO: Reading grammar ... ");
         this.stringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
+
+        nonTermSet = new Vocabulary(grammarFormat);
+        posSet = new SymbolSet<Integer>();
+        phraseSet = new SymbolSet<Integer>();
 
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
@@ -255,22 +250,18 @@ public class Grammar implements Serializable {
         }
 
         // nt2evalntMap = new int[sortedNonTerminals.size()];
-        this.factoredIndices = new IntOpenHashSet();
         for (final StringNonTerminal nt : sortedNonTerminals) {
-            final int ntIndex = nonTermSet.addSymbol(nt.label);
+            final short ntIndex = (short) nonTermSet.addSymbol(nt.label);
 
             // Added by nate to make Cell Constraints work again
-            final boolean isFactored = getNonterminal(ntIndex).isFactored = grammarFormat.isFactored(nt.label);
+            getNonterminal(ntIndex).isFactored = grammarFormat.isFactored(nt.label);
 
-            // Added by Aaron for (reasonably) fast access to factored non-terminals
-            if (isFactored) {
-                factoredIndices.add(ntIndex);
-            }
             // final String evalNT = grammarFormat.getEvalNonTerminal(nt.label);
             // int evalNTIndex = evalNonTermSet.addSymbol(evalNT);
         }
 
         this.startSymbol = nonTermSet.addSymbol(startSymbolStr);
+        nonTermSet.setStartSymbol((short) startSymbol);
         this.nullSymbol = nonTermSet.addSymbol(nullSymbolStr);
         this.nullWord = lexSet.addSymbol(nullSymbolStr);
 
@@ -380,7 +371,6 @@ public class Grammar implements Serializable {
         this.phraseSet = g.phraseSet;
         this.nonTermInfo = g.nonTermInfo;
 
-        this.factoredIndices = g.factoredIndices;
         // this.lexSet = g.lexSet;
         // this.tokenizer = g.tokenizer;
     }
@@ -388,7 +378,7 @@ public class Grammar implements Serializable {
     protected Grammar(final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
             final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
             final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat) {
-        this.nonTermSet = vocabulary;
+        this.nonTermSet = (Vocabulary) vocabulary;
         this.startSymbol = 0;
         this.nullSymbol = -1;
         this.startSymbolStr = vocabulary.getSymbol(startSymbol);
@@ -424,13 +414,6 @@ public class Grammar implements Serializable {
         this.rightChildrenEnd = startAndEndIndices[3];
         this.posStart = startAndEndIndices[4];
         this.posEnd = startAndEndIndices[5];
-
-        this.factoredIndices = new IntOpenHashSet();
-        for (int nt = 0; nt < nonTermSet.size(); nt++) {
-            if (grammarFormat.isFactored(nonTermSet.getSymbol(nt))) {
-                factoredIndices.add(nt);
-            }
-        }
     }
 
     // Read in the grammar file.
@@ -677,10 +660,6 @@ public class Grammar implements Serializable {
         return lexSet.hasSymbol(s);
     }
 
-    int addNonTerm(final String nonTerm) {
-        return nonTermSet.addSymbol(nonTerm);
-    }
-
     // TODO: I don't like that we have getNonterminal() and mapNonterminal()
     // methods. Should mapNonterminal return a NonTerminal instead of a string?
     public final NonTerminal getNonterminal(final int index) {
@@ -925,14 +904,6 @@ public class Grammar implements Serializable {
             return p.prob;
         }
         return Float.NEGATIVE_INFINITY;
-    }
-
-    /**
-     * @param nonTerminal
-     * @return true if the specified non-terminal is a factored category.
-     */
-    public final boolean isFactored(final int nonTerminal) {
-        return factoredIndices.contains(nonTerminal);
     }
 
     /**

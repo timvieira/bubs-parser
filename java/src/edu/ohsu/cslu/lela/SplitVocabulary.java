@@ -22,22 +22,23 @@ import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
 
 import java.util.Collection;
 
+import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Vocabulary;
 
 /**
- * Represents symbols of a state-split vocabulary. e.g. the base NP type might be split into NP_0, NP_1, NP_2,
- * ...
+ * Represents symbols of a state-split vocabulary. e.g. the base NP type might be split into NP_0, NP_1, NP_2, ...
  * 
  * @author Aaron Dunlop
  * @since Feb 3, 2011
  */
-public class SplitVocabulary extends SymbolSet<String> {
+public class SplitVocabulary extends Vocabulary {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * Maps non-terminal indices to positions within the sets of sub-categories derived from the same base
-     * category. e.g. NP_0 -> 0, VP_3 -> 3, PP_5 -> 5.
+     * Maps non-terminal indices to positions within the sets of sub-categories derived from the same base category.
+     * e.g. NP_0 -> 0, VP_3 -> 3, PP_5 -> 5.
      */
     short[] subcategoryIndices;
 
@@ -45,15 +46,15 @@ public class SplitVocabulary extends SymbolSet<String> {
     short[] baseCategoryIndices;
 
     /**
-     * Indices of the first split categories derived from each category in the Markov-order-0 grammar (indexed
-     * by base non-terminal indices)
+     * Indices of the first split categories derived from each category in the Markov-order-0 grammar (indexed by base
+     * non-terminal indices)
      */
     short[] firstSubcategoryIndices;
 
     /**
-     * Records the number of splits for each non-terminal (i.e., the number of sub-categories descended from
-     * the same unsplit category in the base Markov-order-0 grammar). The start symbol has 1 split, all others
-     * will normally be multiples of 2 (the exception being immediately after a merge operation).
+     * Records the number of splits for each non-terminal (i.e., the number of sub-categories descended from the same
+     * unsplit category in the base Markov-order-0 grammar). The start symbol has 1 split, all others will normally be
+     * multiples of 2 (the exception being immediately after a merge operation).
      */
     short[] splitCount;
 
@@ -66,13 +67,13 @@ public class SplitVocabulary extends SymbolSet<String> {
     final SymbolSet<String> baseVocabulary;
 
     /**
-     * Maps from the indices of a parent vocabulary to indices in this {@link SplitVocabulary}. Only populated
-     * if this vocabulary was created by merging symbols in an earlier vocabulary.
+     * Maps from the indices of a parent vocabulary to indices in this {@link SplitVocabulary}. Only populated if this
+     * vocabulary was created by merging symbols in an earlier vocabulary.
      */
     final Short2ShortOpenHashMap mergedIndices;
 
     public SplitVocabulary(final SplitVocabulary parentVocabulary, final short maxSplits) {
-        super();
+        super(GrammarFormatType.Berkeley);
         this.subcategoryIndices = null;
         this.maxSplits = maxSplits;
         this.parentVocabulary = parentVocabulary;
@@ -81,7 +82,7 @@ public class SplitVocabulary extends SymbolSet<String> {
     }
 
     public SplitVocabulary(final String[] symbols) {
-        super(symbols);
+        super(symbols, GrammarFormatType.Berkeley);
         this.parentVocabulary = null;
         this.baseVocabulary = this;
         this.mergedIndices = null;
@@ -92,7 +93,7 @@ public class SplitVocabulary extends SymbolSet<String> {
 
     public SplitVocabulary(final Collection<String> symbols, final SplitVocabulary parentVocabulary,
             final Short2ShortOpenHashMap mergedIndices) {
-        super(symbols);
+        super(symbols, GrammarFormatType.Berkeley);
         this.parentVocabulary = parentVocabulary;
         // If no parent is specified, assume this vocabulary is the base vocabulary
         this.baseVocabulary = parentVocabulary != null ? parentVocabulary.baseVocabulary : this;
