@@ -231,8 +231,34 @@ public abstract class Parser<G extends Grammar> {
         }
     }
 
+    /**
+     * Methods of decoding a populated chart.
+     */
     static public enum DecodeMethod {
-        ViterbiMax, ViterbiSum, MaxRecall, MaxRuleSum, MaxRuleProd, FOMSum, FOMProd;
+        /** Depends only on inside probabilities and viterbi backpointers */
+        ViterbiMax,
+
+        /**
+         * Requires posterior probabilities, but ignores backpointers except for unary productions. Max-Recall,
+         * Max-Precision, and the combination between the two are controlled by lambda (
+         * {@link Parser#PROPERTY_MAXC_LAMBDA}) (see Goodman, 1998 and Hollingshead and Roark, 2007).
+         */
+        Goodman,
+
+        /**
+         * Goodman decoding using a projection onto an unsplit grammar; sums over non-terminal splits (latent
+         * annotations in a latent-variable grammar). Max-recall, Max-precision, and combined are again controlled by
+         * lambda ({@link Parser#PROPERTY_MAXC_LAMBDA})
+         */
+        SplitSum,
+
+        /**
+         * Petrov's max-rule-product decoding. Requires inside/outside posterior probabilities and sums over
+         * non-terminal splits.
+         */
+        MaxRuleSum, MaxRuleProd,
+
+        FOMSum, FOMProd;
 
         private DecodeMethod(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

@@ -15,7 +15,7 @@ public class Vocabulary extends SymbolSet<String> {
     private static final long serialVersionUID = 1L;
 
     /** Indices of unsplit categories in the base Markov-order-0 grammar, indexed by non-terminal indices */
-    protected Short2ShortOpenHashMap baseCategoryIndices = new Short2ShortOpenHashMap();
+    protected Short2ShortOpenHashMap baseNonTerminalIndices = new Short2ShortOpenHashMap();
 
     /** Base Markov-order-0 vocabulary */
     private final Vocabulary baseVocabulary;
@@ -23,13 +23,16 @@ public class Vocabulary extends SymbolSet<String> {
     private final GrammarFormatType grammarFormat;
 
     private final IntOpenHashSet factoredIndices = new IntOpenHashSet();
-    private final IntOpenHashSet baseFactoredIndices = new IntOpenHashSet();
 
     private short startSymbol;
 
-    public Vocabulary(final GrammarFormatType grammarFormat) {
+    private Vocabulary(final GrammarFormatType grammarFormat, final boolean baseVocabulary) {
         this.grammarFormat = grammarFormat;
-        this.baseVocabulary = (grammarFormat != null) ? new Vocabulary(null) : null;
+        this.baseVocabulary = baseVocabulary ? null : new Vocabulary(grammarFormat, true);
+    }
+
+    public Vocabulary(final GrammarFormatType grammarFormat) {
+        this(grammarFormat, false);
     }
 
     public Vocabulary(final Collection<String> symbols, final GrammarFormatType grammarFormat) {
@@ -52,14 +55,14 @@ public class Vocabulary extends SymbolSet<String> {
         short baseIndex = 0;
         if (baseVocabulary != null) {
             baseIndex = (short) baseVocabulary.addSymbol(grammarFormat.unsplitNonTerminal(symbol));
-            baseCategoryIndices.put(index, baseIndex);
+            baseNonTerminalIndices.put(index, baseIndex);
+        } else {
+            baseNonTerminalIndices.put(index, index);
         }
+
         // Added by Aaron for (reasonably) fast access to factored non-terminals
         if (grammarFormat != null && grammarFormat.isFactored(symbol)) {
             factoredIndices.add(index);
-            if (baseVocabulary != null) {
-                baseFactoredIndices.add(baseIndex);
-            }
         }
         return index;
     }
@@ -73,7 +76,7 @@ public class Vocabulary extends SymbolSet<String> {
     }
 
     public final short getBaseIndex(final short nonTerminal) {
-        return baseCategoryIndices.get(nonTerminal);
+        return baseNonTerminalIndices.get(nonTerminal);
     }
 
     public final short startSymbol() {
