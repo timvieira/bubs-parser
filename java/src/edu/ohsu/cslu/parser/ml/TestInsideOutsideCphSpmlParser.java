@@ -20,6 +20,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.InsideOutsideChart;
@@ -27,6 +28,7 @@ import edu.ohsu.cslu.tests.JUnit;
 
 public class TestInsideOutsideCphSpmlParser {
 
+    private InsideOutsideCscSparseMatrixGrammar grammar;
     private SparseMatrixParser<InsideOutsideCscSparseMatrixGrammar, InsideOutsideChart> parser;
 
     /** WSJ section 24 sentences 1-20 */
@@ -51,8 +53,8 @@ public class TestInsideOutsideCphSpmlParser {
 
     @Before
     public void setUp() throws Exception {
-        final InsideOutsideCscSparseMatrixGrammar grammar = new InsideOutsideCscSparseMatrixGrammar(
-                JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"), PerfectIntPairHashPackingFunction.class);
+        grammar = new InsideOutsideCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"),
+                PerfectIntPairHashPackingFunction.class);
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
         props.put(Parser.PROPERTY_MAX_BEAM_WIDTH, "30");
@@ -60,8 +62,6 @@ public class TestInsideOutsideCphSpmlParser {
         props.put(Parser.PROPERTY_LEXICAL_ROW_UNARIES, "10");
         props.put(Parser.PROPERTY_MAX_LOCAL_DELTA, "15");
         props.put(Parser.PROPERTY_MAXC_LAMBDA, "0.5");
-
-        parser = new InsideOutsideCphSpmlParser(new ParserDriver(), grammar);
     }
 
     @After
@@ -111,37 +111,76 @@ public class TestInsideOutsideCphSpmlParser {
     }
 
     @Test
-    public void testSimpleGrammar2() throws Exception {
+    public void testSimpleGrammar2Goodman() throws Exception {
 
+        final ParserDriver opts = new ParserDriver();
+        opts.decodeMethod = DecodeMethod.Goodman;
         final String sentence = "The fish market stands last";
 
         // Max-recall decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "0");
-        parser = new InsideOutsideCphSpmlParser(new ParserDriver(), new InsideOutsideCscSparseMatrixGrammar(
-                simpleGrammar2(), PerfectIntPairHashPackingFunction.class));
-
+        parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
                 .parseSentence(sentence).parseBracketString(false, false));
 
         // Max-precision decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
-        parser = new InsideOutsideCphSpmlParser(new ParserDriver(), new InsideOutsideCscSparseMatrixGrammar(
-                simpleGrammar2(), PerfectIntPairHashPackingFunction.class));
+        parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                PerfectIntPairHashPackingFunction.class));
+        assertEquals("(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))",
+                parser.parseSentence(sentence).parseBracketString(false, false));
+    }
 
+    /**
+     * Tests summing over split categories
+     */
+    @Test
+    public void testSimpleGrammar2SplitSum() throws Exception {
+
+        final ParserDriver opts = new ParserDriver();
+        opts.decodeMethod = DecodeMethod.SplitSum;
+        final String sentence = "The fish market stands last";
+
+        // Max-recall decoding
+        GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "0");
+        parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                PerfectIntPairHashPackingFunction.class));
+        assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
+                .parseSentence(sentence).parseBracketString(false, false));
+
+        // Max-precision decoding
+        GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
+        parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))",
                 parser.parseSentence(sentence).parseBracketString(false, false));
     }
 
     @Test
     public void testPartialSentence2() throws Exception {
+
         final String sentence = "The report is due out tomorrow .";
+
+        final ParserDriver opts = new ParserDriver();
+        opts.decodeMethod = DecodeMethod.Goodman;
+        parser = new InsideOutsideCphSpmlParser(opts, grammar);
+        assertEquals(
+                "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
+                parser.parseSentence(sentence).parseBracketString(false, false));
+
+        opts.decodeMethod = DecodeMethod.SplitSum;
+        parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
                 parser.parseSentence(sentence).parseBracketString(false, false));
     }
 
     @Test
-    public void testSentence2() throws Exception {
+    public void testSentence2SplitSum() throws Exception {
+        final ParserDriver opts = new ParserDriver();
+        opts.decodeMethod = DecodeMethod.SplitSum;
+        parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (PP (JJ due) (IN out) (NP (NN tomorrow))))) (. .)))",
                 parser.parseSentence(sentences.get(1)[0]).parseBracketString(false, false));

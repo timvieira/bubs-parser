@@ -112,7 +112,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
             computeOutsideProbsInCell(cell);
         }
 
-        if (opts.decodeMethod == Parser.DecodeMethod.MaxRecall) {
+        if (opts.decodeMethod == Parser.DecodeMethod.Goodman) {
             goodmanMaximizeLabelRecall();
         } else if (opts.decodeMethod == Parser.DecodeMethod.MaxRuleProd) {
             // berkeleyMaxRule(tokens);

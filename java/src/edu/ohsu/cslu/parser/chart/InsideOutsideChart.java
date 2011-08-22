@@ -10,7 +10,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser.DecodingMethod;
+import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -56,15 +56,15 @@ public class InsideOutsideChart extends PackedArrayChart {
         }
     }
 
-    public void decode(final DecodingMethod decodingMethod) {
+    public void decode(final DecodeMethod decodingMethod) {
         switch (decodingMethod) {
-        case Viterbi:
+        case ViterbiMax:
             // No decoding necessary
             break;
 
         case Goodman:
         case SplitSum:
-            computeSplitSumMaxc(decodingMethod);
+            computeMaxc(decodingMethod);
             break;
 
         default:
@@ -82,7 +82,7 @@ public class InsideOutsideChart extends PackedArrayChart {
      * 
      * @param decodingMethod
      */
-    private void computeSplitSumMaxc(final DecodingMethod decodingMethod) {
+    private void computeMaxc(final DecodeMethod decodingMethod) {
 
         final PackingFunction pf = sparseMatrixGrammar.packingFunction;
         Vocabulary vocabulary;
@@ -151,7 +151,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                     final short nt = nonTermMap.get(nonTerminalIndices[i]);
 
                     // Factored non-terminals do not contribute to the final parse tree, so their maxc score is 0
-                    final double g = vocabulary.isFactored(nonTerminalIndices[i]) ? 0 : Math.exp(insideProbabilities[i]
+                    final double g = vocabulary.isFactored(nt) ? 0 : Math.exp(insideProbabilities[i]
                             + outsideProbabilities[i] - startSymbolInsideProbability)
                             - lambda;
 
@@ -172,7 +172,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                         }
                     }
 
-                    splitSumG[nt] = splitSumG[nt] == Double.NEGATIVE_INFINITY ? g : splitSumG[nt] + g;
+                    splitSumG[nt] += g;
                 }
 
                 final short maxNt = (short) edu.ohsu.cslu.util.Math.argmax(splitMaxG);
@@ -198,27 +198,25 @@ public class InsideOutsideChart extends PackedArrayChart {
     }
 
     /**
-     * Extracts the max-recall parse (Goodman's 'Labeled Recall' algorithm), using the maxc values computed by
-     * {@link #decode()}.
+     * Extracts the max-recall/max-precision/combined parse (Goodman's 'Labeled Recall' algorithm), using the maxc
+     * values computed by {@link #decode(DecodeMethod)}.
      * 
      * @param start
      * @param end
-     * @param decodingMethod TODO
+     * @param decodingMethod
      * @return extracted binary tree
      */
-    public BinaryTree<String> extract(final int start, final int end, final DecodingMethod decodingMethod) {
+    public BinaryTree<String> extract(final int start, final int end, final DecodeMethod decodingMethod) {
 
-        Vocabulary vocabulary;
-        Short2ShortMap nonTermMap;
+        final Vocabulary vocabulary;
 
         switch (decodingMethod) {
         case Goodman:
             vocabulary = sparseMatrixGrammar.nonTermSet;
-            nonTermMap = new IdentityMap();
             break;
+
         case SplitSum:
-            vocabulary = sparseMatrixGrammar.nonTermSet;
-            nonTermMap = new BaseNonterminalMap(vocabulary);
+            vocabulary = sparseMatrixGrammar.nonTermSet.baseVocabulary();
             break;
 
         default:
@@ -247,8 +245,23 @@ public class InsideOutsideChart extends PackedArrayChart {
 
             BinaryTree<String> unaryTree = subtree;
 
-            // Find the index of the current parent in the chart storage and follow the unary productions down to the
-            // lexical entry
+            if (decodingMethod == DecodeMethod.SplitSum) {
+                // Find the maximum-probability split of the unsplit parent non-terminal
+                float maxSplitProb = Float.NEGATIVE_INFINITY;
+                short splitParent = -1;
+                for (int i = offset; i < offset + numNonTerms; i++) {
+                    final float posteriorProbability = insideProbabilities[i] + outsideProbabilities[i];
+                    if (posteriorProbability > maxSplitProb
+                            && sparseMatrixGrammar.nonTermSet.getBaseIndex(nonTerminalIndices[i]) == parent) {
+                        maxSplitProb = posteriorProbability;
+                        splitParent = nonTerminalIndices[i];
+                    }
+                }
+                parent = splitParent;
+            }
+
+            // Find the index of the current parent in the chart storage and follow the unary productions down to
+            // the lexical entry
             int i;
             for (i = entryIndex(offset, numNonTerms, parent); pf.unpackRightChild(packedChildren[i]) != Production.LEXICAL_PRODUCTION; i = entryIndex(
                     offset, numNonTerms, parent)) {
