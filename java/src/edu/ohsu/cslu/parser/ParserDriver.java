@@ -130,17 +130,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-m", metaVar = "FILE", usage = "Model file (binary serialized)")
     private File modelFile = null;
 
-    @Option(name = "-decode", metaVar = "TYPE", hidden = true, usage = "Method to extract best tree from forest")
-    public DecodeMethod decodeMethod = DecodeMethod.ViterbiMax;
+    // == Input options ==
+    @Option(name = "-if", metaVar = "FORMAT", usage = "Input format type.  Choosing 'text' will tokenize the input before parsing.")
+    public InputFormat inputFormat = InputFormat.Token;
 
-    // == Output options ==
     @Option(name = "-maxLength", metaVar = "LEN", usage = "Skip sentences longer than LEN")
     int maxLength = 200;
 
-    // TODO: option doesn't work anymore
-    // @Option(name = "-scores", usage = "Print inside scores for each non-term in result tree")
-    // boolean printInsideProbs = false;
-
+    // == Output options ==
     @Option(name = "-printUNK", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
 
@@ -150,13 +147,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
     public boolean binaryTreeOutput = false;
 
-    @Option(name = "-if", metaVar = "FORMAT", usage = "Input format type.  Choosing 'text' will tokenize the input before parsing.")
-    public InputFormat inputFormat = InputFormat.Token;
+    // == Processing options ==
+    @Option(name = "-decode", metaVar = "TYPE", hidden = true, usage = "Method to extract best tree from forest")
+    public DecodeMethod decodeMethod = DecodeMethod.ViterbiMax;
 
     @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
     public int reparse = 0;
 
-    // == Specific parser options ==
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
     private String fomTypeOrModel = "Inside";
 
