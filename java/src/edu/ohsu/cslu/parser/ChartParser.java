@@ -138,7 +138,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public float getOutside(final int start, final int end, final int nt) {
-        return chart.getInside(start, end, nt);
+        return chart.getOutside(start, end, nt);
     }
 
     @Override

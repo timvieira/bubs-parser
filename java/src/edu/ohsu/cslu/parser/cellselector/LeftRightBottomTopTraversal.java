@@ -34,10 +34,10 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     private short[][] cellIndices;
     private int nextCell = 0;
     private int cells;
-
-    /** The length of the current sentence */
     private short sentenceLength;
 
+    // TODO: If we really need a parser instance to call parser.waitForActiveTasks(), then
+    // this should be passed in when the model is created, not at each sentence init.
     private ChartParser<?, ?> parser;
 
     public static CellSelectorModel MODEL = new CellSelectorModel() {
@@ -51,6 +51,7 @@ public class LeftRightBottomTopTraversal extends CellSelector {
     public LeftRightBottomTopTraversal() {
     }
 
+    // TODO: shouldn't all of this move into the constructor since we create a new one for each sentence?
     @Override
     public void initSentence(final ChartParser<?, ?> p) {
         this.parser = p;

@@ -29,6 +29,8 @@ import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTree;
+import edu.ohsu.cslu.parser.Parser.ResearchParserType;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
@@ -144,18 +146,23 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         }
     }
 
-    public void train(final BufferedReader inStream, final BufferedWriter outStream) throws IOException {
-        train(inStream, outStream, 0.5, false);
+    public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile)
+            throws Exception {
+        BoundaryInOut.train(inStream, outStream, grammarFile, 0.5, false, 2);
     }
 
-    public void train(final BufferedReader inStream, final BufferedWriter outStream, final double smoothingCount,
-            final boolean writeCounts) throws IOException {
+    public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile,
+            final double smoothingCount, final boolean writeCounts, final int posNgramOrder) throws Exception {
         String line, historyStr;
         final String joinString = " ";
         ParseTree tree;
         final SimpleCounterSet<String> leftBoundaryCount = new SimpleCounterSet<String>();
         final SimpleCounterSet<String> rightBoundaryCount = new SimpleCounterSet<String>();
         final SimpleCounterSet<String> posTransitionCount = new SimpleCounterSet<String>();
+
+        // To train a BoundaryInOut FOM model we need a grammar and
+        // binarized gold input trees with NTs from same grammar
+        final Grammar grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
 
         // TODO: note that we have to have the same training grammar as decoding grammar here
         // so the input needs to be bianarized. If we are parsing with the Berkeley latent-variable
@@ -185,8 +192,10 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                         throw new IOException("Nonterminal '" + node.contents
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
-                    leftBoundaryCount.increment(node.contents, convertNull(node.leftBoundaryPOSContents()));
-                    rightBoundaryCount.increment(convertNull(node.rightBoundaryPOSContents()), node.contents);
+                    leftBoundaryCount.increment(node.contents,
+                            convertNull(node.leftBoundaryPOSContents(), Grammar.nullSymbolStr));
+                    rightBoundaryCount.increment(convertNull(node.rightBoundaryPOSContents(), Grammar.nullSymbolStr),
+                            node.contents);
                 }
             }
 
@@ -313,9 +322,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         outStream.close();
     }
 
-    private String convertNull(final String nonTerm) {
+    private static String convertNull(final String nonTerm, final String replacementStr) {
         if (nonTerm == null) {
-            return Grammar.nullSymbolStr;
+            return replacementStr;
         }
         return nonTerm;
     }

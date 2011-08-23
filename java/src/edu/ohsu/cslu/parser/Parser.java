@@ -119,7 +119,8 @@ public abstract class Parser<G extends Grammar> {
         if (input.length() == 0) {
             BaseLogger.singleton().info("WARNING: blank line in input.");
             return null;
-        } else if (input.matches("^\\([^ ].*[^ ]\\)$") && opts.inputFormat != InputFormat.Tree) {
+        } else if (input.matches("^\\([^ ].*[^ ]\\)$")
+                && (opts.inputFormat == InputFormat.Token || opts.inputFormat == InputFormat.Text)) {
             BaseLogger.singleton().fine(
                     "INFO: Auto-detecting inputFormat as Tree (originally " + opts.inputFormat + ")");
             opts.inputFormat = InputFormat.Tree;
@@ -127,7 +128,7 @@ public abstract class Parser<G extends Grammar> {
 
         // TODO: make parseTask local and pass it around to required methods. Will probably need to add
         // instance methods of CellSelector, FOM, and Chart to it. Should make parse thread-safe.
-        parseTask = new ParseContext(input, opts.inputFormat, grammar.grammarFormat);
+        parseTask = new ParseContext(input, opts.inputFormat, grammar);
 
         if (parseTask.sentenceLength() > opts.maxLength) {
             BaseLogger.singleton().info(
@@ -224,7 +225,7 @@ public abstract class Parser<G extends Grammar> {
      * tags and gold trees
      */
     static public enum InputFormat {
-        Text, Token, Tree;
+        Text, Token, Tree, Tagged; // CoNNL
 
         private InputFormat(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

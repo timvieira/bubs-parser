@@ -308,6 +308,18 @@ public class InsideOutsideChart extends PackedArrayChart {
         return new InsideOutsideChartCell(start, end);
     }
 
+    @Override
+    public float getOutside(final int start, final int end, final int nonTerminal) {
+        final int cellIndex = cellIndex(start, end);
+        final int offset = cellIndex * beamWidth;
+        final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
+                (short) nonTerminal);
+        if (index < 0) {
+            return Float.NEGATIVE_INFINITY;
+        }
+        return outsideProbabilities[index];
+    }
+
     private interface Short2ShortMap {
         public short get(short k);
     }

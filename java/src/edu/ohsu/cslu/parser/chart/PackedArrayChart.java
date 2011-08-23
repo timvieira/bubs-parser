@@ -270,6 +270,15 @@ public class PackedArrayChart extends ParallelArrayChart {
         return numNonTerminals;
     }
 
+    // Added by Nate
+    public int cellNonTermStartIndex(final short start, final short end) {
+        return offset(cellIndex(start, end));
+    }
+
+    public int cellNonTermEndIndex(final short start, final short end) {
+        return cellNonTermStartIndex(start, end) + numNonTerminals()[cellIndex(start, end)] - 1;
+    }
+
     public class PackedArrayChartCell extends ParallelArrayChartCell {
 
         /**
