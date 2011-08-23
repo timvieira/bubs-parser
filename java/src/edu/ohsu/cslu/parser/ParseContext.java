@@ -18,13 +18,13 @@
  */
 package edu.ohsu.cslu.parser;
 
+import java.util.LinkedList;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
@@ -37,6 +37,7 @@ public class ParseContext {
     public int[] tokens;
 
     public NaryTree<String> inputTree = null;
+    public int[] inputTags = null;
     public BinaryTree<String> binaryParse = null;
     public float insideProbability = Float.NEGATIVE_INFINITY;
     private EvalbResult evalb = null;
@@ -71,9 +72,9 @@ public class ParseContext {
     public long extractTimeMs = 0;
 
     long startTime;
-    private GrammarFormatType grammarFormat;
+    private Grammar grammar;
 
-    public ParseContext(final String input, final InputFormat inputFormat, final GrammarFormatType grammarFormat) {
+    public ParseContext(final String input, final InputFormat inputFormat, final Grammar grammar) {
         try {
             // TODO We don't really need to trim both here and in Parser.parseSentence()
             if (inputFormat == InputFormat.Token) {
@@ -83,10 +84,25 @@ public class ParseContext {
             } else if (inputFormat == InputFormat.Tree) {
                 this.inputTree = NaryTree.read(input.trim(), String.class);
                 this.sentence = Strings.join(inputTree.leafLabels(), " ");
+            } else if (inputFormat == InputFormat.Tagged) {
+                // (DT The) (NN economy) (POS 's) (NN temperature) (MD will)
+                final LinkedList<String> sentTokens = new LinkedList<String>();
+                final String[] tokens = input.split("\\s+");
+                inputTags = new int[tokens.length / 2];
+                int i = 0;
+                for (final String token : tokens) {
+                    if (i % 2 == 1) {
+                        sentTokens.add(token.substring(0, token.length() - 1)); // remove ")"
+                    } else {
+                        inputTags[i / 2] = grammar.nonTermSet.getIndex(token.substring(1)); // remove "("
+                    }
+                    i++;
+                }
+                sentence = Strings.join(sentTokens, " ");
             }
 
             this.tokens = Grammar.tokenizer.tokenizeToIndex(sentence);
-            this.grammarFormat = grammarFormat;
+            this.grammar = grammar;
 
         } catch (final Exception e) {
             e.printStackTrace();
@@ -133,7 +149,7 @@ public class ParseContext {
         if (binaryParse == null) {
             return null;
         }
-        return binaryParse.unfactor(grammarFormat);
+        return binaryParse.unfactor(grammar.grammarFormat);
     }
 
     public void startTime() {

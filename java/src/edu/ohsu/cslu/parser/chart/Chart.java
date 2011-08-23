@@ -80,6 +80,10 @@ public abstract class Chart {
      */
     public abstract float getInside(int start, int end, int nonTerminal);
 
+    public float getOutside(final int start, final int end, final int nonTermainl) {
+        throw new IllegalArgumentException("Chart instance does not support getOutside(start,end,nt)");
+    }
+
     public boolean hasCompleteParse(final int startSymbol) {
         return getRootCell().getBestEdge(startSymbol) != null;
     }

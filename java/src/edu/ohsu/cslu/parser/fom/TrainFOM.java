@@ -25,16 +25,7 @@ import java.io.OutputStreamWriter;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseContext;
-import edu.ohsu.cslu.parser.Parser.ResearchParserType;
-import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
-import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
-import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
 
 public class TrainFOM extends BaseCommandlineTool {
 
@@ -50,6 +41,9 @@ public class TrainFOM extends BaseCommandlineTool {
     @Option(name = "-smooth", metaVar = "N", usage = "Apply add-N smoothing to model (only BoundaryInOut)")
     public float smoothingCount = (float) 0.5;
 
+    @Option(name = "-posNgramOrder", metaVar = "N", usage = "POS n-gram order for feature extraction")
+    public int posNgramOrder = 2;
+
     public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
     public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
@@ -60,39 +54,9 @@ public class TrainFOM extends BaseCommandlineTool {
     @Override
     public void run() throws Exception {
         if (fomType == FOMType.BoundaryInOut) {
-            // To train a BoundaryInOut FOM model we need a grammar and
-            // binarized gold input trees with NTs from same grammar
-            final Grammar grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
-            final BoundaryInOut fomModel = new BoundaryInOut(FOMType.BoundaryInOut, grammar, null);
-            fomModel.train(inputStream, outputStream, smoothingCount, writeCounts);
+            BoundaryInOut.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
         } else if (fomType == FOMType.Discriminative) {
-            final InsideOutsideCscSparseMatrixGrammar grammar = (InsideOutsideCscSparseMatrixGrammar) ParserDriver
-                    .readGrammar(grammarFile, ResearchParserType.InsideOutsideCartesianProductHash,
-                            CartesianProductFunctionType.PerfectHash);
-            final ParserDriver opts = new ParserDriver();
-            opts.cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
-
-            final InsideOutsideCphSpmlParser parser = new InsideOutsideCphSpmlParser(opts, grammar);
-            String line;
-            while ((line = inputStream.readLine()) != null) {
-                final ParseContext result = parser.parseSentence(line);
-                System.out.println("Result:" + result.parseBracketString(false, false));
-
-                final CellSelector cellSelector = opts.cellSelectorModel.createCellSelector();
-                cellSelector.reset();
-                while (cellSelector.hasNext()) {
-                    final short[] startAndEnd = cellSelector.next();
-                    final short start = startAndEnd[0];
-                    final short end = startAndEnd[1];
-
-                    for (int nt = 0; nt < 20; nt++) {
-                        System.out.println(String.format("[%d,%d] %s in=%f out=%f", start, end,
-                                grammar.nonTermSet.getSymbol(nt), parser.getInside(start, end, nt),
-                                parser.getOutside(start, end, nt)));
-                    }
-                }
-            }
-
+            DiscriminativeFOM.train(inputStream, outputStream, grammarFile);
         } else {
             throw new IllegalArgumentException("FOM type '" + fomType + "' not supported.");
         }

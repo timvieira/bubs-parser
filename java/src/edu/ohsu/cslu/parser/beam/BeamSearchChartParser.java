@@ -19,6 +19,8 @@
 package edu.ohsu.cslu.parser.beam;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.PriorityQueue;
 
 import cltool4j.BaseLogger;
@@ -127,7 +129,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     public BinaryTree<String> findBestParse(final int[] tokens) {
         initSentence(tokens);
 
-        numReparses = -1;
         while (numReparses < opts.reparse && chart.hasCompleteParse(grammar.startSymbol) == false) {
             numReparses++;
             globalBestFOM = Float.NEGATIVE_INFINITY;
@@ -174,19 +175,22 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final boolean hasCellConstraints = cellSelector.hasCellConstraints();
         final CellConstraints cc = cellSelector.getCellConstraints();
 
+        // lexical and unary productions can't compete in the same agenda until their FOM
+        // scores are changed to be comparable
         if (end - start == 1) {
-            // lexical and unary productions can't compete in the same agenda until their FOM
-            // scores are changed to be comparable
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
-                parseTask.nLex += 1;
-                // TODO: need to be able to get POS posteriors. We could use this as the FOM and rank just
-                // like others
-                // if (!only1BestPOS || ((BoundaryInOut) fomModel).get1bestPOSTag(start) ==
-                // lexProd.parent) {
+            Collection<Production> lexProdSet;
+            if (parseTask.inputTags != null) {
+                // only add the provided POS tags if present in parseTask.inputTags
+                lexProdSet = new LinkedList<Production>();
+                lexProdSet.add(grammar.getLexicalProduction(parseTask.inputTags[start], parseTask.tokens[start]));
+            } else {
+                lexProdSet = grammar.getLexicalProductionsWithChild(parseTask.tokens[start]);
+            }
+
+            for (final Production lexProd : lexProdSet) {
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
                 if (hasCellConstraints == false || cc.isUnaryOpen(start, end)) {
                     for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
-                        parseTask.nLexUnary += 1;
                         addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
                     }
                 }
