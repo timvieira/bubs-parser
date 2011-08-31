@@ -18,7 +18,7 @@
  */
 package edu.ohsu.cslu.parser.cellselector;
 
-public abstract class CellConstraints extends CellSelector {
+public abstract class CellConstraints extends ArrayCellSelector {
 
     protected abstract boolean isGrammarLeftFactored();
 
@@ -56,8 +56,8 @@ public abstract class CellConstraints extends CellSelector {
     }
 
     /**
-     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated
-     * with a complete constituent).
+     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
+     * complete constituent).
      * 
      * @param start
      * @param end

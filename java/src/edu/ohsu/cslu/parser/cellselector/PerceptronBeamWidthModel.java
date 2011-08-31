@@ -42,7 +42,6 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
     protected Classifier beamWidthModel;
     private boolean inferFactoredCells = false, classifyBaseCells = false;
-    protected boolean grammarLeftFactored;
 
     public PerceptronBeamWidthModel(final BufferedReader modelStream) {
 
@@ -92,18 +91,11 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
         private int beamWidthValues[][];
         private boolean onlyFactored[][];
-        private int nextCell = 0;
-        private short[][] cellIndices;
-        private int openCells;
-
-        private ChartParser<?, ?> parser;
 
         @Override
         public void initSentence(final ChartParser<?, ?> p) {
-            this.parser = p;
-            grammarLeftFactored = parser.grammar.isLeftFactored();
+            super.initSentence(p);
             computeBeamWidthValues();
-            // init(parser.chart, parser.currentInput.sentence, parser.grammar.isLeftFactored());
         }
 
         private void computeBeamWidthValues() {
@@ -167,7 +159,6 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             if (cellIndices == null || cellIndices.length < openCells) {
                 cellIndices = new short[openCells][2];
             }
-            nextCell = 0;
             int i = 0;
             for (int span = 1; span <= n; span++) {
                 for (int start = 0; start < n - span + 1; start++) { // beginning
@@ -185,41 +176,6 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 BaseLogger.singleton().finer("INFO: beamconf: " + classCounts);
                 // BaseLogger.singleton().finer("INFO: beamconf: " + toString());
             }
-            nextCell = 0;
-        }
-
-        @Override
-        public boolean hasNext() {
-            // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for
-            // active tasks
-            // (if any) before proceeding on to the next row and before returning false when parsing is
-            // complete.
-            if (nextCell >= 1) {
-                if (nextCell >= openCells) {
-                    parser.waitForActiveTasks();
-                    return false;
-                }
-                final int nextSpan = cellIndices[nextCell][1] - cellIndices[nextCell][0];
-                final int currentSpan = cellIndices[nextCell - 1][1] - cellIndices[nextCell - 1][0];
-                if (nextSpan > currentSpan) {
-                    parser.waitForActiveTasks();
-                }
-            }
-
-            return nextCell < openCells;
-        }
-
-        @Override
-        public short[] next() {
-            if (cellIndices[nextCell][1] == 0) {
-                System.out.println("Error");
-            }
-            return cellIndices[nextCell++];
-        }
-
-        @Override
-        public void reset() {
-            nextCell = 0;
         }
 
         @Override
@@ -271,7 +227,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
         @Override
         protected boolean isGrammarLeftFactored() {
-            return grammarLeftFactored;
+            return parser.grammar.isLeftFactored();
         }
     }
 }

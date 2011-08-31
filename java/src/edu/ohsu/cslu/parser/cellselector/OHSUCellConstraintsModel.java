@@ -171,6 +171,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
         @Override
         public void initSentence(final ChartParser<?, ?> parser) {
+            super.initSentence(parser);
             // might have to hash the sentence number for the grid
             initSentence(parser.chart, parser.parseTask.sentence);
         }
@@ -411,22 +412,6 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 stats += "\nCC_CELLS: " + s;
             }
             return stats;
-        }
-
-        @Override
-        public short[] next() {
-            final ChartCell cell = cellListIterator.next();
-            return new short[] { cell.start(), cell.end() };
-        }
-
-        @Override
-        public boolean hasNext() {
-            return cellListIterator.hasNext();
-        }
-
-        @Override
-        public void reset() {
-            cellListIterator = cellList.iterator();
         }
 
         @Override
