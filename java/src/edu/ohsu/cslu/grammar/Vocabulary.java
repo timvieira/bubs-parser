@@ -54,7 +54,7 @@ public class Vocabulary extends SymbolSet<String> {
         final short index = (short) super.addSymbol(symbol);
         short baseIndex = 0;
         if (baseVocabulary != null) {
-            baseIndex = (short) baseVocabulary.addSymbol(grammarFormat.unsplitNonTerminal(symbol));
+            baseIndex = (short) baseVocabulary.addSymbol(grammarFormat.getBaseNT(symbol, false));
             baseNonTerminalIndices.put(index, baseIndex);
         } else {
             baseNonTerminalIndices.put(index, index);
@@ -69,6 +69,9 @@ public class Vocabulary extends SymbolSet<String> {
 
     public final void setStartSymbol(final short nonTerminal) {
         this.startSymbol = nonTerminal;
+        if (baseVocabulary != null) {
+            baseVocabulary.setStartSymbol(baseNonTerminalIndices.get(nonTerminal));
+        }
     }
 
     public final boolean isFactored(final int nonTerminal) {

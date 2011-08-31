@@ -232,7 +232,7 @@ public class TreeTools extends BaseCommandlineTool {
             final LinkedList<String> parentsStr = new LinkedList<String>();
             for (int i = 0; i < vertMarkov; i++) {
                 if (parent != null) {
-                    parentsStr.addLast(grammarFormatType.getBaseNT(parent.contents));
+                    parentsStr.addLast(grammarFormatType.getBaseNT(parent.contents, true));
                     parent = parent.getUnfactoredParent(grammarFormatType);
                 }
             }
