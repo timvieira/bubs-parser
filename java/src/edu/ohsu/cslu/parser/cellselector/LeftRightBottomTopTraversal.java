@@ -18,8 +18,6 @@
  */
 package edu.ohsu.cslu.parser.cellselector;
 
-import java.util.Iterator;
-
 import edu.ohsu.cslu.parser.ChartParser;
 
 /**
@@ -29,16 +27,7 @@ import edu.ohsu.cslu.parser.ChartParser;
  * @author Nathan Bodenstab
  * @since Dec 17, 2009
  */
-public class LeftRightBottomTopTraversal extends CellSelector {
-
-    private short[][] cellIndices;
-    private int nextCell = 0;
-    private int cells;
-    private short sentenceLength;
-
-    // TODO: If we really need a parser instance to call parser.waitForActiveTasks(), then
-    // this should be passed in when the model is created, not at each sentence init.
-    private ChartParser<?, ?> parser;
+public class LeftRightBottomTopTraversal extends ArrayCellSelector {
 
     public static CellSelectorModel MODEL = new CellSelectorModel() {
 
@@ -53,14 +42,15 @@ public class LeftRightBottomTopTraversal extends CellSelector {
 
     // TODO: shouldn't all of this move into the constructor since we create a new one for each sentence?
     @Override
-    public void initSentence(final ChartParser<?, ?> p) {
-        this.parser = p;
-        sentenceLength = (short) p.chart.size();
-        cells = sentenceLength * (sentenceLength + 1) / 2;
-        if (cellIndices == null || cellIndices.length < cells) {
-            cellIndices = new short[cells][2];
+    public void initSentence(final ChartParser<?, ?> parser) {
+        super.initSentence(parser);
+        final short sentenceLength = (short) parser.chart.size();
+
+        openCells = sentenceLength * (sentenceLength + 1) / 2;
+        if (cellIndices == null || cellIndices.length < openCells) {
+            cellIndices = new short[openCells][2];
         }
-        nextCell = 0;
+
         int i = 0;
         for (short span = 1; span <= sentenceLength; span++) {
             for (short start = 0; start < sentenceLength - span + 1; start++) { // beginning
@@ -68,57 +58,4 @@ public class LeftRightBottomTopTraversal extends CellSelector {
             }
         }
     }
-
-    @Override
-    public short[] next() {
-        return cellIndices[nextCell++];
-    }
-
-    @Override
-    public boolean hasNext() {
-        // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active
-        // tasks (if any) before proceeding on to the next row and before returning false when parsing is complete.
-        if (nextCell >= 1) {
-            if (nextCell >= cells) {
-                parser.waitForActiveTasks();
-                return false;
-            }
-            final int nextSpan = cellIndices[nextCell][1] - cellIndices[nextCell][0];
-            final int currentSpan = cellIndices[nextCell - 1][1] - cellIndices[nextCell - 1][0];
-            if (nextSpan > currentSpan) {
-                parser.waitForActiveTasks();
-            }
-        }
-
-        return nextCell < cells;
-    }
-
-    @Override
-    public void reset() {
-        nextCell = 0;
-    }
-
-    @Override
-    public Iterator<short[]> reverseIterator() {
-        return new Iterator<short[]>() {
-
-            private int nextCell = cells;
-
-            @Override
-            public boolean hasNext() {
-                return nextCell > 0;
-            }
-
-            @Override
-            public short[] next() {
-                return cellIndices[--nextCell];
-            }
-
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
-
 }
