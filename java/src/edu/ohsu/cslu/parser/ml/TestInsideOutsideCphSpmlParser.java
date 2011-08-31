@@ -158,22 +158,25 @@ public class TestInsideOutsideCphSpmlParser {
     }
 
     @Test
-    public void testPartialSentence2() throws Exception {
-
-        final String sentence = "The report is due out tomorrow .";
+    public void testPartialSentence2Goodman() throws Exception {
 
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.Goodman;
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
-                parser.parseSentence(sentence).parseBracketString(false, false));
+                parser.parseSentence("The report is due out tomorrow .").parseBracketString(false, false));
+    }
 
+    @Test
+    public void testPartialSentence2SplitSum() throws Exception {
+
+        final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.SplitSum;
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
-                parser.parseSentence(sentence).parseBracketString(false, false));
+                parser.parseSentence("The report is due out tomorrow .").parseBracketString(false, false));
     }
 
     @Test
