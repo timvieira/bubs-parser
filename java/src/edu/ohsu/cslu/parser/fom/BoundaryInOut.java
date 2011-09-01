@@ -28,6 +28,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -78,14 +79,14 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     }
 
     @Override
-    public FigureOfMerit createFOM(final Grammar grammar) {
+    public FigureOfMerit createFOM() {
         switch (type) {
         case BoundaryInOut:
             return new BoundaryInOutSelector();
         case InsideWithFwdBkwd:
             return new InsideWithFwdBkwd();
         default:
-            return super.createFOM(grammar);
+            return super.createFOM();
         }
     }
 
@@ -363,7 +364,8 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
         // pre-computed left/right FOM outside scores for current sentence
         private float outsideLeft[][], outsideRight[][];
-        private int bestPOSTag[];
+        // private int bestPOSTag[];
+        ParseContext parseContext;
 
         public BoundaryInOutSelector() {
         }
@@ -412,19 +414,19 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             return s;
         }
 
-        public int get1bestPOSTag(final int i) {
-            return bestPOSTag[i];
-        }
+        // public int get1bestPOSTag(final int i) {
+        // return bestPOSTag[i];
+        // }
 
         @Override
-        public void init(final int[] tokens) {
-            outsideLeftRightAndBestPOS(tokens);
+        public void init(final ParseContext parseContext) {
+            outsideLeftRightAndBestPOS(parseContext);
         }
 
         // Computes forward-backward and left/right boundary probs across ambiguous
         // POS tags. Also computes 1-best POS tag sequence based on viterbi-max decoding
-        private void outsideLeftRightAndBestPOS(final int[] tokens) {
-            final int sentLen = tokens.length;
+        private void outsideLeftRightAndBestPOS(final ParseContext parseContext) {
+            final int sentLen = parseContext.sentenceLength();
             final int fbSize = sentLen + 2;
             final int posSize = grammar.maxPOSIndex() + 1;
 
@@ -434,7 +436,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             }
 
             final int[][] backPointer = new int[fbSize][posSize];
-            bestPOSTag = new int[sentLen];
+            parseContext.tags = new int[sentLen];
 
             for (int i = 0; i < fbSize; i++) {
                 Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
@@ -464,9 +466,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 final int fwdChartIndex = fwdIndex - 1;
 
                 final short[] posList = fwdChartIndex >= sentLen ? NULL_LIST : grammar
-                        .lexicalParents(tokens[fwdChartIndex]);
+                        .lexicalParents(parseContext.tokens[fwdChartIndex]);
                 final float[] fwdPOSProbs = fwdChartIndex >= sentLen ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(tokens[fwdChartIndex]);
+                        .lexicalLogProbabilities(parseContext.tokens[fwdChartIndex]);
 
                 final int[] currentBackpointer = backPointer[fwdIndex];
 
@@ -514,9 +516,10 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 Arrays.fill(scores, Float.NEGATIVE_INFINITY);
 
                 final int bkwChartIndex = bkwIndex - 1;
-                final short[] posList = bkwChartIndex < 0 ? NULL_LIST : grammar.lexicalParents(tokens[bkwChartIndex]);
+                final short[] posList = bkwChartIndex < 0 ? NULL_LIST : grammar
+                        .lexicalParents(parseContext.tokens[bkwChartIndex]);
                 final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(tokens[bkwChartIndex]);
+                        .lexicalLogProbabilities(parseContext.tokens[bkwChartIndex]);
 
                 for (final short prevPOS : prevPOSList) {
 
@@ -554,7 +557,8 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             int bestPOS = nullSymbol;
             for (int i = sentLen - 1; i >= 0; i--) {
                 bestPOS = backPointer[i + 2][bestPOS];
-                bestPOSTag[i] = bestPOS;
+                parseContext.tags[i] = bestPOS;
+                // bestPOSTag[i] = bestPOS;
                 // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
             }
         }

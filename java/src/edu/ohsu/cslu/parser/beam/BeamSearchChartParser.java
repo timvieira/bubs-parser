@@ -117,7 +117,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         numReparses = -1;
 
         final long startTimeMS = System.currentTimeMillis();
-        fomModel.init(tokens);
+        fomModel.init(parseTask);
         final long endTimeMS = System.currentTimeMillis();
         parseTask.fomInitMs = endTimeMS - startTimeMS;
 
@@ -179,11 +179,12 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         // scores are changed to be comparable
         if (end - start == 1) {
             Collection<Production> lexProdSet;
-            if (parseTask.inputTags != null) {
-                // only add the provided POS tags if present in parseTask.inputTags
+            if (opts.parseFromTags) {
+                // add only one POS => word production given by input (or 1-best) tags
                 lexProdSet = new LinkedList<Production>();
-                lexProdSet.add(grammar.getLexicalProduction(parseTask.inputTags[start], parseTask.tokens[start]));
+                lexProdSet.add(grammar.getLexicalProduction(parseTask.tags[start], parseTask.tokens[start]));
             } else {
+                // add all possible POS => word productions from grammar
                 lexProdSet = grammar.getLexicalProductionsWithChild(parseTask.tokens[start]);
             }
 

@@ -35,9 +35,9 @@ public class ParseContext {
 
     public String sentence;
     public int[] tokens;
+    public int[] tags = null;
 
     public NaryTree<String> inputTree = null;
-    public int[] inputTags = null;
     public BinaryTree<String> binaryParse = null;
     public float insideProbability = Float.NEGATIVE_INFINITY;
     private EvalbResult evalb = null;
@@ -84,17 +84,24 @@ public class ParseContext {
             } else if (inputFormat == InputFormat.Tree) {
                 this.inputTree = NaryTree.read(input.trim(), String.class);
                 this.sentence = Strings.join(inputTree.leafLabels(), " ");
+                // extract POS tags from tree
+                tags = new int[sentence.length()];
+                int i = 0;
+                for (final NaryTree<String> leaf : inputTree.leafTraversal()) {
+                    tags[i] = grammar.nonTermSet.getIndex(leaf.parent().label());
+                    i++;
+                }
             } else if (inputFormat == InputFormat.Tagged) {
                 // (DT The) (NN economy) (POS 's) (NN temperature) (MD will)
                 final LinkedList<String> sentTokens = new LinkedList<String>();
                 final String[] tokens = input.split("\\s+");
-                inputTags = new int[tokens.length / 2];
+                tags = new int[tokens.length / 2];
                 int i = 0;
                 for (final String token : tokens) {
                     if (i % 2 == 1) {
                         sentTokens.add(token.substring(0, token.length() - 1)); // remove ")"
                     } else {
-                        inputTags[i / 2] = grammar.nonTermSet.getIndex(token.substring(1)); // remove "("
+                        tags[i / 2] = grammar.nonTermSet.getIndex(token.substring(1)); // remove "("
                     }
                     i++;
                 }
