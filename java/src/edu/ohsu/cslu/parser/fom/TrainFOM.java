@@ -44,6 +44,12 @@ public class TrainFOM extends BaseCommandlineTool {
     @Option(name = "-posNgramOrder", metaVar = "N", usage = "POS n-gram order for feature extraction")
     public int posNgramOrder = 2;
 
+    @Option(name = "-feats", usage = "Feature template file OR feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    public String featTemplate = null;
+
+    @Option(name = "-extractFeats")
+    public boolean extractFeatures = false;
+
     public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
     public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
@@ -56,7 +62,7 @@ public class TrainFOM extends BaseCommandlineTool {
         if (fomType == FOMType.BoundaryInOut) {
             BoundaryInOut.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
         } else if (fomType == FOMType.Discriminative) {
-            DiscriminativeFOM.train(inputStream, outputStream, grammarFile);
+            DiscriminativeFOM.train(inputStream, outputStream, grammarFile, featTemplate, extractFeatures);
         } else {
             throw new IllegalArgumentException("FOM type '" + fomType + "' not supported.");
         }
