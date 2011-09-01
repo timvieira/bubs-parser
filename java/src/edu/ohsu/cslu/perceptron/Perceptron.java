@@ -61,23 +61,13 @@ public class Perceptron extends Classifier {
         }
     }
 
-    // protected void initBins(final String binsString) {
-    // this.binsStr = binsString;
-    // // convert comma-seperated bin list to int bin list
-    // final String[] tokens = binsString.split(",");
-    // bins = new int[tokens.length];
-    // for (int i = 0; i < tokens.length; i++) {
-    // bins[i] = Integer.parseInt(tokens[i]);
-    // }
-    // }
-
     @Override
     public void setBias(final String biasString) {
         final String[] tokens = biasString.split(",");
         if (tokens.length != numClasses()) {
             throw new IllegalArgumentException(
-                "ERROR: if bias term is specified, must contain a bias for each class in the model.  numBias="
-                        + tokens.length + " numClasses=" + numClasses());
+                    "ERROR: if bias term is specified, must contain a bias for each class in the model.  numBias="
+                            + tokens.length + " numClasses=" + numClasses());
         }
         for (int i = 0; i < tokens.length; i++) {
             bias[i] = Float.parseFloat(tokens[i]);
@@ -91,6 +81,12 @@ public class Perceptron extends Classifier {
         for (int i = 0; i < numClasses(); i++) {
             rawWeights[i] = new FloatVector(initialWeights.clone());
         }
+    }
+
+    protected void initModel(final int numFeatures) {
+        final float[] initialWeights = new float[numFeatures];
+        Arrays.fill(initialWeights, 0f); // init with 0-vector
+        initModel(initialWeights);
     }
 
     /**
@@ -124,9 +120,7 @@ public class Perceptron extends Classifier {
         // since we don't require a user to specify the number of features in their model
         // we need to extract that number from the training data and init the new model
         if (rawWeights == null) {
-            final float[] initialWeights = new float[featureVector.vectorLength()];
-            Arrays.fill(initialWeights, 0f); // init with 0-vector
-            initModel(initialWeights);
+            initModel(featureVector.vectorLength());
         }
 
         // final boolean rawGuessClass = this.classifyRaw(featureVector);
@@ -137,28 +131,18 @@ public class Perceptron extends Classifier {
         final float loss = lossFunction.computeLoss(goldClass, rawGuessClass);
         if (loss != 0) {
             update(goldClass, loss * learningRate, featureVector, trainExampleNumber);
-            // incorrect prediction; adjust model
-            // if (goldClass == 1) {
-            // this.update(featureVector, loss * learningRate, trainExampleNumber);
-            // } else {
-            // this.update(featureVector, -1 * loss * learningRate, trainExampleNumber);
-            // }
         }
     }
 
     /**
      * Update weights for all features found in the specified feature vector by the specified alpha
      * 
-     * @param featureVector
-     *            Features to update
-     * @param alpha
-     *            Update amount (generally positive for positive examples and negative for negative examples)
-     * @param example
-     *            The number of examples seen in the training corpus (i.e., the index of the example which
-     *            caused this update, 1-indexed).
+     * @param featureVector Features to update
+     * @param alpha Update amount (generally positive for positive examples and negative for negative examples)
+     * @param example The number of examples seen in the training corpus (i.e., the index of the example which caused
+     *            this update, 1-indexed).
      */
-    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector,
-            final int example) {
+    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector, final int example) {
         for (int i = 0; i < numClasses(); i++) {
             if (i == goldClass) {
                 rawWeights[i].inPlaceAdd(featureVector, alpha);
@@ -179,8 +163,8 @@ public class Perceptron extends Classifier {
 
     protected String modelToString(final FloatVector[] model) {
         String s = "# === Perceptron Model ===\n";
-        s += String.format("numFeats=%d numClasses=%d bins=%s numTrainExamples=%d \n", model[0].length(),
-            numClasses(), binsStr, trainExampleNumber);
+        s += String.format("numFeats=%d numClasses=%d bins=%s numTrainExamples=%d \n", model[0].length(), numClasses(),
+                binsStr, trainExampleNumber);
         s += String.format("featTemplate: %s\n", featureTemplate);
         for (int i = 0; i < numClasses(); i++) {
             s += model[i].toString() + "\n";
@@ -199,13 +183,12 @@ public class Perceptron extends Classifier {
     }
 
     public static abstract class LossFunction {
-
         public abstract float computeLoss(int goldClass, int guessClass);
     }
 
     /**
-     * Allow loss functions other than Zero-One loss such that some errors can be considered better or worse
-     * than others.
+     * Allow loss functions other than Zero-One loss such that some errors can be considered better or worse than
+     * others.
      */
     public static class ZeroOneLoss extends LossFunction {
 
