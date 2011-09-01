@@ -32,7 +32,6 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
 
 public abstract class ChartParser<G extends Grammar, C extends Chart> extends Parser<G> {
 
@@ -71,10 +70,10 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (fomModel != null) {
             if (collectDetailedStatistics) {
                 final long t1 = System.currentTimeMillis();
-                fomModel.init(tokens);
+                fomModel.init(parseTask);
                 parseTask.fomInitMs = System.currentTimeMillis() - t1;
             } else {
-                fomModel.init(tokens);
+                fomModel.init(parseTask);
             }
         }
 
@@ -148,6 +147,10 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
                         parseTask.fomInitMs, parseTask.ccInitMs) : "");
     }
 
+    public int getCellFeaturesCount(final String[] featureNames) {
+        return getCellFeatures(-99, -99, featureNames, null).vectorLength();
+    }
+
     public SparseBitVector getCellFeatures(final int start, final int end, final String[] featureNames) {
         return getCellFeatures(start, end, featureNames, null);
     }
@@ -169,77 +172,76 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
             // Left tags
             if (featStr.startsWith("lt")) {
                 if (featStr.equals("lt")) {
-                    featIndices.add(numFeats + getPOSIndex(start, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(start));
                     numFeats += numTags;
                 } else if (featStr.equals("lt+1")) {
-                    featIndices.add(numFeats + getPOSIndex(start + 1, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(start + 1));
                     numFeats += numTags;
                 } else if (featStr.equals("lt+2")) {
-                    featIndices.add(numFeats + getPOSIndex(start + 2, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(start + 2));
                     numFeats += numTags;
                 } else if (featStr.equals("lt-1")) {
-                    featIndices.add(numFeats + getPOSIndex(start - 1, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(start - 1));
                     numFeats += numTags;
                 } else if (featStr.equals("lt-2")) {
-                    featIndices.add(numFeats + getPOSIndex(start - 2, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(start - 2));
                     numFeats += numTags;
                 } else if (featStr.equals("lt_lt-1")) {
-                    featIndices.add(numFeats + getPOSIndex(start, goldTree) + numTags
-                            * getPOSIndex(start - 1, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(start) + numTags * getPOSFeat(start - 1));
                     numFeats += numTags * numTags;
                 }
 
             } else if (featStr.startsWith("rt")) {
                 // Right tags -- to get the last tag inside the constituent, we need to subtract 1
                 if (featStr.equals("rt")) {
-                    featIndices.add(numFeats + getPOSIndex(end - 1, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(end - 1));
                     numFeats += numTags;
                 } else if (featStr.equals("rt+1")) {
-                    featIndices.add(numFeats + getPOSIndex(end, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(end));
                     numFeats += numTags;
                 } else if (featStr.equals("rt+2")) {
-                    featIndices.add(numFeats + getPOSIndex(end + 1, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(end + 1));
                     numFeats += numTags;
                 } else if (featStr.equals("rt-1")) {
-                    featIndices.add(numFeats + getPOSIndex(end - 2, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(end - 2));
                     numFeats += numTags;
                 } else if (featStr.equals("rt-2")) {
-                    featIndices.add(numFeats + getPOSIndex(end - 3, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(end - 3));
                     numFeats += numTags;
                 } else if (featStr.equals("rt_rt+1")) {
-                    featIndices.add(numFeats + getPOSIndex(end, goldTree) + numTags * getPOSIndex(end + 1, goldTree));
+                    featIndices.add(numFeats + getPOSFeat(end) + numTags * getPOSFeat(end + 1));
                     numFeats += numTags * numTags;
                 }
 
             } else if (featStr.startsWith("lw")) {
                 // Left words
                 if (featStr.equals("lw")) {
-                    featIndices.add(numFeats + getWordIndex(start));
+                    featIndices.add(numFeats + getWordFeat(start));
                     numFeats += numWords;
                 } else if (featStr.equals("lw-1")) {
-                    featIndices.add(numFeats + getWordIndex(start - 1));
+                    featIndices.add(numFeats + getWordFeat(start - 1));
                     numFeats += numWords;
                 } else if (featStr.equals("lw_lt")) {
-                    featIndices.add(numFeats + getWordIndex(start) + numWords * getPOSIndex(start, goldTree));
+                    featIndices.add(numFeats + getWordFeat(start) + numWords * getPOSFeat(start));
                     numFeats += numWords * numTags;
                 } else if (featStr.equals("lw-1_lt-1")) {
-                    featIndices.add(numFeats + getWordIndex(start - 1) + numWords * getPOSIndex(start - 1, goldTree));
+                    featIndices.add(numFeats + getWordFeat(start - 1) + numWords * getPOSFeat(start - 1));
                     numFeats += numWords * numTags;
                 }
 
             } else if (featStr.startsWith("rw")) {
                 // Right words
                 if (featStr.equals("rw")) {
-                    featIndices.add(numFeats + getWordIndex(end - 1));
+                    featIndices.add(numFeats + getWordFeat(end - 1));
                     numFeats += numWords;
                 } else if (featStr.equals("rw+1")) {
-                    featIndices.add(numFeats + getWordIndex(end));
+                    featIndices.add(numFeats + getWordFeat(end));
                     numFeats += numWords;
                 } else if (featStr.equals("rw_rt")) {
-                    featIndices.add(numFeats + getWordIndex(end - 1) + numWords * getPOSIndex(end - 1, goldTree));
+                    featIndices.add(numFeats + getWordFeat(end - 1) + numWords * getPOSFeat(end - 1));
                     numFeats += numWords * numTags;
                 } else if (featStr.equals("rw+1_rt+1")) {
-                    featIndices.add(numFeats + getWordIndex(end) + numWords * getPOSIndex(end, goldTree));
+                    featIndices.add(numFeats + getWordFeat(end) + numWords * getPOSFeat(end));
                     numFeats += numWords * numTags;
                 }
             } else if (featStr.equals("loc")) { // cell location
@@ -274,45 +276,19 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         return new SparseBitVector(numFeats, featIndices.toIntArray());
     }
 
-    private int getPOSIndex(final int tokIndex, final NaryTree<String> goldTree) {
-        int index = -1;
-
-        if (tokIndex < 0 || tokIndex >= this.parseTask.sentenceLength()) {
-            index = grammar.nullSymbol;
-        } else {
-            if (goldTree != null) {
-                // if the input was a tree, we are training from gold trees. Get the gold POS tag.
-                final int i = 0;
-                for (final NaryTree<String> leaf : goldTree.leafTraversal()) {
-                    if (i == tokIndex) {
-                        return grammar.nonTermSet.getIndex(leaf.parent().label());
-                    }
-                }
-                // for (final Chart.ChartEdge goldEdge : currentInput.inputTreeChart.getEdgeList(tokIndex, tokIndex +
-                // 1)) {
-                // if (goldEdge.prod.isLexProd()) {
-                // index = goldEdge.prod.parent;
-                // }
-                // }
-            } else {
-                // we are decoding -- there are a number of things we could do here to get the "best"
-                // POS tag for this index; I'm choosing to tag the input sentence with a XX tagger
-                // and use the 1-best output.
-                index = ((BoundaryInOutSelector) this.fomModel).get1bestPOSTag(tokIndex);
-                // NOTE: this also works with InsideWithFwdBkwd since it inherits from BoundaryInOut
-            }
+    // map from sparse POS index to compact ordering by using grammar.posSet
+    private int getPOSFeat(final int tokIndex) {
+        if (tokIndex < 0 || tokIndex >= parseTask.sentenceLength()) {
+            return grammar.posSet.getIndex(grammar.nullSymbol);
         }
-
-        if (index == -1) {
-            throw new UnsupportedOperationException("ERROR: not able to get POS Index during feature extraction");
-        }
-        return grammar.posSet.getIndex(index); // map from sparse POS index to compact ordering
+        // return grammar.posSet.getIndex(((BoundaryInOutSelector) this.fomModel).get1bestPOSTag(tokIndex));
+        return grammar.posSet.getIndex(parseTask.tags[tokIndex]);
     }
 
-    private int getWordIndex(final int start) {
-        if (start < 0 || start >= this.parseTask.sentenceLength()) {
+    private int getWordFeat(final int tokIndex) {
+        if (tokIndex < 0 || tokIndex >= parseTask.sentenceLength()) {
             return grammar.nullWord;
         }
-        return parseTask.tokens[start];
+        return parseTask.tokens[tokIndex];
     }
 }

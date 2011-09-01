@@ -43,14 +43,14 @@ public class FigureOfMeritModel {
     /**
      * @return a new {@link FigureOfMerit} instance based on this model.
      */
-    public FigureOfMerit createFOM(final Grammar grammar) {
+    public FigureOfMerit createFOM() {
         switch (type) {
         case Inside:
             return new InsideProb();
         case NormalizedInside:
             return new NormalizedInsideProb();
-        case WeightedFeatures:
-            return new WeightedFeatures(grammar);
+            // case WeightedFeatures:
+            // return new WeightedFeatures(grammar);
         default:
             BaseLogger.singleton().info("ERROR: FOMType " + type + " not supported.");
             System.exit(1);

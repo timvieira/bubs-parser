@@ -88,7 +88,7 @@ public abstract class Parser<G extends Grammar> {
     public Parser(final ParserDriver opts, final G grammar) {
         this.grammar = grammar;
         this.opts = opts;
-        this.fomModel = opts.fomModel.createFOM(grammar);
+        this.fomModel = opts.fomModel.createFOM();
         this.cellSelector = opts.cellSelectorModel.createCellSelector();
 
         this.collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINER);

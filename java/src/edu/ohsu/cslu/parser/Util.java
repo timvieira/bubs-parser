@@ -115,6 +115,14 @@ public class Util {
         return result.trim();
     }
 
+    public static String floatArray2Str(final float[] data) {
+        String result = "";
+        for (final float val : data) {
+            result += String.format("%.2f ", val);
+        }
+        return result.trim();
+    }
+
     public static int bool2int(final boolean value) {
         if (value) {
             return 1;

@@ -30,6 +30,8 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
@@ -52,6 +54,9 @@ public class ProfileBoundaryInOut {
     private PackedArrayChart parentAnnotatedChart;
     private PackedArrayChart berkeleyChart;
 
+    private ParseContext parentAnnotatedParseContext;
+    private ParseContext berkeleyParseContext;
+
     @BeforeClass
     public static void suiteSetUp() throws IOException {
         if (parentAnnotatedGrammar == null) {
@@ -61,7 +66,7 @@ public class ProfileBoundaryInOut {
         final BoundaryInOut parentBioModel = new BoundaryInOut(FOMType.BoundaryInOut, parentAnnotatedGrammar,
                 new BufferedReader(JUnit.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
 
-        parentAnnotatedBio = (BoundaryInOutSelector) parentBioModel.createFOM(parentAnnotatedGrammar);
+        parentAnnotatedBio = (BoundaryInOutSelector) parentBioModel.createFOM();
 
         if (berkeleyGrammar == null) {
             berkeleyGrammar = new LeftCscSparseMatrixGrammar(
@@ -69,15 +74,18 @@ public class ProfileBoundaryInOut {
         }
         final BoundaryInOut berkeleyBioModel = new BoundaryInOut(FOMType.BoundaryInOut, berkeleyGrammar,
                 new BufferedReader(JUnit.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
-        berkeleyBio = (BoundaryInOutSelector) berkeleyBioModel.createFOM(berkeleyGrammar);
+        berkeleyBio = (BoundaryInOutSelector) berkeleyBioModel.createFOM();
     }
 
     @Before
     public void setUp() {
         final String sentence = "And a large slice of the first episode is devoted to efforts to get rid of some nearly worthless Japanese bonds -LRB- since when is anything Japanese nearly worthless nowadays ? -RRB- .";
-        final int[] tokens = parentAnnotatedGrammar.tokenizer.tokenizeToIndex(sentence);
-        parentAnnotatedChart = new PackedArrayChart(tokens, parentAnnotatedGrammar, 100, 100);
-        berkeleyChart = new PackedArrayChart(tokens, berkeleyGrammar, 100, 150);
+        // final int[] tokens = parentAnnotatedGrammar.tokenizer.tokenizeToIndex(sentence);
+        parentAnnotatedParseContext = new ParseContext(sentence, Parser.InputFormat.Text, parentAnnotatedGrammar);
+        parentAnnotatedChart = new PackedArrayChart(parentAnnotatedParseContext.tokens, parentAnnotatedGrammar, 100,
+                100);
+        berkeleyParseContext = new ParseContext(sentence, Parser.InputFormat.Text, parentAnnotatedGrammar);
+        berkeleyChart = new PackedArrayChart(berkeleyParseContext.tokens, berkeleyGrammar, 100, 150);
     }
 
     @Test
@@ -85,7 +93,7 @@ public class ProfileBoundaryInOut {
     public void profileParentAnnotated() {
 
         for (int i = 0; i < 200; i++) {
-            parentAnnotatedBio.init(parentAnnotatedChart.tokens);
+            parentAnnotatedBio.init(parentAnnotatedParseContext);
         }
     }
 
@@ -93,7 +101,7 @@ public class ProfileBoundaryInOut {
     @PerformanceTest({ "mbp", "2308", "d820", "3750" })
     public void profileBerkeley() {
         for (int i = 0; i < 200; i++) {
-            berkeleyBio.init(berkeleyChart.tokens);
+            berkeleyBio.init(berkeleyParseContext);
         }
     }
 }
