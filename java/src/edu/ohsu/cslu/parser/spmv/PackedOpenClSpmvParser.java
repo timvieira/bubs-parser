@@ -25,6 +25,7 @@ import com.nativelibs4java.opencl.CLMem;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -34,8 +35,8 @@ import edu.ohsu.cslu.util.OpenClUtils;
 public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
 
     /**
-     * Populated non-terminal indices. Parallel array with {@link OpenClSpmvParser#clChartInsideProbabilities}
-     * , {@link OpenClSpmvParser#clChartPackedChildren}, and {@link OpenClSpmvParser#clChartMidpoints}
+     * Populated non-terminal indices. Parallel array with {@link OpenClSpmvParser#clChartInsideProbabilities} ,
+     * {@link OpenClSpmvParser#clChartPackedChildren}, and {@link OpenClSpmvParser#clChartMidpoints}
      */
     private CLShortBuffer clChartNonTerminalIndices;
 
@@ -61,8 +62,7 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
 
         // Allocate OpenCL-hosted memory for temporary cell storage, to perform SpMV into before packing into
         // the actual chart storage
-        clTmpCellInsideProbabilities = context.createFloatBuffer(CLMem.Usage.InputOutput,
-            grammar.numNonTerms());
+        clTmpCellInsideProbabilities = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar.numNonTerms());
         clTmpCellPackedChildren = context.createIntBuffer(CLMem.Usage.InputOutput, grammar.numNonTerms());
         clTmpCellMidpoints = context.createShortBuffer(CLMem.Usage.InputOutput, grammar.numNonTerms());
 
@@ -70,16 +70,16 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
     }
 
     @Override
-    protected void initSentence(final int[] tokens) {
-        final int sentLength = tokens.length;
+    protected void initSentence(final ParseContext parseContext) {
+        final int sentLength = parseContext.sentenceLength();
         if (chart == null || chart.size() < sentLength) {
-            chart = new PackedArrayChart(tokens, grammar);
+            chart = new PackedArrayChart(parseContext, grammar);
             clChartNumNonTerminals = context.createIntBuffer(CLMem.Usage.InputOutput, chart.cells);
         } else {
             chart.clear(sentLength);
         }
 
-        super.initSentence(tokens);
+        super.initSentence(parseContext);
     }
 
     @Override
@@ -90,8 +90,7 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
         if (clChartNonTerminalIndices != null) {
             clChartNonTerminalIndices.release();
         }
-        clChartNonTerminalIndices = context
-            .createShortBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
+        clChartNonTerminalIndices = context.createShortBuffer(CLMem.Usage.InputOutput, chart.chartArraySize());
     }
 
     @Override
@@ -108,17 +107,15 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
         final int observedRightChildren = packedRightCell.maxRightChildIndex() - rightChildrenStart + 1;
 
         // Bind the arguments of the OpenCL kernel
-        cartesianProductKernel.setArgs(clChartNonTerminalIndices, clChartInsideProbabilities,
-            clChartPackedChildren, clChartMidpoints, leftChildrenStart, observedLeftChildren,
-            rightChildrenStart, observedRightChildren, tmpClCartesianProductProbabilities,
-            tmpClCartesianProductMidpoints, rightCell.start());
+        cartesianProductKernel.setArgs(clChartNonTerminalIndices, clChartInsideProbabilities, clChartPackedChildren,
+                clChartMidpoints, leftChildrenStart, observedLeftChildren, rightChildrenStart, observedRightChildren,
+                tmpClCartesianProductProbabilities, tmpClCartesianProductMidpoints, rightCell.start());
 
         // Call the kernel and wait for results
-        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(
-            (observedLeftChildren * observedRightChildren), LOCAL_WORK_SIZE);
+        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp((observedLeftChildren * observedRightChildren),
+                LOCAL_WORK_SIZE);
         if (globalWorkSize > 0) {
-            cartesianProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
-                new int[] { LOCAL_WORK_SIZE });
+            cartesianProductKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
             clQueue.finish();
         }
     }
@@ -130,26 +127,21 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
 
         // Fill the temporary storage with negative infinity
         fillFloatKernel.setArgs(clTmpCellInsideProbabilities, grammar.numNonTerms(), Float.NEGATIVE_INFINITY);
-        final int fillFloatGlobalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(),
-            LOCAL_WORK_SIZE);
-        fillFloatKernel.enqueueNDRange(clQueue, new int[] { fillFloatGlobalWorkSize },
-            new int[] { LOCAL_WORK_SIZE });
+        final int fillFloatGlobalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
+        fillFloatKernel.enqueueNDRange(clQueue, new int[] { fillFloatGlobalWorkSize }, new int[] { LOCAL_WORK_SIZE });
 
         // Execute the Binary SpMV kernel
         binarySpmvKernel.setArgs(clTmpCellInsideProbabilities, clTmpCellPackedChildren, clTmpCellMidpoints,
-            clCartesianProductProbabilities0, clCartesianProductMidpoints0, clBinaryRuleMatrixRowIndices,
-            clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities, grammar.numNonTerms());
-        final int spmvGlobalWorkSize = edu.ohsu.cslu.util.Math
-            .roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
-        binarySpmvKernel.enqueueNDRange(clQueue, new int[] { spmvGlobalWorkSize },
-            new int[] { LOCAL_WORK_SIZE });
+                clCartesianProductProbabilities0, clCartesianProductMidpoints0, clBinaryRuleMatrixRowIndices,
+                clBinaryRuleMatrixColumnIndices, clBinaryRuleMatrixProbabilities, grammar.numNonTerms());
+        final int spmvGlobalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
+        binarySpmvKernel.enqueueNDRange(clQueue, new int[] { spmvGlobalWorkSize }, new int[] { LOCAL_WORK_SIZE });
         clQueue.finish();
 
         // TODO This doesn't really belong in an internal method
         // Copy temporary cell contents from device memory into the cell's temporary storage
         packedChartCell.allocateTemporaryStorage();
-        OpenClUtils.copyFromDevice(clQueue, clTmpCellInsideProbabilities,
-            packedChartCell.tmpInsideProbabilities);
+        OpenClUtils.copyFromDevice(clQueue, clTmpCellInsideProbabilities, packedChartCell.tmpInsideProbabilities);
         OpenClUtils.copyFromDevice(clQueue, clTmpCellPackedChildren, packedChartCell.tmpPackedChildren);
         OpenClUtils.copyFromDevice(clQueue, clTmpCellMidpoints, packedChartCell.tmpMidpoints);
     }
@@ -161,15 +153,14 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
 
         // TODO This doesn't really belong in an internal method
         packedChartCell.allocateTemporaryStorage();
-        OpenClUtils.copyToDevice(clQueue, clTmpCellInsideProbabilities,
-            packedChartCell.tmpInsideProbabilities);
+        OpenClUtils.copyToDevice(clQueue, clTmpCellInsideProbabilities, packedChartCell.tmpInsideProbabilities);
         OpenClUtils.copyToDevice(clQueue, clTmpCellPackedChildren, packedChartCell.tmpPackedChildren);
         OpenClUtils.copyToDevice(clQueue, clTmpCellMidpoints, packedChartCell.tmpMidpoints);
 
         // Bind the arguments of the OpenCL kernel
         unarySpmvKernel.setArgs(clTmpCellInsideProbabilities, clTmpCellPackedChildren, clTmpCellMidpoints,
-            clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices, clCsrUnaryProbabilities,
-            grammar.numNonTerms(), chartCell.end());
+                clCsrUnaryRowStartIndices, clCsrUnaryColumnIndices, clCsrUnaryProbabilities, grammar.numNonTerms(),
+                chartCell.end());
 
         // Call the kernel and wait for results
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
@@ -178,8 +169,7 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
 
         // TODO This doesn't really belong in an internal method
         // Copy temporary cell contents from device memory into the cell's temporary storage
-        OpenClUtils.copyFromDevice(clQueue, clTmpCellInsideProbabilities,
-            packedChartCell.tmpInsideProbabilities);
+        OpenClUtils.copyFromDevice(clQueue, clTmpCellInsideProbabilities, packedChartCell.tmpInsideProbabilities);
         OpenClUtils.copyFromDevice(clQueue, clTmpCellPackedChildren, packedChartCell.tmpPackedChildren);
         OpenClUtils.copyFromDevice(clQueue, clTmpCellMidpoints, packedChartCell.tmpMidpoints);
     }
@@ -193,13 +183,13 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.numNonTerms(), LOCAL_WORK_SIZE);
 
         prefixSumKernel.setArgs(clTmpCellInsideProbabilities, clPrefixSum, clChartNumNonTerminals,
-            chart.cellIndex(packedCell.start(), packedCell.end()), grammar.numNonTerms());
+                chart.cellIndex(packedCell.start(), packedCell.end()), grammar.numNonTerms());
         // TODO Thread prefix sum kernel
         prefixSumKernel.enqueueNDRange(clQueue, new int[] { 1 }, new int[] { 1 });
 
-        packKernel.setArgs(clTmpCellInsideProbabilities, clTmpCellPackedChildren, clTmpCellMidpoints,
-            clPrefixSum, clChartNonTerminalIndices, clChartInsideProbabilities, clChartPackedChildren,
-            clChartMidpoints, chartCell.offset(), grammar.numNonTerms());
+        packKernel.setArgs(clTmpCellInsideProbabilities, clTmpCellPackedChildren, clTmpCellMidpoints, clPrefixSum,
+                clChartNonTerminalIndices, clChartInsideProbabilities, clChartPackedChildren, clChartMidpoints,
+                chartCell.offset(), grammar.numNonTerms());
         packKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
 
         clQueue.finish();

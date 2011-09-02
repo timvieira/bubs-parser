@@ -26,6 +26,7 @@ import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
@@ -77,30 +78,18 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     @Override
-    protected void initSentence(final int[] tokens) {
-        chart = new InOutCellChart(tokens, this);
-
-        // TODO: compress this so it's n*(n/2) instead of n*n
-        // final int n = tokens.length + 1;
-        // TODO: this should just be a new type of chart
-        // maxc = new MaxcStruct[n][n][grammar.numNonTerms()];
-
-        // for (int start = 0; start < n - 1; start++) {
-        // for (int end = start + 1; end < n; end++) {
-        // //maxc[start][end]
-        //
-        // }
-        // }
+    protected void initSentence(final ParseContext parseContext) {
+        chart = new InOutCellChart(parseContext.tokens, this);
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
         final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
 
-        initSentence(tokens);
+        initSentence(parseContext);
         cellSelector.initSentence(this);
-        fomModel.init(parseTask);
-        addLexicalProductions(tokens);
+        fomModel.init(parseContext);
+        addLexicalProductions(parseContext);
 
         while (cellSelector.hasNext()) {
             final short[] startEnd = cellSelector.next();
@@ -116,7 +105,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
             goodmanMaximizeLabelRecall();
         } else if (opts.decodeMethod == Parser.DecodeMethod.MaxRuleProd) {
             // berkeleyMaxRule(tokens);
-            berkeleyMaxRuleNoMarginalize(tokens);
+            berkeleyMaxRuleNoMarginalize(parseContext.tokens);
         } else {
             throw new IllegalArgumentException("Expecting -decode to be MaxRecall or MaxRule but found "
                     + opts.decodeMethod);

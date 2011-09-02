@@ -21,6 +21,7 @@ package edu.ohsu.cslu.parser.ml;
 import java.lang.reflect.ParameterizedType;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
@@ -34,9 +35,8 @@ public abstract class SparseMatrixLoopParser<G extends SparseMatrixGrammar, C ex
 
     @Override
     @SuppressWarnings("unchecked")
-    protected void initSentence(final int[] tokens) {
-
-        final int sentLength = tokens.length;
+    protected void initSentence(final ParseContext parseContext) {
+        final int sentLength = parseContext.sentenceLength();
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
         } else {
@@ -47,13 +47,13 @@ public abstract class SparseMatrixLoopParser<G extends SparseMatrixGrammar, C ex
                 try {
                     // First, try for a constructor that takes tokens, grammar, beamWidth, and lexicalRowBeamWidth
                     chart = chartClass.getConstructor(
-                            new Class[] { int[].class, SparseMatrixGrammar.class, int.class, int.class }).newInstance(
-                            new Object[] { tokens, grammar, beamWidth, lexicalRowBeamWidth });
+                            new Class[] { ParseContext.class, SparseMatrixGrammar.class, int.class, int.class })
+                            .newInstance(new Object[] { parseContext, grammar, beamWidth, lexicalRowBeamWidth });
 
                 } catch (final NoSuchMethodException e) {
                     // If not found, use a constructor that takes only tokens and grammar
-                    chart = chartClass.getConstructor(new Class[] { int[].class, SparseMatrixGrammar.class })
-                            .newInstance(new Object[] { tokens, grammar });
+                    chart = chartClass.getConstructor(new Class[] { ParseContext.class, SparseMatrixGrammar.class })
+                            .newInstance(new Object[] { parseContext, grammar });
                 }
             } catch (final Exception e) {
                 throw new RuntimeException(e);

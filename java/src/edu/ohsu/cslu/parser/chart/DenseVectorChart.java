@@ -23,6 +23,7 @@ import java.util.Arrays;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.parser.ParseContext;
 
 /**
  * Stores a chart in a 3-way parallel array indexed by non-terminal:
@@ -59,8 +60,8 @@ public class DenseVectorChart extends ParallelArrayChart {
      * @param tokens Sentence tokens, mapped to integer indices
      * @param sparseMatrixGrammar Grammar
      */
-    public DenseVectorChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(tokens, sparseMatrixGrammar);
+    public DenseVectorChart(final ParseContext parseContext, final SparseMatrixGrammar sparseMatrixGrammar) {
+        super(parseContext, sparseMatrixGrammar);
     }
 
     @Override

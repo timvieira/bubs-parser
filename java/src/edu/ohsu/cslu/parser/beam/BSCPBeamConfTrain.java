@@ -25,6 +25,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -105,16 +106,15 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
     // }
 
     @Override
-    protected void initSentence(final int[] tokens) {
-        super.initSentence(tokens);
+    protected void initSentence(final ParseContext parseContext) {
+        super.initSentence(parseContext);
 
-        if (parseTask.inputTree == null) {
+        if (parseContext.inputTree == null) {
             BaseLogger.singleton().info("ERROR: BSCPTrainFOMConfidence requires gold trees as input");
             System.exit(1);
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
 
@@ -198,8 +198,8 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
             edge = agenda.poll();
         }
 
-        final SparseBitVector cellFeats = getCellFeatures(cell.start(), cell.end(), this.featTemplate.split("\\s+"),
-                parseTask.inputTree);
+        final SparseBitVector cellFeats = chart.getCellFeatures(cell.start(), cell.end(),
+                this.featTemplate.split("\\s+"));
 
         // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
         System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),

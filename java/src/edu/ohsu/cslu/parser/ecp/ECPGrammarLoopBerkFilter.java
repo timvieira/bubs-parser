@@ -24,6 +24,7 @@ import java.util.Collection;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -56,10 +57,10 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
     }
 
     @Override
-    public void initSentence(final int[] tokens) {
-        super.initSentence(tokens);
+    public void initSentence(final ParseContext parseContext) {
+        super.initSentence(parseContext);
 
-        final int sentLength = tokens.length;
+        final int sentLength = parseContext.sentenceLength();
         narrowRExtent = new int[sentLength + 1][grammar.numNonTerms()];
         wideRExtent = new int[sentLength + 1][grammar.numNonTerms()];
         narrowLExtent = new int[sentLength + 1][grammar.numNonTerms()];
@@ -76,13 +77,13 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
     }
 
     @Override
-    protected void addLexicalProductions(final int sent[]) {
+    protected void addLexicalProductions(final ParseContext parseContext) {
         Collection<Production> validProductions;
         HashSetChartCell cell;
 
         // add lexical productions and unary productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(parseContext.tokens[i])) {
                 cell = chart.getCell(i, i + 1);
                 cell.updateInside(chart.new ChartEdge(lexProd, cell));
                 updateRuleConstraints(lexProd.parent, i, i + 1);

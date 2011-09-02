@@ -28,6 +28,7 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -98,15 +99,15 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     }
 
     @Override
-    protected void initSentence(final int[] tokens) {
-        final int sentLength = tokens.length;
+    protected void initSentence(final ParseContext parseContext) {
+        final int sentLength = parseContext.sentenceLength();
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
         } else {
-            chart = new PackedArrayChart(tokens, grammar, beamWidth, lexicalRowBeamWidth);
+            chart = new PackedArrayChart(parseContext, grammar, beamWidth, lexicalRowBeamWidth);
         }
 
-        super.initSentence(tokens);
+        super.initSentence(parseContext);
     }
 
     @Override

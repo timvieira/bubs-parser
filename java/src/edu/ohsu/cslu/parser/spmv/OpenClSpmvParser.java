@@ -36,6 +36,7 @@ import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
@@ -150,10 +151,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     @Override
-    protected void initSentence(final int[] tokens) {
-        super.initSentence(tokens);
+    protected void initSentence(final ParseContext parseContext) {
+        super.initSentence(parseContext);
 
-        if (clChartInsideProbabilities == null || tokens.length > chartSize) {
+        if (clChartInsideProbabilities == null || parseContext.sentenceLength() > chartSize) {
             allocateOpenClChart();
         }
 
@@ -167,9 +168,9 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
      * TODO Call super.findBestParse() and just copy here?
      */
     @Override
-    public BinaryTree<String> findBestParse(final int[] tokens) {
-        initSentence(tokens);
-        addLexicalProductions(tokens);
+    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
+        initSentence(parseContext);
+        addLexicalProductions(parseContext);
         cellSelector.initSentence(this);
 
         while (cellSelector.hasNext()) {
@@ -204,10 +205,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     @Override
-    protected void addLexicalProductions(final int[] sent) {
+    protected void addLexicalProductions(final ParseContext parseContext) {
         // Populate the lexical productions and part-of-speech tags in CPU space, and then copy the chart to
         // device memory.
-        super.addLexicalProductions(sent);
+        super.addLexicalProductions(parseContext);
         copyChartToDevice();
     }
 

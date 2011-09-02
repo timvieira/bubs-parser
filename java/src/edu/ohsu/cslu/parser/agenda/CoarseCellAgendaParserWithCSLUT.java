@@ -23,6 +23,7 @@ import java.util.Collection;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel.OHSUCellConstraints;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -43,13 +44,13 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
         HashSetChartCell cell;
 
-        initParser(tokens);
-        addLexicalProductions(tokens);
-        fomModel.init(parseTask);
-        cellConstraints.initSentence(chart, parseTask.sentence);
+        initParser(parseContext.tokens);
+        addLexicalProductions(parseContext.tokens);
+        fomModel.init(parseContext);
+        cellConstraints.initSentence(chart, parseContext.sentence);
         addUnaryExtensionsToLexProds();
 
         for (int i = 0; i < chart.size(); i++) {

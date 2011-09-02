@@ -30,6 +30,7 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -114,15 +115,15 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
     }
 
     @Override
-    protected void initSentence(final int[] tokens) {
-        final int sentLength = tokens.length;
+    protected void initSentence(final ParseContext parseContext) {
+        final int sentLength = parseContext.sentenceLength();
         if (chart != null && chart.size() >= sentLength) {
             chart.clear(sentLength);
         } else {
-            chart = new PackedArrayChart(tokens, grammar, beamWidth, lexicalRowBeamWidth, cpvSegments);
+            chart = new PackedArrayChart(parseContext, grammar, beamWidth, lexicalRowBeamWidth, cpvSegments);
         }
 
-        super.initSentence(tokens);
+        super.initSentence(parseContext);
     }
 
     // @Override

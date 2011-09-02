@@ -24,6 +24,7 @@ import java.util.PriorityQueue;
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
@@ -52,10 +53,10 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
     }
 
     @Override
-    protected void initSentence(final int[] tokens) {
-        chart = new CellChart(tokens, this);
+    protected void initSentence(final ParseContext parseContext) {
+        chart = new CellChart(parseContext.tokens, this);
 
-        final int n = tokens.length;
+        final int n = parseContext.sentenceLength();
         maxcFOM = new float[n][n + 1][grammar.numNonTerms()];
     }
 
@@ -71,8 +72,8 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
                 score = edge.fom + maxcFOM[start][midpt][edge.prod.leftChild]
                         + maxcFOM[midpt][end][edge.prod.rightChild];
             } else {
-                score = (float) Util.logSum(edge.fom, Util.logSum(
-                        maxcFOM[start][midpt][edge.prod.leftChild], maxcFOM[midpt][end][edge.prod.rightChild]));
+                score = (float) Util.logSum(edge.fom, Util.logSum(maxcFOM[start][midpt][edge.prod.leftChild],
+                        maxcFOM[midpt][end][edge.prod.rightChild]));
             }
         } else if (edge.prod.isUnaryProd()) {
             if (maxProduct) {

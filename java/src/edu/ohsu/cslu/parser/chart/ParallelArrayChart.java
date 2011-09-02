@@ -23,6 +23,7 @@ import java.util.Arrays;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.lela.ConstrainedChart;
+import edu.ohsu.cslu.parser.ParseContext;
 
 /**
  * Represents a parse chart as a parallel array including:
@@ -73,9 +74,9 @@ public abstract class ParallelArrayChart extends Chart {
      * @param sparseMatrixGrammar Grammar
      * @param beamWidth The maximum number of entries allowed in a chart cell
      */
-    protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar,
+    protected ParallelArrayChart(final ParseContext parseContext, final SparseMatrixGrammar sparseMatrixGrammar,
             final int beamWidth, final int lexicalRowBeamWidth) {
-        super(tokens);
+        super(parseContext, sparseMatrixGrammar);
         this.sparseMatrixGrammar = sparseMatrixGrammar;
         this.beamWidth = Math.min(beamWidth, sparseMatrixGrammar.numNonTerms());
         this.lexicalRowBeamWidth = Math.min(lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms());
@@ -105,8 +106,8 @@ public abstract class ParallelArrayChart extends Chart {
      * @param tokens
      * @param sparseMatrixGrammar
      */
-    protected ParallelArrayChart(final int[] tokens, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(tokens, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms());
+    protected ParallelArrayChart(final ParseContext parseContext, final SparseMatrixGrammar sparseMatrixGrammar) {
+        this(parseContext, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms());
     }
 
     /**

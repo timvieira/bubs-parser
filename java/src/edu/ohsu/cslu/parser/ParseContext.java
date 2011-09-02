@@ -84,12 +84,19 @@ public class ParseContext {
             } else if (inputFormat == InputFormat.Tree) {
                 this.inputTree = NaryTree.read(input.trim(), String.class);
                 this.sentence = Strings.join(inputTree.leafLabels(), " ");
-                // extract POS tags from tree
-                tags = new int[sentence.length()];
-                int i = 0;
-                for (final NaryTree<String> leaf : inputTree.leafTraversal()) {
-                    tags[i] = grammar.nonTermSet.getIndex(leaf.parent().label());
-                    i++;
+
+                if (ParserDriver.parseFromInputTags) {
+                    // extract POS tags from tree
+                    tags = new int[sentence.length()];
+                    int i = 0;
+                    for (final NaryTree<String> leaf : inputTree.leafTraversal()) {
+                        tags[i] = grammar.nonTermSet.getIndex(leaf.parent().label());
+                        if (tags[i] == -1) {
+                            throw new IllegalArgumentException("-parseFromInputTags specified but input tag '"
+                                    + leaf.parent().label() + "' not found in grammar");
+                        }
+                        i++;
+                    }
                 }
             } else if (inputFormat == InputFormat.Tagged) {
                 // (DT The) (NN economy) (POS 's) (NN temperature) (MD will)
@@ -106,6 +113,9 @@ public class ParseContext {
                     i++;
                 }
                 sentence = Strings.join(sentTokens, " ");
+                if (ParserDriver.parseFromInputTags == false) {
+                    tags = null; // make sure we don't use these
+                }
             }
 
             this.tokens = Grammar.tokenizer.tokenizeToIndex(sentence);

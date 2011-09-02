@@ -24,6 +24,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -51,18 +52,18 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
         ChartEdge edge;
         HashSetChartCell cell;
 
-        initParser(tokens);
-        addLexicalProductions(tokens);
-        fomModel.init(parseTask);
+        initParser(parseContext.tokens);
+        addLexicalProductions(parseContext.tokens);
+        fomModel.init(parseContext);
 
         // for (final ChartEdge lexEdge : edgesToExpand) {
         // expandFrontier(lexEdge, chart.getCell(lexEdge.start(), lexEdge.end()));
         // }
-        for (int i = 0; i < tokens.length; i++) {
+        for (int i = 0; i < parseContext.sentenceLength(); i++) {
             cell = chart.getCell(i, i + 1);
             for (final int nt : cell.getPosNTs()) {
                 expandFrontier(nt, cell);
