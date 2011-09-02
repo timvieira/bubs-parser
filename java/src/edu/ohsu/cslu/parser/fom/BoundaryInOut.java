@@ -33,6 +33,7 @@ import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 /**
@@ -419,7 +420,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         // }
 
         @Override
-        public void init(final ParseContext parseContext) {
+        public void init(final ParseContext parseContext, final Chart chart) {
             outsideLeftRightAndBestPOS(parseContext);
         }
 

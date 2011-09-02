@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.util.zip.GZIPInputStream;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;

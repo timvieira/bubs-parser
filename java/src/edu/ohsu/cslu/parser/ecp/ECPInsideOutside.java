@@ -88,7 +88,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
         initSentence(parseContext);
         cellSelector.initSentence(this);
-        fomModel.init(parseContext);
+        fomModel.init(parseContext, chart);
         addLexicalProductions(parseContext);
 
         while (cellSelector.hasNext()) {

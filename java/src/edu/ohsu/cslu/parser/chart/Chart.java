@@ -24,8 +24,8 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParseTree;
+import edu.ohsu.cslu.parser.ParseContext;
 
 public abstract class Chart {
 

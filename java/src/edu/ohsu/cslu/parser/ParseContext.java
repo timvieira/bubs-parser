@@ -31,6 +31,9 @@ import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 import edu.ohsu.cslu.util.Strings;
 
+// TODO: shouldn't this be an internal class of Parser?  Then it could have 
+// access to general parser options, the grammar, and chart (although I think
+// the chart should be handled in this class eventually)
 public class ParseContext {
 
     public String sentence;
@@ -72,11 +75,10 @@ public class ParseContext {
     public long extractTimeMs = 0;
 
     long startTime;
-    private Grammar grammar;
+    public Grammar grammar;
 
     public ParseContext(final String input, final InputFormat inputFormat, final Grammar grammar) {
         try {
-            // TODO We don't really need to trim both here and in Parser.parseSentence()
             if (inputFormat == InputFormat.Token) {
                 this.sentence = input.trim();
             } else if (inputFormat == InputFormat.Text) {

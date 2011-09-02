@@ -9,9 +9,9 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.Vocabulary;
-import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
