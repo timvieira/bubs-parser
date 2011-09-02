@@ -30,6 +30,7 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellConstraints;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel.PerceptronBeamWidth;
@@ -112,22 +113,22 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     }
 
     @Override
-    protected void initSentence(final int[] tokens) {
-        chart = new CellChart(tokens, this);
+    protected void initSentence(final ParseContext parseContext) {
+        chart = new CellChart(parseContext.tokens, this);
         numReparses = -1;
 
         final long startTimeMS = System.currentTimeMillis();
-        fomModel.init(parseTask);
+        fomModel.init(parseContext);
         final long endTimeMS = System.currentTimeMillis();
-        parseTask.fomInitMs = endTimeMS - startTimeMS;
+        parseContext.fomInitMs = endTimeMS - startTimeMS;
 
         cellSelector.initSentence(this);
-        parseTask.ccInitMs = System.currentTimeMillis() - endTimeMS;
+        parseContext.ccInitMs = System.currentTimeMillis() - endTimeMS;
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final int[] tokens) {
-        initSentence(tokens);
+    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
+        initSentence(parseContext);
 
         while (numReparses < opts.reparse && chart.hasCompleteParse(grammar.startSymbol) == false) {
             numReparses++;
@@ -151,9 +152,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 final short[] startAndEnd = cellSelector.next();
                 computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
 
-                parseTask.totalPushes += cellPushed;
-                parseTask.totalPops += cellPopped;
-                parseTask.totalConsidered += cellConsidered;
+                parseContext.totalPushes += cellPushed;
+                parseContext.totalPops += cellPopped;
+                parseContext.totalConsidered += cellConsidered;
 
                 // if (opts.collectDetailedStatistics) {
                 // final HashSetChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
@@ -179,7 +180,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         // scores are changed to be comparable
         if (end - start == 1) {
             Collection<Production> lexProdSet;
-            if (opts.parseFromTags) {
+            if (ParserDriver.parseFromInputTags) {
                 // add only one POS => word production given by input (or 1-best) tags
                 lexProdSet = new LinkedList<Production>();
                 lexProdSet.add(grammar.getLexicalProduction(parseTask.tags[start], parseTask.tokens[start]));

@@ -125,7 +125,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                         // beamWidthValues[start][end] = maxBeamWidth;
                         // cellStats += String.format("%d,%d=%d ", start, end, maxBeamWidth);
                     } else {
-                        final SparseBitVector feats = parser.getCellFeatures(start, end, featureNames);
+                        final SparseBitVector feats = parser.chart.getCellFeatures(start, end, featureNames);
                         guessClass = beamWidthModel.classify(feats);
                         if (countClasses) {
                             beamClassCounts[guessClass]++;

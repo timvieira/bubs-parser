@@ -6,6 +6,7 @@ import java.util.Iterator;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.InsideOutsideChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -19,8 +20,8 @@ public class InsideOutsideCphSpmlParser extends
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final int[] tokens) {
-        init(tokens);
+    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
+        initChart(parseContext);
         insidePass();
 
         // Outside pass
@@ -41,14 +42,14 @@ public class InsideOutsideCphSpmlParser extends
             Arrays.fill(tmpOutsideProbabilities, Float.NEGATIVE_INFINITY);
         }
         if (collectDetailedStatistics) {
-            parseTask.outsidePassMs = System.currentTimeMillis() - t0;
+            parseContext.outsidePassMs = System.currentTimeMillis() - t0;
         }
 
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
             chart.decode(opts.decodeMethod);
             final BinaryTree<String> parseTree = chart.extract(0, chart.size(), opts.decodeMethod);
-            parseTask.extractTimeMs = System.currentTimeMillis() - t3;
+            parseContext.extractTimeMs = System.currentTimeMillis() - t3;
             return parseTree;
         }
 

@@ -106,7 +106,8 @@ public class ConstrainedCsrSpmvParser extends
         } else {
             chart = new ConstrainedChart(constrainingChart, grammar);
         }
-        super.initSentence(constrainingChart.tokens);
+        // super.initSentence(constrainingChart.tokens);
+        super.initSentence(parseTask); // TODO: don't know if parseTask has been assigned at this point.
         cellSelector.initSentence(this);
 
         long t1 = 0;

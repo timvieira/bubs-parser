@@ -40,7 +40,7 @@ public class CellChart extends Chart {
     }
 
     public CellChart(final int[] tokens, final Parser<?> parser) {
-        super(tokens);
+        super(parser.parseTask, parser.grammar);
         this.parser = parser;
         this.viterbiMax = (parser.opts.decodeMethod == DecodeMethod.ViterbiMax);
         allocateChart(tokens.length);
@@ -112,8 +112,8 @@ public class CellChart extends Chart {
                 isLexCell = false;
             }
 
-            bestEdge = new ChartEdge[parser.grammar.numNonTerms()];
-            inside = new float[parser.grammar.numNonTerms()];
+            bestEdge = new ChartEdge[grammar.numNonTerms()];
+            inside = new float[grammar.numNonTerms()];
             Arrays.fill(inside, Float.NEGATIVE_INFINITY);
         }
 
@@ -136,13 +136,13 @@ public class CellChart extends Chart {
 
         private void updateCounts(final Production p) {
             if (p.isBinaryProd()) {
-                parser.parseTask.nBinaryConsidered++;
+                parseTask.nBinaryConsidered++;
             } else if (p.isLexProd()) {
-                parser.parseTask.nLex++;
+                parseTask.nLex++;
             } else {
-                parser.parseTask.nUnaryConsidered++;
+                parseTask.nUnaryConsidered++;
                 if (this.width() == 1) {
-                    parser.parseTask.nLexUnary++;
+                    parseTask.nLexUnary++;
                 }
             }
         }
@@ -208,7 +208,7 @@ public class CellChart extends Chart {
 
         protected void addToHashSets(final int ntIndex) {
             childNTs.add(ntIndex);
-            final NonTerminal nt = parser.grammar.getNonterminal(ntIndex);
+            final NonTerminal nt = grammar.getNonterminal(ntIndex);
             if (nt.isLeftChild) {
                 leftChildNTs.add(ntIndex);
             }
@@ -266,7 +266,7 @@ public class CellChart extends Chart {
         public String toString() {
             final StringBuilder sb = new StringBuilder(1024);
             sb.append(getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
-                    + parser.grammar.numNonTerms() + ") edges");
+                    + grammar.numNonTerms() + ") edges");
             for (int i = 0; i < bestEdge.length; i++) {
                 if (bestEdge[i] != null) {
                     sb.append(bestEdge[i].toString());

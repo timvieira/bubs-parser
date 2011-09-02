@@ -23,6 +23,7 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -38,13 +39,13 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
     }
 
     @Override
-    protected void addLexicalProductions(final int sent[]) {
+    protected void addLexicalProductions(final ParseContext parseContext) {
         HashSetChartCell cell;
 
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
             cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(sent[i])) {
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(parseContext.tokens[i])) {
                 cell.updateInside(chart.new ChartEdge(lexProd, cell));
 
                 // NOTE: also adding unary prods here...should probably change the name of this

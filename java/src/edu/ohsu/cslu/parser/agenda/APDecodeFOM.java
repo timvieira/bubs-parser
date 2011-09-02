@@ -22,6 +22,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
@@ -41,16 +42,16 @@ public class APDecodeFOM extends APWithMemory {
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
         ChartEdge edge;
         HashSetChartCell cell;
 
-        initParser(tokens);
-        fomModel.init(parseTask);
+        initParser(parseContext.tokens);
+        fomModel.init(parseContext);
 
-        addLexicalProductions(tokens);
+        addLexicalProductions(parseContext.tokens);
 
-        for (int i = 0; i < tokens.length; i++) {
+        for (int i = 0; i < parseContext.sentenceLength(); i++) {
             cell = chart.getCell(i, i + 1);
             for (final int nt : cell.getPosNTs()) {
                 expandFrontier(nt, cell);

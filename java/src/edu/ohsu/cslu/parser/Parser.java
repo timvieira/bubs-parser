@@ -100,7 +100,7 @@ public abstract class Parser<G extends Grammar> {
 
     public abstract String getStats();
 
-    protected abstract BinaryTree<String> findBestParse(int[] tokens);
+    protected abstract BinaryTree<String> findBestParse(ParseContext parseTask);
 
     /**
      * Waits until all active parsing tasks have completed. Intended for multi-threaded parsers (e.g.
@@ -137,7 +137,7 @@ public abstract class Parser<G extends Grammar> {
         } else {
             parseTask.startTime();
             try {
-                parseTask.binaryParse = findBestParse(parseTask.tokens);
+                parseTask.binaryParse = findBestParse(parseTask);
             } catch (final Exception e) {
                 BaseLogger.singleton().fine("ERROR: " + e.getMessage());
             }

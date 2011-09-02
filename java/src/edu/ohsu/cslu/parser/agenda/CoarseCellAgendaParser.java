@@ -24,6 +24,7 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -58,12 +59,12 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final int[] tokens) {
+    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
         HashSetChartCell cell;
 
-        initParser(tokens);
-        addLexicalProductions(tokens);
-        fomModel.init(parseTask);
+        initParser(parseContext.tokens);
+        addLexicalProductions(parseContext.tokens);
+        fomModel.init(parseContext);
         addUnaryExtensionsToLexProds();
 
         for (int i = 0; i < chart.size(); i++) {

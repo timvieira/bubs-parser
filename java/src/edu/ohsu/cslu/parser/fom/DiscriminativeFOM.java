@@ -2,12 +2,14 @@ package edu.ohsu.cslu.parser.fom;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.LinkedList;
 
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
@@ -22,8 +24,29 @@ import edu.ohsu.cslu.perceptron.LogisticRegressor;
 
 public class DiscriminativeFOM extends FigureOfMeritModel {
 
+    LogisticRegressor model;
+
     public DiscriminativeFOM(final FOMType type) {
         super(type);
+    }
+
+    public DiscriminativeFOM(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
+            throws IOException {
+        super(type);
+    }
+
+    @Override
+    public FigureOfMerit createFOM() {
+        switch (type) {
+        case Discriminative:
+            return new DiscriminativeFOMSelector();
+        default:
+            return super.createFOM();
+        }
+    }
+
+    public void readModel(final BufferedReader inStream) throws IOException {
+        model = LogisticRegressor.read(inStream);
     }
 
     public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile,
@@ -53,8 +76,7 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
                     final short[] startAndEnd = parser.cellSelector.next();
                     final short start = startAndEnd[0];
                     final short end = startAndEnd[1];
-                    final SparseBitVector featureVector = parser.getCellFeatures(start, end, featureNames,
-                            result.inputTree);
+                    final SparseBitVector featureVector = parser.chart.getCellFeatures(start, end, featureNames);
                     Arrays.fill(normInOutScores, Float.NEGATIVE_INFINITY);
                     for (int i = 0; i < numModels; i++) {
                         final int nt = grammar.phraseSet.getSymbol(i);
@@ -68,10 +90,10 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         } else {
             // hack to get number of features given featureNames
             final ParseContext tmpSent = parser.parseSentence("(TOP (S (JJ dummy) (NN string)))");
-            final int numFeatures = parser.getCellFeatures(0, 1, featureNames, tmpSent.inputTree).vectorLength();
+            final int numFeatures = parser.chart.getCellFeatures(0, 1, featureNames).vectorLength();
             // final int numFeatures = System.out.println("numFeats=" + numFeatures);
-            final LogisticRegressor model = new LogisticRegressor(0.1f,
-                    new edu.ohsu.cslu.perceptron.LogisticRegressor.DifferenceLoss(), numFeatures, numModels);
+            final LogisticRegressor model = new LogisticRegressor(numFeatures, numModels, 0.1f,
+                    new edu.ohsu.cslu.perceptron.LogisticRegressor.DifferenceLoss());
 
             final LinkedList<String> fileList = new LinkedList<String>();
             while ((line = inStream.readLine()) != null) {
@@ -132,6 +154,31 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
     // System.out.println("ittr=" + ittr + " loss=" + loss);
     // }
     // }
+
+    public class DiscriminativeFOMSelector extends FigureOfMerit {
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
+            final FloatVector features = null;
+            return 0f;
+        }
+
+        @Override
+        public final float calcLexicalFOM(final int start, final int end, final short parent,
+                final float insideProbability) {
+            return insideProbability;
+        }
+
+        @Override
+        public void init(final ParseContext parseContext) {
+            // should divide feature vector into three parts: cell-specific, left-boundary, right-boundary
+            // could then pre-compute left and right boundary scores for each NT and add them up
+            // in calcFOM with cell-specific values
+        }
+
+    }
 }
 
 class DataPoint {

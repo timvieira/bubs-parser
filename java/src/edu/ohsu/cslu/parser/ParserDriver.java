@@ -154,8 +154,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
     public int reparse = 0;
 
-    @Option(name = "-parseFromTags", hidden = true, usage = "Parse from input POS tags given by tagged or tree input")
-    public boolean parseFromTags = false;
+    @Option(name = "-parseFromInputTags", hidden = true, usage = "Parse from input POS tags given by tagged or tree input.  Replaces 1-best tags from BoundaryInOut FOM if also specified.")
+    public static boolean parseFromInputTags = false;
 
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
     private String fomTypeOrModel = "Inside";

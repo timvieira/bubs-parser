@@ -278,10 +278,9 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      */
     @Test
     public void testSimpleGrammar1() throws Exception {
-        final String sentence = "systems analyst arbitration chef";
-
         parser = createParser(simpleGrammar1, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
 
+        final String sentence = "systems analyst arbitration chef";
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString(true, false);
         assertEquals("(ROOT (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", bestParseTree);
     }
@@ -293,10 +292,9 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      */
     @Test
     public void testSimpleGrammar2() throws Exception {
-        final String sentence = "The fish market stands last";
-
         parser = createParser(simpleGrammar2, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
 
+        final String sentence = "The fish market stands last";
         final String bestParseTree = parser.parseSentence(sentence).parseBracketString(true, false);
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", bestParseTree);
     }
