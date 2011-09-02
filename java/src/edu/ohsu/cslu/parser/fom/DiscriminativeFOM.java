@@ -17,6 +17,7 @@ import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
@@ -25,6 +26,7 @@ import edu.ohsu.cslu.perceptron.LogisticRegressor;
 public class DiscriminativeFOM extends FigureOfMeritModel {
 
     LogisticRegressor model;
+    String[] featureNames;
 
     public DiscriminativeFOM(final FOMType type) {
         super(type);
@@ -45,8 +47,9 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         }
     }
 
-    public void readModel(final BufferedReader inStream) throws IOException {
+    public void readModel(final BufferedReader inStream, final String featureString) throws IOException {
         model = LogisticRegressor.read(inStream);
+        featureNames = featureString.split("\\s+");
     }
 
     public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile,
@@ -158,11 +161,15 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
     public class DiscriminativeFOMSelector extends FigureOfMerit {
 
         private static final long serialVersionUID = 1L;
+        // private ParseContext parseContext;
+        private Grammar grammar;
+        private Chart chart;
 
         @Override
         public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
-            final FloatVector features = null;
-            return 0f;
+            final SparseBitVector features = this.chart.getCellFeatures(start, end, featureNames);
+            // TODO: really bad! Only need to compute one, not all. Should pre-compute a lot of this
+            return model.predict(features).getFloat(grammar.phraseSet.getIndex((int) parent));
         }
 
         @Override
@@ -172,10 +179,13 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         }
 
         @Override
-        public void init(final ParseContext parseContext) {
+        public void init(final ParseContext parseContext, final Chart chart) {
             // should divide feature vector into three parts: cell-specific, left-boundary, right-boundary
             // could then pre-compute left and right boundary scores for each NT and add them up
             // in calcFOM with cell-specific values
+            // this.parseContext = parseContext;
+            this.chart = chart;
+            this.grammar = parseContext.grammar;
         }
 
     }

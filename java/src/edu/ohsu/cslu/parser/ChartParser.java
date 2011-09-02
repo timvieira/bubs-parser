@@ -65,10 +65,10 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (fomModel != null) {
             if (collectDetailedStatistics) {
                 final long t1 = System.currentTimeMillis();
-                fomModel.init(parseContext);
+                fomModel.init(parseContext, chart);
                 parseContext.fomInitMs = System.currentTimeMillis() - t1;
             } else {
-                fomModel.init(parseContext);
+                fomModel.init(parseContext, chart);
             }
         }
 

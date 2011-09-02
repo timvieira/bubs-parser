@@ -25,6 +25,7 @@ import java.io.Serializable;
 
 import edu.ohsu.cslu.parser.ParseContext;
 import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.chart.Chart;
 
 /**
  * A figure-of-merit model for a particular parser. {@link FigureOfMerit} instances are not required (or expected) to be
@@ -49,7 +50,7 @@ public abstract class FigureOfMerit implements Serializable {
         throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
     }
 
-    public void init(final ParseContext parseContext) {
+    public void init(final ParseContext parseContext, final Chart chart) {
         // default is to do nothing
     }
 
