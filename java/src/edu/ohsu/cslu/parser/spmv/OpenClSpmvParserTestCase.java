@@ -32,7 +32,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -90,8 +90,8 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(),
                 configProperties());
-        p.parseTask = new ParseContext("The fish market stands last", Parser.InputFormat.Text, g);
-        p.initSentence(p.parseTask);
+        final ParseTask parseTask = new ParseTask("The fish market stands last", Parser.InputFormat.Text, g);
+        p.initSentence(parseTask);
         final Chart chart = p.chart;
 
         final float[] probabilities = new float[g.cartesianProductFunction().packedArraySize()];
@@ -200,8 +200,8 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final P p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
-        p.parseTask = new ParseContext("systems analyst arbitration chef", Parser.InputFormat.Text, g);
-        p.initSentence(p.parseTask);
+        final ParseTask parseTask = new ParseTask("systems analyst arbitration chef", Parser.InputFormat.Text, g);
+        p.initSentence(parseTask);
         final Chart chart = p.chart;
 
         final int nn = g.mapNonterminal("NN");
@@ -273,8 +273,8 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Create the parser
         final P p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
-        p.parseTask = new ParseContext("The fish market stands last", Parser.InputFormat.Text, g);
-        p.initSentence(p.parseTask);
+        final ParseTask parseTask = new ParseTask("The fish market stands last", Parser.InputFormat.Text, g);
+        p.initSentence(parseTask);
         final Chart chart = p.chart;
 
         populateSimpleGrammar2Rows1_3(chart);
@@ -343,8 +343,8 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Create the parser
         final P p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
-        p.parseTask = new ParseContext("The fish market stands last", Parser.InputFormat.Text, g);
-        p.initSentence(p.parseTask);
+        final ParseTask parseTask = new ParseTask("The fish market stands last", Parser.InputFormat.Text, g);
+        p.initSentence(parseTask);
         final Chart chart = p.chart;
 
         populateSimpleGrammar2Rows1_3(chart);

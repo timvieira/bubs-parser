@@ -24,23 +24,23 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
-import edu.ohsu.cslu.parser.ParseContext;
 
 public abstract class Chart {
 
     protected int size;
     public int[] tokens;
     protected Grammar grammar;
-    protected ParseContext parseTask;
+    public ParseTask parseTask;
 
     protected Chart() {
     }
 
-    public Chart(final ParseContext parseContext, final Grammar grammar) {
-        this.parseTask = parseContext;
+    public Chart(final ParseTask parseTask, final Grammar grammar) {
+        this.parseTask = parseTask;
         this.grammar = grammar;
-        this.tokens = parseContext.tokens;
+        this.tokens = parseTask.tokens;
         this.size = tokens.length;
     }
 

@@ -25,7 +25,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -106,10 +106,10 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
     // }
 
     @Override
-    protected void initSentence(final ParseContext parseContext) {
-        super.initSentence(parseContext);
+    protected void initSentence(final ParseTask parseTask) {
+        super.initSentence(parseTask);
 
-        if (parseContext.inputTree == null) {
+        if (parseTask.inputTree == null) {
             BaseLogger.singleton().info("ERROR: BSCPTrainFOMConfidence requires gold trees as input");
             System.exit(1);
         }

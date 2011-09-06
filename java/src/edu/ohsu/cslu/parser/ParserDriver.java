@@ -46,7 +46,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.agenda.APDecodeFOM;
@@ -106,7 +106,7 @@ import edu.ohsu.cslu.util.Evalb.EvalbResult;
  * @since 2009
  */
 @Threadable(defaultThreads = 1)
-public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseContext> {
+public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask> {
 
     // Global vars to create parser
     public CellSelectorModel cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
@@ -488,18 +488,18 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseCont
     }
 
     @Override
-    protected FutureTask<ParseContext> lineTask(final String input) {
-        return new FutureTask<ParseContext>(new Callable<ParseContext>() {
+    protected FutureTask<ParseTask> lineTask(final String input) {
+        return new FutureTask<ParseTask>(new Callable<ParseTask>() {
 
             @Override
-            public ParseContext call() throws Exception {
+            public ParseTask call() throws Exception {
                 return getLocal().parseSentence(input);
             }
         });
     }
 
     @Override
-    protected void output(final ParseContext parseResult) {
+    protected void output(final ParseTask parseResult) {
         if (parseResult != null) {
             parseResult.evaluate(evaluator);
             System.out.println(parseResult.parseBracketString(binaryTreeOutput, printUnkLabels)

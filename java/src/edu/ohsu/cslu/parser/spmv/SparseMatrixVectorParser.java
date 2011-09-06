@@ -21,7 +21,7 @@ package edu.ohsu.cslu.parser.spmv;
 import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
@@ -73,7 +73,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     public abstract void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell);
 
     @Override
-    protected void initSentence(final ParseContext parseContext) {
+    protected void initSentence(final ParseTask parseTask) {
         startTime = System.currentTimeMillis();
         if (collectDetailedStatistics) {
             sentenceBinarySpMVTime = 0;
@@ -87,7 +87,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
             sentenceRightChildPopulation = 0;
         }
 
-        chart.tokens = parseContext.tokens;
+        chart.tokens = parseTask.tokens;
     }
 
     @Override

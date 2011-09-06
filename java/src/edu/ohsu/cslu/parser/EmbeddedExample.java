@@ -8,7 +8,7 @@ import java.io.InputStreamReader;
 import java.util.zip.GZIPInputStream;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
@@ -43,7 +43,7 @@ public class EmbeddedExample {
         final CscSpmvParser parser = new CscSpmvParser(opts, grammar);
 
         // Parse example sentences and write output to STDOUT
-        ParseContext result = parser
+        ParseTask result = parser
                 .parseSentence("The economy 's temperature will be taken from several vantage points this week , with readings on trade , output , housing and inflation .");
         System.out.println(result.parseBracketString(false, false));
 

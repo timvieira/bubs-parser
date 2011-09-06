@@ -24,7 +24,7 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 
 /**
  * Stores a chart in a 4-way parallel array of:
@@ -117,9 +117,9 @@ public class PackedArrayChart extends ParallelArrayChart {
      * @param leftChildSegments The number of 'segments' to split left children into; used to multi-thread
      *            cartesian-product operation.
      */
-    public PackedArrayChart(final ParseContext parseContext, final SparseMatrixGrammar sparseMatrixGrammar,
+    public PackedArrayChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar,
             final int beamWidth, final int lexicalRowBeamWidth, final int leftChildSegments) {
-        super(parseContext, sparseMatrixGrammar, Math.min(beamWidth, sparseMatrixGrammar.numNonTerms()), Math.min(
+        super(parseTask, sparseMatrixGrammar, Math.min(beamWidth, sparseMatrixGrammar.numNonTerms()), Math.min(
                 lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms()));
 
         numNonTerminals = new int[cells];
@@ -138,7 +138,7 @@ public class PackedArrayChart extends ParallelArrayChart {
         } else {
             leftChildSegmentStartIndices = null;
         }
-        clear(size);
+        reset(parseTask);
     }
 
     /**
@@ -149,9 +149,9 @@ public class PackedArrayChart extends ParallelArrayChart {
      * @param beamWidth
      * @param lexicalRowBeamWidth
      */
-    public PackedArrayChart(final ParseContext parseContext, final SparseMatrixGrammar sparseMatrixGrammar,
+    public PackedArrayChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar,
             final int beamWidth, final int lexicalRowBeamWidth) {
-        this(parseContext, sparseMatrixGrammar, beamWidth, lexicalRowBeamWidth, 0);
+        this(parseTask, sparseMatrixGrammar, beamWidth, lexicalRowBeamWidth, 0);
     }
 
     /**
@@ -160,14 +160,14 @@ public class PackedArrayChart extends ParallelArrayChart {
      * @param tokens Sentence tokens, mapped to integer indices
      * @param sparseMatrixGrammar Grammar
      */
-    public PackedArrayChart(final ParseContext parseContext, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(parseContext, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms(), 0);
+    public PackedArrayChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar) {
+        this(parseTask, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms(), 0);
     }
 
     @Override
-    public void clear(final int sentenceLength) {
-        this.size = sentenceLength;
-        this.parseTask = null;
+    public void reset(final ParseTask parseTask) {
+        this.parseTask = parseTask;
+        this.size = parseTask.sentenceLength();
         Arrays.fill(numNonTerminals, 0);
         if (leftChildSegmentStartIndices != null) {
             Arrays.fill(leftChildSegmentStartIndices, 0);

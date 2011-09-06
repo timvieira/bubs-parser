@@ -24,7 +24,7 @@ import java.util.PriorityQueue;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -45,8 +45,8 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
         throw new IllegalArgumentException("Parser requires tuning and cannot be used");
     }
 
-    protected void initParser(final int[] tokens) {
-        chart = new CellChart(tokens, this);
+    protected void initParser(final ParseTask parseTask) {
+        chart = new CellChart(parseTask, this);
         this.maxEdgeFOM = new float[chart.size()][chart.size() + 1];
         this.spanAgenda = new PriorityQueue<HashSetChartCell>();
 
@@ -59,12 +59,12 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
+    public BinaryTree<String> findBestParse(final ParseTask parseTask) {
         HashSetChartCell cell;
 
-        initParser(parseContext.tokens);
-        addLexicalProductions(parseContext.tokens);
-        fomModel.init(parseContext, chart);
+        initParser(parseTask);
+        addLexicalProductions(parseTask.tokens);
+        fomModel.init(parseTask, chart);
         addUnaryExtensionsToLexProds();
 
         for (int i = 0; i < chart.size(); i++) {

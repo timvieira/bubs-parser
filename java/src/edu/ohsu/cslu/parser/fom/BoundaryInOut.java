@@ -28,7 +28,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -366,7 +366,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         // pre-computed left/right FOM outside scores for current sentence
         private float outsideLeft[][], outsideRight[][];
         // private int bestPOSTag[];
-        ParseContext parseContext;
+        ParseTask parseTask;
 
         public BoundaryInOutSelector() {
         }
@@ -420,14 +420,14 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         // }
 
         @Override
-        public void init(final ParseContext parseContext, final Chart chart) {
-            outsideLeftRightAndBestPOS(parseContext);
+        public void init(final ParseTask parseTask, final Chart chart) {
+            outsideLeftRightAndBestPOS(parseTask);
         }
 
         // Computes forward-backward and left/right boundary probs across ambiguous
         // POS tags. Also computes 1-best POS tag sequence based on viterbi-max decoding
-        private void outsideLeftRightAndBestPOS(final ParseContext parseContext) {
-            final int sentLen = parseContext.sentenceLength();
+        private void outsideLeftRightAndBestPOS(final ParseTask parseTask) {
+            final int sentLen = parseTask.sentenceLength();
             final int fbSize = sentLen + 2;
             final int posSize = grammar.maxPOSIndex() + 1;
 
@@ -466,9 +466,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 final int fwdChartIndex = fwdIndex - 1;
 
                 final short[] posList = fwdChartIndex >= sentLen ? NULL_LIST : grammar
-                        .lexicalParents(parseContext.tokens[fwdChartIndex]);
+                        .lexicalParents(parseTask.tokens[fwdChartIndex]);
                 final float[] fwdPOSProbs = fwdChartIndex >= sentLen ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(parseContext.tokens[fwdChartIndex]);
+                        .lexicalLogProbabilities(parseTask.tokens[fwdChartIndex]);
 
                 final int[] currentBackpointer = backPointer[fwdIndex];
 
@@ -517,9 +517,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
                 final int bkwChartIndex = bkwIndex - 1;
                 final short[] posList = bkwChartIndex < 0 ? NULL_LIST : grammar
-                        .lexicalParents(parseContext.tokens[bkwChartIndex]);
+                        .lexicalParents(parseTask.tokens[bkwChartIndex]);
                 final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(parseContext.tokens[bkwChartIndex]);
+                        .lexicalLogProbabilities(parseTask.tokens[bkwChartIndex]);
 
                 for (final short prevPOS : prevPOSList) {
 
@@ -552,18 +552,18 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 prevPOSList = posList;
             }
 
-            // tags from parseContext.tags are used for chart cell feature extraction when
+            // tags from parseTask.tags are used for chart cell feature extraction when
             // using BoundaryInOut FOM. If parseFromInputTags is true, then the tags
             // from the input will already be in place. Otherwise, fill in the tags array
             // with the 1-best result from this forward-backwards run.
             if (ParserDriver.parseFromInputTags == false) {
-                parseContext.tags = new int[sentLen];
+                parseTask.tags = new int[sentLen];
                 // track backpointers to extract best POS sequence
                 // start at the end of the sentence with the nullSymbol and trace backwards
                 int bestPOS = nullSymbol;
                 for (int i = sentLen - 1; i >= 0; i--) {
                     bestPOS = backPointer[i + 2][bestPOS];
-                    parseContext.tags[i] = bestPOS;
+                    parseTask.tags[i] = bestPOS;
                     // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
                 }
             }

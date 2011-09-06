@@ -21,13 +21,14 @@ package edu.ohsu.cslu.parser.chart;
 import java.util.Arrays;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Util;
 
 public class InOutCellChart extends CellChart {
 
-    public InOutCellChart(final int[] tokens, final Parser<?> parser) {
-        super(tokens, parser);
+    public InOutCellChart(final ParseTask parseTask, final Parser<?> parser) {
+        super(parseTask, parser);
 
         chart = new ChartCell[size][size + 1];
         for (int start = 0; start < size; start++) {
@@ -42,6 +43,7 @@ public class InOutCellChart extends CellChart {
         return (ChartCell) chart[start][end];
     }
 
+    @Override
     public float getOutside(final int start, final int end, final int nt) {
         return getCell(start, end).getOutside(nt);
     }

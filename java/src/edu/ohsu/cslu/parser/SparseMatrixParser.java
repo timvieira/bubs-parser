@@ -190,8 +190,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 if (spvChartCell.tmpInsideProbabilities[nt] > minInsideProbability) {
-                    final float fom = fomModel.calcLexicalFOM(start, end, nt,
-                            spvChartCell.tmpInsideProbabilities[nt]);
+                    final float fom = fomModel.calcLexicalFOM(start, end, nt, spvChartCell.tmpInsideProbabilities[nt]);
                     q.insert(nt, fom);
                     tmpFoms[nt] = fom;
                 }
@@ -269,7 +268,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         }
 
         if (collectDetailedStatistics) {
-            parseTask.unaryAndPruningMs += System.currentTimeMillis() - t0;
+            chart.parseTask.unaryAndPruningMs += System.currentTimeMillis() - t0;
         }
     }
 }

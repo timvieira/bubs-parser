@@ -24,7 +24,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
@@ -44,26 +44,26 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
         super(opts, grammar);
     }
 
-    protected void initParser(final int[] tokens) {
-        chart = new CellChart(tokens, this);
+    protected void initParser(final ParseTask parseTask) {
+        chart = new CellChart(parseTask, this);
 
         agenda = new PriorityQueue<ChartEdge>();
         nAgendaPush = nAgendaPop = nChartEdges = 0;
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
+    public BinaryTree<String> findBestParse(final ParseTask parseTask) {
         ChartEdge edge;
         HashSetChartCell cell;
 
-        initParser(parseContext.tokens);
-        addLexicalProductions(parseContext.tokens);
-        fomModel.init(parseContext, chart);
+        initParser(parseTask);
+        addLexicalProductions(parseTask.tokens);
+        fomModel.init(parseTask, chart);
 
         // for (final ChartEdge lexEdge : edgesToExpand) {
         // expandFrontier(lexEdge, chart.getCell(lexEdge.start(), lexEdge.end()));
         // }
-        for (int i = 0; i < parseContext.sentenceLength(); i++) {
+        for (int i = 0; i < parseTask.sentenceLength(); i++) {
             cell = chart.getCell(i, i + 1);
             for (final int nt : cell.getPosNTs()) {
                 expandFrontier(nt, cell);

@@ -36,7 +36,7 @@ import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.tests.JUnit;
@@ -213,7 +213,7 @@ public class TestTrainGrammar {
             // Extract tokens from training tree, parse, and evaluate
             // TODO Parse from tree instead
             final String sentence = Strings.join(goldTree.leafLabels(), " ");
-            final ParseContext context = parser.parseSentence(sentence);
+            final ParseTask context = parser.parseSentence(sentence);
             evaluator.evaluate(goldTree, context.binaryParse.unfactor(cscGrammar.grammarFormat));
         }
 

@@ -23,6 +23,7 @@ import java.util.LinkedList;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
@@ -41,8 +42,8 @@ public class APGhostEdges extends AgendaParser {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected void initParser(final int[] tokens) {
-        super.initParser(tokens);
+    protected void initParser(final ParseTask parseTask) {
+        super.initParser(parseTask);
 
         needLeftGhostEdges = new LinkedList[grammar.numNonTerms()][chart.size() + 1];
         needRightGhostEdges = new LinkedList[grammar.numNonTerms()][chart.size() + 1];
