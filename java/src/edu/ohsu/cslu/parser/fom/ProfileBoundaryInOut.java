@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
@@ -54,8 +54,8 @@ public class ProfileBoundaryInOut {
     private PackedArrayChart parentAnnotatedChart;
     private PackedArrayChart berkeleyChart;
 
-    private ParseContext parentAnnotatedParseContext;
-    private ParseContext berkeleyParseContext;
+    private ParseTask parentAnnotatedParseContext;
+    private ParseTask berkeleyParseContext;
 
     @BeforeClass
     public static void suiteSetUp() throws IOException {
@@ -81,9 +81,9 @@ public class ProfileBoundaryInOut {
     public void setUp() {
         final String sentence = "And a large slice of the first episode is devoted to efforts to get rid of some nearly worthless Japanese bonds -LRB- since when is anything Japanese nearly worthless nowadays ? -RRB- .";
         // final int[] tokens = parentAnnotatedGrammar.tokenizer.tokenizeToIndex(sentence);
-        parentAnnotatedParseContext = new ParseContext(sentence, Parser.InputFormat.Text, parentAnnotatedGrammar);
+        parentAnnotatedParseContext = new ParseTask(sentence, Parser.InputFormat.Text, parentAnnotatedGrammar);
         parentAnnotatedChart = new PackedArrayChart(parentAnnotatedParseContext, parentAnnotatedGrammar, 100, 100);
-        berkeleyParseContext = new ParseContext(sentence, Parser.InputFormat.Text, parentAnnotatedGrammar);
+        berkeleyParseContext = new ParseTask(sentence, Parser.InputFormat.Text, parentAnnotatedGrammar);
         berkeleyChart = new PackedArrayChart(berkeleyParseContext, berkeleyGrammar, 100, 150);
     }
 

@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.parser.agenda;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -37,11 +38,12 @@ public class APWithMemory extends AgendaParser {
     }
 
     @Override
-    protected void initParser(final int[] tokens) {
-        super.initParser(tokens);
+    protected void initParser(final ParseTask parseTask) {
+        super.initParser(parseTask);
 
         // TODO: this can be half the size since we only need to allocate space for chart cells that exist
-        agendaMemory = new ChartEdge[tokens.length + 1][tokens.length + 1][grammar.numNonTerms()];
+        agendaMemory = new ChartEdge[parseTask.sentenceLength() + 1][parseTask.sentenceLength() + 1][grammar
+                .numNonTerms()];
     }
 
     @Override

@@ -23,7 +23,7 @@ import java.util.Arrays;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 
 /**
  * Stores a chart in a 3-way parallel array indexed by non-terminal:
@@ -60,13 +60,14 @@ public class DenseVectorChart extends ParallelArrayChart {
      * @param tokens Sentence tokens, mapped to integer indices
      * @param sparseMatrixGrammar Grammar
      */
-    public DenseVectorChart(final ParseContext parseContext, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(parseContext, sparseMatrixGrammar);
+    public DenseVectorChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar) {
+        super(parseTask, sparseMatrixGrammar);
     }
 
     @Override
-    public void clear(final int sentenceLength) {
-        this.size = sentenceLength;
+    public void reset(final ParseTask parseTask) {
+        this.parseTask = parseTask;
+        this.size = parseTask.sentenceLength();
         // TODO We probably don't need to re-initialize all three arrays
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         Arrays.fill(packedChildren, 0);

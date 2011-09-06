@@ -173,7 +173,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         public void initSentence(final ChartParser<?, ?> parser) {
             super.initSentence(parser);
             // might have to hash the sentence number for the grid
-            initSentence(parser.chart, parser.parseTask.sentence);
+            initSentence(parser.chart, parser.chart.parseTask.sentence);
         }
 
         public void initSentence(final Chart chart, final String sentence) {

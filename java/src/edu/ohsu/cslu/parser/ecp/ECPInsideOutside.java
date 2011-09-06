@@ -26,7 +26,7 @@ import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
@@ -78,18 +78,18 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     @Override
-    protected void initSentence(final ParseContext parseContext) {
-        chart = new InOutCellChart(parseContext.tokens, this);
+    protected void initSentence(final ParseTask parseTask) {
+        chart = new InOutCellChart(parseTask, this);
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
+    public BinaryTree<String> findBestParse(final ParseTask parseTask) {
         final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
 
-        initSentence(parseContext);
+        initSentence(parseTask);
         cellSelector.initSentence(this);
-        fomModel.init(parseContext, chart);
-        addLexicalProductions(parseContext);
+        fomModel.init(parseTask, chart);
+        addLexicalProductions(parseTask);
 
         while (cellSelector.hasNext()) {
             final short[] startEnd = cellSelector.next();
@@ -105,7 +105,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
             goodmanMaximizeLabelRecall();
         } else if (opts.decodeMethod == Parser.DecodeMethod.MaxRuleProd) {
             // berkeleyMaxRule(tokens);
-            berkeleyMaxRuleNoMarginalize(parseContext.tokens);
+            berkeleyMaxRuleNoMarginalize(parseTask.tokens);
         } else {
             throw new IllegalArgumentException("Expecting -decode to be MaxRecall or MaxRule but found "
                     + opts.decodeMethod);

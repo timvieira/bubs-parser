@@ -33,7 +33,7 @@ import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -114,8 +114,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final P p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
-        p.parseTask = new ParseContext("systems analyst arbitration chef", Parser.InputFormat.Text, g);
-        p.initSentence(p.parseTask);
+        final ParseTask parseTask = new ParseTask("systems analyst arbitration chef", Parser.InputFormat.Text, g);
+        p.initSentence(parseTask);
         // p.parseSentence("systems analyst arbitration chef");
         final Chart chart = p.chart;
 
@@ -177,8 +177,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
         final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(),
                 configProperties());
-        p.parseTask = new ParseContext("systems analyst arbitration chef", Parser.InputFormat.Text, g);
-        p.initSentence(p.parseTask);
+        final ParseTask parseTask = new ParseTask("systems analyst arbitration chef", Parser.InputFormat.Text, g);
+        p.initSentence(parseTask);
         // p.initSentence(new int[4]);
 
         final ChartCell topCell = p.chart.getCell(0, 4);
@@ -316,8 +316,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
         final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(),
                 configProperties());
-        p.parseTask = new ParseContext("The fish market stands last", Parser.InputFormat.Text, g);
-        p.initSentence(p.parseTask);
+        final ParseTask parseTask = new ParseTask("The fish market stands last", Parser.InputFormat.Text, g);
+        p.initSentence(parseTask);
         // p.initSentence(new int[5]);
 
         final Chart chart = p.chart;

@@ -76,8 +76,6 @@ public abstract class Parser<G extends Grammar> {
     public FigureOfMerit fomModel;
     public final CellSelector cellSelector;
 
-    public ParseContext parseTask; // temporary so I don't break too much stuff at once
-
     /**
      * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
      * {@link ParserDriver}, but duplicated here as a final variable, so that the JIT can eliminate
@@ -100,7 +98,7 @@ public abstract class Parser<G extends Grammar> {
 
     public abstract String getStats();
 
-    protected abstract BinaryTree<String> findBestParse(ParseContext parseTask);
+    protected abstract BinaryTree<String> findBestParse(ParseTask parseTask);
 
     /**
      * Waits until all active parsing tasks have completed. Intended for multi-threaded parsers (e.g.
@@ -113,7 +111,7 @@ public abstract class Parser<G extends Grammar> {
     // wraps parse tree from findBestParse() with additional stats and
     // cleans up output for consumption. Input can be a sentence string
     // or a parse tree
-    public ParseContext parseSentence(String input) {
+    public ParseTask parseSentence(String input) {
 
         input = input.trim();
         if (input.length() == 0) {
@@ -128,25 +126,25 @@ public abstract class Parser<G extends Grammar> {
 
         // TODO: make parseTask local and pass it around to required methods. Will probably need to add
         // instance methods of CellSelector, FOM, and Chart to it. Should make parse thread-safe.
-        parseTask = new ParseContext(input, opts.inputFormat, grammar);
+        final ParseTask newTask = new ParseTask(input, opts.inputFormat, grammar);
 
-        if (parseTask.sentenceLength() > opts.maxLength) {
+        if (newTask.sentenceLength() > opts.maxLength) {
             BaseLogger.singleton().info(
-                    "INFO: Skipping sentence. Length of " + parseTask.sentenceLength() + " is greater than maxLength ("
+                    "INFO: Skipping sentence. Length of " + newTask.sentenceLength() + " is greater than maxLength ("
                             + opts.maxLength + ")");
         } else {
-            parseTask.startTime();
+            newTask.startTime();
             try {
-                parseTask.binaryParse = findBestParse(parseTask);
+                newTask.binaryParse = findBestParse(newTask);
             } catch (final Exception e) {
                 BaseLogger.singleton().fine("ERROR: " + e.getMessage());
             }
-            parseTask.stopTime();
-            parseTask.insideProbability = getInside(0, parseTask.sentenceLength(), grammar.startSymbol);
-            parseTask.chartStats = getStats();
+            newTask.stopTime();
+            newTask.insideProbability = getInside(0, newTask.sentenceLength(), grammar.startSymbol);
+            newTask.chartStats = getStats();
         }
 
-        return parseTask;
+        return newTask;
     }
 
     /**

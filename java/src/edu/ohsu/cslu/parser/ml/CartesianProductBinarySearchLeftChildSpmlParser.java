@@ -19,7 +19,7 @@
 package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 
@@ -49,14 +49,14 @@ public class CartesianProductBinarySearchLeftChildSpmlParser extends CartesianPr
 
     // Override default implementation, since this is a sub-subclass
     @Override
-    protected void initSentence(final ParseContext parseContext) {
-        final int sentLength = parseContext.sentenceLength();
+    protected void initSentence(final ParseTask parseTask) {
+        final int sentLength = parseTask.sentenceLength();
         if (chart != null && chart.size() >= sentLength) {
-            chart.clear(sentLength);
+            chart.reset(parseTask);
         } else {
-            chart = new PackedArrayChart(parseContext, grammar, beamWidth, lexicalRowBeamWidth);
+            chart = new PackedArrayChart(parseTask, grammar, beamWidth, lexicalRowBeamWidth);
         }
-        super.initSentence(parseContext);
+        super.initSentence(parseTask);
     }
 
 }

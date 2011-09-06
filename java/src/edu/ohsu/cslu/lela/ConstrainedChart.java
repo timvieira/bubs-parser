@@ -26,6 +26,7 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.util.Math;
 
@@ -174,7 +175,7 @@ public class ConstrainedChart extends ParallelArrayChart {
     }
 
     @Override
-    public void clear(final int sentenceLength) {
+    public void reset(final ParseTask parseTask) {
         throw new UnsupportedOperationException();
     }
 

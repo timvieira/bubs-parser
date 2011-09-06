@@ -24,7 +24,7 @@ import java.util.PriorityQueue;
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
@@ -53,10 +53,10 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
     }
 
     @Override
-    protected void initSentence(final ParseContext parseContext) {
-        chart = new CellChart(parseContext.tokens, this);
+    protected void initSentence(final ParseTask parseTask) {
+        chart = new CellChart(parseTask, this);
 
-        final int n = parseContext.sentenceLength();
+        final int n = parseTask.sentenceLength();
         maxcFOM = new float[n][n + 1][grammar.numNonTerms()];
     }
 

@@ -34,7 +34,7 @@ import edu.ohsu.cslu.util.Strings;
 // TODO: shouldn't this be an internal class of Parser?  Then it could have 
 // access to general parser options, the grammar, and chart (although I think
 // the chart should be handled in this class eventually)
-public class ParseContext {
+public class ParseTask {
 
     public String sentence;
     public int[] tokens;
@@ -77,7 +77,7 @@ public class ParseContext {
     long startTime;
     public Grammar grammar;
 
-    public ParseContext(final String input, final InputFormat inputFormat, final Grammar grammar) {
+    public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar) {
         try {
             if (inputFormat == InputFormat.Token) {
                 this.sentence = input.trim();
@@ -141,6 +141,8 @@ public class ParseContext {
         }
 
         if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+            // moving from ChartParser collectDetailedStatistics test
+            result += String.format(" fomInitTime=%d cellSelectorInitTime=%d", fomInitMs, ccInitMs);
             result += String
                     .format("pops=%d pushes=%d considered=%d chartInit=%d, fomInit=%d ccInit=%d unaryAndPruning=%d outsidePass=%d extract=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d",
                             totalPops, totalPushes, totalConsidered, chartInitMs, fomInitMs, ccInitMs,

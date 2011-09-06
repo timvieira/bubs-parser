@@ -25,7 +25,7 @@ import com.nativelibs4java.opencl.CLMem;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -70,16 +70,16 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
     }
 
     @Override
-    protected void initSentence(final ParseContext parseContext) {
-        final int sentLength = parseContext.sentenceLength();
+    protected void initSentence(final ParseTask parseTask) {
+        final int sentLength = parseTask.sentenceLength();
         if (chart == null || chart.size() < sentLength) {
-            chart = new PackedArrayChart(parseContext, grammar);
+            chart = new PackedArrayChart(parseTask, grammar);
             clChartNumNonTerminals = context.createIntBuffer(CLMem.Usage.InputOutput, chart.cells);
         } else {
-            chart.clear(sentLength);
+            chart.reset(parseTask);
         }
 
-        super.initSentence(parseContext);
+        super.initSentence(parseTask);
     }
 
     @Override

@@ -37,13 +37,13 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     }
 
     @Override
-    public BinaryTree<String> findBestParse(final ParseContext parseContext) {
+    public BinaryTree<String> findBestParse(final ParseTask parseTask) {
         if (collectDetailedStatistics) {
             final long t0 = System.currentTimeMillis();
-            initChart(parseContext);
-            parseContext.chartInitMs = System.currentTimeMillis() - t0;
+            initChart(parseTask);
+            parseTask.chartInitMs = System.currentTimeMillis() - t0;
         } else {
-            initChart(parseContext);
+            initChart(parseTask);
         }
 
         insidePass();
@@ -58,39 +58,39 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
      * 
      * @param tokens
      */
-    protected void initChart(final ParseContext parseContext) {
-        initSentence(parseContext);
-        addLexicalProductions(parseContext);
+    protected void initChart(final ParseTask parseTask) {
+        initSentence(parseTask);
+        addLexicalProductions(parseTask);
 
         if (fomModel != null) {
             if (collectDetailedStatistics) {
                 final long t1 = System.currentTimeMillis();
-                fomModel.init(parseContext, chart);
-                parseContext.fomInitMs = System.currentTimeMillis() - t1;
+                fomModel.init(parseTask, chart);
+                parseTask.fomInitMs = System.currentTimeMillis() - t1;
             } else {
-                fomModel.init(parseContext, chart);
+                fomModel.init(parseTask, chart);
             }
         }
 
         if (collectDetailedStatistics) {
             final long t2 = System.currentTimeMillis();
             cellSelector.initSentence(this);
-            parseContext.ccInitMs = System.currentTimeMillis() - t2;
+            parseTask.ccInitMs = System.currentTimeMillis() - t2;
         } else {
             cellSelector.initSentence(this);
         }
     }
 
     @SuppressWarnings("unchecked")
-    protected void initSentence(final ParseContext parseContext) {
-        chart = (C) new CellChart(parseContext.tokens, this);
+    protected void initSentence(final ParseTask parseTask) {
+        chart = (C) new CellChart(parseTask, this);
     }
 
-    protected void addLexicalProductions(final ParseContext parseContext) {
+    protected void addLexicalProductions(final ParseTask parseTask) {
         // add lexical productions to the base cells of the chart
         for (int i = 0; i < chart.size(); i++) {
             final ChartCell cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(parseContext.tokens[i])) {
+            for (final Production lexProd : grammar.getLexicalProductionsWithChild(parseTask.tokens[i])) {
                 cell.updateInside(lexProd, cell, null, lexProd.prob);
             }
         }
@@ -110,7 +110,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
             final BinaryTree<String> parseTree = chart.extractBestParse(grammar.startSymbol);
-            parseTask.extractTimeMs = System.currentTimeMillis() - t3;
+            chart.parseTask.extractTimeMs = System.currentTimeMillis() - t3;
             return parseTree;
         }
 
@@ -137,8 +137,6 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public String getStats() {
-        return chart.getStats()
-                + (collectDetailedStatistics ? String.format(" fomInitTime=%d cellSelectorInitTime=%d",
-                        parseTask.fomInitMs, parseTask.ccInitMs) : "");
+        return chart.getStats();
     }
 }

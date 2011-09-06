@@ -11,7 +11,7 @@ import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -61,6 +61,7 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
         opts.decodeMethod = DecodeMethod.Goodman;
+        opts.parseFromInputTags = true;
         final InsideOutsideCphSpmlParser parser = new InsideOutsideCphSpmlParser(opts, grammar);
 
         final String[] featureNames = featureTemplate.split("\\s+");
@@ -71,7 +72,7 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         final float[] normInOutScores = new float[grammar.phraseSet.size()];
         if (extractFeatures) {
             while ((line = inStream.readLine()) != null) {
-                final ParseContext result = parser.parseSentence(line);
+                final ParseTask result = parser.parseSentence(line);
                 // System.out.println("Result:" + result.parseBracketString(false, false) + result.statsString());
 
                 parser.cellSelector.reset();
@@ -92,7 +93,7 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
             }
         } else {
             // hack to get number of features given featureNames
-            final ParseContext tmpSent = parser.parseSentence("(TOP (S (JJ dummy) (NN string)))");
+            final ParseTask tmpSent = parser.parseSentence("(TOP (S (JJ dummy) (NN string)))");
             final int numFeatures = parser.chart.getCellFeatures(0, 1, featureNames).vectorLength();
             // final int numFeatures = System.out.println("numFeats=" + numFeatures);
             final LogisticRegressor model = new LogisticRegressor(numFeatures, numModels, 0.1f,
@@ -161,7 +162,7 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
     public class DiscriminativeFOMSelector extends FigureOfMerit {
 
         private static final long serialVersionUID = 1L;
-        // private ParseContext parseContext;
+        // private ParseContext parseTask;
         private Grammar grammar;
         private Chart chart;
 
@@ -179,13 +180,13 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         }
 
         @Override
-        public void init(final ParseContext parseContext, final Chart chart) {
+        public void init(final ParseTask parseTask, final Chart chart) {
             // should divide feature vector into three parts: cell-specific, left-boundary, right-boundary
             // could then pre-compute left and right boundary scores for each NT and add them up
             // in calcFOM with cell-specific values
-            // this.parseContext = parseContext;
+            // this.parseTask = parseTask;
             this.chart = chart;
-            this.grammar = parseContext.grammar;
+            this.grammar = parseTask.grammar;
         }
 
     }

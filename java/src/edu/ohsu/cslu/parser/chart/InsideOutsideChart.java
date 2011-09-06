@@ -11,7 +11,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
-import edu.ohsu.cslu.parser.ParseContext;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -36,8 +36,8 @@ public class InsideOutsideChart extends PackedArrayChart {
 
     private Vocabulary maxcVocabulary = sparseMatrixGrammar.nonTermSet;
 
-    public InsideOutsideChart(final ParseContext parseContext, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super(parseContext, sparseMatrixGrammar);
+    public InsideOutsideChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar) {
+        super(parseTask, sparseMatrixGrammar);
         this.outsideProbabilities = new float[chartArraySize];
         this.viterbiInsideProbabilities = new float[chartArraySize];
 

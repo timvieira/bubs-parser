@@ -100,7 +100,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
         private void computeBeamWidthValues() {
             int guessBeamWidth, guessClass;
-            final int n = parser.parseTask.sentenceLength();
+            final int n = parser.chart.parseTask.sentenceLength();
             beamWidthValues = new int[n][n + 1];
             onlyFactored = new boolean[n][n + 1];
             openCells = 0;
