@@ -61,19 +61,18 @@ public class ProfileBoundaryInOut {
     public static void suiteSetUp() throws IOException {
         if (parentAnnotatedGrammar == null) {
             parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
-                    JUnit.unitTestDataAsReader("grammars/wsj.2-21.unk.L2-p1.gz"));
+                    JUnit.unitTestDataAsReader("grammars/eng.R2.P1.gr.gz"));
         }
         final BoundaryInOut parentBioModel = new BoundaryInOut(FOMType.BoundaryInOut, parentAnnotatedGrammar,
-                new BufferedReader(JUnit.unitTestDataAsReader("parsing/fom.boundary.L2-p1.gold.gz")));
+                new BufferedReader(JUnit.unitTestDataAsReader("fom/eng.R2.P1.fom.gz")));
 
         parentAnnotatedBio = (BoundaryInOutSelector) parentBioModel.createFOM();
 
         if (berkeleyGrammar == null) {
-            berkeleyGrammar = new LeftCscSparseMatrixGrammar(
-                    JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
+            berkeleyGrammar = new LeftCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("../models/eng.sm6.gr.gz"));
         }
         final BoundaryInOut berkeleyBioModel = new BoundaryInOut(FOMType.BoundaryInOut, berkeleyGrammar,
-                new BufferedReader(JUnit.unitTestDataAsReader("parsing/fom.boundary.berk.parses.gz")));
+                new BufferedReader(JUnit.unitTestDataAsReader("../models/eng.sm6.fom.gz")));
         berkeleyBio = (BoundaryInOutSelector) berkeleyBioModel.createFOM();
     }
 
@@ -88,7 +87,7 @@ public class ProfileBoundaryInOut {
     }
 
     @Test
-    @PerformanceTest({ "mbp", "1353", "d820", "3379" })
+    @PerformanceTest({ "mbp", "642", "d820", "3379" })
     public void profileParentAnnotated() {
 
         for (int i = 0; i < 200; i++) {
@@ -97,7 +96,7 @@ public class ProfileBoundaryInOut {
     }
 
     @Test
-    @PerformanceTest({ "mbp", "2308", "d820", "3750" })
+    @PerformanceTest({ "mbp", "1974", "d820", "3750" })
     public void profileBerkeley() {
         for (int i = 0; i < 200; i++) {
             berkeleyBio.init(berkeleyParseContext, berkeleyChart);
