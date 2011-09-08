@@ -59,8 +59,8 @@ public class ParseTask {
     public float insideScore = 0;
     public long maxMemoryMB = 0;
 
-    /** Total time to parse the sentence (note that this time is in seconds rather than milliseconds). */
-    public float parseTimeMs = 0;
+    /** Total time to parse the sentence. */
+    public long parseTimeMs = 0;
     /** Chart initialization and lexical production time */
     public long chartInitMs = 0;
     /** Figure-of-merit initialization time */
