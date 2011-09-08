@@ -52,7 +52,7 @@
        Package documentation 
     ========================================================================
     -->
-    <target name="docs">
+    <target name="javadoc">
         <javadoc destdir="${dir.build.doc}/javadoc">
             <fileset dir="${dir.src}" includes="**/*.java" excludes="edu/ohsu/cslu/lela/**,**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
             <classpath refid="classpath.libs" />
@@ -108,6 +108,15 @@
     </target>
 
 
+    <target name="replace-unks" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.ReplaceUnks" />
+            <param name="tool-name" value="replace-unks" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+        
     <target name="tree-tools" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.TreeTools" />
