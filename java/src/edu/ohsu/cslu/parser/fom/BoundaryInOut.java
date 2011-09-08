@@ -61,15 +61,13 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         }
         final int numNT = grammar.numNonTerms();
         final int maxPOSIndex = grammar.maxPOSIndex();
-        leftBoundaryLogProb = new float[numNT][maxPOSIndex + 1];
+        leftBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
         rightBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
         posTransitionLogProb = new float[maxPOSIndex + 1][maxPOSIndex + 1];
 
         // Init values to log(0) = -Inf
-        for (int i = 0; i < numNT; i++) {
-            Arrays.fill(leftBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
-        }
         for (int i = 0; i < maxPOSIndex + 1; i++) {
+            Arrays.fill(leftBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
             Arrays.fill(rightBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
             Arrays.fill(posTransitionLogProb[i], Float.NEGATIVE_INFINITY);
         }
@@ -136,7 +134,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                     // model meta-data
                     // ex: # model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=2
                 } else if (tokens[0].equals("LB")) {
-                    leftBoundaryLogProb[numIndex][denomIndex] = prob;
+                    leftBoundaryLogProb[denomIndex][numIndex] = prob;
                 } else if (tokens[0].equals("RB")) {
                     rightBoundaryLogProb[numIndex][denomIndex] = prob;
                 } else if (tokens[0].equals("PN")) {
@@ -454,9 +452,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             // Forward pass
             prevScores[nullSymbol] = 0f;
 
-            for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
-                outsideLeft[0][nonTerm] = leftBoundaryLogProb[nonTerm][nullSymbol];
-            }
+            System.arraycopy(leftBoundaryLogProb[nullSymbol], 0, outsideLeft[0], 0, grammar.numNonTerms());
 
             for (int fwdIndex = 1; fwdIndex < fbSize; fwdIndex++) {
 
@@ -475,24 +471,30 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 for (int i = 0; i < posList.length; i++) {
                     final short curPOS = posList[i];
                     final float posEmissionLogProb = fwdPOSProbs[i];
+                    final float[] curPosTransitionLogProb = posTransitionLogProb[curPOS];
+                    float bestScore = Float.NEGATIVE_INFINITY;
+                    short bestPrevPOS = -1;
 
                     for (final short prevPOS : prevPOSList) {
-                        final float score = prevScores[prevPOS] + posTransitionLogProb[curPOS][prevPOS]
-                                + posEmissionLogProb;
-                        if (score > scores[curPOS]) {
-                            scores[curPOS] = score;
-                            currentBackpointer[curPOS] = prevPOS;
+                        final float score = prevScores[prevPOS] + curPosTransitionLogProb[prevPOS] + posEmissionLogProb;
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestPrevPOS = prevPOS;
                         }
                     }
+                    scores[curPOS] = bestScore;
+                    currentBackpointer[curPOS] = bestPrevPOS;
                 }
 
                 // compute left and right outside scores to be used during decoding
                 // to calculate the FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
                 final float[] fwdOutsideLeft = outsideLeft[fwdIndex];
-                for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
+                for (final short pos : posList) {
+                    final float posScore = scores[pos];
+                    final float[] posLeftBoundaryLogProb = leftBoundaryLogProb[pos];
 
-                    for (final short pos : posList) {
-                        final float score = scores[pos] + leftBoundaryLogProb[nonTerm][pos];
+                    for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
+                        final float score = posScore + posLeftBoundaryLogProb[nonTerm];
                         if (score > fwdOutsideLeft[nonTerm]) {
                             fwdOutsideLeft[nonTerm] = score;
                         }
@@ -522,12 +524,12 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                         .lexicalLogProbabilities(parseTask.tokens[bkwChartIndex]);
 
                 for (final short prevPOS : prevPOSList) {
+                    final float prevScore = prevScores[prevPOS];
+                    final float[] prevPosTransitionLogProb = posTransitionLogProb[prevPOS];
 
                     for (int i = 0; i < posList.length; i++) {
                         final short curPOS = posList[i];
-
-                        final float score = prevScores[prevPOS] + posTransitionLogProb[prevPOS][curPOS]
-                                + bkwPOSProbs[i];
+                        final float score = prevScore + prevPosTransitionLogProb[curPOS] + bkwPOSProbs[i];
                         if (score > scores[curPOS]) {
                             scores[curPOS] = score;
                         }
@@ -538,8 +540,11 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 // to calculate the FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
                 final float[] bkwOutsideRight = outsideRight[bkwIndex];
                 for (final short pos : posList) {
+                    final float posScore = scores[pos];
+                    final float[] posRightBoundaryLogProb = rightBoundaryLogProb[pos];
+
                     for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
-                        final float score = scores[pos] + rightBoundaryLogProb[pos][nonTerm];
+                        final float score = posScore + posRightBoundaryLogProb[nonTerm];
                         if (score > bkwOutsideRight[nonTerm]) {
                             bkwOutsideRight[nonTerm] = score;
                         }
