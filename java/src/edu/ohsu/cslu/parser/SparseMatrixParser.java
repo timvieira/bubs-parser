@@ -45,10 +45,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
     protected final float maxLocalDelta;
     protected final boolean exhaustiveSearch;
 
-    public long sentencePruningTime = 0;
-
-    private final ThreadLocal<BoundedPriorityQueue> threadLocalBoundedPriorityQueue;
-    private final ThreadLocal<float[]> threadLocalTmpFoms;
+    protected final ThreadLocal<BoundedPriorityQueue> threadLocalBoundedPriorityQueue;
+    protected final ThreadLocal<float[]> threadLocalTmpFoms;
 
     public SparseMatrixParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -143,7 +141,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
     protected void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end,
             final int[] cellPackedChildren, final float[] cellInsideProbabilities, final short[] cellMidpoints) {
 
-        final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
         // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
         final boolean factoredOnly = cellSelector.hasCellConstraints()
@@ -257,9 +255,9 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
                 edgesPopulated++;
 
-            } else {
-                // We just re-popped a non-terminal we've already seen (meaning a unary which was added to the
-                // queue). Replace the existing edge with the new unary edge.
+            } else if (fom > cellFoms[nt]) {
+                // We just re-popped a non-terminal we've already added to the cell, and the unary probability is
+                // greater than the current probability. Replace the existing edge with the new unary edge.
                 cellPackedChildren[nt] = spvChartCell.tmpPackedChildren[nt];
                 cellInsideProbabilities[nt] = spvChartCell.tmpInsideProbabilities[nt];
                 cellMidpoints[nt] = end;
@@ -268,7 +266,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         }
 
         if (collectDetailedStatistics) {
-            chart.parseTask.unaryAndPruningMs += System.currentTimeMillis() - t0;
+            chart.parseTask.unaryAndPruningNs += System.nanoTime() - t0;
         }
     }
 }

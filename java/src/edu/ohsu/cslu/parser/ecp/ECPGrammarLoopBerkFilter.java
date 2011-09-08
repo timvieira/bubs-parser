@@ -152,6 +152,8 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
 
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
         final HashSetChartCell cell = chart.getCell(start, end);
         HashSetChartCell leftCell, rightCell;
         ChartEdge oldBestEdge;
@@ -187,6 +189,10 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
                     updateRuleConstraints(p.parent, start, end);
                 }
             }
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.insideBinaryNs += System.nanoTime() - t0;
         }
 
         for (final int childNT : cell.getNtArray()) {

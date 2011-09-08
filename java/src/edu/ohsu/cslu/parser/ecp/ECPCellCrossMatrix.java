@@ -42,6 +42,8 @@ public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChar
 
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
         final HashSetChartCell cell = chart.getCell(start, end);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
@@ -61,6 +63,10 @@ public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChar
                     }
                 }
             }
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.insideBinaryNs += System.nanoTime() - t0;
         }
 
         for (final int childNT : cell.getNtArray()) {

@@ -38,6 +38,8 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<LeftCscSpars
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
 
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
         final DenseVectorChartCell targetCell = chart.getCell(start, end);
         final int targetCellOffset = targetCell.offset();
 
@@ -88,6 +90,10 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<LeftCscSpars
                     }
                 }
             }
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.insideBinaryNs += System.nanoTime() - t0;
         }
 
         // Apply unary rules

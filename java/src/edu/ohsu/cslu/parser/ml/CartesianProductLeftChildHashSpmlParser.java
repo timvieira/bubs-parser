@@ -57,6 +57,7 @@ public class CartesianProductLeftChildHashSpmlParser extends
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
 
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
         final PackingFunction cpf = grammar.cartesianProductFunction();
         final PackedArrayChartCell targetCell = chart.getCell(start, end);
         targetCell.allocateTemporaryStorage();
@@ -106,6 +107,10 @@ public class CartesianProductLeftChildHashSpmlParser extends
                     }
                 }
             }
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.insideBinaryNs += System.nanoTime() - t0;
         }
 
         // Apply unary rules

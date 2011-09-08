@@ -47,8 +47,6 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
     public long startTime = 0;
     public long sentenceCartesianProductTime = 0;
-    public long sentenceBinarySpMVTime = 0;
-    public long sentenceUnaryTime = 0;
     public long sentenceFinalizeTime = 0;
 
     protected int sentenceCartesianProductSize;
@@ -57,7 +55,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     protected long sentenceRightChildPopulation;
 
     public static long totalCartesianProductTime = 0;
-    public static long totalBinarySpMVTime = 0;
+    public static long totalBinarySpmvNs = 0;
 
     public SparseMatrixVectorParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -76,9 +74,6 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     protected void initSentence(final ParseTask parseTask) {
         startTime = System.currentTimeMillis();
         if (collectDetailedStatistics) {
-            sentenceBinarySpMVTime = 0;
-            sentencePruningTime = 0;
-            sentenceUnaryTime = 0;
             sentenceCartesianProductTime = 0;
             sentenceFinalizeTime = 0;
             sentenceCartesianProductSize = 0;
@@ -99,7 +94,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
         final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
 
-        final long t0 = System.currentTimeMillis();
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
         long t1 = t0;
         long t2 = t0;
 
@@ -109,7 +104,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
             if (collectDetailedStatistics) {
                 sentenceCartesianProductSize += cartesianProductVector.size();
-                t1 = System.currentTimeMillis();
+                t1 = System.nanoTime();
                 final long time = t1 - t0;
                 sentenceCartesianProductTime += time;
                 totalCartesianProductTime += time;
@@ -121,10 +116,9 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         }
 
         if (collectDetailedStatistics) {
-            t2 = System.currentTimeMillis();
-            final long time = t2 - t1;
-            sentenceBinarySpMVTime += time;
-            totalBinarySpMVTime += time;
+            t2 = System.nanoTime();
+            chart.parseTask.insideBinaryNs += t2 - t0;
+            totalBinarySpmvNs += t2 - t1;
         }
 
         // Handle unary productions
@@ -138,7 +132,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         }
 
         if (collectDetailedStatistics) {
-            sentenceUnaryTime += (System.currentTimeMillis() - t2);
+            chart.parseTask.unaryAndPruningNs += (System.nanoTime() - t2);
 
             sentenceCellPopulation += spvChartCell.getNumNTs();
             if (spvChartCell instanceof PackedArrayChartCell) {
@@ -149,9 +143,9 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
         // Pack the temporary cell storage into the main chart array
         if (collectDetailedStatistics) {
-            final long t3 = System.currentTimeMillis();
+            final long t3 = System.nanoTime();
             spvChartCell.finalizeCell();
-            sentenceFinalizeTime += (System.currentTimeMillis() - t3);
+            sentenceFinalizeTime += (System.nanoTime() - t3);
         } else {
             spvChartCell.finalizeCell();
         }
@@ -190,10 +184,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     @Override
     public String getStats() {
         return super.getStats()
-                + (collectDetailedStatistics ? String.format(
-                        " xProductTime=%d binarySpMVTime=%d unaryTime=%d finalizeTime=%d",
-                        sentenceCartesianProductTime, sentenceBinarySpMVTime, sentenceUnaryTime, sentenceFinalizeTime)
-                        : "");
+                + (collectDetailedStatistics ? String.format(" xProductTime=%d finalizeTime=%d",
+                        sentenceCartesianProductTime, sentenceFinalizeTime) : "");
     }
 
     public final static class CartesianProductVector {

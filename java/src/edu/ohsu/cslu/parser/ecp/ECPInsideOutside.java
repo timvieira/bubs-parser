@@ -479,6 +479,8 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     protected void computeInsideProbsInCell(final ChartCell cell) {
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
         final int start = cell.start(), end = cell.end();
         float insideScore;
 
@@ -493,6 +495,10 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                     }
                 }
             }
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.insideBinaryNs += System.nanoTime() - t0;
         }
 
         final float unaryScores[] = new float[grammar.numNonTerms()];
