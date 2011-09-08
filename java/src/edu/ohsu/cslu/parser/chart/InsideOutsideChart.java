@@ -9,9 +9,9 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.Vocabulary;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
-import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -218,6 +218,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                 }
                 double maxg = Double.NEGATIVE_INFINITY;
 
+                // Compute g scores for each base NT and record the max
                 for (short baseNt = 0; baseNt < baseSumProbabilities.length; baseNt++) {
 
                     // Factored non-terminals do not contribute to the final parse tree, so their maxc score is 0
@@ -412,7 +413,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                     + sparseMatrixGrammar.numNonTerms() + ") edges");
 
             if (maxcScores[cellIndex] > Float.NEGATIVE_INFINITY) {
-                if (maxcUnaryChildren[cellIndex] == Short.MIN_VALUE) {
+                if (maxcUnaryChildren[cellIndex] < 0) {
                     sb.append(String.format("  MaxC = %s (%.5f, %d)", maxcVocabulary.getSymbol(maxcEntries[cellIndex]),
                             maxcScores[cellIndex], maxcMidpoints[cellIndex]));
                 } else {
@@ -465,33 +466,42 @@ public class InsideOutsideChart extends PackedArrayChart {
             if (formatFractions) {
                 if (rightChild == Production.UNARY_PRODUCTION) {
                     // Unary Production
-                    return String.format("%s -> %s (%s, %d) outside=%s\n", maxcVocabulary.getSymbol(nonterminal),
-                            maxcVocabulary.getSymbol(leftChild), JUnit.fraction(insideProbability), midpoint,
-                            JUnit.fraction(outsideProbability));
+                    return String.format("%s -> %s (%s, %d) outside=%s\n",
+                            sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
+                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild), JUnit.fraction(insideProbability),
+                            midpoint, JUnit.fraction(outsideProbability));
                 } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                     // Lexical Production
-                    return String.format("%s -> %s (%s, %d) outside=%s\n", maxcVocabulary.getSymbol(nonterminal),
+                    return String.format("%s -> %s (%s, %d) outside=%s\n",
+                            sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
                             sparseMatrixGrammar.mapLexicalEntry(leftChild), JUnit.fraction(insideProbability),
                             midpoint, JUnit.fraction(outsideProbability));
                 } else {
-                    return String.format("%s -> %s %s (%s, %d) outside=%s\n", maxcVocabulary.getSymbol(nonterminal),
-                            maxcVocabulary.getSymbol(leftChild), maxcVocabulary.getSymbol(rightChild),
-                            JUnit.fraction(insideProbability), midpoint, JUnit.fraction(outsideProbability));
+                    return String.format("%s -> %s %s (%s, %d) outside=%s\n",
+                            sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
+                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild),
+                            sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), JUnit.fraction(insideProbability),
+                            midpoint, JUnit.fraction(outsideProbability));
                 }
             } else {
                 if (rightChild == Production.UNARY_PRODUCTION) {
                     // Unary Production
-                    return String.format("%s -> %s (%.5f, %d) outside=%.5f\n", maxcVocabulary.getSymbol(nonterminal),
-                            maxcVocabulary.getSymbol(leftChild), insideProbability, midpoint, outsideProbability);
+                    return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
+                            sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
+                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild), insideProbability, midpoint,
+                            outsideProbability);
                 } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                     // Lexical Production
-                    return String.format("%s -> %s (%.5f, %d) outside=%.5f\n", maxcVocabulary.getSymbol(nonterminal),
+                    return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
+                            sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
                             sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint,
                             outsideProbability);
                 } else {
                     return String.format("%s -> %s %s (%.5f, %d) outside=%.5f\n",
-                            maxcVocabulary.getSymbol(nonterminal), maxcVocabulary.getSymbol(leftChild),
-                            maxcVocabulary.getSymbol(rightChild), insideProbability, midpoint, outsideProbability);
+                            sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
+                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild),
+                            sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), insideProbability, midpoint,
+                            outsideProbability);
                 }
             }
         }
