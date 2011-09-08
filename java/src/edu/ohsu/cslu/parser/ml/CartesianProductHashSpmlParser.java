@@ -41,6 +41,8 @@ public class CartesianProductHashSpmlParser extends
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
 
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
         final boolean factoredOnly = cellSelector.hasCellConstraints()
                 && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
 
@@ -97,6 +99,10 @@ public class CartesianProductHashSpmlParser extends
                     }
                 }
             }
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.insideBinaryNs += System.nanoTime() - t0;
         }
 
         // Apply unary rules

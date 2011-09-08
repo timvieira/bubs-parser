@@ -140,7 +140,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     @Override
     protected final void internalComputeInsideProbabilities(final short start, final short end) {
 
-        final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
         long t1 = t0, t2 = t0;
 
         final PackedArrayChartCell spvChartCell = chart.getCell(start, end);
@@ -151,7 +151,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
             if (collectDetailedStatistics) {
                 sentenceCartesianProductSize += cartesianProductVector.size();
-                t1 = System.currentTimeMillis();
+                t1 = System.nanoTime();
                 final long xProductTime = (t1 - t0);
                 sentenceCartesianProductTime += xProductTime;
                 totalCartesianProductTime += xProductTime;
@@ -160,13 +160,12 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
             binarySpmv(cartesianProductVector, spvChartCell);
-        }
 
-        if (collectDetailedStatistics) {
-            t2 = System.currentTimeMillis();
-            final long spMVTime = t2 - t1;
-            sentenceBinarySpMVTime += spMVTime;
-            totalBinarySpMVTime += spMVTime;
+            if (collectDetailedStatistics) {
+                t2 = System.nanoTime();
+                totalBinarySpmvNs += t2 - t1;
+                chart.parseTask.insideBinaryNs += t2 - t0;
+            }
         }
 
         // We don't need to process unaries in cells only open to factored non-terminals
@@ -189,7 +188,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         }
 
         if (collectDetailedStatistics) {
-            sentenceUnaryTime = System.currentTimeMillis() - t2;
+            chart.parseTask.unaryAndPruningNs = System.nanoTime() - t2;
         }
     }
 

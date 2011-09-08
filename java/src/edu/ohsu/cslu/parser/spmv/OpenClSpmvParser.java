@@ -213,32 +213,36 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     }
 
     /**
-     * TODO If possible, merge or share code with {@link SparseMatrixVectorParser#visitCell}
+     * TODO If possible, merge or share code with
+     * {@link SparseMatrixVectorParser#computeInsideProbabilities(short, short)}
      */
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
 
-        // TODO If possible, merge or share code with SparseMat
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
         final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
 
-        long t2;
+        long t2 = 0;
 
         // Skip binary grammar intersection for span-1 cells
         if (end - start > 1) {
 
             internalCartesianProductUnion(start, end);
 
-            final long t1 = System.currentTimeMillis();
+            final long t1 = System.nanoTime();
+            final long time = t1 - t0;
+            sentenceCartesianProductTime += time;
+            totalCartesianProductTime += time;
 
             // Multiply the unioned vector with the grammar matrix and populate the current cell with the
             // vector resulting from the matrix-vector multiplication
             internalBinarySpmvMultiply(spvChartCell);
+        }
 
-            t2 = System.currentTimeMillis();
-            sentenceBinarySpMVTime += (t2 - t1);
-
-        } else {
-            t2 = System.currentTimeMillis();
+        if (collectDetailedStatistics) {
+            t2 = System.nanoTime();
+            chart.parseTask.insideBinaryNs += t2 - t0;
         }
 
         // Handle unary productions
@@ -247,8 +251,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         // work, although it's a big-time hack.
         internalUnarySpmvMultiply(spvChartCell);
 
-        final long t3 = System.currentTimeMillis();
-        sentenceUnaryTime += (t3 - t2);
+        final long t3 = System.nanoTime();
+        chart.parseTask.unaryAndPruningNs += (t3 - t2);
 
         finalizeCell(spvChartCell);
         sentenceFinalizeTime += (System.currentTimeMillis() - t3);

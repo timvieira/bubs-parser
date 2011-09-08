@@ -44,6 +44,8 @@ public class ECPCellCrossHashGrammarLoop2 extends ChartParser<LeftHashGrammar, C
 
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
         final HashSetChartCell cell = chart.getCell(start, end);
         float insideProb;
 
@@ -77,6 +79,10 @@ public class ECPCellCrossHashGrammarLoop2 extends ChartParser<LeftHashGrammar, C
                 insideProb = p.prob + entry.getValue().score;
                 cell.updateInside(p, entry.getValue().left, entry.getValue().right, insideProb);
             }
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.insideBinaryNs += System.nanoTime() - t0;
         }
 
         for (final int childNT : cell.getNtArray()) {

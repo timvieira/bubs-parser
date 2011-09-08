@@ -31,7 +31,9 @@ import edu.ohsu.cslu.grammar.Grammar;
  * the queue.
  * 
  * 
- * TODO Replace bubble-sort with a min-max heap or a tree
+ * We could replace the bubble-sort with a min-max heap or a tree, but in our (limited) experiments, we've found
+ * bubble-sort to be faster than other data structures at small beam widths (we often use a beam of 30 for pruned search
+ * with the Berkeley grammar).
  * 
  * @author Aaron Dunlop
  * @since Sep 10, 2010

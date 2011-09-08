@@ -60,16 +60,18 @@ public class ParseTask {
     public long maxMemoryMB = 0;
 
     /** Total time to parse the sentence (note that this time is in seconds rather than milliseconds). */
-    public float parseTimeSec = 0;
+    public float parseTimeMs = 0;
     /** Chart initialization and lexical production time */
     public long chartInitMs = 0;
     /** Figure-of-merit initialization time */
     public long fomInitMs = 0;
     /** Cell-selector initialization time */
     public long ccInitMs = 0;
-    /** Total unary and pruning time */
-    public long unaryAndPruningMs = 0;
-    /** Total outside-pass */
+    /** Total inside-pass binary time (accumulated in nanoseconds, but reported in ms) */
+    public long insideBinaryNs = 0;
+    /** Total unary and pruning time (accumulated in nanoseconds, but reported in ms) */
+    public long unaryAndPruningNs = 0;
+    /** Total outside-pass time */
     public long outsidePassMs = 0;
     /** Time to extract the parse tree from the chart, including unfactoring, if necessary. */
     public long extractTimeMs = 0;
@@ -129,28 +131,27 @@ public class ParseTask {
     }
 
     public String statsString() {
-        String result = "";
+        final StringBuilder result = new StringBuilder(128);
         if (BaseLogger.singleton().isLoggable(Level.FINE)) {
-            result += String.format("\nINFO: sentLen=%d seconds=%.3f inside=%.5f %s ", sentenceLength(), parseTimeSec,
-                    insideProbability, chartStats);
+            result.append(String.format("\nINFO: sentLen=%d time=%d inside=%.5f %s", sentenceLength(), parseTimeMs,
+                    insideProbability, chartStats));
             if (evalb != null) {
-                result += String.format("f1=%.2f prec=%.2f recall=%.2f matched=%d gold=%d parse=%d ", evalb.f1() * 100,
+                result.append(String.format(
+                        " f1=%.2f prec=%.2f recall=%.2f matched=%d goldBrackets=%d parseBrackets=%d", evalb.f1() * 100,
                         evalb.precision() * 100, evalb.recall() * 100, evalb.matchedBrackets, evalb.goldBrackets,
-                        evalb.parseBrackets);
+                        evalb.parseBrackets));
             }
         }
 
         if (BaseLogger.singleton().isLoggable(Level.FINER)) {
-            // moving from ChartParser collectDetailedStatistics test
-            result += String.format(" fomInitTime=%d cellSelectorInitTime=%d", fomInitMs, ccInitMs);
-            result += String
-                    .format("pops=%d pushes=%d considered=%d chartInit=%d, fomInit=%d ccInit=%d unaryAndPruning=%d outsidePass=%d extract=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d",
-                            totalPops, totalPushes, totalConsidered, chartInitMs, fomInitMs, ccInitMs,
-                            unaryAndPruningMs, outsidePassMs, extractTimeMs, nLex, nLexUnaryConsidered,
-                            nUnaryConsidered, nBinaryConsidered);
+            result.append(String
+                    .format(" pops=%d pushes=%d considered=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d chartInit=%d fomInit=%d cellSelectorInit=%d insideBinary=%d unaryAndPruning=%d outsidePass=%d extract=%d",
+                            totalPops, totalPushes, totalConsidered, nLex, nLexUnaryConsidered, nUnaryConsidered,
+                            nBinaryConsidered, chartInitMs, fomInitMs, ccInitMs, insideBinaryNs / 1000000,
+                            unaryAndPruningNs / 1000000, outsidePassMs, extractTimeMs));
         }
 
-        return result;
+        return result.toString();
     }
 
     public String parseBracketString(final boolean binaryTree, final boolean printUnkLabels) {
@@ -178,7 +179,7 @@ public class ParseTask {
     }
 
     public void stopTime() {
-        parseTimeSec = (System.currentTimeMillis() - startTime) / 1000f;
+        parseTimeMs = System.currentTimeMillis() - startTime;
     }
 
     public int sentenceLength() {

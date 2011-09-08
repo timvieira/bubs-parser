@@ -39,6 +39,8 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
 
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
         final HashSetChartCell cell = chart.getCell(start, end);
         float leftInside, rightInside;
 
@@ -61,6 +63,10 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
                     }
                 }
             }
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.insideBinaryNs += System.nanoTime() - t0;
         }
 
         if (cellSelector.hasCellConstraints() == false || cellSelector.getCellConstraints().isUnaryOpen(start, end)) {

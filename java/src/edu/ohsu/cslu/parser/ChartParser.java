@@ -38,13 +38,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public BinaryTree<String> findBestParse(final ParseTask parseTask) {
-        if (collectDetailedStatistics) {
-            final long t0 = System.currentTimeMillis();
-            initChart(parseTask);
-            parseTask.chartInitMs = System.currentTimeMillis() - t0;
-        } else {
-            initChart(parseTask);
-        }
+        initChart(parseTask);
 
         insidePass();
         if (BaseLogger.singleton().isLoggable(Level.FINEST)) {
@@ -59,8 +53,15 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
      * @param tokens
      */
     protected void initChart(final ParseTask parseTask) {
-        initSentence(parseTask);
-        addLexicalProductions(parseTask);
+        if (collectDetailedStatistics) {
+            final long t0 = System.currentTimeMillis();
+            initSentence(parseTask);
+            addLexicalProductions(parseTask);
+            parseTask.chartInitMs = System.currentTimeMillis() - t0;
+        } else {
+            initSentence(parseTask);
+            addLexicalProductions(parseTask);
+        }
 
         if (fomModel != null) {
             if (collectDetailedStatistics) {

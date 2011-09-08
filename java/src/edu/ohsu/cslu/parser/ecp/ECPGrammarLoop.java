@@ -38,6 +38,8 @@ public class ECPGrammarLoop extends ChartParser<Grammar, CellChart> {
 
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
         final HashSetChartCell cell = chart.getCell(start, end);
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
@@ -52,6 +54,10 @@ public class ECPGrammarLoop extends ChartParser<Grammar, CellChart> {
                     cell.updateInside(p, leftCell, rightCell, prob);
                 }
             }
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.insideBinaryNs += System.nanoTime() - t0;
         }
 
         for (final int childNT : cell.getNtArray()) {
