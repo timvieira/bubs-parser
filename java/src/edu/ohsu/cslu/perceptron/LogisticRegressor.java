@@ -2,10 +2,10 @@ package edu.ohsu.cslu.perceptron;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.Util;
@@ -18,6 +18,7 @@ public class LogisticRegressor {
     protected LossFunction lossFunction;
     protected int numFeatures;
     protected int numModels;
+    public String featureString;
 
     public LogisticRegressor(final int numFeatures, final int numModels) {
         this(numFeatures, numModels, 0f, null);
@@ -66,10 +67,12 @@ public class LogisticRegressor {
         }
     }
 
-    public void write(final String fileName) throws IOException {
-        final BufferedWriter file = new BufferedWriter(new FileWriter(fileName));
-        file.write("model=LogisticRegressor numModels=" + numModels + " numFeatures=" + numFeatures + "\n");
+    public void write(final BufferedWriter file, final String featureTemplate) throws IOException {
+        // final BufferedWriter file = new BufferedWriter(new FileWriter(fileName));
+        file.write("model=LogisticRegressor numModels=" + numModels + " numFeatures=" + numFeatures + " feats="
+                + featureTemplate + "\n");
         for (int i = 0; i < numModels; i++) {
+            file.write(String.format("model:%d ", i));
             for (int j = 0; j < numFeatures; j++) {
                 final float weight = weights[i].getFloat(j);
                 if (weight != 0f) {
@@ -78,26 +81,40 @@ public class LogisticRegressor {
             }
             file.write("\n");
         }
+        file.close();
     }
 
     public static LogisticRegressor read(final BufferedReader inStream) throws NumberFormatException, IOException {
         LogisticRegressor regressor = null;
         String line;
-        int i = 0;
+        boolean firstLine = true;
         while ((line = inStream.readLine()) != null) {
-            if (i == 0) {
+            if (firstLine) {
                 final HashMap<String, String> keyValue = Util.readKeyValuePairs(line);
                 final int numFeatures = Integer.parseInt(keyValue.get("numFeatures"));
                 final int numModels = Integer.parseInt(keyValue.get("numModels"));
                 regressor = new LogisticRegressor(numFeatures, numModels);
+                regressor.featureString = line.split("feats=")[1].trim();
+                firstLine = false;
+                BaseLogger.singleton().fine(
+                        "Reading LogisticRegressor model with " + numModels + " models and " + numFeatures
+                                + " features ... ");
             } else {
                 final String toks[] = line.split("\\s+");
+                final int modelIndex = Integer.parseInt(toks[0].split(":")[1]);
                 for (final String tok : toks) {
                     final String[] keyValue = tok.split(":");
-                    regressor.weights[i + 1].set(Integer.parseInt(keyValue[0]), Float.parseFloat(keyValue[1]));
+                    if (!keyValue[0].equals("model")) {
+                        try {
+                            regressor.weights[modelIndex].set(Integer.parseInt(keyValue[0]),
+                                    Float.parseFloat(keyValue[1]));
+                        } catch (final Exception e) {
+                            System.out.println("modelIndex=" + modelIndex + " " + tok);
+                            System.exit(1);
+                        }
+                    }
                 }
             }
-            i++;
         }
 
         return regressor;
