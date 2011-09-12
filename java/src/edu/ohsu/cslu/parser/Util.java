@@ -170,13 +170,19 @@ public class Util {
         return Float.parseFloat(s);
     }
 
-    public static HashMap<String, String> readKeyValuePairs(final String line) {
+    public static HashMap<String, String> readKeyValuePairs(final String line, final String delim) {
         final HashMap<String, String> keyVals = new HashMap<String, String>();
         final String[] toks = line.trim().split(" +");
         for (final String item : toks) {
-            final String[] keyValStr = item.split("=");
-            keyVals.put(keyValStr[0], keyValStr[1]);
+            if (item.contains(delim)) {
+                final String[] keyValStr = item.split(delim);
+                keyVals.put(keyValStr[0], keyValStr[1]);
+            }
         }
         return keyVals;
+    }
+
+    public static HashMap<String, String> readKeyValuePairs(final String line) {
+        return readKeyValuePairs(line, "=");
     }
 }
