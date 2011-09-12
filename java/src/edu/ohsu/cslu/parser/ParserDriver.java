@@ -18,8 +18,10 @@
  */
 package edu.ohsu.cslu.parser;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.ObjectInputStream;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -46,7 +48,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
-import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.agenda.APDecodeFOM;
@@ -76,6 +77,7 @@ import edu.ohsu.cslu.parser.ecp.ECPGrammarLoop;
 import edu.ohsu.cslu.parser.ecp.ECPGrammarLoopBerkFilter;
 import edu.ohsu.cslu.parser.ecp.ECPInsideOutside;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
+import edu.ohsu.cslu.parser.fom.DiscriminativeFOM;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
@@ -243,14 +245,30 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
                 fomModel = new FigureOfMeritModel(FOMType.InsideWithFwdBkwd);
             } else if (new File(fomTypeOrModel).exists()) {
-                // Assuming boundary FOM
-                Grammar fomGrammar = grammar;
-                if (this.coarseGrammarFile != null) {
-                    coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
-                    BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
-                    fomGrammar = coarseGrammar;
+                // read first line and extract model type
+                final BufferedReader tmp = fileAsBufferedReader(fomTypeOrModel);
+                final HashMap<String, String> keyValue = Util.readKeyValuePairs(tmp.readLine().trim());
+                tmp.close();
+
+                if (!keyValue.containsKey("model")) {
+                    throw new IllegalArgumentException("FOM model file has unexpected format");
                 }
-                fomModel = new BoundaryInOut(FOMType.BoundaryInOut, fomGrammar, fileAsBufferedReader(fomTypeOrModel));
+                if (keyValue.get("model").equals("LogisticRegressor")) {
+                    // Discriminative FOM
+                    fomModel = new DiscriminativeFOM(FOMType.Discriminative, grammar,
+                            fileAsBufferedReader(fomTypeOrModel));
+                } else if (keyValue.get("model").equals("FOM") && keyValue.containsKey("type")
+                        && keyValue.get("type").equals("BoundaryInOut")) {
+                    // BoundaryInOut FOM
+                    Grammar fomGrammar = grammar;
+                    if (this.coarseGrammarFile != null) {
+                        coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
+                        BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
+                        fomGrammar = coarseGrammar;
+                    }
+                    fomModel = new BoundaryInOut(FOMType.BoundaryInOut, fomGrammar,
+                            fileAsBufferedReader(fomTypeOrModel));
+                }
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
