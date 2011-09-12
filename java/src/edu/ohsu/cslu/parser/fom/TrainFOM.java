@@ -36,19 +36,25 @@ public class TrainFOM extends BaseCommandlineTool {
     private String grammarFile = null;
 
     @Option(name = "-counts", usage = "Write model counts instead of log probabilities (only BoundaryInOut)")
-    public boolean writeCounts = false;
+    private boolean writeCounts = false;
 
     @Option(name = "-smooth", metaVar = "N", usage = "Apply add-N smoothing to model (only BoundaryInOut)")
-    public float smoothingCount = (float) 0.5;
+    private float smoothingCount = (float) 0.5;
 
-    @Option(name = "-posNgramOrder", metaVar = "N", usage = "POS n-gram order for feature extraction")
-    public int posNgramOrder = 2;
+    @Option(name = "-posNgramOrder", metaVar = "N", usage = "POS n-gram order for feature extraction (only BoundaryInOut)")
+    private int posNgramOrder = 2;
 
     @Option(name = "-feats", usage = "Feature template file OR feature template string: lt rt lt_lt-1 rw_rt loc ...")
-    public String featTemplate = null;
+    private String featTemplate = null;
 
-    @Option(name = "-extractFeats")
-    public boolean extractFeatures = false;
+    @Option(name = "-e", aliases = { "--extractFeats" })
+    private boolean extractFeatures = false;
+
+    @Option(name = "-i", aliases = { "--iterations" }, metaVar = "count", usage = "Iterations over training corpus")
+    private int iterations = 10;
+
+    @Option(name = "-l", aliases = { "--learningRate" }, usage = "Learning rate for Logistic Regression model")
+    private float learningRate = 1.0f;
 
     public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
     public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
@@ -62,7 +68,11 @@ public class TrainFOM extends BaseCommandlineTool {
         if (fomType == FOMType.BoundaryInOut) {
             BoundaryInOut.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
         } else if (fomType == FOMType.Discriminative) {
-            DiscriminativeFOM.train(inputStream, outputStream, grammarFile, featTemplate, extractFeatures);
+            if (extractFeatures) {
+                DiscriminativeFOM.extractFeatures(inputStream, outputStream, grammarFile, featTemplate);
+            } else {
+                DiscriminativeFOM.train(inputStream, outputStream, grammarFile, featTemplate, iterations, learningRate);
+            }
         } else {
             throw new IllegalArgumentException("FOM type '" + fomType + "' not supported.");
         }

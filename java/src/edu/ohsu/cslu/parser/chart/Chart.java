@@ -469,8 +469,7 @@ public abstract class Chart {
         if (tokIndex < 0 || tokIndex >= parseTask.sentenceLength()) {
             return grammar.posSet.getIndex(grammar.nullSymbol);
         }
-        // return grammar.posSet.getIndex(((BoundaryInOutSelector) this.fomModel).get1bestPOSTag(tokIndex));
-        return grammar.posSet.getIndex(parseTask.tags[tokIndex]);
+        return grammar.posSet.getIndex(parseTask.fomTags[tokIndex]);
     }
 
     private int getWordFeat(final int tokIndex) {

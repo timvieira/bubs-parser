@@ -363,8 +363,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
         // pre-computed left/right FOM outside scores for current sentence
         private float outsideLeft[][], outsideRight[][];
-        // private int bestPOSTag[];
         ParseTask parseTask;
+
+        // int[] fomTags;
 
         public BoundaryInOutSelector() {
         }
@@ -557,18 +558,20 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 prevPOSList = posList;
             }
 
-            // tags from parseTask.tags are used for chart cell feature extraction when
-            // using BoundaryInOut FOM. If parseFromInputTags is true, then the tags
-            // from the input will already be in place. Otherwise, fill in the tags array
-            // with the 1-best result from this forward-backwards run.
-            if (ParserDriver.parseFromInputTags == false) {
-                parseTask.tags = new int[sentLen];
+            // tags from parseTask.fomTags are used for chart cell feature extraction when
+            // using BoundaryInOut FOM. If parseFromInputTags is true, then use the tags
+            // from the input stream instead (NOTE: these may not correspond to the forward
+            // backward tags/score computed above).
+            if (ParserDriver.parseFromInputTags) {
+                parseTask.fomTags = parseTask.inputTags;
+            } else {
+                parseTask.fomTags = new int[sentLen];
                 // track backpointers to extract best POS sequence
                 // start at the end of the sentence with the nullSymbol and trace backwards
                 int bestPOS = nullSymbol;
                 for (int i = sentLen - 1; i >= 0; i--) {
                     bestPOS = backPointer[i + 2][bestPOS];
-                    parseTask.tags[i] = bestPOS;
+                    parseTask.fomTags[i] = bestPOS;
                     // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
                 }
             }

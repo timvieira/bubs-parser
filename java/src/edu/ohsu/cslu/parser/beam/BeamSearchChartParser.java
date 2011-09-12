@@ -183,15 +183,24 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             if (ParserDriver.parseFromInputTags) {
                 // add only one POS => word production given by input (or 1-best) tags
                 lexProdSet = new LinkedList<Production>();
-                lexProdSet
-                        .add(grammar.getLexicalProduction(chart.parseTask.tags[start], chart.parseTask.tokens[start]));
+                final Production lexProd = grammar.getLexicalProduction(chart.parseTask.inputTags[start],
+                        chart.parseTask.tokens[start]);
+                if (lexProd == null) {
+                    // TODO: create a new lexical production with a smoothed prob, maybe from the UNK classes
+                    throw new IllegalArgumentException(String.format(
+                            "ERROR: lexical production %s => %s not found in grammar",
+                            grammar.nonTermSet.getSymbol(chart.parseTask.inputTags[start]),
+                            grammar.lexSet.getSymbol(chart.parseTask.tokens[start])));
+                }
+                lexProdSet.add(lexProd);
             } else {
                 // add all possible POS => word productions from grammar
                 lexProdSet = grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[start]);
             }
 
             for (final Production lexProd : lexProdSet) {
-                cell.updateInside(lexProd, cell, null, lexProd.prob);
+                // cell.updateInside(lexProd, cell, null, lexProd.prob);
+                cell.updateInside(lexProd, lexProd.prob);
                 if (hasCellConstraints == false || cc.isUnaryOpen(start, end)) {
                     for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
                         addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
@@ -275,8 +284,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         while (edge != null && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
             cellPopped++;
 
-            // BaseLogger.singleton().finer("Popping: "+ ((BoundaryInOutSelector)
-            // fomModel).calcFOMToString(edge.start(), edge.end(),(short) edge.prod.parent, edge.inside()));
+            // BaseLogger.singleton().finer("Popping: "+ ((BoundaryInOutSelector)fomModel).calcFOMToString(edge.start(),
+            // edge.end(),(short) edge.prod.parent, edge.inside()));
+            BaseLogger.singleton().finer("Popping: " + edge.toString());
 
             if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);
