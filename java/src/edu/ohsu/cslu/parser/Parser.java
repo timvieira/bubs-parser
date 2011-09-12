@@ -134,11 +134,11 @@ public abstract class Parser<G extends Grammar> {
                             + opts.maxLength + ")");
         } else {
             newTask.startTime();
-            try {
-                newTask.binaryParse = findBestParse(newTask);
-            } catch (final Exception e) {
-                BaseLogger.singleton().fine("ERROR: " + e.getMessage());
-            }
+            // try {
+            newTask.binaryParse = findBestParse(newTask);
+            // } catch (final Exception e) {
+            // BaseLogger.singleton().fine("ERROR: " + e);
+            // }
             newTask.stopTime();
             newTask.insideProbability = getInside(0, newTask.sentenceLength(), grammar.startSymbol);
             newTask.chartStats = getStats();

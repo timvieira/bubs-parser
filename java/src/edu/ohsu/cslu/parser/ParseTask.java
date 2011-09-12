@@ -38,8 +38,9 @@ public class ParseTask {
 
     public String sentence;
     public int[] tokens;
-    public int[] tags = null;
 
+    public int[] inputTags = null;
+    public int[] fomTags = null; // TODO: this should be moved to the FOM class
     public NaryTree<String> inputTree = null;
     public BinaryTree<String> binaryParse = null;
     public float insideProbability = Float.NEGATIVE_INFINITY;
@@ -89,37 +90,32 @@ public class ParseTask {
                 this.inputTree = NaryTree.read(input.trim(), String.class);
                 this.sentence = Strings.join(inputTree.leafLabels(), " ");
 
-                if (ParserDriver.parseFromInputTags) {
-                    // extract POS tags from tree
-                    tags = new int[sentence.length()];
-                    int i = 0;
-                    for (final NaryTree<String> leaf : inputTree.leafTraversal()) {
-                        tags[i] = grammar.nonTermSet.getIndex(leaf.parent().label());
-                        if (tags[i] == -1) {
-                            throw new IllegalArgumentException("-parseFromInputTags specified but input tag '"
-                                    + leaf.parent().label() + "' not found in grammar");
-                        }
-                        i++;
+                // extract POS tags from tree
+                inputTags = new int[sentence.length()];
+                int i = 0;
+                for (final NaryTree<String> leaf : inputTree.leafTraversal()) {
+                    inputTags[i] = grammar.nonTermSet.getIndex(leaf.parent().label());
+                    if (inputTags[i] == -1) {
+                        throw new IllegalArgumentException("-parseFromInputTags specified but input tag '"
+                                + leaf.parent().label() + "' not found in grammar");
                     }
+                    i++;
                 }
             } else if (inputFormat == InputFormat.Tagged) {
                 // (DT The) (NN economy) (POS 's) (NN temperature) (MD will)
                 final LinkedList<String> sentTokens = new LinkedList<String>();
                 final String[] tokens = input.split("\\s+");
-                tags = new int[tokens.length / 2];
+                inputTags = new int[tokens.length / 2];
                 int i = 0;
                 for (final String token : tokens) {
                     if (i % 2 == 1) {
                         sentTokens.add(token.substring(0, token.length() - 1)); // remove ")"
                     } else {
-                        tags[i / 2] = grammar.nonTermSet.getIndex(token.substring(1)); // remove "("
+                        inputTags[i / 2] = grammar.nonTermSet.getIndex(token.substring(1)); // remove "("
                     }
                     i++;
                 }
                 sentence = Strings.join(sentTokens, " ");
-                if (ParserDriver.parseFromInputTags == false) {
-                    tags = null; // make sure we don't use these
-                }
             }
 
             this.tokens = Grammar.tokenizer.tokenizeToIndex(sentence);

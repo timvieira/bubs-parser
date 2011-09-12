@@ -301,7 +301,6 @@ public class CellChart extends Chart {
         // binary production
         public ChartEdge(final Production prod, final ChartCell leftCell, final ChartCell rightCell) {
             super(prod, leftCell, rightCell);
-
             if (parser.fomModel != null) {
                 // this.fom = parser.fomModel.calcFOM(this);
                 this.fom = parser.fomModel.calcFOM(this.start(), this.end(), (short) this.prod.parent, this.inside());
@@ -313,7 +312,13 @@ public class CellChart extends Chart {
             super(prod, childCell);
 
             if (parser.fomModel != null) {
-                this.fom = parser.fomModel.calcFOM(this.start(), this.end(), (short) this.prod.parent, this.inside());
+                if (prod.isLexProd()) {
+                    this.fom = parser.fomModel.calcLexicalFOM(this.start(), this.end(), (short) this.prod.parent,
+                            this.inside());
+                } else {
+                    this.fom = parser.fomModel.calcFOM(this.start(), this.end(), (short) this.prod.parent,
+                            this.inside());
+                }
             }
         }
 
