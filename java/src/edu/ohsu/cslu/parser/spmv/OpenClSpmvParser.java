@@ -170,7 +170,6 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     @Override
     public BinaryTree<String> findBestParse(final ParseTask parseTask) {
         initSentence(parseTask);
-        addLexicalProductions(parseTask);
         cellSelector.initSentence(this);
 
         while (cellSelector.hasNext()) {
@@ -204,13 +203,13 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         chartSize = chart.size();
     }
 
-    @Override
-    protected void addLexicalProductions(final ParseTask parseTask) {
-        // Populate the lexical productions and part-of-speech tags in CPU space, and then copy the chart to
-        // device memory.
-        super.addLexicalProductions(parseTask);
-        copyChartToDevice();
-    }
+    // @Override
+    // protected void addLexicalProductions(final ParseTask parseTask) {
+    // // Populate the lexical productions and part-of-speech tags in CPU space, and then copy the chart to
+    // // device memory.
+    // super.addLexicalProductions(parseTask);
+    // copyChartToDevice();
+    // }
 
     /**
      * TODO If possible, merge or share code with

@@ -56,11 +56,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (collectDetailedStatistics) {
             final long t0 = System.currentTimeMillis();
             initSentence(parseTask);
-            addLexicalProductions(parseTask);
             parseTask.chartInitMs = System.currentTimeMillis() - t0;
         } else {
             initSentence(parseTask);
-            addLexicalProductions(parseTask);
         }
 
         if (fomModel != null) {
@@ -87,13 +85,11 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         chart = (C) new CellChart(parseTask, this);
     }
 
-    protected void addLexicalProductions(final ParseTask parseTask) {
-        // add lexical productions to the base cells of the chart
-        for (int i = 0; i < chart.size(); i++) {
-            final ChartCell cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(parseTask.tokens[i])) {
-                cell.updateInside(lexProd, cell, null, lexProd.prob);
-            }
+    protected void addLexicalProductions(final int start) {
+        // add lexical productions to the a base cells of the chart
+        final ChartCell cell = chart.getCell(start, start + 1);
+        for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[start])) {
+            cell.updateInside(lexProd, cell, null, lexProd.prob);
         }
     }
 
@@ -103,6 +99,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     protected final void insidePass() {
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
+            if (startAndEnd[1] - startAndEnd[0] == 1) {
+                addLexicalProductions(startAndEnd[0]);
+            }
             computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
         }
     }

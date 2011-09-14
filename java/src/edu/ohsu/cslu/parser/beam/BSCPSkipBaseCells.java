@@ -23,7 +23,6 @@ import java.util.PriorityQueue;
 
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -39,21 +38,19 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
     }
 
     @Override
-    protected void addLexicalProductions(final ParseTask parseTask) {
+    protected void addLexicalProductions(final int start) {
         HashSetChartCell cell;
 
         // add lexical productions to the base cells of the chart
-        for (int i = 0; i < chart.size(); i++) {
-            cell = chart.getCell(i, i + 1);
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(parseTask.tokens[i])) {
-                cell.updateInside(chart.new ChartEdge(lexProd, cell));
+        cell = chart.getCell(start, start + 1);
+        for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[start])) {
+            cell.updateInside(chart.new ChartEdge(lexProd, cell));
 
-                // NOTE: also adding unary prods here...should probably change the name of this
-                // function and also create our own init()
-                for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
-                    // NOTE: not using an FOM for these edges ... just adding them all
-                    cell.updateInside(chart.new ChartEdge(unaryProd, cell));
-                }
+            // NOTE: also adding unary prods here...should probably change the name of this
+            // function and also create our own init()
+            for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
+                // NOTE: not using an FOM for these edges ... just adding them all
+                cell.updateInside(chart.new ChartEdge(unaryProd, cell));
             }
         }
     }
