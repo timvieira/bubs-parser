@@ -50,8 +50,6 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
     private int possibleMidpointMin = -1;
     private int possibleMidpointMax = -1;
 
-    private int tmpNL, tmpNR, tmpWR;
-
     public ECPGrammarLoopBerkFilter(final ParserDriver opts, final Grammar grammar) {
         super(opts, grammar);
     }
@@ -72,28 +70,24 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
             Arrays.fill(narrowRExtent[i], sentLength + 1);
             Arrays.fill(wideRExtent[i], -1);
         }
-
-        tmpNL = tmpNR = tmpWR = 0;
     }
 
     @Override
-    protected void addLexicalProductions(final ParseTask parseTask) {
+    protected void addLexicalProductions(final int start) {
         Collection<Production> validProductions;
         HashSetChartCell cell;
 
-        // add lexical productions and unary productions to the base cells of the chart
-        for (int i = 0; i < chart.size(); i++) {
-            for (final Production lexProd : grammar.getLexicalProductionsWithChild(parseTask.tokens[i])) {
-                cell = chart.getCell(i, i + 1);
-                cell.updateInside(chart.new ChartEdge(lexProd, cell));
-                updateRuleConstraints(lexProd.parent, i, i + 1);
+        // add lexical productions and unary productions to the base cell of the chart
+        for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[start])) {
+            cell = chart.getCell(start, start + 1);
+            cell.updateInside(chart.new ChartEdge(lexProd, cell));
+            updateRuleConstraints(lexProd.parent, start, start + 1);
 
-                validProductions = grammar.getUnaryProductionsWithChild(lexProd.parent);
-                if (validProductions != null) {
-                    for (final Production unaryProd : validProductions) {
-                        cell.updateInside(chart.new ChartEdge(unaryProd, cell));
-                        updateRuleConstraints(unaryProd.parent, i, i + 1);
-                    }
+            validProductions = grammar.getUnaryProductionsWithChild(lexProd.parent);
+            if (validProductions != null) {
+                for (final Production unaryProd : validProductions) {
+                    cell.updateInside(chart.new ChartEdge(unaryProd, cell));
+                    updateRuleConstraints(unaryProd.parent, start, start + 1);
                 }
             }
         }
@@ -108,14 +102,12 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
         // can this left constituent leave space for a right constituent?
         final int narrowR = narrowRExtent[beg][p.leftChild];
         if (narrowR >= end) {
-            tmpNR++;
             return false;
         }
 
         // can this right constituent fit next to the left constituent?
         final int narrowL = narrowLExtent[end][p.rightChild];
         if (narrowL < narrowR) {
-            tmpNL++;
             return false;
         }
 
@@ -129,7 +121,6 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
 
         // can the constituents stretch far enough to reach each other?
         if (minMidpoint > maxMidpoint) {
-            tmpWR++;
             return false;
         }
 
