@@ -87,18 +87,18 @@ public class ProfileBoundaryInOut {
     }
 
     @Test
-    @PerformanceTest({ "mbp", "642", "d820", "3379" })
+    @PerformanceTest({ "mbp", "584", "d820", "3379" })
     public void profileParentAnnotated() {
 
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 400; i++) {
             parentAnnotatedBio.init(parentAnnotatedParseContext, parentAnnotatedChart);
         }
     }
 
     @Test
-    @PerformanceTest({ "mbp", "1974", "d820", "3750" })
+    @PerformanceTest({ "mbp", "3633", "d820", "3750" })
     public void profileBerkeley() {
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 400; i++) {
             berkeleyBio.init(berkeleyParseContext, berkeleyChart);
         }
     }
