@@ -44,11 +44,14 @@ import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 public final class BoundaryInOut extends FigureOfMeritModel {
 
     private Grammar grammar;
-    private int posNgramOrder = 2;
     private CoarseGrammar coarseGrammar = null;
 
     // Model params learned from training data
     private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
+
+    final short nullSymbol;
+    final short[] NULL_LIST;
+    final float[] NULL_PROBABILITIES;
 
     public BoundaryInOut(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
             throws IOException {
@@ -59,6 +62,11 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         if (grammar.isCoarseGrammar()) {
             coarseGrammar = (CoarseGrammar) grammar;
         }
+
+        nullSymbol = (short) grammar.nullSymbol;
+        NULL_LIST = new short[] { nullSymbol };
+        NULL_PROBABILITIES = new float[] { 0f };
+
         final int numNT = grammar.numNonTerms();
         final int maxPOSIndex = grammar.maxPOSIndex();
         leftBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
@@ -165,10 +173,10 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         final Grammar grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
 
         // TODO: note that we have to have the same training grammar as decoding grammar here
-        // so the input needs to be bianarized. If we are parsing with the Berkeley latent-variable
+        // so the input needs to be binarized. If we are parsing with the Berkeley latent-variable
         // grammar then we can't work with Gold trees. As an approximation we will take the
         // 1-best from the Berkeley parser output (although constraining the coarse labels to match
-        // the true gold tree would pobably be a little better)
+        // the true gold tree would probably be a little better)
         // See Caraballo/Charniak 1998 for (what I think is) their inside/outside solution
         // to the same (or a similar) problem.
         while ((line = inStream.readLine()) != null) {
@@ -363,6 +371,10 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
         // pre-computed left/right FOM outside scores for current sentence
         private float outsideLeft[][], outsideRight[][];
+        private short[][] backPointer;
+        private float[] scores;
+        private float[] prevScores;
+
         // private int bestPOSTag[];
         ParseTask parseTask;
 
@@ -388,6 +400,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             return insideProbability;
         }
 
+        // TODO Appears to be unused. Remove?
         public String calcFOMToString(final int start, final int end, final short parent, final float inside) {
             Grammar fineGrammar = grammar;
             short coarseParent = parent;
@@ -430,24 +443,23 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             final int posSize = grammar.maxPOSIndex() + 1;
 
             if (outsideLeft == null || outsideLeft.length < fbSize) {
-                outsideLeft = new float[fbSize][grammar.numNonTerms()];
-                outsideRight = new float[fbSize][grammar.numNonTerms()];
+                outsideLeft = new float[fbSize + 10][grammar.numNonTerms()];
+                outsideRight = new float[fbSize + 10][grammar.numNonTerms()];
+                backPointer = new short[fbSize + 10][posSize];
             }
-
-            final int[][] backPointer = new int[fbSize][posSize];
+            
+            if (scores == null) {
+                scores = new float[posSize];
+                prevScores = new float[posSize];
+            }
 
             for (int i = 0; i < fbSize; i++) {
                 Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
                 Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
+                Arrays.fill(backPointer[i], (short) 0);
             }
 
-            final short nullSymbol = (short) grammar.nullSymbol;
-            final short[] NULL_LIST = new short[] { nullSymbol };
-            final float[] NULL_PROBABILITIES = new float[] { 0f };
-
             short[] prevPOSList = NULL_LIST;
-            float[] scores = new float[posSize];
-            float[] prevScores = new float[posSize];
 
             // Forward pass
             prevScores[nullSymbol] = 0f;
@@ -466,7 +478,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 final float[] fwdPOSProbs = fwdChartIndex >= sentLen ? NULL_PROBABILITIES : grammar
                         .lexicalLogProbabilities(parseTask.tokens[fwdChartIndex]);
 
-                final int[] currentBackpointer = backPointer[fwdIndex];
+                final short[] currentBackpointer = backPointer[fwdIndex];
 
                 for (int i = 0; i < posList.length; i++) {
                     final short curPOS = posList[i];
@@ -486,17 +498,17 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                     currentBackpointer[curPOS] = bestPrevPOS;
                 }
 
-                // compute left and right outside scores to be used during decoding
-                // to calculate the FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
-                final float[] fwdOutsideLeft = outsideLeft[fwdIndex];
+                // compute left outside scores to be used during decoding
+                // FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
+                final float[] currentOutsideLeft = outsideLeft[fwdIndex];
                 for (final short pos : posList) {
                     final float posScore = scores[pos];
                     final float[] posLeftBoundaryLogProb = leftBoundaryLogProb[pos];
 
                     for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
                         final float score = posScore + posLeftBoundaryLogProb[nonTerm];
-                        if (score > fwdOutsideLeft[nonTerm]) {
-                            fwdOutsideLeft[nonTerm] = score;
+                        if (score > currentOutsideLeft[nonTerm]) {
+                            currentOutsideLeft[nonTerm] = score;
                         }
                     }
                 }
@@ -537,16 +549,16 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 }
 
                 // compute right outside scores to be used during decoding
-                // to calculate the FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
-                final float[] bkwOutsideRight = outsideRight[bkwIndex];
+                // FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
+                final float[] currentOutsideRight = outsideRight[bkwIndex];
                 for (final short pos : posList) {
                     final float posScore = scores[pos];
                     final float[] posRightBoundaryLogProb = rightBoundaryLogProb[pos];
 
                     for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
                         final float score = posScore + posRightBoundaryLogProb[nonTerm];
-                        if (score > bkwOutsideRight[nonTerm]) {
-                            bkwOutsideRight[nonTerm] = score;
+                        if (score > currentOutsideRight[nonTerm]) {
+                            currentOutsideRight[nonTerm] = score;
                         }
                     }
                 }
