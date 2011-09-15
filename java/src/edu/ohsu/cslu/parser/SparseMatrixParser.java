@@ -28,6 +28,7 @@ import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 
 /**
@@ -47,6 +48,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
     protected final ThreadLocal<BoundedPriorityQueue> threadLocalBoundedPriorityQueue;
     protected final ThreadLocal<float[]> threadLocalTmpFoms;
+    protected final ThreadLocal<TemporaryChartCell> threadLocalQueueEdges;
 
     public SparseMatrixParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
@@ -72,6 +74,12 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                     return new float[grammar.numNonTerms()];
                 }
             };
+            this.threadLocalQueueEdges = new ThreadLocal<TemporaryChartCell>() {
+                @Override
+                protected TemporaryChartCell initialValue() {
+                    return new TemporaryChartCell(grammar.numNonTerms());
+                }
+            };
 
         } else {
             this.beamWidth = grammar.numNonTerms();
@@ -81,6 +89,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             this.exhaustiveSearch = true;
             this.threadLocalBoundedPriorityQueue = null;
             this.threadLocalTmpFoms = null;
+            this.threadLocalQueueEdges = null;
         }
     }
 
@@ -96,8 +105,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
             packedArrayCell.allocateTemporaryStorage();
 
-            unarySpmv(packedArrayCell.tmpPackedChildren, packedArrayCell.tmpInsideProbabilities,
-                    packedArrayCell.tmpMidpoints, 0, chartCell.end());
+            unarySpmv(packedArrayCell.tmpCell.packedChildren, packedArrayCell.tmpCell.insideProbabilities,
+                    packedArrayCell.tmpCell.midpoints, 0, chartCell.end());
         } else {
             final DenseVectorChartCell denseVectorCell = (DenseVectorChartCell) chartCell;
 
@@ -136,20 +145,17 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         }
     }
 
-    // TODO Eliminate cellInsideProbabilities and cellMidpoints; use existing temporary chart cell storage instead?
-
-    protected void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end,
-            final int[] cellPackedChildren, final float[] cellInsideProbabilities, final short[] cellMidpoints) {
+    protected void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
+        final TemporaryChartCell tmpCell = spvChartCell.tmpCell;
+
         // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
-        final boolean factoredOnly = cellSelector.hasCellConstraints()
-                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end) && (end - start > 1);
         final boolean allowUnaries = !cellSelector.hasCellConstraints()
-                || cellSelector.getCellConstraints().isUnaryOpen(start, end);
-        final float minInsideProbability = edu.ohsu.cslu.util.Math.max(spvChartCell.tmpInsideProbabilities)
-                - maxLocalDelta;
+                || cellSelector.getCellConstraints().isUnaryOpen(start, end)
+                && !(cellSelector.getCellConstraints().isCellOnlyFactored(start, end) && (end - start > 1));
+        final float minInsideProbability = edu.ohsu.cslu.util.Math.max(tmpCell.insideProbabilities) - maxLocalDelta;
 
         /*
          * Populate the chart cell with the most probable n edges (n = beamWidth).
@@ -158,10 +164,10 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
          * 
          * A) The temporary edge storage already populated with binary inside probabilities and (viterbi) backpointers
          * 
-         * B) A bounded priority queue of non-terminal indices, prioritized by their figure-of-merit scores
+         * B) A bounded priority queue of non-terminal indices, prioritized by their figure-of-merit scores (q)
          * 
          * C) A parallel array of edges. We will pop a limited number of edges off the priority queue into this array,
-         * so this storage represents the actual cell population.
+         * so this storage represents the actual cell population. (parallel array in tmpCell)
          * 
          * First, we push all binary edges onto the priority queue (if we're pruning significantly, most will not make
          * the queue). We then begin popping edges off the queue. With each edge popped, we 1) Add the edge to the array
@@ -176,10 +182,9 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         final BoundedPriorityQueue q = threadLocalBoundedPriorityQueue.get();
         q.clear(cellBeamWidth);
 
-        // FOM of each observed non-terminal (parallel to the temporary storage arrays in the chart cell which only
-        // store inside probability)
-        final float[] tmpFoms = threadLocalTmpFoms.get();
-        Arrays.fill(tmpFoms, Float.NEGATIVE_INFINITY);
+        // Packed children and probabilities currently on the queue. Initially copied from cell temporary storage, but
+        // updated as unaries are pushed onto the queue
+        final TemporaryChartCell queueEdges = threadLocalQueueEdges.get();
 
         if (end - start == 1) { // Lexical Row (span = 1)
 
@@ -187,10 +192,12 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             q.setMaxSize(lexicalRowBeamWidth - lexicalRowUnaries);
 
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
-                if (spvChartCell.tmpInsideProbabilities[nt] > minInsideProbability) {
-                    final float fom = fomModel.calcLexicalFOM(start, end, nt, spvChartCell.tmpInsideProbabilities[nt]);
+                if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
+                    final float fom = fomModel.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
                     q.insert(nt, fom);
-                    tmpFoms[nt] = fom;
+                    queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
+                    queueEdges.insideProbabilities[nt] = tmpCell.insideProbabilities[nt];
+                    queueEdges.midpoints[nt] = tmpCell.midpoints[nt];
                 }
             }
             // Now that all lexical productions are on the queue, expand it a bit to allow space for unary productions
@@ -198,70 +205,77 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
         } else { // Span >= 2
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
-                if (spvChartCell.tmpInsideProbabilities[nt] > minInsideProbability) {
-                    final float fom = fomModel.calcFOM(start, end, nt, spvChartCell.tmpInsideProbabilities[nt]);
+                if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
+                    final float fom = fomModel.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
                     q.insert(nt, fom);
-                    tmpFoms[nt] = fom;
+                    queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
+                    queueEdges.insideProbabilities[nt] = tmpCell.insideProbabilities[nt];
+                    queueEdges.midpoints[nt] = tmpCell.midpoints[nt];
                 }
             }
         }
 
-        final float[] cellFoms = new float[grammar.numNonTerms()];
-        Arrays.fill(cellInsideProbabilities, Float.NEGATIVE_INFINITY);
+        if (q.size() == 0) {
+            if (collectDetailedStatistics) {
+                chart.parseTask.unaryAndPruningNs += System.nanoTime() - t0;
+            }
+            return;
+        }
+
+        // FOM of each non-terminal populated in the cell (i.e., each NT which was survived pruning and popped from the
+        // queue). Parallel to the temporary storage arrays in the chart cell which only store inside probability.
+        final float[] cellFoms = threadLocalTmpFoms.get();
         Arrays.fill(cellFoms, Float.NEGATIVE_INFINITY);
+
+        // Clear out the temporary cell. We've stored copies of all edges which made it onto the queue.
+        Arrays.fill(tmpCell.insideProbabilities, Float.NEGATIVE_INFINITY);
 
         // Pop edges off the queue until we fill the beam width. With each non-terminal popped off the queue,
         // push unary edges for each unary grammar rule with the non-terminal as a child
         for (int edgesPopulated = 0; edgesPopulated < cellBeamWidth && q.size() > 0;) {
 
             final int headIndex = q.headIndex();
-            final short nt = q.parentIndices[headIndex];
+            final short nt = q.nts[headIndex];
             final float fom = q.foms[headIndex];
             q.popHead();
 
-            if (cellFoms[nt] == Float.NEGATIVE_INFINITY) {
-                cellPackedChildren[nt] = spvChartCell.tmpPackedChildren[nt];
-                cellInsideProbabilities[nt] = spvChartCell.tmpInsideProbabilities[nt];
-                cellFoms[nt] = fom;
-                cellMidpoints[nt] = spvChartCell.tmpMidpoints[nt];
+            if (tmpCell.insideProbabilities[nt] == Float.NEGATIVE_INFINITY) {
+                // We're adding an edge that wasn't previously populated
+                edgesPopulated++;
+            }
 
-                // Process unary edges for cells which are open to non-factored parents
-                if (!factoredOnly && allowUnaries) {
+            if (fom > cellFoms[nt]) {
+                // Add or replace the edge in temporary chart storage
+                tmpCell.packedChildren[nt] = queueEdges.packedChildren[nt];
+                tmpCell.insideProbabilities[nt] = queueEdges.insideProbabilities[nt];
+                tmpCell.midpoints[nt] = queueEdges.midpoints[nt];
+                cellFoms[nt] = fom;
+
+                // Process unary edges and add to the queue.
+                if (allowUnaries) {
                     // Insert all unary edges with the current parent as child into the queue
                     final short child = nt;
-                    final float insideProbability = spvChartCell.tmpInsideProbabilities[child];
+                    final float childInsideProbability = tmpCell.insideProbabilities[child];
 
                     // Iterate over possible parents of the child (rows with non-zero entries)
                     for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
 
-                        final float jointProbability = grammar.cscUnaryProbabilities[i] + insideProbability;
+                        final float jointProbability = grammar.cscUnaryProbabilities[i] + childInsideProbability;
 
                         if (jointProbability > minInsideProbability) {
                             final short parent = grammar.cscUnaryRowIndices[i];
                             final float parentFom = fomModel.calcFOM(start, end, parent, jointProbability);
 
-                            if (parentFom > tmpFoms[parent] && parentFom > cellFoms[parent]
-                                    && q.replace(parent, parentFom)) {
+                            if (parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
                                 // The FOM was high enough that the edge was added to the queue; update temporary
                                 // storage to reflect the new unary child and probability
-                                spvChartCell.tmpPackedChildren[parent] = grammar.cartesianProductFunction().packUnary(
-                                        child);
-                                spvChartCell.tmpInsideProbabilities[parent] = jointProbability;
-                                spvChartCell.tmpMidpoints[parent] = end;
+                                queueEdges.packedChildren[parent] = grammar.cartesianProductFunction().packUnary(child);
+                                queueEdges.insideProbabilities[parent] = jointProbability;
+                                tmpCell.midpoints[parent] = end;
                             }
                         }
                     }
                 }
-
-                edgesPopulated++;
-
-            } else if (fom > cellFoms[nt]) {
-                // We just re-popped a non-terminal we've already added to the cell, and the unary probability is
-                // greater than the current probability. Replace the existing edge with the new unary edge.
-                cellPackedChildren[nt] = spvChartCell.tmpPackedChildren[nt];
-                cellInsideProbabilities[nt] = spvChartCell.tmpInsideProbabilities[nt];
-                cellMidpoints[nt] = end;
-                cellFoms[nt] = fom;
             }
         }
 

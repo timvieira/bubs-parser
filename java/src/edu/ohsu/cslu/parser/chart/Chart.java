@@ -140,7 +140,7 @@ public abstract class Chart {
             }
         }
 
-        return " chartEdges=" + add + " processedEdges=" + con;
+        return "chartEdges=" + add + " processedEdges=" + con;
     }
 
     public static abstract class ChartCell {

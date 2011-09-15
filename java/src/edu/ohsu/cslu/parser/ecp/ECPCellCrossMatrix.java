@@ -27,6 +27,7 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 /**
  * Exhaustive chart parser which performs grammar intersection by iterating over grammar rules matching the observed
@@ -41,10 +42,12 @@ public class ECPCellCrossMatrix extends ChartParser<ChildMatrixGrammar, CellChar
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final ChartCell c) {
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final HashSetChartCell cell = chart.getCell(start, end);
+        final HashSetChartCell cell = (HashSetChartCell) c;
+        final short start = cell.start();
+        final short end = cell.end();
 
         for (int mid = start + 1; mid <= end - 1; mid++) { // mid point
             final HashSetChartCell leftCell = chart.getCell(start, mid);

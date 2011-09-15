@@ -26,6 +26,7 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 /**
  * Exhaustive chart parser which performs grammar intersection by iterating over grammar rules matching the observed
@@ -45,10 +46,12 @@ public class ECPCellCrossHashGrammarLoop extends ChartParser<LeftHashGrammar, Ce
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final ChartCell c) {
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final HashSetChartCell cell = chart.getCell(start, end);
+        final HashSetChartCell cell = (HashSetChartCell) c;
+        final short start = cell.start();
+        final short end = cell.end();
         float insideProb;
 
         final int nt = grammar.numNonTerms();

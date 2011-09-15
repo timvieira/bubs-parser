@@ -22,8 +22,10 @@ import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.hash.PerfectIntPair2IntHash;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 
 /**
  * Exhaustive matrix-loop parser which performs grammar intersection by iterating over grammar rules matching the
@@ -55,16 +57,15 @@ public class CartesianProductLeftChildHashSpmlParser extends
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final ChartCell cell) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
         final PackingFunction cpf = grammar.cartesianProductFunction();
-        final PackedArrayChartCell targetCell = chart.getCell(start, end);
+        final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
+        final short start = cell.start();
+        final short end = cell.end();
         targetCell.allocateTemporaryStorage();
-
-        final int[] targetCellChildren = targetCell.tmpPackedChildren;
-        final float[] targetCellProbabilities = targetCell.tmpInsideProbabilities;
-        final short[] targetCellMidpoints = targetCell.tmpMidpoints;
+        final TemporaryChartCell tmpCell = targetCell.tmpCell;
 
         // Iterate over all possible midpoints
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
@@ -99,10 +100,10 @@ public class CartesianProductLeftChildHashSpmlParser extends
                         final float jointProbability = grammar.cscBinaryProbabilities[k] + childProbability;
                         final int parent = grammar.cscBinaryRowIndices[k];
 
-                        if (jointProbability > targetCellProbabilities[parent]) {
-                            targetCellChildren[parent] = cpf.pack(leftChild, chart.nonTerminalIndices[j]);
-                            targetCellProbabilities[parent] = jointProbability;
-                            targetCellMidpoints[parent] = midpoint;
+                        if (jointProbability > tmpCell.insideProbabilities[parent]) {
+                            tmpCell.packedChildren[parent] = cpf.pack(leftChild, chart.nonTerminalIndices[j]);
+                            tmpCell.insideProbabilities[parent] = jointProbability;
+                            tmpCell.midpoints[parent] = midpoint;
                         }
                     }
                 }

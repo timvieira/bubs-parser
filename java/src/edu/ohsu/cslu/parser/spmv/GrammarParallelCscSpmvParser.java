@@ -35,6 +35,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 
 /**
  * Distributes the binary SpMV operation across multiple threads.
@@ -45,7 +46,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
 
     /** The number of threads configured for cartesian-product and binary grammar intersection */
-    private final int cellThreads;
+    private final int grammarThreads;
 
     /**
      * The number of tasks to split cartesian-product operation into. Normally a multiple of the number of threads.
@@ -54,14 +55,12 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
 
     /**
      * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into segments of
-     * roughly equal size for distribution between threads. Length is {@link #cellThreads} + 1 (to avoid falling off the
-     * end)
+     * roughly equal size for distribution between threads. Length is {@link #grammarThreads} + 1 (to avoid falling off
+     * the end)
      */
     private final int[] binaryRowSegments;
 
-    // private Future<?> cpvClearTask;
-
-    protected final ThreadLocal<TemporaryChartCell[]> threadLocalTemporaryCells;
+    private final ThreadLocal<PackedArrayChart.TemporaryChartCell[]> threadLocalTemporaryCellArrays;
 
     public GrammarParallelCscSpmvParser(final ParserDriver opts, final LeftCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -81,12 +80,10 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
         }
         segments[i] = grammar.cscBinaryPopulatedColumnOffsets.length - 1;
 
-        this.cellThreads = i;
-        this.cpvSegments = cellThreads * 2;
-        final int configuredThreads = props.containsKey(ParserDriver.OPT_CELL_THREAD_COUNT) ? props
-                .getIntProperty(ParserDriver.OPT_CELL_THREAD_COUNT) * cellThreads : cellThreads;
+        this.grammarThreads = i;
+        this.cpvSegments = grammarThreads * 2;
         GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
-                Integer.toString(configuredThreads));
+                Integer.toString(props.getIntProperty(ParserDriver.OPT_CELL_THREAD_COUNT, 1) * grammarThreads));
 
         this.binaryRowSegments = new int[i + 1];
         System.arraycopy(segments, 0, binaryRowSegments, 0, binaryRowSegments.length);
@@ -100,14 +97,14 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
             BaseLogger.singleton().fine("INFO: CSC Binary Grammar segments of length: " + sb.toString());
         }
 
-        // Temporary cell storage for each row-level thread
-        this.threadLocalTemporaryCells = new ThreadLocal<GrammarParallelCscSpmvParser.TemporaryChartCell[]>() {
+        // Temporary cell storage for each grammar-level thread
+        this.threadLocalTemporaryCellArrays = new ThreadLocal<PackedArrayChart.TemporaryChartCell[]>() {
 
             @Override
-            protected TemporaryChartCell[] initialValue() {
-                final TemporaryChartCell[] tcs = new TemporaryChartCell[cellThreads];
-                for (int j = 0; j < cellThreads; j++) {
-                    tcs[j] = new TemporaryChartCell();
+            protected PackedArrayChart.TemporaryChartCell[] initialValue() {
+                final PackedArrayChart.TemporaryChartCell[] tcs = new PackedArrayChart.TemporaryChartCell[grammarThreads];
+                for (int j = 0; j < grammarThreads; j++) {
+                    tcs[j] = new PackedArrayChart.TemporaryChartCell(grammar.numNonTerms());
                 }
                 return tcs;
             }
@@ -265,14 +262,14 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
     @Override
     public final void binarySpmv(final CartesianProductVector cartesianProductVector, final ChartCell chartCell) {
 
-        final Future<?>[] futures = new Future[cellThreads];
-        final TemporaryChartCell[] temporaryCells = threadLocalTemporaryCells.get();
+        final Future<?>[] futures = new Future[grammarThreads];
+        final PackedArrayChart.TemporaryChartCell[] temporaryCells = threadLocalTemporaryCellArrays.get();
 
         // Iterate over binary grammar segments
-        for (int i = 0; i < cellThreads; i++) {
+        for (int i = 0; i < grammarThreads; i++) {
             final int segmentStart = binaryRowSegments[i];
             final int segmentEnd = binaryRowSegments[i + 1];
-            final TemporaryChartCell tmpCell = temporaryCells[i];
+            final PackedArrayChart.TemporaryChartCell tmpCell = temporaryCells[i];
 
             if (cellSelector.hasCellConstraints()
                     && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end())) {
@@ -280,6 +277,7 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
 
                     @Override
                     public void run() {
+                        tmpCell.clear();
                         // Multiply by the factored grammar rule matrix
                         binarySpmvMultiply(cartesianProductVector, grammar.factoredCscBinaryPopulatedColumns,
                                 grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
@@ -292,6 +290,7 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
 
                     @Override
                     public void run() {
+                        tmpCell.clear();
                         // Multiply by the full grammar rule matrix
                         binarySpmvMultiply(cartesianProductVector, grammar.cscBinaryPopulatedColumns,
                                 grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
@@ -308,50 +307,30 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
             // Wait for the first task to finish and use its arrays as the temporary cell storage
             futures[0].get();
 
+            final TemporaryChartCell tmpCell = packedArrayCell.tmpCell;
+            // TODO Eliminate this extra arraycopy
             final int arrayLength = temporaryCells[0].insideProbabilities.length;
-            System.arraycopy(temporaryCells[0].insideProbabilities, 0, packedArrayCell.tmpInsideProbabilities, 0,
+            System.arraycopy(temporaryCells[0].insideProbabilities, 0, tmpCell.insideProbabilities, 0,
                     arrayLength);
-            System.arraycopy(temporaryCells[0].packedChildren, 0, packedArrayCell.tmpPackedChildren, 0, arrayLength);
-            System.arraycopy(temporaryCells[0].midpoints, 0, packedArrayCell.tmpMidpoints, 0, arrayLength);
-            temporaryCells[0].clear();
-
-            // final TemporaryChartCell tmpCell0 = temporaryCells[0];
-            // packedArrayCell.tmpInsideProbabilities = tmpCell0.insideProbabilities;
-            // packedArrayCell.tmpPackedChildren = tmpCell0.packedChildren;
-            // packedArrayCell.tmpMidpoints = tmpCell0.midpoints;
+            System.arraycopy(temporaryCells[0].packedChildren, 0, tmpCell.packedChildren, 0, arrayLength);
+            System.arraycopy(temporaryCells[0].midpoints, 0, tmpCell.midpoints, 0, arrayLength);
 
             // Wait for each other task to complete and merge results into the main temporary storage
-            for (int i = 1; i < cellThreads; i++) {
+            for (int i = 1; i < grammarThreads; i++) {
                 futures[i].get();
-                final TemporaryChartCell tmpCell = temporaryCells[i];
+                final PackedArrayChart.TemporaryChartCell threadTmpCell = temporaryCells[i];
                 for (int j = 0; j < arrayLength; j++) {
-                    if (tmpCell.insideProbabilities[j] > packedArrayCell.tmpInsideProbabilities[j]) {
-                        packedArrayCell.tmpInsideProbabilities[j] = tmpCell.insideProbabilities[j];
-                        packedArrayCell.tmpPackedChildren[j] = tmpCell.packedChildren[j];
-                        packedArrayCell.tmpMidpoints[j] = tmpCell.midpoints[j];
+                    if (threadTmpCell.insideProbabilities[j] > tmpCell.insideProbabilities[j]) {
+                        tmpCell.insideProbabilities[j] = threadTmpCell.insideProbabilities[j];
+                        tmpCell.packedChildren[j] = threadTmpCell.packedChildren[j];
+                        tmpCell.midpoints[j] = threadTmpCell.midpoints[j];
                     }
                 }
-                tmpCell.clear();
             }
         } catch (final InterruptedException e) {
             e.printStackTrace();
         } catch (final ExecutionException e) {
             e.printStackTrace();
-        }
-    }
-
-    private final class TemporaryChartCell {
-
-        final int[] packedChildren = new int[grammar.numNonTerms()];
-        final float[] insideProbabilities = new float[grammar.numNonTerms()];
-        final short[] midpoints = new short[grammar.numNonTerms()];
-
-        public TemporaryChartCell() {
-            clear();
-        }
-
-        public void clear() {
-            Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         }
     }
 }

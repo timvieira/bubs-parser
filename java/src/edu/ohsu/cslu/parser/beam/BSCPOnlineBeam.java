@@ -26,6 +26,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 /**
  * @author Nathan Bodenstab
@@ -40,8 +41,10 @@ public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellC
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
-        final HashSetChartCell cell = chart.getCell(start, end);
+    protected void computeInsideProbabilities(final ChartCell c) {
+        final HashSetChartCell cell = (HashSetChartCell) c;
+        final short start = c.start();
+        final short end = c.end();
         final int spanWidth = end - start;
         Collection<Production> possibleProds;
         ChartEdge edge;

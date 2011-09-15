@@ -187,6 +187,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
                 p.chart.getCell(0, 3), p.chart.getCell(3, 4), -3.101f);
 
         p.unarySpmv(topCell);
+        topCell.finalizeCell();
         assertEquals(2, topCell.getNumNTs());
 
         final ChartEdge topEdge = topCell.getBestEdge(g.mapNonterminal("ROOT"));
@@ -328,8 +329,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         ChartCell cell = chart.getCell(0, 5);
         cell.updateInside(new Production("S", "NP", "VP", -5.37528f, g), chart.getCell(0, 3), chart.getCell(3, 5),
                 -5.37528f);
-
         p.unarySpmv(cell);
+        cell.finalizeCell();
 
         // We expect a single entry to have been added for 'ROOT -> S'
         assertEquals(2, cell.getNumNTs());
@@ -347,6 +348,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
                 -5.66296f);
 
         p.unarySpmv(cell);
+        cell.finalizeCell();
 
         // We expect two entries to have been added for 'ROOT -> S' and 'VP|VB -> NP'
         assertEquals(4, cell.getNumNTs());

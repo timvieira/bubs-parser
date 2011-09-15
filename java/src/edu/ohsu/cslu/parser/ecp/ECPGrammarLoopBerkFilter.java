@@ -29,6 +29,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 /**
  * Exhaustive chart parser which performs grammar intersection by iterating over a filtered list of grammar rules at
@@ -73,13 +74,13 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
     }
 
     @Override
-    protected void addLexicalProductions(final int start) {
+    protected void addLexicalProductions(final ChartCell c) {
         Collection<Production> validProductions;
-        HashSetChartCell cell;
 
-        // add lexical productions and unary productions to the base cell of the chart
+        final HashSetChartCell cell = (HashSetChartCell) c;
+        final short start = cell.start();
+
         for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[start])) {
-            cell = chart.getCell(start, start + 1);
             cell.updateInside(chart.new ChartEdge(lexProd, cell));
             updateRuleConstraints(lexProd.parent, start, start + 1);
 
@@ -142,10 +143,12 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final ChartCell c) {
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final HashSetChartCell cell = chart.getCell(start, end);
+        final HashSetChartCell cell = (HashSetChartCell) c;
+        final short start = cell.start();
+        final short end = cell.end();
         HashSetChartCell leftCell, rightCell;
         ChartEdge oldBestEdge;
         float prob, leftInside, rightInside;

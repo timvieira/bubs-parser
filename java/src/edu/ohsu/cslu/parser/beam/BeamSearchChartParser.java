@@ -37,6 +37,7 @@ import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel.PerceptronBeam
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 /**
  * Beam search chart parser which performs grammar intersection by iterating over grammar rules matching the observed
@@ -150,7 +151,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             while (cellSelector.hasNext()) {
 
                 final short[] startAndEnd = cellSelector.next();
-                computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
+                computeInsideProbabilities(null);
 
                 parseTask.totalPushes += cellPushed;
                 parseTask.totalPops += cellPopped;
@@ -169,8 +170,10 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
-        final HashSetChartCell cell = chart.getCell(start, end);
+    protected void computeInsideProbabilities(final ChartCell c) {
+        final HashSetChartCell cell = (HashSetChartCell) c;
+        final short start = cell.start();
+        final short end = cell.end();
         ChartEdge edge;
         initCell(start, end);
         final boolean hasCellConstraints = cellSelector.hasCellConstraints();

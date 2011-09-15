@@ -27,6 +27,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 /**
  * @author Nathan Bodenstab
@@ -38,12 +39,11 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
     }
 
     @Override
-    protected void addLexicalProductions(final int start) {
-        HashSetChartCell cell;
+    protected void addLexicalProductions(final ChartCell c) {
+        final HashSetChartCell cell = (HashSetChartCell) c;
 
         // add lexical productions to the base cells of the chart
-        cell = chart.getCell(start, start + 1);
-        for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[start])) {
+        for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[c.start()])) {
             cell.updateInside(chart.new ChartEdge(lexProd, cell));
 
             // NOTE: also adding unary prods here...should probably change the name of this
@@ -56,8 +56,11 @@ public class BSCPSkipBaseCells extends BeamSearchChartParser<LeftHashGrammar, Ce
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
-        final HashSetChartCell cell = chart.getCell(start, end);
+    protected void computeInsideProbabilities(final ChartCell c) {
+        final HashSetChartCell cell = (HashSetChartCell) c;
+        final short start = c.start();
+        final short end = c.end();
+
         Collection<Production> possibleProds;
         ChartEdge edge;
 

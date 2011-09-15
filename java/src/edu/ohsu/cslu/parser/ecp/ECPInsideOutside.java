@@ -31,6 +31,7 @@ import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
+import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
 
@@ -92,7 +93,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
         while (cellSelector.hasNext()) {
             final short[] startEnd = cellSelector.next();
-            computeInsideProbabilities(startEnd[0], startEnd[1]);
+            computeInsideProbabilities(null);
             topDownTraversal.addFirst(chart.getCell(startEnd[0], startEnd[1]));
         }
 
@@ -473,13 +474,10 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
-        computeInsideProbsInCell(chart.getCell(start, end));
-    }
-
-    protected void computeInsideProbsInCell(final ChartCell cell) {
+    protected void computeInsideProbabilities(final edu.ohsu.cslu.parser.chart.Chart.ChartCell c) {
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
+        final HashSetChartCell cell = (HashSetChartCell) c;
         final int start = cell.start(), end = cell.end();
         float insideScore;
 

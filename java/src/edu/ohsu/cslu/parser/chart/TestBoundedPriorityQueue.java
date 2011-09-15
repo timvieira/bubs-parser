@@ -73,37 +73,37 @@ public class TestBoundedPriorityQueue {
     @Test
     public void testInsert() {
         // Verify insertions from setUp()
-        assertEquals(3, queue.parentIndices[0]);
+        assertEquals(3, queue.nts[0]);
         assertEquals(-1f, queue.foms[0], .001f);
 
-        assertEquals(2, queue.parentIndices[1]);
+        assertEquals(2, queue.nts[1]);
         assertEquals(-2f, queue.foms[1], .001f);
 
-        assertEquals(1, queue.parentIndices[2]);
+        assertEquals(1, queue.nts[2]);
         assertEquals(-3f, queue.foms[2], .001f);
 
-        assertEquals(5, queue.parentIndices[3]);
+        assertEquals(5, queue.nts[3]);
         assertEquals(-4f, queue.foms[3], .001f);
 
-        assertEquals(4, queue.parentIndices[4]);
+        assertEquals(4, queue.nts[4]);
         assertEquals(-5f, queue.foms[4], .001f);
 
         // Verify that the queue properly accepts new insertions and rejects insertions below the lowest entry
         assertFalse(queue.insert((short) 8, -8f));
         assertFalse(queue.insert((short) 6, -5f));
         assertTrue(queue.insert((short) 6, -4.9f));
-        assertEquals(6, queue.parentIndices[4]);
+        assertEquals(6, queue.nts[4]);
         assertEquals(-4.9f, queue.foms[4], .001f);
     }
 
     @Test
     public void testReplace() {
-        assertEquals(3, queue.parentIndices[queue.headIndex()]);
+        assertEquals(3, queue.nts[queue.headIndex()]);
         assertEquals(-1f, queue.foms[queue.headIndex()], 0.001f);
 
         // Replace the head
         queue.replace((short) 3, -.5f);
-        assertEquals(3, queue.parentIndices[queue.headIndex()]);
+        assertEquals(3, queue.nts[queue.headIndex()]);
         assertEquals(-.5f, queue.foms[queue.headIndex()], 0.001f);
 
         // An entry not present in the queue
@@ -117,7 +117,7 @@ public class TestBoundedPriorityQueue {
         queue.popHead(); // 3
         queue.popHead(); // 2
         queue.popHead(); // 1
-        assertEquals(5, queue.parentIndices[queue.headIndex()]);
+        assertEquals(5, queue.nts[queue.headIndex()]);
         assertEquals(-2f, queue.foms[queue.headIndex()], 0.001f);
 
         // And an entry present with a higher FOM, now that the queue is not full
@@ -125,13 +125,13 @@ public class TestBoundedPriorityQueue {
 
         // Replace the tail entry
         assertTrue(queue.replace((short) 4, -1f));
-        assertEquals(4, queue.parentIndices[queue.headIndex() + 1]);
+        assertEquals(4, queue.nts[queue.headIndex() + 1]);
         assertEquals(-1f, queue.foms[queue.headIndex() + 1], 0.001f);
 
         // Replace an entry that is both head and tail
         queue.popHead();
         assertTrue(queue.replace((short) 4, -0.5f));
-        assertEquals(4, queue.parentIndices[queue.headIndex()]);
+        assertEquals(4, queue.nts[queue.headIndex()]);
         assertEquals(-0.5f, queue.foms[queue.headIndex()], 0.001f);
 
         // Now try to replace in an empty queue
@@ -141,7 +141,7 @@ public class TestBoundedPriorityQueue {
 
     @Test
     public void testHeadIndex() {
-        assertEquals(3, queue.parentIndices[queue.headIndex()]);
+        assertEquals(3, queue.nts[queue.headIndex()]);
         assertEquals(-1f, queue.foms[queue.headIndex()], 0.001f);
     }
 
@@ -152,23 +152,23 @@ public class TestBoundedPriorityQueue {
         assertEquals(4, queue.size());
 
         // The second-most-probable entry should now be the head
-        assertEquals(2, queue.parentIndices[queue.headIndex()]);
+        assertEquals(2, queue.nts[queue.headIndex()]);
         assertEquals(-2f, queue.foms[queue.headIndex()], 0.001f);
 
         // Continue popping
         assertTrue(queue.popHead());
         assertEquals(3, queue.size());
-        assertEquals(1, queue.parentIndices[queue.headIndex()]);
+        assertEquals(1, queue.nts[queue.headIndex()]);
         assertEquals(-3f, queue.foms[queue.headIndex()], 0.001f);
 
         assertTrue(queue.popHead());
         assertEquals(2, queue.size());
-        assertEquals(5, queue.parentIndices[queue.headIndex()]);
+        assertEquals(5, queue.nts[queue.headIndex()]);
         assertEquals(-4f, queue.foms[queue.headIndex()], 0.001f);
 
         assertTrue(queue.popHead());
         assertEquals(1, queue.size());
-        assertEquals(4, queue.parentIndices[queue.headIndex()]);
+        assertEquals(4, queue.nts[queue.headIndex()]);
         assertEquals(-5f, queue.foms[queue.headIndex()], 0.001f);
 
         assertTrue(queue.popHead());

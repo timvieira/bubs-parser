@@ -517,13 +517,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     }
 
     @Override
-    protected void output(final ParseTask parseResult) {
-        if (parseResult != null) {
-            parseResult.evaluate(evaluator);
-            System.out.println(parseResult.parseBracketString(binaryTreeOutput, printUnkLabels)
-                    + parseResult.statsString());
+    protected void output(final ParseTask parseTask) {
+        if (parseTask != null) {
+            parseTask.evaluate(evaluator);
+            System.out.println(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels)
+                    + parseTask.statsString());
             sentencesParsed++;
-            if (parseResult.parseFailed()) {
+            if (parseTask.parseFailed()) {
                 failedParses++;
             }
         }

@@ -31,6 +31,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.util.Strings;
 
@@ -109,8 +110,10 @@ public class WeightedFeatures extends FigureOfMerit {
         }
 
         @Override
-        protected void computeInsideProbabilities(final short start, final short end) {
-            final HashSetChartCell cell = chart.getCell(start, end);
+        protected void computeInsideProbabilities(final ChartCell c) {
+            final HashSetChartCell cell = (HashSetChartCell) c;
+            final short start = cell.start();
+            final short end = cell.end();
             float leftInside, rightInside;
             ChartEdge edge;
 

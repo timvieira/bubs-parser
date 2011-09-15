@@ -22,6 +22,7 @@ import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 
 /**
  * {@link SparseMatrixVectorParser} which uses a sparse grammar stored in CSC format (
@@ -43,21 +44,22 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
 
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) chartCell;
         targetCell.allocateTemporaryStorage();
+        final TemporaryChartCell tmpCell = targetCell.tmpCell;
 
         if (cellSelector.hasCellConstraints()
                 && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end())) {
             // Multiply by the factored grammar rule matrix
             binarySpmvMultiply(cartesianProductVector, grammar.factoredCscBinaryPopulatedColumns,
                     grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
-                    grammar.factoredCscBinaryProbabilities, targetCell.tmpPackedChildren,
-                    targetCell.tmpInsideProbabilities, targetCell.tmpMidpoints, 0,
+                    grammar.factoredCscBinaryProbabilities, tmpCell.packedChildren,
+                    tmpCell.insideProbabilities, tmpCell.midpoints, 0,
                     grammar.cscBinaryPopulatedColumns.length);
         } else {
             // Multiply by the main grammar rule matrix
             binarySpmvMultiply(cartesianProductVector, grammar.cscBinaryPopulatedColumns,
                     grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
-                    grammar.cscBinaryProbabilities, targetCell.tmpPackedChildren, targetCell.tmpInsideProbabilities,
-                    targetCell.tmpMidpoints, 0, grammar.cscBinaryPopulatedColumns.length);
+                    grammar.cscBinaryProbabilities, tmpCell.packedChildren,
+                    tmpCell.insideProbabilities, tmpCell.midpoints, 0, grammar.cscBinaryPopulatedColumns.length);
         }
     }
 

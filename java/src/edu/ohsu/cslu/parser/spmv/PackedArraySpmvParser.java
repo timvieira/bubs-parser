@@ -28,13 +28,15 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
 /**
- * Base class for CSC and CSR SpMV parsers.
+ * Base class for CSC and CSR SpMV parsers. Implements cell-level parallelization.
  * 
  * @author Aaron Dunlop
  * @since Dec 23, 2010
@@ -110,20 +112,33 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         super.initSentence(parseTask);
     }
 
+    /**
+     * Executes the inside / viterbi parsing pass. Overrides {@link ChartParser#insidePass()} to move population of
+     * lexical entries into {@link #internalComputeInsideProbabilities(PackedArrayChartCell)}.
+     */
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected final void insidePass() {
+        while (cellSelector.hasNext()) {
+            final short[] startAndEnd = cellSelector.next();
+            final ChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
+            computeInsideProbabilities(cell);
+        }
+    }
+
+    @Override
+    protected void computeInsideProbabilities(final ChartCell cell) {
 
         if (threadPool != null && rowThreads > 1) {
             currentTasks.add(threadPool.submit(new Runnable() {
 
                 @Override
                 public void run() {
-                    internalComputeInsideProbabilities(start, end);
+                    internalComputeInsideProbabilities((PackedArrayChartCell) cell);
                 }
             }));
 
         } else {
-            internalComputeInsideProbabilities(start, end);
+            internalComputeInsideProbabilities((PackedArrayChartCell) cell);
         }
     }
 
@@ -138,15 +153,21 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
     }
 
     @Override
-    protected final void internalComputeInsideProbabilities(final short start, final short end) {
+    protected final void internalComputeInsideProbabilities(final PackedArrayChartCell spvChartCell) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
         long t1 = t0, t2 = t0;
 
-        final PackedArrayChartCell spvChartCell = chart.getCell(start, end);
+        final short start = spvChartCell.start();
+        final short end = spvChartCell.end();
 
-        // Skip binary grammar intersection for span-1 cells
-        if (end - start > 1) {
+        // Add lexical productions for span-1 cells
+        if (end - start == 1) {
+            addLexicalProductions(spvChartCell);
+        }
+
+        // And perform binary grammar intersection for span > 1 cells
+        else {
             final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
 
             if (collectDetailedStatistics) {
@@ -178,12 +199,8 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
                 spvChartCell.finalizeCell();
 
             } else {
-                final int[] cellPackedChildren = new int[grammar.numNonTerms()];
-                final float[] cellInsideProbabilities = new float[grammar.numNonTerms()];
-                final short[] cellMidpoints = new short[grammar.numNonTerms()];
-                unaryAndPruning(spvChartCell, start, end, cellPackedChildren, cellInsideProbabilities, cellMidpoints);
-
-                spvChartCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+                unaryAndPruning(spvChartCell, start, end);
+                spvChartCell.finalizeCell();
             }
         }
 

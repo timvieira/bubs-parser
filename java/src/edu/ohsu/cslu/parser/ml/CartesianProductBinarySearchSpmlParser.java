@@ -23,6 +23,7 @@ import java.util.Arrays;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 
@@ -49,15 +50,14 @@ public class CartesianProductBinarySearchSpmlParser extends
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final ChartCell cell) {
 
         final PackingFunction cpf = grammar.cartesianProductFunction();
-        final PackedArrayChartCell targetCell = chart.getCell(start, end);
+        final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
+        final short start = cell.start();
+        final short end = cell.end();
         targetCell.allocateTemporaryStorage();
-
-        final int[] targetCellChildren = targetCell.tmpPackedChildren;
-        final float[] targetCellProbabilities = targetCell.tmpInsideProbabilities;
-        final short[] targetCellMidpoints = targetCell.tmpMidpoints;
+        final PackedArrayChart.TemporaryChartCell tmpCell = targetCell.tmpCell;
 
         // Iterate over all possible midpoints
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
@@ -105,10 +105,10 @@ public class CartesianProductBinarySearchSpmlParser extends
                         final float jointProbability = grammar.cscBinaryProbabilities[k] + childProbability;
                         final int parent = grammar.cscBinaryRowIndices[k];
 
-                        if (jointProbability > targetCellProbabilities[parent]) {
-                            targetCellChildren[parent] = childPair;
-                            targetCellProbabilities[parent] = jointProbability;
-                            targetCellMidpoints[parent] = midpoint;
+                        if (jointProbability > tmpCell.insideProbabilities[parent]) {
+                            tmpCell.packedChildren[parent] = childPair;
+                            tmpCell.insideProbabilities[parent] = jointProbability;
+                            tmpCell.midpoints[parent] = midpoint;
                         }
                     }
                 }

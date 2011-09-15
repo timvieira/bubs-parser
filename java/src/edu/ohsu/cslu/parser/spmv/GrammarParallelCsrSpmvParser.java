@@ -245,9 +245,9 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
             }
 
             if (winningProbability != Float.NEGATIVE_INFINITY) {
-                packedArrayCell.tmpPackedChildren[parent] = winningChildren;
-                packedArrayCell.tmpInsideProbabilities[parent] = winningProbability;
-                packedArrayCell.tmpMidpoints[parent] = winningMidpoint;
+                packedArrayCell.tmpCell.packedChildren[parent] = winningChildren;
+                packedArrayCell.tmpCell.insideProbabilities[parent] = winningProbability;
+                packedArrayCell.tmpCell.midpoints[parent] = winningMidpoint;
             }
         }
     }
