@@ -26,8 +26,8 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
-import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 
 /**
  * A class of parser which performs the grammar intersection in each cell by:
@@ -86,20 +86,26 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
-        internalComputeInsideProbabilities(start, end);
+    protected void computeInsideProbabilities(final ChartCell cell) {
+        internalComputeInsideProbabilities((PackedArrayChartCell) cell);
     }
 
-    protected void internalComputeInsideProbabilities(final short start, final short end) {
-
-        final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
+    protected void internalComputeInsideProbabilities(final PackedArrayChartCell spvChartCell) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
         long t1 = t0;
         long t2 = t0;
 
-        // Skip binary grammar intersection for span-1 cells
-        if (end - start > 1) {
+        final short start = spvChartCell.start();
+        final short end = spvChartCell.end();
+
+        // Add lexical productions for span-1 cells
+        if (end - start == 1) {
+            addLexicalProductions(spvChartCell);
+        }
+
+        // And perform binary grammar intersection for span > 1 cells
+        else {
             final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
 
             if (collectDetailedStatistics) {
@@ -136,8 +142,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
             sentenceCellPopulation += spvChartCell.getNumNTs();
             if (spvChartCell instanceof PackedArrayChartCell) {
-                sentenceLeftChildPopulation += ((PackedArrayChartCell) spvChartCell).leftChildren();
-                sentenceRightChildPopulation += ((PackedArrayChartCell) spvChartCell).rightChildren();
+                sentenceLeftChildPopulation += spvChartCell.leftChildren();
+                sentenceRightChildPopulation += spvChartCell.rightChildren();
             }
         }
 
@@ -162,13 +168,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
-
-        final int[] chartCellChildren = packedArrayCell.tmpPackedChildren;
-        final float[] chartCellProbabilities = packedArrayCell.tmpInsideProbabilities;
-        final short[] chartCellMidpoints = packedArrayCell.tmpMidpoints;
-        final short chartCellEnd = chartCell.end();
-
-        unarySpmv(chartCellChildren, chartCellProbabilities, chartCellMidpoints, 0, chartCellEnd);
+        final TemporaryChartCell tmpCell = packedArrayCell.tmpCell;
+        unarySpmv(tmpCell.packedChildren, tmpCell.insideProbabilities, tmpCell.midpoints, 0, chartCell.end());
     }
 
     /**

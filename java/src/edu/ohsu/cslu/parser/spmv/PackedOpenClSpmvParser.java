@@ -141,9 +141,9 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
         // TODO This doesn't really belong in an internal method
         // Copy temporary cell contents from device memory into the cell's temporary storage
         packedChartCell.allocateTemporaryStorage();
-        OpenClUtils.copyFromDevice(clQueue, clTmpCellInsideProbabilities, packedChartCell.tmpInsideProbabilities);
-        OpenClUtils.copyFromDevice(clQueue, clTmpCellPackedChildren, packedChartCell.tmpPackedChildren);
-        OpenClUtils.copyFromDevice(clQueue, clTmpCellMidpoints, packedChartCell.tmpMidpoints);
+        OpenClUtils.copyFromDevice(clQueue, clTmpCellInsideProbabilities, packedChartCell.tmpCell.insideProbabilities);
+        OpenClUtils.copyFromDevice(clQueue, clTmpCellPackedChildren, packedChartCell.tmpCell.packedChildren);
+        OpenClUtils.copyFromDevice(clQueue, clTmpCellMidpoints, packedChartCell.tmpCell.midpoints);
     }
 
     @Override
@@ -153,9 +153,9 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
 
         // TODO This doesn't really belong in an internal method
         packedChartCell.allocateTemporaryStorage();
-        OpenClUtils.copyToDevice(clQueue, clTmpCellInsideProbabilities, packedChartCell.tmpInsideProbabilities);
-        OpenClUtils.copyToDevice(clQueue, clTmpCellPackedChildren, packedChartCell.tmpPackedChildren);
-        OpenClUtils.copyToDevice(clQueue, clTmpCellMidpoints, packedChartCell.tmpMidpoints);
+        OpenClUtils.copyToDevice(clQueue, clTmpCellInsideProbabilities, packedChartCell.tmpCell.insideProbabilities);
+        OpenClUtils.copyToDevice(clQueue, clTmpCellPackedChildren, packedChartCell.tmpCell.packedChildren);
+        OpenClUtils.copyToDevice(clQueue, clTmpCellMidpoints, packedChartCell.tmpCell.midpoints);
 
         // Bind the arguments of the OpenCL kernel
         unarySpmvKernel.setArgs(clTmpCellInsideProbabilities, clTmpCellPackedChildren, clTmpCellMidpoints,
@@ -169,9 +169,9 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
 
         // TODO This doesn't really belong in an internal method
         // Copy temporary cell contents from device memory into the cell's temporary storage
-        OpenClUtils.copyFromDevice(clQueue, clTmpCellInsideProbabilities, packedChartCell.tmpInsideProbabilities);
-        OpenClUtils.copyFromDevice(clQueue, clTmpCellPackedChildren, packedChartCell.tmpPackedChildren);
-        OpenClUtils.copyFromDevice(clQueue, clTmpCellMidpoints, packedChartCell.tmpMidpoints);
+        OpenClUtils.copyFromDevice(clQueue, clTmpCellInsideProbabilities, packedChartCell.tmpCell.insideProbabilities);
+        OpenClUtils.copyFromDevice(clQueue, clTmpCellPackedChildren, packedChartCell.tmpCell.packedChildren);
+        OpenClUtils.copyFromDevice(clQueue, clTmpCellMidpoints, packedChartCell.tmpCell.midpoints);
     }
 
     @Override
@@ -195,7 +195,6 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
         clQueue.finish();
 
         // We still have to compute min and max indices on the CPU
-        packedCell.clearTemporaryStorage();
         copyChartFromDevice();
         packedCell.allocateTemporaryStorage();
         packedCell.finalizeCell();

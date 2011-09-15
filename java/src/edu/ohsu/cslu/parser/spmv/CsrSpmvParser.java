@@ -42,8 +42,8 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
 
         final PackedArrayChartCell packedArrayCell = (PackedArrayChartCell) chartCell;
         packedArrayCell.allocateTemporaryStorage();
-        binarySpmvMultiply(cartesianProductVector, packedArrayCell.tmpPackedChildren,
-                packedArrayCell.tmpInsideProbabilities, packedArrayCell.tmpMidpoints);
+        binarySpmvMultiply(cartesianProductVector, packedArrayCell.tmpCell.packedChildren,
+                packedArrayCell.tmpCell.insideProbabilities, packedArrayCell.tmpCell.midpoints);
     }
 
     protected final void binarySpmvMultiply(final CartesianProductVector cartesianProductVector,

@@ -9,6 +9,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.InsideOutsideChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.util.Math;
@@ -62,17 +63,19 @@ public class InsideOutsideCphSpmlParser extends
      * Identical to {@link CartesianProductHashSpmlParser}, but computes sum instead of viterbi max.
      */
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final ChartCell cell) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
         final PackingFunction cpf = grammar.cartesianProductFunction();
-        final PackedArrayChartCell targetCell = chart.getCell(start, end);
+        final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
+        final short start = cell.start();
+        final short end = cell.end();
         targetCell.allocateTemporaryStorage();
 
-        final int[] targetCellChildren = targetCell.tmpPackedChildren;
-        final float[] targetCellProbabilities = targetCell.tmpInsideProbabilities;
-        final short[] targetCellMidpoints = targetCell.tmpMidpoints;
+        final int[] targetCellChildren = targetCell.tmpCell.packedChildren;
+        final float[] targetCellProbabilities = targetCell.tmpCell.insideProbabilities;
+        final short[] targetCellMidpoints = targetCell.tmpCell.midpoints;
 
         final float[] maxInsideProbabilities = new float[targetCellProbabilities.length];
         Arrays.fill(maxInsideProbabilities, Float.NEGATIVE_INFINITY);
@@ -139,6 +142,7 @@ public class InsideOutsideCphSpmlParser extends
         // targetCell.finalizeCell();
     }
 
+    @Override
     protected void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
@@ -148,7 +152,7 @@ public class InsideOutsideCphSpmlParser extends
                 && cellSelector.getCellConstraints().isCellOnlyFactored(start, end) && (end - start > 1);
         final boolean allowUnaries = !cellSelector.hasCellConstraints()
                 || cellSelector.getCellConstraints().isUnaryOpen(start, end);
-        final float minInsideProbability = edu.ohsu.cslu.util.Math.max(spvChartCell.tmpInsideProbabilities)
+        final float minInsideProbability = edu.ohsu.cslu.util.Math.max(spvChartCell.tmpCell.insideProbabilities)
                 - maxLocalDelta;
 
         // We will push all binary or lexical edges onto a bounded priority queue, and then (if unaries are allowed),
@@ -159,7 +163,7 @@ public class InsideOutsideCphSpmlParser extends
         q.clear(cellBeamWidth);
 
         final float[] maxInsideProbabilities = new float[grammar.numNonTerms()];
-        System.arraycopy(spvChartCell.tmpInsideProbabilities, 0, maxInsideProbabilities, 0,
+        System.arraycopy(spvChartCell.tmpCell.insideProbabilities, 0, maxInsideProbabilities, 0,
                 maxInsideProbabilities.length);
 
         // If unaries are allowed in this cell, compute unary probabilities for all possible parents
@@ -171,7 +175,7 @@ public class InsideOutsideCphSpmlParser extends
             final int[] viterbiUnaryPackedChildren = new int[grammar.numNonTerms()];
 
             for (short child = 0; child < grammar.numNonTerms(); child++) {
-                final float insideProbability = spvChartCell.tmpInsideProbabilities[child];
+                final float insideProbability = spvChartCell.tmpCell.insideProbabilities[child];
                 if (insideProbability == Float.NEGATIVE_INFINITY) {
                     continue;
                 }
@@ -197,7 +201,7 @@ public class InsideOutsideCphSpmlParser extends
                 if (unaryInsideProbabilities[nt] != Float.NEGATIVE_INFINITY
                         && unaryInsideProbabilities[nt] >= maxInsideProbabilities[nt]) {
                     maxInsideProbabilities[nt] = unaryInsideProbabilities[nt];
-                    spvChartCell.tmpPackedChildren[nt] = viterbiUnaryPackedChildren[nt];
+                    spvChartCell.tmpCell.packedChildren[nt] = viterbiUnaryPackedChildren[nt];
                 }
             }
         }
@@ -226,14 +230,14 @@ public class InsideOutsideCphSpmlParser extends
             }
         }
 
-        Arrays.fill(spvChartCell.tmpInsideProbabilities, Float.NEGATIVE_INFINITY);
+        Arrays.fill(spvChartCell.tmpCell.insideProbabilities, Float.NEGATIVE_INFINITY);
 
         // Pop n edges off the queue into the temporary cell storage.
         for (final int edgesPopulated = 0; edgesPopulated < cellBeamWidth && q.size() > 0;) {
 
             final int headIndex = q.headIndex();
-            final short nt = q.parentIndices[headIndex];
-            spvChartCell.tmpInsideProbabilities[nt] = maxInsideProbabilities[nt];
+            final short nt = q.nts[headIndex];
+            spvChartCell.tmpCell.insideProbabilities[nt] = maxInsideProbabilities[nt];
             q.popHead();
         }
 

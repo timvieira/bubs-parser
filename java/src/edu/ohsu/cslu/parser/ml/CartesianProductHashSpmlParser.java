@@ -21,8 +21,10 @@ package edu.ohsu.cslu.parser.ml;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 
 /**
  * Exhaustive matrix-loop parser which performs grammar intersection by iterating over grammar rules matching the
@@ -39,9 +41,15 @@ public class CartesianProductHashSpmlParser extends
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final ChartCell cell) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
+        final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
+        final short start = cell.start();
+        final short end = cell.end();
+        targetCell.allocateTemporaryStorage();
+        final TemporaryChartCell tmpCell = targetCell.tmpCell;
 
         final boolean factoredOnly = cellSelector.hasCellConstraints()
                 && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
@@ -54,12 +62,6 @@ public class CartesianProductHashSpmlParser extends
                 : grammar.cscBinaryRowIndices;
 
         final PackingFunction cpf = grammar.cartesianProductFunction();
-        final PackedArrayChartCell targetCell = chart.getCell(start, end);
-        targetCell.allocateTemporaryStorage();
-
-        final int[] targetCellChildren = targetCell.tmpPackedChildren;
-        final float[] targetCellProbabilities = targetCell.tmpInsideProbabilities;
-        final short[] targetCellMidpoints = targetCell.tmpMidpoints;
 
         // Iterate over all possible midpoints
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
@@ -91,10 +93,10 @@ public class CartesianProductHashSpmlParser extends
                         final float jointProbability = binaryProbabilities[k] + childProbability;
                         final int parent = binaryRowIndices[k];
 
-                        if (jointProbability > targetCellProbabilities[parent]) {
-                            targetCellChildren[parent] = column;
-                            targetCellProbabilities[parent] = jointProbability;
-                            targetCellMidpoints[parent] = midpoint;
+                        if (jointProbability > tmpCell.insideProbabilities[parent]) {
+                            tmpCell.packedChildren[parent] = column;
+                            tmpCell.insideProbabilities[parent] = jointProbability;
+                            tmpCell.midpoints[parent] = midpoint;
                         }
                     }
                 }
@@ -110,12 +112,8 @@ public class CartesianProductHashSpmlParser extends
             unarySpmv(targetCell);
             targetCell.finalizeCell();
         } else {
-            final int[] cellPackedChildren = new int[grammar.numNonTerms()];
-            final float[] cellInsideProbabilities = new float[grammar.numNonTerms()];
-            final short[] cellMidpoints = new short[grammar.numNonTerms()];
-            unaryAndPruning(targetCell, start, end, cellPackedChildren, cellInsideProbabilities, cellMidpoints);
-
-            targetCell.finalizeCell(cellPackedChildren, cellInsideProbabilities, cellMidpoints);
+            unaryAndPruning(targetCell, start, end);
+            targetCell.finalizeCell();
         }
     }
 }

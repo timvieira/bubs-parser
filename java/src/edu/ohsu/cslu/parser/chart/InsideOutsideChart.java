@@ -354,9 +354,6 @@ public class InsideOutsideChart extends PackedArrayChart {
 
     @Override
     public InsideOutsideChartCell getCell(final int start, final int end) {
-        if (temporaryCells[start][end] != null) {
-            return (InsideOutsideChartCell) temporaryCells[start][end];
-        }
         return new InsideOutsideChartCell(start, end);
     }
 
@@ -378,7 +375,6 @@ public class InsideOutsideChart extends PackedArrayChart {
 
         public InsideOutsideChartCell(final int start, final int end) {
             super(start, end);
-            temporaryCells[start][end] = this;
         }
 
         @Override
@@ -426,7 +422,7 @@ public class InsideOutsideChart extends PackedArrayChart {
 
             sb.append('\n');
 
-            if (tmpPackedChildren == null) {
+            if (tmpCell == null) {
                 // Format entries from the main chart array
                 for (int index = offset; index < offset + numNonTerminals[cellIndex]; index++) {
                     final int childProductions = packedChildren[index];
@@ -443,11 +439,11 @@ public class InsideOutsideChart extends PackedArrayChart {
                 // Format entries from temporary cell storage
                 for (int nonTerminal = 0; nonTerminal < sparseMatrixGrammar.numNonTerms(); nonTerminal++) {
 
-                    if (tmpInsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
-                        final int childProductions = tmpPackedChildren[nonTerminal];
-                        final float insideProbability = tmpInsideProbabilities[nonTerminal];
+                    if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
+                        final int childProductions = tmpCell.packedChildren[nonTerminal];
+                        final float insideProbability = tmpCell.insideProbabilities[nonTerminal];
                         final float outsideProbability = tmpOutsideProbabilities[nonTerminal];
-                        final int midpoint = tmpMidpoints[nonTerminal];
+                        final int midpoint = tmpCell.midpoints[nonTerminal];
 
                         sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint,
                                 outsideProbability, formatFractions));

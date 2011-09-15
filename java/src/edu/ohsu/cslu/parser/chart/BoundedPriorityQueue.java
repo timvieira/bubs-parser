@@ -38,14 +38,14 @@ import edu.ohsu.cslu.grammar.Grammar;
  * @author Aaron Dunlop
  * @since Sep 10, 2010
  */
-public class BoundedPriorityQueue {
+public final class BoundedPriorityQueue {
 
     /**
      * Parallel array storing a bounded cell population (parents and a figure-of-merit for each). Analagous to
      * {@link ParallelArrayChart#insideProbabilities} and {@link PackedArrayChart#nonTerminalIndices}. The most probable
      * entry should be stored in index 0.
      */
-    public final short[] parentIndices;
+    public final short[] nts;
     public final float[] foms;
 
     /** The array index of the head (maximum-probability) entry. */
@@ -63,7 +63,7 @@ public class BoundedPriorityQueue {
     public BoundedPriorityQueue(final int maxSize, final Grammar grammar) {
         foms = new float[maxSize];
         Arrays.fill(foms, Float.NEGATIVE_INFINITY);
-        parentIndices = new short[maxSize];
+        nts = new short[maxSize];
         this.grammar = grammar;
         this.maxTail = maxSize - 1;
     }
@@ -79,9 +79,9 @@ public class BoundedPriorityQueue {
     public void setMaxSize(final int maxSize) {
         final int currentMaxSize = maxTail - head + 1;
         if (maxSize != currentMaxSize) {
-            if (maxSize > parentIndices.length) {
+            if (maxSize > nts.length) {
                 throw new IllegalArgumentException("Specified size (" + maxSize + ") exceeds storage capacity ("
-                        + parentIndices.length + ")");
+                        + nts.length + ")");
             }
             if (maxSize < 0) {
                 throw new IllegalArgumentException("Negative size specified (" + maxSize + ")");
@@ -91,7 +91,7 @@ public class BoundedPriorityQueue {
             final int size = size();
             if (size > 0) {
                 for (int i = 0; i < size; i++) {
-                    parentIndices[i] = parentIndices[i + head];
+                    nts[i] = nts[i + head];
                     foms[i] = foms[i + head];
                 }
                 head = 0;
@@ -109,8 +109,6 @@ public class BoundedPriorityQueue {
         head = -1;
         tail = -1;
         maxTail = maxSize - 1;
-        Arrays.fill(foms, Float.NEGATIVE_INFINITY);
-        Arrays.fill(parentIndices, (short) 0);
     }
 
     /**
@@ -120,6 +118,15 @@ public class BoundedPriorityQueue {
      */
     public int headIndex() {
         return head;
+    }
+
+    /**
+     * Returns the array index of the tail (minimum-probability) entry.
+     * 
+     * @return the array index of the head (minimum-probability) entry.
+     */
+    public int tailIndex() {
+        return tail;
     }
 
     /**
@@ -140,11 +147,11 @@ public class BoundedPriorityQueue {
      * false if the entry did not fit into the queue (i.e., the queue is full and the figure-of-merit was less than the
      * lowest queue entry).
      * 
-     * @param parentIndex
+     * @param nt
      * @param fom
-     * @return true if the parent was inserted into the queue
+     * @return true if the non-terminal was inserted into the queue
      */
-    public boolean insert(final short parentIndex, final float fom) {
+    public boolean insert(final short nt, final float fom) {
 
         if (tail == maxTail) {
             // Ignore entries which are less probable than the minimum-priority entry
@@ -160,7 +167,7 @@ public class BoundedPriorityQueue {
         }
 
         foms[tail] = fom;
-        parentIndices[tail] = parentIndex;
+        nts[tail] = nt;
 
         // Bubble-sort the new entry into the queue
         for (int i = tail; i > head && foms[i - 1] < foms[i]; i--) {
@@ -174,17 +181,20 @@ public class BoundedPriorityQueue {
      * Replaces the figure-of-merit for a parent if the new FOM is greater than the current FOM. Returns true if the
      * parent was found and replaced.
      * 
-     * @param parentIndex
+     * TODO Maintain a boolean array of NTs which are currently on the queue and skip the linear search for an NT which
+     * isn't present?
+     * 
+     * @param nt
      * @param fom
-     * @return True if the parent was found and replaced.
+     * @return True if the non-terminal was found and replaced.
      */
-    public boolean replace(final short parentIndex, final float fom) {
+    public boolean replace(final short nt, final float fom) {
         if (fom <= foms[maxTail]) {
             return false;
         }
 
         for (int i = head; i <= tail; i++) {
-            if (parentIndices[i] == parentIndex) {
+            if (nts[i] == nt) {
                 if (fom > foms[i]) {
                     foms[i] = fom;
                     return true;
@@ -192,7 +202,7 @@ public class BoundedPriorityQueue {
                 return false;
             }
         }
-        return insert(parentIndex, fom);
+        return insert(nt, fom);
     }
 
     private void swap(final int i1, final int i2) {
@@ -200,9 +210,9 @@ public class BoundedPriorityQueue {
         foms[i1] = foms[i2];
         foms[i2] = t1;
 
-        final short t2 = parentIndices[i1];
-        parentIndices[i1] = parentIndices[i2];
-        parentIndices[i2] = t2;
+        final short t2 = nts[i1];
+        nts[i1] = nts[i2];
+        nts[i2] = t2;
     }
 
     public int size() {
@@ -215,9 +225,9 @@ public class BoundedPriorityQueue {
         if (head >= 0) {
             for (int i = head; i < tail; i++) {
                 if (grammar != null) {
-                    sb.append(String.format("%s %.3f\n", grammar.mapNonterminal(parentIndices[i]), foms[i]));
+                    sb.append(String.format("%s %.3f\n", grammar.mapNonterminal(nts[i]), foms[i]));
                 } else {
-                    sb.append(String.format("%d %.3f\n", parentIndices[i], foms[i]));
+                    sb.append(String.format("%d %.3f\n", nts[i], foms[i]));
                 }
             }
         }

@@ -39,6 +39,7 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.util.OpenClUtils;
@@ -172,9 +173,16 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         initSentence(parseTask);
         cellSelector.initSentence(this);
 
+        // For most parsers, we populate lexical entries during parsing, but for OpenCL parsers, we have to do it
+        // ahead-of-time so we can copy them to the GPU chart storage
+        for (int start = 0; start < chart.size(); start++) {
+            addLexicalProductions(chart.getCell(start, start + 1));
+        }
+        copyChartToDevice();
+
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
-            computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
+            computeInsideProbabilities(chart.getCell(startAndEnd[0], startAndEnd[1]));
         }
 
         copyChartFromDevice();
@@ -212,19 +220,20 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     // }
 
     /**
-     * TODO If possible, merge or share code with
-     * {@link SparseMatrixVectorParser#computeInsideProbabilities(short, short)}
+     * TODO If possible, merge or share code with {@link SparseMatrixVectorParser#computeInsideProbabilities(ChartCell)}
      */
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final ChartCell cell) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final ParallelArrayChartCell spvChartCell = chart.getCell(start, end);
+        final DenseVectorChartCell spvChartCell = (DenseVectorChartCell) cell;
+        final short start = cell.start();
+        final short end = cell.end();
 
         long t2 = 0;
 
-        // Skip binary grammar intersection for span-1 cells
+        // Perform binary grammar intersection for span > 1 cells
         if (end - start > 1) {
 
             internalCartesianProductUnion(start, end);

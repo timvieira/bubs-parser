@@ -268,5 +268,10 @@ public abstract class ParallelArrayChart extends Chart {
         }
 
         public abstract String toString(final boolean formatFractions);
+
+        @Override
+        public String toString() {
+            return toString(false);
+        }
     }
 }

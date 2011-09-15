@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser.ml;
 
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 
@@ -36,11 +37,13 @@ public class RightChildLoopSpmlParser extends SparseMatrixLoopParser<RightCscSpa
     }
 
     @Override
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final ChartCell cell) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final DenseVectorChartCell targetCell = chart.getCell(start, end);
+        final DenseVectorChartCell targetCell = (DenseVectorChartCell) cell;
+        final short start = cell.start();
+        final short end = cell.end();
         final int targetCellOffset = targetCell.offset();
 
         final int v = grammar.numNonTerms();

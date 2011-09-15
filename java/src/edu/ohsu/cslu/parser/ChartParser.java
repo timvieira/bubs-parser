@@ -85,10 +85,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         chart = (C) new CellChart(parseTask, this);
     }
 
-    protected void addLexicalProductions(final int start) {
+    protected void addLexicalProductions(final ChartCell cell) {
         // add lexical productions to the a base cells of the chart
-        final ChartCell cell = chart.getCell(start, start + 1);
-        for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[start])) {
+        for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[cell.start()])) {
             cell.updateInside(lexProd, cell, null, lexProd.prob);
         }
     }
@@ -96,13 +95,14 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     /**
      * Executes the inside / viterbi parsing pass
      */
-    protected final void insidePass() {
+    protected void insidePass() {
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
+            final ChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
             if (startAndEnd[1] - startAndEnd[0] == 1) {
-                addLexicalProductions(startAndEnd[0]);
+                addLexicalProductions(cell);
             }
-            computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
+            computeInsideProbabilities(cell);
         }
     }
 
@@ -120,10 +120,9 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     /**
      * Each subclass will implement this method to perform the inner-loop grammar intersection.
      * 
-     * @param start
-     * @param end
+     * @param cell The cell to populate
      */
-    protected abstract void computeInsideProbabilities(short start, short end);
+    protected abstract void computeInsideProbabilities(ChartCell cell);
 
     @Override
     public float getInside(final int start, final int end, final int nt) {
