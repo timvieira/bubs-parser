@@ -574,13 +574,13 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             // from the input will already be in place. Otherwise, fill in the tags array
             // with the 1-best result from this forward-backwards run.
             if (ParserDriver.parseFromInputTags == false) {
-                parseTask.inputTags = new int[sentLen];
+                parseTask.fomTags = new int[sentLen];
                 // track backpointers to extract best POS sequence
                 // start at the end of the sentence with the nullSymbol and trace backwards
                 int bestPOS = nullSymbol;
                 for (int i = sentLen - 1; i >= 0; i--) {
                     bestPOS = backPointer[i + 2][bestPOS];
-                    parseTask.inputTags[i] = bestPOS;
+                    parseTask.fomTags[i] = bestPOS;
                     // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
                 }
             }
