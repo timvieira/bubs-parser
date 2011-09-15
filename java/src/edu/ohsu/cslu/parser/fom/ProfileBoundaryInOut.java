@@ -87,7 +87,7 @@ public class ProfileBoundaryInOut {
     }
 
     @Test
-    @PerformanceTest({ "mbp", "584", "d820", "3379" })
+    @PerformanceTest({ "mbp", "973", "d820", "3379" })
     public void profileParentAnnotated() {
 
         for (int i = 0; i < 400; i++) {
