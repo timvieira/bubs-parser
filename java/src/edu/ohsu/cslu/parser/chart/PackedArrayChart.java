@@ -355,11 +355,64 @@ public class PackedArrayChart extends ParallelArrayChart {
 
             numNonTerminals[cellIndex] = nonTerminalOffset - offset;
             this.tmpCell = null;
+            finalizeSegmentStartIndices();
+        }
 
+        /**
+         * Special-case to populate a cell with a single entry without a linear search of the temporary storage
+         * 
+         * @param entryNonTerminal
+         * @param entryInsideProbability
+         * @param entryPackedChildren
+         * @param entryMidpoint
+         */
+        public void finalizeCell(final short entryNonTerminal, final float entryInsideProbability,
+                final int entryPackedChildren, final short entryMidpoint) {
+
+            minLeftChildIndex[cellIndex] = offset;
+            maxLeftChildIndex[cellIndex] = offset - 1;
+            minRightChildIndex[cellIndex] = offset;
+            maxRightChildIndex[cellIndex] = offset - 1;
+
+            nonTerminalIndices[offset] = entryNonTerminal;
+            insideProbabilities[offset] = entryInsideProbability;
+            packedChildren[offset] = entryPackedChildren;
+            midpoints[offset] = entryMidpoint;
+
+            if (sparseMatrixGrammar.isValidLeftChild(entryNonTerminal)) {
+                maxLeftChildIndex[cellIndex] = offset;
+            }
+
+            if (sparseMatrixGrammar.isValidRightChild(entryNonTerminal)) {
+                maxRightChildIndex[cellIndex] = offset;
+            }
+
+            numNonTerminals[cellIndex] = 1;
+            this.tmpCell = null;
+            // TODO We could probably special-case this as well
+            finalizeSegmentStartIndices();
+        }
+
+        /**
+         * Special-case to finalize an empty cell
+         */
+        public void finalizeEmptyCell() {
+
+            minLeftChildIndex[cellIndex] = offset;
+            maxLeftChildIndex[cellIndex] = offset - 1;
+            minRightChildIndex[cellIndex] = offset;
+            maxRightChildIndex[cellIndex] = offset - 1;
+
+            numNonTerminals[cellIndex] = 0;
+            this.tmpCell = null;
+            // TODO We could probably special-case this as well
+            finalizeSegmentStartIndices();
+        }
+
+        private void finalizeSegmentStartIndices() {
             if (leftChildSegmentStartIndices != null) {
                 // Split up the left-child non-terminals into 'segments' for multi-threading of cartesian
-                // product
-                // operation.
+                // product operation.
 
                 // The cell population is likely to be biased toward a specific range of non-terminals, but we
                 // still have to use fixed segment boundaries (instead of splitting the actual population range
