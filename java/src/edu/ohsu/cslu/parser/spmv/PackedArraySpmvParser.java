@@ -199,8 +199,8 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
                 spvChartCell.finalizeCell();
 
             } else {
+                // unaryAndPruning finalizes the cell
                 unaryAndPruning(spvChartCell, start, end);
-                spvChartCell.finalizeCell();
             }
         }
 

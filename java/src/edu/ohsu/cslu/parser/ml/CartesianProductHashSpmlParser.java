@@ -112,8 +112,8 @@ public class CartesianProductHashSpmlParser extends
             unarySpmv(targetCell);
             targetCell.finalizeCell();
         } else {
+            // unaryAndPruning finalizes the cell
             unaryAndPruning(targetCell, start, end);
-            targetCell.finalizeCell();
         }
     }
 }

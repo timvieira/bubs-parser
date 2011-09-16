@@ -151,6 +151,51 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
         final TemporaryChartCell tmpCell = spvChartCell.tmpCell;
 
+        final int cellBeamWidth = (end - start == 1 ? lexicalRowBeamWidth : Math.min(
+                cellSelector.getBeamWidth(start, end), beamWidth));
+        if (cellBeamWidth == 1) {
+            // Special-case when we are pruning down to only a single entry. We can't add any unary productions, so just
+            // choose the NT with the maximum FOM.
+            float maxFom = Float.NEGATIVE_INFINITY;
+            short maxNt = -1;
+            if (end - start == 1) { // Lexical Row (span = 1)
+                for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
+                    final float fom = fomModel.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    if (fom > maxFom) {
+                        maxFom = fom;
+                        maxNt = nt;
+                    }
+                }
+            } else {
+                for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
+                    final float fom = fomModel.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    if (fom > maxFom) {
+                        maxFom = fom;
+                        maxNt = nt;
+                    }
+                }
+            }
+            if (maxNt >= 0) {
+                spvChartCell.finalizeCell(maxNt, tmpCell.insideProbabilities[maxNt], tmpCell.packedChildren[maxNt],
+                        tmpCell.midpoints[maxNt]);
+            } else {
+                spvChartCell.finalizeEmptyCell();
+            }
+
+        } else {
+            // General-case unary processing and pruning
+            unaryAndPruning(tmpCell, cellBeamWidth, start, end);
+            spvChartCell.finalizeCell();
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.unaryAndPruningNs += System.nanoTime() - t0;
+        }
+
+    }
+
+    private void unaryAndPruning(final TemporaryChartCell tmpCell, final int cellBeamWidth, final short start,
+            final short end) {
         // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
         final boolean allowUnaries = !cellSelector.hasCellConstraints()
                 || cellSelector.getCellConstraints().isUnaryOpen(start, end)
@@ -177,8 +222,6 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
          */
 
         // Push all binary or lexical edges onto a bounded priority queue
-        final int cellBeamWidth = (end - start == 1 ? lexicalRowBeamWidth : Math.min(
-                cellSelector.getBeamWidth(start, end), beamWidth));
         final BoundedPriorityQueue q = threadLocalBoundedPriorityQueue.get();
         q.clear(cellBeamWidth);
 
@@ -216,9 +259,6 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         }
 
         if (q.size() == 0) {
-            if (collectDetailedStatistics) {
-                chart.parseTask.unaryAndPruningNs += System.nanoTime() - t0;
-            }
             return;
         }
 
@@ -277,10 +317,6 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                     }
                 }
             }
-        }
-
-        if (collectDetailedStatistics) {
-            chart.parseTask.unaryAndPruningNs += System.nanoTime() - t0;
         }
     }
 }
