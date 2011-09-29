@@ -22,7 +22,6 @@ import com.nativelibs4java.opencl.CLFloatBuffer;
 import com.nativelibs4java.opencl.CLShortBuffer;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
@@ -37,18 +36,6 @@ public class DenseVectorOpenClSpmvParser extends OpenClSpmvParser<DenseVectorCha
 
     public DenseVectorOpenClSpmvParser(final ParserDriver opts, final CsrSparseMatrixGrammar grammar) {
         super(opts, grammar);
-    }
-
-    @Override
-    protected void initSentence(final ParseTask parseTask) {
-        final int sentLength = parseTask.sentenceLength();
-        if (chart == null || chart.size() < sentLength) {
-            chart = new DenseVectorChart(parseTask, grammar);
-        } else {
-            chart.reset(parseTask);
-        }
-
-        super.initSentence(parseTask);
     }
 
     @Override

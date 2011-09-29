@@ -44,11 +44,13 @@ public class CellChart extends Chart {
         super(parseTask, parser.grammar);
         this.parser = parser;
         this.viterbiMax = (parser.opts.decodeMethod == DecodeMethod.ViterbiMax);
-        allocateChart(tokens.length);
+        chart = new HashSetChartCell[parseTask.sentenceLength()][parseTask.sentenceLength() + 1];
+        reset(parseTask);
     }
 
-    private void allocateChart(final int n) {
-        chart = new HashSetChartCell[n][n + 1];
+    @Override
+    public void reset(final ParseTask parseTask) {
+        final int n = parseTask.sentenceLength();
         for (int start = 0; start < n; start++) {
             for (int end = start + 1; end < n + 1; end++) {
                 chart[start][end] = new HashSetChartCell(start, end);

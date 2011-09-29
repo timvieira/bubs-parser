@@ -72,6 +72,9 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
 
     @Override
     protected void initSentence(final ParseTask parseTask) {
+
+        super.initSentence(parseTask);
+
         startTime = System.currentTimeMillis();
         if (collectDetailedStatistics) {
             sentenceCartesianProductTime = 0;

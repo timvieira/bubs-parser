@@ -70,6 +70,14 @@ public abstract class Chart {
     }
 
     /**
+     * Clears all productions from the chart, in preparation for parsing a new sentence.
+     * 
+     * @param parseTask
+     */
+    public void reset(final ParseTask parseTask) {
+    }
+
+    /**
      * Updates the inside probability of the specified non-terminal in the a cell.
      * 
      * @param start

@@ -18,6 +18,8 @@
  */
 package edu.ohsu.cslu.parser;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 
 import cltool4j.ConfigProperties;
@@ -25,6 +27,7 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -91,6 +94,50 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             this.threadLocalTmpFoms = null;
             this.threadLocalQueueEdges = null;
         }
+    }
+
+    @Override
+    protected void initSentence(final ParseTask parseTask) {
+        final int sentLength = parseTask.sentenceLength();
+        if (chart != null && chart.size() >= sentLength) {
+            chart.reset(parseTask);
+        } else {
+            // Construct a chart of the appropriate type
+            try {
+                final Class<C> chartClass = chartClass();
+                chartClass.getConstructors();
+                try {
+                    // First, try for a constructor that takes tokens, grammar, beamWidth, and lexicalRowBeamWidth
+                    chart = chartClass.getConstructor(
+                            new Class[] { ParseTask.class, SparseMatrixGrammar.class, int.class, int.class })
+                            .newInstance(new Object[] { parseTask, grammar, beamWidth, lexicalRowBeamWidth });
+
+                } catch (final NoSuchMethodException e) {
+                    // If not found, use a constructor that takes only tokens and grammar
+                    chart = chartClass.getConstructor(new Class[] { ParseTask.class, SparseMatrixGrammar.class })
+                            .newInstance(new Object[] { parseTask, grammar });
+                }
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Class<C> chartClass() throws NoSuchMethodException {
+
+        for (Class<?> c = getClass(); c != SparseMatrixParser.class; c = c.getSuperclass()) {
+            if (!(c.getGenericSuperclass() instanceof ParameterizedType)) {
+                continue;
+            }
+            final Type[] typeArguments = ((ParameterizedType) c.getGenericSuperclass()).getActualTypeArguments();
+            for (int i = 0; i < typeArguments.length; i++) {
+                if (typeArguments[i] instanceof Class && Chart.class.isAssignableFrom((Class<?>) typeArguments[i])) {
+                    return (Class<C>) typeArguments[i];
+                }
+            }
+        }
+        throw new NoSuchMethodException("Cannot find chart class for class " + getClass().getName());
     }
 
     /**
