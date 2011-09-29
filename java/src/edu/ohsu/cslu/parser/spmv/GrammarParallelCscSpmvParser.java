@@ -30,7 +30,6 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -109,18 +108,6 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
                 return tcs;
             }
         };
-    }
-
-    @Override
-    protected void initSentence(final ParseTask parseTask) {
-        final int sentLength = parseTask.sentenceLength();
-        if (chart != null && chart.size() >= sentLength) {
-            chart.reset(parseTask);
-        } else {
-            chart = new PackedArrayChart(parseTask, grammar, beamWidth, lexicalRowBeamWidth, cpvSegments);
-        }
-
-        super.initSentence(parseTask);
     }
 
     // @Override
@@ -310,8 +297,7 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
             final TemporaryChartCell tmpCell = packedArrayCell.tmpCell;
             // TODO Eliminate this extra arraycopy
             final int arrayLength = temporaryCells[0].insideProbabilities.length;
-            System.arraycopy(temporaryCells[0].insideProbabilities, 0, tmpCell.insideProbabilities, 0,
-                    arrayLength);
+            System.arraycopy(temporaryCells[0].insideProbabilities, 0, tmpCell.insideProbabilities, 0, arrayLength);
             System.arraycopy(temporaryCells[0].packedChildren, 0, tmpCell.packedChildren, 0, arrayLength);
             System.arraycopy(temporaryCells[0].midpoints, 0, tmpCell.midpoints, 0, arrayLength);
 

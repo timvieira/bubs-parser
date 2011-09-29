@@ -29,7 +29,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -98,18 +97,6 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
                 return m;
             }
         };
-    }
-
-    @Override
-    protected void initSentence(final ParseTask parseTask) {
-        final int sentLength = parseTask.sentenceLength();
-        if (chart != null && chart.size() >= sentLength) {
-            chart.reset(parseTask);
-        } else {
-            chart = new PackedArrayChart(parseTask, grammar, beamWidth, lexicalRowBeamWidth);
-        }
-
-        super.initSentence(parseTask);
     }
 
     /**
