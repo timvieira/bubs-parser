@@ -137,7 +137,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                 }
             }
         }
-        throw new NoSuchMethodException("Cannot find chart class for class " + getClass().getName());
+        throw new NoSuchMethodException("Cannot find chart class for parser class: " + getClass().getName());
     }
 
     /**

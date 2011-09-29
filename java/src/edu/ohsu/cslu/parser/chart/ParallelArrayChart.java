@@ -111,33 +111,25 @@ public abstract class ParallelArrayChart extends Chart {
     }
 
     /**
-     * Constructs a chart for constrained parsing (see {@link ConstrainedChart}.
+     * Constructs a chart for Constrained parsing (see {@link ConstrainedChart}).
      * 
      * @param size
      * @param chartArraySize
      * @param sparseMatrixGrammar
      */
     protected ParallelArrayChart(final int size, final int chartArraySize, final SparseMatrixGrammar sparseMatrixGrammar) {
-        super();
         this.sparseMatrixGrammar = sparseMatrixGrammar;
         this.size = size;
         this.chartArraySize = chartArraySize;
 
-        cells = size * (size + 1) / 2;
-        cellOffsets = new int[cells];
+        this.cells = size * (size + 1) / 2;
+        this.cellOffsets = new int[cells];
 
-        insideProbabilities = new float[chartArraySize];
+        this.insideProbabilities = new float[chartArraySize];
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
-        packedChildren = new int[chartArraySize];
-        midpoints = new short[cells];
+        this.packedChildren = new int[chartArraySize];
+        this.midpoints = new short[cells];
     }
-
-    /**
-     * Removes existing chart entries and re-initializes chart state.
-     * 
-     * @param sentenceLength
-     */
-    public abstract void reset(final ParseTask parseTask);
 
     @Override
     public abstract ParallelArrayChartCell getCell(final int start, final int end);
@@ -184,8 +176,7 @@ public abstract class ParallelArrayChart extends Chart {
         }
 
         final int priorCellBeamWidths = cellIndex(start, end) * this.beamWidth;
-        // If this cell is in the lexical row, we've seen 'start' prior lexical entries; otherwise we've seen
-        // the one in
+        // If this cell is in the lexical row, we've seen 'start' prior lexical entries; otherwise we've seen the one in
         // this diagonal too, so 'start + 1'
         final int priorLexicalCells = (end - start == 1) ? start : start + 1;
         return priorCellBeamWidths + priorLexicalCells * (this.lexicalRowBeamWidth - this.beamWidth);
