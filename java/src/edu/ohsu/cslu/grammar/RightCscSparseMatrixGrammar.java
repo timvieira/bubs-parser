@@ -21,6 +21,7 @@ package edu.ohsu.cslu.grammar;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -66,8 +67,13 @@ public class RightCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         this(new FileReader(grammarFile));
     }
 
-    public RightCscSparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
-        super(g, functionClass);
+    public RightCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
+            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
+
+        super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
+                functionClass, initCscMatrices);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.cscBinaryRightChildStartIndices = new int[numNonTerms() + 1];

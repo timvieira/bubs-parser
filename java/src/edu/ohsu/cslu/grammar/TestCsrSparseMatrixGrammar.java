@@ -25,6 +25,7 @@ import java.io.StringReader;
 
 import org.junit.Test;
 
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.lela.AllLelaTests;
 import edu.ohsu.cslu.lela.ProductionListGrammar;
@@ -40,17 +41,15 @@ public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
     @Test
     public void testCartesianProductFunction() throws IOException {
         // Induce a grammar from a sample tree
-        final StringCountGrammar sg = new StringCountGrammar(
-            new StringReader(AllLelaTests.STRING_SAMPLE_TREE), null, null, 1);
+        final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllLelaTests.STRING_SAMPLE_TREE),
+                Factorization.RIGHT, GrammarFormatType.Berkeley);
         final ProductionListGrammar plGrammar0 = new ProductionListGrammar(sg);
 
         // Split the grammar
-        final ProductionListGrammar plGrammar1 = plGrammar0
-            .split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
+        final ProductionListGrammar plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
         final SparseMatrixGrammar csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions,
-            plGrammar1.unaryProductions, plGrammar1.lexicalProductions, plGrammar1.vocabulary,
-            plGrammar1.lexicon, GrammarFormatType.Berkeley,
-            SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+                plGrammar1.unaryProductions, plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final PackingFunction f = csrGrammar1.packingFunction;
 

@@ -20,7 +20,9 @@ package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.ObjectInputStream;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
@@ -222,7 +224,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         BaseLogger.singleton().info(
                 "INFO: parser=" + researchParserType + " fom=" + fomTypeOrModel + " decode=" + decodeMethod);
         BaseLogger.singleton().info("INFO: " + commandLineArgStr);
-        grammar = readGrammar(grammarFile, researchParserType, cartesianProductFunctionType);
 
         if (modelFile != null) {
             final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(modelFile));
@@ -237,6 +238,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             fomModel = (FigureOfMeritModel) ois.readObject();
 
         } else {
+
+            this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType, cartesianProductFunctionType);
 
             if (fomTypeOrModel.equals("Inside")) {
                 fomModel = new FigureOfMeritModel(FOMType.Inside);
@@ -288,15 +291,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         parseStartTime = System.currentTimeMillis();
     }
 
+    /**
+     * Used by other tools
+     */
     public static Grammar readGrammar(final String grammarFile, final ResearchParserType researchParserType,
             final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
 
         // Handle gzipped and non-gzipped grammar files
-        // Read the generic grammar in either text or binary-serialized format.
-        final Grammar genericGrammar = Grammar.read(grammarFile);
-
-        // Construct the requested grammar type from the generic grammar
-        return createGrammar(genericGrammar, researchParserType, cartesianProductFunctionType);
+        return createGrammar(new FileReader(grammarFile), researchParserType, cartesianProductFunctionType);
     }
 
     /**
@@ -309,31 +311,31 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * @return a Grammar instance
      * @throws Exception
      */
-    public static Grammar createGrammar(final Grammar genericGrammar, final ResearchParserType researchParserType,
+    public static Grammar createGrammar(final Reader grammarFile, final ResearchParserType researchParserType,
             final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
 
         switch (researchParserType) {
         case ECPInsideOutside:
         case ECPCellCrossList:
-            return new LeftListGrammar(genericGrammar);
+            return new LeftListGrammar(grammarFile);
 
         case ECPCellCrossHashGrammarLoop:
         case ECPCellCrossHashGrammarLoop2:
         case ECPCellCrossHash:
-            return new LeftHashGrammar(genericGrammar);
+            return new LeftHashGrammar(grammarFile);
 
         case ECPCellCrossMatrix:
-            return new ChildMatrixGrammar(genericGrammar);
+            return new ChildMatrixGrammar(grammarFile);
 
         case ECPGrammarLoop:
         case ECPGrammarLoopBerkeleyFilter:
-            return genericGrammar;
+            return new Grammar(grammarFile);
 
         case AgendaParser:
         case APWithMemory:
         case APGhostEdges:
         case APDecodeFOM:
-            return new LeftRightListsGrammar(genericGrammar);
+            return new LeftRightListsGrammar(grammarFile);
 
         case BeamSearchChartParser:
         case BSCPSplitUnary:
@@ -347,15 +349,15 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             // case BSCPBeamConf:
         case CoarseCellAgenda:
         case CoarseCellAgendaCSLUT:
-            return new LeftHashGrammar(genericGrammar);
+            return new LeftHashGrammar(grammarFile);
 
         case CsrSpmv:
         case GrammarParallelCsrSpmv:
             switch (cartesianProductFunctionType) {
             case Simple:
-                return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+                return new CsrSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
             case PerfectHash:
-                return new CsrSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
+                return new CsrSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
             default:
                 throw new IllegalArgumentException("Unsupported cartesian-product-function type: "
                         + cartesianProductFunctionType);
@@ -363,15 +365,15 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         case PackedOpenClSpmv:
         case DenseVectorOpenClSpmv:
-            return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+            return new CsrSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
 
         case CscSpmv:
         case GrammarParallelCscSpmv:
             switch (cartesianProductFunctionType) {
             case Simple:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+                return new LeftCscSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
             case PerfectHash:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
+                return new LeftCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
             default:
                 throw new IllegalArgumentException("Unsupported cartesian-product-function type: "
                         + cartesianProductFunctionType);
@@ -384,21 +386,21 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         case CartesianProductLeftChildHashMl:
             switch (cartesianProductFunctionType) {
             case Simple:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+                return new LeftCscSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
             case Hash:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, Int2IntHashPackingFunction.class);
+                return new LeftCscSparseMatrixGrammar(grammarFile, Int2IntHashPackingFunction.class);
             case PerfectHash:
-                return new LeftCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
+                return new LeftCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
             default:
                 throw new IllegalArgumentException("Unsupported cartesian-product-function type: "
                         + cartesianProductFunctionType);
             }
         case RightChildMl:
-            return new RightCscSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+            return new RightCscSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
         case GrammarLoopMl:
-            return new CsrSparseMatrixGrammar(genericGrammar, LeftShiftFunction.class);
+            return new CsrSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
         case InsideOutsideCartesianProductHash:
-            return new InsideOutsideCscSparseMatrixGrammar(genericGrammar, PerfectIntPairHashPackingFunction.class);
+            return new InsideOutsideCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
 
         default:
             throw new IllegalArgumentException("Unsupported parser type: " + researchParserType);
@@ -520,8 +522,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     protected void output(final ParseTask parseTask) {
         if (parseTask != null) {
             parseTask.evaluate(evaluator);
-            System.out.println(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels)
-                    + parseTask.statsString());
+            System.out
+                    .println(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels) + parseTask.statsString());
             sentencesParsed++;
             if (parseTask.parseFailed()) {
                 failedParses++;

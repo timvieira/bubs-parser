@@ -41,7 +41,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Override
     protected void run() throws IOException {
         final StringCountGrammar cg = new StringCountGrammar(new InputStreamReader(System.in), factorization,
-                grammarFormatType, lexicalUnkThreshold);
+                grammarFormatType);
         final ProductionListGrammar plg = new ProductionListGrammar(cg);
 
         System.out.println(plg.toString(false, grammarFormatType, lexicalUnkThreshold));
