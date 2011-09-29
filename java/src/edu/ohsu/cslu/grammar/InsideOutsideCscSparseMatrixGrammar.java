@@ -100,9 +100,13 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
         storeUnaryRulesAsCsrMatrix(csrUnaryRowStartIndices, csrUnaryColumnIndices, csrUnaryProbabilities);
     }
 
-    public InsideOutsideCscSparseMatrixGrammar(final Grammar g,
-            final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
-        super(g, cartesianProductFunctionClass);
+    public InsideOutsideCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
+            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
+
+        super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
+                functionClass, initCscMatrices);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
 

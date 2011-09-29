@@ -334,47 +334,6 @@ public class Grammar implements Serializable {
         this(new InputStreamReader(Util.file2inputStream(grammarFile)));
     }
 
-    /**
-     * Construct a {@link Grammar} instance from an existing instance. This is used when constructing a subclass of
-     * {@link Grammar} from a binary-serialized {@link Grammar}.
-     * 
-     * @param g
-     */
-    protected Grammar(final Grammar g) {
-        this.startSymbolStr = g.startSymbolStr;
-        this.leftChildrenStart = g.leftChildrenStart;
-        this.leftChildrenEnd = g.leftChildrenEnd;
-        this.rightChildrenStart = g.rightChildrenStart;
-        this.rightChildrenEnd = g.rightChildrenEnd;
-        this.posStart = g.posStart;
-        this.posEnd = g.posEnd;
-
-        this.binaryProductions = g.binaryProductions;
-        this.unaryProductions = g.unaryProductions;
-        this.lexicalProductions = g.lexicalProductions;
-
-        this.unaryProductionsByChild = g.unaryProductionsByChild;
-        this.lexicalProdsByChild = g.lexicalProdsByChild;
-        this.lexicalParents = g.lexicalParents;
-        this.lexicalLogProbabilities = g.lexicalLogProbabilities;
-
-        this.nullSymbol = g.nullSymbol;
-        this.startSymbol = g.startSymbol;
-        this.maxPOSIndex = g.maxPOSIndex;
-        this.numPosSymbols = g.numPosSymbols;
-        this.grammarFormat = g.grammarFormat;
-
-        this.isLeftFactored = g.isLeftFactored;
-
-        this.nonTermSet = g.nonTermSet;
-        this.posSet = g.posSet;
-        this.phraseSet = g.phraseSet;
-        this.nonTermInfo = g.nonTermInfo;
-
-        // this.lexSet = g.lexSet;
-        // this.tokenizer = g.tokenizer;
-    }
-
     protected Grammar(final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
             final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
             final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat) {
@@ -414,6 +373,25 @@ public class Grammar implements Serializable {
         this.rightChildrenEnd = startAndEndIndices[3];
         this.posStart = startAndEndIndices[4];
         this.posEnd = startAndEndIndices[5];
+    }
+
+    /**
+     * Construct a {@link Grammar} instance from an existing instance. This is used when constructing a subclass of
+     * {@link Grammar} from a binary-serialized {@link Grammar}.
+     * 
+     * @param g
+     */
+    protected Grammar(final Grammar g) {
+        this(g.binaryProductions, g.unaryProductions, g.lexicalProductions, g.nonTermSet, g.lexSet, g.grammarFormat);
+        this.startSymbolStr = g.startSymbolStr;
+
+        this.nullSymbol = g.nullSymbol;
+        this.startSymbol = g.startSymbol;
+        this.maxPOSIndex = g.maxPOSIndex;
+        this.numPosSymbols = g.numPosSymbols;
+        this.grammarFormat = g.grammarFormat;
+
+        this.isLeftFactored = g.isLeftFactored;
     }
 
     // Read in the grammar file.

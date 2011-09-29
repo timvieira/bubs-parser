@@ -109,32 +109,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this(new FileReader(grammarFile));
     }
 
-    public SparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
-        super(g);
-
-        // Initialization code duplicated from constructor above to allow these fields to be final
-        this.packingFunction = createCartesianProductFunction(functionClass);
-
-        // Store all unary productions
-        cscUnaryColumnOffsets = new int[numNonTerms() + 1];
-        cscUnaryRowIndices = new short[numUnaryProds()];
-        cscUnaryProbabilities = new float[numUnaryProds()];
-
-        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
-
-        minRightSiblingIndices = new short[numNonTerms()];
-        maxRightSiblingIndices = new short[numNonTerms()];
-        storeRightSiblingIndices();
-    }
-
-    protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
-            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass) {
-        this(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                functionClass, true);
-    }
-
     protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
@@ -157,6 +131,11 @@ public abstract class SparseMatrixGrammar extends Grammar {
         maxRightSiblingIndices = new short[numNonTerms()];
         storeRightSiblingIndices();
 
+    }
+
+    protected SparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
+        this(g.binaryProductions, g.unaryProductions, g.lexicalProductions, g.nonTermSet, g.lexSet, g.grammarFormat,
+                functionClass, true);
     }
 
     /**

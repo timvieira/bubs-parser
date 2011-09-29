@@ -21,13 +21,13 @@ package edu.ohsu.cslu.grammar;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
  * Stores a sparse-matrix grammar in compressed-sparse-column (CSC) format
  * 
- * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for
- * details).
+ * Assumes fewer than 2^30 total non-terminals combinations (see {@link SparseMatrixGrammar} documentation for details).
  * 
  * @author Aaron Dunlop
  * @since Jan 24, 2010
@@ -65,8 +65,12 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         this(new FileReader(grammarFile));
     }
 
-    public LeftCscSparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
-        super(g, functionClass);
+    public LeftCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
+            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
+        super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
+                functionClass, initCscMatrices);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.cscBinaryLeftChildStartIndices = new int[numNonTerms() + 1];
@@ -75,7 +79,8 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
     }
 
     public LeftCscSparseMatrixGrammar(final Grammar g) {
-        this(g, PerfectIntPairHashPackingFunction.class);
+        this(g.binaryProductions, g.unaryProductions, g.lexicalProductions, g.nonTermSet, g.lexSet, g.grammarFormat,
+                PerfectIntPairHashPackingFunction.class, true);
     }
 
     private void init() {
