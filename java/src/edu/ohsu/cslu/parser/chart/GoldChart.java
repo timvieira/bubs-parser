@@ -25,6 +25,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
 
 public class GoldChart extends Chart {
@@ -191,5 +192,10 @@ public class GoldChart extends Chart {
 
         }
 
+    }
+
+    @Override
+    public void reset(final ParseTask parseTask) {
+        throw new UnsupportedOperationException();
     }
 }

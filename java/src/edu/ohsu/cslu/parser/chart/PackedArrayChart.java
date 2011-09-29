@@ -24,6 +24,7 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.lela.ConstrainedChart;
 import edu.ohsu.cslu.parser.ParseTask;
 
 /**
@@ -166,6 +167,29 @@ public class PackedArrayChart extends ParallelArrayChart {
      */
     public PackedArrayChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar) {
         this(parseTask, sparseMatrixGrammar, sparseMatrixGrammar.numNonTerms(), sparseMatrixGrammar.numNonTerms(), 0);
+    }
+
+    /**
+     * Constructs a chart for constrained parsing (see {@link ConstrainedChart}.
+     * 
+     * @param size
+     * @param chartArraySize
+     * @param sparseMatrixGrammar
+     */
+    protected PackedArrayChart(final int size, final int chartArraySize, final SparseMatrixGrammar sparseMatrixGrammar) {
+        super(size, chartArraySize, sparseMatrixGrammar);
+
+        this.nonTerminalIndices = new short[chartArraySize];
+        Arrays.fill(nonTerminalIndices, Short.MIN_VALUE);
+
+        this.threadLocalTemporaryCells = null;
+        this.numNonTerminals = null;
+        this.minLeftChildIndex = null;
+        this.minRightChildIndex = null;
+        this.maxLeftChildIndex = null;
+        this.maxRightChildIndex = null;
+        this.leftChildSegments = 0;
+        this.leftChildSegmentStartIndices = null;
     }
 
     @Override
