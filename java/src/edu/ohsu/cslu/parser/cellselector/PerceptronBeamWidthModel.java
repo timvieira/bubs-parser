@@ -89,6 +89,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
     public class PerceptronBeamWidth extends CellConstraints {
 
+        // TODO Switch to using single-dimensional array, indexed by cellIndex. Should be somewhat more cache-efficient
         private int beamWidthValues[][];
         private boolean onlyFactored[][];
 
@@ -101,6 +102,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
         private void computeBeamWidthValues() {
             int guessBeamWidth, guessClass;
             final int n = parser.chart.parseTask.sentenceLength();
+            // TODO Reuse existing arrays when possible
             beamWidthValues = new int[n][n + 1];
             onlyFactored = new boolean[n][n + 1];
             openCells = 0;
