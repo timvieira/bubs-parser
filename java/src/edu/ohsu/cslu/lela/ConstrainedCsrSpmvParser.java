@@ -23,7 +23,6 @@ import java.util.Arrays;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.lela.ConstrainedChart.ConstrainedChartCell;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
@@ -59,7 +58,7 @@ import edu.ohsu.cslu.util.Math;
 public class ConstrainedCsrSpmvParser extends
         SparseMatrixVectorParser<ConstrainedCsrSparseMatrixGrammar, ConstrainedChart> {
 
-    ConstrainedChart constrainingChart;
+    ConstrainingChart constrainingChart;
     private final SplitVocabulary splitVocabulary;
 
     private final float[] cartesianProductProbabilities;
@@ -92,7 +91,7 @@ public class ConstrainedCsrSpmvParser extends
         this(opts, grammar, false);
     }
 
-    public BinaryTree<String> findBestParse(final ConstrainedChart unsplitConstrainingChart) {
+    public BinaryTree<String> findBestParse(final ConstrainingChart unsplitConstrainingChart) {
         this.constrainingChart = unsplitConstrainingChart;
 
         final long t0 = System.nanoTime();
@@ -100,7 +99,7 @@ public class ConstrainedCsrSpmvParser extends
         // Initialize the chart
         if (chart != null
                 && chart.nonTerminalIndices.length >= ConstrainedChart.chartArraySize(constrainingChart.size(),
-                        constrainingChart.maxUnaryChainLength, splitVocabulary.maxSplits)
+                        constrainingChart.maxUnaryChainLength(), splitVocabulary.maxSplits)
                 && chart.cellOffsets.length >= constrainingChart.cellOffsets.length) {
             chart.clear(constrainingChart);
         } else {
@@ -653,13 +652,13 @@ public class ConstrainedCsrSpmvParser extends
         }
     }
 
-    ConstrainedCountGrammar countRuleOccurrences() {
-        final ConstrainedCountGrammar countGrammar = new ConstrainedCountGrammar(grammar);
+    FractionalCountGrammar countRuleOccurrences() {
+        final FractionalCountGrammar countGrammar = new FractionalCountGrammar(grammar);
         countRuleOccurrences(countGrammar);
         return countGrammar;
     }
 
-    public void countRuleOccurrences(final ConstrainedCountGrammar countGrammar) {
+    public void countRuleOccurrences(final FractionalCountGrammar countGrammar) {
         long t0 = 0;
         if (collectDetailedTimings) {
             t0 = System.nanoTime();
@@ -681,7 +680,7 @@ public class ConstrainedCsrSpmvParser extends
         }
     }
 
-    private void countBinaryRuleOccurrences(final ConstrainedCountGrammar countGrammar, final short start,
+    private void countBinaryRuleOccurrences(final FractionalCountGrammar countGrammar, final short start,
             final short end) {
 
         final CartesianProductVector cartesianProductVector = cartesianProductUnion(start, end);
@@ -734,8 +733,7 @@ public class ConstrainedCsrSpmvParser extends
         }
     }
 
-    private void countUnaryRuleOccurrences(final ConstrainedCountGrammar countGrammar, final short start,
-            final short end) {
+    private void countUnaryRuleOccurrences(final FractionalCountGrammar countGrammar, final short start, final short end) {
 
         // System.out.println("=== " + start + "," + end + " ===");
         final int cellIndex = chart.cellIndex(start, end);
@@ -780,7 +778,7 @@ public class ConstrainedCsrSpmvParser extends
         }
     }
 
-    private void countLexicalRuleOccurrences(final ConstrainedCountGrammar countGrammar, final short start,
+    private void countLexicalRuleOccurrences(final FractionalCountGrammar countGrammar, final short start,
             final short end) {
 
         // System.out.println("=== " + start + "," + end + " ===");

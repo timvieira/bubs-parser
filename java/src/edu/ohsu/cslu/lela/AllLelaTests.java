@@ -22,9 +22,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestStringCountGrammar.class, TestFractionalCountGrammar.class, TestConstrainedCountGrammar.class,
-        TestProductionListGrammar.class, TestConstrainedCsrSparseMatrixGrammar.class, TestConstrainedChart.class,
-        TestConstrainedCsrSpmvParser.class, TestTrainGrammar.class })
+@Suite.SuiteClasses({ TestStringCountGrammar.class, TestFractionalCountGrammar.class, TestProductionListGrammar.class,
+        TestConstrainedCsrSparseMatrixGrammar.class, TestConstrainingChart.class, TestConstrainedChart.class,
+        TestConstrainedInsideOutsideParser.class, TestTrainGrammar.class })
 public class AllLelaTests {
 
     /**

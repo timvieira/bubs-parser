@@ -94,7 +94,7 @@ public class TestTrainGrammar {
 
         // Parse the training 'corpus' with induced grammar and report F-score
         final long t0 = System.currentTimeMillis();
-        System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", parseFScore(csrGrammar(plg0), tg.goldTrees),
+        System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", parseFScore(cscGrammar(plg0), tg.goldTrees),
                 (System.currentTimeMillis() - t0) / 1000f);
 
         final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
@@ -160,9 +160,9 @@ public class TestTrainGrammar {
     private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar plg, final int split,
             final int iterations) {
 
-        ConstrainedCsrSparseMatrixGrammar csr = csrGrammar(plg);
+        ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(plg);
 
-        final int lexiconSize = csr.lexSet.size();
+        final int lexiconSize = cscGrammar.lexSet.size();
         float previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
         final long t0 = System.currentTimeMillis();
 
@@ -170,14 +170,14 @@ public class TestTrainGrammar {
         for (int i = 0; i < iterations; i++) {
             System.out.format("=== Split %d, iteration %d", split, i + 1);
 
-            result = tg.emIteration(csr);
+            result = tg.emIteration(cscGrammar);
             result.plGrammar.verifyProbabilityDistribution();
-            csr = csrGrammar(result.plGrammar);
+            cscGrammar = cscGrammar(result.plGrammar);
 
             // Ensure we have rules matching each lexical entry
             for (int j = 0; j < lexiconSize; j++) {
-                assertTrue("No parents found for " + csr.lexSet.getSymbol(j), csr.getLexicalProductionsWithChild(j)
-                        .size() > 0);
+                assertTrue("No parents found for " + cscGrammar.lexSet.getSymbol(j), cscGrammar
+                        .getLexicalProductionsWithChild(j).size() > 0);
             }
 
             // result.plGrammar.verifyProbabilityDistribution();
@@ -194,14 +194,16 @@ public class TestTrainGrammar {
         System.out.format("Training Time: %.1f seconds", (t1 - t0) / 1000f);
 
         // Parse the training corpus with the new CSR grammar and report F-score
-        System.out.format("F-score: %.3f\n", parseFScore(csr, tg.goldTrees), (System.currentTimeMillis() - t1) / 1000f);
+        System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100,
+                (System.currentTimeMillis() - t1) / 1000f);
 
         return result.plGrammar;
     }
 
-    private ConstrainedCsrSparseMatrixGrammar csrGrammar(final ProductionListGrammar plg) {
-        return new ConstrainedCsrSparseMatrixGrammar(plg, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+    private ConstrainedInsideOutsideGrammar cscGrammar(final ProductionListGrammar plg) {
+        return new ConstrainedInsideOutsideGrammar(plg.binaryProductions, plg.unaryProductions, plg.lexicalProductions,
+                plg.vocabulary, plg.lexicon, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class, plg);
     }
 
     private double parseFScore(final Grammar grammar, final List<NaryTree<String>> goldTrees) {

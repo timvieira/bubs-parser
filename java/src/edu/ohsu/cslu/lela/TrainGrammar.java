@@ -28,8 +28,8 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
-import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
+import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -45,11 +45,11 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-f", aliases = { "--factorization" }, metaVar = "type", usage = "Factorizes unfactored trees. If not specified, assumes trees are already binarized")
     Factorization factorization = null;
 
-    @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Grammar Format (required if factorization is specified)")
-    GrammarFormatType grammarFormatType = null;
+    @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Grammar Format; required if factorization is specified")
+    GrammarFormatType grammarFormatType = GrammarFormatType.Berkeley;
 
-    @Option(name = "-unk", aliases = { "--unk-threshold" }, metaVar = "threshold", usage = "The number of observations of a word required in order to add it to the lexicon.")
-    private int lexicalUnkThreshold = 1;
+    @Option(name = "-unk", aliases = { "--unk-threshold" }, metaVar = "threshold", usage = "Learn unknown-word probabilities for words occurring <= threshold times")
+    private int lexicalUnkThreshold = 5;
 
     @Option(name = "-noise", metaVar = "noise (0-1)", usage = "Random noise to add to rule probabilities during each split")
     private float noise = 0.01f;
@@ -57,8 +57,11 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-rs", aliases = { "--random-seed" }, metaVar = "seed", usage = "Random seed (default = System.currentTimeMillis())")
     private long randomSeed;
 
+    @Option(name = "-i", aliases = { "--iterations" }, metaVar = "count", usage = "Split-merge iterations")
+    private int splitMergeIterations;
+
     final LinkedList<NaryTree<String>> goldTrees = new LinkedList<NaryTree<String>>();
-    final LinkedList<ConstrainedChart> constrainingCharts = new LinkedList<ConstrainedChart>();
+    final LinkedList<ConstrainingChart> constrainingCharts = new LinkedList<ConstrainingChart>();
 
     private NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
 
@@ -85,6 +88,32 @@ public class TrainGrammar extends BaseCommandlineTool {
         loadGoldTreesAndCharts(trainingCorpusReader, plGrammar);
         trainingCorpusReader.close();
 
+        // Run split-merge training cycles
+        for (int i = 0; i < splitMergeIterations; i++) {
+
+            // Split
+
+            // Train the split grammar with EM
+
+            // Merge
+
+            // Smooth
+        }
+
+        // // Add UNK probabilities to lexicon
+        // // Note that words that occur <= lexicalUnkThreshold times will also be included in their lexicalized form.
+        // for (final BinaryTree<String> tree : trees) {
+        // int i = 0;
+        // for (final BinaryTree<String> leaf : tree.leafTraversal()) {
+        // final String word = leaf.label();
+        // if (lexicalEntryOccurrences.get(word) <= lexicalUnkThreshold) {
+        // final String unkStr = Tokenizer.berkeleyGetSignature(word, i, knownWords);
+        // incrementLexicalCount(leaf.parentLabel(), unkStr);
+        // lexicalEntryOccurrences.put(unkStr, lexicalEntryOccurrences.getInt(unkStr) + 1);
+        // }
+        // i++;
+        // }
+        // }
     }
 
     /**
@@ -96,18 +125,18 @@ public class TrainGrammar extends BaseCommandlineTool {
     final ProductionListGrammar induceGrammar(final BufferedReader trainingCorpusReader) throws IOException {
         // Induce M0 grammar from training corpus
         System.out.println("Inducing M0 grammar...");
-        return new ProductionListGrammar(new StringCountGrammar(trainingCorpusReader, factorization, grammarFormatType,
-                lexicalUnkThreshold));
+        return new ProductionListGrammar(new StringCountGrammar(trainingCorpusReader, factorization, grammarFormatType));
 
     }
 
     final void loadGoldTreesAndCharts(final BufferedReader trainingCorpusReader, final ProductionListGrammar plGrammar)
             throws IOException {
-        // Convert M0 grammar to CSR format
-        System.out.println("Converting to CSR format...");
-        final SparseMatrixGrammar csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar.binaryProductions,
+
+        // Convert M0 grammar to CSC format
+        System.out.println("Converting to CSC format...");
+        final SparseMatrixGrammar cscGrammar0 = new InsideOutsideCscSparseMatrixGrammar(plGrammar.binaryProductions,
                 plGrammar.unaryProductions, plGrammar.lexicalProductions, plGrammar.vocabulary, plGrammar.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class, true);
 
         // Load in constraining charts from training corpus
         System.out.println("Loading gold trees and constraining charts...");
@@ -118,7 +147,7 @@ public class TrainGrammar extends BaseCommandlineTool {
 
             final BinaryTree<String> factoredTree = goldTree.factor(grammarFormatType, factorization);
             try {
-                final ConstrainedChart c = new ConstrainedChart(factoredTree, csrGrammar0);
+                final ConstrainingChart c = new ConstrainingChart(factoredTree, cscGrammar0);
                 constrainingCharts.add(c);
                 c.extractBestParse(0);
             } catch (final ArrayIndexOutOfBoundsException e) {
@@ -135,19 +164,20 @@ public class TrainGrammar extends BaseCommandlineTool {
         return plGrammar.split(noiseGenerator);
     }
 
-    EmIterationResult emIteration(final ConstrainedCsrSparseMatrixGrammar csrGrammar) {
+    EmIterationResult emIteration(final ConstrainedInsideOutsideGrammar cscGrammar) {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         // opts.realSemiring = true;
-        final ConstrainedCsrSpmvParser parser = new ConstrainedCsrSpmvParser(opts, csrGrammar);
+        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscGrammar);
 
-        final ConstrainedCountGrammar countGrammar = new ConstrainedCountGrammar(csrGrammar);
+        final FractionalCountGrammar countGrammar = new FractionalCountGrammar((SplitVocabulary) cscGrammar.nonTermSet,
+                cscGrammar.lexSet, cscGrammar.packingFunction);
 
         // Iterate over the training corpus, parsing and counting rule occurrences
         int sentenceCount = 0;
         float corpusLikelihood = 0f;
-        for (final ConstrainedChart constrainingChart : constrainingCharts) {
+        for (final ConstrainingChart constrainingChart : constrainingCharts) {
             parser.findBestParse(constrainingChart);
             corpusLikelihood += parser.chart.insideProbabilities[parser.chart.offset(parser.chart.cellIndex(0,
                     parser.chart.size()))];
@@ -156,7 +186,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             // progressBar(count);
         }
 
-        return new EmIterationResult(new ProductionListGrammar(countGrammar, csrGrammar.baseGrammar), corpusLikelihood);
+        return new EmIterationResult(new ProductionListGrammar(countGrammar, cscGrammar.baseGrammar), corpusLikelihood);
     }
 
     public static void main(final String[] args) {

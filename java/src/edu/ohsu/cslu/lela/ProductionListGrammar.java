@@ -117,12 +117,12 @@ public class ProductionListGrammar {
     }
 
     /**
-     * Constructs a production-list grammar based on a {@link ConstrainedCountGrammar}.
+     * Constructs a production-list grammar based on a {@link FractionalCountGrammar}.
      * 
      * @param countGrammar
      * @param baseGrammar
      */
-    public ProductionListGrammar(final ConstrainedCountGrammar countGrammar, final ProductionListGrammar baseGrammar) {
+    public ProductionListGrammar(final FractionalCountGrammar countGrammar, final ProductionListGrammar baseGrammar) {
 
         this.vocabulary = countGrammar.vocabulary;
         this.lexicon = countGrammar.lexicon;
