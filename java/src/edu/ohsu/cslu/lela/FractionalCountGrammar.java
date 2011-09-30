@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
@@ -37,7 +38,9 @@ public class FractionalCountGrammar implements CountGrammar {
     protected final SymbolSet<String> lexicon;
     protected final String startSymbol;
 
-    // TODO Map to FloatList instead of directly to float, and use Math.logSumExp() to do all the log-summing at once
+    // TODO We could map to FloatList instead of directly to float, and use Math.logSumExp() to do all the log-summing
+    // at once, but we're constraining the chart population enough that we should have at most 4 possible child pairs (2
+    // in each child cell), so that's not likely a huge win
     /** Parent -> Left child -> Right child -> log(count) */
     private final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> binaryRuleLogCounts = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
     private final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> unaryRuleLogCounts = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
@@ -49,19 +52,6 @@ public class FractionalCountGrammar implements CountGrammar {
 
     /** Parent -> log(count) */
     private final Short2FloatOpenHashMap parentLogCounts = new Short2FloatOpenHashMap();
-
-    // // TODO Rename these; they're not really base rules, they're sums over split parents
-    // /** Parent -> Base grammar left child -> Base grammar right child -> log(count) */
-    // private final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> baseBinaryRuleLogCounts =
-    // new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
-    // /** Parent -> Base grammar child -> log(count) */
-    // private final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> baseUnaryRuleLogCounts = new
-    // Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
-    // private final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> baseLexicalRuleLogCounts = new
-    // Short2ObjectOpenHashMap<Int2FloatOpenHashMap>();
-
-    // /** Parent -> Base grammar packed children -> log(count) */
-    // private final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> basePackedBinaryRuleLogCounts;
 
     public FractionalCountGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon,
             final PackingFunction packingFunction) {
@@ -77,6 +67,10 @@ public class FractionalCountGrammar implements CountGrammar {
             packedBinaryRuleLogCounts = null;
         }
         parentLogCounts.defaultReturnValue(Float.NEGATIVE_INFINITY);
+    }
+
+    public FractionalCountGrammar(final InsideOutsideCscSparseMatrixGrammar cscGrammar) {
+        this((SplitVocabulary) cscGrammar.nonTermSet, cscGrammar.lexSet, cscGrammar.packingFunction);
     }
 
     public void incrementBinaryLogCount(final short parent, final short leftChild, final short rightChild,

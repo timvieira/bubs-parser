@@ -41,7 +41,7 @@ public class ConstrainedCellSelector extends CellSelector {
 
     private short[][] cellIndices;
     private int currentCell = -1;
-    private ConstrainedChart constrainingChart;
+    private ConstrainingChart constrainingChart;
 
     @Override
     public void initSentence(final ChartParser<?, ?> parser) {
@@ -50,18 +50,6 @@ public class ConstrainedCellSelector extends CellSelector {
         this.cellIndices = constrainingChart.openCells;
         currentCell = -1;
     }
-
-    // @Override
-    // public boolean isOpenAll(final short start, final short end) {
-    // // TODO Auto-generated method stub
-    // return super.isOpenAll(start, end);
-    // }
-    //
-    // @Override
-    // public boolean isOpenOnlyFactored(final short start, final short end) {
-    // // TODO Auto-generated method stub
-    // return super.isOpenOnlyFactored(start, end);
-    // }
 
     @Override
     public short[] next() {
@@ -79,22 +67,22 @@ public class ConstrainedCellSelector extends CellSelector {
     }
 
     /**
-     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell
-     *         can contain only a single midpoint)
+     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell can
+     *         contain only a single midpoint)
      */
     public short currentCellMidpoint() {
         return constrainingChart.midpoints[constrainingChart.cellIndex(cellIndices[currentCell][0],
-            cellIndices[currentCell][1])];
+                cellIndices[currentCell][1])];
     }
 
-    /**
-     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell
-     *         can contain only a single midpoint)
-     */
-    public int currentCellUnaryChainDepth() {
-        return constrainingChart.unaryChainDepth(constrainingChart.offset(constrainingChart.cellIndex(
-            cellIndices[currentCell][0], cellIndices[currentCell][1])));
-    }
+    // /**
+    // * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell can
+    // * contain only a single midpoint)
+    // */
+    // public int currentCellUnaryChainDepth() {
+    // return constrainingChart.unaryChainDepth(constrainingChart.offset(constrainingChart.cellIndex(
+    // cellIndices[currentCell][0], cellIndices[currentCell][1])));
+    // }
 
     /**
      * @return All non-terminals populated in the current cell of the constraining chart
@@ -115,7 +103,7 @@ public class ConstrainedCellSelector extends CellSelector {
      */
     public int constrainingCellOffset() {
         return constrainingChart.cellOffsets[constrainingChart.cellIndex(cellIndices[currentCell][0],
-            cellIndices[currentCell][1])];
+                cellIndices[currentCell][1])];
     }
 
     /**
@@ -123,6 +111,6 @@ public class ConstrainedCellSelector extends CellSelector {
      */
     public int constrainingLeftChildCellOffset() {
         return constrainingChart.cellOffsets[constrainingChart.cellIndex(cellIndices[currentCell][0],
-            currentCellMidpoint())];
+                currentCellMidpoint())];
     }
 }

@@ -46,13 +46,13 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Unit tests for {@link ConstrainedCsrSpmvParser}.
+ * Unit tests for {@link ConstrainedInsideOutsideParser}.
  * 
  * @author Aaron Dunlop
  * @since Jan 15, 2011
  */
 @RunWith(Theories.class)
-public class TestConstrainedCsrSpmvParser {
+public class TestConstrainedInsideOutsideParser {
 
     @DataPoint
     public static NoiseGenerator zeroNoiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(0);
@@ -65,26 +65,24 @@ public class TestConstrainedCsrSpmvParser {
 
     private ProductionListGrammar plGrammar0;
     private ProductionListGrammar plGrammar1;
-    private ConstrainedChart chart0;
-    private ConstrainedCsrSparseMatrixGrammar csrGrammar1;
-    private ConstrainedCsrSpmvParser parser1;
+    private ConstrainingChart chart0;
+    private ConstrainedInsideOutsideGrammar cscGrammar1;
+    private ConstrainedInsideOutsideParser parser1;
 
     @Before
     public void setUp() throws IOException {
 
         // Induce a grammar from the sample tree and construct a basic constraining chart
         final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllLelaTests.STRING_SAMPLE_TREE), null,
-                null, 1);
+                null);
         plGrammar0 = new ProductionListGrammar(sg);
         // Create a basic constraining chart
-        final ConstrainedCsrSparseMatrixGrammar unsplitGrammar = new ConstrainedCsrSparseMatrixGrammar(plGrammar0,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
-        chart0 = new ConstrainedChart(BinaryTree.read(AllLelaTests.STRING_SAMPLE_TREE, String.class), unsplitGrammar);
+        final ConstrainedInsideOutsideGrammar unsplitGrammar = cscGrammar(plGrammar0);
+        chart0 = new ConstrainingChart(BinaryTree.read(AllLelaTests.STRING_SAMPLE_TREE, String.class), unsplitGrammar);
 
         // Split the grammar
         plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
-        csrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(plGrammar1, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+        cscGrammar1 = cscGrammar(plGrammar1);
     }
 
     /**
@@ -94,17 +92,17 @@ public class TestConstrainedCsrSpmvParser {
      */
     private BinaryTree<String> parseWithGrammar1() {
         // Parse with the split-1 grammar
-        // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
+        // TODO It seems like the cell selector should be set directly in ConstrainedInsideOutsideParser
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         // opts.realSemiring = true;
-        parser1 = new ConstrainedCsrSpmvParser(opts, csrGrammar1);
+        parser1 = new ConstrainedInsideOutsideParser(opts, cscGrammar1);
         return parser1.findBestParse(chart0);
     }
 
     @Test
-    public void testCsrConversion() {
-        final PackingFunction f = csrGrammar1.packingFunction;
+    public void testCscConversion() {
+        final PackingFunction f = cscGrammar1.packingFunction;
 
         assertEquals(1, f.unpackLeftChild(f.pack((short) 1, (short) 4)));
         assertEquals(4, f.unpackRightChild(f.pack((short) 1, (short) 4)));
@@ -201,16 +199,15 @@ public class TestConstrainedCsrSpmvParser {
         // Split the grammar again
         // Split the grammar
         final ProductionListGrammar plGrammar2 = plGrammar1.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
-        final ConstrainedCsrSparseMatrixGrammar csrGrammar2 = new ConstrainedCsrSparseMatrixGrammar(plGrammar2,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+        final ConstrainedInsideOutsideGrammar cscGrammar2 = cscGrammar(plGrammar2);
 
         // Parse with the split-2 grammar, constrained by the split-1 chart
-        // TODO It seems like the cell selector should be set directly in ConstrainedCsrSpmvParser
+        // TODO It seems like the cell selector should be set directly in the parser
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
 
         // opts.realSemiring = true;
-        final ConstrainedCsrSpmvParser parser2 = new ConstrainedCsrSpmvParser(opts, csrGrammar2);
+        final ConstrainedInsideOutsideParser parser2 = new ConstrainedInsideOutsideParser(opts, cscGrammar2);
         final BinaryTree<String> parseTree2 = parser2.findBestParse(chart0);
         final ConstrainedChart chart2 = parser2.chart;
 
@@ -291,21 +288,21 @@ public class TestConstrainedCsrSpmvParser {
         // Induce a grammar from the corpus and construct a basic constraining chart
         final ProductionListGrammar plg0 = induceProductionListGrammar(new StringReader(
                 AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN));
-        final ConstrainedCsrSparseMatrixGrammar csr0 = csrGrammar(plg0);
+        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(plg0);
 
         // Split the grammar
         final ProductionListGrammar plg1 = plg0.split(noiseGenerator);
-        final ConstrainedCsrSparseMatrixGrammar csr1 = csrGrammar(plg1);
+        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(plg1);
 
         // Construct a constraining chart
         final NaryTree<String> goldTree = NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
         final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
-        final ConstrainedChart constrainingChart = new ConstrainedChart(factoredTree, csr0);
+        final ConstrainingChart constrainingChart = new ConstrainingChart(factoredTree, csc0);
 
         // Parse with the split-1 grammar
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedCsrSpmvParser parser = new ConstrainedCsrSpmvParser(opts, csr1);
+        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, csc1);
 
         // TODO Eliminate multiple conversions
         final BinaryTree<String> parseTree1 = parser.findBestParse(constrainingChart);
@@ -314,13 +311,14 @@ public class TestConstrainedCsrSpmvParser {
     }
 
     private ProductionListGrammar induceProductionListGrammar(final Reader reader) throws IOException {
-        final StringCountGrammar sg = new StringCountGrammar(reader, Factorization.RIGHT, GrammarFormatType.Berkeley, 0);
+        final StringCountGrammar sg = new StringCountGrammar(reader, Factorization.RIGHT, GrammarFormatType.Berkeley);
         return new ProductionListGrammar(sg);
     }
 
-    private ConstrainedCsrSparseMatrixGrammar csrGrammar(final ProductionListGrammar plg) {
-        return new ConstrainedCsrSparseMatrixGrammar(plg, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+    private ConstrainedInsideOutsideGrammar cscGrammar(final ProductionListGrammar plg) {
+        return new ConstrainedInsideOutsideGrammar(plGrammar1.binaryProductions, plGrammar1.unaryProductions,
+                plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class, null);
     }
 
     @Theory
@@ -329,30 +327,30 @@ public class TestConstrainedCsrSpmvParser {
 
         // Induce a grammar from the corpus
         final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
-        final ConstrainedCsrSparseMatrixGrammar csr0 = csrGrammar(plg0);
+        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(plg0);
 
         // Split the grammar
         final ProductionListGrammar plg1 = plg0.split(noiseGenerator);
-        final ConstrainedCsrSparseMatrixGrammar csr1 = csrGrammar(plg1);
+        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(plg1);
 
         // Parse each tree in the training corpus with the split-1 grammar
-        parseAndCheck(JUnit.unitTestDataAsReader(corpus), csr0, csr1);
+        parseAndCheck(JUnit.unitTestDataAsReader(corpus), csc0, csc1);
     }
 
-    private void parseAndCheck(final Reader corpus, final ConstrainedCsrSparseMatrixGrammar unsplitGrammar,
-            final ConstrainedCsrSparseMatrixGrammar splitGrammar) throws IOException {
+    private void parseAndCheck(final Reader corpus, final ConstrainedInsideOutsideGrammar unsplitGrammar,
+            final ConstrainedInsideOutsideGrammar splitGrammar) throws IOException {
 
         final BufferedReader br = new BufferedReader(corpus);
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedCsrSpmvParser parser = new ConstrainedCsrSpmvParser(opts, splitGrammar);
+        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, splitGrammar);
 
         int count = 0;
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
             final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
-            final ConstrainedChart constrainingChart = new ConstrainedChart(factoredTree, unsplitGrammar);
+            final ConstrainingChart constrainingChart = new ConstrainingChart(factoredTree, unsplitGrammar);
 
             // Ensure that we're constructing the constraining chart correctly
             assertEquals(factoredTree.toString(), constrainingChart.toString());
@@ -375,15 +373,15 @@ public class TestConstrainedCsrSpmvParser {
 
         // Induce a grammar from the corpus
         final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
-        final ConstrainedCsrSparseMatrixGrammar csr0 = csrGrammar(plg0);
+        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(plg0);
 
         // Split the grammar
         final ProductionListGrammar plg1 = plg0.split(noiseGenerator);
-        final ConstrainedCsrSparseMatrixGrammar csr1 = csrGrammar(plg1);
+        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(plg1);
 
         // Split the grammar again
         final ProductionListGrammar plg2 = plg1.split(noiseGenerator);
-        final ConstrainedCsrSparseMatrixGrammar csr2 = csrGrammar(plg2);
+        final ConstrainedInsideOutsideGrammar csc2 = cscGrammar(plg2);
 
         // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the
         // split-2
@@ -393,14 +391,14 @@ public class TestConstrainedCsrSpmvParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedCsrSpmvParser p1 = new ConstrainedCsrSpmvParser(opts, csr1);
-        final ConstrainedCsrSpmvParser p2 = new ConstrainedCsrSpmvParser(opts, csr2);
+        final ConstrainedInsideOutsideParser p1 = new ConstrainedInsideOutsideParser(opts, csc1);
+        final ConstrainedInsideOutsideParser p2 = new ConstrainedInsideOutsideParser(opts, csc2);
 
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
             final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
-            final ConstrainedChart c0 = new ConstrainedChart(tree0, csr0);
+            final ConstrainingChart c0 = new ConstrainingChart(tree0, csc0);
 
             final BinaryTree<String> tree1 = BinaryTree.read(p1.findBestParse(c0).toString(), String.class);
             final BinaryTree<String> tree2 = BinaryTree.read(p2.findBestParse(c0).toString(), String.class);
@@ -417,24 +415,24 @@ public class TestConstrainedCsrSpmvParser {
 
         // Induce a grammar from the corpus
         final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
-        final ConstrainedCsrSparseMatrixGrammar csr0 = csrGrammar(plg0);
+        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(plg0);
 
         // Split the grammar
         final ProductionListGrammar plg1 = plg0.split(noiseGenerator);
-        final ConstrainedCsrSparseMatrixGrammar csr1 = csrGrammar(plg1);
+        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(plg1);
 
         // Split the grammar again
         final ProductionListGrammar plg2 = plg1.split(noiseGenerator);
-        final ConstrainedCsrSparseMatrixGrammar csr2 = csrGrammar(plg2);
+        final ConstrainedInsideOutsideGrammar csc2 = cscGrammar(plg2);
 
         // Re-merge some categories in the split-2 grammar
         final ProductionListGrammar plg2b = plg2.merge(new short[] { 2, 4, 8, 12, 20, 22, 26, 40, 46, 56, 70, 72, 100,
                 110 });
-        final ConstrainedCsrSparseMatrixGrammar csr2b = csrGrammar(plg2b);
+        final ConstrainedInsideOutsideGrammar csc2b = cscGrammar(plg2b);
 
         // Split the merged 2-split grammar again (producing a 3-split grammar) and parse with that grammar
         final ProductionListGrammar plg3 = plg2b.split(noiseGenerator);
-        final ConstrainedCsrSparseMatrixGrammar csr3 = csrGrammar(plg3);
+        final ConstrainedInsideOutsideGrammar csc3 = cscGrammar(plg3);
 
         // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the
         // split-2
@@ -444,9 +442,9 @@ public class TestConstrainedCsrSpmvParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedCsrSpmvParser p1 = new ConstrainedCsrSpmvParser(opts, csr1);
-        final ConstrainedCsrSpmvParser p2 = new ConstrainedCsrSpmvParser(opts, csr2);
-        final ConstrainedCsrSpmvParser p3 = new ConstrainedCsrSpmvParser(opts, csr3);
+        final ConstrainedInsideOutsideParser p1 = new ConstrainedInsideOutsideParser(opts, csc1);
+        final ConstrainedInsideOutsideParser p2 = new ConstrainedInsideOutsideParser(opts, csc2);
+        final ConstrainedInsideOutsideParser p3 = new ConstrainedInsideOutsideParser(opts, csc3);
 
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
         for (String line = br.readLine(); line != null; line = br.readLine()) {
@@ -454,13 +452,13 @@ public class TestConstrainedCsrSpmvParser {
             final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
 
             // Parse with the split-1 grammar
-            final ConstrainedChart c0 = new ConstrainedChart(tree0, csr0);
+            final ConstrainingChart c0 = new ConstrainingChart(tree0, csc0);
             p1.findBestParse(c0);
             // Parse with the split-2 grammar (constrained by the split-1 parse)
             p2.findBestParse(c0).toString();
 
             // Apply the grammar merge to the split-2 chart
-            final ConstrainedChart c2b = p2.chart.merge(csr2b);
+            final ConstrainedChart c2b = p2.chart.merge(csc2b);
 
             // Ensure that the tree encoded in the newly-merged chart matches the original un-split tree
             assertEquals(goldTree.toString(), BinaryTree.read(c2b.extractBestParse(0).toString(), String.class)
@@ -479,7 +477,8 @@ public class TestConstrainedCsrSpmvParser {
         // Parse with an equal-split grammar, count (fractional) rule occurrences, and convert those counts
         // into a grammar
         parseWithGrammar1();
-        ProductionListGrammar plg = new ProductionListGrammar(parser1.countRuleOccurrences(),
+        final FractionalCountGrammar fcg = new FractionalCountGrammar(cscGrammar1);
+        ProductionListGrammar plg = new ProductionListGrammar(parser1.countRuleOccurrences(fcg),
                 parser1.grammar.baseGrammar);
 
         // Verify that we find the same probabilities in the original split grammar
@@ -508,13 +507,12 @@ public class TestConstrainedCsrSpmvParser {
         // Split the grammar
         final ProductionListGrammar biasedGrammar1 = plGrammar0
                 .split(new ProductionListGrammar.BiasedNoiseGenerator(1f));
-        final ConstrainedCsrSparseMatrixGrammar biasedCsrGrammar1 = new ConstrainedCsrSparseMatrixGrammar(
-                biasedGrammar1, GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+        final ConstrainedInsideOutsideGrammar biasedCscGrammar1 = cscGrammar(biasedGrammar1);
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         // opts.realSemiring = true;
-        parser1 = new ConstrainedCsrSpmvParser(opts, biasedCsrGrammar1);
+        parser1 = new ConstrainedInsideOutsideParser(opts, biasedCscGrammar1);
         parser1.findBestParse(chart0);
 
         plg = new ProductionListGrammar(parser1.countRuleOccurrences(), parser1.grammar.baseGrammar);
