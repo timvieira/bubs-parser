@@ -118,7 +118,7 @@ public abstract class ParallelArrayChart extends Chart {
      * @param sparseMatrixGrammar
      */
     protected ParallelArrayChart(final int size, final int chartArraySize, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this.sparseMatrixGrammar = sparseMatrixGrammar;
+        this.grammar = this.sparseMatrixGrammar = sparseMatrixGrammar;
         this.size = size;
         this.chartArraySize = chartArraySize;
 
