@@ -42,7 +42,7 @@ public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
     public void testCartesianProductFunction() throws IOException {
         // Induce a grammar from a sample tree
         final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllLelaTests.STRING_SAMPLE_TREE),
-                Factorization.RIGHT, GrammarFormatType.Berkeley);
+                Factorization.RIGHT, GrammarFormatType.Berkeley, 1);
         final ProductionListGrammar plGrammar0 = new ProductionListGrammar(sg);
 
         // Split the grammar
