@@ -23,8 +23,9 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ TestStringCountGrammar.class, TestFractionalCountGrammar.class, TestProductionListGrammar.class,
-        TestConstrainedCsrSparseMatrixGrammar.class, TestConstrainingChart.class, TestConstrainedChart.class,
-        TestConstrainedInsideOutsideParser.class, TestTrainGrammar.class })
+        TestConstrainingChart.class, TestConstrainedChart.class, TestConstrainedInsideOutsideParser.class
+// ,TestTrainGrammar.class
+})
 public class AllLelaTests {
 
     /**

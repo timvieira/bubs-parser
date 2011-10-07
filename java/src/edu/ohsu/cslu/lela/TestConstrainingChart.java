@@ -20,6 +20,7 @@ package edu.ohsu.cslu.lela;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -36,7 +37,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
- * Unit tests for {@link ConstrainedChart}.
+ * Unit tests for {@link ConstrainingChart}.
  * 
  * @author Aaron Dunlop
  * @since Jan 15, 2011
@@ -60,7 +61,7 @@ public class TestConstrainingChart {
     }
 
     /**
-     * Tests constructing a {@link ConstrainedChart} from a gold tree and then re-extracting that tree from the chart.
+     * Tests constructing a {@link ConstrainingChart} from a gold tree and then re-extracting that tree from the chart.
      * 
      * @throws IOException
      */
@@ -86,16 +87,25 @@ public class TestConstrainingChart {
         // Verify expected probabilities in a few cells
         assertEquals(0, cc.getInside(0, 5, top), .001f);
         assertEquals(0, cc.getInside(0, 5, a), .001f);
+        assertEquals(2, cc.unaryChainLength(0, 5));
         assertEquals(Float.NEGATIVE_INFINITY, cc.getInside(0, 4, b), .001f);
 
         assertEquals(0, cc.getInside(0, 2, a), .001f);
+        assertEquals(1, cc.unaryChainLength(0, 2));
         assertEquals(Float.NEGATIVE_INFINITY, cc.getInside(0, 2, b), .001f);
 
         assertEquals(0, cc.getInside(0, 3, a), .001f);
+        assertEquals(1, cc.unaryChainLength(0, 3));
         assertEquals(Float.NEGATIVE_INFINITY, cc.getInside(0, 2, b), .001f);
 
         assertEquals(0, cc.getInside(3, 5, b), .001f);
+        assertEquals(1, cc.unaryChainLength(3, 5));
         assertEquals(Float.NEGATIVE_INFINITY, cc.getInside(3, 5, a), .001f);
+
+        assertEquals(2, cc.unaryChainLength(3, 4));
+        assertEquals(0, cc.getInside(3, 4, b), .001f);
+
+        assertEquals(1, cc.unaryChainLength(4, 5));
 
         // And ensure that the extracted parse matches the input gold tree
         assertEquals(AllLelaTests.STRING_SAMPLE_TREE, cc.extractBestParse(vocabulary.getIndex("top")).toString());
@@ -114,6 +124,13 @@ public class TestConstrainingChart {
         final ConstrainingChart cc = new ConstrainingChart(NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN,
                 String.class).factor(GrammarFormatType.Berkeley, Factorization.RIGHT), csrg);
 
+        // Verify some unary chain lengths
+        assertEquals(3, cc.maxUnaryChainLength());
+        assertEquals(1, cc.unaryChainLength(0, 1));
+        assertEquals(1, cc.unaryChainLength(2, 3));
+        assertEquals(2, cc.unaryChainLength(3, 4));
+        assertEquals(3, cc.unaryChainLength(4, 5));
+
         // Ensure that the extracted parse matches the input gold tree
         assertEquals(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN,
                 BinaryTree.read(cc.extractBestParse(0).toString(), String.class).unfactor(GrammarFormatType.Berkeley)
@@ -126,6 +143,10 @@ public class TestConstrainingChart {
         final ConstrainingChart cc = new ConstrainingChart(BinaryTree.read(bracketedTree, String.class), csrGrammar0);
         // Ensure that the extracted parse matches the input gold tree
         assertEquals(bracketedTree, cc.extractBestParse(plGrammar0.vocabulary.getIndex("top")).toString());
+    }
 
+    @Test
+    public void testConstructFromConstrainedChart() {
+        fail("Not Implemented");
     }
 }

@@ -14,8 +14,10 @@ public class ConstrainingChart extends PackedArrayChart {
 
     short[][] openCells;
 
+    protected final int[] unaryChainLength;
+
     /** The length of the longest unary chain (i.e., the binary parent + any unary parents) */
-    private final int maxUnaryChainLength;
+    protected final int maxUnaryChainLength;
 
     /**
      * Populates a chart based on a gold tree, with one entry per cell (+ unary productions, if any). This chart can
@@ -31,7 +33,7 @@ public class ConstrainingChart extends PackedArrayChart {
 
         this.maxUnaryChainLength = goldTree.maxUnaryChainLength() + 1;
         this.beamWidth = this.lexicalRowBeamWidth = maxUnaryChainLength;
-
+        this.unaryChainLength = new int[size * (size + 1) / 2];
         final IntArrayList tokenList = new IntArrayList();
 
         short start = 0;
@@ -46,11 +48,15 @@ public class ConstrainingChart extends PackedArrayChart {
             final int end = start + node.leaves();
             final short parent = (short) sparseMatrixGrammar.nonTermSet.getInt(node.label());
             final int cellIndex = cellIndex(start, end);
+            final int unaryChainHeight = node.unaryChainHeight();
+            if (unaryChainLength[cellIndex] == 0) {
+                unaryChainLength[cellIndex] = unaryChainHeight + 1;
+            }
 
             // Find the index of this non-terminal in the main chart array.
             // Unary children are positioned _after_ parents
             final int cellOffset = cellOffset(start, end);
-            final int i = cellOffset + node.unaryChainHeight();
+            final int i = cellOffset + unaryChainLength[cellIndex] - unaryChainHeight - 1;
 
             nonTerminalIndices[i] = parent;
 
@@ -101,6 +107,16 @@ public class ConstrainingChart extends PackedArrayChart {
         }
     }
 
+    protected ConstrainingChart(final ConstrainingChart constrainingChart, final int chartArraySize,
+            final SparseMatrixGrammar sparseMatrixGrammar) {
+
+        super(constrainingChart.size(), chartArraySize, sparseMatrixGrammar);
+
+        this.unaryChainLength = constrainingChart.unaryChainLength;
+        this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength;
+        this.openCells = constrainingChart.openCells;
+    }
+
     @Override
     public float getInside(final int start, final int end, final int nonTerminal) {
 
@@ -120,19 +136,17 @@ public class ConstrainingChart extends PackedArrayChart {
 
     public BinaryTree<String> extractInsideParse(final int start, final int end) {
 
+        final int cellIndex = cellIndex(start, end);
         final int cellOffset = cellOffset(start, end);
-        int entryIndex = cellOffset + maxUnaryChainLength - 1;
-        // Find the first populated entry
-        while (nonTerminalIndices[entryIndex] < 0) {
-            entryIndex--;
-        }
+        int entryIndex = cellOffset;
 
         final BinaryTree<String> tree = new BinaryTree<String>(
-                grammar.nonTermSet.getSymbol(nonTerminalIndices[entryIndex]));
+                grammar.nonTermSet.getSymbol(nonTerminalIndices[cellOffset]));
         BinaryTree<String> subtree = tree;
+
         // Add unary productions and binary parent
-        while (entryIndex > cellOffset) {
-            subtree = subtree.addChild(grammar.nonTermSet.getSymbol(nonTerminalIndices[--entryIndex]));
+        while (entryIndex < cellOffset + unaryChainLength[cellIndex] - 1) {
+            subtree = subtree.addChild(grammar.nonTermSet.getSymbol(nonTerminalIndices[++entryIndex]));
         }
 
         if (packedChildren[entryIndex] < 0) {
@@ -150,11 +164,71 @@ public class ConstrainingChart extends PackedArrayChart {
     }
 
     /**
+     * @param cellIndex
+     * @return The length of the unary chain in the specified cell (1 <= length <= maxUnaryChainLength).
+     */
+    int unaryChainLength(final int cellIndex) {
+        return unaryChainLength[cellIndex];
+    }
+
+    /**
+     * @param start
+     * @param end
+     * @return The length of the unary chain in the specified cell (1 <= length <= maxUnaryChainLength).
+     */
+    int unaryChainLength(final int start, final int end) {
+        return unaryChainLength(cellIndex(start, end));
+    }
+
+    /**
      * For unit testing
      * 
      * @return maximum unary chain length
      */
     int maxUnaryChainLength() {
         return maxUnaryChainLength;
+    }
+
+    @Override
+    public String toString() {
+        return toString(true);
+    }
+
+    @Override
+    public String toString(final boolean formatFractions) {
+        final StringBuilder sb = new StringBuilder(1024);
+
+        for (int span = 1; span <= size; span++) {
+            for (int start = 0; start <= size - span; start++) {
+                final int end = start + span;
+                final int cellIndex = cellIndex(start, end);
+                final int offset = offset(cellIndex);
+
+                // Skip empty cells
+                if (nonTerminalIndices[offset] < 0) {
+                    continue;
+                }
+
+                sb.append("ConstrainedChartCell[" + start + "][" + end + "]\n");
+
+                // Format entries from the main chart array
+                // TODO Format unary productions
+                for (int index = offset; index < offset + 2; index++) {
+                    final int nonTerminal = nonTerminalIndices[index];
+
+                    if (nonTerminal < 0) {
+                        continue;
+                    }
+
+                    final int childProductions = packedChildren[index];
+                    final int midpoint = midpoints[cellIndex];
+
+                    sb.append(formatCellEntry(nonTerminal, childProductions, 0, midpoint, formatFractions));
+                }
+                sb.append("\n\n");
+            }
+        }
+
+        return sb.toString();
     }
 }

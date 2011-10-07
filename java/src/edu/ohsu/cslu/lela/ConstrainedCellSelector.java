@@ -45,7 +45,7 @@ public class ConstrainedCellSelector extends CellSelector {
 
     @Override
     public void initSentence(final ChartParser<?, ?> parser) {
-        final ConstrainedCsrSpmvParser constrainedParser = (ConstrainedCsrSpmvParser) parser;
+        final ConstrainedInsideOutsideParser constrainedParser = (ConstrainedInsideOutsideParser) parser;
         this.constrainingChart = constrainedParser.constrainingChart;
         this.cellIndices = constrainingChart.openCells;
         currentCell = -1;

@@ -274,16 +274,18 @@ public class ProductionListGrammar {
     public ProductionListGrammar split(final NoiseGenerator noiseGenerator) {
         // Produce a new vocabulary, splitting each non-terminal into two substates
 
-        final SplitVocabulary splitVocabulary = new SplitVocabulary(vocabulary, (short) (vocabulary.maxSplits * 2));
+        final SplitVocabulary splitVocabulary = new SplitVocabulary(vocabulary);
 
-        // Do not split the start symbol
+        // Add a dummy non-terminal for the start symbol. The start symbol is always index 0, and using index 1 makes
+        // computing other splits simpler. We'll always re-merge the dummy symbol.
         splitVocabulary.addSymbol(startSymbol);
+        splitVocabulary.addSymbol(startSymbol + "_1");
         for (int i = 1; i < vocabulary.size(); i++) {
             final String[] substates = substates(vocabulary.getSymbol(i));
             splitVocabulary.addSymbol(substates[0]);
             splitVocabulary.addSymbol(substates[1]);
         }
-        splitVocabulary.recomputeSplits();
+        // splitVocabulary.recomputeSplits();
 
         // Number of rules headed by each parent and the total noise added to rules headed by those parents. Used to
         // re-normalize rule probabilities after splitting all rules
@@ -303,95 +305,103 @@ public class ProductionListGrammar {
         // + noise
         for (final Production p : binaryProductions) {
 
-            final int[] splitParents = new int[] { p.parent * 2 - 1, p.parent * 2 };
-            final int[] splitLeftChildren = new int[] { p.leftChild * 2 - 1, p.leftChild * 2 };
-            final int[] splitRightChildren = new int[] { p.rightChild * 2 - 1, p.rightChild * 2 };
+            final int splitParent0 = p.parent << 1;
+            final int splitParent1 = splitParent0 + 1;
+            final int splitLeftChild0 = p.leftChild << 1;
+            final int splitLeftChild1 = splitLeftChild0 + 1;
+            final int splitRightChild0 = p.rightChild << 1;
+            final int splitRightChild1 = splitRightChild0 + 1;
+
             final float[] noise = noiseGenerator.noise(8);
 
-            tmpGrammar.binaryProductions.add(new Production(splitParents[0], splitLeftChildren[0],
-                    splitRightChildren[0], p.prob + logOneFourth + noise[0], splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[0]].add(p.prob + logOneFourth + noise[0]);
+            tmpGrammar.binaryProductions.add(new Production(splitParent0, splitLeftChild0, splitRightChild0, p.prob
+                    + logOneFourth + noise[0], splitVocabulary, lexicon));
+            probabilitiesByParent[splitParent0].add(p.prob + logOneFourth + noise[0]);
 
-            tmpGrammar.binaryProductions.add(new Production(splitParents[0], splitLeftChildren[0],
-                    splitRightChildren[1], p.prob + logOneFourth + noise[1], splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[0]].add(p.prob + logOneFourth + noise[1]);
+            tmpGrammar.binaryProductions.add(new Production(splitParent0, splitLeftChild0, splitRightChild1, p.prob
+                    + logOneFourth + noise[1], splitVocabulary, lexicon));
+            probabilitiesByParent[splitParent0].add(p.prob + logOneFourth + noise[1]);
 
-            tmpGrammar.binaryProductions.add(new Production(splitParents[0], splitLeftChildren[1],
-                    splitRightChildren[0], p.prob + logOneFourth + noise[2], splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[0]].add(p.prob + logOneFourth + noise[2]);
+            tmpGrammar.binaryProductions.add(new Production(splitParent0, splitLeftChild1, splitRightChild0, p.prob
+                    + logOneFourth + noise[2], splitVocabulary, lexicon));
+            probabilitiesByParent[splitParent0].add(p.prob + logOneFourth + noise[2]);
 
-            tmpGrammar.binaryProductions.add(new Production(splitParents[0], splitLeftChildren[1],
-                    splitRightChildren[1], p.prob + logOneFourth + noise[3], splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[0]].add(p.prob + logOneFourth + noise[3]);
+            tmpGrammar.binaryProductions.add(new Production(splitParent0, splitLeftChild1, splitRightChild1, p.prob
+                    + logOneFourth + noise[3], splitVocabulary, lexicon));
+            probabilitiesByParent[splitParent0].add(p.prob + logOneFourth + noise[3]);
 
-            tmpGrammar.binaryProductions.add(new Production(splitParents[1], splitLeftChildren[0],
-                    splitRightChildren[0], p.prob + logOneFourth + noise[4], splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[1]].add(p.prob + logOneFourth + noise[4]);
+            tmpGrammar.binaryProductions.add(new Production(splitParent1, splitLeftChild0, splitRightChild0, p.prob
+                    + logOneFourth + noise[4], splitVocabulary, lexicon));
+            probabilitiesByParent[splitParent1].add(p.prob + logOneFourth + noise[4]);
 
-            tmpGrammar.binaryProductions.add(new Production(splitParents[1], splitLeftChildren[0],
-                    splitRightChildren[1], p.prob + logOneFourth + noise[5], splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[1]].add(p.prob + logOneFourth + noise[5]);
+            tmpGrammar.binaryProductions.add(new Production(splitParent1, splitLeftChild0, splitRightChild1, p.prob
+                    + logOneFourth + noise[5], splitVocabulary, lexicon));
+            probabilitiesByParent[splitParent1].add(p.prob + logOneFourth + noise[5]);
 
-            tmpGrammar.binaryProductions.add(new Production(splitParents[1], splitLeftChildren[1],
-                    splitRightChildren[0], p.prob + logOneFourth + noise[6], splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[1]].add(p.prob + logOneFourth + noise[6]);
+            tmpGrammar.binaryProductions.add(new Production(splitParent1, splitLeftChild1, splitRightChild0, p.prob
+                    + logOneFourth + noise[6], splitVocabulary, lexicon));
+            probabilitiesByParent[splitParent1].add(p.prob + logOneFourth + noise[6]);
 
-            tmpGrammar.binaryProductions.add(new Production(splitParents[1], splitLeftChildren[1],
-                    splitRightChildren[1], p.prob + logOneFourth + noise[7], splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[1]].add(p.prob + logOneFourth + noise[7]);
+            tmpGrammar.binaryProductions.add(new Production(splitParent1, splitLeftChild1, splitRightChild1, p.prob
+                    + logOneFourth + noise[7], splitVocabulary, lexicon));
+            probabilitiesByParent[splitParent1].add(p.prob + logOneFourth + noise[7]);
         }
 
         // Split unary productions in 4ths. Each split production has 1/2 the probability of the original
         // production + noise
         for (final Production p : unaryProductions) {
 
-            final int[] splitChildren = new int[] { p.leftChild * 2 - 1, p.leftChild * 2 };
+            final int splitChild0 = p.leftChild << 1;
+            final int splitChild1 = splitChild0 + 1;
 
-            // Since we do not split the start symbol, we only split unaries of which it is the parent in two
+            // Special-case for the start symbol. Since we do not split it, we only split unaries of which it is the
+            // parent in two
             if (p.parent == 0) {
                 final float[] noise = noiseGenerator.noise(2);
-                tmpGrammar.unaryProductions.add(new Production(0, splitChildren[0], p.prob + logOneHalf + noise[0],
-                        false, splitVocabulary, lexicon));
+                tmpGrammar.unaryProductions.add(new Production(0, splitChild0, p.prob + logOneHalf + noise[0], false,
+                        splitVocabulary, lexicon));
                 probabilitiesByParent[0].add(p.prob + logOneHalf + noise[0]);
 
-                tmpGrammar.unaryProductions.add(new Production(0, splitChildren[1], p.prob + logOneHalf + noise[1],
-                        false, splitVocabulary, lexicon));
+                tmpGrammar.unaryProductions.add(new Production(0, splitChild1, p.prob + logOneHalf + noise[1], false,
+                        splitVocabulary, lexicon));
                 probabilitiesByParent[0].add(p.prob + logOneHalf + noise[1]);
 
             } else {
-                final int[] splitParents = new int[] { p.parent * 2 - 1, p.parent * 2 };
+                final int splitParent0 = p.parent << 1;
+                final int splitParent1 = splitParent0 + 1;
                 final float[] noise = noiseGenerator.noise(4);
 
-                tmpGrammar.unaryProductions.add(new Production(splitParents[0], splitChildren[0], p.prob + logOneHalf
+                tmpGrammar.unaryProductions.add(new Production(splitParent0, splitChild0, p.prob + logOneHalf
                         + noise[0], false, splitVocabulary, lexicon));
-                probabilitiesByParent[splitParents[0]].add(p.prob + logOneHalf + noise[0]);
+                probabilitiesByParent[splitParent0].add(p.prob + logOneHalf + noise[0]);
 
-                tmpGrammar.unaryProductions.add(new Production(splitParents[0], splitChildren[1], p.prob + logOneHalf
+                tmpGrammar.unaryProductions.add(new Production(splitParent0, splitChild1, p.prob + logOneHalf
                         + noise[1], false, splitVocabulary, lexicon));
-                probabilitiesByParent[splitParents[0]].add(p.prob + logOneHalf + noise[1]);
+                probabilitiesByParent[splitParent0].add(p.prob + logOneHalf + noise[1]);
 
-                tmpGrammar.unaryProductions.add(new Production(splitParents[1], splitChildren[0], p.prob + logOneHalf
+                tmpGrammar.unaryProductions.add(new Production(splitParent1, splitChild0, p.prob + logOneHalf
                         + noise[2], false, splitVocabulary, lexicon));
-                probabilitiesByParent[splitParents[1]].add(p.prob + logOneHalf + noise[2]);
+                probabilitiesByParent[splitParent1].add(p.prob + logOneHalf + noise[2]);
 
-                tmpGrammar.unaryProductions.add(new Production(splitParents[1], splitChildren[1], p.prob + logOneHalf
+                tmpGrammar.unaryProductions.add(new Production(splitParent1, splitChild1, p.prob + logOneHalf
                         + noise[3], false, splitVocabulary, lexicon));
-                probabilitiesByParent[splitParents[1]].add(p.prob + logOneHalf + noise[3]);
+                probabilitiesByParent[splitParent1].add(p.prob + logOneHalf + noise[3]);
             }
         }
 
         // Split lexical productions in half. Each split production has the same probability as the original production
         // + noise
         for (final Production p : lexicalProductions) {
-            final int[] splitParents = new int[] { p.parent * 2 - 1, p.parent * 2 };
+            final int splitParent0 = p.parent << 1;
+            final int splitParent1 = splitParent0 + 1;
             final float[] noise = noiseGenerator.noise(2);
-            tmpGrammar.lexicalProductions.add(new Production(splitParents[0], p.child(), p.prob + noise[0], true,
+            tmpGrammar.lexicalProductions.add(new Production(splitParent0, p.child(), p.prob + noise[0], true,
                     splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[0]].add(p.prob + noise[0]);
+            probabilitiesByParent[splitParent0].add(p.prob + noise[0]);
 
-            tmpGrammar.lexicalProductions.add(new Production(splitParents[1], p.child(), p.prob + noise[1], true,
+            tmpGrammar.lexicalProductions.add(new Production(splitParent1, p.child(), p.prob + noise[1], true,
                     splitVocabulary, lexicon));
-            probabilitiesByParent[splitParents[1]].add(p.prob + noise[1]);
+            probabilitiesByParent[splitParent1].add(p.prob + noise[1]);
         }
 
         // Re-normalize rule probabilities
@@ -399,9 +409,7 @@ public class ProductionListGrammar {
         Arrays.fill(normalization, Float.NEGATIVE_INFINITY);
         for (int i = 0; i < normalization.length; i++) {
             if (probabilitiesByParent[i].size() > 0) {
-                // TODO: I changed this from sumExp() to logSumExp(). Aaron, is that OK?
-                final double totalProbability = edu.ohsu.cslu.util.Math.logSumExp(probabilitiesByParent[i]
-                        .toFloatArray());
+                final double totalProbability = edu.ohsu.cslu.util.Math.sumExp(probabilitiesByParent[i].toFloatArray());
                 // Total 'noise' added
                 final double x = totalProbability - 1;
                 normalization[i] = (float) Math.log(1 - x / totalProbability);
@@ -665,7 +673,7 @@ public class ProductionListGrammar {
                 probabilities[j++] = p.prob;
                 sum += Math.exp(p.prob);
             }
-            final float logSum = edu.ohsu.cslu.util.Math.logSumExp(probabilities);
+            final float logSum = probabilities.length == 0 ? 0 : edu.ohsu.cslu.util.Math.logSumExp(probabilities);
             assertEquals("Invalid probability distribution for parent " + vocabulary.getSymbol(parent), 0, logSum, .001);
         }
     }
@@ -747,25 +755,19 @@ public class ProductionListGrammar {
     public List<Production>[] productionsByParent() {
         @SuppressWarnings("unchecked")
         final List<Production>[] prods = new List[vocabulary.size()];
+        for (int i = 0; i < vocabulary.size(); i++) {
+            prods[i] = new ArrayList<Production>();
+        }
 
         for (final Production p : binaryProductions) {
-            if (prods[p.parent] == null) {
-                prods[p.parent] = new ArrayList<Production>();
-            }
             prods[p.parent].add(p);
         }
 
         for (final Production p : unaryProductions) {
-            if (prods[p.parent] == null) {
-                prods[p.parent] = new ArrayList<Production>();
-            }
             prods[p.parent].add(p);
         }
 
         for (final Production p : lexicalProductions) {
-            if (prods[p.parent] == null) {
-                prods[p.parent] = new ArrayList<Production>();
-            }
             prods[p.parent].add(p);
         }
 
