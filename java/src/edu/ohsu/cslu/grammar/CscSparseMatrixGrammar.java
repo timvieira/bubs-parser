@@ -212,6 +212,10 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             final int[] validPackedChildPairs, final int[] cscPopulatedColumns, final int[] cscPopulatedColumnOffsets,
             final int[] cscColumnOffsets, final short[] cscRowIndices, final float[] cscProbabilities) {
 
+        if (productions.size() == 0) {
+            return;
+        }
+
         // Bin all rules by child pair, mapping parent -> probability
         final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(1000);
         final IntSet populatedColumnSet = new IntOpenHashSet(productions.size() / 8);
