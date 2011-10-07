@@ -479,26 +479,27 @@ public class InsideOutsideChart extends PackedArrayChart {
                             sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), JUnit.fraction(insideProbability),
                             midpoint, JUnit.fraction(outsideProbability));
                 }
+            }
+
+            if (rightChild == Production.UNARY_PRODUCTION) {
+                // Unary Production
+                return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
+                        sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
+                        sparseMatrixGrammar.nonTermSet.getSymbol(leftChild), insideProbability, midpoint,
+                        outsideProbability);
+            } else if (rightChild == Production.LEXICAL_PRODUCTION) {
+                // Lexical Production
+                return String
+                        .format("%s -> %s (%.5f, %d) outside=%.5f\n",
+                                sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
+                                sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint,
+                                outsideProbability);
             } else {
-                if (rightChild == Production.UNARY_PRODUCTION) {
-                    // Unary Production
-                    return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
-                            sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
-                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild), insideProbability, midpoint,
-                            outsideProbability);
-                } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-                    // Lexical Production
-                    return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
-                            sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
-                            sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint,
-                            outsideProbability);
-                } else {
-                    return String.format("%s -> %s %s (%.5f, %d) outside=%.5f\n",
-                            sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
-                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild),
-                            sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), insideProbability, midpoint,
-                            outsideProbability);
-                }
+                return String.format("%s -> %s %s (%.5f, %d) outside=%.5f\n",
+                        sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
+                        sparseMatrixGrammar.nonTermSet.getSymbol(leftChild),
+                        sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), insideProbability, midpoint,
+                        outsideProbability);
             }
         }
     }

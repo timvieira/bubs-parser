@@ -22,7 +22,6 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
@@ -33,7 +32,7 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
  * 
  * @author Aaron Dunlop
  */
-public class ConstrainedChart extends PackedArrayChart {
+public class ConstrainedChart extends ConstrainingChart {
 
     /**
      * Outside probabilities (parallel to {@link ParallelArrayChart#insideProbabilities},
@@ -44,13 +43,6 @@ public class ConstrainedChart extends PackedArrayChart {
     public final float[] outsideProbabilities;
 
     protected final SplitVocabulary splitVocabulary;
-
-    protected final SymbolSet<String> lexicon;
-
-    protected short[][] openCells;
-
-    /** The length of the longest unary chain (i.e., the binary parent + any unary parents) */
-    protected int maxUnaryChainLength;
 
     /**
      * Constructs a {@link ConstrainedChart} based on a chart containing a sentence parsed with the parent grammar.
@@ -69,19 +61,15 @@ public class ConstrainedChart extends PackedArrayChart {
      */
     protected ConstrainedChart(final ConstrainingChart constrainingChart, final SparseMatrixGrammar sparseMatrixGrammar) {
 
-        super(constrainingChart.size(), chartArraySize(constrainingChart.size(),
-                constrainingChart.maxUnaryChainLength()), sparseMatrixGrammar);
+        super(constrainingChart, chartArraySize(constrainingChart.size(), constrainingChart.maxUnaryChainLength()),
+                sparseMatrixGrammar);
 
         this.splitVocabulary = (SplitVocabulary) sparseMatrixGrammar.nonTermSet;
-        this.beamWidth = lexicalRowBeamWidth = 2;
+        this.beamWidth = lexicalRowBeamWidth = 2 * constrainingChart.maxUnaryChainLength();
         Arrays.fill(nonTerminalIndices, Short.MIN_VALUE);
-        Arrays.fill(insideProbabilities, 0);
+        Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         this.outsideProbabilities = new float[insideProbabilities.length];
         Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
-
-        this.lexicon = sparseMatrixGrammar.lexSet;
-        this.openCells = constrainingChart.openCells;
-        this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength();
 
         // TODO Do we need to copy? Or can we just reference the original array?
         System.arraycopy(constrainingChart.midpoints, 0, midpoints, 0, midpoints.length);
@@ -106,27 +94,25 @@ public class ConstrainedChart extends PackedArrayChart {
         final int fillLength = chartArraySize(constrainingChart.size(), constrainingChart.maxUnaryChainLength());
         Arrays.fill(nonTerminalIndices, 0, fillLength, Short.MIN_VALUE);
         Arrays.fill(packedChildren, 0, fillLength, 0);
+        Arrays.fill(insideProbabilities, 0, fillLength, Float.NEGATIVE_INFINITY);
         Arrays.fill(outsideProbabilities, 0, fillLength, Float.NEGATIVE_INFINITY);
         computeOffsets();
-
-        this.openCells = constrainingChart.openCells;
-        this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength();
     }
 
     // TODO Unused?
-    void shiftCellEntriesDownward(final int topEntryOffset) {
-        for (int unaryDepth = maxUnaryChainLength - 2; unaryDepth >= 0; unaryDepth--) {
-            final int origin = topEntryOffset + unaryDepth * splitVocabulary.maxSplits;
-            final int destination = origin + splitVocabulary.maxSplits;
-
-            nonTerminalIndices[destination] = nonTerminalIndices[origin];
-            insideProbabilities[destination] = insideProbabilities[origin];
-            packedChildren[destination] = packedChildren[origin];
-        }
-        nonTerminalIndices[topEntryOffset] = Short.MIN_VALUE;
-        insideProbabilities[topEntryOffset] = Float.NEGATIVE_INFINITY;
-        packedChildren[topEntryOffset] = 0;
-    }
+    // void shiftCellEntriesDownward(final int topEntryOffset) {
+    // for (int unaryDepth = maxUnaryChainLength - 2; unaryDepth >= 0; unaryDepth--) {
+    // final int origin = topEntryOffset + unaryDepth * splitVocabulary.maxSplits;
+    // final int destination = origin + splitVocabulary.maxSplits;
+    //
+    // nonTerminalIndices[destination] = nonTerminalIndices[origin];
+    // insideProbabilities[destination] = insideProbabilities[origin];
+    // packedChildren[destination] = packedChildren[origin];
+    // }
+    // nonTerminalIndices[topEntryOffset] = Short.MIN_VALUE;
+    // insideProbabilities[topEntryOffset] = Float.NEGATIVE_INFINITY;
+    // packedChildren[topEntryOffset] = 0;
+    // }
 
     private void computeOffsets() {
         for (int start = 0; start < size; start++) {
@@ -145,7 +131,7 @@ public class ConstrainedChart extends PackedArrayChart {
     int unaryChainDepth(final int cellOffset) {
 
         for (int unaryDepth = 0; unaryDepth < maxUnaryChainLength; unaryDepth++) {
-            if (nonTerminalIndices[cellOffset + unaryDepth * splitVocabulary.maxSplits] < 0) {
+            if (nonTerminalIndices[cellOffset + (unaryDepth << 1)] < 0) {
                 return unaryDepth;
             }
         }
@@ -157,24 +143,21 @@ public class ConstrainedChart extends PackedArrayChart {
         return extractInsideParse(start, end);
     }
 
-    private BinaryTree<String> extractInsideParse(final int start, final int end) {
+    @Override
+    public BinaryTree<String> extractInsideParse(final int start, final int end) {
 
+        final int cellIndex = cellIndex(start, end);
         final int cellOffset = cellOffset(start, end);
-        int entryIndex = cellOffset + maxUnaryChainLength - 2;
-        // Find the first populated entry
-        while (nonTerminalIndices[entryIndex] < 0) {
-            entryIndex -= 2;
-        }
+        int entryIndex = cellOffset;
 
         final BinaryTree<String> tree = new BinaryTree<String>(
                 grammar.nonTermSet.getSymbol(nonTerminalIndices[entryIndex]));
         BinaryTree<String> subtree = tree;
 
         // Add unary productions and binary parent
-        while (entryIndex > cellOffset) {
-            entryIndex -= 2;
-            subtree = subtree.addChild(grammar.nonTermSet
-                    .getSymbol(nonTerminalIndices[maxProbabilityEntryIndex(entryIndex)]));
+        while (entryIndex < cellOffset + unaryChainLength[cellIndex] - 1) {
+            entryIndex += 2;
+            subtree = subtree.addChild(grammar.nonTermSet.getSymbol(nonTerminalIndices[entryIndex]));
         }
 
         if (packedChildren[entryIndex] < 0) {
@@ -205,9 +188,27 @@ public class ConstrainedChart extends PackedArrayChart {
     public float getInside(final int start, final int end, final int nonTerminal) {
         final int offset = cellOffset(start, end);
 
-        // We could compute the possible indices directly, but it's a very short range to linear search, and
-        // this method should only be called in testing
         for (int i = offset; i < offset + beamWidth; i++) {
+            if (nonTerminalIndices[i] == nonTerminal) {
+                return insideProbabilities[i];
+            }
+        }
+        return Float.NEGATIVE_INFINITY;
+    }
+
+    /**
+     * For unit testing
+     * 
+     * @param start
+     * @param end
+     * @param nonTerminal
+     * @param unaryDepth 0 <= unaryDepth < maxUnaryChainHeight
+     * @return
+     */
+    float getInside(final int start, final int end, final int nonTerminal, final int unaryDepth) {
+        final int index = cellOffset(start, end) + ((maxUnaryChainLength - unaryDepth) << 1);
+
+        for (int i = index; i < index + beamWidth; i++) {
             if (nonTerminalIndices[i] == nonTerminal) {
                 return insideProbabilities[i];
             }
@@ -229,6 +230,7 @@ public class ConstrainedChart extends PackedArrayChart {
         return Float.NEGATIVE_INFINITY;
     }
 
+    @Override
     public int maxUnaryChainLength() {
         return maxUnaryChainLength;
     }
