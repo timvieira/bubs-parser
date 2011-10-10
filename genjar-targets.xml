@@ -26,8 +26,6 @@
     ========================================================================
        Package an executable jar file.
        
-       Called by individual targets below
-       
        Arguments:
          * root-class - Primary root classname (required)
          * additional-root-classes - Additional root classnames, comma-delimited 
@@ -42,7 +40,7 @@
          * reference-lgpl-libs (optional) Reference LGPL libraries in generated 
              jar classpath. For non-GPL code, we don't want to package LGPL libraries 
              directly into the generated jar file. For GPL code, see package-gpl-libs.
-         * version (options) Version number to include in jar file MANIFEST
+         * version (optional) Version number to include in jar file MANIFEST
          * readme-file (optional) Location of a README file for the tool. If 
              the file exists, it will be packaged as META-INF/README.txt 
          * license-file (optional) Location of a license file for the tool. If
