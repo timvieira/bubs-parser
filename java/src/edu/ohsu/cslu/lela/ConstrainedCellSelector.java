@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.lela;
 
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.cellselector.ArrayCellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 
@@ -29,7 +30,7 @@ import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
  * @author Aaron Dunlop
  * @since Jan 15, 2011
  */
-public class ConstrainedCellSelector extends CellSelector {
+public class ConstrainedCellSelector extends ArrayCellSelector {
 
     public static CellSelectorModel MODEL = new CellSelectorModel() {
 
@@ -39,78 +40,10 @@ public class ConstrainedCellSelector extends CellSelector {
         }
     };
 
-    private short[][] cellIndices;
-    private int currentCell = -1;
-    private ConstrainingChart constrainingChart;
-
     @Override
-    public void initSentence(final ChartParser<?, ?> parser) {
-        final ConstrainedInsideOutsideParser constrainedParser = (ConstrainedInsideOutsideParser) parser;
-        this.constrainingChart = constrainedParser.constrainingChart;
-        this.cellIndices = constrainingChart.openCells;
-        currentCell = -1;
-    }
-
-    @Override
-    public short[] next() {
-        return cellIndices[++currentCell];
-    }
-
-    @Override
-    public boolean hasNext() {
-        return currentCell < cellIndices.length - 1;
-    }
-
-    @Override
-    public void reset() {
-        currentCell = -1;
-    }
-
-    /**
-     * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell can
-     *         contain only a single midpoint)
-     */
-    public short currentCellMidpoint() {
-        return constrainingChart.midpoints[constrainingChart.cellIndex(cellIndices[currentCell][0],
-                cellIndices[currentCell][1])];
-    }
-
-    // /**
-    // * @return The midpoint in the current cell (when parsing is constrained by the gold bracketing, each cell can
-    // * contain only a single midpoint)
-    // */
-    // public int currentCellUnaryChainDepth() {
-    // return constrainingChart.unaryChainDepth(constrainingChart.offset(constrainingChart.cellIndex(
-    // cellIndices[currentCell][0], cellIndices[currentCell][1])));
-    // }
-
-    /**
-     * @return All non-terminals populated in the current cell of the constraining chart
-     */
-    public short[] constrainingChartNonTerminalIndices() {
-        return constrainingChart.nonTerminalIndices;
-    }
-
-    /**
-     * @return All children populated in the current cell of the constraining chart
-     */
-    public int[] constrainingChartPackedChildren() {
-        return constrainingChart.packedChildren;
-    }
-
-    /**
-     * @return Offset of the current cell in the constraining chart
-     */
-    public int constrainingCellOffset() {
-        return constrainingChart.cellOffsets[constrainingChart.cellIndex(cellIndices[currentCell][0],
-                cellIndices[currentCell][1])];
-    }
-
-    /**
-     * @return Offset of the current cell's left child in the constraining chart
-     */
-    public int constrainingLeftChildCellOffset() {
-        return constrainingChart.cellOffsets[constrainingChart.cellIndex(cellIndices[currentCell][0],
-                currentCellMidpoint())];
+    public void initSentence(final ChartParser<?, ?> p) {
+        super.initSentence(p);
+        this.cellIndices = ((ConstrainedInsideOutsideParser) p).constrainingChart.openCells;
+        this.openCells = cellIndices.length;
     }
 }

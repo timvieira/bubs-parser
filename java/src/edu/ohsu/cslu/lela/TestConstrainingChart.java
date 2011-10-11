@@ -35,6 +35,7 @@ import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.tests.JUnit;
 
 /**
  * Unit tests for {@link ConstrainingChart}.
@@ -109,6 +110,12 @@ public class TestConstrainingChart {
 
         // And ensure that the extracted parse matches the input gold tree
         assertEquals(AllLelaTests.STRING_SAMPLE_TREE, cc.extractBestParse(vocabulary.getIndex("top")).toString());
+
+        JUnit.assertArrayEquals(new short[][] { { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 0, 2 }, { 3, 5 },
+                { 0, 3 }, { 0, 5 } }, cc.openCells);
+
+        assertArrayEquals(new short[] { 1, 2, 4, -1, -1, 1, -1, -1, -1, 2, -1, -1, 13, 4, 13 }, cc.parentCellIndices);
+        assertArrayEquals(new short[] { 5, 9, 13, -1, -1, 0, -1, -1, -1, 1, -1, -1, 14, 2, 12 }, cc.siblingCellIndices);
     }
 
     @Test
@@ -148,5 +155,8 @@ public class TestConstrainingChart {
     @Test
     public void testConstructFromConstrainedChart() {
         fail("Not Implemented");
+
+        // JUnit.assertArrayEquals(new short[][] { { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 0, 2 }, { 3, 5 },
+        // { 0, 3 }, { 0, 5 } }, cc.openCells);
     }
 }

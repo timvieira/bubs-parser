@@ -348,6 +348,7 @@ public class TestConstrainedInsideOutsideParser {
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, splitGrammar);
 
+        @SuppressWarnings("unused")
         int count = 0;
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);

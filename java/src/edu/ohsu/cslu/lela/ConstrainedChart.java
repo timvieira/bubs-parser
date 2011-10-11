@@ -21,6 +21,7 @@ package edu.ohsu.cslu.lela;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -83,7 +84,7 @@ public class ConstrainedChart extends ConstrainingChart {
     }
 
     @Override
-    public void reset(final ParseTask parseTask) {
+    public void reset(final ParseTask task) {
         throw new UnsupportedOperationException();
     }
 
@@ -299,73 +300,35 @@ public class ConstrainedChart extends ConstrainingChart {
         throw new UnsupportedOperationException("Not supported by ConstrainedChart");
     }
 
-    // // TODO Is this ever called? Can we drop the entire ConstrainedChartCell class?
-    // @Override
-    // public ConstrainedChartCell getCell(final int start, final int end) {
-    // return new ConstrainedChartCell(start, end);
-    // }
-    //
-    // @Override
-    // public String toString() {
-    // return extractBestParse(0).toString();
-    // }
-    //
-    // public class ConstrainedChartCell extends PackedArrayChartCell {
-    //
-    // public final int cellIndex;
-    //
-    // public ConstrainedChartCell(final int start, final int end) {
-    // super(start, end);
-    // this.cellIndex = cellIndex(start, end);
-    // }
-    //
-    // @Override
-    // public float getInside(final int nonTerminal) {
-    // throw new UnsupportedOperationException();
-    // }
-    //
-    // @Override
-    // public void updateInside(final Production p, final ChartCell leftCell, final ChartCell rightCell,
-    // final float insideProbability) {
-    // throw new UnsupportedOperationException();
-    // }
-    //
-    // @Override
-    // public void updateInside(final ChartEdge edge) {
-    // throw new UnsupportedOperationException();
-    // }
-    //
-    // @Override
-    // public ChartEdge getBestEdge(final int nonTerminal) {
-    // throw new UnsupportedOperationException();
-    // }
-    //
-    // @Override
-    // public int getNumNTs() {
-    // return 0;
-    // }
-    //
-    // /**
-    // * Warning: Not truly thread-safe, since it doesn't validate that the two cells belong to the same chart.
-    // */
-    // @Override
-    // public boolean equals(final Object o) {
-    // if (!(o instanceof ConstrainedChartCell)) {
-    // return false;
-    // }
-    //
-    // final ConstrainedChartCell constrainedChartCell = (ConstrainedChartCell) o;
-    // return (constrainedChartCell.start == start && constrainedChartCell.end == end);
-    // }
-    //
-    // @Override
-    // public String toString() {
-    // return toString(false);
-    // }
-    //
-    // @Override
-    // public String toString(final boolean formatFractions) {
-    // return extractBestParse(0).toString();
-    // }
-    // }
+    @Override
+    protected String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
+        final StringBuilder sb = new StringBuilder(128);
+        sb.append(formatCellEntry(nonTerminalIndices[offset], packedChildren[offset], unary,
+                insideProbabilities[offset], outsideProbabilities[offset], formatFractions));
+        if (nonTerminalIndices[offset + 1] >= 0) {
+            sb.append(formatCellEntry(nonTerminalIndices[offset + 1], packedChildren[offset + 1], unary,
+                    insideProbabilities[offset + 1], outsideProbabilities[offset + 1], formatFractions));
+        }
+        return sb.toString();
+    }
+
+    protected String formatCellEntry(final int nonterminal, final int childProductions, final boolean unary,
+            final float insideProbability, final float outsideProbability, final boolean formatFractions) {
+
+        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
+        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
+
+        if (rightChild == Production.LEXICAL_PRODUCTION) {
+            // Lexical Production
+            return String.format("%s -> %s (%.5f,%.5f)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                    sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, outsideProbability);
+        } else if (unary) {
+            // Unary Production
+            return String.format("%s -> unary (%.5f,%.5f)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                    insideProbability, outsideProbability);
+        } else {
+            return String.format("%s -> binary (%.5f,%.5f)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                    insideProbability, outsideProbability);
+        }
+    }
 }
