@@ -210,7 +210,7 @@ public class TestConstrainedInsideOutsideParser {
 
         // opts.realSemiring = true;
         final ConstrainedInsideOutsideParser parser2 = new ConstrainedInsideOutsideParser(opts, cscGrammar2);
-        final BinaryTree<String> parseTree2 = parser2.findBestParse(chart0);
+        final BinaryTree<String> parseTree2 = parser2.findBestParse(parser1.chart);
         final ConstrainedChart chart2 = parser2.chart;
 
         // Verify expected inside probabilities in a few cells
