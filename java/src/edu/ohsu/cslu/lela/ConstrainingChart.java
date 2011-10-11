@@ -1,7 +1,11 @@
 package edu.ohsu.cslu.lela;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+
+import java.util.Arrays;
+
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 
@@ -12,8 +16,15 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
  */
 public class ConstrainingChart extends PackedArrayChart {
 
-    short[][] openCells;
+    final short[][] openCells;
 
+    /** Indices of parent cells, indexed by child cell cellIndex. Used for outside-probability computation. */
+    final short[] parentCellIndices;
+
+    /** Indices of sibling cells, indexed by cellIndex. Used for outside-probability computation. */
+    final short[] siblingCellIndices;
+
+    /** Length of unary chain for each cell. 1 <= unaryChainLength <= maxUnaryChainLength */
     protected final int[] unaryChainLength;
 
     /** The length of the longest unary chain (i.e., the binary parent + any unary parents) */
@@ -31,6 +42,11 @@ public class ConstrainingChart extends PackedArrayChart {
         super(goldTree.leaves(), ConstrainedChart.chartArraySize(goldTree.leaves(), goldTree.maxUnaryChainLength()),
                 sparseMatrixGrammar);
 
+        this.parentCellIndices = new short[cells];
+        Arrays.fill(parentCellIndices, (short) -1);
+        this.siblingCellIndices = new short[cells];
+        Arrays.fill(siblingCellIndices, (short) -1);
+
         this.maxUnaryChainLength = goldTree.maxUnaryChainLength() + 1;
         this.beamWidth = this.lexicalRowBeamWidth = maxUnaryChainLength;
         this.unaryChainLength = new int[size * (size + 1) / 2];
@@ -47,7 +63,7 @@ public class ConstrainingChart extends PackedArrayChart {
 
             final int end = start + node.leaves();
             final short parent = (short) sparseMatrixGrammar.nonTermSet.getInt(node.label());
-            final int cellIndex = cellIndex(start, end);
+            final short cellIndex = (short) cellIndex(start, end);
             final int unaryChainHeight = node.unaryChainHeight();
             if (unaryChainLength[cellIndex] == 0) {
                 unaryChainLength[cellIndex] = unaryChainHeight + 1;
@@ -78,7 +94,16 @@ public class ConstrainingChart extends PackedArrayChart {
                 final short leftChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.leftChild().label());
                 final short rightChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.rightChild().label());
                 packedChildren[i] = sparseMatrixGrammar.packingFunction.pack(leftChild, rightChild);
-                midpoints[cellIndex] = (short) (start + node.leftChild().leaves());
+                final short midpoint = (short) (start + node.leftChild().leaves());
+                midpoints[cellIndex] = midpoint;
+
+                final short leftChildCellIndex = (short) cellIndex(start, midpoint);
+                final short rightChildCellIndex = (short) cellIndex(midpoint, end);
+                parentCellIndices[leftChildCellIndex] = cellIndex;
+                siblingCellIndices[leftChildCellIndex] = rightChildCellIndex;
+
+                parentCellIndices[rightChildCellIndex] = cellIndex;
+                siblingCellIndices[rightChildCellIndex] = leftChildCellIndex;
             }
         }
 
@@ -115,6 +140,8 @@ public class ConstrainingChart extends PackedArrayChart {
         this.unaryChainLength = constrainingChart.unaryChainLength;
         this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength;
         this.openCells = constrainingChart.openCells;
+        this.parentCellIndices = constrainingChart.parentCellIndices;
+        this.siblingCellIndices = constrainingChart.siblingCellIndices;
     }
 
     @Override
@@ -211,24 +238,47 @@ public class ConstrainingChart extends PackedArrayChart {
 
                 sb.append("ConstrainedChartCell[" + start + "][" + end + "]\n");
 
-                // Format entries from the main chart array
-                // TODO Format unary productions
-                for (int index = offset; index < offset + 2; index++) {
-                    final int nonTerminal = nonTerminalIndices[index];
-
-                    if (nonTerminal < 0) {
-                        continue;
-                    }
-
-                    final int childProductions = packedChildren[index];
-                    final int midpoint = midpoints[cellIndex];
-
-                    sb.append(formatCellEntry(nonTerminal, childProductions, 0, midpoint, formatFractions));
+                // Format unary parents first, followed by the two bottom entries
+                final int bottomEntryOffset = offset + (unaryChainLength(cellIndex) - 1) * 2;
+                for (int offset0 = offset; offset0 < bottomEntryOffset; offset0 += 2) {
+                    sb.append(formatEntries(offset0, true, formatFractions));
                 }
+                sb.append(formatEntries(bottomEntryOffset, false, formatFractions));
                 sb.append("\n\n");
             }
         }
 
         return sb.toString();
+    }
+
+    protected String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
+        final StringBuilder sb = new StringBuilder(128);
+        sb.append(formatCellEntry(nonTerminalIndices[offset], packedChildren[offset], unary,
+                insideProbabilities[offset], formatFractions));
+        if (nonTerminalIndices[offset + 1] >= 0) {
+            sb.append(formatCellEntry(nonTerminalIndices[offset + 1], packedChildren[offset + 1], unary,
+                    insideProbabilities[offset + 1], formatFractions));
+        }
+        return sb.toString();
+    }
+
+    protected String formatCellEntry(final int nonterminal, final int childProductions, final boolean unary,
+            final float insideProbability, final boolean formatFractions) {
+
+        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
+        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
+
+        if (rightChild == Production.LEXICAL_PRODUCTION) {
+            // Lexical Production
+            return String.format("%s -> %s (%.5f)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                    sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability);
+        } else if (unary) {
+            // Unary Production
+            return String.format("%s -> unary (%.5f)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                    insideProbability);
+        } else {
+            return String.format("%s -> binary (%.5f)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                    insideProbability);
+        }
     }
 }

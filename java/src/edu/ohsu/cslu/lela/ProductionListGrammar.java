@@ -668,10 +668,8 @@ public class ProductionListGrammar {
         final List<Production>[] prodsByParent = productionsByParent();
         for (int parent = 0, j = 0; parent < prodsByParent.length; parent++, j = 0) {
             final float[] probabilities = new float[prodsByParent[parent].size()];
-            double sum = 0;
             for (final Production p : prodsByParent[parent]) {
                 probabilities[j++] = p.prob;
-                sum += Math.exp(p.prob);
             }
             final float logSum = probabilities.length == 0 ? 0 : edu.ohsu.cslu.util.Math.logSumExp(probabilities);
             assertEquals("Invalid probability distribution for parent " + vocabulary.getSymbol(parent), 0, logSum, .001);
