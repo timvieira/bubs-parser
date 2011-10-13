@@ -21,11 +21,11 @@ package edu.ohsu.cslu.parser.chart;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTask;
-import edu.ohsu.cslu.parser.ParseTree;
 
 public abstract class Chart {
 
@@ -131,7 +131,7 @@ public abstract class Chart {
         return curNode;
     }
 
-    public ParseTree extractBestParseNoBkptrs(final int start, final int end, final int nonTermIndex) {
+    public NaryTree<String> extractBestParseNoBkptrs(final int start, final int end, final int nonTermIndex) {
         // start at TOP and traverse down. Loop over possible midpoints for each visited cell.
         // Unaries are a problem, but same as in Goodman/Berkeley decoding.
         return null;

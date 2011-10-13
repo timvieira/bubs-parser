@@ -20,11 +20,8 @@ package edu.ohsu.cslu.parser.agenda;
 
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.parser.ParseTask;
-import edu.ohsu.cslu.parser.ParseTree;
-import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
-import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
 
 /**
  * @author Nathan Bodenstab
@@ -55,16 +52,4 @@ public class APWithMemory extends AgendaParser {
             agendaMemory[edge.start()][edge.end()][edge.prod.parent] = edge;
         }
     }
-
-    public void printTreeEdgeStats(final ParseTree tree, final Parser<?> parser) {
-
-        assert fomModel instanceof BoundaryInOutSelector;
-
-        for (final ParseTree node : tree.preOrderTraversal()) {
-            if (node.isNonTerminal()) {
-                throw new RuntimeException("Doesn't work right now");
-            }
-        }
-    }
-
 }
