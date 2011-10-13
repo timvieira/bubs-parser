@@ -312,6 +312,14 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
 
         parse = parser.parseSentence("The fish market stands last XXX").parseBracketString(true, false);
         assertEquals("()", parse);
+
+        // And a specific test with words starting with '@' and containing '|' (to validate unfactoring the tree if
+        // lexical items contain special characters)
+        parse = parser.parseSentence("The fish market @stands last").parseBracketString(true, false);
+        assertEquals("(ROOT (S (NP (DT The) (NN fish)) (VP (VB market) (VP|VB (NP (NN @stands) (RB last))))))", parse);
+
+        parse = parser.parseSentence("The fish market stands|X last").parseBracketString(true, false);
+        assertEquals("(ROOT (S (NP (DT The) (NN fish)) (VP (VB market) (VP|VB (NP (NN stands|X) (RB last))))))", parse);
     }
 
     @Test
