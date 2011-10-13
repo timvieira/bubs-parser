@@ -85,6 +85,9 @@ public class DenseVectorChart extends ParallelArrayChart {
 
         // Find the index of the non-terminal in the chart storage
         final int parentIndex = packedCell.offset + parent;
+        if (insideProbabilities[parentIndex] == Float.NEGATIVE_INFINITY) {
+            return null;
+        }
         final int edgeChildren = packedChildren[parentIndex];
         final short edgeMidpoint = midpoints[parentIndex];
 

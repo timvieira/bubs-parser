@@ -108,17 +108,22 @@ public abstract class Parser<G extends Grammar> {
     public void waitForActiveTasks() {
     }
 
-    // wraps parse tree from findBestParse() with additional stats and
-    // cleans up output for consumption. Input can be a sentence string
-    // or a parse tree
+    /**
+     * Wraps parse tree from findBestParse() with additional stats and cleans up output for consumption. Input can be a
+     * sentence string or a parse tree. The input format is set to {@link InputFormat#Tree} if the input string starts
+     * with '((', '(TOP', or '(ROOT'.
+     * 
+     * @param input
+     * @return
+     */
     public ParseTask parseSentence(String input) {
 
         input = input.trim();
         if (input.length() == 0) {
             BaseLogger.singleton().info("WARNING: blank line in input.");
             return null;
-        } else if (input.matches("^\\([^ ].*[^ ]\\)$")
-                && (opts.inputFormat == InputFormat.Token || opts.inputFormat == InputFormat.Text)) {
+        } else if (opts.inputFormat != InputFormat.Tree && input.charAt(0) == '('
+                && (input.startsWith("((") || input.startsWith("(TOP") || input.startsWith("(ROOT"))) {
             BaseLogger.singleton().fine(
                     "INFO: Auto-detecting inputFormat as Tree (originally " + opts.inputFormat + ")");
             opts.inputFormat = InputFormat.Tree;

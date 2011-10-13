@@ -356,7 +356,7 @@ public abstract class Chart {
         final IntList featIndices = new IntArrayList(10);
 
         final int numTags = grammar.posSet.size();
-        final int numWords = Grammar.lexSet.size();
+        final int numWords = grammar.lexSet.size();
 
         // TODO Create a feature enum. Pre-tokenize the feature template once per sentence into an EnumSet (in
         // CellSelector.initSentence()) and make this a large switch statement. Should help with

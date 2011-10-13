@@ -93,7 +93,6 @@ public class Tokenizer implements Serializable {
         return s.replaceAll("\\s+", " ").trim();
     }
 
-    // TODO: tokenize according to treebank conventions (split don't to do n't, etc.)
     public String[] tokenize(final String sentence) {
         final String treebankTokens[] = treebankTokenize(sentence).split(" ");
         for (int i = 0; i < treebankTokens.length; i++) {
@@ -103,6 +102,7 @@ public class Tokenizer implements Serializable {
     }
 
     public int[] tokenizeToIndex(final String sentence) {
+        // TODO This could probably be done faster with something other than a regex
         final String tokens[] = sentence.split("\\s+");
         final int tokenIndices[] = new int[tokens.length];
         for (int i = 0; i < tokens.length; i++) {
