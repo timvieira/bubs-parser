@@ -118,8 +118,8 @@ public class ParseTask {
                 sentence = Strings.join(sentTokens, " ");
             }
 
-            this.tokens = Grammar.tokenizer.tokenizeToIndex(sentence);
             this.grammar = grammar;
+            this.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
 
         } catch (final Exception e) {
             e.printStackTrace();

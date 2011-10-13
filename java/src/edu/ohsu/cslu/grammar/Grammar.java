@@ -88,10 +88,13 @@ public class Grammar implements Serializable {
     public GrammarFormatType grammarFormat;
     public final Vocabulary nonTermSet;
 
+    // TODO This comment may have been true at some point (and referred to static lexSet and tokenizer instances), but
+    // tests appear to pass with member variables instead, and for unit testing we construct multiple separate grammars
+    // with differing lexicons.
     // The lexSet and tokenizer need to be shared across multiple grammars so that
     // token indices are identical.
-    public static SymbolSet<String> lexSet = new SymbolSet<String>();
-    public static Tokenizer tokenizer = new Tokenizer(lexSet);
+    public SymbolSet<String> lexSet = new SymbolSet<String>();
+    public Tokenizer tokenizer = new Tokenizer(lexSet);
 
     // maps from 0-based index to entry in nonTermSet. Used to reduce absolute
     // index value for feature extraction
