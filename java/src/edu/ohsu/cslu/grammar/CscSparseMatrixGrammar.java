@@ -162,7 +162,6 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         cscBinaryRowIndices = new short[numBinaryProds()];
         cscBinaryProbabilities = new float[numBinaryProds()];
         cscBinaryColumnOffsets = new int[packingFunction.packedArraySize()];
-        factoredCscBinaryColumnOffsets = new int[packingFunction.packedArraySize()];
 
         storeRulesAsMatrix(binaryProductions, packingFunction, populatedBinaryColumnIndices, cscBinaryPopulatedColumns,
                 cscBinaryPopulatedColumnOffsets, cscBinaryColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
@@ -175,6 +174,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         factoredCscBinaryPopulatedColumnOffsets = new int[factoredCscBinaryPopulatedColumns.length + 1];
         factoredCscBinaryRowIndices = new short[factoredBinaryProductions.size()];
         factoredCscBinaryProbabilities = new float[factoredBinaryProductions.size()];
+        factoredCscBinaryColumnOffsets = new int[packingFunction.packedArraySize()];
 
         storeRulesAsMatrix(factoredBinaryProductions, packingFunction, factoredPopulatedBinaryColumnIndices,
                 factoredCscBinaryPopulatedColumns, factoredCscBinaryPopulatedColumnOffsets,
@@ -212,14 +212,15 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             final int[] validPackedChildPairs, final int[] cscPopulatedColumns, final int[] cscPopulatedColumnOffsets,
             final int[] cscColumnOffsets, final short[] cscRowIndices, final float[] cscProbabilities) {
 
+        if (productions.size() == 0) {
+            return;
+        }
+
         // Bin all rules by child pair, mapping parent -> probability
         final Int2ObjectOpenHashMap<Int2FloatOpenHashMap> maps = new Int2ObjectOpenHashMap<Int2FloatOpenHashMap>(1000);
         final IntSet populatedColumnSet = new IntOpenHashSet(productions.size() / 8);
 
         for (final Production p : productions) {
-            // if (nonTermSet.getSymbol(p.leftChild).equals("NP") && nonTermSet.getSymbol(p.rightChild).equals("DT")) {
-            // System.out.println("NP,DT");
-            // }
             final int childPair = pf.pack((short) p.leftChild, (short) p.rightChild);
             populatedColumnSet.add(childPair);
             Int2FloatOpenHashMap map1 = maps.get(childPair);
