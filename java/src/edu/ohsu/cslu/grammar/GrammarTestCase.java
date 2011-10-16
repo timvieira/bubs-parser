@@ -59,9 +59,6 @@ public abstract class GrammarTestCase {
         sb.append("NP => NP NN -1.203972\n");
         sb.append("NP => NN NP -2.302585\n");
         sb.append("NP => NP NP -2.302585\n");
-        // Add a fake factored category just to keep Grammar happy
-        sb.append("NP => @NP NP -Infinity\n");
-        sb.append("@NP => NP NP -Infinity\n");
 
         sb.append(Grammar.LEXICON_DELIMITER);
         sb.append('\n');
