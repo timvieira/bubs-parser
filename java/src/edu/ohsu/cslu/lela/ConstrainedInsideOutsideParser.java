@@ -80,9 +80,6 @@ public class ConstrainedInsideOutsideParser extends
                 addLexicalProductions(startAndEnd[0], startAndEnd[1]);
             }
             computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
-            // if (startAndEnd[0] == 3 && startAndEnd[1] == 4) {
-            // System.out.println(chart.toString(true));
-            // }
         }
     }
 
@@ -379,12 +376,12 @@ public class ConstrainedInsideOutsideParser extends
 
                     } else if (parent == parent0) {
                         final float parentOutsideProbability = chart.outsideProbabilities[parent0Offset];
-                        chart.outsideProbabilities[childOffset] = Math.logSum(chart.insideProbabilities[childOffset],
+                        chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
                                 grammar.cscUnaryProbabilities[j] + parentOutsideProbability);
 
                     } else if (parent == parent0 + 1) {
                         final float parentOutsideProbability = chart.outsideProbabilities[parent0Offset + 1];
-                        chart.outsideProbabilities[childOffset] = Math.logSum(chart.insideProbabilities[childOffset],
+                        chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
                                 grammar.cscUnaryProbabilities[j] + parentOutsideProbability);
                     } else {
                         // We've passed both target parents. No need to search more grammar rules
