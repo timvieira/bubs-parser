@@ -20,21 +20,17 @@ package edu.ohsu.cslu.lela;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.StringReader;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
-import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -43,23 +39,7 @@ import edu.ohsu.cslu.tests.JUnit;
  * @author Aaron Dunlop
  * @since Jan 15, 2011
  */
-public class TestConstrainingChart {
-
-    ProductionListGrammar plGrammar0;
-    SparseMatrixGrammar csrGrammar0;
-
-    @Before
-    public void setUp() throws IOException {
-        // Induce a grammar from the sample tree
-        final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllLelaTests.STRING_SAMPLE_TREE), null,
-                null);
-
-        // Construct a SparseMatrixGrammar from the induced grammar
-        plGrammar0 = new ProductionListGrammar(sg);
-        csrGrammar0 = new CsrSparseMatrixGrammar(plGrammar0.binaryProductions, plGrammar0.unaryProductions,
-                plGrammar0.lexicalProductions, plGrammar0.vocabulary, plGrammar0.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
-    }
+public class TestConstrainingChart extends ChartTestCase {
 
     /**
      * Tests constructing a {@link ConstrainingChart} from a gold tree and then re-extracting that tree from the chart.
@@ -70,17 +50,10 @@ public class TestConstrainingChart {
     public void testGoldTreeConstructor() throws IOException {
 
         final ConstrainingChart cc = new ConstrainingChart(BinaryTree.read(AllLelaTests.STRING_SAMPLE_TREE,
-                String.class), csrGrammar0);
+                String.class), cscGrammar0);
 
         // The chart should size itself according to the longest unary chain
         assertEquals(2, cc.maxUnaryChainLength());
-
-        final SymbolSet<String> vocabulary = plGrammar0.vocabulary;
-        final int top = plGrammar0.vocabulary.getIndex("top");
-        final int a = plGrammar0.vocabulary.getIndex("a");
-        final int b = plGrammar0.vocabulary.getIndex("b");
-        final int c = plGrammar0.lexicon.getIndex("c");
-        final int d = plGrammar0.lexicon.getIndex("d");
 
         // Verify that the tokens array is initialized properly
         assertArrayEquals(new int[] { c, c, d, d, d }, cc.tokens);
@@ -109,10 +82,10 @@ public class TestConstrainingChart {
         assertEquals(1, cc.unaryChainLength(4, 5));
 
         // And ensure that the extracted parse matches the input gold tree
-        assertEquals(AllLelaTests.STRING_SAMPLE_TREE, cc.extractBestParse(vocabulary.getIndex("top")).toString());
+        assertEquals(AllLelaTests.STRING_SAMPLE_TREE, cc.extractBestParse(plGrammar0.vocabulary.getIndex("top"))
+                .toString());
 
-        JUnit.assertArrayEquals(new short[][] { { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 0, 2 }, { 3, 5 },
-                { 0, 3 }, { 0, 5 } }, cc.openCells);
+        JUnit.assertArrayEquals(OPEN_CELLS, cc.openCells);
 
         assertArrayEquals(new short[] { 1, 2, 4, -1, -1, 1, -1, -1, -1, 2, -1, -1, 13, 4, 13 }, cc.parentCellIndices);
         assertArrayEquals(new short[] { 5, 9, 13, -1, -1, 0, -1, -1, -1, 1, -1, -1, 14, 2, 12 }, cc.siblingCellIndices);
@@ -124,12 +97,11 @@ public class TestConstrainingChart {
         // Induce a grammar from the tree and construct a SparseMatrixGrammar
         final ProductionListGrammar plg = new ProductionListGrammar(new StringCountGrammar(new StringReader(
                 AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN), Factorization.RIGHT, GrammarFormatType.Berkeley));
-        final SparseMatrixGrammar csrg = new CsrSparseMatrixGrammar(plg.binaryProductions, plg.unaryProductions,
-                plg.lexicalProductions, plg.vocabulary, plg.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+        final ConstrainedInsideOutsideGrammar cscg = new ConstrainedInsideOutsideGrammar(plg,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final ConstrainingChart cc = new ConstrainingChart(NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN,
-                String.class).factor(GrammarFormatType.Berkeley, Factorization.RIGHT), csrg);
+                String.class).factor(GrammarFormatType.Berkeley, Factorization.RIGHT), cscg);
 
         // Verify some unary chain lengths
         assertEquals(3, cc.maxUnaryChainLength());
@@ -147,16 +119,31 @@ public class TestConstrainingChart {
     @Test
     public void testWithInternalStartSymbol() {
         final String bracketedTree = "(top (a (top (a c) (b c))) (b c))";
-        final ConstrainingChart cc = new ConstrainingChart(BinaryTree.read(bracketedTree, String.class), csrGrammar0);
+        final ConstrainingChart cc = new ConstrainingChart(BinaryTree.read(bracketedTree, String.class), cscGrammar0);
         // Ensure that the extracted parse matches the input gold tree
         assertEquals(bracketedTree, cc.extractBestParse(plGrammar0.vocabulary.getIndex("top")).toString());
     }
 
+    /**
+     * Tests constructing a new {@link ConstrainingChart} (one entry per cell + unaries) from a {@link ConstrainedChart}
+     * (two entries per cell - e.g., the chart populated by constrained parsing).
+     */
     @Test
     public void testConstructFromConstrainedChart() {
-        fail("Not Implemented");
+        // Create and populate a 1-split ConstrainedChart
+        final ConstrainedChart constrainedChart = create1SplitConstrainedChart();
 
-        // JUnit.assertArrayEquals(new short[][] { { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 0, 2 }, { 3, 5 },
-        // { 0, 3 }, { 0, 5 } }, cc.openCells);
+        // Convert the ConstrainedChart into a ConstrainingChart
+        final ConstrainingChart newConstrainingChart = new ConstrainingChart(constrainedChart);
+
+        // Verify that the extracted parse matches
+        assertEquals("(top (a_1 (a_0 (a_0 (a_0 c) (a_1 c)) (b_1 d)) (b_1 (b_0 (b_1 d)) (a_0 d))))",
+                newConstrainingChart.extractBestParse(0).toString());
+
+        JUnit.assertArrayEquals(constrainedChart.openCells, newConstrainingChart.openCells);
+
+        // Ensure that toString() runs without an exception. We could attempt to verify the output, but that's probably
+        // overkill
+        newConstrainingChart.toString();
     }
 }
