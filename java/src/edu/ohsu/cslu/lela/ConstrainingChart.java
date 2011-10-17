@@ -7,6 +7,7 @@ import java.util.Arrays;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 
 /**
@@ -27,7 +28,9 @@ public class ConstrainingChart extends PackedArrayChart {
     /** Length of unary chain for each cell. 1 <= unaryChainLength <= maxUnaryChainLength */
     protected final int[] unaryChainLength;
 
-    /** The length of the longest unary chain (i.e., the binary parent + any unary parents) */
+    /**
+     * The length of the longest unary chain (i.e., the binary parent + any unary parents) 1 <= maxUnaryChainLength <= n
+     */
     protected final int maxUnaryChainLength;
 
     /**
@@ -122,26 +125,100 @@ public class ConstrainingChart extends PackedArrayChart {
         }
 
         this.tokens = tokenList.toIntArray();
-
-        // Calculate all cell offsets
-        for (int st = 0; st < size; st++) {
-            for (int end = st + 1; end <= size; end++) {
-                final int cellIndex = cellIndex(st, end);
-                cellOffsets[cellIndex] = cellOffset(st, end);
-            }
-        }
+        calculateCellOffsets();
     }
 
+    // TODO Where is this used?
     protected ConstrainingChart(final ConstrainingChart constrainingChart, final int chartArraySize,
             final SparseMatrixGrammar sparseMatrixGrammar) {
 
         super(constrainingChart.size(), chartArraySize, sparseMatrixGrammar);
+        calculateCellOffsets();
 
+        this.beamWidth = constrainingChart.beamWidth;
         this.unaryChainLength = constrainingChart.unaryChainLength;
         this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength;
         this.openCells = constrainingChart.openCells;
         this.parentCellIndices = constrainingChart.parentCellIndices;
         this.siblingCellIndices = constrainingChart.siblingCellIndices;
+    }
+
+    /**
+     * Construct a {@link ConstrainingChart} and populate it from a {@link ConstrainedChart} (e.g., a chart populated by
+     * a constrained parse). Populates each cell in the new chart with the highest-posterior-probability entry from the
+     * {@link ConstrainedChart}.
+     * 
+     * @param constrainedChart
+     */
+    protected ConstrainingChart(final ConstrainedChart constrainedChart) {
+
+        super(constrainedChart.size(), constrainedChart.chartArraySize / 2,
+                (SparseMatrixGrammar) constrainedChart.grammar);
+
+        this.unaryChainLength = constrainedChart.unaryChainLength;
+        this.beamWidth = this.lexicalRowBeamWidth = constrainedChart.maxUnaryChainLength;
+        this.maxUnaryChainLength = constrainedChart.maxUnaryChainLength;
+        this.openCells = constrainedChart.openCells;
+        this.parentCellIndices = constrainedChart.parentCellIndices;
+        this.siblingCellIndices = constrainedChart.siblingCellIndices;
+        System.arraycopy(constrainedChart.midpoints, 0, this.midpoints, 0, constrainedChart.midpoints.length);
+
+        calculateCellOffsets();
+
+        final PackingFunction packingFunction = sparseMatrixGrammar.packingFunction;
+
+        for (final short[] startAndEnd : openCells) {
+            final int cellIndex = cellIndex(startAndEnd[0], startAndEnd[1]);
+            final int constrainedChartBaseOffset = constrainedChart.offset(cellIndex);
+            final int baseOffset = offset(cellIndex);
+
+            for (int unaryChainHeight = unaryChainLength[cellIndex] - 1; unaryChainHeight >= 0; unaryChainHeight--) {
+                final int constrainedChartOffset = constrainedChartBaseOffset + (unaryChainHeight << 1);
+                final int offset = baseOffset + unaryChainHeight;
+
+                final float entry0Probability = constrainedChart.insideProbabilities[constrainedChartOffset];
+                final float entry1Probability = constrainedChart.insideProbabilities[constrainedChartOffset + 1];
+
+                if (entry1Probability > Float.NEGATIVE_INFINITY && entry1Probability > entry0Probability) {
+                    nonTerminalIndices[offset] = (short) (constrainedChart.nonTerminalIndices[constrainedChartOffset] + 1);
+                    insideProbabilities[offset] = 0;
+                } else if (entry0Probability > Float.NEGATIVE_INFINITY) {
+                    nonTerminalIndices[offset] = constrainedChart.nonTerminalIndices[constrainedChartOffset];
+                    insideProbabilities[offset] = 0;
+                } else {
+                    continue;
+                }
+
+                if (unaryChainHeight == unaryChainLength[cellIndex] - 1) {
+                    // Bottom Entry
+                    if (startAndEnd[1] - startAndEnd[0] == 1) {
+                        // Lexical parent
+                        final int lexicalEntry = constrainedChart.sparseMatrixGrammar.packingFunction
+                                .unpackLeftChild(constrainedChart.packedChildren[constrainedChartOffset]);
+                        packedChildren[offset] = packingFunction.packLexical(lexicalEntry);
+                    } else {
+                        // Binary parent
+                        final short midpoint = midpoints[cellIndex];
+                        final short leftChild = nonTerminalIndices[cellOffset(startAndEnd[0], midpoint)];
+                        final short rightChild = nonTerminalIndices[cellOffset(midpoint, startAndEnd[1])];
+                        packedChildren[offset] = packingFunction.pack(leftChild, rightChild);
+                    }
+                } else {
+                    // Unary parent
+                    packedChildren[offset] = packingFunction.packUnary(nonTerminalIndices[offset + 1]);
+                }
+            }
+        }
+    }
+
+    private void calculateCellOffsets() {
+        // Calculate all cell offsets
+        for (int start = 0; start < size; start++) {
+            for (int end = start + 1; end <= size; end++) {
+                final int cellIndex = cellIndex(start, end);
+                cellOffsets[cellIndex] = cellOffset(start, end);
+            }
+        }
     }
 
     @Override
@@ -225,6 +302,7 @@ public class ConstrainingChart extends PackedArrayChart {
     public String toString(final boolean formatFractions) {
         final StringBuilder sb = new StringBuilder(1024);
 
+        final int increment = (this instanceof ConstrainedChart) ? 2 : 1;
         for (int span = 1; span <= size; span++) {
             for (int start = 0; start <= size - span; start++) {
                 final int end = start + span;
@@ -236,29 +314,20 @@ public class ConstrainingChart extends PackedArrayChart {
                     continue;
                 }
 
-                sb.append("ConstrainedChartCell[" + start + "][" + end + "]\n");
+                sb.append("ConstrainingChartCell[" + start + "][" + end + "]\n");
 
                 // Format unary parents first, followed by the two bottom entries
-                final int bottomEntryOffset = offset + (unaryChainLength(cellIndex) - 1) * 2;
-                for (int offset0 = offset; offset0 < bottomEntryOffset; offset0 += 2) {
-                    sb.append(formatEntries(offset0, true, formatFractions));
+                final int bottomEntryOffset = offset + (unaryChainLength(cellIndex) - 1) * increment;
+                for (int offset0 = offset; offset0 < bottomEntryOffset; offset0 += increment) {
+                    sb.append(formatCellEntry(nonTerminalIndices[offset0], packedChildren[offset0], true,
+                            insideProbabilities[offset0], formatFractions));
                 }
-                sb.append(formatEntries(bottomEntryOffset, false, formatFractions));
+                sb.append(formatCellEntry(nonTerminalIndices[bottomEntryOffset], packedChildren[bottomEntryOffset],
+                        false, insideProbabilities[bottomEntryOffset], formatFractions));
                 sb.append("\n\n");
             }
         }
 
-        return sb.toString();
-    }
-
-    protected String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
-        final StringBuilder sb = new StringBuilder(128);
-        sb.append(formatCellEntry(nonTerminalIndices[offset], packedChildren[offset], unary,
-                insideProbabilities[offset], formatFractions));
-        if (nonTerminalIndices[offset + 1] >= 0) {
-            sb.append(formatCellEntry(nonTerminalIndices[offset + 1], packedChildren[offset + 1], unary,
-                    insideProbabilities[offset + 1], formatFractions));
-        }
         return sb.toString();
     }
 

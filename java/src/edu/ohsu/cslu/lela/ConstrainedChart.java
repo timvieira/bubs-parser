@@ -149,22 +149,26 @@ public class ConstrainedChart extends ConstrainingChart {
 
         final int cellIndex = cellIndex(start, end);
         final int cellOffset = cellOffset(start, end);
-        int entryIndex = cellOffset;
+        int entry0Offset = cellOffset;
+        int entryOffset = (insideProbabilities[entry0Offset + 1] > insideProbabilities[entry0Offset]) ? entry0Offset + 1
+                : entry0Offset;
 
         final BinaryTree<String> tree = new BinaryTree<String>(
-                grammar.nonTermSet.getSymbol(nonTerminalIndices[entryIndex]));
+                grammar.nonTermSet.getSymbol(nonTerminalIndices[entryOffset]));
         BinaryTree<String> subtree = tree;
 
         // Add unary productions and binary parent
-        while (entryIndex < cellOffset + unaryChainLength[cellIndex] - 1) {
-            entryIndex += 2;
-            subtree = subtree.addChild(grammar.nonTermSet.getSymbol(nonTerminalIndices[entryIndex]));
+        while (entry0Offset < cellOffset + unaryChainLength[cellIndex] * 2 - 2) {
+            entry0Offset += 2;
+            entryOffset = (insideProbabilities[entry0Offset + 1] > insideProbabilities[entry0Offset]) ? entry0Offset + 1
+                    : entry0Offset;
+            subtree = subtree.addChild(grammar.nonTermSet.getSymbol(nonTerminalIndices[entryOffset]));
         }
 
-        if (packedChildren[entryIndex] < 0) {
+        if (packedChildren[entryOffset] < 0) {
             // Lexical production
             final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.cartesianProductFunction()
-                    .unpackLeftChild(packedChildren[entryIndex]));
+                    .unpackLeftChild(packedChildren[entryOffset]));
             subtree.addChild(new BinaryTree<String>(sChild));
         } else {
             // Binary production
@@ -203,11 +207,11 @@ public class ConstrainedChart extends ConstrainingChart {
      * @param start
      * @param end
      * @param nonTerminal
-     * @param unaryDepth 0 <= unaryDepth < maxUnaryChainHeight
+     * @param unaryHeight 0 <= unaryDepth < maxUnaryChainHeight
      * @return
      */
-    float getInside(final int start, final int end, final int nonTerminal, final int unaryDepth) {
-        final int index = cellOffset(start, end) + ((maxUnaryChainLength - unaryDepth) << 1);
+    float getInside(final int start, final int end, final int nonTerminal, final int unaryHeight) {
+        final int index = cellOffset(start, end) + ((maxUnaryChainLength - unaryHeight) << 1);
 
         for (int i = index; i < index + beamWidth; i++) {
             if (nonTerminalIndices[i] == nonTerminal) {
@@ -224,6 +228,26 @@ public class ConstrainedChart extends ConstrainingChart {
         // this method
         // should only be called in testing
         for (int i = offset; i < offset + beamWidth; i++) {
+            if (nonTerminalIndices[i] == nonTerminal) {
+                return outsideProbabilities[i];
+            }
+        }
+        return Float.NEGATIVE_INFINITY;
+    }
+
+    /**
+     * For unit testing
+     * 
+     * @param start
+     * @param end
+     * @param nonTerminal
+     * @param unaryHeight 0 <= unaryDepth < maxUnaryChainHeight
+     * @return
+     */
+    float getOutside(final int start, final int end, final int nonTerminal, final int unaryHeight) {
+        final int index = cellOffset(start, end) + ((maxUnaryChainLength - unaryHeight) << 1);
+
+        for (int i = index; i < index + beamWidth; i++) {
             if (nonTerminalIndices[i] == nonTerminal) {
                 return outsideProbabilities[i];
             }
@@ -301,6 +325,35 @@ public class ConstrainedChart extends ConstrainingChart {
     }
 
     @Override
+    public String toString(final boolean formatFractions) {
+        final StringBuilder sb = new StringBuilder(1024);
+
+        for (int span = 1; span <= size; span++) {
+            for (int start = 0; start <= size - span; start++) {
+                final int end = start + span;
+                final int cellIndex = cellIndex(start, end);
+                final int offset0 = offset(cellIndex);
+
+                // Skip empty cells
+                if (nonTerminalIndices[offset0] < 0) {
+                    continue;
+                }
+
+                sb.append("ConstrainingChartCell[" + start + "][" + end + "]\n");
+
+                // Format unary parents first, followed by the two bottom entries
+                final int bottomEntryOffset = offset0 + (unaryChainLength(cellIndex) - 1) * 2;
+                for (int offset = offset0; offset < bottomEntryOffset; offset += 2) {
+                    sb.append(formatEntries(offset, true, formatFractions));
+                }
+                sb.append(formatEntries(bottomEntryOffset, false, formatFractions));
+                sb.append("\n\n");
+            }
+        }
+
+        return sb.toString();
+    }
+
     protected String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
         final StringBuilder sb = new StringBuilder(128);
         sb.append(formatCellEntry(nonTerminalIndices[offset], packedChildren[offset], unary,

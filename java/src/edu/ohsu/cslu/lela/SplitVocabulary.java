@@ -23,7 +23,6 @@ import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
 import java.util.Collection;
 
 import edu.ohsu.cslu.grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Vocabulary;
 
 /**
@@ -61,10 +60,8 @@ public class SplitVocabulary extends Vocabulary {
     // /** The maximum number of splits from any single unsplit category in the base Markov-order-0 grammar. */
     // final short maxSplits;
 
+    /** Parent (pre-split) vocabulary */
     final SplitVocabulary parentVocabulary;
-
-    /** Base Markov-order-0 vocabulary */
-    final SymbolSet<String> baseVocabulary;
 
     /**
      * Maps from the indices of a parent vocabulary to indices in this {@link SplitVocabulary}. Only populated if this
@@ -77,14 +74,12 @@ public class SplitVocabulary extends Vocabulary {
         // this.subcategoryIndices = null;
         // this.maxSplits = maxSplits;
         this.parentVocabulary = parentVocabulary;
-        this.baseVocabulary = parentVocabulary.baseVocabulary;
         this.mergedIndices = null;
     }
 
     public SplitVocabulary(final String[] symbols) {
         super(symbols, GrammarFormatType.Berkeley);
         this.parentVocabulary = null;
-        this.baseVocabulary = this;
         this.mergedIndices = null;
 
         // recomputeSplits();
@@ -95,8 +90,6 @@ public class SplitVocabulary extends Vocabulary {
             final Short2ShortOpenHashMap mergedIndices) {
         super(symbols, GrammarFormatType.Berkeley);
         this.parentVocabulary = parentVocabulary;
-        // If no parent is specified, assume this vocabulary is the base vocabulary
-        this.baseVocabulary = parentVocabulary != null ? parentVocabulary.baseVocabulary : this;
         this.mergedIndices = mergedIndices;
 
         // recomputeSplits();
@@ -105,6 +98,22 @@ public class SplitVocabulary extends Vocabulary {
 
     public SplitVocabulary(final Collection<String> symbols) {
         this(symbols, null, null);
+    }
+
+    /**
+     * Returns the index (in this vocabulary) of the first non-terminal matching the specified index in the parent
+     * vocabulary. If this vocabulary was created by splitting a parent vocabulary, the first matching split is
+     * returned. If it was created by merging, then the target of the merge is returned.
+     * 
+     * TODO Currently unused. Delete?
+     * 
+     * @param parentVocabularyIndex
+     * @return The index (in this vocabulary) of the first non-terminal matching the specified index in the parent
+     *         vocabulary
+     */
+    public short firstSplitNonterminalIndex(final short parentVocabularyIndex) {
+        return (short) (mergedIndices != null ? (mergedIndices.get(parentVocabularyIndex) << 1)
+                : (parentVocabularyIndex << 1));
     }
 
     // void recomputeSplits() {
