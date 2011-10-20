@@ -390,18 +390,17 @@ public class ProductionListGrammar {
         }
 
         // Split lexical productions in half. Each split production has the same probability as the original production
-        // + noise
         for (final Production p : lexicalProductions) {
             final int splitParent0 = p.parent << 1;
             final int splitParent1 = splitParent0 + 1;
-            final float[] noise = noiseGenerator.noise(2);
-            tmpGrammar.lexicalProductions.add(new Production(splitParent0, p.child(), p.prob + noise[0], true,
-                    splitVocabulary, lexicon));
-            probabilitiesByParent[splitParent0].add(p.prob + noise[0]);
+            // final float[] noise = noiseGenerator.noise(2);
+            tmpGrammar.lexicalProductions.add(new Production(splitParent0, p.child(), p.prob, true, splitVocabulary,
+                    lexicon));
+            probabilitiesByParent[splitParent0].add(p.prob);
 
-            tmpGrammar.lexicalProductions.add(new Production(splitParent1, p.child(), p.prob + noise[1], true,
-                    splitVocabulary, lexicon));
-            probabilitiesByParent[splitParent1].add(p.prob + noise[1]);
+            tmpGrammar.lexicalProductions.add(new Production(splitParent1, p.child(), p.prob, true, splitVocabulary,
+                    lexicon));
+            probabilitiesByParent[splitParent1].add(p.prob);
         }
 
         // Re-normalize rule probabilities
