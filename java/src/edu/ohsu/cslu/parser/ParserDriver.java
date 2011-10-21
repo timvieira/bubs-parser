@@ -177,6 +177,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
 
+    @Option(name = "-help-rp", hidden = true, usage = "List possible research parsers")
+    public boolean listResearchParsers = false;
+
     private long parseStartTime;
     private int sentencesParsed = 0, failedParses = 0;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
@@ -216,6 +219,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     // run once at initialization regardless of number of threads
     public void setup() throws Exception {
 
+        if (this.listResearchParsers) {
+            BaseLogger.singleton().info("Possible values for -rp PARSER:");
+            for (final ResearchParserType type : Parser.ResearchParserType.values()) {
+                BaseLogger.singleton().info("\t" + type.toString());
+            }
+            System.exit(0);
+        } else if (grammarFile == null && modelFile == null) {
+            throw new IllegalArgumentException("-g GRAMMAR or -m MODEL is required");
+        }
+
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
             researchParserType = parserType.researchParserType;
@@ -238,8 +251,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             fomModel = (FigureOfMeritModel) ois.readObject();
 
         } else {
-
-            this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType, cartesianProductFunctionType);
+            this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType,
+                    cartesianProductFunctionType);
 
             if (fomTypeOrModel.equals("Inside")) {
                 fomModel = new FigureOfMeritModel(FOMType.Inside);

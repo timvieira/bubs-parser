@@ -44,11 +44,12 @@ public class Util {
 
     public static String join(final Object[] objs, final String delimiter) {
         final StringBuilder buffer = new StringBuilder();
-        for (int i = 0; i < objs.length - 1; i++) {
+        for (int i = 0; i < objs.length; i++) {
             buffer.append(objs[i].toString());
-            buffer.append(delimiter);
+            if (i < objs.length - 1) {
+                buffer.append(delimiter);
+            }
         }
-        buffer.append(objs[objs.length - 1].toString());
         return buffer.toString();
     }
 
