@@ -49,7 +49,8 @@ public class CellChart extends Chart {
     }
 
     @Override
-    public void reset(final ParseTask parseTask) {
+    public void reset(final ParseTask newParseTask) {
+        this.parseTask = newParseTask;
         final int n = parseTask.sentenceLength();
         for (int start = 0; start < n; start++) {
             for (int end = start + 1; end < n + 1; end++) {
