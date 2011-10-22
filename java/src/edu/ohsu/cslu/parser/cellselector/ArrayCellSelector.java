@@ -23,7 +23,7 @@ public abstract class ArrayCellSelector extends CellSelector {
     }
 
     @Override
-    public final short[] next() {
+    public short[] next() {
         return cellIndices[nextCell++];
     }
 
@@ -34,7 +34,7 @@ public abstract class ArrayCellSelector extends CellSelector {
     }
 
     @Override
-    public final boolean hasNext() {
+    public boolean hasNext() {
         // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active
         // tasks (if any) before proceeding on to the next row and before returning false when parsing is complete.
         if (nextCell >= 1) {
@@ -53,7 +53,7 @@ public abstract class ArrayCellSelector extends CellSelector {
     }
 
     @Override
-    public final void reset() {
+    public void reset() {
         nextCell = 0;
     }
 

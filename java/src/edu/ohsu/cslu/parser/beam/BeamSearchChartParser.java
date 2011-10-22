@@ -147,22 +147,15 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                             + globalBeamDelta + " localThresh=" + localBeamDelta + " factBeamWidth="
                             + factoredBeamWidth);
 
-            cellSelector.reset();
+            // cellSelector.reset();
             while (cellSelector.hasNext()) {
 
                 final short[] startAndEnd = cellSelector.next();
-                computeInsideProbabilities(null);
+                computeInsideProbabilities(chart.getCell(startAndEnd[0], startAndEnd[1]));
 
                 parseTask.totalPushes += cellPushed;
                 parseTask.totalPops += cellPopped;
                 parseTask.totalConsidered += cellConsidered;
-
-                // if (opts.collectDetailedStatistics) {
-                // final HashSetChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
-                // System.out.println(cell.width() + " [" + cell.start() + "," + cell.end() + "] #pop=" +
-                // cellPopped
-                // + " #push=" + cellPushed + " #considered=" + cellConsidered);
-                // }
             }
         }
 
@@ -172,8 +165,8 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     @Override
     protected void computeInsideProbabilities(final ChartCell c) {
         final HashSetChartCell cell = (HashSetChartCell) c;
-        final short start = cell.start();
-        final short end = cell.end();
+        final short start = c.start();
+        final short end = c.end();
         ChartEdge edge;
         initCell(start, end);
         final boolean hasCellConstraints = cellSelector.hasCellConstraints();

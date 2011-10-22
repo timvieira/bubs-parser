@@ -136,15 +136,20 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
     public void readModel(final BufferedReader inStream) throws Exception {
         final List<String> sentenceTokens = new LinkedList<String>();
+        boolean firstLine = true;
         String line = null;
         while ((line = inStream.readLine()) != null) {
             line = line.trim();
-            if (line.equals("") || allBeginScores.size() == 0) {
+            if (line.equals("") || firstLine) {
                 // new sentence
-                sentToIndex.put(Util.join(sentenceTokens, " "), allBeginScores.size());
+                if (!firstLine) {
+                    sentToIndex.put(Util.join(sentenceTokens, " "), allBeginScores.size() - 1);
+                    sentenceTokens.clear();
+                }
                 allBeginScores.add(new Vector<Float>());
                 allEndScores.add(new Vector<Float>());
                 allUnaryScores.add(new Vector<Float>());
+                firstLine = false;
             }
 
             if (!line.equals("")) {
@@ -161,6 +166,9 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 }
             }
         }
+        if (sentenceTokens.size() > 0) {
+            sentToIndex.put(Util.join(sentenceTokens, " "), allBeginScores.size() - 1);
+        }
     }
 
     public CellSelector createCellSelector() {
@@ -171,7 +179,6 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
         @Override
         public void initSentence(final ChartParser<?, ?> parser) {
-            super.initSentence(parser);
             // might have to hash the sentence number for the grid
             initSentence(parser.chart, parser.chart.parseTask.sentence);
         }
@@ -412,6 +419,22 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 stats += "\nCC_CELLS: " + s;
             }
             return stats;
+        }
+
+        @Override
+        public short[] next() {
+            final ChartCell cell = cellListIterator.next();
+            return new short[] { cell.start(), cell.end() };
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cellListIterator.hasNext();
+        }
+
+        @Override
+        public void reset() {
+            cellListIterator = cellList.iterator();
         }
 
         @Override
