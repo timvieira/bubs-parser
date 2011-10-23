@@ -49,6 +49,7 @@ public class ConstrainedInsideOutsideParser extends
 
         // Initialize the chart
         if (chart != null
+                && chart.midpoints.length >= c.midpoints.length
                 && chart.nonTerminalIndices.length >= ConstrainedChart
                         .chartArraySize(c.size(), c.maxUnaryChainLength())
                 && chart.cellOffsets.length >= c.cellOffsets.length) {

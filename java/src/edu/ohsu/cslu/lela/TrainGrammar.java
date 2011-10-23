@@ -21,7 +21,7 @@ package edu.ohsu.cslu.lela;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
@@ -60,8 +60,8 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-i", aliases = { "--iterations" }, metaVar = "count", usage = "Split-merge iterations")
     private int splitMergeIterations;
 
-    final LinkedList<NaryTree<String>> goldTrees = new LinkedList<NaryTree<String>>();
-    final LinkedList<ConstrainingChart> constrainingCharts = new LinkedList<ConstrainingChart>();
+    final ArrayList<NaryTree<String>> goldTrees = new ArrayList<NaryTree<String>>();
+    final ArrayList<ConstrainingChart> constrainingCharts = new ArrayList<ConstrainingChart>();
 
     private NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
 
@@ -156,6 +156,20 @@ public class TrainGrammar extends BaseCommandlineTool {
             }
             count++;
             // progressBar(count);
+        }
+    }
+
+    final void reloadGoldTreesAndCharts(final ConstrainedInsideOutsideGrammar cscGrammar) {
+
+        final ParserDriver opts = new ParserDriver();
+        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
+        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscGrammar);
+
+        // Iterate over the training corpus, parsing and replacing current ConstrainingCharts with 1-best output of the
+        // newly trained CSC grammar
+        for (int i = 0; i < constrainingCharts.size(); i++) {
+            parser.findBestParse(constrainingCharts.get(i));
+            constrainingCharts.set(i, new ConstrainingChart(parser.chart));
         }
     }
 
