@@ -66,14 +66,8 @@ public class ConstrainedChart extends ConstrainingChart {
                 sparseMatrixGrammar);
 
         this.splitVocabulary = (SplitVocabulary) sparseMatrixGrammar.nonTermSet;
-        this.beamWidth = lexicalRowBeamWidth = 2 * constrainingChart.maxUnaryChainLength();
-        Arrays.fill(nonTerminalIndices, Short.MIN_VALUE);
-        Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         this.outsideProbabilities = new float[insideProbabilities.length];
-        Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
-
-        // TODO Do we need to copy? Or can we just reference the original array?
-        System.arraycopy(constrainingChart.midpoints, 0, midpoints, 0, midpoints.length);
+        clear(constrainingChart);
 
         // Calculate all cell offsets, etc
         computeOffsets();
@@ -90,13 +84,22 @@ public class ConstrainedChart extends ConstrainingChart {
 
     public void clear(final ConstrainingChart constrainingChart) {
         this.size = constrainingChart.size();
-        this.beamWidth = lexicalRowBeamWidth = 2;
+        this.beamWidth = lexicalRowBeamWidth = 2 * constrainingChart.maxUnaryChainLength();
+        this.openCells = constrainingChart.openCells;
+        this.parentCellIndices = constrainingChart.parentCellIndices;
+        this.siblingCellIndices = constrainingChart.siblingCellIndices;
+        this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength;
+
+        System.arraycopy(constrainingChart.unaryChainLength, 0, unaryChainLength, 0,
+                constrainingChart.unaryChainLength.length);
 
         final int fillLength = chartArraySize(constrainingChart.size(), constrainingChart.maxUnaryChainLength());
         Arrays.fill(nonTerminalIndices, 0, fillLength, Short.MIN_VALUE);
         Arrays.fill(packedChildren, 0, fillLength, 0);
         Arrays.fill(insideProbabilities, 0, fillLength, Float.NEGATIVE_INFINITY);
         Arrays.fill(outsideProbabilities, 0, fillLength, Float.NEGATIVE_INFINITY);
+        System.arraycopy(constrainingChart.midpoints, 0, midpoints, 0, constrainingChart.midpoints.length);
+
         computeOffsets();
     }
 

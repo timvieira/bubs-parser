@@ -38,7 +38,7 @@ import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
+import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
 import edu.ohsu.cslu.tests.JUnit;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
@@ -53,13 +53,30 @@ import edu.ohsu.cslu.util.Strings;
 public class TestTrainGrammar {
 
     /**
-     * Learns a 2-split grammar from a sample corpus. Verifies that likelihood increases with successive EM runs.
+     * Learns a 2-split grammar from a 1-sentence sample corpus. Verifies that likelihood increases with successive EM
+     * runs.
      * 
      * @throws IOException
      */
     @Test
     public void testSample() throws IOException {
         testEmTraining(new BufferedReader(new StringReader(AllLelaTests.STRING_SAMPLE_TREE)));
+    }
+
+    /**
+     * Learns a 2-split grammar from longer 1-sentence 'corpus'. Verifies that corpus likelihood increases with
+     * successive EM runs.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testSentence3() throws IOException {
+        final BufferedReader br = new BufferedReader(
+                new StringReader(
+                        "(TOP (S (S (CC But) (NP (NNS investors)) (VP (MD should) (VP (VB keep) (PP (IN in) (NP (NN mind))) (, ,) (PP (IN before) (S (VP (VBG paying) (ADVP (RB too) (JJ much))))) (, ,) (SBAR (IN that) (S (NP (NP (DT the) (JJ average) (JJ annual) (NN return)) (PP (IN for) (NP (NN stock) (NNS holdings)))) (, ,) (ADVP (JJ long-term)) (, ,) (VP (AUX is) (NP (NP (QP (CD 9) (NN %) (TO to) (CD 10) (NN %))) (NP (DT a) (NN year))))))))) (: ;) (S (NP (NP (DT a) (NN return)) (PP (IN of) (NP (CD 15) (NN %)))) (VP (AUX is) (VP (VBN considered) (S (ADJP (JJ praiseworthy)))))) (. .)))"),
+                1024);
+
+        testEmTraining(br);
     }
 
     /**
@@ -75,7 +92,7 @@ public class TestTrainGrammar {
                         "(TOP (S (NP (NNP FCC) (NN counsel)) (VP (VBZ joins) (NP (NN firm))) (: :)))\n"
                                 + "(TOP (X (X (SYM z)) (: -) (ADJP (RB Not) (JJ available)) (. .)))\n"
                                 + "(TOP (S (S (CC But) (NP (NNS investors)) (VP (MD should) (VP (VB keep) (PP (IN in) (NP (NN mind))) (, ,) (PP (IN before) (S (VP (VBG paying) (ADVP (RB too) (JJ much))))) (, ,) (SBAR (IN that) (S (NP (NP (DT the) (JJ average) (JJ annual) (NN return)) (PP (IN for) (NP (NN stock) (NNS holdings)))) (, ,) (ADVP (JJ long-term)) (, ,) (VP (AUX is) (NP (NP (QP (CD 9) (NN %) (TO to) (CD 10) (NN %))) (NP (DT a) (NN year))))))))) (: ;) (S (NP (NP (DT a) (NN return)) (PP (IN of) (NP (CD 15) (NN %)))) (VP (AUX is) (VP (VBN considered) (S (ADJP (JJ praiseworthy)))))) (. .)))"),
-                1024);
+                4096);
 
         testEmTraining(br);
     }
@@ -106,6 +123,7 @@ public class TestTrainGrammar {
         fw.close();
 
         // Split again and train with the 2-split grammar
+        tg.reloadGoldTreesAndCharts(cscGrammar(plg1));
         runEm(tg, plg1.split(noiseGenerator), 2, 25);
     }
 
@@ -149,9 +167,9 @@ public class TestTrainGrammar {
 
         // Split and train with the 1-split grammar
         final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 25);
-        final FileWriter fw = new FileWriter("/tmp/1split");
-        fw.write(plg1.toString());
-        fw.close();
+//        final FileWriter fw = new FileWriter("/tmp/1split");
+//        fw.write(plg1.toString());
+//        fw.close();
 
         // Split again and train with the 2-split grammar
         runEm(tg, plg1.split(noiseGenerator), 2, 25);
@@ -193,7 +211,7 @@ public class TestTrainGrammar {
         final long t1 = System.currentTimeMillis();
         System.out.format("Training Time: %.1f seconds", (t1 - t0) / 1000f);
 
-        // Parse the training corpus with the new CSR grammar and report F-score
+        // Parse the training corpus with the new CSC grammar and report F-score
         System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100,
                 (System.currentTimeMillis() - t1) / 1000f);
 
@@ -208,7 +226,7 @@ public class TestTrainGrammar {
 
     private double parseFScore(final Grammar grammar, final List<NaryTree<String>> goldTrees) {
         final LeftCscSparseMatrixGrammar cscGrammar = new LeftCscSparseMatrixGrammar(grammar);
-        final CscSpmvParser parser = new CscSpmvParser(new ParserDriver(), cscGrammar);
+        final CartesianProductHashSpmlParser parser = new CartesianProductHashSpmlParser(new ParserDriver(), cscGrammar);
 
         final BracketEvaluator evaluator = new BracketEvaluator();
         for (final NaryTree<String> goldTree : goldTrees) {
@@ -216,6 +234,13 @@ public class TestTrainGrammar {
             // TODO Parse from tree instead
             final String sentence = Strings.join(goldTree.leafLabels(), " ");
             final ParseTask context = parser.parseSentence(sentence);
+//            try {
+//                final FileWriter fw = new FileWriter("/tmp/chart");
+//                fw.write(parser.chart.toString());
+//                fw.close();
+//            } catch (final IOException e) {
+//                e.printStackTrace();
+//            }
             evaluator.evaluate(goldTree, context.binaryParse.unfactor(cscGrammar.grammarFormat));
         }
 

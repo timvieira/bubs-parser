@@ -443,7 +443,7 @@ public class TestConstrainedInsideOutsideParser {
 
     @Theory
     public void testWsjSubset1Split(final NoiseGenerator noiseGenerator) throws Exception {
-        final String corpus = "parsing/wsj_24.mrgEC.1-20";
+        final String corpus = "parsing/wsj.24.trees.1-20";
 
         // Induce a grammar from the corpus
         final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
@@ -474,7 +474,7 @@ public class TestConstrainedInsideOutsideParser {
             final ConstrainingChart constrainingChart = new ConstrainingChart(factoredTree, unsplitGrammar);
 
             // Ensure that we're constructing the constraining chart correctly
-            assertEquals(factoredTree.toString(), constrainingChart.toString());
+            assertEquals(factoredTree.toString(), constrainingChart.extractBestParse(0).toString());
 
             // TODO Eliminate multiple conversions
             final BinaryTree<String> parseTree1 = parser.findBestParse(constrainingChart);
@@ -490,7 +490,7 @@ public class TestConstrainedInsideOutsideParser {
     public void testWsjSubset2Splits() throws Exception {
         // We have to bias these splits
         final NoiseGenerator noiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(0.01f);
-        final String corpus = "parsing/wsj_24.mrgEC.1-20";
+        final String corpus = "parsing/wsj.24.trees.1-20";
 
         // Induce a grammar from the corpus
         final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
@@ -517,10 +517,13 @@ public class TestConstrainedInsideOutsideParser {
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
             final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
-            final ConstrainingChart c0 = new ConstrainingChart(tree0, csc0);
 
-            final BinaryTree<String> tree1 = BinaryTree.read(p1.findBestParse(c0).toString(), String.class);
-            final BinaryTree<String> tree2 = BinaryTree.read(p2.findBestParse(c0).toString(), String.class);
+            final ConstrainingChart constrainingChart0 = new ConstrainingChart(tree0, csc0);
+            final BinaryTree<String> tree1 = p1.findBestParse(constrainingChart0);
+
+            final ConstrainingChart constrainingChart1 = new ConstrainingChart(tree1, csc1);
+            final BinaryTree<String> tree2 = p2.findBestParse(constrainingChart1);
+
             final BinaryTree<String> preSplitTree = toPreSplitTree(tree2);
 
             // Ensure that the resulting parse matches the constraining 1-split parse

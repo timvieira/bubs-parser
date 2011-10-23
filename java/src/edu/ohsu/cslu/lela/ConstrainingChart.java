@@ -17,21 +17,21 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
  */
 public class ConstrainingChart extends PackedArrayChart {
 
-    final short[][] openCells;
+    short[][] openCells;
 
     /** Indices of parent cells, indexed by child cell cellIndex. Used for outside-probability computation. */
-    final short[] parentCellIndices;
+    short[] parentCellIndices;
 
     /** Indices of sibling cells, indexed by cellIndex. Used for outside-probability computation. */
-    final short[] siblingCellIndices;
+    short[] siblingCellIndices;
 
     /** Length of unary chain for each cell. 1 <= unaryChainLength <= maxUnaryChainLength */
-    protected final int[] unaryChainLength;
+    protected final byte[] unaryChainLength;
 
     /**
      * The length of the longest unary chain (i.e., the binary parent + any unary parents) 1 <= maxUnaryChainLength <= n
      */
-    protected final int maxUnaryChainLength;
+    protected int maxUnaryChainLength;
 
     /**
      * Populates a chart based on a gold tree, with one entry per cell (+ unary productions, if any). This chart can
@@ -52,7 +52,7 @@ public class ConstrainingChart extends PackedArrayChart {
 
         this.maxUnaryChainLength = goldTree.maxUnaryChainLength() + 1;
         this.beamWidth = this.lexicalRowBeamWidth = maxUnaryChainLength;
-        this.unaryChainLength = new int[size * (size + 1) / 2];
+        this.unaryChainLength = new byte[size * (size + 1) / 2];
         final IntArrayList tokenList = new IntArrayList();
 
         short start = 0;
@@ -69,7 +69,7 @@ public class ConstrainingChart extends PackedArrayChart {
             final short cellIndex = (short) cellIndex(start, end);
             final int unaryChainHeight = node.unaryChainHeight();
             if (unaryChainLength[cellIndex] == 0) {
-                unaryChainLength[cellIndex] = unaryChainHeight + 1;
+                unaryChainLength[cellIndex] = (byte) (unaryChainHeight + 1);
             }
 
             // Find the index of this non-terminal in the main chart array.
@@ -128,7 +128,6 @@ public class ConstrainingChart extends PackedArrayChart {
         calculateCellOffsets();
     }
 
-    // TODO Where is this used?
     protected ConstrainingChart(final ConstrainingChart constrainingChart, final int chartArraySize,
             final SparseMatrixGrammar sparseMatrixGrammar) {
 
@@ -136,11 +135,7 @@ public class ConstrainingChart extends PackedArrayChart {
         calculateCellOffsets();
 
         this.beamWidth = constrainingChart.beamWidth;
-        this.unaryChainLength = constrainingChart.unaryChainLength;
-        this.maxUnaryChainLength = constrainingChart.maxUnaryChainLength;
-        this.openCells = constrainingChart.openCells;
-        this.parentCellIndices = constrainingChart.parentCellIndices;
-        this.siblingCellIndices = constrainingChart.siblingCellIndices;
+        this.unaryChainLength = new byte[constrainingChart.unaryChainLength.length];
     }
 
     /**
