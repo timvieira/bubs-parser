@@ -87,8 +87,27 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     protected void addLexicalProductions(final ChartCell cell) {
         // add lexical productions to the a base cells of the chart
-        for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.parseTask.tokens[cell.start()])) {
+        if (ParserDriver.parseFromInputTags) {
+            // add only one POS => word production given by input (or 1-best) tags
+            final int posTag = chart.parseTask.inputTags[cell.start()];
+            final int word = chart.parseTask.tokens[cell.start()];
+            Production lexProd = grammar.getLexicalProduction(posTag, word);
+            if (lexProd == null) {
+                // TODO: create a new lexical production with a smoothed prob, maybe from the UNK classes
+                // final int parent, final int child, final float prob, final boolean isLex, final Grammar grammar
+                lexProd = new Production(posTag, word, 0.0f, true, grammar);
+                // throw new IllegalArgumentException(String.format(
+                // "ERROR: lexical production %s => %s not found in grammar",
+                // grammar.nonTermSet.getSymbol(chart.parseTask.inputTags[cell.start()]),
+                // grammar.lexSet.getSymbol(chart.parseTask.tokens[cell.start()])));
+            }
             cell.updateInside(lexProd, cell, null, lexProd.prob);
+        } else {
+            // add all possible lexical productions given input word
+            for (final Production lexProd : grammar
+                    .getLexicalProductionsWithChild(chart.parseTask.tokens[cell.start()])) {
+                cell.updateInside(lexProd, cell, null, lexProd.prob);
+            }
         }
     }
 

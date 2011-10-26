@@ -75,6 +75,9 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
     private Vector<Vector<Float>> allBeginScores = new Vector<Vector<Float>>();
     private Vector<Vector<Float>> allEndScores = new Vector<Vector<Float>>();
     private Vector<Vector<Float>> allUnaryScores = new Vector<Vector<Float>>();
+    // private Vector<float[]> allBeginScores = new Vector<float[]>();
+    // private Vector<float[]> allEndScores = new Vector<float[]>();
+    // private Vector<float[]> allUnaryScores = new Vector<float[]>();
 
     // Because we're getting the Cell Constraints scores pre-computed from Kristy for
     // certain sections, we can only parse sentences we have scores for. And when this
@@ -88,7 +91,8 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
     private float globalBegin = Float.POSITIVE_INFINITY;
     private float globalEnd = Float.POSITIVE_INFINITY;
     private float globalUnary = Float.POSITIVE_INFINITY;
-    private float precisionPct = Float.NaN, linearOpen = Float.NaN;
+    private float hpTune = Float.NaN;
+    private int quadTune = Integer.MAX_VALUE, linearTune = Integer.MAX_VALUE;
 
     protected LinkedList<ChartCell> cellList;
     protected Iterator<ChartCell> cellListIterator;
@@ -100,7 +104,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             parseConstraintArgs(props.getProperty("chartConstraintsTune"));
             BaseLogger.singleton().fine(
                     "CC_PARAM: startThresh=" + globalBegin + " endThresh=" + globalEnd + " unaryThresh=" + globalUnary
-                            + " precisionPct=" + precisionPct + " linearN=" + linearOpen);
+                            + " hpTune=" + hpTune + " quadTune=" + quadTune + " linearTune=" + linearTune);
 
             readModel(modelStream);
         } catch (final Exception e) {
@@ -113,19 +117,28 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         int i = 0;
         while (i < tokens.length) {
             if (tokens[i].equals("A")) {
+                // Absolute: A,b,e,u
                 globalBegin = Util.str2float(tokens[++i]);
                 globalEnd = Util.str2float(tokens[++i]);
                 globalUnary = Util.str2float(tokens[++i]);
             } else if (tokens[i].equals("P")) {
-                precisionPct = Util.str2float(tokens[++i]);
-                if (precisionPct < 0.0 || precisionPct > 1.0) {
+                // High Precision: P,x [x in 0...1]
+                hpTune = Util.str2float(tokens[++i]);
+                if (hpTune < 0.0 || hpTune > 1.0) {
                     BaseLogger.singleton().severe(
-                            "Precision constraint must be btwn 0 and 1 inclusive.  Found value: " + precisionPct);
+                            "High Precision param must be btwn 0 and 1 inclusive.  Found value: " + hpTune);
                 }
-            } else if (tokens[i].equals("N")) {
-                this.linearOpen = Util.str2float(tokens[++i]);
-                if (linearOpen <= 0) {
-                    BaseLogger.singleton().severe("Linear open cells constrain must be greater than zero");
+            } else if (tokens[i].equals("Q")) {
+                // Quadratic: Q,x [x is integer; n*x open begin/end positions]
+                quadTune = Integer.parseInt(tokens[++i]);
+                if (quadTune <= 0) {
+                    BaseLogger.singleton().severe("Quadratic param must be an integer greater than zero");
+                }
+            } else if (tokens[i].equals("L")) {
+                // Linear: L,x [x is integer; x open begin/end positions]
+                linearTune = Integer.parseInt(tokens[++i]);
+                if (linearTune <= 0) {
+                    BaseLogger.singleton().severe("Linear param must be an integer greater than zero");
                 }
             } else {
                 BaseLogger.singleton().severe("CC tune option not recognized.  Exiting.");
@@ -171,6 +184,99 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         }
     }
 
+    // A threshold of 0 is the Bayes decision boundary. Move X% of closed
+    // begin/end positions to open to increase precision (X=0 is original Bayes
+    // decision boundary; X=1 results in no constraints).
+    public static float computeHighPrecisionThresh(final Vector<Float> bScores, final Vector<Float> eScores,
+            final float hpTune) {
+        final Vector<Float> positiveScores = new Vector<Float>();
+        for (final float value : bScores) {
+            if (value >= 0)
+                positiveScores.add(value);
+        }
+        for (final float value : eScores) {
+            if (value >= 0)
+                positiveScores.add(value);
+        }
+        Collections.sort(positiveScores);
+
+        final int index = (int) (positiveScores.size() * (1 - hpTune));
+        if (index == 0)
+            return 0;
+        if (index == positiveScores.size())
+            return Float.POSITIVE_INFINITY;
+        return positiveScores.get(index);
+    }
+
+    // Given ranked begin/end classification scores, open the K*N highest-scoring
+    // word positions, where N=sentLength and K is a tuning param. This results
+    // in O(N^2) parsing complexity.
+    public static float computeQuadraticThresh(final Vector<Float> bScores, final Vector<Float> eScores,
+            final int quadTune) {
+        final int sentLen = bScores.size();
+        final LinkedList<TagScore> allScores = new LinkedList<TagScore>();
+        for (int i = 0; i < sentLen; i++) {
+            allScores.add(new TagScore(bScores.get(i), i, -1));
+            allScores.add(new TagScore(eScores.get(sentLen - i - 1), -1, sentLen - i));
+        }
+        Collections.sort(allScores);
+
+        final boolean beginOpen[] = new boolean[sentLen];
+        final boolean endOpen[] = new boolean[sentLen + 1];
+        final int targetNumOpen = (quadTune * sentLen);
+        int numOpen = 0;
+        TagScore s = null;
+        while (numOpen < targetNumOpen && allScores.size() > 0) {
+            s = allScores.poll();
+            if (s.end == -1) {
+                beginOpen[s.start] = true;
+                for (int end = s.start + 2; end <= sentLen; end++) {
+                    if (endOpen[end]) {
+                        numOpen++;
+                    }
+                }
+            } else {
+                endOpen[s.end] = true;
+                for (int start = 0; start < s.end - 1; start++) {
+                    if (beginOpen[start]) {
+                        numOpen++;
+                    }
+                }
+            }
+        }
+
+        if (s == null) {
+            return Float.POSITIVE_INFINITY;
+        }
+        return s.score;
+    }
+
+    // Given ranked begin/end classification scores, open the K highest-scoring
+    // word positions, where K is a tuning param. This results in O(N) parsing complexity.
+    public static float getLinearConstraints(final Vector<Float> bScores, final Vector<Float> eScores) {
+
+        return 0;
+    }
+
+    private static class TagScore implements Comparable<TagScore> {
+
+        public float score;
+        public int start, end;
+
+        public TagScore(final float score, final int start, final int end) {
+            this.score = score;
+            this.start = start;
+            this.end = end;
+        }
+
+        @Override
+        public int compareTo(final TagScore o) {
+            if (o.score < this.score)
+                return 1;
+            return -1;
+        }
+    }
+
     public CellSelector createCellSelector() {
         return new OHSUCellConstraints();
     }
@@ -197,13 +303,13 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             float endThresh = globalEnd;
             final float unaryThresh = globalUnary;
 
-            if (!Float.isNaN(precisionPct)) {
-                final float precisionThresh = getPrecisionConstraints(beginScores, endScores);
+            if (!Float.isNaN(hpTune)) {
+                final float precisionThresh = computeHighPrecisionThresh(beginScores, endScores, hpTune);
                 beginThresh = Math.min(beginThresh, precisionThresh);
                 endThresh = Math.min(endThresh, precisionThresh);
             }
-            if (!Float.isNaN(linearOpen)) {
-                final float quadThresh = getQuadraticConstraints(beginScores, endScores);
+            if (quadTune != Integer.MAX_VALUE) {
+                final float quadThresh = computeQuadraticThresh(beginScores, endScores, quadTune);
                 beginThresh = Math.min(beginThresh, quadThresh);
                 endThresh = Math.min(endThresh, quadThresh);
             }
@@ -246,92 +352,6 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 }
             }
             return boolVals;
-        }
-
-        private float getPrecisionConstraints(final Vector<Float> bScores, final Vector<Float> eScores) {
-            final Vector<Float> positiveScores = new Vector<Float>();
-            for (final float value : bScores) {
-                if (value >= 0)
-                    positiveScores.add(value);
-            }
-            for (final float value : eScores) {
-                if (value >= 0)
-                    positiveScores.add(value);
-            }
-            Collections.sort(positiveScores);
-
-            final int index = (int) (positiveScores.size() * (1 - precisionPct));
-            if (index == 0)
-                return 0;
-            if (index == positiveScores.size())
-                return Float.POSITIVE_INFINITY;
-            return positiveScores.get(index);
-            // float precisionThresh = 0;
-            // float numToKeep = positiveScores.size() * (1 - precisionPct);
-            // if (positiveScores.size() > 0) {
-            // int index = (int) (positiveScores.size() * (1 - precisionPct));
-            // index = Math.min(index, positiveScores.size() - 1);
-            // precisionThresh = positiveScores.get(index);
-            // }
-            // return precisionThresh;
-        }
-
-        private float getQuadraticConstraints(final Vector<Float> bScores, final Vector<Float> eScores) {
-            final int sentLen = bScores.size();
-            final LinkedList<TagScore> allScores = new LinkedList<TagScore>();
-            for (int i = 0; i < sentLen; i++) {
-                allScores.add(new TagScore(bScores.get(i), i, -1));
-                allScores.add(new TagScore(eScores.get(sentLen - i - 1), -1, sentLen - i));
-            }
-            Collections.sort(allScores);
-
-            final boolean beginOpen[] = new boolean[sentLen];
-            final boolean endOpen[] = new boolean[sentLen + 1];
-            final int targetNumOpen = (int) (linearOpen * sentLen);
-            int numOpen = 0;
-            TagScore s = null;
-            while (numOpen < targetNumOpen && allScores.size() > 0) {
-                s = allScores.poll();
-                if (s.end == -1) {
-                    beginOpen[s.start] = true;
-                    for (int end = s.start + 2; end <= sentLen; end++) {
-                        if (endOpen[end]) {
-                            numOpen++;
-                        }
-                    }
-                } else {
-                    endOpen[s.end] = true;
-                    for (int start = 0; start < s.end - 1; start++) {
-                        if (beginOpen[start]) {
-                            numOpen++;
-                        }
-                    }
-                }
-            }
-
-            if (s == null) {
-                return Float.POSITIVE_INFINITY;
-            }
-            return s.score;
-        }
-
-        private class TagScore implements Comparable<TagScore> {
-
-            public float score;
-            public int start, end;
-
-            public TagScore(final float score, final int start, final int end) {
-                this.score = score;
-                this.start = start;
-                this.end = end;
-            }
-
-            @Override
-            public int compareTo(final TagScore o) {
-                if (o.score < this.score)
-                    return 1;
-                return -1;
-            }
         }
 
         @Override
