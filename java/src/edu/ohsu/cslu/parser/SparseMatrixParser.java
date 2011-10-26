@@ -61,8 +61,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         // Pruning Parameters
         if (props.containsKey(PROPERTY_MAX_BEAM_WIDTH) && props.getIntProperty(PROPERTY_MAX_BEAM_WIDTH) > 0) {
             this.beamWidth = props.getIntProperty(Parser.PROPERTY_MAX_BEAM_WIDTH);
-            this.lexicalRowBeamWidth = props.getIntProperty(PROPERTY_LEXICAL_ROW_BEAM_WIDTH);
-            this.lexicalRowUnaries = props.getIntProperty(PROPERTY_LEXICAL_ROW_UNARIES);
+            this.lexicalRowBeamWidth = props.getIntProperty(PROPERTY_LEXICAL_ROW_BEAM_WIDTH, beamWidth);
+            this.lexicalRowUnaries = props.getIntProperty(PROPERTY_LEXICAL_ROW_UNARIES, lexicalRowBeamWidth / 3);
             this.maxLocalDelta = props.getFloatProperty(PROPERTY_MAX_LOCAL_DELTA, 8f);
             this.exhaustiveSearch = false;
             this.threadLocalBoundedPriorityQueue = new ThreadLocal<BoundedPriorityQueue>() {
