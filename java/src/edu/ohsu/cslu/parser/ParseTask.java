@@ -82,6 +82,7 @@ public class ParseTask {
 
     public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar) {
         try {
+            this.grammar = grammar;
             if (inputFormat == InputFormat.Token) {
                 this.sentence = input.trim();
             } else if (inputFormat == InputFormat.Text) {
@@ -94,36 +95,40 @@ public class ParseTask {
                 inputTags = new int[sentence.length()];
                 int i = 0;
                 for (final NaryTree<String> leaf : inputTree.leafTraversal()) {
-                    inputTags[i] = grammar.nonTermSet.getIndex(leaf.parent().label());
-                    if (inputTags[i] == -1) {
-                        throw new IllegalArgumentException("-parseFromInputTags specified but input tag '"
-                                + leaf.parent().label() + "' not found in grammar");
-                    }
+                    inputTags[i] = getInputTagIndex(leaf.parent().label());
                     i++;
                 }
             } else if (inputFormat == InputFormat.Tagged) {
                 // (DT The) (NN economy) (POS 's) (NN temperature) (MD will)
                 final LinkedList<String> sentTokens = new LinkedList<String>();
-                final String[] tokens = input.split("\\s+");
-                inputTags = new int[tokens.length / 2];
+                final String[] tagTokens = input.split("\\s+");
+                inputTags = new int[tagTokens.length / 2];
                 int i = 0;
-                for (final String token : tokens) {
+                for (final String token : tagTokens) {
                     if (i % 2 == 1) {
                         sentTokens.add(token.substring(0, token.length() - 1)); // remove ")"
                     } else {
-                        inputTags[i / 2] = grammar.nonTermSet.getIndex(token.substring(1)); // remove "("
+                        inputTags[i / 2] = getInputTagIndex(token.substring(1)); // remove "("
                     }
                     i++;
                 }
                 sentence = Strings.join(sentTokens, " ");
             }
 
-            this.grammar = grammar;
             this.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
 
         } catch (final Exception e) {
             e.printStackTrace();
         }
+    }
+
+    protected int getInputTagIndex(final String posStr) {
+        final int index = grammar.nonTermSet.getIndex(posStr);
+        if (index == -1 && ParserDriver.parseFromInputTags) {
+            throw new IllegalArgumentException("-parseFromInputTags specified but input tag '" + posStr
+                    + "' not found in grammar");
+        }
+        return index;
     }
 
     public String statsString() {
