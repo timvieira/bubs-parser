@@ -145,5 +145,8 @@ public class TestConstrainingChart extends ChartTestCase {
         // Ensure that toString() runs without an exception. We could attempt to verify the output, but that's probably
         // overkill
         newConstrainingChart.toString();
+
+        // TODO Null out some entries in the ConstrainedChart (simulating parsing after EM has 0'd out some grammar
+        // probabilities) and ensure we can still construct a ConstrainingChart
     }
 }

@@ -99,41 +99,19 @@ public class ProductionListGrammar {
      * 
      * @param countGrammar
      */
-    public ProductionListGrammar(final FractionalCountGrammar countGrammar) {
+    ProductionListGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon,
+            final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
+            final ArrayList<Production> lexicalProductions) {
 
-        this.vocabulary = countGrammar.vocabulary;
-        this.lexicon = countGrammar.lexicon;
+        this.vocabulary = vocabulary;
+        this.lexicon = lexicon;
 
-        this.binaryProductions = countGrammar.binaryProductions();
-        this.unaryProductions = countGrammar.unaryProductions();
-        this.lexicalProductions = countGrammar.lexicalProductions();
+        this.binaryProductions = binaryProductions;
+        this.unaryProductions = unaryProductions;
+        this.lexicalProductions = lexicalProductions;
 
-        this.startSymbol = countGrammar.startSymbol;
+        this.startSymbol = vocabulary.getSymbol(vocabulary.startSymbol());
         this.baseGrammar = this;
-        this.parentVocabularyMap = null;
-
-        // // TODO Populate this, somehow
-        // this.subcategoryIndices = new short[vocabulary.size()];
-    }
-
-    /**
-     * Constructs a production-list grammar based on a {@link FractionalCountGrammar}.
-     * 
-     * @param countGrammar
-     * @param baseGrammar
-     */
-    public ProductionListGrammar(final FractionalCountGrammar countGrammar, final ProductionListGrammar baseGrammar) {
-
-        this.vocabulary = countGrammar.vocabulary;
-        this.lexicon = countGrammar.lexicon;
-
-        this.binaryProductions = countGrammar.binaryProductions();
-        this.unaryProductions = countGrammar.unaryProductions();
-        this.lexicalProductions = countGrammar.lexicalProductions();
-
-        this.startSymbol = countGrammar.startSymbol;
-        // TODO Record a parent grammar?
-        this.baseGrammar = baseGrammar;
         this.parentVocabularyMap = null;
 
         // // TODO Populate this, somehow

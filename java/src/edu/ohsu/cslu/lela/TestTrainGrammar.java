@@ -21,13 +21,13 @@ package edu.ohsu.cslu.lela;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 
 import org.junit.Test;
 
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.Grammar;
@@ -37,6 +37,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
 import edu.ohsu.cslu.tests.JUnit;
@@ -87,6 +88,7 @@ public class TestTrainGrammar {
      */
     @Test
     public void test3Sentences() throws IOException {
+        GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAX_BEAM_WIDTH, "50");
         final BufferedReader br = new BufferedReader(
                 new StringReader(
                         "(TOP (S (NP (NNP FCC) (NN counsel)) (VP (VBZ joins) (NP (NN firm))) (: :)))\n"
@@ -114,13 +116,11 @@ public class TestTrainGrammar {
         System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", parseFScore(cscGrammar(plg0), tg.goldTrees),
                 (System.currentTimeMillis() - t0) / 1000f);
 
-        final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
+        // TODO Remove fixed random seed
+        final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f, 1);
 
         // Split and train with the 1-split grammar
         final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 25);
-        final FileWriter fw = new FileWriter("/tmp/1split");
-        fw.write(plg1.toString());
-        fw.close();
 
         // Split again and train with the 2-split grammar
         tg.reloadGoldTreesAndCharts(cscGrammar(plg1));
@@ -167,9 +167,9 @@ public class TestTrainGrammar {
 
         // Split and train with the 1-split grammar
         final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 25);
-//        final FileWriter fw = new FileWriter("/tmp/1split");
-//        fw.write(plg1.toString());
-//        fw.close();
+        // final FileWriter fw = new FileWriter("/tmp/1split");
+        // fw.write(plg1.toString());
+        // fw.close();
 
         // Split again and train with the 2-split grammar
         runEm(tg, plg1.split(noiseGenerator), 2, 25);
@@ -182,15 +182,37 @@ public class TestTrainGrammar {
 
         final int lexiconSize = cscGrammar.lexSet.size();
         float previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
+        // ConstrainedChart previousChart = null;
+        // ProductionListGrammar previousGrammar = null;
+
         final long t0 = System.currentTimeMillis();
 
         EmIterationResult result = null;
+        // final ProductionListGrammar originalMergedGrammar = mergeAllSplits(plg);
+        // final int originalMergedRules = originalMergedGrammar.binaryProductions.size()
+        // + originalMergedGrammar.unaryProductions.size() + originalMergedGrammar.lexicalProductions.size();
+
         for (int i = 0; i < iterations; i++) {
             System.out.format("=== Split %d, iteration %d", split, i + 1);
 
-            result = tg.emIteration(cscGrammar);
+            result = tg.emIteration(cscGrammar, -8f);
             result.plGrammar.verifyProbabilityDistribution();
             cscGrammar = cscGrammar(result.plGrammar);
+
+            // Re-merge all splits and verify that the resulting grammar hasn't lost any rules from the original
+            // final ProductionListGrammar mergedGrammar = mergeAllSplits(result.plGrammar);
+            // final int mergedGrammarRules = mergedGrammar.binaryProductions.size()
+            // + mergedGrammar.unaryProductions.size() + mergedGrammar.lexicalProductions.size();
+            // if (mergedGrammarRules != originalMergedRules) {
+            // System.out.println("Missing rules. Expected " + originalMergedRules + " but was " + mergedGrammarRules);
+            // final ConstrainedInsideOutsideGrammar previousCscGrammar = cscGrammar(previousGrammar);
+            // final ParserDriver opts = new ParserDriver();
+            // opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
+            // final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts,
+            // previousCscGrammar);
+            // parser.findBestParse(tg.constrainingCharts.get(0));
+            // parser.countRuleOccurrences();
+            // }
 
             // Ensure we have rules matching each lexical entry
             for (int j = 0; j < lexiconSize; j++) {
@@ -202,20 +224,32 @@ public class TestTrainGrammar {
             System.out.format("   Likelihood: %.3f\n", result.corpusLikelihood);
 
             if (i > 1) {
+                // Allow a small delta on corpus likelihood comparison to avoid floating-point errors
                 assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f on iteration %d",
-                        previousCorpusLikelihood, result.corpusLikelihood, i + 1),
-                        result.corpusLikelihood >= previousCorpusLikelihood);
+                        previousCorpusLikelihood, result.corpusLikelihood, i + 1), result.corpusLikelihood
+                        - previousCorpusLikelihood >= -.001f);
             }
             previousCorpusLikelihood = result.corpusLikelihood;
+            // previousGrammar = result.plGrammar;
+            // previousChart = result.finalChart;
         }
+
         final long t1 = System.currentTimeMillis();
-        System.out.format("Training Time: %.1f seconds", (t1 - t0) / 1000f);
+        System.out.format("Training Time: %.1f seconds\n", (t1 - t0) / 1000f);
 
         // Parse the training corpus with the new CSC grammar and report F-score
         System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100,
                 (System.currentTimeMillis() - t1) / 1000f);
 
         return result.plGrammar;
+    }
+
+    private ProductionListGrammar mergeAllSplits(final ProductionListGrammar plg) {
+        final short[] mergeIndices = new short[plg.vocabulary.size() / 2];
+        for (short j = 0, k = 1; j < mergeIndices.length; j++, k += 2) {
+            mergeIndices[j] = k;
+        }
+        return plg.merge(mergeIndices);
     }
 
     private ConstrainedInsideOutsideGrammar cscGrammar(final ProductionListGrammar plg) {
@@ -234,13 +268,13 @@ public class TestTrainGrammar {
             // TODO Parse from tree instead
             final String sentence = Strings.join(goldTree.leafLabels(), " ");
             final ParseTask context = parser.parseSentence(sentence);
-//            try {
-//                final FileWriter fw = new FileWriter("/tmp/chart");
-//                fw.write(parser.chart.toString());
-//                fw.close();
-//            } catch (final IOException e) {
-//                e.printStackTrace();
-//            }
+            // try {
+            // final FileWriter fw = new FileWriter("/tmp/chart");
+            // fw.write(parser.chart.toString());
+            // fw.close();
+            // } catch (final IOException e) {
+            // e.printStackTrace();
+            // }
             evaluator.evaluate(goldTree, context.binaryParse.unfactor(cscGrammar.grammarFormat));
         }
 

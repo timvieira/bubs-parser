@@ -166,6 +166,9 @@ public class ConstrainedInsideOutsideParser extends
             // Iterate over all possible child pairs
             for (int i = leftCellOffset; i <= leftCellOffset + 1; i++) {
                 final short leftChild = chart.nonTerminalIndices[i];
+                if (leftChild < 0) {
+                    continue;
+                }
                 final float leftProbability = chart.insideProbabilities[i];
 
                 // And over children in the right child cell
@@ -221,6 +224,9 @@ public class ConstrainedInsideOutsideParser extends
 
                 final short child = (short) (child0 + i);
                 final float childInsideProbability = chart.insideProbabilities[child0Offset + i];
+                if (childInsideProbability == Float.NEGATIVE_INFINITY) {
+                    continue;
+                }
 
                 // Iterate over possible parents of the child (rows with non-zero entries)
                 for (int j = grammar.cscUnaryColumnOffsets[child]; j < grammar.cscUnaryColumnOffsets[child + 1]; j++) {
@@ -274,7 +280,6 @@ public class ConstrainedInsideOutsideParser extends
         // The entry we're computing is the top entry in the target cell
         final int entry0Offset = chart.offset(cellIndex);
         final int entry1Offset = entry0Offset + 1;
-        final short entry0 = chart.nonTerminalIndices[entry0Offset];
 
         // The parent is the bottom entry in the parent cell
         final int parentCellIndex = chart.parentCellIndices[cellIndex];
@@ -289,12 +294,12 @@ public class ConstrainedInsideOutsideParser extends
 
             if (siblingCellIndex > cellIndex) {
                 // Process a left-side sibling
-                computeSiblingOutsideProbabilities(entry0Offset, entry1Offset, entry0, parent0Offset, sibling0Offset,
+                computeSiblingOutsideProbabilities(entry0Offset, entry1Offset, parent0Offset, sibling0Offset,
                         grammar.leftChildCscBinaryColumnOffsets, grammar.leftChildCscBinaryRowIndices,
                         grammar.leftChildCscBinaryProbabilities, grammar.leftChildPackingFunction);
             } else {
                 // Process a right-side sibling
-                computeSiblingOutsideProbabilities(entry0Offset, entry1Offset, entry0, parent0Offset, sibling0Offset,
+                computeSiblingOutsideProbabilities(entry0Offset, entry1Offset, parent0Offset, sibling0Offset,
                         grammar.rightChildCscBinaryColumnOffsets, grammar.rightChildCscBinaryRowIndices,
                         grammar.rightChildCscBinaryProbabilities, grammar.rightChildPackingFunction);
             }
@@ -305,19 +310,29 @@ public class ConstrainedInsideOutsideParser extends
 
     }
 
-    private void computeSiblingOutsideProbabilities(final int entry0Offset, final int entry1Offset, final short entry0,
+    private void computeSiblingOutsideProbabilities(final int entry0Offset, final int entry1Offset,
             final int parent0Offset, final int sibling0Offset, final int[] cscBinaryColumnOffsets,
             final short[] cscBinaryRowIndices, final float[] cscBinaryProbabilities, final PackingFunction cpf) {
+
+        final short entry0 = chart.nonTerminalIndices[entry0Offset];
+        final short entry1 = chart.nonTerminalIndices[entry1Offset];
 
         // Iterate over possible siblings
         for (int i = sibling0Offset; i <= sibling0Offset + 1; i++) {
             final short siblingEntry = chart.nonTerminalIndices[i];
+            if (siblingEntry < 0) {
+                continue;
+            }
             final float siblingInsideProbability = chart.insideProbabilities[i];
 
             // And over possible parents
             for (int j = parent0Offset; j <= parent0Offset + 1; j++) {
 
-                final int column = cpf.pack(chart.nonTerminalIndices[j], siblingEntry);
+                final short parent = chart.nonTerminalIndices[j];
+                if (parent < 0) {
+                    continue;
+                }
+                final int column = cpf.pack(parent, siblingEntry);
                 if (column == Integer.MIN_VALUE) {
                     continue;
                 }
@@ -336,7 +351,7 @@ public class ConstrainedInsideOutsideParser extends
                         chart.outsideProbabilities[entry0Offset] = Math.logSum(
                                 chart.outsideProbabilities[entry0Offset], cscBinaryProbabilities[k] + jointProbability);
 
-                    } else if (entry == entry0 + 1) {
+                    } else if (entry == entry1) {
                         chart.outsideProbabilities[entry1Offset] = Math.logSum(
                                 chart.outsideProbabilities[entry1Offset], cscBinaryProbabilities[k] + jointProbability);
 
@@ -360,11 +375,15 @@ public class ConstrainedInsideOutsideParser extends
 
             final int child0Offset = parent0Offset + 2;
             final short parent0 = chart.nonTerminalIndices[parent0Offset];
+            final short parent1 = chart.nonTerminalIndices[parent0Offset + 1];
 
             // Iterate over both child slots
             for (int childOffset = child0Offset; childOffset <= child0Offset + 1; childOffset++) {
 
                 final short child = chart.nonTerminalIndices[childOffset];
+                if (child < 0) {
+                    continue;
+                }
 
                 // Iterate over possible parents of the child (rows with non-zero entries)
                 for (int j = grammar.cscUnaryColumnOffsets[child]; j < grammar.cscUnaryColumnOffsets[child + 1]; j++) {
@@ -380,7 +399,7 @@ public class ConstrainedInsideOutsideParser extends
                         chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
                                 grammar.cscUnaryProbabilities[j] + parentOutsideProbability);
 
-                    } else if (parent == parent0 + 1) {
+                    } else if (parent == parent1) {
                         final float parentOutsideProbability = chart.outsideProbabilities[parent0Offset + 1];
                         chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
                                 grammar.cscUnaryProbabilities[j] + parentOutsideProbability);
@@ -442,6 +461,9 @@ public class ConstrainedInsideOutsideParser extends
         // Iterate over all possible child pairs
         for (int i = leftCellOffset; i <= leftCellOffset + 1; i++) {
             final short leftChild = chart.nonTerminalIndices[i];
+            if (leftChild < 0) {
+                continue;
+            }
             final float leftProbability = chart.insideProbabilities[i];
 
             // And over children in the right child cell
@@ -504,6 +526,9 @@ public class ConstrainedInsideOutsideParser extends
 
                 final short child = (short) (child0 + i);
                 final float childInsideProbability = chart.insideProbabilities[child0Offset + i];
+                if (childInsideProbability == Float.NEGATIVE_INFINITY) {
+                    continue;
+                }
 
                 // Iterate over possible parents of the child (rows with non-zero entries)
                 for (int j = grammar.cscUnaryColumnOffsets[child]; j < grammar.cscUnaryColumnOffsets[child + 1]; j++) {

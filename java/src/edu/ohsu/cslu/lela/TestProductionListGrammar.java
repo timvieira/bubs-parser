@@ -42,7 +42,8 @@ public class TestProductionListGrammar {
     public static ProductionListGrammar[] dataPoints() throws IOException {
         final ProductionListGrammar g1 = new ProductionListGrammar(new StringCountGrammar(new StringReader(
                 AllLelaTests.STRING_SAMPLE_TREE), null, null));
-        final ProductionListGrammar g2 = new ProductionListGrammar(FractionalCountGrammarTestCase.SAMPLE_GRAMMAR());
+        final ProductionListGrammar g2 = FractionalCountGrammarTestCase.SAMPLE_GRAMMAR().toProductionListGrammar(
+                Float.NEGATIVE_INFINITY);
         return new ProductionListGrammar[] { g1, g2 };
     }
 

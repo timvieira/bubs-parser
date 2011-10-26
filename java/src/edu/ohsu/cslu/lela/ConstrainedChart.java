@@ -338,7 +338,7 @@ public class ConstrainedChart extends ConstrainingChart {
                 final int offset0 = offset(cellIndex);
 
                 // Skip empty cells
-                if (nonTerminalIndices[offset0] < 0) {
+                if (nonTerminalIndices[offset0] < 0 && nonTerminalIndices[offset0 + 1] < 0) {
                     continue;
                 }
 
@@ -359,8 +359,10 @@ public class ConstrainedChart extends ConstrainingChart {
 
     protected String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
         final StringBuilder sb = new StringBuilder(128);
-        sb.append(formatCellEntry(nonTerminalIndices[offset], packedChildren[offset], unary,
-                insideProbabilities[offset], outsideProbabilities[offset], formatFractions));
+        if (nonTerminalIndices[offset] >= 0) {
+            sb.append(formatCellEntry(nonTerminalIndices[offset], packedChildren[offset], unary,
+                    insideProbabilities[offset], outsideProbabilities[offset], formatFractions));
+        }
         if (nonTerminalIndices[offset + 1] >= 0) {
             sb.append(formatCellEntry(nonTerminalIndices[offset + 1], packedChildren[offset + 1], unary,
                     insideProbabilities[offset + 1], outsideProbabilities[offset + 1], formatFractions));
