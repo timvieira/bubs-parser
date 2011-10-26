@@ -178,7 +178,8 @@ public class TrainGrammar extends BaseCommandlineTool {
         return plGrammar.split(noiseGenerator);
     }
 
-    EmIterationResult emIteration(final ConstrainedInsideOutsideGrammar cscGrammar) {
+    EmIterationResult emIteration(final ConstrainedInsideOutsideGrammar cscGrammar,
+            final float minimumRuleLogProbability) {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
@@ -193,14 +194,14 @@ public class TrainGrammar extends BaseCommandlineTool {
         float corpusLikelihood = 0f;
         for (final ConstrainingChart constrainingChart : constrainingCharts) {
             parser.findBestParse(constrainingChart);
-            corpusLikelihood += parser.chart.insideProbabilities[parser.chart.offset(parser.chart.cellIndex(0,
-                    parser.chart.size()))];
+            corpusLikelihood += parser.chart.getInside(0, parser.chart.size(), 0);
             parser.countRuleOccurrences(countGrammar);
             sentenceCount++;
             // progressBar(count);
         }
 
-        return new EmIterationResult(new ProductionListGrammar(countGrammar, cscGrammar.baseGrammar), corpusLikelihood);
+        return new EmIterationResult(countGrammar.toProductionListGrammar(minimumRuleLogProbability), corpusLikelihood,
+                parser.chart);
     }
 
     public static void main(final String[] args) {
@@ -211,10 +212,18 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final ProductionListGrammar plGrammar;
         final float corpusLikelihood;
+        final ConstrainedChart finalChart;
 
-        public EmIterationResult(final ProductionListGrammar plGrammar, final float corpusLikelihood) {
+        public EmIterationResult(final ProductionListGrammar plGrammar, final float corpusLikelihood,
+                final ConstrainedChart finalChart) {
             this.plGrammar = plGrammar;
             this.corpusLikelihood = corpusLikelihood;
+            this.finalChart = finalChart;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%.2f", corpusLikelihood);
         }
     }
 }

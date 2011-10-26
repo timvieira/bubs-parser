@@ -18,8 +18,8 @@
  */
 package edu.ohsu.cslu.lela;
 
-import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
-import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.shorts.Short2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 
 import java.util.ArrayList;
@@ -38,20 +38,19 @@ public class FractionalCountGrammar implements CountGrammar {
     protected final SymbolSet<String> lexicon;
     protected final String startSymbol;
 
-    // TODO We could map to FloatList instead of directly to float, and use Math.logSumExp() to do all the log-summing
-    // at once, but we're constraining the chart population enough that we should have at most 4 possible child pairs (2
-    // in each child cell), so that's not likely a huge win
-    /** Parent -> Left child -> Right child -> log(count) */
-    private final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> binaryRuleLogCounts = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
-    private final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> unaryRuleLogCounts = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
-    private final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> lexicalRuleLogCounts = new Short2ObjectOpenHashMap<Int2FloatOpenHashMap>();
+    /** Parent -> Left child -> Right child -> count */
+    private final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2DoubleOpenHashMap>> binaryRuleCounts = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2DoubleOpenHashMap>>();
 
-    /** Parent -> Packed children -> log(count) */
-    private final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> packedBinaryRuleLogCounts;
+    /** Parent -> child -> count */
+    private final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> unaryRuleCounts = new Short2ObjectOpenHashMap<Short2DoubleOpenHashMap>();
+
+    /** Parent -> child -> count */
+    private final Short2ObjectOpenHashMap<Int2DoubleOpenHashMap> lexicalRuleCounts = new Short2ObjectOpenHashMap<Int2DoubleOpenHashMap>();
+
+    /** Parent -> count */
+    private final Short2DoubleOpenHashMap parentCounts = new Short2DoubleOpenHashMap();
+
     private final PackingFunction packingFunction;
-
-    /** Parent -> log(count) */
-    private final Short2FloatOpenHashMap parentLogCounts = new Short2FloatOpenHashMap();
 
     public FractionalCountGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon,
             final PackingFunction packingFunction) {
@@ -61,75 +60,42 @@ public class FractionalCountGrammar implements CountGrammar {
         this.startSymbol = vocabulary.getSymbol(0);
 
         this.packingFunction = packingFunction;
-        if (packingFunction != null) {
-            packedBinaryRuleLogCounts = new Short2ObjectOpenHashMap<Int2FloatOpenHashMap>();
-        } else {
-            packedBinaryRuleLogCounts = null;
-        }
-        parentLogCounts.defaultReturnValue(Float.NEGATIVE_INFINITY);
+        this.parentCounts.defaultReturnValue(0);
     }
 
     public FractionalCountGrammar(final InsideOutsideCscSparseMatrixGrammar cscGrammar) {
         this((SplitVocabulary) cscGrammar.nonTermSet, cscGrammar.lexSet, cscGrammar.packingFunction);
     }
 
-    public void incrementBinaryLogCount(final short parent, final short leftChild, final short rightChild,
-            final float logIncrement) {
+    protected void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
+            final double increment) {
 
-        incrementBinaryLogCount(binaryRuleLogCounts, parent, leftChild, rightChild, logIncrement);
-        incrementParentLogCount(parent, logIncrement);
-    }
-
-    protected void incrementBinaryLogCount(
-            final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> countMap,
-            final short parent, final short leftChild, final short rightChild, final float logIncrement) {
-
-        Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = countMap.get(parent);
+        Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {
-            leftChildMap = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
-            countMap.put(parent, leftChildMap);
+            leftChildMap = new Short2ObjectOpenHashMap<Short2DoubleOpenHashMap>();
+            binaryRuleCounts.put(parent, leftChildMap);
         }
 
-        Short2FloatOpenHashMap rightChildMap = leftChildMap.get(leftChild);
+        Short2DoubleOpenHashMap rightChildMap = leftChildMap.get(leftChild);
         if (rightChildMap == null) {
-            rightChildMap = new Short2FloatOpenHashMap();
-            rightChildMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
+            rightChildMap = new Short2DoubleOpenHashMap();
+            rightChildMap.defaultReturnValue(0);
             leftChildMap.put(leftChild, rightChildMap);
         }
 
-        if (rightChildMap.containsKey(rightChild)) {
-            rightChildMap.put(rightChild, edu.ohsu.cslu.util.Math.logSum(rightChildMap.get(rightChild), logIncrement));
-        } else {
-            rightChildMap.put(rightChild, logIncrement);
-        }
+        rightChildMap.put(rightChild, rightChildMap.get(rightChild) + increment);
+        parentCounts.put(parent, parentCounts.get(parent) + increment);
     }
 
-    public void incrementBinaryLogCount(final short parent, final int packedChildren, final float logIncrement) {
+    public void incrementBinaryCount(final short parent, final int childPair, final double increment) {
 
-        incrementBinaryLogCount(packedBinaryRuleLogCounts, parent, packedChildren, logIncrement);
-        incrementParentLogCount(parent, logIncrement);
+        final short leftChild = (short) packingFunction.unpackLeftChild(childPair);
+        final short rightChild = packingFunction.unpackRightChild(childPair);
+        incrementBinaryCount(parent, leftChild, rightChild, increment);
     }
 
-    protected void incrementBinaryLogCount(final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> countMap,
-            final short parent, final int packedChildren, final float logIncrement) {
-
-        Int2FloatOpenHashMap childMap = countMap.get(parent);
-        if (childMap == null) {
-            childMap = new Int2FloatOpenHashMap();
-            childMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
-            countMap.put(parent, childMap);
-        }
-
-        if (childMap.containsKey(packedChildren)) {
-            childMap.put(packedChildren, edu.ohsu.cslu.util.Math.logSum(childMap.get(packedChildren), logIncrement));
-        } else {
-            childMap.put(packedChildren, logIncrement);
-        }
-    }
-
-    public void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
-            final float increment) {
-        incrementBinaryLogCount(parent, leftChild, rightChild, (float) Math.log(increment));
+    public void incrementBinaryLogCount(final short parent, final int childPair, final float logIncrement) {
+        incrementBinaryCount(parent, childPair, Math.exp(logIncrement));
     }
 
     /**
@@ -137,137 +103,100 @@ public class FractionalCountGrammar implements CountGrammar {
      */
     void incrementBinaryCount(final String parent, final String leftChild, final String rightChild,
             final float increment) {
-        incrementBinaryLogCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(leftChild),
-                (short) vocabulary.getIndex(rightChild), (float) Math.log(increment));
+        incrementBinaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(leftChild),
+                (short) vocabulary.getIndex(rightChild), increment);
+    }
+
+    public void incrementUnaryCount(final short parent, final short child, final double increment) {
+
+        Short2DoubleOpenHashMap childMap = unaryRuleCounts.get(parent);
+        if (childMap == null) {
+            childMap = new Short2DoubleOpenHashMap();
+            childMap.defaultReturnValue(0);
+            unaryRuleCounts.put(parent, childMap);
+        }
+
+        childMap.put(child, childMap.get(child) + increment);
+        parentCounts.put(parent, parentCounts.get(parent) + increment);
     }
 
     public void incrementUnaryLogCount(final short parent, final short child, final float logIncrement) {
-
-        incrementUnaryLogCount(unaryRuleLogCounts, parent, child, logIncrement);
-        incrementParentLogCount(parent, logIncrement);
-    }
-
-    protected void incrementUnaryLogCount(final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> countMap,
-            final short parent, final short child, final float logIncrement) {
-
-        Short2FloatOpenHashMap childMap = countMap.get(parent);
-        if (childMap == null) {
-            childMap = new Short2FloatOpenHashMap();
-            childMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
-            countMap.put(parent, childMap);
-        }
-
-        if (childMap.containsKey(child)) {
-            childMap.put(child, edu.ohsu.cslu.util.Math.logSum(childMap.get(child), logIncrement));
-        } else {
-            childMap.put(child, logIncrement);
-        }
-    }
-
-    public void incrementUnaryCount(final short parent, final short child, final float increment) {
-        incrementUnaryLogCount(parent, child, (float) Math.log(increment));
+        incrementUnaryCount(parent, child, Math.exp(logIncrement));
     }
 
     /**
      * For unit tests
      */
-    void incrementUnaryCount(final String parent, final String child, final float increment) {
-        incrementUnaryLogCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(child),
-                (float) Math.log(increment));
+    void incrementUnaryCount(final String parent, final String child, final double increment) {
+        incrementUnaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(child), increment);
     }
 
-    public void incrementLexicalLogCount(final short parent, final int child, final float logIncrement) {
+    protected void incrementLexicalCount(final short parent, final int child, final double increment) {
 
-        incrementLexicalLogCount(lexicalRuleLogCounts, parent, child, logIncrement);
-        incrementParentLogCount(parent, logIncrement);
-    }
-
-    protected void incrementLexicalLogCount(final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> countMap,
-            final short parent, final int child, final float logIncrement) {
-
-        Int2FloatOpenHashMap childMap = countMap.get(parent);
+        Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
         if (childMap == null) {
-            childMap = new Int2FloatOpenHashMap();
-            childMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
-            countMap.put(parent, childMap);
+            childMap = new Int2DoubleOpenHashMap();
+            childMap.defaultReturnValue(0);
+            lexicalRuleCounts.put(parent, childMap);
         }
 
-        if (childMap.containsKey(child)) {
-            childMap.put(child, edu.ohsu.cslu.util.Math.logSum(childMap.get(child), logIncrement));
-        } else {
-            childMap.put(child, logIncrement);
-        }
+        childMap.put(child, childMap.get(child) + increment);
+        parentCounts.put(parent, parentCounts.get(parent) + increment);
     }
 
-    public void incrementLexicalCount(final short parent, final int child, final float increment) {
-        incrementLexicalLogCount(parent, child, (float) Math.log(increment));
+    protected void incrementLexicalLogCount(final short parent, final int child, final float logIncrement) {
+        incrementLexicalCount(parent, child, Math.exp(logIncrement));
     }
 
     /**
      * For unit tests
      */
-    void incrementLexicalCount(final String parent, final String child, final float increment) {
-        incrementLexicalLogCount((short) vocabulary.getIndex(parent), lexicon.getIndex(child),
-                (float) Math.log(increment));
+    void incrementLexicalCount(final String parent, final String child, final double increment) {
+        incrementLexicalCount((short) vocabulary.getIndex(parent), lexicon.getIndex(child), increment);
     }
 
-    public void incrementParentLogCount(final short parent, final float logIncrement) {
+    public ProductionListGrammar toProductionListGrammar(final float minimumRuleLogProbability) {
 
-        if (parentLogCounts.containsKey(parent)) {
-            parentLogCounts.put(parent, edu.ohsu.cslu.util.Math.logSum(parentLogCounts.get(parent), logIncrement));
-        } else {
-            parentLogCounts.put(parent, logIncrement);
-        }
+        // TODO Construct an un-pruned grammar from the accumulated fractional rule counts
+
+        // Sum parent probabilities of rules exceeding the minimum rule threshold
+
+        // Construct a new ProductionListGrammar including all rules over the threshold, re-normalizing probabilities
+        // using the new parent probabilities
+
+        return new ProductionListGrammar(vocabulary, lexicon, binaryProductions(), unaryProductions(),
+                lexicalProductions());
     }
 
     public ArrayList<Production> binaryProductions() {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
 
-        movePackedCountsToBinaryMap();
         for (short parent = 0; parent < vocabulary.size(); parent++) {
 
-            if (!binaryRuleLogCounts.containsKey(parent)) {
+            if (!binaryRuleCounts.containsKey(parent)) {
                 continue;
             }
 
-            final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = binaryRuleLogCounts.get(parent);
+            final double parentCount = parentCounts.get(parent);
+            final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
 
             for (short leftChild = 0; leftChild < vocabulary.size(); leftChild++) {
                 if (!leftChildMap.containsKey(leftChild)) {
                     continue;
                 }
 
-                final Short2FloatOpenHashMap rightChildMap = leftChildMap.get(leftChild);
+                final Short2DoubleOpenHashMap rightChildMap = leftChildMap.get(leftChild);
 
                 for (short rightChild = 0; rightChild < vocabulary.size(); rightChild++) {
                     if (!rightChildMap.containsKey(rightChild)) {
                         continue;
                     }
 
-                    // final String sParent = vocabulary.getSymbol(parent);
-                    // final String sLeftChild = vocabulary.getSymbol(leftChild);
-                    // final String sRightChild = vocabulary.getSymbol(rightChild);
-                    //
-                    // final double observations = Math.exp(binaryRuleLogObservations(binaryRuleLogCounts,
-                    // parent,
-                    // leftChild, rightChild));
-                    // final double baseRuleObservations =
-                    // Math.exp(binaryRuleLogObservations(baseBinaryRuleLogCounts,
-                    // parent, vocabulary.baseCategoryIndices[leftChild],
-                    // vocabulary.baseCategoryIndices[rightChild]));
-
-                    // final String observationProbability = Assert
-                    // .fraction(Math.log(observations / baseRuleObservations));
-                    // final String baseRuleProbability = Assert.fraction(baseBinaryRuleLogProbabilities
-                    // .get(vocabulary.baseCategoryIndices[parent]).get(vocabulary.baseCategoryIndices[leftChild])
-                    // .get(vocabulary.baseCategoryIndices[rightChild]));
-
                     // Observations of this rule / Observations of all split rules with the parent
-                    final float logObservations = binaryRuleLogObservations(binaryRuleLogCounts, parent, leftChild,
-                            rightChild);
-                    if (logObservations != Float.NEGATIVE_INFINITY) {
-                        final float logProbability = logObservations - parentLogCounts.get(parent);
+                    final double observations = rightChildMap.get(rightChild);
+                    if (observations != 0) {
+                        final float logProbability = (float) Math.log(observations / parentCount);
                         prods.add(new Production(parent, leftChild, rightChild, logProbability, vocabulary, lexicon));
                     }
                 }
@@ -277,39 +206,17 @@ public class FractionalCountGrammar implements CountGrammar {
         return prods;
     }
 
-    /**
-     * Moves all observations from packed maps to 'normal' binary maps
-     */
-    private void movePackedCountsToBinaryMap() {
-
-        if (packingFunction == null) {
-            return;
-        }
-
-        for (short parent = 0; parent < vocabulary.size(); parent++) {
-            // Copy all productions from packed map to normal map
-            if (packedBinaryRuleLogCounts.containsKey(parent)) {
-                final Int2FloatOpenHashMap childMap = packedBinaryRuleLogCounts.get(parent);
-                for (final int packedChildren : childMap.keySet()) {
-                    final short leftChild = (short) packingFunction.unpackLeftChild(packedChildren);
-                    final short rightChild = packingFunction.unpackRightChild(packedChildren);
-                    incrementBinaryLogCount(binaryRuleLogCounts, parent, leftChild, rightChild,
-                            childMap.remove(packedChildren));
-                }
-            }
-        }
-    }
-
     public ArrayList<Production> unaryProductions() {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
 
         for (short parent = 0; parent < vocabulary.size(); parent++) {
-            if (!unaryRuleLogCounts.containsKey(parent)) {
+            if (!unaryRuleCounts.containsKey(parent)) {
                 continue;
             }
 
-            final Short2FloatOpenHashMap childMap = unaryRuleLogCounts.get(parent);
+            final double parentCount = parentCounts.get(parent);
+            final Short2DoubleOpenHashMap childMap = unaryRuleCounts.get(parent);
 
             for (short child = 0; child < vocabulary.size(); child++) {
                 if (!childMap.containsKey(child)) {
@@ -317,9 +224,9 @@ public class FractionalCountGrammar implements CountGrammar {
                 }
 
                 // Observations of this rule / Observations of all rules with the parent
-                final float logObservations = unaryRuleLogObservations(unaryRuleLogCounts, parent, child);
-                if (logObservations != Float.NEGATIVE_INFINITY) {
-                    final float logProbability = logObservations - parentLogCounts.get(parent);
+                final double count = childMap.get(child);
+                if (count != 0) {
+                    final float logProbability = (float) Math.log(count / parentCount);
                     prods.add(new Production(parent, child, logProbability, false, vocabulary, lexicon));
                 }
             }
@@ -333,36 +240,22 @@ public class FractionalCountGrammar implements CountGrammar {
         final ArrayList<Production> prods = new ArrayList<Production>();
 
         for (short parent = 0; parent < vocabulary.size(); parent++) {
-            if (!lexicalRuleLogCounts.containsKey(parent)) {
+            if (!lexicalRuleCounts.containsKey(parent)) {
                 continue;
             }
+            final double parentCount = parentCounts.get(parent);
 
-            final Int2FloatOpenHashMap childMap = lexicalRuleLogCounts.get(parent);
+            final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
 
             for (int child = 0; child < lexicon.size(); child++) {
                 if (!childMap.containsKey(child)) {
                     continue;
                 }
 
-                // final String sParent = vocabulary.getSymbol(parent);
-                // final String sChild = lexicon.getSymbol(child);
-                //
-                // final double observations = Math.exp(lexicalRuleLogObservations(lexicalRuleLogCounts,
-                // parent,
-                // child));
-                // final double baseRuleObservations =
-                // Math.exp(lexicalRuleLogObservations(baseLexicalRuleLogCounts,
-                // parent, child));
-                //
-                // final String observationProbability = Assert.fraction(Math.log(observations /
-                // baseRuleObservations));
-                // final String baseRuleProbability = Assert.fraction(baseLexicalRuleLogProbabilities.get(
-                // vocabulary.baseCategoryIndices[parent]).get(child));
-
                 // Observations of this rule / Observations of all rules with the parent
-                final float logObservations = lexicalRuleLogObservations(lexicalRuleLogCounts, parent, child);
-                if (logObservations != Float.NEGATIVE_INFINITY) {
-                    final float logProbability = logObservations - parentLogCounts.get(parent);
+                final double count = childMap.get(child);
+                if (count != 0) {
+                    final float logProbability = (float) Math.log(count / parentCount);
                     prods.add(new Production(parent, child, logProbability, true, vocabulary, lexicon));
                 }
             }
@@ -379,36 +272,20 @@ public class FractionalCountGrammar implements CountGrammar {
      * @param rightChild
      * @return the number of observations of a binary rule.
      */
-    public final float binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
+    public final double binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
 
-        return (float) Math.exp(binaryRuleLogObservations(binaryRuleLogCounts, (short) vocabulary.getIndex(parent),
-                (short) vocabulary.getIndex(leftChild), (short) vocabulary.getIndex(rightChild)));
-    }
-
-    /**
-     * Returns the log of the number of observations of a binary rule.
-     * 
-     * @param countMap
-     * @param parent
-     * @param leftChild
-     * @param rightChild
-     * @return the number of observations of a binary rule.
-     */
-    private float binaryRuleLogObservations(
-            final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> countMap,
-            final short parent, final short leftChild, final short rightChild) {
-
-        final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = countMap.get(parent);
+        final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get((short) vocabulary
+                .getIndex(parent));
         if (leftChildMap == null) {
-            return Float.NEGATIVE_INFINITY;
+            return 0f;
         }
 
-        final Short2FloatOpenHashMap rightChildMap = leftChildMap.get(leftChild);
+        final Short2DoubleOpenHashMap rightChildMap = leftChildMap.get((short) vocabulary.getIndex(leftChild));
         if (rightChildMap == null) {
-            return Float.NEGATIVE_INFINITY;
+            return 0f;
         }
 
-        return rightChildMap.get(rightChild);
+        return rightChildMap.get((short) vocabulary.getIndex(rightChild));
     }
 
     /**
@@ -418,28 +295,14 @@ public class FractionalCountGrammar implements CountGrammar {
      * @param child
      * @return the number of observations of a unary rule.
      */
-    public final float unaryRuleObservations(final String parent, final String child) {
-        return (float) Math.exp(unaryRuleLogObservations(unaryRuleLogCounts, (short) vocabulary.getIndex(parent),
-                (short) vocabulary.getIndex(child)));
-    }
+    public final double unaryRuleObservations(final String parent, final String child) {
 
-    /**
-     * Returns the log of the number of observations of a unary rule.
-     * 
-     * @param countMap
-     * @param parent
-     * @param child
-     * @return the number of observations of a unary rule.
-     */
-    private float unaryRuleLogObservations(final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> countMap,
-            final short parent, final short child) {
-
-        final Short2FloatOpenHashMap childMap = countMap.get(parent);
+        final Short2DoubleOpenHashMap childMap = unaryRuleCounts.get((short) vocabulary.getIndex(parent));
         if (childMap == null) {
-            return Float.NEGATIVE_INFINITY;
+            return 0f;
         }
 
-        return childMap.get(child);
+        return childMap.get((short) vocabulary.getIndex(child));
     }
 
     /**
@@ -449,28 +312,13 @@ public class FractionalCountGrammar implements CountGrammar {
      * @param child
      * @return the number of observations of a lexical rule.
      */
-    public final float lexicalRuleObservations(final String parent, final String child) {
-        return (float) Math.exp(lexicalRuleLogObservations(lexicalRuleLogCounts, (short) vocabulary.getIndex(parent),
-                lexicon.getIndex(child)));
-    }
-
-    /**
-     * Returns the natural log of the number of observations of a lexical rule.
-     * 
-     * @param countMap
-     * @param parent
-     * @param child
-     * @return the number of observations of a lexical rule.
-     */
-    private float lexicalRuleLogObservations(final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> countMap,
-            final short parent, final int child) {
-
-        final Int2FloatOpenHashMap childMap = countMap.get(parent);
+    public final double lexicalRuleObservations(final String parent, final String child) {
+        final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get((short) vocabulary.getIndex(parent));
         if (childMap == null) {
-            return Float.NEGATIVE_INFINITY;
+            return 0f;
         }
 
-        return childMap.get(child);
+        return childMap.get(lexicon.getIndex(child));
     }
 
     public final int totalRules() {
@@ -489,7 +337,7 @@ public class FractionalCountGrammar implements CountGrammar {
         return lexicalProductions().size();
     }
 
-    public final float observations(final String parent) {
+    public final double observations(final String parent) {
         throw new UnsupportedOperationException();
     }
 

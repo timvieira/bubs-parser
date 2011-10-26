@@ -86,7 +86,7 @@ public class FractionalCountGrammarTestCase extends CountGrammarTestCase {
     public void testFractionalCounts() {
         final FractionalCountGrammar fcg = grammar();
 
-        final ProductionListGrammar plg = new ProductionListGrammar(fcg);
+        final ProductionListGrammar plg = fcg.toProductionListGrammar(Float.NEGATIVE_INFINITY);
         JUnit.assertLogFractionEquals(0, plg.unaryLogProbability("top", "a"), 0.01f);
 
         JUnit.assertLogFractionEquals(Math.log(5f / 12), plg.binaryLogProbability("a", "a", "b"), 0.01f);

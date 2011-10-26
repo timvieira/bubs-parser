@@ -205,7 +205,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     @Override
-    public final float binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
+    public final double binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
 
         final HashMap<String, Object2IntMap<String>> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {
@@ -221,7 +221,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     @Override
-    public final float unaryRuleObservations(final String parent, final String child) {
+    public final double unaryRuleObservations(final String parent, final String child) {
 
         final Object2IntMap<String> childMap = unaryRuleCounts.get(parent);
         if (childMap == null) {
@@ -232,7 +232,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     @Override
-    public final float lexicalRuleObservations(final String parent, final String child) {
+    public final double lexicalRuleObservations(final String parent, final String child) {
 
         final Object2IntMap<String> childMap = lexicalRuleCounts.get(parent);
         if (childMap == null) {
@@ -410,7 +410,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     @Override
-    public final float observations(final String parent) {
+    public final double observations(final String parent) {
         int count = 0;
 
         if (binaryRuleCounts.containsKey(parent)) {

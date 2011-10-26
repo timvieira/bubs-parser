@@ -175,7 +175,7 @@ public class ConstrainingChart extends PackedArrayChart {
                 final float entry1Probability = constrainedChart.insideProbabilities[constrainedChartOffset + 1];
 
                 if (entry1Probability > Float.NEGATIVE_INFINITY && entry1Probability > entry0Probability) {
-                    nonTerminalIndices[offset] = (short) (constrainedChart.nonTerminalIndices[constrainedChartOffset] + 1);
+                    nonTerminalIndices[offset] = (constrainedChart.nonTerminalIndices[constrainedChartOffset + 1]);
                     insideProbabilities[offset] = 0;
                 } else if (entry0Probability > Float.NEGATIVE_INFINITY) {
                     nonTerminalIndices[offset] = constrainedChart.nonTerminalIndices[constrainedChartOffset];
@@ -188,8 +188,10 @@ public class ConstrainingChart extends PackedArrayChart {
                     // Bottom Entry
                     if (startAndEnd[1] - startAndEnd[0] == 1) {
                         // Lexical parent
+                        final int lexicalEntryOffset = constrainedChart.nonTerminalIndices[constrainedChartOffset] >= 0 ? constrainedChartOffset
+                                : constrainedChartOffset + 1;
                         final int lexicalEntry = constrainedChart.sparseMatrixGrammar.packingFunction
-                                .unpackLeftChild(constrainedChart.packedChildren[constrainedChartOffset]);
+                                .unpackLeftChild(constrainedChart.packedChildren[lexicalEntryOffset]);
                         packedChildren[offset] = packingFunction.packLexical(lexicalEntry);
                     } else {
                         // Binary parent
