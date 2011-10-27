@@ -192,16 +192,19 @@ public class TrainGrammar extends BaseCommandlineTool {
         // Iterate over the training corpus, parsing and counting rule occurrences
         int sentenceCount = 0;
         float corpusLikelihood = 0f;
+        final ArrayList<ConstrainedChart> charts = new ArrayList<ConstrainedChart>();
         for (final ConstrainingChart constrainingChart : constrainingCharts) {
             parser.findBestParse(constrainingChart);
+            charts.add(parser.chart);
             corpusLikelihood += parser.chart.getInside(0, parser.chart.size(), 0);
+            System.out.format("%.3f\n", parser.chart.getInside(0, parser.chart.size(), 0));
             parser.countRuleOccurrences(countGrammar);
             sentenceCount++;
             // progressBar(count);
         }
 
         return new EmIterationResult(countGrammar.toProductionListGrammar(minimumRuleLogProbability), corpusLikelihood,
-                parser.chart);
+                charts);
     }
 
     public static void main(final String[] args) {
@@ -212,13 +215,13 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final ProductionListGrammar plGrammar;
         final float corpusLikelihood;
-        final ConstrainedChart finalChart;
+        final ArrayList<ConstrainedChart> charts;
 
         public EmIterationResult(final ProductionListGrammar plGrammar, final float corpusLikelihood,
-                final ConstrainedChart finalChart) {
+                final ArrayList<ConstrainedChart> charts) {
             this.plGrammar = plGrammar;
             this.corpusLikelihood = corpusLikelihood;
-            this.finalChart = finalChart;
+            this.charts = charts;
         }
 
         @Override

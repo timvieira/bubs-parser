@@ -53,30 +53,34 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
     @Test
     public void testInduceVocabulary() {
         final SymbolSet<String> unsortedVocabulary = sg.induceVocabulary(null);
-        assertEquals(3, unsortedVocabulary.size());
+        assertEquals(5, unsortedVocabulary.size());
         assertEquals(0, unsortedVocabulary.getIndex("top"));
-        assertEquals(1, unsortedVocabulary.getIndex("a"));
-        assertEquals(2, unsortedVocabulary.getIndex("b"));
+        assertEquals(2, unsortedVocabulary.getIndex("a"));
+        assertEquals(4, unsortedVocabulary.getIndex("b"));
+        assertEquals(1, unsortedVocabulary.getIndex("c"));
+        assertEquals(3, unsortedVocabulary.getIndex("d"));
 
         final SymbolSet<String> sortedVocabulary = sg.induceVocabulary(sg.binaryParentCountComparator());
-        assertEquals(3, sortedVocabulary.size());
+        assertEquals(5, sortedVocabulary.size());
         assertEquals(0, sortedVocabulary.getIndex("top"));
         assertEquals(1, sortedVocabulary.getIndex("a"));
         assertEquals(2, sortedVocabulary.getIndex("b"));
+        assertEquals(3, sortedVocabulary.getIndex("c"));
+        assertEquals(4, sortedVocabulary.getIndex("d"));
     }
 
     @Test
     public void testInduceLexicon() {
         final SymbolSet<String> lexicon = sg.induceLexicon();
         assertEquals(2, lexicon.size());
-        assertEquals(0, lexicon.getIndex("c"));
-        assertEquals(1, lexicon.getIndex("d"));
+        assertEquals(0, lexicon.getIndex("e"));
+        assertEquals(1, lexicon.getIndex("f"));
     }
 
     @Test
     public void testBinaryProductions() {
         final ArrayList<Production> binaryProductions = sg.binaryProductions(sg.induceVocabulary(null));
-        assertEquals(3, binaryProductions.size());
+        assertEquals(4, binaryProductions.size());
     }
 
     @Test
@@ -84,9 +88,9 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
         final ArrayList<Production> unaryProductions = sg.unaryProductions(sg.induceVocabulary(null));
         assertEquals(2, unaryProductions.size());
         assertEquals(0, unaryProductions.get(0).parent); // s
-        assertEquals(1, unaryProductions.get(0).leftChild); // a
-        assertEquals(2, unaryProductions.get(1).parent); // b
-        assertEquals(2, unaryProductions.get(1).leftChild); // b
+        assertEquals(2, unaryProductions.get(0).leftChild); // a
+        assertEquals(4, unaryProductions.get(1).parent); // b
+        assertEquals(3, unaryProductions.get(1).leftChild); // b
     }
 
     @Test

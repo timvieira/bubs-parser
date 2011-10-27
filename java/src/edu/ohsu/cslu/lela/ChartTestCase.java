@@ -28,8 +28,10 @@ public class ChartTestCase {
     protected short top;
     protected short a;
     protected short b;
-    protected int c;
-    protected int d;
+    protected short c;
+    protected short d;
+    protected int e;
+    protected int f;
 
     @Before
     public void setUp() throws IOException {
@@ -46,8 +48,10 @@ public class ChartTestCase {
         top = (short) vocabulary.getIndex("top");
         a = (short) vocabulary.getIndex("a");
         b = (short) vocabulary.getIndex("b");
-        c = plGrammar0.lexicon.getIndex("c");
-        d = plGrammar0.lexicon.getIndex("d");
+        c = (short) vocabulary.getIndex("c");
+        d = (short) vocabulary.getIndex("d");
+        e = plGrammar0.lexicon.getIndex("e");
+        f = plGrammar0.lexicon.getIndex("f");
 
         // Split the grammar
         plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
@@ -69,39 +73,39 @@ public class ChartTestCase {
 
         // 0,1
         int offset = chart.offset(chart.cellIndex(0, 1));
-        chart.nonTerminalIndices[offset] = 2; // a_0 *
+        chart.nonTerminalIndices[offset] = 6; // c_0 *
         chart.insideProbabilities[offset] = -1;
         chart.outsideProbabilities[offset] = -1;
-        chart.packedChildren[offset] = cscGrammar1.packingFunction.packLexical(c);
+        chart.packedChildren[offset] = cscGrammar1.packingFunction.packLexical(e);
 
-        chart.nonTerminalIndices[offset + 1] = 3; // a_1
+        chart.nonTerminalIndices[offset + 1] = 7; // c_1
         chart.insideProbabilities[offset + 1] = -1;
         chart.outsideProbabilities[offset + 1] = -1;
-        chart.packedChildren[offset + 1] = cscGrammar1.packingFunction.packLexical(c);
+        chart.packedChildren[offset + 1] = cscGrammar1.packingFunction.packLexical(e);
 
         // 1,2
         offset = chart.offset(chart.cellIndex(1, 2));
-        chart.nonTerminalIndices[offset] = 2; // a_0
+        chart.nonTerminalIndices[offset] = 6; // c_0
         chart.insideProbabilities[offset] = -2;
         chart.outsideProbabilities[offset] = -2;
-        chart.packedChildren[offset] = cscGrammar1.packingFunction.packLexical(c);
+        chart.packedChildren[offset] = cscGrammar1.packingFunction.packLexical(e);
 
-        chart.nonTerminalIndices[offset + 1] = 3; // a_1 *
+        chart.nonTerminalIndices[offset + 1] = 7; // c_1 *
         chart.insideProbabilities[offset + 1] = -1;
         chart.outsideProbabilities[offset + 1] = -1;
-        chart.packedChildren[offset + 1] = cscGrammar1.packingFunction.packLexical(c);
+        chart.packedChildren[offset + 1] = cscGrammar1.packingFunction.packLexical(e);
 
         // 2,3
         offset = chart.offset(chart.cellIndex(2, 3));
-        chart.nonTerminalIndices[offset] = 4; // b_0
+        chart.nonTerminalIndices[offset] = 8; // d_0
         chart.insideProbabilities[offset] = -2;
         chart.outsideProbabilities[offset] = -2;
-        chart.packedChildren[offset] = cscGrammar1.packingFunction.packLexical(d);
+        chart.packedChildren[offset] = cscGrammar1.packingFunction.packLexical(f);
 
-        chart.nonTerminalIndices[offset + 1] = 5; // b_1 *
+        chart.nonTerminalIndices[offset + 1] = 9; // d_1 *
         chart.insideProbabilities[offset + 1] = -1;
         chart.outsideProbabilities[offset + 1] = -1;
-        chart.packedChildren[offset + 1] = cscGrammar1.packingFunction.packLexical(d);
+        chart.packedChildren[offset + 1] = cscGrammar1.packingFunction.packLexical(f);
 
         // 3,4
         offset = chart.offset(chart.cellIndex(3, 4));
@@ -113,27 +117,27 @@ public class ChartTestCase {
         chart.insideProbabilities[offset + 1] = -2;
         chart.outsideProbabilities[offset + 1] = -2;
 
-        chart.nonTerminalIndices[offset + 2] = 4; // b_0
+        chart.nonTerminalIndices[offset + 2] = 8; // d_0
         chart.insideProbabilities[offset + 2] = -2;
         chart.outsideProbabilities[offset + 2] = -2;
-        chart.packedChildren[offset + 2] = cscGrammar1.packingFunction.packLexical(d);
+        chart.packedChildren[offset + 2] = cscGrammar1.packingFunction.packLexical(f);
 
-        chart.nonTerminalIndices[offset + 3] = 5; // b_1 *
+        chart.nonTerminalIndices[offset + 3] = 9; // d_1 *
         chart.insideProbabilities[offset + 3] = -1;
         chart.outsideProbabilities[offset + 3] = -1;
-        chart.packedChildren[offset + 3] = cscGrammar1.packingFunction.packLexical(d);
+        chart.packedChildren[offset + 3] = cscGrammar1.packingFunction.packLexical(f);
 
         // 4,5
         offset = chart.offset(chart.cellIndex(4, 5));
-        chart.nonTerminalIndices[offset] = 2; // a_0 *
+        chart.nonTerminalIndices[offset] = 6; // c_0 *
         chart.insideProbabilities[offset] = -1;
         chart.outsideProbabilities[offset] = -1;
-        chart.packedChildren[offset] = cscGrammar1.packingFunction.packLexical(d);
+        chart.packedChildren[offset] = cscGrammar1.packingFunction.packLexical(f);
 
-        chart.nonTerminalIndices[offset + 1] = 3; // a_1
+        chart.nonTerminalIndices[offset + 1] = 7; // c_1
         chart.insideProbabilities[offset + 1] = -1;
         chart.outsideProbabilities[offset + 1] = -1;
-        chart.packedChildren[offset + 1] = cscGrammar1.packingFunction.packLexical(d);
+        chart.packedChildren[offset + 1] = cscGrammar1.packingFunction.packLexical(f);
 
         // 0,2
         offset = chart.offset(chart.cellIndex(0, 2));

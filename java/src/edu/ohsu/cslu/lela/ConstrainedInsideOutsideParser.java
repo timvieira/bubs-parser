@@ -48,15 +48,15 @@ public class ConstrainedInsideOutsideParser extends
         this.constrainingChart = c;
 
         // Initialize the chart
-        if (chart != null
-                && chart.midpoints.length >= c.midpoints.length
-                && chart.nonTerminalIndices.length >= ConstrainedChart
-                        .chartArraySize(c.size(), c.maxUnaryChainLength())
-                && chart.cellOffsets.length >= c.cellOffsets.length) {
-            chart.clear(c);
-        } else {
-            chart = new ConstrainedChart(c, grammar);
-        }
+        // if (chart != null
+        // && chart.midpoints.length >= c.midpoints.length
+        // && chart.nonTerminalIndices.length >= ConstrainedChart
+        // .chartArraySize(c.size(), c.maxUnaryChainLength())
+        // && chart.cellOffsets.length >= c.cellOffsets.length) {
+        // chart.clear(c);
+        // } else {
+        chart = new ConstrainedChart(c, grammar);
+        // }
 
         chart.parseTask = new ParseTask(c.tokens, grammar);
         cellSelector.initSentence(this);
@@ -314,8 +314,8 @@ public class ConstrainedInsideOutsideParser extends
             final int parent0Offset, final int sibling0Offset, final int[] cscBinaryColumnOffsets,
             final short[] cscBinaryRowIndices, final float[] cscBinaryProbabilities, final PackingFunction cpf) {
 
-        final short entry0 = chart.nonTerminalIndices[entry0Offset];
-        final short entry1 = chart.nonTerminalIndices[entry1Offset];
+        final short entry0 = (short) (constrainingChart.nonTerminalIndices[entry0Offset >> 1] << 1);
+        final short entry1 = (short) (entry0 + 1);
 
         // Iterate over possible siblings
         for (int i = sibling0Offset; i <= sibling0Offset + 1; i++) {
@@ -374,8 +374,8 @@ public class ConstrainedInsideOutsideParser extends
         for (int parent0Offset = offset; parent0Offset < bottomChildOffset; parent0Offset += 2) {
 
             final int child0Offset = parent0Offset + 2;
-            final short parent0 = chart.nonTerminalIndices[parent0Offset];
-            final short parent1 = chart.nonTerminalIndices[parent0Offset + 1];
+            final short parent0 = (short) (constrainingChart.nonTerminalIndices[parent0Offset >> 1] << 1);
+            final short parent1 = (short) (parent0 + 1);
 
             // Iterate over both child slots
             for (int childOffset = child0Offset; childOffset <= child0Offset + 1; childOffset++) {

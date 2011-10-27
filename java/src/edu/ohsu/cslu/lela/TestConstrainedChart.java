@@ -17,7 +17,7 @@ public class TestConstrainedChart extends ChartTestCase {
     public void testExtractBestParse() {
         // Create and populate a 1-split ConstrainedChart and verify that we can extract the expected tree
         final ConstrainedChart constrainedChart = create1SplitConstrainedChart();
-        assertEquals("(top (a_1 (a_0 (a_0 (a_0 c) (a_1 c)) (b_1 d)) (b_1 (b_0 (b_1 d)) (a_0 d))))", constrainedChart
+        assertEquals("(top (a_1 (a_0 (a_0 (c_0 e) (c_1 e)) (d_1 f)) (b_1 (b_0 (d_1 f)) (c_0 f))))", constrainedChart
                 .extractBestParse(0).toString());
         JUnit.assertArrayEquals(OPEN_CELLS, constrainedChart.openCells);
 

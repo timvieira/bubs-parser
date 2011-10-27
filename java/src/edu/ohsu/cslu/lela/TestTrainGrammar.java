@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
@@ -65,6 +66,34 @@ public class TestTrainGrammar {
     }
 
     /**
+     * Learns a 2-split grammar from short 1-sentence 'corpus'. Verifies that corpus likelihood increases with
+     * successive EM runs.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testSentence1() throws IOException {
+        final BufferedReader br = new BufferedReader(new StringReader(
+                "(TOP (S (NP (NNP FCC) (NN counsel)) (VP (VBZ joins) (NP (NN firm))) (: :)))"), 1024);
+
+        testEmTraining(br);
+    }
+
+    /**
+     * Learns a 2-split grammar from short 1-sentence 'corpus'. Verifies that corpus likelihood increases with
+     * successive EM runs.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testSentence2() throws IOException {
+        final BufferedReader br = new BufferedReader(new StringReader(
+                "(TOP (X (X (SYM z)) (: -) (ADJP (RB Not) (JJ available)) (. .)))"), 1024);
+
+        testEmTraining(br);
+    }
+
+    /**
      * Learns a 2-split grammar from longer 1-sentence 'corpus'. Verifies that corpus likelihood increases with
      * successive EM runs.
      * 
@@ -76,6 +105,51 @@ public class TestTrainGrammar {
                 new StringReader(
                         "(TOP (S (S (CC But) (NP (NNS investors)) (VP (MD should) (VP (VB keep) (PP (IN in) (NP (NN mind))) (, ,) (PP (IN before) (S (VP (VBG paying) (ADVP (RB too) (JJ much))))) (, ,) (SBAR (IN that) (S (NP (NP (DT the) (JJ average) (JJ annual) (NN return)) (PP (IN for) (NP (NN stock) (NNS holdings)))) (, ,) (ADVP (JJ long-term)) (, ,) (VP (AUX is) (NP (NP (QP (CD 9) (NN %) (TO to) (CD 10) (NN %))) (NP (DT a) (NN year))))))))) (: ;) (S (NP (NP (DT a) (NN return)) (PP (IN of) (NP (CD 15) (NN %)))) (VP (AUX is) (VP (VBN considered) (S (ADJP (JJ praiseworthy)))))) (. .)))"),
                 1024);
+
+        testEmTraining(br);
+    }
+
+    /**
+     * Learns a 2-split grammar from 2-sentence 'corpus'. Verifies that corpus likelihood increases with successive EM
+     * runs.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testSentence1Twice() throws IOException {
+        final BufferedReader br = new BufferedReader(new StringReader(
+                "(TOP (S (NP (NNP FCC) (NN counsel)) (VP (VBZ joins) (NP (NN firm))) (: :)))\n"
+                        + "(TOP (S (NP (NNP FCC) (NN counsel)) (VP (VBZ joins) (NP (NN firm))) (: :)))"), 1024);
+
+        testEmTraining(br);
+    }
+
+    /**
+     * Learns a 2-split grammar from 2-sentence 'corpus'. Verifies that corpus likelihood increases with successive EM
+     * runs.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testSentence2Twice() throws IOException {
+        final BufferedReader br = new BufferedReader(new StringReader(
+                "(TOP (X (X (SYM z)) (: -) (ADJP (RB Not) (JJ available)) (. .)))\n"
+                        + "(TOP (X (X (SYM z)) (: -) (ADJP (RB Not) (JJ available)) (. .)))"), 1024);
+
+        testEmTraining(br);
+    }
+
+    /**
+     * Learns a 2-split grammar from 2-sentence 'corpus'. Verifies that corpus likelihood increases with successive EM
+     * runs.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testSentences1and2() throws IOException {
+        final BufferedReader br = new BufferedReader(new StringReader(
+                "(TOP (S (NP (NNP FCC) (NN counsel)) (VP (VBZ joins) (NP (NN firm))) (: :)))\n"
+                        + "(TOP (X (X (SYM z)) (: -) (ADJP (RB Not) (JJ available)) (. .)))"), 1024);
 
         testEmTraining(br);
     }
@@ -182,8 +256,8 @@ public class TestTrainGrammar {
 
         final int lexiconSize = cscGrammar.lexSet.size();
         float previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
-        // ConstrainedChart previousChart = null;
-        // ProductionListGrammar previousGrammar = null;
+        ArrayList<ConstrainedChart> previousCharts = null;
+        ProductionListGrammar previousGrammar = null;
 
         final long t0 = System.currentTimeMillis();
 
@@ -193,7 +267,6 @@ public class TestTrainGrammar {
         // + originalMergedGrammar.unaryProductions.size() + originalMergedGrammar.lexicalProductions.size();
 
         for (int i = 0; i < iterations; i++) {
-            System.out.format("=== Split %d, iteration %d", split, i + 1);
 
             result = tg.emIteration(cscGrammar, -8f);
             result.plGrammar.verifyProbabilityDistribution();
@@ -216,12 +289,15 @@ public class TestTrainGrammar {
 
             // Ensure we have rules matching each lexical entry
             for (int j = 0; j < lexiconSize; j++) {
-                assertTrue("No parents found for " + cscGrammar.lexSet.getSymbol(j), cscGrammar
-                        .getLexicalProductionsWithChild(j).size() > 0);
+                if (cscGrammar.getLexicalProductionsWithChild(j).size() == 0) {
+                    System.out.println("Iteration " + (i + 1) + " : Missing parent for "
+                            + cscGrammar.lexSet.getSymbol(j));
+                }
+                assertTrue("Iteration " + (i + 1) + " : No parents found for " + cscGrammar.lexSet.getSymbol(j),
+                        cscGrammar.getLexicalProductionsWithChild(j).size() > 0);
             }
 
-            // result.plGrammar.verifyProbabilityDistribution();
-            System.out.format("   Likelihood: %.3f\n", result.corpusLikelihood);
+            System.out.format("=== Split %d, iteration %d   Likelihood: %.3f\n", split, i + 1, result.corpusLikelihood);
 
             if (i > 1) {
                 // Allow a small delta on corpus likelihood comparison to avoid floating-point errors
@@ -230,8 +306,8 @@ public class TestTrainGrammar {
                         - previousCorpusLikelihood >= -.001f);
             }
             previousCorpusLikelihood = result.corpusLikelihood;
-            // previousGrammar = result.plGrammar;
-            // previousChart = result.finalChart;
+            previousGrammar = result.plGrammar;
+            previousCharts = result.charts;
         }
 
         final long t1 = System.currentTimeMillis();
