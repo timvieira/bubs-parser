@@ -56,7 +56,7 @@ public class TestConstrainingChart extends ChartTestCase {
         assertEquals(2, cc.maxUnaryChainLength());
 
         // Verify that the tokens array is initialized properly
-        assertArrayEquals(new int[] { c, c, d, d, d }, cc.tokens);
+        assertArrayEquals(new int[] { e, e, f, f, f }, cc.tokens);
 
         // Verify expected probabilities in a few cells
         assertEquals(0, cc.getInside(0, 5, top), .001f);
@@ -118,7 +118,7 @@ public class TestConstrainingChart extends ChartTestCase {
 
     @Test
     public void testWithInternalStartSymbol() {
-        final String bracketedTree = "(top (a (top (a c) (b c))) (b c))";
+        final String bracketedTree = "(top (a (top (a e) (b e))) (b e))";
         final ConstrainingChart cc = new ConstrainingChart(BinaryTree.read(bracketedTree, String.class), cscGrammar0);
         // Ensure that the extracted parse matches the input gold tree
         assertEquals(bracketedTree, cc.extractBestParse(plGrammar0.vocabulary.getIndex("top")).toString());
@@ -137,7 +137,7 @@ public class TestConstrainingChart extends ChartTestCase {
         final ConstrainingChart newConstrainingChart = new ConstrainingChart(constrainedChart);
 
         // Verify that the extracted parse matches
-        assertEquals("(top (a_1 (a_0 (a_0 (a_0 c) (a_1 c)) (b_1 d)) (b_1 (b_0 (b_1 d)) (a_0 d))))",
+        assertEquals("(top (a_1 (a_0 (a_0 (c_0 e) (c_1 e)) (d_1 f)) (b_1 (b_0 (d_1 f)) (c_0 f))))",
                 newConstrainingChart.extractBestParse(0).toString());
 
         JUnit.assertArrayEquals(constrainedChart.openCells, newConstrainingChart.openCells);
