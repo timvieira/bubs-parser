@@ -232,10 +232,10 @@ public class TestTrainGrammar {
 
         // TODO re-enable initial parse
         // Parse the training corpus with induced grammar and report F-score
-        System.out.println("Initial F-score: .630");
-        // final long t0 = System.currentTimeMillis();
-        // System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", parseFScore(csrGrammar(plg0), tg.goldTrees),
-        // (System.currentTimeMillis() - t0) / 1000f);
+        // System.out.println("Initial F-score: .630");
+        final long t0 = System.currentTimeMillis();
+        System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", parseFScore(cscGrammar(plg0), tg.goldTrees),
+                (System.currentTimeMillis() - t0) / 1000f);
 
         final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
 
@@ -299,12 +299,19 @@ public class TestTrainGrammar {
 
             System.out.format("=== Split %d, iteration %d   Likelihood: %.3f\n", split, i + 1, result.corpusLikelihood);
 
+            final float topToS0 = result.plGrammar.unaryLogProbability("TOP", "S_0");
+            final float previousTopToS0 = previousGrammar == null ? Float.NEGATIVE_INFINITY : previousGrammar
+                    .unaryLogProbability("TOP", "S_0");
             if (i > 1) {
                 // Allow a small delta on corpus likelihood comparison to avoid floating-point errors
                 assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f on iteration %d",
                         previousCorpusLikelihood, result.corpusLikelihood, i + 1), result.corpusLikelihood
                         - previousCorpusLikelihood >= -.001f);
             }
+
+            // Parse the training corpus with the new CSC grammar and report F-score
+            System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100);
+
             previousCorpusLikelihood = result.corpusLikelihood;
             previousGrammar = result.plGrammar;
             previousCharts = result.charts;
@@ -314,8 +321,7 @@ public class TestTrainGrammar {
         System.out.format("Training Time: %.1f seconds\n", (t1 - t0) / 1000f);
 
         // Parse the training corpus with the new CSC grammar and report F-score
-        System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100,
-                (System.currentTimeMillis() - t1) / 1000f);
+        System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100);
 
         return result.plGrammar;
     }
