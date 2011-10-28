@@ -426,13 +426,14 @@ public class ConstrainedInsideOutsideParser extends
      */
     FractionalCountGrammar countRuleOccurrences(final FractionalCountGrammar countGrammar) {
         cellSelector.reset();
+        final float sentenceInsideLogProb = chart.getInside(0, chart.size(), 0);
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
-            countUnaryRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1]);
+            countUnaryRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1], sentenceInsideLogProb);
             if (startAndEnd[1] - startAndEnd[0] == 1) {
-                countLexicalRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1]);
+                countLexicalRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1], sentenceInsideLogProb);
             } else {
-                countBinaryRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1]);
+                countBinaryRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1], sentenceInsideLogProb);
             }
         }
 
@@ -441,7 +442,7 @@ public class ConstrainedInsideOutsideParser extends
 
     // TODO Could these counts be computed during the outside pass?
     private void countBinaryRuleOccurrences(final FractionalCountGrammar countGrammar, final short start,
-            final short end) {
+            final short end, final float sentenceInsideLogProb) {
 
         final PackingFunction cpf = grammar.cartesianProductFunction();
 
@@ -485,14 +486,14 @@ public class ConstrainedInsideOutsideParser extends
                     } else if (parent == parent0) {
                         // Parent outside x left child inside x right child inside x production probability.
                         // Equation 1 of Petrov et al., 2006.
-                        final float jointProbability = chart.outsideProbabilities[parent0Offset]
-                                + childInsideProbability + grammar.cscBinaryProbabilities[k];
-                        countGrammar.incrementBinaryLogCount(parent, column, jointProbability);
+                        final float count = chart.outsideProbabilities[parent0Offset] + childInsideProbability
+                                + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
+                        countGrammar.incrementBinaryLogCount(parent, column, count);
 
                     } else if (parent == parent0 + 1) {
-                        final float jointProbability = chart.outsideProbabilities[parent1Offset]
-                                + childInsideProbability + grammar.cscBinaryProbabilities[k];
-                        countGrammar.incrementBinaryLogCount(parent, column, jointProbability);
+                        final float count = chart.outsideProbabilities[parent1Offset] + childInsideProbability
+                                + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
+                        countGrammar.incrementBinaryLogCount(parent, column, count);
 
                     } else {
                         // We've passed both target parents. No need to search more grammar rules
@@ -503,7 +504,8 @@ public class ConstrainedInsideOutsideParser extends
         }
     }
 
-    private void countUnaryRuleOccurrences(final FractionalCountGrammar countGrammar, final short start, final short end) {
+    private void countUnaryRuleOccurrences(final FractionalCountGrammar countGrammar, final short start,
+            final short end, final float sentenceInsideLogProb) {
 
         final int cellIndex = chart.cellIndex(start, end);
         // 0 <= unaryLevels < maxUnaryChainLength
@@ -542,14 +544,14 @@ public class ConstrainedInsideOutsideParser extends
                     } else if (parent == parent0) {
                         // Parent outside x child inside x production probability. From equation 1 of Petrov et al.,
                         // 2006
-                        final float jointProbability = chart.outsideProbabilities[parent0Offset]
-                                + childInsideProbability + grammar.cscUnaryProbabilities[j];
-                        countGrammar.incrementUnaryLogCount(parent, child, jointProbability);
+                        final float count = chart.outsideProbabilities[parent0Offset] + childInsideProbability
+                                + grammar.cscUnaryProbabilities[j] - sentenceInsideLogProb;
+                        countGrammar.incrementUnaryLogCount(parent, child, count);
 
                     } else if (parent == parent0 + 1) {
-                        final float jointProbability = chart.outsideProbabilities[parent1Offset]
-                                + childInsideProbability + grammar.cscUnaryProbabilities[j];
-                        countGrammar.incrementUnaryLogCount(parent, child, jointProbability);
+                        final float count = chart.outsideProbabilities[parent1Offset] + childInsideProbability
+                                + grammar.cscUnaryProbabilities[j] - sentenceInsideLogProb;
+                        countGrammar.incrementUnaryLogCount(parent, child, count);
 
                     } else {
                         // We've passed both target parents. No need to search more grammar rules
@@ -561,7 +563,7 @@ public class ConstrainedInsideOutsideParser extends
     }
 
     private void countLexicalRuleOccurrences(final FractionalCountGrammar countGrammar, final short start,
-            final short end) {
+            final short end, final float sentenceInsideLogProb) {
 
         final int cellIndex = chart.cellIndex(start, start + 1);
 
@@ -600,12 +602,14 @@ public class ConstrainedInsideOutsideParser extends
             } else if (parent == parent0) {
                 // Parent outside x production probability (child inside = 1 for lexical entries)
                 // From Equation 1 of Petrov et al., 2006
-                final float jointProbability = chart.outsideProbabilities[parent0Offset] + lexicalLogProbabilities[i];
-                countGrammar.incrementLexicalLogCount(parent, lexicalProduction, jointProbability);
+                final float count = chart.outsideProbabilities[parent0Offset] + lexicalLogProbabilities[i]
+                        - sentenceInsideLogProb;
+                countGrammar.incrementLexicalLogCount(parent, lexicalProduction, count);
 
             } else if (parent == parent0 + 1) {
-                final float jointProbability = chart.outsideProbabilities[parent1Offset] + lexicalLogProbabilities[i];
-                countGrammar.incrementLexicalLogCount(parent, lexicalProduction, jointProbability);
+                final float count = chart.outsideProbabilities[parent1Offset] + lexicalLogProbabilities[i]
+                        - sentenceInsideLogProb;
+                countGrammar.incrementLexicalLogCount(parent, lexicalProduction, count);
 
             } else {
                 // We've passed both target parents. No need to search more grammar rules

@@ -197,7 +197,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             parser.findBestParse(constrainingChart);
             charts.add(parser.chart);
             corpusLikelihood += parser.chart.getInside(0, parser.chart.size(), 0);
-            System.out.format("%.3f\n", parser.chart.getInside(0, parser.chart.size(), 0));
+            // System.out.format("%.3f\n", parser.chart.getInside(0, parser.chart.size(), 0));
             parser.countRuleOccurrences(countGrammar);
             sentenceCount++;
             // progressBar(count);
