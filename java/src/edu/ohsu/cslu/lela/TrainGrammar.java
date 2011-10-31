@@ -159,17 +159,18 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
     }
 
-    final void reloadGoldTreesAndCharts(final ConstrainedInsideOutsideGrammar cscGrammar) {
+    final void reloadGoldTreesAndCharts(final ConstrainedInsideOutsideGrammar finalSplitGrammar,
+            final ConstrainedInsideOutsideGrammar mergedGrammar) {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscGrammar);
+        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, finalSplitGrammar);
 
         // Iterate over the training corpus, parsing and replacing current ConstrainingCharts with 1-best output of the
         // newly trained CSC grammar
         for (int i = 0; i < constrainingCharts.size(); i++) {
             parser.findBestParse(constrainingCharts.get(i));
-            constrainingCharts.set(i, new ConstrainingChart(parser.chart));
+            constrainingCharts.set(i, new ConstrainingChart(parser.chart, mergedGrammar));
         }
     }
 

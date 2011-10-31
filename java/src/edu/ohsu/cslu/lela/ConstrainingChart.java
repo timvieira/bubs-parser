@@ -1,6 +1,8 @@
 package edu.ohsu.cslu.lela;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.shorts.Short2ShortMap;
+import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
 
 import java.util.Arrays;
 
@@ -128,7 +130,10 @@ public class ConstrainingChart extends PackedArrayChart {
         calculateCellOffsets();
     }
 
-    protected ConstrainingChart(final ConstrainingChart constrainingChart, final int chartArraySize,
+    /**
+     * Used by {@link ConstrainedChart} constructor
+     */
+    ConstrainingChart(final ConstrainingChart constrainingChart, final int chartArraySize,
             final SparseMatrixGrammar sparseMatrixGrammar) {
 
         super(constrainingChart.size(), chartArraySize, sparseMatrixGrammar);
@@ -146,9 +151,29 @@ public class ConstrainingChart extends PackedArrayChart {
      * @param constrainedChart
      */
     protected ConstrainingChart(final ConstrainedChart constrainedChart) {
+        this(constrainedChart, (SparseMatrixGrammar) constrainedChart.grammar);
+    }
 
-        super(constrainedChart.size(), constrainedChart.chartArraySize / 2,
-                (SparseMatrixGrammar) constrainedChart.grammar);
+    /**
+     * Construct a {@link ConstrainingChart} and populate it from a {@link ConstrainedChart} (e.g., a chart populated by
+     * a constrained parse). Populates each cell in the new chart with the highest-posterior-probability entry from the
+     * {@link ConstrainedChart}.
+     * 
+     * @param constrainedChart
+     * @param parent2IndexMap
+     */
+    protected ConstrainingChart(final ConstrainedChart constrainedChart, final SparseMatrixGrammar grammar) {
+
+        super(constrainedChart.size(), constrainedChart.chartArraySize / 2, grammar);
+
+        Short2ShortMap parent2IndexMap = ((SplitVocabulary) grammar.nonTermSet).parent2IndexMap;
+        if (parent2IndexMap == null) {
+            // Construct an identity map to simplify chart population code below
+            parent2IndexMap = new Short2ShortOpenHashMap();
+            for (short i = 0; i < grammar.nonTermSet.size(); i++) {
+                parent2IndexMap.put(i, i);
+            }
+        }
 
         this.unaryChainLength = constrainedChart.unaryChainLength;
         this.beamWidth = this.lexicalRowBeamWidth = constrainedChart.maxUnaryChainLength;
@@ -175,10 +200,12 @@ public class ConstrainingChart extends PackedArrayChart {
                 final float entry1Probability = constrainedChart.insideProbabilities[constrainedChartOffset + 1];
 
                 if (entry1Probability > Float.NEGATIVE_INFINITY && entry1Probability > entry0Probability) {
-                    nonTerminalIndices[offset] = (constrainedChart.nonTerminalIndices[constrainedChartOffset + 1]);
+                    nonTerminalIndices[offset] = parent2IndexMap
+                            .get(constrainedChart.nonTerminalIndices[constrainedChartOffset + 1]);
                     insideProbabilities[offset] = 0;
                 } else if (entry0Probability > Float.NEGATIVE_INFINITY) {
-                    nonTerminalIndices[offset] = constrainedChart.nonTerminalIndices[constrainedChartOffset];
+                    nonTerminalIndices[offset] = parent2IndexMap
+                            .get(constrainedChart.nonTerminalIndices[constrainedChartOffset]);
                     insideProbabilities[offset] = 0;
                 } else {
                     continue;

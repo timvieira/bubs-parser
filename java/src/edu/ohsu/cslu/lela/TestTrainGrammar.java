@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
@@ -190,36 +189,30 @@ public class TestTrainGrammar {
         System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", parseFScore(cscGrammar(plg0), tg.goldTrees),
                 (System.currentTimeMillis() - t0) / 1000f);
 
-        // TODO Remove fixed random seed
-        final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f, 1);
+        final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
 
         // Split and train with the 1-split grammar
-        final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 25);
+        final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 25, true, true);
 
-        // Split again and train with the 2-split grammar
-        tg.reloadGoldTreesAndCharts(cscGrammar(plg1));
-        runEm(tg, plg1.split(noiseGenerator), 2, 25);
+        // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
+        final ProductionListGrammar mergedPlg1 = plg1.merge(new short[] { 1 });
+        tg.reloadGoldTreesAndCharts(cscGrammar(plg1), cscGrammar(mergedPlg1));
+        runEm(tg, mergedPlg1.split(noiseGenerator), 2, 25, true, true);
     }
 
     /**
-     * Learns a 2-split grammar from a small corpus (WSJ section 24). Verifies that corpus likelihood increases with
-     * successive EM runs.
+     * Learns a 3-split grammar from a small corpus (WSJ section 24). Verifies that corpus likelihood increases with
+     * successive EM iteration. Reports F-score after each split/EM run and verifies that those increase as well.
+     * Parsing accuracy isn't guaranteed to increase, but in this test, we're evaluating on the training set, so if
+     * parse accuracy declines, something's probably terribly wrong.
      * 
      * @throws IOException
      */
     @Test
-    public void testWithoutMerging() throws IOException {
+    public void test3SplitWsj24WithoutMerging() throws IOException {
         final TrainGrammar tg = new TrainGrammar();
         tg.factorization = Factorization.RIGHT;
         tg.grammarFormatType = GrammarFormatType.Berkeley;
-
-        // final BufferedReader br = new BufferedReader(
-        // new StringReader(
-        // "(TOP (S (NP (NNP FCC) (NN COUNSEL)) (VP (VBZ JOINS) (NP (NN FIRM))) (: :)))\n"
-        // + "(TOP (X (X (SYM z)) (: -) (ADJP (RB Not) (JJ available)) (. .)))\n"
-        // +
-        // "(TOP (S (S (CC But) (NP (NNS investors)) (VP (MD should) (VP (VB keep) (PP (IN in) (NP (NN mind))) (, ,) (PP (IN before) (S (VP (VBG paying) (ADVP (RB too) (JJ much))))) (, ,) (SBAR (IN that) (S (NP (NP (DT the) (JJ average) (JJ annual) (NN return)) (PP (IN for) (NP (NN stock) (NNS holdings)))) (, ,) (ADVP (JJ long-term)) (, ,) (VP (AUX is) (NP (NP (QP (CD 9) (NN %) (TO to) (CD 10) (NN %))) (NP (DT a) (NN year))))))))) (: ;) (S (NP (NP (DT a) (NN return)) (PP (IN of) (NP (CD 15) (NN %)))) (VP (AUX is) (VP (VBN considered) (S (ADJP (JJ praiseworthy)))))) (. .)))"),
-        // 1024);
 
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"),
                 20 * 1024 * 1024);
@@ -230,62 +223,57 @@ public class TestTrainGrammar {
 
         tg.loadGoldTreesAndCharts(br, plg0);
 
-        // TODO re-enable initial parse
-        // Parse the training corpus with induced grammar and report F-score
-        // System.out.println("Initial F-score: .630");
+        // Parse the training 'corpus' with induced grammar and report F-score
         final long t0 = System.currentTimeMillis();
-        System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", parseFScore(cscGrammar(plg0), tg.goldTrees),
+        double previousFScore = parseFScore(cscGrammar(plg0), tg.goldTrees);
+        System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", previousFScore * 100,
                 (System.currentTimeMillis() - t0) / 1000f);
 
         final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
 
         // Split and train with the 1-split grammar
-        final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 25);
-        // final FileWriter fw = new FileWriter("/tmp/1split");
-        // fw.write(plg1.toString());
-        // fw.close();
+        final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 50, false, false);
+        previousFScore = verifyFscoreIncrease(tg, plg1, previousFScore);
 
-        // Split again and train with the 2-split grammar
-        runEm(tg, plg1.split(noiseGenerator), 2, 25);
+        // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
+        final ProductionListGrammar mergedPlg1 = plg1.merge(new short[] { 1 });
+        tg.reloadGoldTreesAndCharts(cscGrammar(plg1), cscGrammar(mergedPlg1));
+        final ProductionListGrammar plg2 = runEm(tg, mergedPlg1.split(noiseGenerator), 2, 50, false, false);
+        previousFScore = verifyFscoreIncrease(tg, plg2, previousFScore);
+
+        // Merge TOP_1 back into TOP, split again, and train with the new 3-split grammar
+        final ProductionListGrammar mergedPlg2 = plg2.merge(new short[] { 1 });
+        tg.reloadGoldTreesAndCharts(cscGrammar(plg2), cscGrammar(mergedPlg2));
+        final ProductionListGrammar plg3 = runEm(tg, mergedPlg2.split(noiseGenerator), 2, 50, false, false);
+        verifyFscoreIncrease(tg, plg3, previousFScore);
+    }
+
+    /** Parses the training corpus with the new grammar, reports F-score, and verifies that it's increasing */
+    private double verifyFscoreIncrease(final TrainGrammar tg, final ProductionListGrammar plg2,
+            final double previousFScore) {
+
+        final double fScore = parseFScore(cscGrammar(plg2), tg.goldTrees);
+        System.out.format("F-score: %.2f\n", parseFScore(cscGrammar(plg2), tg.goldTrees) * 100);
+        assertTrue("Expected f-score to increase", fScore > previousFScore);
+        return fScore;
     }
 
     private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar plg, final int split,
-            final int iterations) {
+            final int iterations, final boolean reportFinalParseScore, final boolean reportEmIterationParseScores) {
 
         ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(plg);
 
         final int lexiconSize = cscGrammar.lexSet.size();
         float previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
-        ArrayList<ConstrainedChart> previousCharts = null;
-        ProductionListGrammar previousGrammar = null;
 
         final long t0 = System.currentTimeMillis();
-
         EmIterationResult result = null;
-        // final ProductionListGrammar originalMergedGrammar = mergeAllSplits(plg);
-        // final int originalMergedRules = originalMergedGrammar.binaryProductions.size()
-        // + originalMergedGrammar.unaryProductions.size() + originalMergedGrammar.lexicalProductions.size();
 
         for (int i = 0; i < iterations; i++) {
 
             result = tg.emIteration(cscGrammar, -8f);
             result.plGrammar.verifyProbabilityDistribution();
             cscGrammar = cscGrammar(result.plGrammar);
-
-            // Re-merge all splits and verify that the resulting grammar hasn't lost any rules from the original
-            // final ProductionListGrammar mergedGrammar = mergeAllSplits(result.plGrammar);
-            // final int mergedGrammarRules = mergedGrammar.binaryProductions.size()
-            // + mergedGrammar.unaryProductions.size() + mergedGrammar.lexicalProductions.size();
-            // if (mergedGrammarRules != originalMergedRules) {
-            // System.out.println("Missing rules. Expected " + originalMergedRules + " but was " + mergedGrammarRules);
-            // final ConstrainedInsideOutsideGrammar previousCscGrammar = cscGrammar(previousGrammar);
-            // final ParserDriver opts = new ParserDriver();
-            // opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-            // final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts,
-            // previousCscGrammar);
-            // parser.findBestParse(tg.constrainingCharts.get(0));
-            // parser.countRuleOccurrences();
-            // }
 
             // Ensure we have rules matching each lexical entry
             for (int j = 0; j < lexiconSize; j++) {
@@ -297,11 +285,6 @@ public class TestTrainGrammar {
                         cscGrammar.getLexicalProductionsWithChild(j).size() > 0);
             }
 
-            System.out.format("=== Split %d, iteration %d   Likelihood: %.3f\n", split, i + 1, result.corpusLikelihood);
-
-            final float topToS0 = result.plGrammar.unaryLogProbability("TOP", "S_0");
-            final float previousTopToS0 = previousGrammar == null ? Float.NEGATIVE_INFINITY : previousGrammar
-                    .unaryLogProbability("TOP", "S_0");
             if (i > 1) {
                 // Allow a small delta on corpus likelihood comparison to avoid floating-point errors
                 assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f on iteration %d",
@@ -309,35 +292,32 @@ public class TestTrainGrammar {
                         - previousCorpusLikelihood >= -.001f);
             }
 
-            // Parse the training corpus with the new CSC grammar and report F-score
-            System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100);
+            if (reportEmIterationParseScores) {
+                // Parse the training corpus with the new CSC grammar and report F-score
+                System.out.format("=== Split %d, iteration %d   Likelihood: %.3f   F-score: %.2f\n", split, i + 1,
+                        result.corpusLikelihood, parseFScore(cscGrammar, tg.goldTrees) * 100);
+            } else {
+                System.out.format("=== Split %d, iteration %d   Likelihood: %.3f\n", split, i + 1,
+                        result.corpusLikelihood);
+            }
 
             previousCorpusLikelihood = result.corpusLikelihood;
-            previousGrammar = result.plGrammar;
-            previousCharts = result.charts;
         }
 
         final long t1 = System.currentTimeMillis();
         System.out.format("Training Time: %.1f seconds\n", (t1 - t0) / 1000f);
 
-        // Parse the training corpus with the new CSC grammar and report F-score
-        System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100);
+        if (reportFinalParseScore) {
+            // Parse the training corpus with the new CSC grammar and report F-score
+            System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100);
+        }
 
         return result.plGrammar;
     }
 
-    private ProductionListGrammar mergeAllSplits(final ProductionListGrammar plg) {
-        final short[] mergeIndices = new short[plg.vocabulary.size() / 2];
-        for (short j = 0, k = 1; j < mergeIndices.length; j++, k += 2) {
-            mergeIndices[j] = k;
-        }
-        return plg.merge(mergeIndices);
-    }
-
     private ConstrainedInsideOutsideGrammar cscGrammar(final ProductionListGrammar plg) {
-        return new ConstrainedInsideOutsideGrammar(plg.binaryProductions, plg.unaryProductions, plg.lexicalProductions,
-                plg.vocabulary, plg.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class, plg);
+        return new ConstrainedInsideOutsideGrammar(plg, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 
     private double parseFScore(final Grammar grammar, final List<NaryTree<String>> goldTrees) {
@@ -345,19 +325,16 @@ public class TestTrainGrammar {
         final CartesianProductHashSpmlParser parser = new CartesianProductHashSpmlParser(new ParserDriver(), cscGrammar);
 
         final BracketEvaluator evaluator = new BracketEvaluator();
+
         for (final NaryTree<String> goldTree : goldTrees) {
             // Extract tokens from training tree, parse, and evaluate
             // TODO Parse from tree instead
             final String sentence = Strings.join(goldTree.leafLabels(), " ");
             final ParseTask context = parser.parseSentence(sentence);
-            // try {
-            // final FileWriter fw = new FileWriter("/tmp/chart");
-            // fw.write(parser.chart.toString());
-            // fw.close();
-            // } catch (final IOException e) {
-            // e.printStackTrace();
-            // }
-            evaluator.evaluate(goldTree, context.binaryParse.unfactor(cscGrammar.grammarFormat));
+
+            if (context.binaryParse != null) {
+                evaluator.evaluate(goldTree, context.binaryParse.unfactor(cscGrammar.grammarFormat));
+            }
         }
 
         final EvalbResult evalbResult = evaluator.accumulatedResult();

@@ -149,4 +149,28 @@ public class TestConstrainingChart extends ChartTestCase {
         // TODO Null out some entries in the ConstrainedChart (simulating parsing after EM has 0'd out some grammar
         // probabilities) and ensure we can still construct a ConstrainingChart
     }
+
+    /**
+     * Tests constructing a new {@link ConstrainingChart} (one entry per cell + unaries) from a {@link ConstrainedChart}
+     * (two entries per cell - e.g., the chart populated by constrained parsing) after merging the grammar.
+     */
+    @Test
+    public void testConstructWithMergedGrammar() {
+        // Create and populate a 1-split ConstrainedChart
+        final ConstrainedChart constrainedChart = create1SplitConstrainedChart();
+
+        final ProductionListGrammar mergedPlg = plGrammar1.merge(new short[] { 1, 5, 7 });
+        final ConstrainedInsideOutsideGrammar mergedCsc = new ConstrainedInsideOutsideGrammar(mergedPlg,
+                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+
+        // Convert the ConstrainedChart into a ConstrainingChart
+        final ConstrainingChart newConstrainingChart = new ConstrainingChart(constrainedChart, mergedCsc);
+
+        // Verify that the extracted parse matches
+        assertEquals("(top (a_1 (a_0 (a_0 (c_0 e) (c_0 e)) (d_1 f)) (b_0 (b_0 (d_1 f)) (c_0 f))))",
+                newConstrainingChart.extractBestParse(0).toString());
+
+        // Ensure that toString() runs without an exception.
+        newConstrainingChart.toString();
+    }
 }

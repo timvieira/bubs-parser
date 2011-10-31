@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.lela;
 
 import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
+import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 
 import java.util.Collection;
 
@@ -60,26 +61,34 @@ public class SplitVocabulary extends Vocabulary {
     // /** The maximum number of splits from any single unsplit category in the base Markov-order-0 grammar. */
     // final short maxSplits;
 
-    /** Parent (pre-split) vocabulary */
+    /** Parent (pre-split or pre-merge) vocabulary */
     final SplitVocabulary parentVocabulary;
 
     /**
      * Maps from the indices of a parent vocabulary to indices in this {@link SplitVocabulary}. Only populated if this
-     * vocabulary was created by merging symbols in an earlier vocabulary.
+     * vocabulary was created by merging symbols in a parent vocabulary.
      */
-    final Short2ShortOpenHashMap mergedIndices;
+    final Short2ShortOpenHashMap parent2IndexMap;
+
+    /**
+     * Indices of non-terminals which were created by merging symbols in the parent vocabulary. Only populated if this
+     * vocabulary was formed by merging symbols in a parent vocabulary.
+     */
+    final ShortOpenHashSet mergedIndices;
 
     public SplitVocabulary(final SplitVocabulary parentVocabulary) {
         super(GrammarFormatType.Berkeley);
         // this.subcategoryIndices = null;
         // this.maxSplits = maxSplits;
         this.parentVocabulary = parentVocabulary;
+        this.parent2IndexMap = null;
         this.mergedIndices = null;
     }
 
     public SplitVocabulary(final String[] symbols) {
         super(symbols, GrammarFormatType.Berkeley);
         this.parentVocabulary = null;
+        this.parent2IndexMap = null;
         this.mergedIndices = null;
 
         // recomputeSplits();
@@ -87,9 +96,10 @@ public class SplitVocabulary extends Vocabulary {
     }
 
     public SplitVocabulary(final Collection<String> symbols, final SplitVocabulary parentVocabulary,
-            final Short2ShortOpenHashMap mergedIndices) {
+            final Short2ShortOpenHashMap parent2IndexMap, final ShortOpenHashSet mergedIndices) {
         super(symbols, GrammarFormatType.Berkeley);
         this.parentVocabulary = parentVocabulary;
+        this.parent2IndexMap = parent2IndexMap;
         this.mergedIndices = mergedIndices;
 
         // recomputeSplits();
@@ -97,7 +107,7 @@ public class SplitVocabulary extends Vocabulary {
     }
 
     public SplitVocabulary(final Collection<String> symbols) {
-        this(symbols, null, null);
+        this(symbols, null, null, null);
     }
 
     /**
@@ -112,7 +122,7 @@ public class SplitVocabulary extends Vocabulary {
      *         vocabulary
      */
     public short firstSplitNonterminalIndex(final short parentVocabularyIndex) {
-        return (short) (mergedIndices != null ? (mergedIndices.get(parentVocabularyIndex) << 1)
+        return (short) (parent2IndexMap != null ? (parent2IndexMap.get(parentVocabularyIndex) << 1)
                 : (parentVocabularyIndex << 1));
     }
 
