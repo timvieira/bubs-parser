@@ -35,5 +35,4 @@ public class ConstrainedInsideOutsideGrammar extends InsideOutsideCscSparseMatri
                 plGrammar.vocabulary, plGrammar.lexicon, grammarFormat, functionClass, true);
         this.baseGrammar = plGrammar.baseGrammar;
     }
-
 }

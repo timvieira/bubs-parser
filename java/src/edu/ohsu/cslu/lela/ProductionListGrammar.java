@@ -27,7 +27,6 @@ import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
-import it.unimi.dsi.fastutil.shorts.ShortSet;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -439,13 +438,11 @@ public class ProductionListGrammar {
      */
     public ProductionListGrammar merge(final short[] indices) {
 
-        // TODO Map from split indices -> merged indices?
-
         // Create merged vocabulary and map from old vocab indices to new
-        final Short2ShortOpenHashMap mergedIndices = new Short2ShortOpenHashMap();
+        final Short2ShortOpenHashMap parentToIndexMap = new Short2ShortOpenHashMap();
 
         // Set of merged indices which were merged 'into'
-        final ShortSet mergedParents = new ShortOpenHashSet();
+        final ShortOpenHashSet mergedIndices = new ShortOpenHashSet();
 
         short j = 0;
         Arrays.sort(indices);
@@ -458,7 +455,7 @@ public class ProductionListGrammar {
         for (short i = 1; i < vocabulary.size(); i++) {
             if (j < indices.length && indices[j] == i) {
                 j++;
-                mergedParents.add((short) (mergedSymbols.size() - 1));
+                mergedIndices.add((short) (mergedSymbols.size() - 1));
             } else {
                 // This would be much shorter and clearer if Java had tuples...
                 final String mergedRoot = vocabulary.getSymbol(i).split("_")[0];
@@ -473,10 +470,11 @@ public class ProductionListGrammar {
                 }
                 previousRoot = mergedRoot;
             }
-            mergedIndices.put(i, (short) (mergedSymbols.size() - 1));
+            parentToIndexMap.put(i, (short) (mergedSymbols.size() - 1));
         }
 
-        final SplitVocabulary mergedVocabulary = new SplitVocabulary(mergedSymbols, vocabulary, mergedIndices);
+        final SplitVocabulary mergedVocabulary = new SplitVocabulary(mergedSymbols, vocabulary, parentToIndexMap,
+                mergedIndices);
 
         // Create maps to store new rules in
         final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> binaryRuleMap = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
@@ -488,22 +486,22 @@ public class ProductionListGrammar {
         // If multiple split rules merge into a single merged rule, sum the probabilities.
 
         for (final Production p : binaryProductions) {
-            final short mergedParent = mergedIndices.get((short) p.parent);
-            addBinaryRuleProbability(binaryRuleMap, mergedParent, mergedIndices.get((short) p.leftChild),
-                    mergedIndices.get((short) p.rightChild), p.prob
-                            + (mergedParents.contains(mergedParent) ? LOG_ONE_HALF : 0));
+            final short mergedParent = parentToIndexMap.get((short) p.parent);
+            addBinaryRuleProbability(binaryRuleMap, mergedParent, parentToIndexMap.get((short) p.leftChild),
+                    parentToIndexMap.get((short) p.rightChild), p.prob
+                            + (mergedIndices.contains(mergedParent) ? LOG_ONE_HALF : 0));
         }
 
         for (final Production p : unaryProductions) {
-            final short mergedParent = mergedIndices.get((short) p.parent);
-            addUnaryRuleProbability(unaryRuleMap, mergedParent, mergedIndices.get((short) p.leftChild), p.prob
-                    + (mergedParents.contains(mergedParent) ? LOG_ONE_HALF : 0));
+            final short mergedParent = parentToIndexMap.get((short) p.parent);
+            addUnaryRuleProbability(unaryRuleMap, mergedParent, parentToIndexMap.get((short) p.leftChild), p.prob
+                    + (mergedIndices.contains(mergedParent) ? LOG_ONE_HALF : 0));
         }
 
         for (final Production p : lexicalProductions) {
-            final short mergedParent = mergedIndices.get((short) p.parent);
+            final short mergedParent = parentToIndexMap.get((short) p.parent);
             addLexicalRuleProbability(lexicalRuleMap, mergedParent, p.leftChild,
-                    p.prob + (mergedParents.contains(mergedParent) ? LOG_ONE_HALF : 0));
+                    p.prob + (mergedIndices.contains(mergedParent) ? LOG_ONE_HALF : 0));
         }
 
         final ProductionListGrammar mergedGrammar = new ProductionListGrammar(baseGrammar, mergedVocabulary, lexicon);
