@@ -148,7 +148,7 @@ public class TreeTools extends BaseCommandlineTool {
         int wordIndex = 0;
         for (final ParseTree node : tree.getLeafNodes()) {
             if (!knownWords.contains(node.contents)) {
-                node.contents = Tokenizer.berkeleyGetSignature(node.contents, wordIndex, knownWords);
+                node.contents = Tokenizer.berkeleyGetSignature(node.contents, wordIndex == 0, knownWords);
             }
             wordIndex += 1;
         }

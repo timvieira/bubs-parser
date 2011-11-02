@@ -18,6 +18,8 @@
  */
 package edu.ohsu.cslu.lela;
 
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,7 +32,10 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.parser.ParserDriver;
 
@@ -100,20 +105,43 @@ public class TrainGrammar extends BaseCommandlineTool {
             // Smooth
         }
 
-        // // Add UNK probabilities to lexicon
-        // // Note that words that occur <= lexicalUnkThreshold times will also be included in their lexicalized form.
-        // for (final BinaryTree<String> tree : trees) {
-        // int i = 0;
-        // for (final BinaryTree<String> leaf : tree.leafTraversal()) {
-        // final String word = leaf.label();
-        // if (lexicalEntryOccurrences.get(word) <= lexicalUnkThreshold) {
-        // final String unkStr = Tokenizer.berkeleyGetSignature(word, i, knownWords);
-        // incrementLexicalCount(leaf.parentLabel(), unkStr);
-        // lexicalEntryOccurrences.put(unkStr, lexicalEntryOccurrences.getInt(unkStr) + 1);
-        // }
-        // i++;
-        // }
-        // }
+        final SymbolSet<String> lexicon = plGrammar.lexicon;
+
+        //
+        // Add UNK probabilities to lexical rules
+        // Note that words that occur <= lexicalUnkThreshold times will also be included in their lexicalized form.
+        //
+
+        // Count words
+        final Object2IntOpenHashMap<String> lexicalEntryCounts = new Object2IntOpenHashMap<String>();
+        for (final NaryTree<String> tree : goldTrees) {
+            for (final NaryTree<String> leaf : tree.leafTraversal()) {
+                final String word = leaf.label();
+                lexicalEntryCounts.put(word, lexicalEntryCounts.getInt(word) + 1);
+            }
+        }
+
+        //
+        for (final NaryTree<String> tree : goldTrees) {
+            int i = 0;
+            for (final NaryTree<String> leaf : tree.leafTraversal()) {
+                final String word = leaf.label();
+                if (lexicalEntryCounts.get(word) <= lexicalUnkThreshold) {
+                    final String unkStr = Tokenizer.berkeleyGetSignature(word, i == 0, lexicon);
+                    lexicalEntryCounts.put(unkStr, lexicalEntryCounts.getInt(unkStr) + 1);
+                }
+                i++;
+            }
+        }
+
+        // Add UNK probabilities for uncommon words
+        for (final Production p : plGrammar.lexicalProductions) {
+            if (lexicalEntryCounts.get(lexicon.getSymbol(p.leftChild)) <= lexicalUnkThreshold) {
+
+            }
+        }
+        // Re-normalize
+
     }
 
     /**
@@ -159,15 +187,23 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
     }
 
-    final void reloadGoldTreesAndCharts(final ConstrainedInsideOutsideGrammar finalSplitGrammar,
+    /**
+     * Parses with a split grammar and replaces the current {@link ConstrainingChart}s with 1-best parses, populated
+     * with a merged version of the same grammar.
+     * 
+     * @param finalSplitGrammar
+     * @param mergedGrammar
+     */
+    final void reloadConstrainingCharts(final ConstrainedInsideOutsideGrammar finalSplitGrammar,
             final ConstrainedInsideOutsideGrammar mergedGrammar) {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, finalSplitGrammar);
 
-        // Iterate over the training corpus, parsing and replacing current ConstrainingCharts with 1-best output of the
-        // newly trained CSC grammar
+        System.out.println("Reloading constraining charts...");
+
+        // Iterate over the training corpus, parsing and replacing current ConstrainingCharts
         for (int i = 0; i < constrainingCharts.size(); i++) {
             parser.findBestParse(constrainingCharts.get(i));
             constrainingCharts.set(i, new ConstrainingChart(parser.chart, mergedGrammar));
