@@ -20,6 +20,7 @@ package edu.ohsu.cslu.lela;
 
 import static edu.ohsu.cslu.tests.JUnit.assertLogFractionEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -177,6 +178,20 @@ public class TestProductionListGrammar {
 
         split2 = split1.split(new ProductionListGrammar.RandomNoiseGenerator(0.25f));
         split2.verifyProbabilityDistribution();
+    }
+
+    @Theory
+    public void testMergeStartSymbol(final ProductionListGrammar g) {
+
+        final ProductionListGrammar.BiasedNoiseGenerator zeroNoiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(
+                0f);
+        final ProductionListGrammar split1 = g.split(zeroNoiseGenerator);
+        final ProductionListGrammar merged = split1.merge(new short[] { 1 });
+
+        assertEquals(split1.vocabulary.size() - 1, merged.vocabulary.size());
+        assertEquals(1, merged.vocabulary.mergedIndices.size());
+        assertTrue("Expected mergedIndices to contain '0'", merged.vocabulary.mergedIndices.contains((short) 0));
+        assertEquals(split1.unaryLogProbability("top", "a_0"), merged.unaryLogProbability("top", "a_0"), .01f);
     }
 
     @Theory
