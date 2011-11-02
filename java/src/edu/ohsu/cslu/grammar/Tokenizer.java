@@ -97,7 +97,7 @@ public class Tokenizer implements Serializable {
     public String[] tokenize(final String sentence) {
         final String treebankTokens[] = treebankTokenize(sentence).split(" ");
         for (int i = 0; i < treebankTokens.length; i++) {
-            treebankTokens[i] = mapToLexSetEntry(treebankTokens[i], i);
+            treebankTokens[i] = mapToLexSetEntry(treebankTokens[i], i == 0);
         }
         return treebankTokens;
     }
@@ -106,7 +106,7 @@ public class Tokenizer implements Serializable {
         final String tokens[] = sentence.split("\\s+");
         final int tokenIndices[] = new int[tokens.length];
         for (int i = 0; i < tokens.length; i++) {
-            tokenIndices[i] = lexSet.getIndex(mapToLexSetEntry(tokens[i], i));
+            tokenIndices[i] = lexSet.getIndex(mapToLexSetEntry(tokens[i], i == 0));
         }
         return tokenIndices;
     }
@@ -115,17 +115,17 @@ public class Tokenizer implements Serializable {
         final int tokenIndices[] = new int[sentence.leaves()];
         int i = 0;
         for (final NaryTree<String> leaf : sentence.leafTraversal()) {
-            tokenIndices[i++] = lexSet.getIndex(mapToLexSetEntry(leaf.label(), i));
+            tokenIndices[i++] = lexSet.getIndex(mapToLexSetEntry(leaf.label(), i == 0));
         }
         return tokenIndices;
     }
 
-    public String mapToLexSetEntry(final String word, final int sentIndex) {
+    public String mapToLexSetEntry(final String word, final boolean sentenceInitial) {
         if (lexSet.hasSymbol(word)) {
             return word;
         }
 
-        String unkStr = wordToUnkString(word, sentIndex);
+        String unkStr = wordToUnkString(word, sentenceInitial);
         // remove last feature from unk string until we find a matching entry in the lexicon
         while (!lexSet.hasSymbol(unkStr) && unkStr.contains("-")) {
             unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
@@ -138,7 +138,7 @@ public class Tokenizer implements Serializable {
         return unkStr;
     }
 
-    public String wordToUnkString(final String word, final int sentIndex) {
+    public String wordToUnkString(final String word, final boolean sentenceInitial) {
         // TODO Remove this reference so Tokenizer won't depend on ParserDriver (and thus on pretty much
         // everything else in the codebase). When doing reference-tracing at build time, this reference means
         // we suck in all classes into all tools (and breaks the build for most tools, since we don't package
@@ -146,7 +146,7 @@ public class Tokenizer implements Serializable {
         if (ParserDriver.oldUNK == true) {
             return wordToUnkStringVer1(word);
         }
-        return berkeleyGetSignature(word, sentIndex);
+        return berkeleyGetSignature(word, sentenceInitial);
     }
 
     /**
@@ -213,8 +213,8 @@ public class Tokenizer implements Serializable {
         return unkStr;
     }
 
-    private String berkeleyGetSignature(final String word, final int sentIndex) {
-        return berkeleyGetSignature(word, sentIndex, lexSet);
+    private String berkeleyGetSignature(final String word, final boolean sentenceInitial) {
+        return berkeleyGetSignature(word, sentenceInitial, lexSet);
     }
 
     // taken from Berkeley Parser SimpleLexicon.getNewSignature
@@ -226,11 +226,12 @@ public class Tokenizer implements Serializable {
      * English-specific.
      * 
      * @param word The word to make a signature for
-     * @param wordIndex Its position in the sentence (mainly so sentence-initial capitalized words can be treated
+     * @param sentenceInitial Its position in the sentence (mainly so sentence-initial capitalized words can be treated
      *            differently)
      * @return A String that is its signature (equivalence class)
      */
-    public static String berkeleyGetSignature(final String word, final int wordIndex, final SymbolSet<String> lexSet) {
+    public static String berkeleyGetSignature(final String word, final boolean sentenceInitial,
+            final SymbolSet<String> lexSet) {
         final StringBuffer sb = new StringBuffer("UNK");
 
         // Reformed Mar 2004 (cdm); hopefully much better now.
@@ -264,7 +265,7 @@ public class Tokenizer implements Serializable {
         final char ch0 = word.charAt(0);
         final String lowered = word.toLowerCase();
         if (Character.isUpperCase(ch0) || Character.isTitleCase(ch0)) {
-            if (wordIndex == 0 && numCaps == 1) {
+            if (sentenceInitial && numCaps == 1) {
                 sb.append("-INITC");
                 // Condition assures word != lowered
                 if (lexSet != null && lexSet.hasSymbol(lowered)) {
