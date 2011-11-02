@@ -66,10 +66,14 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
         }
     }
 
-    // get integer index of label string. If it does not exist then
-    // add it to the internal structures
+    /**
+     * Returns the integer index of <code>symbol</code>; if the symbol is not already mapped, it is created and added to
+     * the {@link SymbolSet}.
+     * 
+     * @param symbol
+     * @return the integer index of <code>symbol</code>
+     */
     public int addSymbol(final E symbol) {
-        // return this.getIndex(symbol);
         int index = map.getInt(symbol);
         if (index != -1) {
             return index;
