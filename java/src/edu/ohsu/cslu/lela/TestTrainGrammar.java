@@ -174,7 +174,7 @@ public class TestTrainGrammar {
 
     private void testEmTraining(final BufferedReader trainingCorpusReader) throws IOException {
         final TrainGrammar tg = new TrainGrammar();
-        tg.factorization = Factorization.RIGHT;
+        tg.binarization = Factorization.LEFT;
         tg.grammarFormatType = GrammarFormatType.Berkeley;
 
         trainingCorpusReader.mark(20 * 1024 * 1024);
@@ -211,7 +211,7 @@ public class TestTrainGrammar {
     @Test
     public void test3SplitWsj24WithoutMerging() throws IOException {
         final TrainGrammar tg = new TrainGrammar();
-        tg.factorization = Factorization.RIGHT;
+        tg.binarization = Factorization.LEFT;
         tg.grammarFormatType = GrammarFormatType.Berkeley;
 
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"),
@@ -229,7 +229,7 @@ public class TestTrainGrammar {
         System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", previousFScore * 100,
                 (System.currentTimeMillis() - t0) / 1000f);
 
-        final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
+        final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f, 0);
 
         // Split and train with the 1-split grammar
         final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 50, false, false);
