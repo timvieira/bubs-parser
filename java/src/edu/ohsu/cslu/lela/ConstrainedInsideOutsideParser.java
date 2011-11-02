@@ -206,9 +206,6 @@ public class ConstrainedInsideOutsideParser extends
                     }
                 }
             }
-            if (chart.nonTerminalIndices[parent0Offset] < 0 && chart.nonTerminalIndices[parent1Offset] < 0) {
-                throw new IllegalArgumentException("Failed to find an entry in cell " + start + "," + end);
-            }
         }
 
         // Unary productions
