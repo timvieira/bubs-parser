@@ -244,7 +244,7 @@ public class TestTrainGrammar {
         // Merge TOP_1 back into TOP, split again, and train with the new 3-split grammar
         final ProductionListGrammar mergedPlg2 = plg2.merge(new short[] { 1 });
         tg.reloadGoldTreesAndCharts(cscGrammar(plg2), cscGrammar(mergedPlg2));
-        final ProductionListGrammar plg3 = runEm(tg, mergedPlg2.split(noiseGenerator), 2, 50, false, false);
+        final ProductionListGrammar plg3 = runEm(tg, mergedPlg2.split(noiseGenerator), 3, 50, false, false);
         verifyFscoreIncrease(tg, plg3, previousFScore);
     }
 
@@ -271,7 +271,7 @@ public class TestTrainGrammar {
 
         for (int i = 0; i < iterations; i++) {
 
-            result = tg.emIteration(cscGrammar, -8f);
+            result = tg.emIteration(cscGrammar, -15f);
             result.plGrammar.verifyProbabilityDistribution();
             cscGrammar = cscGrammar(result.plGrammar);
 

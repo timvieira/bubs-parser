@@ -157,18 +157,15 @@ public class FractionalCountGrammar implements CountGrammar {
 
     public ProductionListGrammar toProductionListGrammar(final float minimumRuleLogProbability) {
 
-        // TODO Construct an un-pruned grammar from the accumulated fractional rule counts
+        // Construct a pruned (but not normalized) grammar from the accumulated fractional rule counts
+        final ProductionListGrammar prunedGrammar = new ProductionListGrammar(vocabulary, lexicon,
+                binaryProductions(minimumRuleLogProbability), unaryProductions(minimumRuleLogProbability),
+                lexicalProductions(minimumRuleLogProbability));
 
-        // Sum parent probabilities of rules exceeding the minimum rule threshold
-
-        // Construct a new ProductionListGrammar including all rules over the threshold, re-normalizing probabilities
-        // using the new parent probabilities
-
-        return new ProductionListGrammar(vocabulary, lexicon, binaryProductions(), unaryProductions(),
-                lexicalProductions());
+        return prunedGrammar.normalizeProbabilities();
     }
 
-    public ArrayList<Production> binaryProductions() {
+    public ArrayList<Production> binaryProductions(final float minimumRuleLogProbability) {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
 
@@ -197,7 +194,9 @@ public class FractionalCountGrammar implements CountGrammar {
                     final double observations = rightChildMap.get(rightChild);
                     if (observations != 0) {
                         final float logProbability = (float) Math.log(observations / parentCount);
-                        prods.add(new Production(parent, leftChild, rightChild, logProbability, vocabulary, lexicon));
+                        if (logProbability > minimumRuleLogProbability) {
+                            prods.add(new Production(parent, leftChild, rightChild, logProbability, vocabulary, lexicon));
+                        }
                     }
                 }
             }
@@ -206,7 +205,7 @@ public class FractionalCountGrammar implements CountGrammar {
         return prods;
     }
 
-    public ArrayList<Production> unaryProductions() {
+    public ArrayList<Production> unaryProductions(final float minimumRuleLogProbability) {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
 
@@ -225,9 +224,12 @@ public class FractionalCountGrammar implements CountGrammar {
 
                 // Observations of this rule / Observations of all rules with the parent
                 final double count = childMap.get(child);
+                // TODO Remove these redundant checks
                 if (count != 0) {
                     final float logProbability = (float) Math.log(count / parentCount);
-                    prods.add(new Production(parent, child, logProbability, false, vocabulary, lexicon));
+                    if (logProbability > minimumRuleLogProbability) {
+                        prods.add(new Production(parent, child, logProbability, false, vocabulary, lexicon));
+                    }
                 }
             }
         }
@@ -235,7 +237,7 @@ public class FractionalCountGrammar implements CountGrammar {
         return prods;
     }
 
-    public ArrayList<Production> lexicalProductions() {
+    public ArrayList<Production> lexicalProductions(final float minimumRuleLogProbability) {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
 
@@ -256,7 +258,9 @@ public class FractionalCountGrammar implements CountGrammar {
                 final double count = childMap.get(child);
                 if (count != 0) {
                     final float logProbability = (float) Math.log(count / parentCount);
-                    prods.add(new Production(parent, child, logProbability, true, vocabulary, lexicon));
+                    if (logProbability > minimumRuleLogProbability) {
+                        prods.add(new Production(parent, child, logProbability, true, vocabulary, lexicon));
+                    }
                 }
             }
         }
@@ -326,15 +330,15 @@ public class FractionalCountGrammar implements CountGrammar {
     }
 
     public final int binaryRules() {
-        return binaryProductions().size();
+        return binaryProductions(Float.NEGATIVE_INFINITY).size();
     }
 
     public final int unaryRules() {
-        return unaryProductions().size();
+        return unaryProductions(Float.NEGATIVE_INFINITY).size();
     }
 
     public final int lexicalRules() {
-        return lexicalProductions().size();
+        return lexicalProductions(Float.NEGATIVE_INFINITY).size();
     }
 
     public final double observations(final String parent) {
@@ -349,7 +353,7 @@ public class FractionalCountGrammar implements CountGrammar {
 
     public String toString(final boolean fraction) {
         final TreeSet<String> binaryRules = new TreeSet<String>();
-        for (final Production p : binaryProductions()) {
+        for (final Production p : binaryProductions(Float.NEGATIVE_INFINITY)) {
             if (fraction) {
                 binaryRules.add(String.format("%s -> %s %s %s", vocabulary.getSymbol(p.parent),
                         vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), JUnit.fraction(p.prob)));
@@ -360,7 +364,7 @@ public class FractionalCountGrammar implements CountGrammar {
         }
 
         final TreeSet<String> unaryRules = new TreeSet<String>();
-        for (final Production p : unaryProductions()) {
+        for (final Production p : unaryProductions(Float.NEGATIVE_INFINITY)) {
             if (fraction) {
                 unaryRules.add(String.format("%s -> %s %s", vocabulary.getSymbol(p.parent),
                         vocabulary.getSymbol(p.leftChild), JUnit.fraction(p.prob)));
@@ -371,7 +375,7 @@ public class FractionalCountGrammar implements CountGrammar {
         }
 
         final TreeSet<String> lexicalRules = new TreeSet<String>();
-        for (final Production p : lexicalProductions()) {
+        for (final Production p : lexicalProductions(Float.NEGATIVE_INFINITY)) {
             if (fraction) {
                 lexicalRules.add(String.format("%s -> %s %s", vocabulary.getSymbol(p.parent),
                         lexicon.getSymbol(p.leftChild), JUnit.fraction(p.prob)));

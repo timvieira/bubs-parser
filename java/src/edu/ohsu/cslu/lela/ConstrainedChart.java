@@ -183,12 +183,7 @@ public class ConstrainedChart extends ConstrainingChart {
         return tree;
     }
 
-    private int maxProbabilityEntryIndex(final int firstEntryIndex) {
-        return insideProbabilities[firstEntryIndex] >= insideProbabilities[firstEntryIndex + 1] ? firstEntryIndex
-                : firstEntryIndex + 1;
-    }
-
-    public void countRuleObservations(final FractionalCountGrammar grammar) {
+    public void countRuleObservations(final FractionalCountGrammar g) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
@@ -336,21 +331,21 @@ public class ConstrainedChart extends ConstrainingChart {
                 final int end = start + span;
                 final int cellIndex = cellIndex(start, end);
                 final int offset0 = offset(cellIndex);
-
-                // Skip empty cells
-                if (nonTerminalIndices[offset0] < 0 && nonTerminalIndices[offset0 + 1] < 0) {
-                    continue;
-                }
-
-                sb.append("ConstrainingChartCell[" + start + "][" + end + "]\n");
+                final StringBuilder sb2 = new StringBuilder(128);
 
                 // Format unary parents first, followed by the two bottom entries
                 final int bottomEntryOffset = offset0 + (unaryChainLength(cellIndex) - 1) * 2;
                 for (int offset = offset0; offset < bottomEntryOffset; offset += 2) {
-                    sb.append(formatEntries(offset, true, formatFractions));
+                    sb2.append(formatEntries(offset, true, formatFractions));
                 }
-                sb.append(formatEntries(bottomEntryOffset, false, formatFractions));
-                sb.append("\n\n");
+                sb2.append(formatEntries(bottomEntryOffset, false, formatFractions));
+                sb2.append("\n\n");
+
+                // Skip empty cells
+                if (sb2.length() > 0) {
+                    sb.append("ConstrainingChartCell[" + start + "][" + end + "]\n");
+                    sb.append(sb2.toString());
+                }
             }
         }
 

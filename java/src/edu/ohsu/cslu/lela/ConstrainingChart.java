@@ -196,16 +196,18 @@ public class ConstrainingChart extends PackedArrayChart {
                 final int constrainedChartOffset = constrainedChartBaseOffset + (unaryChainHeight << 1);
                 final int offset = baseOffset + unaryChainHeight;
 
-                final float entry0Probability = constrainedChart.insideProbabilities[constrainedChartOffset];
-                final float entry1Probability = constrainedChart.insideProbabilities[constrainedChartOffset + 1];
+                final float entry0Probability = constrainedChart.insideProbabilities[constrainedChartOffset]
+                        + constrainedChart.outsideProbabilities[constrainedChartOffset];
+                final float entry1Probability = constrainedChart.insideProbabilities[constrainedChartOffset + 1]
+                        + constrainedChart.outsideProbabilities[constrainedChartOffset + 1];
 
-                if (entry1Probability > Float.NEGATIVE_INFINITY && entry1Probability > entry0Probability) {
-                    nonTerminalIndices[offset] = parent2IndexMap
-                            .get(constrainedChart.nonTerminalIndices[constrainedChartOffset + 1]);
-                    insideProbabilities[offset] = 0;
-                } else if (entry0Probability > Float.NEGATIVE_INFINITY) {
+                if (entry1Probability == Float.NEGATIVE_INFINITY || entry0Probability >= entry1Probability) {
                     nonTerminalIndices[offset] = parent2IndexMap
                             .get(constrainedChart.nonTerminalIndices[constrainedChartOffset]);
+                    insideProbabilities[offset] = 0;
+                } else if (entry1Probability > Float.NEGATIVE_INFINITY) {
+                    nonTerminalIndices[offset] = parent2IndexMap
+                            .get(constrainedChart.nonTerminalIndices[constrainedChartOffset + 1]);
                     insideProbabilities[offset] = 0;
                 } else {
                     continue;
