@@ -222,7 +222,7 @@ public class Tokenizer implements Serializable {
     /**
      * This routine returns a String that is the "signature" of the class of a word. For, example, it might represent
      * whether it is a number of ends in -s. The strings returned by convention match the pattern UNK-.* , which is just
-     * assumed to not match any real word. The decision-tree (and particulary the suffix-handling) is fairly
+     * assumed to not match any real word. The decision-tree (and particularly the suffix-handling) is fairly
      * English-specific.
      * 
      * @param word The word to make a signature for
