@@ -21,8 +21,6 @@ package edu.ohsu.cslu.lela;
 import static org.junit.Assert.assertEquals;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
@@ -63,7 +61,6 @@ public class ProductionListGrammar {
     private final String startSymbol;
 
     final ProductionListGrammar baseGrammar;
-    private final Int2IntMap parentVocabularyMap;
 
     private final static Pattern SUBSTATE_PATTERN = Pattern.compile("^.*_[0-9]+$");
     private final static float LOG_ONE_HALF = (float) Math.log(.5);
@@ -85,7 +82,6 @@ public class ProductionListGrammar {
 
         this.startSymbol = countGrammar.startSymbol;
         this.baseGrammar = this;
-        this.parentVocabularyMap = null;
 
         // This grammar was induced from a treebank and has not (yet) been split or merged, so each
         // non-terminal is its own base category.
@@ -111,7 +107,6 @@ public class ProductionListGrammar {
 
         this.startSymbol = vocabulary.getSymbol(vocabulary.startSymbol());
         this.baseGrammar = this;
-        this.parentVocabularyMap = null;
 
         // // TODO Populate this, somehow
         // this.subcategoryIndices = new short[vocabulary.size()];
@@ -128,7 +123,6 @@ public class ProductionListGrammar {
 
         this.startSymbol = parentGrammar.startSymbol;
         this.baseGrammar = parentGrammar.baseGrammar;
-        this.parentVocabularyMap = new Int2IntOpenHashMap();
     }
 
     /**
@@ -360,10 +354,26 @@ public class ProductionListGrammar {
         return tmpGrammar.normalizeProbabilities();
     }
 
-    ProductionListGrammar normalizeProbabilities() {
+    private String[] substates(final String state) {
+        if (SUBSTATE_PATTERN.matcher(state).matches()) {
+            final String[] rootAndIndex = state.split("_");
+            final int substateIndex = Integer.parseInt(rootAndIndex[1]);
+            return new String[] { rootAndIndex[0] + '_' + (substateIndex * 2),
+                    rootAndIndex[0] + '_' + (substateIndex * 2 + 1) };
+        }
+        return new String[] { state + "_0", state + "_1" };
+    }
 
-        // Number of rules headed by each parent and the total probability of all headed by each parent.
+    /**
+     * @return a fully normalized version of the grammar
+     */
+    final ProductionListGrammar normalizeProbabilities() {
+
+        //
+        // Sum up the total probability of all rules headed by each parent.
+        //
         final FloatArrayList[] probabilitiesByParent = new FloatArrayList[vocabulary.size()];
+
         for (int i = 0; i < probabilitiesByParent.length; i++) {
             probabilitiesByParent[i] = new FloatArrayList();
         }
@@ -380,18 +390,21 @@ public class ProductionListGrammar {
             probabilitiesByParent[p.parent].add(p.prob);
         }
 
-        // Re-normalize rule probabilities
+        //
+        // Compute the required normalization for each parent (the difference from a normalized probability
+        // distribution)
+        //
         final float[] normalization = new float[probabilitiesByParent.length];
-        Arrays.fill(normalization, Float.NEGATIVE_INFINITY);
         for (int i = 0; i < normalization.length; i++) {
             if (probabilitiesByParent[i].size() > 0) {
                 final double totalProbability = edu.ohsu.cslu.util.Math.sumExp(probabilitiesByParent[i].toFloatArray());
-                // Total 'noise' added
-                final double x = totalProbability - 1;
-                normalization[i] = (float) Math.log(1 - x / totalProbability);
+                normalization[i] = (float) Math.log(1 - (totalProbability - 1) / totalProbability);
             }
         }
 
+        //
+        // Re-normalize rule probabilities
+        //
         final ProductionListGrammar normalizedGrammar = new ProductionListGrammar(this, vocabulary, lexicon);
         for (final Production p : binaryProductions) {
             normalizedGrammar.binaryProductions.add(new Production(p.parent, p.leftChild, p.rightChild, p.prob
@@ -406,24 +419,6 @@ public class ProductionListGrammar {
                     + normalization[p.parent], true, vocabulary, lexicon));
         }
         return normalizedGrammar;
-    }
-
-    private String[] substates(final String state) {
-        if (SUBSTATE_PATTERN.matcher(state).matches()) {
-            final String[] rootAndIndex = state.split("_");
-            final int substateIndex = Integer.parseInt(rootAndIndex[1]);
-            return new String[] { rootAndIndex[0] + '_' + (substateIndex * 2),
-                    rootAndIndex[0] + '_' + (substateIndex * 2 + 1) };
-        }
-        return new String[] { state + "_0", state + "_1" };
-    }
-
-    public String superState(final String substate) {
-        if (baseGrammar == null) {
-            return null;
-        }
-
-        return baseGrammar.vocabulary.getSymbol(parentVocabularyMap.get(vocabulary.getIndex(substate)));
     }
 
     /**
@@ -632,10 +627,28 @@ public class ProductionListGrammar {
     }
 
     /**
-     * Verifies that the grammar rules for each parent non-terminal sum to 1
+     * Verifies that the grammar rules for each parent non-terminal sum to 1. Used for unit testing
      */
     void verifyProbabilityDistribution() {
-        final List<Production>[] prodsByParent = productionsByParent();
+
+        @SuppressWarnings("unchecked")
+        final List<Production>[] prodsByParent = new List[vocabulary.size()];
+        for (int i = 0; i < vocabulary.size(); i++) {
+            prodsByParent[i] = new ArrayList<Production>();
+        }
+
+        for (final Production p : binaryProductions) {
+            prodsByParent[p.parent].add(p);
+        }
+
+        for (final Production p : unaryProductions) {
+            prodsByParent[p.parent].add(p);
+        }
+
+        for (final Production p : lexicalProductions) {
+            prodsByParent[p.parent].add(p);
+        }
+
         for (int parent = 0, j = 0; parent < prodsByParent.length; parent++, j = 0) {
             final float[] probabilities = new float[prodsByParent[parent].size()];
             for (final Production p : prodsByParent[parent]) {
@@ -715,31 +728,6 @@ public class ProductionListGrammar {
             sb.append(rule + '\n');
         }
         return sb.toString();
-    }
-
-    /**
-     * @return an array of productions, indexed by the non-terminal parent of each
-     */
-    public List<Production>[] productionsByParent() {
-        @SuppressWarnings("unchecked")
-        final List<Production>[] prods = new List[vocabulary.size()];
-        for (int i = 0; i < vocabulary.size(); i++) {
-            prods[i] = new ArrayList<Production>();
-        }
-
-        for (final Production p : binaryProductions) {
-            prods[p.parent].add(p);
-        }
-
-        for (final Production p : unaryProductions) {
-            prods[p.parent].add(p);
-        }
-
-        for (final Production p : lexicalProductions) {
-            prods[p.parent].add(p);
-        }
-
-        return prods;
     }
 
     public static interface NoiseGenerator {
