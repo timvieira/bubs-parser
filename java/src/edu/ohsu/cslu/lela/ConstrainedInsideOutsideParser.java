@@ -37,11 +37,9 @@ public class ConstrainedInsideOutsideParser extends
         SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, ConstrainedChart> {
 
     ConstrainingChart constrainingChart;
-    private final SplitVocabulary splitVocabulary;
 
     public ConstrainedInsideOutsideParser(final ParserDriver opts, final ConstrainedInsideOutsideGrammar grammar) {
         super(opts, grammar);
-        this.splitVocabulary = (SplitVocabulary) grammar.nonTermSet;
     }
 
     public BinaryTree<String> findBestParse(final ConstrainingChart c) {

@@ -80,6 +80,7 @@ public class ConstrainingChart extends PackedArrayChart {
             final int i = cellOffset + unaryChainLength[cellIndex] - unaryChainHeight - 1;
 
             nonTerminalIndices[i] = parent;
+            insideProbabilities[i] = 0;
 
             if (node.rightChild() == null) {
                 if (node.leftChild().isLeaf()) {
