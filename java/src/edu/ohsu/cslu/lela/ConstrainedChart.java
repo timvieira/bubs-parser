@@ -342,7 +342,7 @@ public class ConstrainedChart extends ConstrainingChart {
                 sb2.append("\n\n");
 
                 // Skip empty cells
-                if (sb2.length() > 0) {
+                if (sb2.length() > 2) {
                     sb.append("ConstrainingChartCell[" + start + "][" + end + "]\n");
                     sb.append(sb2.toString());
                 }
