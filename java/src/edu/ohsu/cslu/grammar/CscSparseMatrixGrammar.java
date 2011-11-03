@@ -270,14 +270,8 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     public final float binaryLogProbability(final int parent, final int childPair) {
 
         // Find the column (child pair)
-        int c = -1;
-        for (int i = 0; i < cscBinaryPopulatedColumns.length; i++) {
-            if (cscBinaryPopulatedColumns[i] == childPair) {
-                c = i;
-                break;
-            }
-        }
-        if (c == -1) {
+        final int c = cscBinaryColumnOffsets[childPair];
+        if (c < 0) {
             return Float.NEGATIVE_INFINITY;
         }
 
