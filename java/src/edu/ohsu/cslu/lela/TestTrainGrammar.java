@@ -192,12 +192,14 @@ public class TestTrainGrammar {
         final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
 
         // Split and train with the 1-split grammar
-        final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 25, true, true);
+        final ProductionListGrammar split1 = plg0.split(noiseGenerator);
+        final ProductionListGrammar plg1 = runEm(tg, plg0, split1, 1, 25, true, true);
 
         // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
         final ProductionListGrammar mergedPlg1 = plg1.merge(new short[] { 1 });
         tg.reloadConstrainingCharts(cscGrammar(plg1), cscGrammar(mergedPlg1));
-        runEm(tg, mergedPlg1.split(noiseGenerator), 2, 25, true, true);
+        final ProductionListGrammar split2 = mergedPlg1.split(noiseGenerator);
+        runEm(tg, plg0, split2, 2, 25, true, true);
     }
 
     /**
@@ -226,25 +228,25 @@ public class TestTrainGrammar {
         // Parse the training 'corpus' with induced grammar and report F-score
         final long t0 = System.currentTimeMillis();
         double previousFScore = parseFScore(cscGrammar(plg0), tg.goldTrees);
-        System.out.format("Initial F-score: %.3f  Time: %.1f seconds\n", previousFScore * 100,
+        System.out.format("Initial F-score: %.3f  Parse Time: %.1f seconds\n", previousFScore * 100,
                 (System.currentTimeMillis() - t0) / 1000f);
 
         final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f, 0);
 
         // Split and train with the 1-split grammar
-        final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator), 1, 50, false, false);
+        final ProductionListGrammar plg1 = runEm(tg, plg0, plg0.split(noiseGenerator), 1, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, plg1, previousFScore);
 
         // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
         final ProductionListGrammar mergedPlg1 = plg1.merge(new short[] { 1 });
         tg.reloadConstrainingCharts(cscGrammar(plg1), cscGrammar(mergedPlg1));
-        final ProductionListGrammar plg2 = runEm(tg, mergedPlg1.split(noiseGenerator), 2, 50, false, false);
+        final ProductionListGrammar plg2 = runEm(tg, plg0, mergedPlg1.split(noiseGenerator), 2, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, plg2, previousFScore);
 
         // Merge TOP_1 back into TOP, split again, and train with the new 3-split grammar
         final ProductionListGrammar mergedPlg2 = plg2.merge(new short[] { 1 });
         tg.reloadConstrainingCharts(cscGrammar(plg2), cscGrammar(mergedPlg2));
-        final ProductionListGrammar plg3 = runEm(tg, mergedPlg2.split(noiseGenerator), 3, 50, false, false);
+        final ProductionListGrammar plg3 = runEm(tg, plg0, mergedPlg2.split(noiseGenerator), 3, 50, false, false);
         verifyFscoreIncrease(tg, plg3, previousFScore);
     }
 
@@ -252,14 +254,17 @@ public class TestTrainGrammar {
     private double verifyFscoreIncrease(final TrainGrammar tg, final ProductionListGrammar plg2,
             final double previousFScore) {
 
+        final long t0 = System.currentTimeMillis();
         final double fScore = parseFScore(cscGrammar(plg2), tg.goldTrees);
-        System.out.format("F-score: %.2f\n", parseFScore(cscGrammar(plg2), tg.goldTrees) * 100);
+        System.out.format("F-score: %.3f  Parse Time: %.1f seconds\n", fScore * 100,
+                (System.currentTimeMillis() - t0) / 1000f);
         assertTrue("Expected f-score to increase", fScore > previousFScore);
         return fScore;
     }
 
-    private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar plg, final int split,
-            final int iterations, final boolean reportFinalParseScore, final boolean reportEmIterationParseScores) {
+    private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar markov0Grammar,
+            final ProductionListGrammar plg, final int split, final int iterations,
+            final boolean reportFinalParseScore, final boolean reportEmIterationParseScores) {
 
         ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(plg);
 
@@ -273,6 +278,7 @@ public class TestTrainGrammar {
 
             result = tg.emIteration(cscGrammar, -15f);
             result.plGrammar.verifyProbabilityDistribution();
+            // result.fcGrammar.verifyVsUnsplitGrammar(markov0Grammar);
             cscGrammar = cscGrammar(result.plGrammar);
 
             // Ensure we have rules matching each lexical entry
