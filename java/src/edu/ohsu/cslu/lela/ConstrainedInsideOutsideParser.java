@@ -46,15 +46,15 @@ public class ConstrainedInsideOutsideParser extends
         this.constrainingChart = c;
 
         // Initialize the chart
-        // if (chart != null
-        // && chart.midpoints.length >= c.midpoints.length
-        // && chart.nonTerminalIndices.length >= ConstrainedChart
-        // .chartArraySize(c.size(), c.maxUnaryChainLength())
-        // && chart.cellOffsets.length >= c.cellOffsets.length) {
-        // chart.clear(c);
-        // } else {
-        chart = new ConstrainedChart(c, grammar);
-        // }
+        if (chart != null
+                && chart.midpoints.length >= c.midpoints.length
+                && chart.nonTerminalIndices.length >= ConstrainedChart
+                        .chartArraySize(c.size(), c.maxUnaryChainLength())
+                && chart.cellOffsets.length >= c.cellOffsets.length) {
+            chart.clear(c);
+        } else {
+            chart = new ConstrainedChart(c, grammar);
+        }
 
         chart.parseTask = new ParseTask(c.tokens, grammar);
         cellSelector.initSentence(this);
@@ -85,7 +85,7 @@ public class ConstrainedInsideOutsideParser extends
     /**
      * Adds lexical productions from the constraining chart to the current chart
      */
-    private void addLexicalProductions(final short start, final short end) {
+    protected void addLexicalProductions(final short start, final short end) {
 
         final int cellIndex = chart.cellIndex(start, start + 1);
 
@@ -393,14 +393,12 @@ public class ConstrainedInsideOutsideParser extends
                         continue;
 
                     } else if (parent == parent0) {
-                        final float parentOutsideProbability = chart.outsideProbabilities[parent0Offset];
                         chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
-                                grammar.cscUnaryProbabilities[j] + parentOutsideProbability);
+                                grammar.cscUnaryProbabilities[j] + chart.outsideProbabilities[parent0Offset]);
 
                     } else if (parent == parent1) {
-                        final float parentOutsideProbability = chart.outsideProbabilities[parent0Offset + 1];
                         chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
-                                grammar.cscUnaryProbabilities[j] + parentOutsideProbability);
+                                grammar.cscUnaryProbabilities[j] + chart.outsideProbabilities[parent0Offset + 1]);
                     } else {
                         // We've passed both target parents. No need to search more grammar rules
                         break;

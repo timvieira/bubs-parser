@@ -205,11 +205,11 @@ public class ConstrainingChart extends PackedArrayChart {
                 if (entry1Probability == Float.NEGATIVE_INFINITY || entry0Probability >= entry1Probability) {
                     nonTerminalIndices[offset] = parent2IndexMap
                             .get(constrainedChart.nonTerminalIndices[constrainedChartOffset]);
-                    insideProbabilities[offset] = 0;
+                    insideProbabilities[offset] = entry0Probability;
                 } else if (entry1Probability > Float.NEGATIVE_INFINITY) {
                     nonTerminalIndices[offset] = parent2IndexMap
                             .get(constrainedChart.nonTerminalIndices[constrainedChartOffset + 1]);
-                    insideProbabilities[offset] = 0;
+                    insideProbabilities[offset] = entry1Probability;
                 } else {
                     continue;
                 }

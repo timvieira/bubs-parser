@@ -267,14 +267,14 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, finalSplitGrammar);
+        final ConstrainedViterbiParser parser = new ConstrainedViterbiParser(opts, finalSplitGrammar);
 
         BaseLogger.singleton().info("Reloading constraining charts...");
 
         // Iterate over the training corpus, parsing and replacing current ConstrainingCharts
         for (int i = 0; i < constrainingCharts.size(); i++) {
-            parser.findBestParse(constrainingCharts.get(i));
-            constrainingCharts.set(i, new ConstrainingChart(parser.chart, mergedGrammar));
+            final ConstrainedChart c = parser.parse(constrainingCharts.get(i));
+            constrainingCharts.set(i, new ConstrainingChart(c, mergedGrammar));
         }
     }
 
@@ -301,6 +301,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         float corpusLikelihood = 0f;
         final ArrayList<ConstrainedChart> charts = new ArrayList<ConstrainedChart>();
         for (final ConstrainingChart constrainingChart : constrainingCharts) {
+            final String expectedParse = constrainingChart.extractBestParse(0).toString();
             parser.findBestParse(constrainingChart);
             charts.add(parser.chart);
             corpusLikelihood += parser.chart.getInside(0, parser.chart.size(), 0);
@@ -310,8 +311,8 @@ public class TrainGrammar extends BaseCommandlineTool {
             // progressBar(count);
         }
 
-        return new EmIterationResult(countGrammar.toProductionListGrammar(minimumRuleLogProbability), corpusLikelihood,
-                charts);
+        return new EmIterationResult(countGrammar, countGrammar.toProductionListGrammar(minimumRuleLogProbability),
+                corpusLikelihood, charts);
     }
 
     /**
@@ -404,12 +405,14 @@ public class TrainGrammar extends BaseCommandlineTool {
 
     public static class EmIterationResult {
 
+        final FractionalCountGrammar fcGrammar;
         final ProductionListGrammar plGrammar;
         final float corpusLikelihood;
         final ArrayList<ConstrainedChart> charts;
 
-        public EmIterationResult(final ProductionListGrammar plGrammar, final float corpusLikelihood,
-                final ArrayList<ConstrainedChart> charts) {
+        public EmIterationResult(final FractionalCountGrammar fcGrammar, final ProductionListGrammar plGrammar,
+                final float corpusLikelihood, final ArrayList<ConstrainedChart> charts) {
+            this.fcGrammar = fcGrammar;
             this.plGrammar = plGrammar;
             this.corpusLikelihood = corpusLikelihood;
             this.charts = charts;
