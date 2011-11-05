@@ -171,23 +171,25 @@ public class Production implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        if (vocabulary == null || lexicon == null) {
-            if (isBinaryProd()) {
-                return String.format("%d -> %d %d %.4f", parent, leftChild, rightChild, prob);
+        if (isBinaryProd()) {
+            if (vocabulary != null) {
+                return String.format("%s -> %s %s %.4f", vocabulary.getSymbol(parent), vocabulary.getSymbol(leftChild),
+                        vocabulary.getSymbol(rightChild), prob);
+            }
+            return String.format("%d -> %d %d %.4f", parent, leftChild, rightChild, prob);
+        }
+
+        if (isLexProd()) {
+            if (lexicon != null) {
+                return String.format("%s -> %s %.4f", vocabulary.getSymbol(parent), lexicon.getSymbol(leftChild), prob);
             }
             return String.format("%d -> %d %.4f", parent, leftChild, prob);
         }
 
-        if (isBinaryProd()) {
-            return String.format("%s -> %s %s %.4f", vocabulary.getSymbol(parent), vocabulary.getSymbol(leftChild),
-                    vocabulary.getSymbol(rightChild), prob);
-        }
-
-        if (isLexProd()) {
-            return String.format("%s -> %s %.4f", vocabulary.getSymbol(parent), lexicon.getSymbol(leftChild), prob);
-        }
-
         // Unary
-        return String.format("%s -> %s %.4f", vocabulary.getSymbol(parent), vocabulary.getSymbol(leftChild), prob);
+        if (vocabulary != null) {
+            return String.format("%s -> %s %.4f", vocabulary.getSymbol(parent), vocabulary.getSymbol(leftChild), prob);
+        }
+        return String.format("%d -> %d %.4f", parent, leftChild, prob);
     }
 }
