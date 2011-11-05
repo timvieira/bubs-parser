@@ -82,17 +82,10 @@ public class ProductionListGrammar {
 
         this.startSymbol = countGrammar.startSymbol;
         this.baseGrammar = this;
-
-        // This grammar was induced from a treebank and has not (yet) been split or merged, so each
-        // non-terminal is its own base category.
-        // this.subcategoryIndices = new short[vocabulary.size()];
-        // Arrays.fill(subcategoryIndices, (short) 0);
     }
 
     /**
-     * Constructs a production-list grammar based on a {@link FractionalCountGrammar}.
-     * 
-     * @param countGrammar
+     * Constructs a production-list grammar based on lists of productions.
      */
     ProductionListGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon,
             final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
@@ -107,9 +100,6 @@ public class ProductionListGrammar {
 
         this.startSymbol = vocabulary.getSymbol(vocabulary.startSymbol());
         this.baseGrammar = this;
-
-        // // TODO Populate this, somehow
-        // this.subcategoryIndices = new short[vocabulary.size()];
     }
 
     private ProductionListGrammar(final ProductionListGrammar parentGrammar, final SplitVocabulary vocabulary,
@@ -369,6 +359,7 @@ public class ProductionListGrammar {
      */
     final ProductionListGrammar normalizeProbabilities() {
 
+        // System.out.println("Normalizing");
         //
         // Sum up the total probability of all rules headed by each parent.
         //
@@ -659,10 +650,80 @@ public class ProductionListGrammar {
         }
     }
 
+    public void verifyVsExpectedGrammar(final ProductionListGrammar unsplitPlg) {
+        final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> unsplitBinaryProbabilities = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
+        final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> unaryProbabilities = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
+        final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> lexicalProbabilities = new Short2ObjectOpenHashMap<Int2FloatOpenHashMap>();
+
+        for (final Production p : binaryProductions) {
+
+            Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = unsplitBinaryProbabilities
+                    .get((short) p.parent);
+            if (leftChildMap == null) {
+                leftChildMap = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
+                unsplitBinaryProbabilities.put((short) p.parent, leftChildMap);
+            }
+
+            Short2FloatOpenHashMap rightChildMap = leftChildMap.get((short) p.leftChild);
+            if (rightChildMap == null) {
+                rightChildMap = new Short2FloatOpenHashMap();
+                rightChildMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
+                leftChildMap.put((short) p.leftChild, rightChildMap);
+            }
+
+            rightChildMap.put((short) p.rightChild,
+                    edu.ohsu.cslu.util.Math.logSum(rightChildMap.get((short) p.rightChild), p.prob));
+        }
+
+        for (final Production p : unaryProductions) {
+
+            Short2FloatOpenHashMap childMap = unaryProbabilities.get((short) p.parent);
+            if (childMap == null) {
+                childMap = new Short2FloatOpenHashMap();
+                childMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
+                unaryProbabilities.put((short) p.parent, childMap);
+            }
+
+            childMap.put((short) p.leftChild, edu.ohsu.cslu.util.Math.logSum(childMap.get((short) p.leftChild), p.prob));
+        }
+
+        for (final Production p : lexicalProductions) {
+
+            Int2FloatOpenHashMap childMap = lexicalProbabilities.get((short) p.parent);
+            if (childMap == null) {
+                childMap = new Int2FloatOpenHashMap();
+                childMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
+                lexicalProbabilities.put((short) p.parent, childMap);
+            }
+
+            childMap.put((short) p.leftChild, edu.ohsu.cslu.util.Math.logSum(childMap.get((short) p.leftChild), p.prob));
+        }
+
+        //
+        // Verify that the summed probabilities from the current grammar match those from the unsplit grammar
+        //
+        for (final Production p : unsplitPlg.binaryProductions) {
+            assertEquals(
+                    "Verification failed on " + p.toString(),
+                    p.prob,
+                    unsplitBinaryProbabilities.get((short) p.parent).get((short) p.leftChild).get((short) p.rightChild),
+                    0.001f);
+        }
+
+        for (final Production p : unsplitPlg.unaryProductions) {
+            assertEquals("Verification failed on " + p.toString(), p.prob, unaryProbabilities.get((short) p.parent)
+                    .get((short) p.leftChild), 0.001f);
+        }
+
+        for (final Production p : unsplitPlg.lexicalProductions) {
+            assertEquals("Verification failed on " + p.toString(), p.prob, lexicalProbabilities.get((short) p.parent)
+                    .get(p.leftChild), 0.001f);
+        }
+    }
+
     @Override
     public String toString() {
-        // TODO Switch from fractions to logs
-        return toString(true, null, -1);
+        return toString(false, null, -1);
     }
 
     public String toString(final boolean fraction, final GrammarFormatType grammarFormatType,

@@ -325,6 +325,50 @@ public class FractionalCountGrammar implements CountGrammar {
         return childMap.get(lexicon.getIndex(child));
     }
 
+    public void verifyVsUnsplitGrammar(final ProductionListGrammar unsplitPlg) {
+
+        final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(unsplitPlg.vocabulary,
+                unsplitPlg.lexicon, null);
+
+        for (final short parent : binaryRuleCounts.keySet()) {
+            final short unsplitParent = vocabulary.getBaseIndex(parent);
+            final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
+
+            for (final short leftChild : leftChildMap.keySet()) {
+                final short unsplitLeftChild = vocabulary.getBaseIndex(leftChild);
+                final Short2DoubleOpenHashMap rightChildMap = leftChildMap.get(leftChild);
+
+                for (final short rightChild : rightChildMap.keySet()) {
+                    final short unsplitRightChild = vocabulary.getBaseIndex(rightChild);
+                    unsplitGrammar.incrementBinaryCount(unsplitParent, unsplitLeftChild, unsplitRightChild,
+                            rightChildMap.get(rightChild));
+                }
+            }
+        }
+
+        for (final short parent : unaryRuleCounts.keySet()) {
+            final short unsplitParent = vocabulary.getBaseIndex(parent);
+            final Short2DoubleOpenHashMap childMap = unaryRuleCounts.get(parent);
+
+            for (final short child : childMap.keySet()) {
+                final short unsplitChild = vocabulary.getBaseIndex(child);
+                unsplitGrammar.incrementUnaryCount(unsplitParent, unsplitChild, childMap.get(child));
+            }
+        }
+
+        for (final short parent : lexicalRuleCounts.keySet()) {
+            final short unsplitParent = vocabulary.getBaseIndex(parent);
+            final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
+
+            for (final int child : childMap.keySet()) {
+                unsplitGrammar.incrementLexicalCount(unsplitParent, child, childMap.get(child));
+            }
+        }
+
+        final ProductionListGrammar newUnsplitPlg = unsplitGrammar.toProductionListGrammar(Float.NEGATIVE_INFINITY);
+        newUnsplitPlg.verifyVsExpectedGrammar(unsplitPlg);
+    }
+
     public final int totalRules() {
         return binaryRules() + unaryRules() + lexicalRules();
     }
@@ -347,8 +391,7 @@ public class FractionalCountGrammar implements CountGrammar {
 
     @Override
     public String toString() {
-        // TODO Switch from fractions to logs
-        return toString(true);
+        return toString(false);
     }
 
     public String toString(final boolean fraction) {
