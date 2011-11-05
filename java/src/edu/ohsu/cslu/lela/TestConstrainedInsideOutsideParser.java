@@ -101,7 +101,6 @@ public class TestConstrainedInsideOutsideParser {
      */
     private BinaryTree<String> parseWithGrammar1() {
         // Parse with the split-1 grammar
-        // TODO It seems like the cell selector should be set directly in ConstrainedInsideOutsideParser
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         parser1 = new ConstrainedInsideOutsideParser(opts, cscGrammar1);
@@ -319,7 +318,6 @@ public class TestConstrainedInsideOutsideParser {
         // Construct a Constraining chart based on the 1-best output of the 1-split parse
         final ConstrainingChart constrainingChart1 = new ConstrainingChart(parser1.chart);
 
-        // TODO It seems like the cell selector should be set directly in the parser
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
 
@@ -611,8 +609,8 @@ public class TestConstrainedInsideOutsideParser {
         // Parse with an equal-split grammar, count (fractional) rule occurrences, and convert those counts
         // into a grammar
         parseWithGrammar1();
-        final FractionalCountGrammar countGrammar = parser1.countRuleOccurrences();
-        final ProductionListGrammar plg = countGrammar.toProductionListGrammar(Float.NEGATIVE_INFINITY);
+        final ProductionListGrammar plg = parser1.countRuleOccurrences().toProductionListGrammar(
+                Float.NEGATIVE_INFINITY);
 
         // Verify that we find the same probabilities in the original split grammar
         assertLogFractionEquals(Math.log(1f / 2), plg.unaryLogProbability("top", "a_0"), .01f);
