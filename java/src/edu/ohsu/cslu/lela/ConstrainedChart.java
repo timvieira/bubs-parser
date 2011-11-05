@@ -103,21 +103,6 @@ public class ConstrainedChart extends ConstrainingChart {
         computeOffsets();
     }
 
-    // TODO Unused?
-    // void shiftCellEntriesDownward(final int topEntryOffset) {
-    // for (int unaryDepth = maxUnaryChainLength - 2; unaryDepth >= 0; unaryDepth--) {
-    // final int origin = topEntryOffset + unaryDepth * splitVocabulary.maxSplits;
-    // final int destination = origin + splitVocabulary.maxSplits;
-    //
-    // nonTerminalIndices[destination] = nonTerminalIndices[origin];
-    // insideProbabilities[destination] = insideProbabilities[origin];
-    // packedChildren[destination] = packedChildren[origin];
-    // }
-    // nonTerminalIndices[topEntryOffset] = Short.MIN_VALUE;
-    // insideProbabilities[topEntryOffset] = Float.NEGATIVE_INFINITY;
-    // packedChildren[topEntryOffset] = 0;
-    // }
-
     private void computeOffsets() {
         for (int start = 0; start < size; start++) {
             for (int end = start + 1; end <= size; end++) {
@@ -181,10 +166,6 @@ public class ConstrainedChart extends ConstrainingChart {
         }
 
         return tree;
-    }
-
-    public void countRuleObservations(final FractionalCountGrammar g) {
-        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
