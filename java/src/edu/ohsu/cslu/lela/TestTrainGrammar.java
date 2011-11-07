@@ -231,7 +231,7 @@ public class TestTrainGrammar {
         System.out.format("Initial F-score: %.3f  Parse Time: %.1f seconds\n", previousFScore * 100,
                 (System.currentTimeMillis() - t0) / 1000f);
 
-        final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f, 0);
+        final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
 
         // Split and train with the 1-split grammar
         final ProductionListGrammar plg1 = runEm(tg, plg0, plg0.split(noiseGenerator), 1, 50, false, false);
