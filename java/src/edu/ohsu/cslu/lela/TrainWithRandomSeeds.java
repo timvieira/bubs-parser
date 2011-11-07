@@ -51,14 +51,15 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
             final ProductionListGrammar mergedPlg2 = plg2.merge(new short[] { 1 });
             tg.reloadConstrainingCharts(cscGrammar(plg2), cscGrammar(mergedPlg2));
             System.out.println("Split 3");
-            final ProductionListGrammar plg3 = runEm(tg, mergedPlg2.split(noiseGenerator));
+            runEm(tg, mergedPlg2.split(noiseGenerator));
         }
     }
 
+    @SuppressWarnings("null")
     private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar split) {
         ProductionListGrammar plg = split;
         EmIterationResult result = null;
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < 50; i++) {
             result = tg.emIteration(cscGrammar(plg), -15f);
             System.out.format("Iteration: %2d  Likelihood: %.2f\n", i, result.corpusLikelihood);
             plg = result.plGrammar;
