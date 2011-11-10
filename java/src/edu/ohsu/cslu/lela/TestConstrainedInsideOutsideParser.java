@@ -609,8 +609,9 @@ public class TestConstrainedInsideOutsideParser {
         // Parse with an equal-split grammar, count (fractional) rule occurrences, and convert those counts
         // into a grammar
         parseWithGrammar1();
-        final ProductionListGrammar plg = parser1.countRuleOccurrences().toProductionListGrammar(
-                Float.NEGATIVE_INFINITY);
+        final FractionalCountGrammar countGrammar = new FractionalCountGrammar(parser1.grammar);
+        parser1.countRuleOccurrences(countGrammar);
+        final ProductionListGrammar plg = countGrammar.toProductionListGrammar(Float.NEGATIVE_INFINITY);
 
         // Verify that we find the same probabilities in the original split grammar
         assertLogFractionEquals(Math.log(1f / 2), plg.unaryLogProbability("top", "a_0"), .01f);
@@ -643,8 +644,9 @@ public class TestConstrainedInsideOutsideParser {
         parser1 = new ConstrainedInsideOutsideParser(opts, biasedCscGrammar1);
         parser1.findBestParse(chart0);
 
-        final ProductionListGrammar plg = parser1.countRuleOccurrences().toProductionListGrammar(
-                Float.NEGATIVE_INFINITY);
+        final FractionalCountGrammar countGrammar = new FractionalCountGrammar(parser1.grammar);
+        parser1.countRuleOccurrences(countGrammar);
+        final ProductionListGrammar plg = countGrammar.toProductionListGrammar(Float.NEGATIVE_INFINITY);
 
         // Verify that we find the same probabilities in the original split grammar
         assertLogFractionEquals(Math.log(1), plg.unaryLogProbability("top", "a_0"), .01f);

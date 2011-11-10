@@ -25,10 +25,9 @@ import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Unit tests for {@link MappedCountGrammar}.
+ * Unit tests for {@link FractionalCountGrammar}.
  * 
  * @author Aaron Dunlop
- * @since Jan 13, 2011
  */
 public class TestFractionalCountGrammar extends CountGrammarTestCase {
 
