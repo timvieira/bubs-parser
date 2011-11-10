@@ -87,7 +87,12 @@ public class Production implements Serializable, Cloneable {
     // Unary or lexical production
     public Production(final int parent, final int child, final float prob, final boolean isLex,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
+
         assert parent != -1 && child != -1;
+        assert !Float.isInfinite(prob);
+        assert !Float.isNaN(prob);
+        assert prob <= 0f;
+
         this.parent = parent;
         this.leftChild = child;
         this.vocabulary = vocabulary;
