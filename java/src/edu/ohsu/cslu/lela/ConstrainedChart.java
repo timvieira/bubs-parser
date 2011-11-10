@@ -239,65 +239,6 @@ public class ConstrainedChart extends ConstrainingChart {
         return maxUnaryChainLength;
     }
 
-    // /**
-    // * Populates a new {@link ConstrainedChart} with a re-merged grammar, including all merged non-terminals populated
-    // * in the pre-merge chart.
-    // *
-    // * @param mergedGrammar
-    // * @return Chart containing merged versions of the current chart's pre-merge non-terminals.
-    // */
-    // public ConstrainedChart merge(final SparseMatrixGrammar mergedGrammar) {
-    //
-    // final SplitVocabulary mergedVocabulary = (SplitVocabulary) mergedGrammar.nonTermSet;
-    // final ConstrainedChart mergedChart = new ConstrainedChart(this, mergedGrammar, mergedVocabulary.maxSplits
-    // * maxUnaryChainLength);
-    //
-    // // Iterate over each open cell
-    // for (final short[] startAndEnd : openCells) {
-    //
-    // // Iterate over each entry in the existing chart
-    // for (int unaryDepth = 0; unaryDepth < maxUnaryChainLength; unaryDepth++) {
-    //
-    // final int cellIndex = cellIndex(startAndEnd[0], startAndEnd[1]);
-    // final int offset = offset(cellIndex) + splitVocabulary.maxSplits * unaryDepth;
-    // final int mergedOffset = mergedChart.offset(cellIndex) + mergedVocabulary.maxSplits * unaryDepth;
-    //
-    // // Stop when we reach an un-populated unary depth
-    // if (nonTerminalIndices[offset] < 0) {
-    // break;
-    // }
-    //
-    // for (int i = offset; i < offset + splitVocabulary.maxSplits; i++) {
-    //
-    // final short parent = nonTerminalIndices[i];
-    // if (parent < 0) {
-    // continue;
-    // }
-    // final float probability = insideProbabilities[i];
-    //
-    // // Record the parent non-terminal and sum the probabilities
-    // final short mergedParent = mergedVocabulary.mergedIndices.get(parent);
-    // final int mergedEntryIndex = mergedOffset + mergedVocabulary.subcategoryIndices[mergedParent];
-    // mergedChart.nonTerminalIndices[mergedEntryIndex] = mergedParent;
-    //
-    // final float currentMergedProbability = mergedChart.insideProbabilities[mergedEntryIndex];
-    // mergedChart.insideProbabilities[mergedEntryIndex] = currentMergedProbability == Float.NEGATIVE_INFINITY ?
-    // probability
-    // : Math.logSum(currentMergedProbability, probability);
-    //
-    // // Record packed children
-    // if (packedChildren[i] < 0) {
-    // // A lexical entry is the same regardless of grammar
-    // final int leftChild = sparseMatrixGrammar.packingFunction.unpackLeftChild(packedChildren[i]);
-    // mergedChart.packedChildren[mergedEntryIndex] = mergedGrammar.packingFunction
-    // .packLexical(leftChild);
-    // }
-    // }
-    // }
-    // }
-    // return mergedChart;
-    // }
-
     @Override
     public void updateInside(final int start, final int end, final int nonTerminal, final float insideProb) {
         throw new UnsupportedOperationException("Not supported by ConstrainedChart");
