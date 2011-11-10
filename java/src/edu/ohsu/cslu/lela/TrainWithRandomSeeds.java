@@ -30,7 +30,7 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
             final ProductionListGrammar plg0 = tg.induceGrammar(br);
             br.reset();
 
-            tg.loadGoldTreesAndCharts(br, plg0);
+            tg.loadGoldTreesAndConstrainingCharts(br, plg0);
             br.reset();
 
             final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f, seed);
@@ -57,12 +57,12 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
 
     @SuppressWarnings("null")
     private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar split) {
-        ProductionListGrammar plg = split;
+        ProductionListGrammar plGrammar = split;
         EmIterationResult result = null;
         for (int i = 0; i < 50; i++) {
-            result = tg.emIteration(cscGrammar(plg), -15f);
+            result = tg.emIteration(plGrammar, -30f);
             System.out.format("Iteration: %2d  Likelihood: %.2f\n", i, result.corpusLikelihood);
-            plg = result.plGrammar;
+            plGrammar = result.plGrammar;
         }
         return result.plGrammar;
     }

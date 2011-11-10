@@ -49,7 +49,7 @@ import edu.ohsu.cslu.tests.JUnit;
  * @author Aaron Dunlop
  * @since Jan 13, 2011
  */
-public class ProductionListGrammar {
+public class ProductionListGrammar implements Cloneable {
 
     public final SplitVocabulary vocabulary;
     public final SymbolSet<String> lexicon;
@@ -260,10 +260,15 @@ public class ProductionListGrammar {
 
             final int splitParent0 = p.parent << 1;
             final int splitParent1 = splitParent0 + 1;
+            assert splitParent1 < splitVocabulary.size();
+
             final int splitLeftChild0 = p.leftChild << 1;
             final int splitLeftChild1 = splitLeftChild0 + 1;
+            assert splitLeftChild1 < splitVocabulary.size();
+
             final int splitRightChild0 = p.rightChild << 1;
             final int splitRightChild1 = splitRightChild0 + 1;
+            assert splitRightChild1 < splitVocabulary.size();
 
             final float[] noise = noiseGenerator.noise(8);
 
@@ -298,6 +303,7 @@ public class ProductionListGrammar {
 
             final int splitChild0 = p.leftChild << 1;
             final int splitChild1 = splitChild0 + 1;
+            assert splitChild1 < splitVocabulary.size();
 
             // Special-case for the start symbol. Since we do not split it, we only split unaries of which it is the
             // parent in two
@@ -310,9 +316,11 @@ public class ProductionListGrammar {
                         splitVocabulary, lexicon));
 
             } else {
+                final float[] noise = noiseGenerator.noise(4);
+
                 final int splitParent0 = p.parent << 1;
                 final int splitParent1 = splitParent0 + 1;
-                final float[] noise = noiseGenerator.noise(4);
+                assert splitParent1 < splitVocabulary.size();
 
                 tmpGrammar.unaryProductions.add(new Production(splitParent0, splitChild0, p.prob + logOneHalf
                         + noise[0], false, splitVocabulary, lexicon));
@@ -333,6 +341,8 @@ public class ProductionListGrammar {
         for (final Production p : lexicalProductions) {
             final int splitParent0 = p.parent << 1;
             final int splitParent1 = splitParent0 + 1;
+            assert splitParent1 < splitVocabulary.size();
+
             // final float[] noise = noiseGenerator.noise(2);
             tmpGrammar.lexicalProductions.add(new Production(splitParent0, p.child(), p.prob, true, splitVocabulary,
                     lexicon));
@@ -390,6 +400,8 @@ public class ProductionListGrammar {
             if (probabilitiesByParent[i].size() > 0) {
                 final double totalProbability = edu.ohsu.cslu.util.Math.sumExp(probabilitiesByParent[i].toFloatArray());
                 normalization[i] = (float) Math.log(1 - (totalProbability - 1) / totalProbability);
+                assert !Float.isInfinite(normalization[i]);
+                assert !Float.isNaN(normalization[i]);
             }
         }
 
@@ -398,16 +410,16 @@ public class ProductionListGrammar {
         //
         final ProductionListGrammar normalizedGrammar = new ProductionListGrammar(this, vocabulary, lexicon);
         for (final Production p : binaryProductions) {
-            normalizedGrammar.binaryProductions.add(new Production(p.parent, p.leftChild, p.rightChild, p.prob
-                    + normalization[p.parent], vocabulary, lexicon));
+            normalizedGrammar.binaryProductions.add(new Production(p.parent, p.leftChild, p.rightChild, Math.min(0f,
+                    p.prob + normalization[p.parent]), vocabulary, lexicon));
         }
         for (final Production p : unaryProductions) {
-            normalizedGrammar.unaryProductions.add(new Production(p.parent, p.leftChild, p.prob
-                    + normalization[p.parent], false, vocabulary, lexicon));
+            normalizedGrammar.unaryProductions.add(new Production(p.parent, p.leftChild, Math.min(0f, p.prob
+                    + normalization[p.parent]), false, vocabulary, lexicon));
         }
         for (final Production p : lexicalProductions) {
-            normalizedGrammar.lexicalProductions.add(new Production(p.parent, p.leftChild, p.prob
-                    + normalization[p.parent], true, vocabulary, lexicon));
+            normalizedGrammar.lexicalProductions.add(new Production(p.parent, p.leftChild, Math.min(0f, p.prob
+                    + normalization[p.parent]), true, vocabulary, lexicon));
         }
         return normalizedGrammar;
     }
@@ -513,7 +525,9 @@ public class ProductionListGrammar {
             leftChildMap.put(leftChild, rightChildMap);
         }
 
-        rightChildMap.put(rightChild, edu.ohsu.cslu.util.Math.logSum(rightChildMap.get(rightChild), probability));
+        final float p = edu.ohsu.cslu.util.Math.logSum(rightChildMap.get(rightChild), probability);
+        assert p <= 1e-5f;
+        rightChildMap.put(rightChild, Math.min(0f, p));
     }
 
     private void addToBinaryProductionsList(
@@ -555,11 +569,9 @@ public class ProductionListGrammar {
             unaryRuleMap.put(parent, childMap);
         }
 
-        if (childMap.containsKey(child)) {
-            childMap.put(child, edu.ohsu.cslu.util.Math.logSum(childMap.get(child), probability));
-        } else {
-            childMap.put(child, probability);
-        }
+        final float p = edu.ohsu.cslu.util.Math.logSum(childMap.get(child), probability);
+        assert p <= 1e-5f;
+        childMap.put(child, Math.min(0f, p));
     }
 
     private void addToUnaryProductionsList(final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> unaryRuleMap) {
@@ -591,11 +603,9 @@ public class ProductionListGrammar {
             lexicalRuleMap.put(parent, childMap);
         }
 
-        if (childMap.containsKey(child)) {
-            childMap.put(child, edu.ohsu.cslu.util.Math.logSum(childMap.get(child), probability));
-        } else {
-            childMap.put(child, probability);
-        }
+        final float p = edu.ohsu.cslu.util.Math.logSum(childMap.get(child), probability);
+        assert p <= 1e-5f;
+        childMap.put(child, Math.min(0f, p));
     }
 
     private void addToLexicalProductionList(final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> lexicalRuleMap) {
@@ -722,6 +732,15 @@ public class ProductionListGrammar {
     }
 
     @Override
+    protected ProductionListGrammar clone() {
+        final ProductionListGrammar clone = new ProductionListGrammar(baseGrammar, vocabulary, lexicon);
+        clone.binaryProductions.addAll(binaryProductions);
+        clone.unaryProductions.addAll(unaryProductions);
+        clone.lexicalProductions.addAll(lexicalProductions);
+        return clone;
+    }
+
+    @Override
     public String toString() {
         return toString(false, null, -1);
     }
@@ -761,6 +780,7 @@ public class ProductionListGrammar {
             }
         }
 
+        // TODO Consolidate into base Grammar class
         final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
         final String dateNowStr = dateFormat.format(new Date());
 
