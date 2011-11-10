@@ -78,6 +78,9 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-unk", aliases = { "--unk-threshold" }, metaVar = "threshold", usage = "Learn unknown-word probabilities for words occurring <= threshold times")
     private int lexicalUnkThreshold = 5;
 
+    @Option(name = "-l", aliases = { "--language" }, metaVar = "language", usage = "Language. Output in grammar file headers.")
+    private String language = "english";
+
     @Option(name = "-b", aliases = { "--binarization" }, metaVar = "type", usage = "Binarization direction.")
     Factorization binarization = Factorization.LEFT;
 
@@ -184,7 +187,7 @@ public class TrainGrammar extends BaseCommandlineTool {
                         : "", cycle);
                 final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File(
                         outputGrammarDirectory, filename))));
-                w.write(grammarWithUnks.toString());
+                w.write(grammarWithUnks.toString(false, language, grammarFormatType, lexicalUnkThreshold));
                 w.close();
             }
 

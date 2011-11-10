@@ -742,10 +742,10 @@ public class ProductionListGrammar implements Cloneable {
 
     @Override
     public String toString() {
-        return toString(false, null, -1);
+        return toString(false, null, null, -1);
     }
 
-    public String toString(final boolean fraction, final GrammarFormatType grammarFormatType,
+    public String toString(final boolean fraction, final String language, final GrammarFormatType grammarFormatType,
             final int lexicalUnkThreshold) {
         final TreeSet<String> binaryRules = new TreeSet<String>();
         for (final Production p : binaryProductions) {
@@ -785,7 +785,7 @@ public class ProductionListGrammar implements Cloneable {
         final String dateNowStr = dateFormat.format(new Date());
 
         final StringBuilder sb = new StringBuilder(1024);
-        sb.append("lang=UNK");
+        sb.append("lang=" + (language != null ? language : "UNK"));
         sb.append(" format=" + grammarFormatType);
         sb.append(" unkThresh=" + lexicalUnkThreshold);
         sb.append(" start=" + startSymbol);
