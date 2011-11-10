@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.lela;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -182,7 +183,7 @@ public class TestTrainGrammar {
         final ProductionListGrammar plg0 = tg.induceGrammar(trainingCorpusReader);
         trainingCorpusReader.reset();
 
-        tg.loadGoldTreesAndCharts(trainingCorpusReader, plg0);
+        tg.loadGoldTreesAndConstrainingCharts(trainingCorpusReader, plg0);
 
         // Parse the training 'corpus' with induced grammar and report F-score
         final long t0 = System.currentTimeMillis();
@@ -223,7 +224,56 @@ public class TestTrainGrammar {
         final ProductionListGrammar plg0 = tg.induceGrammar(br);
         br.reset();
 
-        tg.loadGoldTreesAndCharts(br, plg0);
+        tg.loadGoldTreesAndConstrainingCharts(br, plg0);
+
+        // Parse the training 'corpus' with induced grammar and report F-score
+        final long t0 = System.currentTimeMillis();
+        double previousFScore = parseFScore(cscGrammar(plg0), tg.goldTrees);
+        System.out.format("Initial F-score: %.3f  Parse Time: %.1f seconds\n", previousFScore * 100,
+                (System.currentTimeMillis() - t0) / 1000f);
+
+        final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
+
+        // Split and train with the 1-split grammar
+        final ProductionListGrammar plg1 = runEm(tg, plg0, plg0.split(noiseGenerator), 1, 50, false, false);
+        previousFScore = verifyFscoreIncrease(tg, plg1, previousFScore);
+
+        // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
+        final ProductionListGrammar mergedPlg1 = plg1.merge(new short[] { 1 });
+        tg.reloadConstrainingCharts(cscGrammar(plg1), cscGrammar(mergedPlg1));
+        final ProductionListGrammar plg2 = runEm(tg, plg0, mergedPlg1.split(noiseGenerator), 2, 50, false, false);
+        previousFScore = verifyFscoreIncrease(tg, plg2, previousFScore);
+
+        // Merge TOP_1 back into TOP, split again, and train with the new 3-split grammar
+        final ProductionListGrammar mergedPlg2 = plg2.merge(new short[] { 1 });
+        tg.reloadConstrainingCharts(cscGrammar(plg2), cscGrammar(mergedPlg2));
+        final ProductionListGrammar plg3 = runEm(tg, plg0, mergedPlg2.split(noiseGenerator), 3, 50, false, false);
+        verifyFscoreIncrease(tg, plg3, previousFScore);
+    }
+
+    /**
+     * Learns a 3-split grammar from a small corpus (WSJ section 24). Verifies that corpus likelihood increases with
+     * successive EM iteration. Reports F-score after each split/EM run and verifies that those increase as well.
+     * Parsing accuracy isn't guaranteed to increase, but in this test, we're evaluating on the training set, so if
+     * parse accuracy declines, something's probably terribly wrong.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void test3SplitWsj24WithMerging() throws IOException {
+        fail("Not Implemented");
+        final TrainGrammar tg = new TrainGrammar();
+        tg.binarization = Factorization.LEFT;
+        tg.grammarFormatType = GrammarFormatType.Berkeley;
+
+        final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"),
+                20 * 1024 * 1024);
+        br.mark(20 * 1024 * 1024);
+
+        final ProductionListGrammar plg0 = tg.induceGrammar(br);
+        br.reset();
+
+        tg.loadGoldTreesAndConstrainingCharts(br, plg0);
 
         // Parse the training 'corpus' with induced grammar and report F-score
         final long t0 = System.currentTimeMillis();
@@ -263,12 +313,10 @@ public class TestTrainGrammar {
     }
 
     private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar markov0Grammar,
-            final ProductionListGrammar plg, final int split, final int iterations,
+            ProductionListGrammar plGrammar, final int split, final int iterations,
             final boolean reportFinalParseScore, final boolean reportEmIterationParseScores) {
 
-        ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(plg);
-
-        final int lexiconSize = cscGrammar.lexSet.size();
+        final int lexiconSize = plGrammar.lexicon.size();
         float previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
 
         final long t0 = System.currentTimeMillis();
@@ -276,10 +324,11 @@ public class TestTrainGrammar {
 
         for (int i = 0; i < iterations; i++) {
 
-            result = tg.emIteration(cscGrammar, -15f);
-            result.plGrammar.verifyProbabilityDistribution();
+            result = tg.emIteration(plGrammar, -15f);
+            plGrammar = result.plGrammar;
+            plGrammar.verifyProbabilityDistribution();
             // result.fcGrammar.verifyVsUnsplitGrammar(markov0Grammar);
-            cscGrammar = cscGrammar(result.plGrammar);
+            final ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(plGrammar);
 
             // Ensure we have rules matching each lexical entry
             for (int j = 0; j < lexiconSize; j++) {
@@ -287,7 +336,7 @@ public class TestTrainGrammar {
                     System.out.println("Iteration " + (i + 1) + " : Missing parent for "
                             + cscGrammar.lexSet.getSymbol(j));
                 }
-                assertTrue("Iteration " + (i + 1) + " : No parents found for " + cscGrammar.lexSet.getSymbol(j),
+                assertTrue("Iteration " + (i + 1) + " : No parents found for " + plGrammar.lexicon.getSymbol(j),
                         cscGrammar.getLexicalProductionsWithChild(j).size() > 0);
             }
 
@@ -315,10 +364,10 @@ public class TestTrainGrammar {
 
         if (reportFinalParseScore) {
             // Parse the training corpus with the new CSC grammar and report F-score
-            System.out.format("F-score: %.2f\n", parseFScore(cscGrammar, tg.goldTrees) * 100);
+            System.out.format("F-score: %.2f\n", parseFScore(cscGrammar(plGrammar), tg.goldTrees) * 100);
         }
 
-        return result.plGrammar;
+        return plGrammar;
     }
 
     private ConstrainedInsideOutsideGrammar cscGrammar(final ProductionListGrammar plg) {

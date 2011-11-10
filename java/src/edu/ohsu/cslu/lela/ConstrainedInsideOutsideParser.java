@@ -112,6 +112,8 @@ public class ConstrainedInsideOutsideParser extends
         final short parent0 = (short) (constrainingChart.nonTerminalIndices[constrainingEntryIndex] << 1);
         final float[] lexicalLogProbabilities = grammar.lexicalLogProbabilities(lexicalProduction);
         final short[] lexicalParents = grammar.lexicalParents(lexicalProduction);
+        // For debugging with assertions turned on
+        boolean foundParent = false;
 
         // Iterate through grammar lexicon rules matching this word.
         for (int i = 0; i < lexicalLogProbabilities.length; i++) {
@@ -121,12 +123,14 @@ public class ConstrainedInsideOutsideParser extends
                 continue;
 
             } else if (parent == parent0) {
+                foundParent = true;
                 chart.nonTerminalIndices[parent0Offset] = parent;
                 chart.insideProbabilities[parent0Offset] = lexicalLogProbabilities[i];
                 chart.packedChildren[parent0Offset] = chart.sparseMatrixGrammar.packingFunction
                         .packLexical(lexicalProduction);
 
             } else if (parent == parent0 + 1) {
+                foundParent = true;
                 chart.nonTerminalIndices[parent1Offset] = parent;
                 chart.insideProbabilities[parent1Offset] = lexicalLogProbabilities[i];
                 chart.packedChildren[parent1Offset] = chart.sparseMatrixGrammar.packingFunction
@@ -137,6 +141,7 @@ public class ConstrainedInsideOutsideParser extends
                 break;
             }
         }
+        assert foundParent;
     }
 
     /**
@@ -160,6 +165,8 @@ public class ConstrainedInsideOutsideParser extends
 
             final int leftCellOffset = chart.offset(chart.cellIndex(start, midpoint));
             final int rightCellOffset = chart.offset(chart.cellIndex(midpoint, end));
+            // For debugging with assertions turned on
+            boolean foundParent = false;
 
             // Iterate over all possible child pairs
             for (int i = leftCellOffset; i <= leftCellOffset + 1; i++) {
@@ -186,12 +193,14 @@ public class ConstrainedInsideOutsideParser extends
                             continue;
 
                         } else if (parent == parent0) {
+                            foundParent = true;
                             chart.nonTerminalIndices[parent0Offset] = parent;
                             chart.insideProbabilities[parent0Offset] = Math.logSum(
                                     chart.insideProbabilities[parent0Offset], grammar.cscBinaryProbabilities[k]
                                             + childInsideProbability);
 
                         } else if (parent == parent0 + 1) {
+                            foundParent = true;
                             chart.nonTerminalIndices[parent1Offset] = parent;
                             chart.insideProbabilities[parent1Offset] = Math.logSum(
                                     chart.insideProbabilities[parent1Offset], grammar.cscBinaryProbabilities[k]
@@ -204,6 +213,7 @@ public class ConstrainedInsideOutsideParser extends
                     }
                 }
             }
+            assert foundParent;
         }
 
         // Unary productions
@@ -215,6 +225,8 @@ public class ConstrainedInsideOutsideParser extends
             final int parent0Offset = child0Offset - 2;
             final short parent0 = (short) (constrainingChart.nonTerminalIndices[parent0Offset >> 1] << 1);
             final int parent1Offset = parent0Offset + 1;
+            // For debugging with assertions turned on
+            boolean foundParent = false;
 
             // Iterate over both child slots
             final short child0 = (short) (constrainingChart.nonTerminalIndices[child0Offset >> 1] << 1);
@@ -236,12 +248,14 @@ public class ConstrainedInsideOutsideParser extends
                         continue;
 
                     } else if (parent == parent0) {
+                        foundParent = true;
                         final float unaryProbability = grammar.cscUnaryProbabilities[j] + childInsideProbability;
                         chart.nonTerminalIndices[parent0Offset] = parent;
                         chart.insideProbabilities[parent0Offset] = Math.logSum(
                                 chart.insideProbabilities[parent0Offset], unaryProbability);
 
                     } else if (parent == parent0 + 1) {
+                        foundParent = true;
                         final float unaryProbability = grammar.cscUnaryProbabilities[j] + childInsideProbability;
                         chart.nonTerminalIndices[parent1Offset] = parent;
                         chart.insideProbabilities[parent1Offset] = Math.logSum(
@@ -252,6 +266,7 @@ public class ConstrainedInsideOutsideParser extends
                     }
                 }
             }
+            assert foundParent;
         }
     }
 
@@ -314,6 +329,8 @@ public class ConstrainedInsideOutsideParser extends
 
         final short entry0 = (short) (constrainingChart.nonTerminalIndices[entry0Offset >> 1] << 1);
         final short entry1 = (short) (entry0 + 1);
+        // For debugging with assertions turned on
+        boolean foundEntry = false;
 
         // Iterate over possible siblings
         for (int i = sibling0Offset; i <= sibling0Offset + 1; i++) {
@@ -346,10 +363,12 @@ public class ConstrainedInsideOutsideParser extends
                         continue;
 
                     } else if (entry == entry0) {
+                        foundEntry = true;
                         chart.outsideProbabilities[entry0Offset] = Math.logSum(
                                 chart.outsideProbabilities[entry0Offset], cscBinaryProbabilities[k] + jointProbability);
 
                     } else if (entry == entry1) {
+                        foundEntry = true;
                         chart.outsideProbabilities[entry1Offset] = Math.logSum(
                                 chart.outsideProbabilities[entry1Offset], cscBinaryProbabilities[k] + jointProbability);
 
@@ -361,6 +380,7 @@ public class ConstrainedInsideOutsideParser extends
                 }
             }
         }
+        assert foundEntry;
     }
 
     private void computeUnaryOutsideProbabilities(final int cellIndex) {
@@ -374,6 +394,8 @@ public class ConstrainedInsideOutsideParser extends
             final int child0Offset = parent0Offset + 2;
             final short parent0 = (short) (constrainingChart.nonTerminalIndices[parent0Offset >> 1] << 1);
             final short parent1 = (short) (parent0 + 1);
+            // For debugging with assertions turned on
+            boolean foundChild = false;
 
             // Iterate over both child slots
             for (int childOffset = child0Offset; childOffset <= child0Offset + 1; childOffset++) {
@@ -393,10 +415,12 @@ public class ConstrainedInsideOutsideParser extends
                         continue;
 
                     } else if (parent == parent0) {
+                        foundChild = true;
                         chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
                                 grammar.cscUnaryProbabilities[j] + chart.outsideProbabilities[parent0Offset]);
 
                     } else if (parent == parent1) {
+                        foundChild = true;
                         chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
                                 grammar.cscUnaryProbabilities[j] + chart.outsideProbabilities[parent0Offset + 1]);
                     } else {
@@ -405,13 +429,8 @@ public class ConstrainedInsideOutsideParser extends
                     }
                 }
             }
+            assert foundChild;
         }
-    }
-
-    FractionalCountGrammar countRuleOccurrences() {
-        final FractionalCountGrammar countGrammar = new FractionalCountGrammar(grammar);
-        countRuleOccurrences(countGrammar);
-        return countGrammar;
     }
 
     /**
@@ -612,6 +631,107 @@ public class ConstrainedInsideOutsideParser extends
                 break;
             }
         }
+    }
+
+    /**
+     * Estimates the cost of merging each pair of split non-terminals, using the heuristic from Petrov et al., 2006
+     * (equation 2 and following).
+     * 
+     * TODO Binary, Unary, and Lexical methods can probably all be collapsed
+     * 
+     * @param countGrammar The grammar to populate with rule counts
+     * @return countGrammar
+     */
+    void countMergeCost(final float[] mergeCost, final float[] logSplitFraction) {
+        cellSelector.reset();
+        final float sentenceInsideLogProb = chart.getInside(0, chart.size(), 0);
+        while (cellSelector.hasNext()) {
+            final short[] startAndEnd = cellSelector.next();
+            countUnaryMergeCost(mergeCost, logSplitFraction, startAndEnd[0], startAndEnd[1], sentenceInsideLogProb);
+            if (startAndEnd[1] - startAndEnd[0] == 1) {
+                countLexicalMergeCost(mergeCost, logSplitFraction, startAndEnd[0], startAndEnd[1],
+                        sentenceInsideLogProb);
+            } else {
+                countBinaryMergeCost(mergeCost, logSplitFraction, startAndEnd[0], startAndEnd[1], sentenceInsideLogProb);
+            }
+        }
+    }
+
+    private void countBinaryMergeCost(final float[] mergeCost, final float[] logSplitFraction, final short start,
+            final short end, final float sentenceInsideLogProb) {
+
+        final int cellIndex = chart.cellIndex(start, end);
+        // 0 <= unaryLevels < maxUnaryChainLength
+        final int unaryLevels = constrainingChart.unaryChainLength(cellIndex) - 1;
+
+        // Binary productions
+        final int parent0Offset = chart.offset(cellIndex) + (unaryLevels << 1);
+        final int parent1Offset = parent0Offset + 1;
+        final short parent0 = (short) (constrainingChart.nonTerminalIndices[parent0Offset >> 1] << 1);
+        final short parent1 = (short) (parent0 + 1);
+
+        final float pIn = Math.logSum(logSplitFraction[parent0] + chart.insideProbabilities[parent0Offset],
+                logSplitFraction[parent1] + chart.insideProbabilities[parent1Offset]);
+        final float pOut = Math.logSum(chart.outsideProbabilities[parent0Offset],
+                chart.outsideProbabilities[parent1Offset]);
+
+        mergeCost[parent0 >> 1] += (pIn + pOut - sentenceInsideLogProb);
+    }
+
+    private void countUnaryMergeCost(final float[] mergeCost, final float[] logSplitFraction, final short start,
+            final short end, final float sentenceInsideLogProb) {
+
+        final int cellIndex = chart.cellIndex(start, end);
+        // 0 <= unaryLevels < maxUnaryChainLength
+        final int unaryLevels = constrainingChart.unaryChainLength(cellIndex) - 1;
+
+        final int offset = chart.offset(cellIndex);
+        final int initialChildIndex = offset + (unaryLevels << 1);
+
+        // foreach unary chain depth (starting from 2nd from bottom in chain; the bottom entry is the binary or lexical
+        // parent)
+        for (int child0Offset = initialChildIndex; child0Offset > offset; child0Offset -= 2) {
+
+            final int parent0Offset = child0Offset - 2;
+            final int parent1Offset = parent0Offset + 1;
+            final short parent0 = (short) (constrainingChart.nonTerminalIndices[parent0Offset >> 1] << 1);
+            final short parent1 = (short) (parent0 + 1);
+
+            final float pIn = Math.logSum(logSplitFraction[parent0] + chart.insideProbabilities[parent0Offset],
+                    logSplitFraction[parent1] + chart.insideProbabilities[parent1Offset]);
+            final float pOut = Math.logSum(chart.outsideProbabilities[parent0Offset],
+                    chart.outsideProbabilities[parent1Offset]);
+
+            mergeCost[parent0 >> 1] += (pIn + pOut - sentenceInsideLogProb);
+        }
+    }
+
+    private void countLexicalMergeCost(final float[] mergeCost, final float[] logSplitFraction, final short start,
+            final short end, final float sentenceInsideLogProb) {
+
+        final int cellIndex = chart.cellIndex(start, start + 1);
+
+        final int constrainingOffset = constrainingChart.offset(cellIndex);
+
+        // Find the lexical production in the constraining chart
+        int unaryChainLength = chart.maxUnaryChainLength - 1;
+        while (unaryChainLength > 0 && constrainingChart.nonTerminalIndices[constrainingOffset + unaryChainLength] < 0) {
+            unaryChainLength--;
+        }
+
+        final int parent0Offset = chart.offset(cellIndex) + (unaryChainLength << 1);
+        final int parent1Offset = parent0Offset + 1;
+
+        final int constrainingEntryIndex = constrainingChart.offset(cellIndex) + unaryChainLength;
+        final short parent0 = (short) (constrainingChart.nonTerminalIndices[constrainingEntryIndex] << 1);
+        final short parent1 = (short) (parent0 + 1);
+
+        final float pIn = Math.logSum(logSplitFraction[parent0] + chart.insideProbabilities[parent0Offset],
+                logSplitFraction[parent1] + chart.insideProbabilities[parent1Offset]);
+        final float pOut = Math.logSum(chart.outsideProbabilities[parent0Offset],
+                chart.outsideProbabilities[parent1Offset]);
+
+        mergeCost[parent0 >> 1] += (pIn + pOut - sentenceInsideLogProb);
     }
 
     @Override

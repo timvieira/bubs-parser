@@ -19,17 +19,23 @@
 package edu.ohsu.cslu.lela;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.TreeSet;
 
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.tests.JUnit;
 
 public class FractionalCountGrammar implements CountGrammar {
@@ -325,7 +331,105 @@ public class FractionalCountGrammar implements CountGrammar {
         return childMap.get(lexicon.getIndex(child));
     }
 
-    public void verifyVsUnsplitGrammar(final ProductionListGrammar unsplitPlg) {
+    /**
+     * Computes relative counts of each split pair. E.g., if NP_0 has been split into NP_0 and NP_1, and NP_0 occurs 12
+     * times and NP_1 8, the array entries for NP_0 and NP_1 will contain (log) 12/20 and 8/20 respectively.
+     * 
+     * @return relative counts of each split pair.
+     */
+    public float[] logSplitFraction() {
+        final float[] logSplitCounts = new float[vocabulary.size()];
+        for (short i = 0; i < logSplitCounts.length; i += 2) {
+            final double split0Count = parentCounts.get(i);
+            final double split1Count = parentCounts.get((short) (i + 1));
+            final double totalCount = split0Count + split1Count;
+            logSplitCounts[i] = (float) Math.log(split0Count / totalCount);
+            logSplitCounts[i + 1] = (float) Math.log(split1Count / totalCount);
+        }
+        return logSplitCounts;
+    }
+
+    /**
+     * Add UNK rules to the lexicon, stealing from other lexical probabilities to allot some probability mass for UNK
+     * rules.
+     * 
+     * Note that even rare words (those that occur <= lexicalUnkThreshold times) will still be included in their
+     * lexicalized form.
+     * 
+     * @param countGrammar {@link FractionalCountGrammar} with posterior counts from training corpus. Note : fractional
+     *            counts will be added for UNK rules, modifying this grammar.
+     */
+    public void addUnkProbabilities(final Collection<NaryTree<String>> goldTrees, final int lexicalUnkThreshold) {
+
+        //
+        // Count words - overall and separately when they occur as the first word in a sentence
+        //
+        final Object2IntOpenHashMap<String> lexicalEntryCounts = new Object2IntOpenHashMap<String>();
+        lexicalEntryCounts.defaultReturnValue(0);
+
+        for (final NaryTree<String> tree : goldTrees) {
+
+            for (final NaryTree<String> leaf : tree.leafTraversal()) {
+                final String word = leaf.label();
+                lexicalEntryCounts.put(word, lexicalEntryCounts.getInt(word) + 1);
+            }
+        }
+
+        // Create a map from lexical entries to parents and probabilities (word -> parent -> probability)
+        final Int2ObjectOpenHashMap<Short2DoubleOpenHashMap> lexicalParentProbabilities = new Int2ObjectOpenHashMap<Short2DoubleOpenHashMap>();
+        for (final short parent : lexicalRuleCounts.keySet()) {
+            final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
+            for (final int child : childMap.keySet()) {
+                Short2DoubleOpenHashMap parentMap = lexicalParentProbabilities.get(child);
+                if (parentMap == null) {
+                    parentMap = new Short2DoubleOpenHashMap();
+                    parentMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
+                    lexicalParentProbabilities.put(child, parentMap);
+                }
+                parentMap.put(parent, childMap.get(child) / parentCounts.get(parent));
+            }
+        }
+
+        //
+        // Iterate through the training corpus again, adding UNK counts for rare words
+        //
+        for (final NaryTree<String> tree : goldTrees) {
+
+            // Handle first word separately
+            final Tree<String> leftmostLeaf = tree.leftmostLeaf();
+            final String firstWord = leftmostLeaf.label();
+            if (lexicalEntryCounts.getInt(firstWord) <= lexicalUnkThreshold) {
+                final int initialUnkIndex = lexicon.addSymbol(Tokenizer.berkeleyGetSignature(firstWord, true, lexicon));
+                final Short2DoubleOpenHashMap parentMap = lexicalParentProbabilities.get(lexicon.getIndex(firstWord));
+                for (final short parent : parentMap.keySet()) {
+                    incrementLexicalCount(parent, initialUnkIndex, parentMap.get(parent));
+                }
+            }
+
+            for (final NaryTree<String> leaf : tree.leafTraversal()) {
+
+                final String word = leaf.label();
+                final int count = lexicalEntryCounts.getInt(word);
+
+                if (count <= lexicalUnkThreshold) {
+                    final int unkIndex = lexicon.addSymbol(Tokenizer.berkeleyGetSignature(word, false, lexicon));
+                    final Short2DoubleOpenHashMap parentMap = lexicalParentProbabilities.get(lexicon.getIndex(word));
+                    for (final short parent : parentMap.keySet()) {
+                        incrementLexicalCount(parent, unkIndex, parentMap.get(parent));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Merges the grammar back into a Markov-0 (unsplit) grammar, and ensures that the merged probabilities are the same
+     * as the supplied unsplit grammar (usually the original Markov-0 grammar induced from the training corpus). Used
+     * for unit testing.
+     * 
+     * @param unsplitPlg
+     */
+    void verifyVsUnsplitGrammar(final ProductionListGrammar unsplitPlg) {
 
         final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(unsplitPlg.vocabulary,
                 unsplitPlg.lexicon, null);
