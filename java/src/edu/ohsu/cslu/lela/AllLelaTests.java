@@ -22,9 +22,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestStringCountGrammar.class, TestFractionalCountGrammar.class, TestConstrainedCountGrammar.class,
-        TestProductionListGrammar.class, TestConstrainedCsrSparseMatrixGrammar.class, TestConstrainedChart.class,
-        TestConstrainedCsrSpmvParser.class, TestTrainGrammar.class })
+@Suite.SuiteClasses({ TestStringCountGrammar.class, TestFractionalCountGrammar.class, TestProductionListGrammar.class,
+        TestConstrainingChart.class, TestConstrainedChart.class, TestConstrainedInsideOutsideParser.class,
+        TestTrainGrammar.class })
 public class AllLelaTests {
 
     /**
@@ -39,25 +39,26 @@ public class AllLelaTests {
      *       |           |
      *    -------     --------
      *    |     |     |      |
-     *    a     b     b      a
+     *    a     d     b      c
      *    |     |     |      |
-     *  -----   d     b      d
+     *  -----   f     d      f
      *  |   |         |
-     *  a   a         d
+     *  c   c         f
      *  |   |
-     *  c   c
+     *  e   e
      *  
      *  top -> a 1
-     *  a -> a b 2/6
-     *  a -> a a 1/6
-     *  a -> c 2/6
-     *  a -> d 1/6
-     *  b -> b a 1/4
-     *  b -> b 1/4
-     *  b -> d 2/4
+     *  a -> a b 1/3
+     *  a -> a d 1/3
+     *  a -> c c 1/3
+     *  c -> e 2/3
+     *  c -> f 1/3
+     *  b -> b c 1/2
+     *  b -> d 1/2
+     *  d -> f 1
      * </pre>
      */
-    public final static String STRING_SAMPLE_TREE = "(top (a (a (a (a c) (a c)) (b d)) (b (b (b d)) (a d))))";
+    public final static String STRING_SAMPLE_TREE = "(top (a (a (a (c e) (c e)) (d f)) (b (b (d f)) (c f))))";
 
     public final static String TREE_WITH_LONG_UNARY_CHAIN = "(TOP (S (NP (NP (RB Not) (PDT all) (DT those)) (SBAR (WHNP (WP who)) (S (VP (VBD wrote))))) (VP (VBP oppose) (NP (DT the) (NNS changes))) (. .)))";
 

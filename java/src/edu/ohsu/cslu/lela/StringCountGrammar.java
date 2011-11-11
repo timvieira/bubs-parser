@@ -37,7 +37,6 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 
 /**
  * Grammar computed from observation counts in a training corpus. Generally used for initial induction of a Markov-0
@@ -85,12 +84,10 @@ public final class StringCountGrammar implements CountGrammar {
      * @param factorization Factorization direction. If null, the tree is assumed to be already binarized.
      * @param grammarFormatType Grammar format used in factorization. If null, the tree is assumed to be already
      *            binarized.
-     * @param lexicalUnkThreshold The number of occurrences of a word which must be observed in order to add it to the
-     *            lexicon. Words observed less than this threshold are instead mapped to UNK- tokens.
      * @throws IOException
      */
     public StringCountGrammar(final Reader reader, final Factorization factorization,
-            final GrammarFormatType grammarFormatType, final int lexicalUnkThreshold) throws IOException {
+            final GrammarFormatType grammarFormatType) throws IOException {
 
         // Temporary string-based maps recording counts of binary, unary, and
         // lexical rules. We will transfer these counts to more compact index-mapped
@@ -147,60 +144,7 @@ public final class StringCountGrammar implements CountGrammar {
             }
         }
 
-        // add UNK production counts. Note that words that occur <= lexicalUnkThreshold times
-        // will also be included in their lexicalized form above.
-        for (final BinaryTree<String> tree : trees) {
-            int i = 0;
-            for (final BinaryTree<String> leaf : tree.leafTraversal()) {
-                final String word = leaf.label();
-                if (lexicalEntryOccurrences.get(word) <= lexicalUnkThreshold) {
-                    final String unkStr = Tokenizer.berkeleyGetSignature(word, i, knownWords);
-                    incrementLexicalCount(leaf.parentLabel(), unkStr);
-                    lexicalEntryOccurrences.put(unkStr, lexicalEntryOccurrences.getInt(unkStr) + 1);
-                }
-                i++;
-            }
-        }
         trees = null;
-
-    }
-
-    private void addUnkLeavesToTrees(final LinkedList<BinaryTree<String>> trees, final int lexicalUnkThreshold) {
-
-        final HashMap<String, Integer> wordCounts = new HashMap<String, Integer>();
-        for (final BinaryTree<String> tree : trees) {
-            for (final BinaryTree<String> leaf : tree.leafTraversal()) {
-                if (wordCounts.containsKey(leaf.label())) {
-                    wordCounts.put(leaf.label(), wordCounts.get(leaf.label()) + 1);
-                } else {
-                    wordCounts.put(leaf.label(), 1);
-                }
-            }
-        }
-
-        // build set of words that have frequency greater than lexicalUnkThreshold
-        final SymbolSet<String> knownWords = new SymbolSet<String>();
-        for (final String word : wordCounts.keySet()) {
-            if (wordCounts.get(word) > lexicalUnkThreshold) {
-                knownWords.addSymbol(word);
-            }
-        }
-
-        // Map word to UNK symbol in corpus
-        for (final BinaryTree<String> tree : trees) {
-            // final String[] leaves = tree.leafLabels();
-            final String[] leaves = new String[tree.leaves()];
-            int k = 0;
-            for (final BinaryTree<String> leaf : tree.leafTraversal()) {
-                leaves[k++] = leaf.label();
-            }
-            for (int i = 0; i < leaves.length; i++) {
-                if (knownWords.contains(leaves[i]) == false) {
-                    leaves[i] = Tokenizer.berkeleyGetSignature(leaves[i], i, knownWords);
-                }
-            }
-            tree.replaceLeafLabels(leaves);
-        }
     }
 
     private void incrementBinaryCount(final String parent, final String leftChild, final String rightChild) {
@@ -261,7 +205,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     @Override
-    public final float binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
+    public final double binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
 
         final HashMap<String, Object2IntMap<String>> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {
@@ -277,7 +221,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     @Override
-    public final float unaryRuleObservations(final String parent, final String child) {
+    public final double unaryRuleObservations(final String parent, final String child) {
 
         final Object2IntMap<String> childMap = unaryRuleCounts.get(parent);
         if (childMap == null) {
@@ -288,7 +232,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     @Override
-    public final float lexicalRuleObservations(final String parent, final String child) {
+    public final double lexicalRuleObservations(final String parent, final String child) {
 
         final Object2IntMap<String> childMap = lexicalRuleCounts.get(parent);
         if (childMap == null) {
@@ -466,7 +410,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     @Override
-    public final float observations(final String parent) {
+    public final double observations(final String parent) {
         int count = 0;
 
         if (binaryRuleCounts.containsKey(parent)) {

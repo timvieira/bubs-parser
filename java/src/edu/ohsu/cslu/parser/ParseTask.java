@@ -36,17 +36,29 @@ import edu.ohsu.cslu.util.Strings;
 // the chart should be handled in this class eventually)
 public class ParseTask {
 
-    public String sentence;
-    public int[] tokens;
+    //
+    // Input
+    //
+    public final String sentence;
+    public final int[] tokens;
 
-    public int[] inputTags = null;
+    public final int[] inputTags;
     public int[] fomTags = null; // TODO: this should be moved to the FOM class
+
     public NaryTree<String> inputTree = null;
+    public final Grammar grammar;
+
+    //
+    // Parse results
+    //
     public BinaryTree<String> binaryParse = null;
     public float insideProbability = Float.NEGATIVE_INFINITY;
     private EvalbResult evalb = null;
     public String chartStats = ""; // move all of these stats into this class
 
+    //
+    // Statistics
+    //
     public long totalPops = 0;
     public long totalPushes = 0;
     public long totalConsidered = 0;
@@ -78,48 +90,69 @@ public class ParseTask {
     public long extractTimeMs = 0;
 
     long startTime;
-    public Grammar grammar;
 
     public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar) {
-        try {
-            this.grammar = grammar;
-            if (inputFormat == InputFormat.Token) {
-                this.sentence = input.trim();
-            } else if (inputFormat == InputFormat.Text) {
-                this.sentence = Tokenizer.treebankTokenize(input.trim());
-            } else if (inputFormat == InputFormat.Tree) {
-                this.inputTree = NaryTree.read(input.trim(), String.class);
-                this.sentence = Strings.join(inputTree.leafLabels(), " ");
+        switch (inputFormat) {
 
-                // extract POS tags from tree
-                inputTags = new int[sentence.length()];
-                int i = 0;
-                for (final NaryTree<String> leaf : inputTree.leafTraversal()) {
-                    inputTags[i] = getInputTagIndex(leaf.parent().label());
-                    i++;
-                }
-            } else if (inputFormat == InputFormat.Tagged) {
-                // (DT The) (NN economy) (POS 's) (NN temperature) (MD will)
-                final LinkedList<String> sentTokens = new LinkedList<String>();
-                final String[] tagTokens = input.split("\\s+");
-                inputTags = new int[tagTokens.length / 2];
-                int i = 0;
-                for (final String token : tagTokens) {
-                    if (i % 2 == 1) {
-                        sentTokens.add(token.substring(0, token.length() - 1)); // remove ")"
-                    } else {
-                        inputTags[i / 2] = getInputTagIndex(token.substring(1)); // remove "("
-                    }
-                    i++;
-                }
-                sentence = Strings.join(sentTokens, " ");
+        case Token:
+            this.sentence = input.trim();
+            this.inputTree = null;
+            this.inputTags = null;
+            break;
+
+        case Text:
+            this.sentence = Tokenizer.treebankTokenize(input.trim());
+            this.inputTree = null;
+            this.inputTags = null;
+            break;
+
+        case Tree: {
+            this.inputTree = NaryTree.read(input.trim(), String.class);
+            this.sentence = Strings.join(inputTree.leafLabels(), " ");
+
+            // extract POS tags from tree
+            this.inputTags = new int[sentence.length()];
+            int i = 0;
+            for (final NaryTree<String> leaf : inputTree.leafTraversal()) {
+                inputTags[i] = getInputTagIndex(leaf.parent().label());
+                i++;
             }
-
-            this.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
-
-        } catch (final Exception e) {
-            e.printStackTrace();
         }
+            break;
+
+        case Tagged: {
+            // (DT The) (NN economy) (POS 's) (NN temperature) (MD will)
+            final LinkedList<String> sentTokens = new LinkedList<String>();
+            final String[] stringTokens = input.split("\\s+");
+            this.inputTags = new int[stringTokens.length / 2];
+            int i = 0;
+            for (final String token : stringTokens) {
+                if (i % 2 == 1) {
+                    sentTokens.add(token.substring(0, token.length() - 1)); // remove ")"
+                } else {
+                    inputTags[i / 2] = grammar.nonTermSet.getIndex(token.substring(1)); // remove "("
+                }
+                i++;
+            }
+            this.sentence = Strings.join(sentTokens, " ");
+            this.inputTree = null;
+            break;
+        }
+
+        default:
+            throw new UnsupportedOperationException("Unsupported inputFormat: " + inputFormat);
+        }
+
+        this.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
+        this.grammar = grammar;
+    }
+
+    public ParseTask(final int[] tokens, final Grammar grammar) {
+        this.tokens = tokens;
+        this.grammar = grammar;
+        this.sentence = null;
+        this.inputTags = null;
+        this.fomTags = null;
     }
 
     protected int getInputTagIndex(final String posStr) {

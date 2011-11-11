@@ -34,7 +34,7 @@ public interface CountGrammar {
      * @param rightChild
      * @return the number of observations of a binary rule.
      */
-    public float binaryRuleObservations(final String parent, final String leftChild, final String rightChild);
+    public double binaryRuleObservations(final String parent, final String leftChild, final String rightChild);
 
     /**
      * Returns the number of observations of a unary rule.
@@ -43,7 +43,7 @@ public interface CountGrammar {
      * @param child
      * @return the number of observations of a unary rule.
      */
-    public float unaryRuleObservations(final String parent, final String child);
+    public double unaryRuleObservations(final String parent, final String child);
 
     /**
      * Returns the number of observations of a lexical rule.
@@ -52,7 +52,7 @@ public interface CountGrammar {
      * @param child
      * @return the number of observations of a lexical rule.
      */
-    public float lexicalRuleObservations(final String parent, final String child);
+    public double lexicalRuleObservations(final String parent, final String child);
 
     /**
      * Returns the total number of times a non-terminal was observed as a parent (optional operation).
@@ -60,7 +60,7 @@ public interface CountGrammar {
      * @param parent
      * @return the total number of times a non-terminal was observed as a parent
      */
-    public float observations(final String parent);
+    public double observations(final String parent);
 
     /**
      * @return The total number of observed rules
