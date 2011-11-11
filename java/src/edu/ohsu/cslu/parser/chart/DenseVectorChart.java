@@ -65,9 +65,9 @@ public class DenseVectorChart extends ParallelArrayChart {
     }
 
     @Override
-    public void reset(final ParseTask parseTask) {
-        this.parseTask = parseTask;
-        this.size = parseTask.sentenceLength();
+    public void reset(final ParseTask task) {
+        this.parseTask = task;
+        this.size = task.sentenceLength();
         // TODO We probably don't need to re-initialize all three arrays
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         Arrays.fill(packedChildren, 0);

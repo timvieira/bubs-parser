@@ -42,9 +42,9 @@ public class LeftRightBottomTopTraversal extends ArrayCellSelector {
 
     // TODO: shouldn't all of this move into the constructor since we create a new one for each sentence?
     @Override
-    public void initSentence(final ChartParser<?, ?> parser) {
-        super.initSentence(parser);
-        final short sentenceLength = (short) parser.chart.size();
+    public void initSentence(final ChartParser<?, ?> p) {
+        super.initSentence(p);
+        final short sentenceLength = (short) p.chart.size();
 
         openCells = sentenceLength * (sentenceLength + 1) / 2;
         if (cellIndices == null || cellIndices.length < openCells) {

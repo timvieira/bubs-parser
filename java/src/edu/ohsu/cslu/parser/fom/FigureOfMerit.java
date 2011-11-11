@@ -21,6 +21,7 @@ package edu.ohsu.cslu.parser.fom;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.Serializable;
 
 import edu.ohsu.cslu.parser.ParseTask;
@@ -54,16 +55,25 @@ public abstract class FigureOfMerit implements Serializable {
         // default is to do nothing
     }
 
-    public void train(final BufferedReader inStream) throws IOException {
+    /**
+     * @throws IOException if input from the {@link Reader} fails
+     */
+    public void train(final BufferedReader reader) throws IOException {
         throw new UnsupportedOperationException("Not implemented.");
     }
 
-    public void readModel(final BufferedReader inStream) throws IOException {
+    /**
+     * @throws IOException if input from the {@link Reader} fails
+     */
+    public void readModel(final BufferedReader reader) throws IOException {
         // NOTE: some models have nothing to be read
         // throw new Exception("Not implemented.");
     }
 
-    public void writeModel(final BufferedWriter outStream) throws IOException {
+    /**
+     * @throws IOException if input from the {@link Reader} fails
+     */
+    public void writeModel(final BufferedWriter reader) throws IOException {
         throw new UnsupportedOperationException("Not implemented.");
     }
 

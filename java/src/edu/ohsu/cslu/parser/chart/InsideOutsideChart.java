@@ -344,12 +344,12 @@ public class InsideOutsideChart extends PackedArrayChart {
      * Returns the index in the parallel chart array of the specified parent in the cell with the specified offset
      * 
      * @param offset The offset of the target cell
-     * @param numNonTerminals Number of non-terminals populated in the target cell
+     * @param cellPopulation Number of non-terminals populated in the target cell
      * @param parent The parent to search for in the target cell
      * @return the index in the parallel chart array of the specified parent in the cell with the specified offset
      */
-    private int entryIndex(final int offset, final int numNonTerminals, final short parent) {
-        return Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals, parent);
+    private int entryIndex(final int offset, final int cellPopulation, final short parent) {
+        return Arrays.binarySearch(nonTerminalIndices, offset, offset + cellPopulation, parent);
     }
 
     @Override

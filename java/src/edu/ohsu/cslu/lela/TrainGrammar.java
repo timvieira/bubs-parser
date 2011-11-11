@@ -26,7 +26,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
 import cltool4j.BaseCommandlineTool;
@@ -36,10 +35,8 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
@@ -131,6 +128,7 @@ public class TrainGrammar extends BaseCommandlineTool {
                 developmentSet != null ? fileAsBufferedReader(developmentSet) : null);
     }
 
+    @SuppressWarnings("null")
     void train(final BufferedReader trainingCorpusReader, final BufferedReader devCorpusReader) throws IOException {
 
         trainingCorpusReader.mark(MAX_CORPUS_SIZE);
@@ -356,6 +354,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         final float[] mergeCost = new float[cscGrammar.nonTermSet.size() / 2];
 
         // Iterate over the training corpus, parsing and counting rule occurrences
+        @SuppressWarnings("unused")
         int sentenceCount = 0;
         for (final ConstrainingChart constrainingChart : constrainingCharts) {
             parser.findBestParse(constrainingChart);
@@ -392,27 +391,6 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final EvalbResult evalbResult = evaluator.accumulatedResult();
         BaseLogger.singleton().info(String.format("Dev-set F-score: %.2f", evalbResult.f1() * 100));
-    }
-
-    private double parseFScore(final Grammar grammar, final List<NaryTree<String>> goldTrees) {
-        final LeftCscSparseMatrixGrammar cscGrammar = new LeftCscSparseMatrixGrammar(grammar);
-        final CartesianProductHashSpmlParser parser = new CartesianProductHashSpmlParser(new ParserDriver(), cscGrammar);
-
-        final BracketEvaluator evaluator = new BracketEvaluator();
-
-        for (final NaryTree<String> goldTree : goldTrees) {
-            // Extract tokens from training tree, parse, and evaluate
-            // TODO Parse from tree instead
-            final String sentence = Strings.join(goldTree.leafLabels(), " ");
-            final ParseTask context = parser.parseSentence(sentence);
-
-            if (context.binaryParse != null) {
-                evaluator.evaluate(goldTree, context.binaryParse.unfactor(cscGrammar.grammarFormat));
-            }
-        }
-
-        final EvalbResult evalbResult = evaluator.accumulatedResult();
-        return evalbResult.f1();
     }
 
     public static void main(final String[] args) {

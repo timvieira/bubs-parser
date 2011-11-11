@@ -29,12 +29,16 @@ public abstract class CellSelector implements Iterator<short[]> {
 
     public abstract void initSentence(final ChartParser<?, ?> parser);
 
-    // public abstract void initSentence(final int sentenceLength);
-
+    /**
+     * @throws IOException if the write fails
+     */
     public void train(final BufferedReader inStream) throws IOException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * @throws IOException if the write fails
+     */
     public void writeModel(final BufferedWriter outStream) throws IOException {
         throw new UnsupportedOperationException();
     }

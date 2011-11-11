@@ -28,8 +28,8 @@ public abstract class ArrayCellSelector extends CellSelector {
     }
 
     @Override
-    public void initSentence(final ChartParser<?, ?> parser) {
-        this.parser = parser;
+    public void initSentence(final ChartParser<?, ?> p) {
+        this.parser = p;
         nextCell = 0;
     }
 
