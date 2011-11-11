@@ -18,8 +18,9 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
     private static final long serialVersionUID = 1L;
 
     /**
-     * A copy of the CSC grammar, mapped by left child -> parent,right child (note that this confuses the arguments to
-     * pack/unpack method of the PackingFunction, swapping the parent and the left child).
+     * A copy of the CSC grammar, mapped by left child -> parent,right child Note that this confuses the arguments to
+     * pack/unpack method of the {@link PackingFunction}, swapping the parent and the left child. So
+     * {@link PackingFunction#pack(short, short)} should be called with (parent, right child).
      */
     public final int[] leftChildCscBinaryPopulatedColumns;
     public final int[] leftChildCscBinaryPopulatedColumnOffsets;
@@ -29,8 +30,9 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
     public final PerfectIntPairHashPackingFunction leftChildPackingFunction;
 
     /**
-     * A copy of the CSC grammar, mapped by right child -> parent,left child (note that this confuses the arguments to
-     * pack/unpack method of the PackingFunction, shifting the positions of parent, left child, and right child)
+     * A copy of the CSC grammar, mapped by right child -> parent,left child. Note that this confuses the arguments to
+     * pack/unpack method of the {@link PackingFunction}, shifting the positions of parent, left child, and right child.
+     * So {@link PackingFunction#pack(short, short)} should be called with (parent, left child).
      */
     public final int[] rightChildCscBinaryPopulatedColumns;
     public final int[] rightChildCscBinaryPopulatedColumnOffsets;

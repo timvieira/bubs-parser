@@ -295,17 +295,9 @@ public class Grammar implements Serializable {
         unaryProductionsByChild = storeProductionByChild(unaryProductions, nonTermSet.size() - 1);
         lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
 
-        lexicalParents = new short[lexicalProdsByChild.length][];
-        lexicalLogProbabilities = new float[lexicalProdsByChild.length][];
-        for (int child = 0; child < lexicalProdsByChild.length; child++) {
-            lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
-            lexicalLogProbabilities[child] = new float[lexicalProdsByChild[child].size()];
-            int j = 0;
-            for (final Production p : lexicalProdsByChild[child]) {
-                lexicalParents[child][j] = (short) p.parent;
-                lexicalLogProbabilities[child][j++] = p.prob;
-            }
-        }
+        this.lexicalParents = new short[lexicalProdsByChild.length][];
+        this.lexicalLogProbabilities = new float[lexicalProdsByChild.length][];
+        initLexicalProbabilities();
 
         stringPool = null; // We no longer need the String intern map, so let it be GC'd
 
@@ -357,9 +349,11 @@ public class Grammar implements Serializable {
         this.lexicalProductions = lexicalProductions;
 
         this.unaryProductionsByChild = null;
-        lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
-        this.lexicalParents = null;
-        this.lexicalLogProbabilities = null;
+        this.lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
+
+        this.lexicalParents = new short[lexicalProdsByChild.length][];
+        this.lexicalLogProbabilities = new float[lexicalProdsByChild.length][];
+        initLexicalProbabilities();
 
         this.maxPOSIndex = -1;
         this.numPosSymbols = -1;
@@ -466,6 +460,23 @@ public class Grammar implements Serializable {
         }
 
         return gf;
+    }
+
+    /**
+     * Populates lexicalLogProbabilities and lexicalParents
+     * 
+     * @return
+     */
+    private void initLexicalProbabilities() {
+        for (int child = 0; child < lexicalProdsByChild.length; child++) {
+            lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
+            lexicalLogProbabilities[child] = new float[lexicalProdsByChild[child].size()];
+            int j = 0;
+            for (final Production p : lexicalProdsByChild[child]) {
+                lexicalParents[child][j] = (short) p.parent;
+                lexicalLogProbabilities[child][j++] = p.prob;
+            }
+        }
     }
 
     private int[] startAndEndIndices() {
@@ -629,10 +640,23 @@ public class Grammar implements Serializable {
         return lexicalProdsByChild[child];
     }
 
+    /**
+     * Returns the non-terminal parents for the specified child. See also {@link #lexicalLogProbabilities(int)}.
+     * 
+     * @param child Word, as mapped in the lexicon
+     * @return All non-terminal parents for the specified child
+     */
     public final short[] lexicalParents(final int child) {
         return lexicalParents[child];
     }
 
+    /**
+     * Returns the log probabilities of the non-terminal parents returned by {@Link #lexicalParents(int)} for the
+     * specified child.
+     * 
+     * @param child Word, as mapped in the lexicon
+     * @return The log probabilities of each non-terminal parent for the specified child
+     */
     public final float[] lexicalLogProbabilities(final int child) {
         return lexicalLogProbabilities[child];
     }
