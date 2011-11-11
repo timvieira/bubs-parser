@@ -201,12 +201,12 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         }
 
         @Override
-        public void init(final ParseTask parseTask, final Chart chart) {
+        public void init(final ParseTask parseTask, final Chart c) {
             // should divide feature vector into three parts: cell-specific, left-boundary, right-boundary
             // could then pre-compute left and right boundary scores for each NT and add them up
             // in calcFOM with cell-specific values
             // this.parseTask = parseTask;
-            this.chart = chart;
+            this.chart = c;
             this.grammar = parseTask.grammar;
         }
 

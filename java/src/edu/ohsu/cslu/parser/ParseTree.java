@@ -18,7 +18,6 @@
  */
 package edu.ohsu.cslu.parser;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,7 +55,7 @@ public class ParseTree {
 
     // opposite of toString()
     // example treebank string: (TOP (NP (NNP Two-Way) (NNP Street)))
-    public static ParseTree readBracketFormat(final String str) throws IOException {
+    public static ParseTree readBracketFormat(final String str) {
         ParseTree child;
         final Pattern WORD = Pattern.compile("\\s*([^\\s\\(\\)]*)\\s*");
         Matcher match;

@@ -193,9 +193,9 @@ public class PackedArrayChart extends ParallelArrayChart {
     }
 
     @Override
-    public void reset(final ParseTask parseTask) {
-        this.parseTask = parseTask;
-        this.size = parseTask.sentenceLength();
+    public void reset(final ParseTask task) {
+        this.parseTask = task;
+        this.size = task.sentenceLength();
         Arrays.fill(numNonTerminals, 0);
         if (leftChildSegmentStartIndices != null) {
             Arrays.fill(leftChildSegmentStartIndices, 0);
@@ -335,10 +335,7 @@ public class PackedArrayChart extends ParallelArrayChart {
             if (tmpCell == null) {
                 return;
             }
-            finalizeCell(tmpCell);
-        }
 
-        public void finalizeCell(final TemporaryChartCell tmpCell) {
             // Copy all populated entries from temporary storage
             boolean foundMinLeftChild = false, foundMinRightChild = false;
             int nonTerminalOffset = offset;

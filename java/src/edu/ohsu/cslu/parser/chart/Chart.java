@@ -72,9 +72,9 @@ public abstract class Chart {
     /**
      * Removes existing chart entries and re-initializes chart state.
      * 
-     * @param parseTask
+     * @param task
      */
-    public abstract void reset(final ParseTask parseTask);
+    public abstract void reset(final ParseTask task);
 
     /**
      * Updates the inside probability of the specified non-terminal in the a cell.

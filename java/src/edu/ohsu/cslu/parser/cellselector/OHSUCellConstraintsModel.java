@@ -284,9 +284,9 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
     public class OHSUCellConstraints extends CellConstraints {
 
         @Override
-        public void initSentence(final ChartParser<?, ?> parser) {
+        public void initSentence(final ChartParser<?, ?> p) {
             // might have to hash the sentence number for the grid
-            initSentence(parser.chart, parser.chart.parseTask.sentence);
+            initSentence(p.chart, p.chart.parseTask.sentence);
         }
 
         public void initSentence(final Chart chart, final String sentence) {

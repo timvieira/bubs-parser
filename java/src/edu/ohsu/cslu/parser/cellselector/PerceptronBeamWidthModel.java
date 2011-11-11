@@ -57,9 +57,9 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             }
             modelStream.reset();
 
-            if (line.equals("# === BinaryPerceptronSet Model ===")) {
+            if ("# === BinaryPerceptronSet Model ===".equals(line)) {
                 beamWidthModel = new BinaryPerceptronSet(modelStream);
-            } else if (line.equals("# === Perceptron Model ===")) {
+            } else if ("# === Perceptron Model ===".equals(line)) {
                 beamWidthModel = new AveragedPerceptron(modelStream);
             } else {
                 throw new IllegalArgumentException("ERROR: Unknown beamconf model type on line: " + line);
@@ -106,11 +106,10 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             beamWidthValues = new int[n][n + 1];
             onlyFactored = new boolean[n][n + 1];
             openCells = 0;
-            // cellList = new LinkedList<ChartCell>();
 
-            final boolean countClasses = BaseLogger.singleton().isLoggable(Level.FINER);
-            final int[] beamClassCounts = countClasses ? new int[beamWidthModel.numClasses()] : null;
-            // Arrays.fill(beamClassCounts, 0);
+            // Count classes if we're at a verbose logging level
+            final int[] beamClassCounts = BaseLogger.singleton().isLoggable(Level.FINER) ? new int[beamWidthModel
+                    .numClasses()] : null;
 
             final String[] featureNames = beamWidthModel.getFeatureTemplate().split("\\s+");
 
@@ -129,7 +128,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                     } else {
                         final SparseBitVector feats = parser.chart.getCellFeatures(start, end, featureNames);
                         guessClass = beamWidthModel.classify(feats);
-                        if (countClasses) {
+                        if (beamClassCounts != null) {
                             beamClassCounts[guessClass]++;
                         }
                         // guessBeamWidth = (int) Math.min(beamWidthModel.class2value(guessClass),
@@ -170,7 +169,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 }
             }
 
-            if (countClasses) {
+            if (beamClassCounts != null) {
                 final StringBuilder classCounts = new StringBuilder(1024);
                 for (i = 0; i < beamWidthModel.numClasses(); i++) {
                     classCounts.append(" class" + i + "=" + beamClassCounts[i]);

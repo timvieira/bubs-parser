@@ -45,7 +45,7 @@ public class GoldChart extends Chart {
         addParseTreeToChart(tree, grammar);
     }
 
-    private void addParseTreeToChart(final BinaryTree<String> goldTree, final Grammar grammar) {
+    private void addParseTreeToChart(final BinaryTree<String> goldTree, final Grammar g) {
 
         // TODO Replace with NaryTree throughput this method
         final ParseTree tree = new ParseTree(goldTree.toString());
@@ -82,7 +82,7 @@ public class GoldChart extends Chart {
                     B = node.children.get(0).contents;
                     C = node.children.get(1).contents;
                     // prod = grammar.getBinaryProduction(A, B, C);
-                    prod = new Production(A, B, C, Float.NEGATIVE_INFINITY, grammar);
+                    prod = new Production(A, B, C, Float.NEGATIVE_INFINITY, g);
                     midpt = leafNodes.indexOf(node.children.get(0).rightMostLeaf()) + 1;
                     edge = new ChartEdge(prod, getCell(start, midpt), getCell(midpt, end));
                 } else if (numChildren == 1) {
@@ -91,11 +91,11 @@ public class GoldChart extends Chart {
                         // prod = grammar.getLexicalProduction(A, B);
                         // NOTE: don't want to add new words to the lexicon because they
                         // won't get mapped to UNK during decoding
-                        B = grammar.tokenizer.mapToLexSetEntry(B, false);
-                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, true, grammar.nonTermSet, grammar.lexSet);
+                        B = g.tokenizer.mapToLexSetEntry(B, false);
+                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, true, g.nonTermSet, g.lexSet);
                     } else {
                         // prod = grammar.getUnaryProduction(A, B);
-                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, false, grammar.nonTermSet, grammar.lexSet);
+                        prod = new Production(A, B, Float.NEGATIVE_INFINITY, false, g.nonTermSet, g.lexSet);
                     }
                     edge = new ChartEdge(prod, getCell(start, end));
                 } else {
@@ -105,7 +105,7 @@ public class GoldChart extends Chart {
 
                 // we can ignore unary nodes because they are always with a binary node or a lex node
                 if (numChildren == 2) {
-                    perCellStats += String.format("%d,%d=%d ", start, end, grammar.grammarFormat.isFactored(A) ? 2 : 4);
+                    perCellStats += String.format("%d,%d=%d ", start, end, g.grammarFormat.isFactored(A) ? 2 : 4);
                 } else if (numChildren == 1 && node.isPOS()) {
                     perCellStats += String.format("%d,%d=4 ", start, end);
                 }
@@ -195,7 +195,7 @@ public class GoldChart extends Chart {
     }
 
     @Override
-    public void reset(final ParseTask parseTask) {
+    public void reset(final ParseTask task) {
         throw new UnsupportedOperationException();
     }
 }

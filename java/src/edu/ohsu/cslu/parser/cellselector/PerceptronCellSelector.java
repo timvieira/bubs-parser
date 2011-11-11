@@ -501,7 +501,7 @@ public class PerceptronCellSelector extends CellSelector {
         return bins;
     }
 
-    public void train(final BufferedReader inStream, final BSCPPerceptronCellTrainer parserToTrain) throws IOException {
+    public void train(final BufferedReader inStream, final BSCPPerceptronCellTrainer parserToTrain) {
         learningRate = (float) 1.0;
         initWeights();
         // parserToTrain.train(inStream);
