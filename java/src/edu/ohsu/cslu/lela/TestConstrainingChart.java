@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.tests.JUnit;
@@ -96,12 +96,12 @@ public class TestConstrainingChart extends ChartTestCase {
         // Try from a problematic tree from the Penn Treebank
         // Induce a grammar from the tree and construct a SparseMatrixGrammar
         final ProductionListGrammar plg = new ProductionListGrammar(new StringCountGrammar(new StringReader(
-                AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN), Factorization.RIGHT, GrammarFormatType.Berkeley));
+                AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN), Binarization.RIGHT, GrammarFormatType.Berkeley));
         final ConstrainedInsideOutsideGrammar cscg = new ConstrainedInsideOutsideGrammar(plg,
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final ConstrainingChart cc = new ConstrainingChart(NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN,
-                String.class).factor(GrammarFormatType.Berkeley, Factorization.RIGHT), cscg);
+                String.class).factor(GrammarFormatType.Berkeley, Binarization.RIGHT), cscg);
 
         // Verify some unary chain lengths
         assertEquals(3, cc.maxUnaryChainLength());

@@ -33,7 +33,7 @@ import java.util.LinkedList;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
@@ -81,12 +81,12 @@ public final class StringCountGrammar implements CountGrammar {
      * original treebank.
      * 
      * @param reader
-     * @param factorization Factorization direction. If null, the tree is assumed to be already binarized.
+     * @param binarization Binarization direction. If null, the tree is assumed to be already binarized.
      * @param grammarFormatType Grammar format used in factorization. If null, the tree is assumed to be already
      *            binarized.
      * @throws IOException
      */
-    public StringCountGrammar(final Reader reader, final Factorization factorization,
+    public StringCountGrammar(final Reader reader, final Binarization binarization,
             final GrammarFormatType grammarFormatType) throws IOException {
 
         // Temporary string-based maps recording counts of binary, unary, and
@@ -100,10 +100,10 @@ public final class StringCountGrammar implements CountGrammar {
         // Get word counts from corpus
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             BinaryTree<String> tree;
-            if (factorization == null) {
+            if (binarization == null) {
                 tree = BinaryTree.read(line, String.class);
             } else {
-                tree = NaryTree.read(line, String.class).factor(grammarFormatType, factorization);
+                tree = NaryTree.read(line, String.class).factor(grammarFormatType, binarization);
             }
             trees.add(tree);
 

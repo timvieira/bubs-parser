@@ -359,7 +359,7 @@ public class Grammar implements Serializable {
         this.numPosSymbols = -1;
         this.grammarFormat = grammarFormat;
 
-        // TODO Correct this; replace with Factorization.LEFT or Factorization.RIGHT
+        // TODO Correct this; replace with Binarization.LEFT or Binarization.RIGHT
         this.isLeftFactored = false;
 
         // Initialize start and end indices
@@ -957,7 +957,7 @@ public class Grammar implements Serializable {
 
         sb.append(" startSymbol=" + nonTermSet.getSymbol(startSymbol));
         sb.append(" nullSymbol=" + nonTermSet.getSymbol(nullSymbol));
-        sb.append(" factorization=" + (isLeftFactored() ? "left" : "right"));
+        sb.append(" binarization=" + (isLeftFactored() ? "left" : "right"));
         sb.append(" grammarFormat=" + grammarFormat);
 
         return sb.toString();
@@ -988,7 +988,7 @@ public class Grammar implements Serializable {
 
         sb.append("Start symbol: " + nonTermSet.getSymbol(startSymbol) + '\n');
         sb.append("Null symbol: " + nonTermSet.getSymbol(nullSymbol) + '\n');
-        sb.append("Factorization: " + (isLeftFactored() ? "left" : "right") + '\n');
+        sb.append("Binarization: " + (isLeftFactored() ? "left" : "right") + '\n');
         sb.append("GrammarFormat: " + grammarFormat + '\n');
 
         return sb.toString();

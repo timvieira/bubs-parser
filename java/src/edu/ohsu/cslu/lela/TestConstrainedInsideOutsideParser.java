@@ -35,7 +35,7 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -426,7 +426,7 @@ public class TestConstrainedInsideOutsideParser {
 
         // Construct a constraining chart
         final NaryTree<String> goldTree = NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
-        final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
+        final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Binarization.RIGHT);
         final ConstrainingChart constrainingChart = new ConstrainingChart(factoredTree, csc0);
 
         // Parse with the split-1 grammar
@@ -441,7 +441,7 @@ public class TestConstrainedInsideOutsideParser {
     }
 
     private ProductionListGrammar induceProductionListGrammar(final Reader reader) throws IOException {
-        final StringCountGrammar sg = new StringCountGrammar(reader, Factorization.RIGHT, GrammarFormatType.Berkeley);
+        final StringCountGrammar sg = new StringCountGrammar(reader, Binarization.RIGHT, GrammarFormatType.Berkeley);
         return new ProductionListGrammar(sg);
     }
 
@@ -480,7 +480,7 @@ public class TestConstrainedInsideOutsideParser {
         int count = 0;
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
-            final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
+            final BinaryTree<String> factoredTree = goldTree.factor(GrammarFormatType.Berkeley, Binarization.RIGHT);
             final ConstrainingChart constrainingChart = new ConstrainingChart(factoredTree, unsplitGrammar);
 
             // Ensure that we're constructing the constraining chart correctly
@@ -526,7 +526,7 @@ public class TestConstrainedInsideOutsideParser {
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
-            final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
+            final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Binarization.RIGHT);
 
             final ConstrainingChart constrainingChart0 = new ConstrainingChart(tree0, csc0);
             final BinaryTree<String> tree1 = p1.findBestParse(constrainingChart0);
@@ -581,7 +581,7 @@ public class TestConstrainedInsideOutsideParser {
     // final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
     // for (String line = br.readLine(); line != null; line = br.readLine()) {
     // final NaryTree<String> goldTree = NaryTree.read(line, String.class);
-    // final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Factorization.RIGHT);
+    // final BinaryTree<String> tree0 = goldTree.factor(GrammarFormatType.Berkeley, Binarization.RIGHT);
     //
     // // Parse with the split-1 grammar
     // final ConstrainingChart c0 = new ConstrainingChart(tree0, csc0);

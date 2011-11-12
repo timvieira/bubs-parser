@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
@@ -24,7 +24,7 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
 
         for (int seed = initialRandomSeed; seed < (initialRandomSeed + 1000); seed++) {
             final TrainGrammar tg = new TrainGrammar();
-            tg.binarization = Factorization.RIGHT;
+            tg.binarization = Binarization.RIGHT;
             tg.grammarFormatType = GrammarFormatType.Berkeley;
 
             final ProductionListGrammar plg0 = tg.induceGrammar(br);
