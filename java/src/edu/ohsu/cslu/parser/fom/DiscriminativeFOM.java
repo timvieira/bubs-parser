@@ -21,7 +21,7 @@ import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
-import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
+import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 import edu.ohsu.cslu.perceptron.LogisticRegressor;
 
 public class DiscriminativeFOM extends FigureOfMeritModel {
@@ -58,7 +58,7 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
     private static InsideOutsideCphSpmlParser getTrainParser(final String grammarFile) throws Exception {
         final InsideOutsideCscSparseMatrixGrammar grammar = (InsideOutsideCscSparseMatrixGrammar) ParserDriver
                 .readGrammar(grammarFile, ResearchParserType.InsideOutsideCartesianProductHash,
-                        CartesianProductFunctionType.PerfectHash);
+                        PackingFunctionType.PerfectHash);
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
         opts.decodeMethod = DecodeMethod.Goodman;
