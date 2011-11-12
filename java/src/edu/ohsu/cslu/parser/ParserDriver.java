@@ -97,7 +97,7 @@ import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
-import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.CartesianProductFunctionType;
+import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 
@@ -165,8 +165,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
     private String fomTypeOrModel = "Inside";
 
-    @Option(name = "-cpf", hidden = true, metaVar = "function", usage = "Cartesian-product function (only used for SpMV parsers)")
-    private CartesianProductFunctionType cartesianProductFunctionType = CartesianProductFunctionType.PerfectHash;
+    @Option(name = "-pf", hidden = true, metaVar = "function", usage = "Packing function (only used for SpMV parsers)")
+    private PackingFunctionType packingFunctionType = PackingFunctionType.PerfectHash;
 
     @Option(name = "-beamModel", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
@@ -251,8 +251,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             fomModel = (FigureOfMeritModel) ois.readObject();
 
         } else {
-            this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType,
-                    cartesianProductFunctionType);
+            this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType, packingFunctionType);
 
             if (fomTypeOrModel.equals("Inside")) {
                 fomModel = new FigureOfMeritModel(FOMType.Inside);
@@ -308,7 +307,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * Used by other tools
      */
     public static Grammar readGrammar(final String grammarFile, final ResearchParserType researchParserType,
-            final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
+            final PackingFunctionType cartesianProductFunctionType) throws Exception {
 
         // Handle gzipped and non-gzipped grammar files
         return createGrammar(new FileReader(grammarFile), researchParserType, cartesianProductFunctionType);
@@ -325,7 +324,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * @throws Exception
      */
     public static Grammar createGrammar(final Reader grammarFile, final ResearchParserType researchParserType,
-            final CartesianProductFunctionType cartesianProductFunctionType) throws Exception {
+            final PackingFunctionType cartesianProductFunctionType) throws Exception {
 
         switch (researchParserType) {
         case ECPInsideOutside:
