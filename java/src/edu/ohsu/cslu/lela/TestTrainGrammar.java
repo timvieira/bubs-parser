@@ -30,7 +30,7 @@ import org.junit.Test;
 
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
@@ -175,7 +175,7 @@ public class TestTrainGrammar {
 
     private void testEmTraining(final BufferedReader trainingCorpusReader) throws IOException {
         final TrainGrammar tg = new TrainGrammar();
-        tg.binarization = Factorization.LEFT;
+        tg.binarization = Binarization.LEFT;
         tg.grammarFormatType = GrammarFormatType.Berkeley;
 
         trainingCorpusReader.mark(20 * 1024 * 1024);
@@ -214,7 +214,7 @@ public class TestTrainGrammar {
     @Test
     public void test3SplitWsj24WithoutMerging() throws IOException {
         final TrainGrammar tg = new TrainGrammar();
-        tg.binarization = Factorization.LEFT;
+        tg.binarization = Binarization.LEFT;
         tg.grammarFormatType = GrammarFormatType.Berkeley;
 
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"),
@@ -263,7 +263,7 @@ public class TestTrainGrammar {
     public void test3SplitWsj24WithMerging() throws IOException {
         fail("Not Implemented");
         final TrainGrammar tg = new TrainGrammar();
-        tg.binarization = Factorization.LEFT;
+        tg.binarization = Binarization.LEFT;
         tg.grammarFormatType = GrammarFormatType.Berkeley;
 
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"),

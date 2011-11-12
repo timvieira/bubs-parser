@@ -25,7 +25,7 @@ import java.io.StringReader;
 
 import org.junit.Test;
 
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.lela.AllLelaTests;
 import edu.ohsu.cslu.lela.ProductionListGrammar;
@@ -42,7 +42,7 @@ public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
     public void testCartesianProductFunction() throws IOException {
         // Induce a grammar from a sample tree
         final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllLelaTests.STRING_SAMPLE_TREE),
-                Factorization.RIGHT, GrammarFormatType.Berkeley);
+                Binarization.RIGHT, GrammarFormatType.Berkeley);
         final ProductionListGrammar plGrammar0 = new ProductionListGrammar(sg);
 
         // Split the grammar

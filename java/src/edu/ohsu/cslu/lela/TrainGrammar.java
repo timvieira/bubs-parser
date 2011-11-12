@@ -34,7 +34,7 @@ import cltool4j.GlobalConfigProperties;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Factorization;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -75,11 +75,14 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-unk", aliases = { "--unk-threshold" }, metaVar = "threshold", usage = "Learn unknown-word probabilities for words occurring <= threshold times")
     private int lexicalUnkThreshold = 5;
 
+    @Option(name = "-ot", aliases = { "--open-class-threshold" }, metaVar = "threshold", usage = "Learn unknown-word probabilities for tags producing at least n words")
+    private int openClassThreshold = 50;
+
     @Option(name = "-l", aliases = { "--language" }, metaVar = "language", usage = "Language. Output in grammar file headers.")
     private String language = "english";
 
     @Option(name = "-b", aliases = { "--binarization" }, metaVar = "type", usage = "Binarization direction.")
-    Factorization binarization = Factorization.LEFT;
+    Binarization binarization = Binarization.LEFT;
 
     @Option(name = "-mrp", metaVar = "probability", usage = "Minimum rule log probability (rules with lower probability are pruned from the grammar)")
     private float minimumRuleProbability = -30f;
@@ -172,7 +175,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             final ConstrainedInsideOutsideGrammar finalSplitGrammar = cscGrammar(plGrammar);
             plGrammar = merge(plGrammar, finalCountGrammar, finalSplitGrammar);
 
-            // Add UNK productions
+            // Add UNK productionsä
             finalCountGrammar.addUnkProbabilities(goldTrees, lexicalUnkThreshold);
             final ProductionListGrammar grammarWithUnks = finalCountGrammar
                     .toProductionListGrammar(minimumRuleProbability);
