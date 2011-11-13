@@ -51,7 +51,7 @@ public abstract class FigureOfMerit implements Serializable {
         throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
     }
 
-    public void init(final ParseTask parseTask, final Chart chart) {
+    public void initSentence(final ParseTask parseTask, final Chart chart) {
         // default is to do nothing
     }
 

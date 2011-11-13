@@ -435,7 +435,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
          * tag sequence based on viterbi-max decoding
          */
         @Override
-        public void init(final ParseTask task, final Chart chart) {
+        public void initSentence(final ParseTask task, final Chart chart) {
             final int sentLen = task.sentenceLength();
             final int fbSize = sentLen + 2;
             final int posSize = grammar.maxPOSIndex() + 1;

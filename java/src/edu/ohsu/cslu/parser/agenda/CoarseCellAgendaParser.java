@@ -64,7 +64,7 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
 
         initParser(parseTask);
         addLexicalProductions(parseTask.tokens);
-        fomModel.init(parseTask, chart);
+        fomModel.initSentence(parseTask, chart);
         addUnaryExtensionsToLexProds();
 
         for (int i = 0; i < chart.size(); i++) {
