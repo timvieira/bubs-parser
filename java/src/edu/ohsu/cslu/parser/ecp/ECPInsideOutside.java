@@ -89,7 +89,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
         initSentence(parseTask);
         cellSelector.initSentence(this);
-        fomModel.init(parseTask, chart);
+        fomModel.initSentence(parseTask, chart);
 
         while (cellSelector.hasNext()) {
             final short[] startEnd = cellSelector.next();

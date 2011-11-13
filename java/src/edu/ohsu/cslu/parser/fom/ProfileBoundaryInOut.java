@@ -91,7 +91,7 @@ public class ProfileBoundaryInOut {
     public void profileParentAnnotated() {
 
         for (int i = 0; i < 400; i++) {
-            parentAnnotatedBio.init(parentAnnotatedParseContext, parentAnnotatedChart);
+            parentAnnotatedBio.initSentence(parentAnnotatedParseContext, parentAnnotatedChart);
         }
     }
 
@@ -99,7 +99,7 @@ public class ProfileBoundaryInOut {
     @PerformanceTest({ "mbp", "3633", "d820", "3750" })
     public void profileBerkeley() {
         for (int i = 0; i < 400; i++) {
-            berkeleyBio.init(berkeleyParseContext, berkeleyChart);
+            berkeleyBio.initSentence(berkeleyParseContext, berkeleyChart);
         }
     }
 }
