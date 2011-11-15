@@ -157,8 +157,151 @@ public class ConstrainingChart extends PackedArrayChart {
 
     /**
      * Construct a {@link ConstrainingChart} and populate it from a {@link ConstrainedChart} (e.g., a chart populated by
-     * a constrained parse). Populates each cell in the new chart with the highest-posterior-probability entry from the
-     * {@link ConstrainedChart}.
+     * a constrained parse). Populates the new chart with either 1) the highest-posterior-probability entry from the
+     * each cell of the {@link ConstrainedChart} or 2) the 1-best Viterbi parse from the {@link ConstrainedChart}.
+     * 
+     * @param constrainedChart
+     * @param grammar
+     * @param viterbi Populate the new chart with the Viterbi 1-best tree from the {@link ConstrainedChart}
+     */
+    protected ConstrainingChart(final ConstrainedChart constrainedChart, final SparseMatrixGrammar grammar,
+            final boolean viterbi) {
+
+        super(constrainedChart.size(), constrainedChart.chartArraySize / 2, grammar);
+
+        Short2ShortMap parent2IndexMap = ((SplitVocabulary) grammar.nonTermSet).parent2IndexMap;
+        if (parent2IndexMap == null) {
+            // Construct an identity map to simplify chart population code below
+            parent2IndexMap = new Short2ShortOpenHashMap();
+            for (short i = 0; i < grammar.nonTermSet.size(); i++) {
+                parent2IndexMap.put(i, i);
+            }
+        }
+
+        this.unaryChainLength = constrainedChart.unaryChainLength;
+        this.beamWidth = this.lexicalRowBeamWidth = constrainedChart.maxUnaryChainLength;
+        this.maxUnaryChainLength = constrainedChart.maxUnaryChainLength;
+        this.openCells = constrainedChart.openCells;
+        this.parentCellIndices = constrainedChart.parentCellIndices;
+        this.siblingCellIndices = constrainedChart.siblingCellIndices;
+        System.arraycopy(constrainedChart.midpoints, 0, this.midpoints, 0, constrainedChart.midpoints.length);
+
+        calculateCellOffsets();
+
+        if (viterbi) {
+            populateViterbiParse(constrainedChart, parent2IndexMap, 0, constrainedChart.size(), 0);
+            return;
+        }
+
+        final PackingFunction packingFunction = sparseMatrixGrammar.packingFunction;
+
+        // Populate each cell with the highest posterior probability entry from the analogous cell
+        for (final short[] startAndEnd : openCells) {
+            final int cellIndex = cellIndex(startAndEnd[0], startAndEnd[1]);
+            final int constrainedChartBaseOffset = constrainedChart.offset(cellIndex);
+            final int baseOffset = offset(cellIndex);
+
+            for (int unaryChainHeight = unaryChainLength[cellIndex] - 1; unaryChainHeight >= 0; unaryChainHeight--) {
+                final int constrainedChartOffset = constrainedChartBaseOffset + (unaryChainHeight << 1);
+                final int offset = baseOffset + unaryChainHeight;
+
+                final float entry0Probability = constrainedChart.insideProbabilities[constrainedChartOffset]
+                        + constrainedChart.outsideProbabilities[constrainedChartOffset];
+                final float entry1Probability = constrainedChart.insideProbabilities[constrainedChartOffset + 1]
+                        + constrainedChart.outsideProbabilities[constrainedChartOffset + 1];
+
+                if (entry1Probability == Float.NEGATIVE_INFINITY || entry0Probability >= entry1Probability) {
+                    nonTerminalIndices[offset] = parent2IndexMap
+                            .get(constrainedChart.nonTerminalIndices[constrainedChartOffset]);
+                    insideProbabilities[offset] = entry0Probability;
+                } else if (entry1Probability > Float.NEGATIVE_INFINITY) {
+                    nonTerminalIndices[offset] = parent2IndexMap
+                            .get(constrainedChart.nonTerminalIndices[constrainedChartOffset + 1]);
+                    insideProbabilities[offset] = entry1Probability;
+                } else {
+                    continue;
+                }
+
+                if (unaryChainHeight == unaryChainLength[cellIndex] - 1) {
+                    // Bottom Entry
+                    if (startAndEnd[1] - startAndEnd[0] == 1) {
+                        // Lexical parent
+                        final int lexicalEntryOffset = constrainedChart.nonTerminalIndices[constrainedChartOffset] >= 0 ? constrainedChartOffset
+                                : constrainedChartOffset + 1;
+                        final int lexicalEntry = constrainedChart.sparseMatrixGrammar.packingFunction
+                                .unpackLeftChild(constrainedChart.packedChildren[lexicalEntryOffset]);
+                        packedChildren[offset] = packingFunction.packLexical(lexicalEntry);
+                    } else {
+                        // Binary parent
+                        final short midpoint = midpoints[cellIndex];
+                        final short leftChild = nonTerminalIndices[cellOffset(startAndEnd[0], midpoint)];
+                        final short rightChild = nonTerminalIndices[cellOffset(midpoint, startAndEnd[1])];
+                        packedChildren[offset] = packingFunction.pack(leftChild, rightChild);
+                    }
+                } else {
+                    // Unary parent
+                    packedChildren[offset] = packingFunction.packUnary(nonTerminalIndices[offset + 1]);
+                }
+            }
+        }
+    }
+
+    private void populateViterbiParse(final ConstrainedChart constrainedChart, final Short2ShortMap parent2IndexMap,
+            final int start, final int end, int constrainedParent) {
+
+        final PackingFunction pf = sparseMatrixGrammar.packingFunction;
+        final PackingFunction constrainedPf = constrainedChart.sparseMatrixGrammar.packingFunction;
+
+        final int cellIndex = cellIndex(start, end);
+        final int constrainedCellOffset = constrainedChart.cellOffset(start, end);
+
+        // Work downward through unary productions
+        for (int constrainedEntry0Offset = constrainedCellOffset; constrainedEntry0Offset < constrainedCellOffset
+                + unaryChainLength[cellIndex] * 2 - 2; constrainedEntry0Offset += 2) {
+
+            final int constrainedEntryOffset = (constrainedChart.nonTerminalIndices[constrainedEntry0Offset] == constrainedParent) ? constrainedEntry0Offset
+                    : constrainedEntry0Offset + 1;
+
+            final int offset = constrainedEntryOffset >> 1;
+            nonTerminalIndices[offset] = parent2IndexMap.get((short) constrainedParent);
+            insideProbabilities[offset] = constrainedChart.insideProbabilities[constrainedEntryOffset];
+
+            final int constrainedChild = constrainedPf
+                    .unpackLeftChild(constrainedChart.packedChildren[constrainedEntryOffset]);
+            packedChildren[offset] = pf.packUnary(parent2IndexMap.get((short) constrainedChild));
+            constrainedParent = constrainedChild;
+        }
+
+        final int topEntry0Offset = constrainedCellOffset + unaryChainLength[cellIndex] * 2 - 2;
+        final int constrainedEntryOffset = (constrainedChart.nonTerminalIndices[topEntry0Offset] == constrainedParent) ? topEntry0Offset
+                : topEntry0Offset + 1;
+        final int offset = constrainedEntryOffset >> 1;
+        nonTerminalIndices[offset] = parent2IndexMap.get((short) constrainedParent);
+        insideProbabilities[offset] = constrainedChart.insideProbabilities[constrainedEntryOffset];
+
+        //
+        // Add the binary or lexical parent
+        //
+        if (constrainedChart.packedChildren[constrainedEntryOffset] < 0) {
+            // Lexical production
+
+            final int lexicalEntry = constrainedPf
+                    .unpackLeftChild(constrainedChart.packedChildren[constrainedEntryOffset]);
+            packedChildren[constrainedEntryOffset >> 1] = pf.packLexical(lexicalEntry);
+
+        } else {
+            // Binary production
+            final short edgeMidpoint = midpoints[cellIndex(start, end)];
+            populateViterbiParse(constrainedChart, parent2IndexMap, start, edgeMidpoint,
+                    constrainedPf.unpackLeftChild(constrainedChart.packedChildren[constrainedEntryOffset]));
+            populateViterbiParse(constrainedChart, parent2IndexMap, edgeMidpoint, end,
+                    constrainedPf.unpackRightChild(constrainedChart.packedChildren[constrainedEntryOffset]));
+        }
+    }
+
+    /**
+     * Construct a {@link ConstrainingChart} and populate it from a {@link ConstrainedChart} (e.g., a chart populated by
+     * a constrained parse). Populates the new chart with the Viterbi 1-best parse from the {@link ConstrainedChart}.
      * 
      * @param constrainedChart
      * @param parent2IndexMap
@@ -329,7 +472,6 @@ public class ConstrainingChart extends PackedArrayChart {
     public String toString(final boolean formatFractions) {
         final StringBuilder sb = new StringBuilder(1024);
 
-        final int increment = (this instanceof ConstrainedChart) ? 2 : 1;
         for (int span = 1; span <= size; span++) {
             for (int start = 0; start <= size - span; start++) {
                 final int end = start + span;
@@ -344,8 +486,8 @@ public class ConstrainingChart extends PackedArrayChart {
                 sb.append("ConstrainingChartCell[" + start + "][" + end + "]\n");
 
                 // Format unary parents first, followed by the two bottom entries
-                final int bottomEntryOffset = offset + (unaryChainLength(cellIndex) - 1) * increment;
-                for (int offset0 = offset; offset0 < bottomEntryOffset; offset0 += increment) {
+                final int bottomEntryOffset = offset + (unaryChainLength(cellIndex) - 1);
+                for (int offset0 = offset; offset0 < bottomEntryOffset; offset0++) {
                     sb.append(formatCellEntry(nonTerminalIndices[offset0], packedChildren[offset0], true,
                             insideProbabilities[offset0], formatFractions));
                 }

@@ -168,6 +168,43 @@ public class ConstrainedChart extends ConstrainingChart {
         return tree;
     }
 
+    public BinaryTree<String> extractViterbiParse(final int start, final int end, int parent) {
+
+        final int cellIndex = cellIndex(start, end);
+        final int cellOffset = cellOffset(start, end);
+        int entry0Offset = cellOffset;
+        int entryOffset = (nonTerminalIndices[entry0Offset] == parent) ? entry0Offset : entry0Offset + 1;
+
+        final BinaryTree<String> tree = new BinaryTree<String>(
+                grammar.nonTermSet.getSymbol(nonTerminalIndices[entryOffset]));
+        BinaryTree<String> subtree = tree;
+
+        // Add unary productions and binary parent
+        while (entry0Offset < cellOffset + unaryChainLength[cellIndex] * 2 - 2) {
+            entry0Offset += 2;
+            entryOffset = (insideProbabilities[entry0Offset + 1] > insideProbabilities[entry0Offset]) ? entry0Offset + 1
+                    : entry0Offset;
+            subtree = subtree.addChild(grammar.nonTermSet.getSymbol(nonTerminalIndices[entryOffset]));
+            parent = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(packedChildren[entryOffset]);
+        }
+
+        if (packedChildren[entryOffset] < 0) {
+            // Lexical production
+            final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.cartesianProductFunction()
+                    .unpackLeftChild(packedChildren[entryOffset]));
+            subtree.addChild(new BinaryTree<String>(sChild));
+        } else {
+            // Binary production
+            final short edgeMidpoint = midpoints[cellIndex(start, end)];
+            subtree.addChild(extractViterbiParse(start, edgeMidpoint, sparseMatrixGrammar.cartesianProductFunction()
+                    .unpackLeftChild(packedChildren[entryOffset])));
+            subtree.addChild(extractViterbiParse(edgeMidpoint, end, sparseMatrixGrammar.cartesianProductFunction()
+                    .unpackRightChild(packedChildren[entryOffset])));
+        }
+
+        return tree;
+    }
+
     @Override
     public float getInside(final int start, final int end, final int nonTerminal) {
         final int offset = cellOffset(start, end);
@@ -256,6 +293,7 @@ public class ConstrainedChart extends ConstrainingChart {
                 final StringBuilder sb2 = new StringBuilder(128);
 
                 // Format unary parents first, followed by the two bottom entries
+                // TODO This may not be right for longer unary chains?
                 final int bottomEntryOffset = offset0 + (unaryChainLength(cellIndex) - 1) * 2;
                 for (int offset = offset0; offset < bottomEntryOffset; offset += 2) {
                     sb2.append(formatEntries(offset, true, formatFractions));
@@ -265,7 +303,7 @@ public class ConstrainedChart extends ConstrainingChart {
 
                 // Skip empty cells
                 if (sb2.length() > 2) {
-                    sb.append("ConstrainingChartCell[" + start + "][" + end + "]\n");
+                    sb.append("ConstrainedChartCell[" + start + "][" + end + "]\n");
                     sb.append(sb2.toString());
                 }
             }

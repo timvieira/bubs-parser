@@ -20,12 +20,14 @@ package edu.ohsu.cslu.lela;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 
 import cltool4j.BaseCommandlineTool;
@@ -73,10 +75,10 @@ public class TrainGrammar extends BaseCommandlineTool {
     GrammarFormatType grammarFormatType = GrammarFormatType.Berkeley;
 
     @Option(name = "-unk", aliases = { "--unk-threshold" }, metaVar = "threshold", usage = "Learn unknown-word probabilities for words occurring <= threshold times")
-    private int lexicalUnkThreshold = 5;
+    private int lexicalUnkThreshold = 20;
 
     @Option(name = "-ot", aliases = { "--open-class-threshold" }, metaVar = "threshold", usage = "Learn unknown-word probabilities for tags producing at least n words")
-    private int openClassThreshold = 50;
+    private int openClassPreterminalThreshold = 50;
 
     @Option(name = "-l", aliases = { "--language" }, metaVar = "language", usage = "Language. Output in grammar file headers.")
     private String language = "english";
@@ -138,6 +140,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         devCorpusReader.mark(MAX_CORPUS_SIZE);
 
         final ProductionListGrammar markov0Grammar = induceGrammar(trainingCorpusReader);
+        BaseLogger.singleton().fine("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
         ProductionListGrammar plGrammar = markov0Grammar;
         trainingCorpusReader.reset();
 
@@ -151,15 +154,13 @@ public class TrainGrammar extends BaseCommandlineTool {
             // Split
             //
             BaseLogger.singleton().info(String.format("=== Cycle %d ===", cycle));
-            BaseLogger.singleton().fine("Splitting grammar...");
             plGrammar = plGrammar.split(noiseGenerator);
-            BaseLogger.singleton().fine("Vocabulary Size: " + plGrammar.vocabulary.size());
-
-            FractionalCountGrammar finalCountGrammar = null;
+            BaseLogger.singleton().fine("Split grammar size: " + grammarSummaryString(plGrammar));
 
             //
             // Train the split grammar with EM
             //
+            FractionalCountGrammar finalCountGrammar = null;
             for (int i = 1; i <= emIterationsPerCycle; i++) {
                 final EmIterationResult result = emIteration(plGrammar, minimumRuleProbability);
                 BaseLogger.singleton().fine(
@@ -168,32 +169,39 @@ public class TrainGrammar extends BaseCommandlineTool {
                 plGrammar = result.plGrammar;
                 finalCountGrammar = result.fcGrammar;
             }
+            BaseLogger.singleton().fine("Learned grammar size: " + grammarSummaryString(plGrammar));
+
+            // At verbose log levels, write pre-merge grammar to file
+            if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+                writeGrammarToFile(String.format("em%d.gr.gz", cycle), plGrammar);
+            }
 
             //
-            // Estimate likelihood loss and merge
+            // Estimate likelihood loss of re-merging and merge least costly splits
             //
             final ConstrainedInsideOutsideGrammar finalSplitGrammar = cscGrammar(plGrammar);
             plGrammar = merge(plGrammar, finalCountGrammar, finalSplitGrammar);
 
-            // Add UNK productionsä
+            //
+            // TODO Run some more EM iterations on merged grammar
+            //
+
+            // TODO Remove Add UNK productions
             finalCountGrammar.addUnkProbabilities(goldTrees, lexicalUnkThreshold);
             final ProductionListGrammar grammarWithUnks = finalCountGrammar
                     .toProductionListGrammar(minimumRuleProbability);
 
-            // TODO Smooth (before or after adding UNK probabilities?)
+            //
+            // TODO Smooth
+            //
 
-            // Output grammar
-            if (outputGrammarDirectory != null) {
-                final String filename = String.format("%ssm%d.gr.gz", outputGrammarPrefix != null ? outputGrammarPrefix
-                        : "", cycle);
-                final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File(
-                        outputGrammarDirectory, filename))));
-                w.write(grammarWithUnks.toString(false, language, grammarFormatType, lexicalUnkThreshold));
-                w.close();
-            }
+            // Write merged grammar
+            writeGrammarToFile(String.format("sm%d.gr.gz", cycle), grammarWithUnks);
 
+            // Populate constraining charts for the next SM cycle from a Viterbi 1-best parse with the current grammar
             reloadConstrainingCharts(finalSplitGrammar, cscGrammar(plGrammar));
 
+            // Output dev-set parse accuracy
             if (developmentSet != null) {
                 parseDevSet(devCorpusReader, cscGrammar(grammarWithUnks));
             }
@@ -257,7 +265,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         // Iterate over the training corpus, parsing and replacing current ConstrainingCharts
         for (int i = 0; i < constrainingCharts.size(); i++) {
             final ConstrainedChart c = parser.parse(constrainingCharts.get(i));
-            constrainingCharts.set(i, new ConstrainingChart(c, mergedGrammar));
+            constrainingCharts.set(i, new ConstrainingChart(c, mergedGrammar, true));
         }
     }
 
@@ -302,9 +310,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         // Special-case - just merge TOP_0
         if (mergeFraction == 0) {
             final ProductionListGrammar mergedGrammar = plGrammar.merge(new short[] { 1 });
-            BaseLogger.singleton().fine(
-                    String.format("Merged %d nonterminals. New grammar size: %d nonterminals", 1,
-                            mergedGrammar.vocabulary.size()));
+            BaseLogger.singleton().fine("Merged 1 nonterminal. Grammar size:  " + grammarSummaryString(mergedGrammar));
             return mergedGrammar;
         }
 
@@ -331,8 +337,8 @@ public class TrainGrammar extends BaseCommandlineTool {
         // Perform the merge
         final ProductionListGrammar mergedGrammar = plGrammar.merge(mergeIndices);
         BaseLogger.singleton().fine(
-                String.format("Merged %d nonterminals. New grammar size: %d nonterminals", mergeIndices.length,
-                        mergedGrammar.vocabulary.size()));
+                "Merged " + mergeIndices.length + " nonterminals. Grammar size:  "
+                        + grammarSummaryString(mergedGrammar));
         return mergedGrammar;
     }
 
@@ -394,6 +400,25 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final EvalbResult evalbResult = evaluator.accumulatedResult();
         BaseLogger.singleton().info(String.format("Dev-set F-score: %.2f", evalbResult.f1() * 100));
+    }
+
+    private void writeGrammarToFile(String filename, final ProductionListGrammar grammar) throws IOException,
+            FileNotFoundException {
+
+        filename = (outputGrammarPrefix != null ? outputGrammarPrefix : "") + filename;
+
+        if (outputGrammarDirectory != null) {
+            final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File(
+                    outputGrammarDirectory, filename))));
+            w.write(grammar.toString(false, language, grammarFormatType, lexicalUnkThreshold));
+            w.close();
+        }
+    }
+
+    private String grammarSummaryString(final ProductionListGrammar grammar) {
+        return String.format("%d nonterminals  %d binary rules  %d unary rules  %d lexical rules",
+                grammar.vocabulary.size(), grammar.binaryProductions.size(), grammar.unaryProductions.size(),
+                grammar.lexicalProductions.size());
     }
 
     public static void main(final String[] args) {
