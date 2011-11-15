@@ -37,9 +37,9 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
         chart.parseTask = new ParseTask(c.tokens, grammar);
         cellSelector.initSentence(this);
 
-        // Compute inside and outside probabilities
+        // Compute inside probabilities
         insidePass();
-        outsidePass();
+        // outsidePass();
 
         // chart.decode(opts.decodeMethod);
         return chart;
@@ -83,6 +83,8 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
             final int leftCellOffset = chart.offset(chart.cellIndex(start, midpoint));
             final int rightCellOffset = chart.offset(chart.cellIndex(midpoint, end));
 
+            float maxRule = Float.NEGATIVE_INFINITY;
+
             // Iterate over all possible child pairs
             for (int i = leftCellOffset; i <= leftCellOffset + 1; i++) {
                 final short leftChild = chart.nonTerminalIndices[i];
@@ -108,17 +110,21 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
                             continue;
 
                         } else if (parent == parent0) {
-                            chart.nonTerminalIndices[parent0Offset] = parent;
                             final float jointProbability = childInsideProbability + grammar.cscBinaryProbabilities[k];
                             if (jointProbability > chart.insideProbabilities[parent0Offset]) {
+                                chart.nonTerminalIndices[parent0Offset] = parent;
+                                maxRule = Math.max(maxRule, grammar.cscBinaryProbabilities[k]);
                                 chart.insideProbabilities[parent0Offset] = jointProbability;
+                                chart.packedChildren[parent0Offset] = column;
                             }
 
                         } else if (parent == parent0 + 1) {
-                            chart.nonTerminalIndices[parent1Offset] = parent;
                             final float jointProbability = childInsideProbability + grammar.cscBinaryProbabilities[k];
                             if (jointProbability > chart.insideProbabilities[parent1Offset]) {
+                                chart.nonTerminalIndices[parent1Offset] = parent;
+                                maxRule = Math.max(maxRule, grammar.cscBinaryProbabilities[k]);
                                 chart.insideProbabilities[parent1Offset] = jointProbability;
+                                chart.packedChildren[parent1Offset] = column;
                             }
 
                         } else {
@@ -128,6 +134,7 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
                     }
                 }
             }
+            assert maxRule > -20f;
         }
 
         // Unary productions
@@ -139,6 +146,7 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
             final int parent0Offset = child0Offset - 2;
             final short parent0 = (short) (constrainingChart.nonTerminalIndices[parent0Offset >> 1] << 1);
             final int parent1Offset = parent0Offset + 1;
+            float maxRule = Float.NEGATIVE_INFINITY;
 
             // Iterate over both child slots
             final short child0 = (short) (constrainingChart.nonTerminalIndices[child0Offset >> 1] << 1);
@@ -161,23 +169,29 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
 
                     } else if (parent == parent0) {
                         final float unaryProbability = grammar.cscUnaryProbabilities[j] + childInsideProbability;
-                        chart.nonTerminalIndices[parent0Offset] = parent;
                         if (unaryProbability > chart.insideProbabilities[parent0Offset]) {
+                            chart.nonTerminalIndices[parent0Offset] = parent;
+                            maxRule = Math.max(maxRule, grammar.cscUnaryProbabilities[j]);
                             chart.insideProbabilities[parent0Offset] = unaryProbability;
+                            chart.packedChildren[parent0Offset] = grammar.packingFunction.packUnary(child);
                         }
 
                     } else if (parent == parent0 + 1) {
                         final float unaryProbability = grammar.cscUnaryProbabilities[j] + childInsideProbability;
-                        chart.nonTerminalIndices[parent1Offset] = parent;
                         if (unaryProbability > chart.insideProbabilities[parent1Offset]) {
+                            chart.nonTerminalIndices[parent1Offset] = parent;
+                            maxRule = Math.max(maxRule, grammar.cscUnaryProbabilities[j]);
                             chart.insideProbabilities[parent1Offset] = unaryProbability;
+                            chart.packedChildren[parent1Offset] = grammar.packingFunction.packUnary(child);
                         }
+
                     } else {
                         // We've passed both target parents. No need to search more grammar rules
                         break;
                     }
                 }
             }
+            assert maxRule > -20f;
         }
     }
 
@@ -240,6 +254,7 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
 
         final short entry0 = (short) (constrainingChart.nonTerminalIndices[entry0Offset >> 1] << 1);
         final short entry1 = (short) (entry0 + 1);
+        float maxRule = Float.NEGATIVE_INFINITY;
 
         // Iterate over possible siblings
         for (int i = sibling0Offset; i <= sibling0Offset + 1; i++) {
@@ -274,12 +289,14 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
                     } else if (entry == entry0) {
                         final float totalProbability = cscBinaryProbabilities[k] + jointProbability;
                         if (totalProbability > chart.outsideProbabilities[entry0Offset]) {
+                            maxRule = Math.max(maxRule, grammar.cscBinaryProbabilities[k]);
                             chart.outsideProbabilities[entry0Offset] = totalProbability;
                         }
 
                     } else if (entry == entry1) {
                         final float totalProbability = cscBinaryProbabilities[k] + jointProbability;
                         if (totalProbability > chart.outsideProbabilities[entry1Offset]) {
+                            maxRule = Math.max(maxRule, grammar.cscBinaryProbabilities[k]);
                             chart.outsideProbabilities[entry1Offset] = totalProbability;
                         }
 
@@ -287,10 +304,10 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
                         // We've passed both target parents. No need to search more grammar rules
                         break;
                     }
-
                 }
             }
         }
+        assert maxRule > -20f;
     }
 
     private void computeUnaryOutsideProbabilities(final int cellIndex) {
@@ -304,6 +321,7 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
             final int child0Offset = parent0Offset + 2;
             final short parent0 = (short) (constrainingChart.nonTerminalIndices[parent0Offset >> 1] << 1);
             final short parent1 = (short) (parent0 + 1);
+            float maxRule = Float.NEGATIVE_INFINITY;
 
             // Iterate over both child slots
             for (int childOffset = child0Offset; childOffset <= child0Offset + 1; childOffset++) {
@@ -326,6 +344,7 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
                         final float jointProbability = chart.outsideProbabilities[parent0Offset]
                                 + grammar.cscUnaryProbabilities[j];
                         if (jointProbability > chart.outsideProbabilities[childOffset]) {
+                            maxRule = Math.max(maxRule, grammar.cscUnaryProbabilities[j]);
                             chart.outsideProbabilities[childOffset] = jointProbability;
                         }
 
@@ -333,6 +352,7 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
                         final float jointProbability = chart.outsideProbabilities[parent0Offset + 1]
                                 + grammar.cscUnaryProbabilities[j];
                         if (jointProbability > chart.outsideProbabilities[childOffset]) {
+                            maxRule = Math.max(maxRule, grammar.cscUnaryProbabilities[j]);
                             chart.outsideProbabilities[childOffset] = jointProbability;
                         }
 
@@ -342,6 +362,7 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
                     }
                 }
             }
+            assert maxRule > -20f;
         }
     }
 
