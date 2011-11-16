@@ -226,8 +226,8 @@ public class Tokenizer implements Serializable {
      * English-specific.
      * 
      * @param word The word to make a signature for
-     * @param sentenceInitial Its position in the sentence (mainly so sentence-initial capitalized words can be treated
-     *            differently)
+     * @param sentenceInitial True if the word occurs as the first in the sentence (so sentence-initial capitalized
+     *            words can be treated differently)
      * @return A String that is its signature (equivalence class)
      */
     public static String berkeleyGetSignature(final String word, final boolean sentenceInitial,
