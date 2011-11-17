@@ -92,6 +92,9 @@ public class ParseTask {
     long startTime;
 
     public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar) {
+
+        this.grammar = grammar;
+
         switch (inputFormat) {
 
         case Token:
@@ -144,7 +147,6 @@ public class ParseTask {
         }
 
         this.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
-        this.grammar = grammar;
     }
 
     public ParseTask(final int[] tokens, final Grammar grammar) {
