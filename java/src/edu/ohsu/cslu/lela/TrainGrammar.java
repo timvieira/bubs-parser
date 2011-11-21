@@ -18,9 +18,10 @@
  */
 package edu.ohsu.cslu.lela;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -41,6 +42,8 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
@@ -65,6 +68,9 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-i", aliases = { "--em-iterations" }, metaVar = "count", usage = "EM iterations per split-merge cycle")
     private int emIterationsPerCycle = 50;
 
+    @Option(name = "-ami", aliases = { "--after-merge" }, metaVar = "count", usage = "EM iterations after merge")
+    private int emIterationsAfterMerge = 20;
+
     @Option(name = "-gd", aliases = { "--grammar-directory" }, required = true, metaVar = "directory", usage = "Output grammar directory. Each merged grammar will be output in .gz format")
     private File outputGrammarDirectory;
 
@@ -74,8 +80,8 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Grammar Format; required if binarization is specified")
     GrammarFormatType grammarFormatType = GrammarFormatType.Berkeley;
 
-    @Option(name = "-unk", aliases = { "--unk-threshold" }, metaVar = "threshold", usage = "Learn unknown-word probabilities for words occurring <= threshold times")
-    private int lexicalUnkThreshold = 20;
+    @Option(name = "-unk", aliases = { "-rw" }, metaVar = "threshold", usage = "Smooth production probabilities with unknown-word probabilities for rare words")
+    private int rareWordThreshold = 20;
 
     @Option(name = "-ot", aliases = { "--open-class-threshold" }, metaVar = "threshold", usage = "Learn unknown-word probabilities for tags producing at least n words")
     private int openClassPreterminalThreshold = 50;
@@ -87,7 +93,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     Binarization binarization = Binarization.LEFT;
 
     @Option(name = "-mrp", metaVar = "probability", usage = "Minimum rule log probability (rules with lower probability are pruned from the grammar)")
-    private float minimumRuleProbability = -30f;
+    private float minimumRuleProbability = -70f;
 
     @Option(name = "-noise", metaVar = "noise (0-1)", usage = "Random noise to add to rule probabilities during each split")
     private float noise = 0.01f;
@@ -139,8 +145,13 @@ public class TrainGrammar extends BaseCommandlineTool {
         trainingCorpusReader.mark(MAX_CORPUS_SIZE);
         devCorpusReader.mark(MAX_CORPUS_SIZE);
 
-        final ProductionListGrammar markov0Grammar = induceGrammar(trainingCorpusReader);
-        BaseLogger.singleton().fine("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
+        // Induce M0 grammar from training corpus
+        BaseLogger.singleton().info("Inducing M0 grammar...");
+        final StringCountGrammar scg = new StringCountGrammar(trainingCorpusReader, binarization, grammarFormatType);
+        final ProductionListGrammar markov0Grammar = new ProductionListGrammar(scg);
+        final Int2IntOpenHashMap corpusWordCounts = scg.wordCounts(markov0Grammar.lexicon);
+
+        BaseLogger.singleton().config("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
         ProductionListGrammar plGrammar = markov0Grammar;
         trainingCorpusReader.reset();
 
@@ -155,7 +166,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             //
             BaseLogger.singleton().info(String.format("=== Cycle %d ===", cycle));
             plGrammar = plGrammar.split(noiseGenerator);
-            BaseLogger.singleton().fine("Split grammar size: " + grammarSummaryString(plGrammar));
+            BaseLogger.singleton().config("Split grammar size: " + grammarSummaryString(plGrammar));
 
             //
             // Train the split grammar with EM
@@ -163,13 +174,11 @@ public class TrainGrammar extends BaseCommandlineTool {
             FractionalCountGrammar finalCountGrammar = null;
             for (int i = 1; i <= emIterationsPerCycle; i++) {
                 final EmIterationResult result = emIteration(plGrammar, minimumRuleProbability);
-                BaseLogger.singleton().fine(
-                        String.format("Iteration: %2d  Likelihood: %.2f  EM Time: %5dms  Grammar Time: %dms", i,
-                                result.corpusLikelihood, result.emTime, result.grammarConversionTime));
+                logEmIteration(result, i);
                 plGrammar = result.plGrammar;
                 finalCountGrammar = result.fcGrammar;
             }
-            BaseLogger.singleton().fine("Learned grammar size: " + grammarSummaryString(plGrammar));
+            BaseLogger.singleton().config("Learned grammar size: " + grammarSummaryString(plGrammar));
 
             // At verbose log levels, write pre-merge grammar to file
             if (BaseLogger.singleton().isLoggable(Level.FINER)) {
@@ -183,13 +192,22 @@ public class TrainGrammar extends BaseCommandlineTool {
             plGrammar = merge(plGrammar, finalCountGrammar, finalSplitGrammar);
 
             //
-            // TODO Run some more EM iterations on merged grammar
+            // TODO Run some more EM iterations on merged grammar - we'll have to 'partially-merge' the grammar,
+            // combining rule probabilities, but delay merging the vocabulary until after this EM cycle, so we can still
+            // map to the existing ConstrainingChart properly.
             //
+            // BaseLogger.singleton().info("Post-merge EM");
+            // for (int i = 1; i <= emIterationsAfterMerge; i++) {
+            // final EmIterationResult result = emIteration(plGrammar, minimumRuleProbability);
+            // logEmIteration(result, i);
+            // plGrammar = result.plGrammar;
+            // finalCountGrammar = result.fcGrammar;
+            // }
 
-            // TODO Remove Add UNK productions
-            finalCountGrammar.addUnkProbabilities(goldTrees, lexicalUnkThreshold);
-            final ProductionListGrammar grammarWithUnks = finalCountGrammar
-                    .toProductionListGrammar(minimumRuleProbability);
+            // Add UNK productions
+            final ProductionListGrammar grammarWithUnks = finalCountGrammar.toProductionListGrammar(
+                    minimumRuleProbability, unkClassMap(finalCountGrammar.lexicon), openClassPreterminalThreshold,
+                    corpusWordCounts, rareWordThreshold);
 
             //
             // TODO Smooth
@@ -208,22 +226,17 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
     }
 
-    /**
-     * Induces a {@link ProductionListGrammar} from a training corpus.
-     * 
-     * @return ProductionListGrammar
-     * @throws IOException
-     */
-    final ProductionListGrammar induceGrammar(final BufferedReader trainingCorpusReader) throws IOException {
-        // Induce M0 grammar from training corpus
-        BaseLogger.singleton().info("Inducing M0 grammar...");
-        return new ProductionListGrammar(new StringCountGrammar(trainingCorpusReader, binarization, grammarFormatType));
-
-    }
-
     private ConstrainedInsideOutsideGrammar cscGrammar(final ProductionListGrammar plGrammar) {
         return new ConstrainedInsideOutsideGrammar(plGrammar, GrammarFormatType.Berkeley,
                 PerfectIntPairHashPackingFunction.class);
+    }
+
+    private Int2IntOpenHashMap unkClassMap(final SymbolSet<String> lexicon) {
+        final Int2IntOpenHashMap unkClassMap = new Int2IntOpenHashMap();
+        for (int i = 0; i < lexicon.size(); i++) {
+            unkClassMap.put(i, lexicon.addSymbol(Tokenizer.berkeleyGetSignature(lexicon.getSymbol(i), false, lexicon)));
+        }
+        return unkClassMap;
     }
 
     final void loadGoldTreesAndConstrainingCharts(final BufferedReader trainingCorpusReader,
@@ -334,9 +347,20 @@ public class TrainGrammar extends BaseCommandlineTool {
         System.arraycopy(tmpIndices, 0, mergeIndices, 0, mergeIndices.length);
         java.util.Arrays.sort(mergeIndices);
 
+        if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+            final StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < tmpCost.length; i++) {
+                sb.append(plGrammar.vocabulary.getSymbol(tmpIndices[i]) + " " + tmpCost[i] + '\n');
+                if (i == mergeIndices.length) {
+                    sb.append("--------\n");
+                }
+            }
+            BaseLogger.singleton().finer("Merge Costs:");
+            BaseLogger.singleton().finer(sb.toString());
+        }
         // Perform the merge
         final ProductionListGrammar mergedGrammar = plGrammar.merge(mergeIndices);
-        BaseLogger.singleton().fine(
+        BaseLogger.singleton().config(
                 "Merged " + mergeIndices.length + " nonterminals. Grammar size:  "
                         + grammarSummaryString(mergedGrammar));
         return mergedGrammar;
@@ -402,21 +426,52 @@ public class TrainGrammar extends BaseCommandlineTool {
         BaseLogger.singleton().info(String.format("Dev-set F-score: %.2f", evalbResult.f1() * 100));
     }
 
-    private void writeGrammarToFile(String filename, final ProductionListGrammar grammar) throws IOException,
-            FileNotFoundException {
+    /**
+     * Reports the result of an EM iteration to the user via {@link BaseLogger}
+     * 
+     * @param result
+     * @param i
+     */
+    private void logEmIteration(final EmIterationResult result, final int i) {
+        if (BaseLogger.singleton().isLoggable(Level.FINE)) {
+            BaseLogger.singleton().fine(
+                    String.format("Iteration: %2d  Likelihood: %.2f  EM Time: %5dms  Grammar Time: %4dms  "
+                            + grammarSummaryString(result.plGrammar), i, result.corpusLikelihood, result.emTime,
+                            result.grammarConversionTime));
+        } else {
+            BaseLogger.singleton().config(
+                    String.format("Iteration: %2d  Likelihood: %.2f  EM Time: %5dms  Grammar Time: %dms", i,
+                            result.corpusLikelihood, result.emTime, result.grammarConversionTime));
+        }
+    }
+
+    /**
+     * Writes a grammar file to disk
+     * 
+     * @param filename
+     * @param grammar
+     * @throws IOException
+     */
+    private void writeGrammarToFile(String filename, final ProductionListGrammar grammar) throws IOException {
 
         filename = (outputGrammarPrefix != null ? outputGrammarPrefix : "") + filename;
 
         if (outputGrammarDirectory != null) {
             final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File(
                     outputGrammarDirectory, filename))));
-            w.write(grammar.toString(false, language, grammarFormatType, lexicalUnkThreshold));
+            w.write(grammar.toString(false, language, grammarFormatType, rareWordThreshold));
             w.close();
         }
     }
 
+    /**
+     * Returns a short summary of statistics about the supplied grammar
+     * 
+     * @param grammar
+     * @return A short summary of statistics about the supplied grammar
+     */
     private String grammarSummaryString(final ProductionListGrammar grammar) {
-        return String.format("%d nonterminals  %d binary rules  %d unary rules  %d lexical rules",
+        return String.format("%4d nonterminals  %7d binary rules  %6d unary rules  %7d lexical rules",
                 grammar.vocabulary.size(), grammar.binaryProductions.size(), grammar.unaryProductions.size(),
                 grammar.lexicalProductions.size());
     }

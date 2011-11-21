@@ -27,7 +27,8 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
             tg.binarization = Binarization.RIGHT;
             tg.grammarFormatType = GrammarFormatType.Berkeley;
 
-            final ProductionListGrammar plg0 = tg.induceGrammar(br);
+            final ProductionListGrammar plg0 = new ProductionListGrammar(new StringCountGrammar(br, Binarization.RIGHT,
+                    GrammarFormatType.Berkeley));
             br.reset();
 
             tg.loadGoldTreesAndConstrainingCharts(br, plg0);
