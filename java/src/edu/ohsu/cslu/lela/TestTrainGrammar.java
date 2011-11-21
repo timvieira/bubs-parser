@@ -180,7 +180,8 @@ public class TestTrainGrammar {
 
         trainingCorpusReader.mark(20 * 1024 * 1024);
 
-        final ProductionListGrammar plg0 = tg.induceGrammar(trainingCorpusReader);
+        final ProductionListGrammar plg0 = new ProductionListGrammar(new StringCountGrammar(trainingCorpusReader,
+                Binarization.LEFT, GrammarFormatType.Berkeley));
         trainingCorpusReader.reset();
 
         tg.loadGoldTreesAndConstrainingCharts(trainingCorpusReader, plg0);
@@ -221,7 +222,8 @@ public class TestTrainGrammar {
                 20 * 1024 * 1024);
         br.mark(20 * 1024 * 1024);
 
-        final ProductionListGrammar plg0 = tg.induceGrammar(br);
+        final ProductionListGrammar plg0 = new ProductionListGrammar(new StringCountGrammar(br, Binarization.LEFT,
+                GrammarFormatType.Berkeley));
         br.reset();
 
         tg.loadGoldTreesAndConstrainingCharts(br, plg0);
@@ -270,7 +272,8 @@ public class TestTrainGrammar {
                 20 * 1024 * 1024);
         br.mark(20 * 1024 * 1024);
 
-        final ProductionListGrammar plg0 = tg.induceGrammar(br);
+        final ProductionListGrammar plg0 = new ProductionListGrammar(new StringCountGrammar(br, Binarization.LEFT,
+                GrammarFormatType.Berkeley));
         br.reset();
 
         tg.loadGoldTreesAndConstrainingCharts(br, plg0);
