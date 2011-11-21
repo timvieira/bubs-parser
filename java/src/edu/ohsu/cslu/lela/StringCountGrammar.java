@@ -18,6 +18,7 @@
  */
 package edu.ohsu.cslu.lela;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -359,6 +360,23 @@ public final class StringCountGrammar implements CountGrammar {
         }
 
         return prods;
+    }
+
+    public Int2IntOpenHashMap wordCounts(final SymbolSet<String> lexicon) {
+
+        final Int2IntOpenHashMap wordCounts = new Int2IntOpenHashMap();
+        wordCounts.defaultReturnValue(0);
+        
+        for (final String parent : lexicalRuleCounts.keySet()) {
+
+            final Object2IntMap<String> childMap = lexicalRuleCounts.get(parent);
+
+            for (final String word : childMap.keySet()) {
+                final int index = lexicon.getIndex(word);
+                wordCounts.put(index, wordCounts.get(index) + childMap.getInt(word));
+            }
+        }
+        return wordCounts;
     }
 
     /**

@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.lela;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2DoubleOpenHashMap;
@@ -161,12 +162,41 @@ public class FractionalCountGrammar implements CountGrammar {
         incrementLexicalCount((short) vocabulary.getIndex(parent), lexicon.getIndex(child), increment);
     }
 
+    /**
+     * @param minimumRuleLogProbability Minimum threshold rule probability. Rules with lower probability will be pruned.
+     * @return {@link ProductionListGrammar} populated using the counts from this grammar
+     */
     public ProductionListGrammar toProductionListGrammar(final float minimumRuleLogProbability) {
 
         // Construct a pruned (but not normalized) grammar from the accumulated fractional rule counts
         final ProductionListGrammar prunedGrammar = new ProductionListGrammar(vocabulary, lexicon,
                 binaryProductions(minimumRuleLogProbability), unaryProductions(minimumRuleLogProbability),
                 lexicalProductions(minimumRuleLogProbability));
+
+        return prunedGrammar.normalizeProbabilities();
+    }
+
+    /**
+     * Returns a {@link ProductionListGrammar} populated using the counts from this grammar and UNK-class lexical rules.
+     * 
+     * @param minimumRuleLogProbability Minimum threshold rule probability. Rules with lower probability will be pruned.
+     * @param unkClassMap Maps word entries from the lexicon to their UNK-class entries.
+     * @param openClassPreterminalThreshold Minimum number of terminal children a preterminal must have to be considered
+     *            open-class. UNK-class rules will be created for open-class preterminals.
+     * @param corpusWordCounts Word-counts from the training corpus
+     * @param rareWordThreshold Rules for rare words (those occurring less often than this threshold) will be smoothed
+     *            with their UNK-class probabilities.
+     * @return {@link ProductionListGrammar} populated using the counts from this grammar and UNK-class lexical rules
+     */
+    public ProductionListGrammar toProductionListGrammar(final float minimumRuleLogProbability,
+            final Int2IntOpenHashMap unkClassMap, final int openClassPreterminalThreshold,
+            final Int2IntOpenHashMap corpusWordCounts, final int rareWordThreshold) {
+
+        // Construct a pruned (but not normalized) grammar from the accumulated fractional rule counts
+        final ProductionListGrammar prunedGrammar = new ProductionListGrammar(vocabulary, lexicon,
+                binaryProductions(minimumRuleLogProbability), unaryProductions(minimumRuleLogProbability),
+                lexicalProductions(minimumRuleLogProbability, unkClassMap, openClassPreterminalThreshold,
+                        corpusWordCounts, rareWordThreshold));
 
         return prunedGrammar.normalizeProbabilities();
     }
@@ -272,6 +302,126 @@ public class FractionalCountGrammar implements CountGrammar {
         }
 
         return prods;
+    }
+
+    /**
+     * Returns lexical and UNK-class rule productions
+     * 
+     * @param minimumRuleLogProbability Minimum threshold rule probability. Rules with lower probability will be omitted
+     *            from the returned ruleset.
+     * @param unkClassMap Maps word entries from the lexicon to their UNK-class entries.
+     * @param openClassPreterminalThreshold Minimum number of terminal children a preterminal must have to be considered
+     *            open-class. UNK-class rules will be created for open-class preterminals.
+     * @param corpusWordCounts Word-counts from the training corpus
+     * @param rareWordThreshold Rules for rare words (those occurring less often than this threshold) will be smoothed
+     *            with their UNK-class probabilities.
+     * @return Lexical rules including UNK-class rules
+     */
+    public ArrayList<Production> lexicalProductions(final float minimumRuleLogProbability,
+            final Int2IntOpenHashMap unkClassMap, final int openClassPreterminalThreshold,
+            final Int2IntOpenHashMap corpusWordCounts, final int rareWordThreshold) {
+
+        final ArrayList<Production> prods = new ArrayList<Production>();
+        final Short2ObjectOpenHashMap<Int2DoubleOpenHashMap> unkClassCounts = unkClassCounts(unkClassMap,
+                openClassPreterminalThreshold, corpusWordCounts, rareWordThreshold);
+
+        for (short parent = 0; parent < vocabulary.size(); parent++) {
+            if (!lexicalRuleCounts.containsKey(parent)) {
+                continue;
+            }
+            final double tagCount = parentCounts.get(parent);
+
+            final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
+            // An open-class preterminal is one with more than 'openClassPreterminalThreshold' observed children
+            final boolean openClassPreterminal = (childMap.size() >= openClassPreterminalThreshold);
+
+            for (int child = 0; child < lexicon.size(); child++) {
+
+                if (!childMap.containsKey(child)) {
+                    continue;
+                }
+                final double wordGivenTag = childMap.get(child);
+
+                if (wordGivenTag < rareWordThreshold && openClassPreterminal) {
+
+                    // c(w) / r
+                    final double lambda = ((double) corpusWordCounts.get(child)) / rareWordThreshold;
+
+                    //
+                    // (c(w) / r * c(w|t) / c(t)) + (1- c(w) / r) * (c(UNK-class|t) / c(t))
+                    //
+                    final double unkClassCount = corpusWordCounts.get(unkClassMap.get(child));
+                    final float logProbability = (float) Math.log(lambda * (wordGivenTag / tagCount) + (1 - lambda)
+                            * (unkClassCount / tagCount));
+
+                    if (logProbability > minimumRuleLogProbability) {
+                        prods.add(new Production(parent, child, logProbability, true, vocabulary, lexicon));
+                    }
+
+                } else {
+                    // c(w|t) / c(t) - observations of this word / observations of the parent
+                    final float logProbability = (float) Math.log(wordGivenTag / tagCount);
+                    if (logProbability > minimumRuleLogProbability) {
+                        prods.add(new Production(parent, child, logProbability, true, vocabulary, lexicon));
+                    }
+                }
+            }
+
+            // Add UNK-class rules for open-class parents
+            if (openClassPreterminal) {
+
+                for (final int unkClass : unkClassCounts.get(parent).keySet()) {
+                    // c(UNK-class|t) / c(t)
+                    final double unkClassCount = unkClassCounts.get(parent).get(unkClass);
+                    final float logProbability = (float) Math.log(unkClassCount / tagCount);
+
+                    if (logProbability > minimumRuleLogProbability) {
+                        prods.add(new Production(parent, unkClass, logProbability, true, vocabulary, lexicon));
+                    }
+                }
+            }
+        }
+
+        return prods;
+    }
+
+    /**
+     * Adds pseudo-counts for UNK classes, only for open-class tags (those with more than
+     * <code>openClassPreterminalThreshold</code> observed children)
+     * 
+     * @param openClassPreterminalThreshold Minimum child word observations required to consider a preterminal as
+     *            open-class
+     */
+    private Short2ObjectOpenHashMap<Int2DoubleOpenHashMap> unkClassCounts(final Int2IntOpenHashMap unkClassMap,
+            final int openClassPreterminalThreshold, final Int2IntOpenHashMap corpusWordCounts,
+            final int rareWordThreshold) {
+        final Short2ObjectOpenHashMap<Int2DoubleOpenHashMap> unkClassCounts = new Short2ObjectOpenHashMap<Int2DoubleOpenHashMap>();
+
+        for (short parent = 0; parent < vocabulary.size(); parent++) {
+            if (!lexicalRuleCounts.containsKey(parent)) {
+                continue;
+            }
+
+            final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
+
+            if (childMap.size() < openClassPreterminalThreshold) {
+                continue;
+            }
+
+            final Int2DoubleOpenHashMap unkChildMap = new Int2DoubleOpenHashMap();
+            unkChildMap.defaultReturnValue(0);
+            unkClassCounts.put(parent, unkChildMap);
+
+            for (int child = 0; child < lexicon.size(); child++) {
+
+                final double wordGivenTag = childMap.get(child);
+                if (wordGivenTag > 0 && corpusWordCounts.get(child) < rareWordThreshold) {
+                    final int unkClass = unkClassMap.get(child);
+                    unkChildMap.put(unkClass, unkChildMap.get(unkClass) + wordGivenTag);
+                }
+            }
+        }
+        return unkClassCounts;
     }
 
     /**
