@@ -1,25 +1,18 @@
 <!-- $Id: build.xml 7582 2008-06-17 21:57:19Z chriso $ -->
 <project name="genjar-targets" basedir=".">
 
-    <!-- Use ant-contrib and genjar to enable if/then and better dependency analysis than classfileset -->
+    <!-- Use ant-contrib to enable if/then -->
     <taskdef classpath="${dir.build.lib}/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
+    <!-- genjar for better dependency analysis than classfileset -->
     <taskdef classpath="${dir.build.lib}/genjar.jar" resource="genjar.properties" />
+    <!-- and ANT4HG for mercurial support -->
+    <taskdef classpath="${dir.build.lib}/ant4hg.jar" resource="net/sourceforge/ant4hg/taskdefs/antlib.xml" />
 
-    <target name="svnversion" unless="source-revision">
-        <!-- Enable SVN tasks -->
-        <path id="path.svn">
-            <fileset dir="${dir.build.lib}" includes="svnant.jar,svnkit.jar,svnClientAdapter.jar,svnjavahl.jar" />
-        </path>
-        <typedef classpathref="path.svn" resource="org/tigris/subversion/svnant/svnantlib.xml" />
-        <if>
-            <available file=".svn" />
-            <then>
-                <svn svnkit="true">
-                    <wcVersion path="." />
-                </svn>
-            </then>
-        </if>
-        <property name="source-revision" value="${revision.max}" />
+    <target name="hgversion" unless="source-revision">
+        <hg cmd="log" dir="." >
+            <arg value="-rtip"/>
+        </hg>
+        <property name="source-revision" value="${ant4hg.log.revision} (${ant4hg.log.changeset})" />
     </target>
 
     <!-- 
@@ -65,10 +58,9 @@
         <!-- Default unspecified parameters -->
         <property name="additional-libs" value="none" />
         <property name="additional-root-classes" value="" />
-        <property name="grid-params" value="" />
         <property name="additional-file-root" value="" />
         <property name="additional-file-includes" value="none" />
-        <property name="version" value="" />
+        <property name="version" value="source-revision" />
         <property name="readme-file" value="none" />
         <property name="license-file" value="none" />
         <property name="default-options" value="none" />
@@ -130,9 +122,24 @@
         <!-- Copy specified readme and license files into a temporary directory -->
         <delete dir="package-jar-tmp" failonerror="false" />
         <mkdir dir="package-jar-tmp/META-INF" />
-        <copy file="${readme-file}" tofile="package-jar-tmp/META-INF/README.txt" failonerror="false" />
-        <copy file="${license-file}" tofile="package-jar-tmp/META-INF/LICENSE.txt" failonerror="false" />
-        <copy file="${default-options}" tofile="package-jar-tmp/META-INF/defaults.properties" failonerror="false" />
+        <if>
+            <available file="${readme-file}" />
+            <then>
+                <copy file="${readme-file}" tofile="package-jar-tmp/META-INF/README.txt" failonerror="false" />
+            </then>
+        </if>
+        <if>
+            <available file="${license-file}" />
+            <then>
+                <copy file="${license-file}" tofile="package-jar-tmp/META-INF/LICENSE.txt" failonerror="false" />
+            </then>
+        </if>
+        <if>
+            <available file="${default-options}" />
+            <then>
+                <copy file="${default-options}" tofile="package-jar-tmp/META-INF/defaults.properties" failonerror="false" />
+            </then>
+        </if>
 
         <!-- Package the jar -->
         <genjar jarfile="${dir.dist}/${tool-name}.jar">

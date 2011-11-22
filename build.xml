@@ -39,7 +39,7 @@
         Compile all Java code
     ========================================================================
     -->
-    <target name="compile" description="Compile Java code and tools">
+    <target name="compile" depends="hgversion" description="Compile Java code and tools">
         <!-- If the build directory doesn't already exist, create it -->
         <mkdir dir="${dir.build}" />
         <javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
