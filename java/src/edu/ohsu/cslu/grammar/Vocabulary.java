@@ -1,7 +1,7 @@
 package edu.ohsu.cslu.grammar;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
+import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 
 import java.util.Collection;
 
@@ -22,7 +22,7 @@ public class Vocabulary extends SymbolSet<String> {
 
     private final GrammarFormatType grammarFormat;
 
-    private final IntOpenHashSet factoredIndices = new IntOpenHashSet();
+    private final ShortOpenHashSet factoredIndices = new ShortOpenHashSet();
 
     private short startSymbol;
 
@@ -74,7 +74,8 @@ public class Vocabulary extends SymbolSet<String> {
         }
     }
 
-    public final boolean isFactored(final int nonTerminal) {
+    public final boolean isFactored(final short nonTerminal) {
+        // TODO If this is used a lot, we could replace the ShortOpenHashSet with a boolean[] or a PackedBitVector
         return factoredIndices.contains(nonTerminal);
     }
 
