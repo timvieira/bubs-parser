@@ -153,8 +153,8 @@ public class TestInsideOutsideCphSpmlParser {
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
                 PerfectIntPairHashPackingFunction.class));
-        assertEquals("(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))",
-                parser.parseSentence(sentence).parseBracketString(false, false));
+        assertEquals("(ROOT (S (DT The) (NN fish) (NN market) (VB stands) (RB last)))", parser.parseSentence(sentence)
+                .parseBracketString(false, false));
     }
 
     @Test
@@ -185,7 +185,7 @@ public class TestInsideOutsideCphSpmlParser {
         opts.decodeMethod = DecodeMethod.SplitSum;
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
-                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (PP (JJ due) (IN out) (NP (NN tomorrow))))) (. .)))",
+                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
                 parser.parseSentence(sentences.get(1)[0]).parseBracketString(false, false));
     }
 
