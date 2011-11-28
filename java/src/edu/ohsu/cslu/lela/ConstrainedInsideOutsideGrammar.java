@@ -16,7 +16,6 @@ import edu.ohsu.cslu.grammar.SymbolSet;
 public class ConstrainedInsideOutsideGrammar extends InsideOutsideCscSparseMatrixGrammar {
 
     private static final long serialVersionUID = 1L;
-    final ProductionListGrammar baseGrammar;
 
     public ConstrainedInsideOutsideGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
@@ -25,7 +24,6 @@ public class ConstrainedInsideOutsideGrammar extends InsideOutsideCscSparseMatri
 
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
                 functionClass, true);
-        this.baseGrammar = baseGrammar;
     }
 
     public ConstrainedInsideOutsideGrammar(final ProductionListGrammar plGrammar,
@@ -33,6 +31,13 @@ public class ConstrainedInsideOutsideGrammar extends InsideOutsideCscSparseMatri
 
         super(plGrammar.binaryProductions, plGrammar.unaryProductions, plGrammar.lexicalProductions,
                 plGrammar.vocabulary, plGrammar.lexicon, grammarFormat, functionClass, true);
-        this.baseGrammar = plGrammar.baseGrammar;
+    }
+
+    public ConstrainedInsideOutsideGrammar(final FractionalCountGrammar countGrammar,
+            final GrammarFormatType grammarFormat, final Class<? extends PackingFunction> functionClass) {
+
+        super(countGrammar.binaryProductions(Float.NEGATIVE_INFINITY), countGrammar
+                .unaryProductions(Float.NEGATIVE_INFINITY), countGrammar.lexicalProductions(Float.NEGATIVE_INFINITY),
+                countGrammar.vocabulary, countGrammar.lexicon, grammarFormat, functionClass, true);
     }
 }
