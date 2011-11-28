@@ -40,6 +40,7 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
+import edu.ohsu.cslu.grammar.Language;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
@@ -86,7 +87,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     private int openClassPreterminalThreshold = 50;
 
     @Option(name = "-l", aliases = { "--language" }, metaVar = "language", usage = "Language. Output in grammar file headers.")
-    private String language = "english";
+    private Language language = Language.English;
 
     @Option(name = "-b", aliases = { "--binarization" }, metaVar = "type", usage = "Binarization direction.")
     Binarization binarization = Binarization.LEFT;

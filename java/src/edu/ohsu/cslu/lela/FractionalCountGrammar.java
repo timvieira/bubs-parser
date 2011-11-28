@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.Language;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
@@ -1114,7 +1115,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         return toString(false, null, null, -1);
     }
 
-    public String toString(final boolean fraction, final String language, final GrammarFormatType grammarFormatType,
+    public String toString(final boolean fraction, final Language language, final GrammarFormatType grammarFormatType,
             final int lexicalUnkThreshold) {
         final TreeSet<String> binaryRules = new TreeSet<String>();
         for (final Production p : binaryProductions(Float.NEGATIVE_INFINITY)) {
@@ -1161,6 +1162,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         sb.append(" hMarkov=UNK");
         sb.append(" vMarkov=UNK");
         sb.append(" date=" + dateNowStr);
+        sb.append(" vocabSize=" + vocabulary.size());
         sb.append(" nBinary=" + binaryRules.size());
         sb.append(" nUnary=" + unaryRules.size());
         sb.append(" nLex=" + lexicalRules.size());
