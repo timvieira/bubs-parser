@@ -28,7 +28,7 @@ import org.junit.Test;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.lela.AllLelaTests;
-import edu.ohsu.cslu.lela.ProductionListGrammar;
+import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.lela.StringCountGrammar;
 
 public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
@@ -43,13 +43,16 @@ public class TestCsrSparseMatrixGrammar extends SortedGrammarTestCase {
         // Induce a grammar from a sample tree
         final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllLelaTests.STRING_SAMPLE_TREE),
                 Binarization.RIGHT, GrammarFormatType.Berkeley);
-        final ProductionListGrammar plGrammar0 = new ProductionListGrammar(sg);
+        final FractionalCountGrammar countGrammar0 = sg.toFractionalCountGrammar();
 
         // Split the grammar
-        final ProductionListGrammar plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
-        final SparseMatrixGrammar csrGrammar1 = new CsrSparseMatrixGrammar(plGrammar1.binaryProductions,
-                plGrammar1.unaryProductions, plGrammar1.lexicalProductions, plGrammar1.vocabulary, plGrammar1.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
+        final FractionalCountGrammar countGrammar1 = countGrammar0.split();
+        final SparseMatrixGrammar csrGrammar1 = new CsrSparseMatrixGrammar(
+                countGrammar1.binaryProductions(Float.NEGATIVE_INFINITY),
+                countGrammar1.unaryProductions(Float.NEGATIVE_INFINITY),
+                countGrammar1.lexicalProductions(Float.NEGATIVE_INFINITY), countGrammar1.vocabulary,
+                countGrammar1.lexicon, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final PackingFunction f = csrGrammar1.packingFunction;
 

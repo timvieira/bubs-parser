@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 
@@ -39,12 +40,10 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
-import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -102,7 +101,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     private long randomSeed;
 
     @Option(name = "-mf", aliases = { "--merge-fraction" }, metaVar = "fraction", usage = "Fraction of new splits to re-merge in each split-merge cycle")
-    private float mergeFraction = 0.5f;
+    float mergeFraction = 0.5f;
 
     @Option(name = "-ds", aliases = { "--dev-set" }, metaVar = "file", usage = "Dev-set trees. If specified, parse accuracy will be reported after each split-merge cycle")
     private File developmentSet;
@@ -116,7 +115,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     final ArrayList<NaryTree<String>> goldTrees = new ArrayList<NaryTree<String>>();
     final ArrayList<ConstrainingChart> constrainingCharts = new ArrayList<ConstrainingChart>();
 
-    private NoiseGenerator noiseGenerator;
+    Random random;
 
     @Override
     protected void setup() {
@@ -125,7 +124,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             randomSeed = System.currentTimeMillis();
         }
 
-        noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(noise, randomSeed);
+        random = new Random(randomSeed);
 
         if (outputGrammarDirectory != null && !outputGrammarDirectory.exists()) {
             outputGrammarDirectory.mkdir();
@@ -139,7 +138,6 @@ public class TrainGrammar extends BaseCommandlineTool {
                 developmentSet != null ? fileAsBufferedReader(developmentSet) : null);
     }
 
-    @SuppressWarnings("null")
     void train(final BufferedReader trainingCorpusReader, final BufferedReader devCorpusReader) throws IOException {
 
         trainingCorpusReader.mark(MAX_CORPUS_SIZE);
@@ -148,14 +146,14 @@ public class TrainGrammar extends BaseCommandlineTool {
         // Induce M0 grammar from training corpus
         BaseLogger.singleton().info("Inducing M0 grammar...");
         final StringCountGrammar scg = new StringCountGrammar(trainingCorpusReader, binarization, grammarFormatType);
-        final ProductionListGrammar markov0Grammar = new ProductionListGrammar(scg);
+        final FractionalCountGrammar markov0Grammar = scg.toFractionalCountGrammar();
         final Int2IntOpenHashMap corpusWordCounts = scg.wordCounts(markov0Grammar.lexicon);
 
         BaseLogger.singleton().config("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
-        ProductionListGrammar plGrammar = markov0Grammar;
+        FractionalCountGrammar currentGrammar = markov0Grammar;
         trainingCorpusReader.reset();
 
-        loadGoldTreesAndConstrainingCharts(trainingCorpusReader, plGrammar);
+        loadGoldTreesAndConstrainingCharts(trainingCorpusReader, currentGrammar);
         trainingCorpusReader.close();
 
         // Run split-merge training cycles
@@ -165,31 +163,30 @@ public class TrainGrammar extends BaseCommandlineTool {
             // Split
             //
             BaseLogger.singleton().info(String.format("=== Cycle %d ===", cycle));
-            plGrammar = plGrammar.split(noiseGenerator);
-            BaseLogger.singleton().config("Split grammar size: " + grammarSummaryString(plGrammar));
+            currentGrammar = currentGrammar.split();
+            currentGrammar.randomize(random, noise);
+            BaseLogger.singleton().config("Split grammar size: " + grammarSummaryString(currentGrammar));
 
             //
             // Train the split grammar with EM
             //
-            FractionalCountGrammar finalCountGrammar = null;
             for (int i = 1; i <= emIterationsPerCycle; i++) {
-                final EmIterationResult result = emIteration(plGrammar, minimumRuleProbability);
+                final EmIterationResult result = emIteration(currentGrammar, minimumRuleProbability);
                 logEmIteration(result, i);
-                plGrammar = result.plGrammar;
-                finalCountGrammar = result.fcGrammar;
+                currentGrammar = result.countGrammar;
             }
-            BaseLogger.singleton().config("Learned grammar size: " + grammarSummaryString(plGrammar));
+            BaseLogger.singleton().config("Learned grammar size: " + grammarSummaryString(currentGrammar));
 
             // At verbose log levels, write pre-merge grammar to file
             if (BaseLogger.singleton().isLoggable(Level.FINER)) {
-                writeGrammarToFile(String.format("em%d.gr.gz", cycle), plGrammar);
+                writeGrammarToFile(String.format("em%d.gr.gz", cycle), currentGrammar);
             }
 
             //
             // Estimate likelihood loss of re-merging and merge least costly splits
             //
-            final ConstrainedInsideOutsideGrammar finalSplitGrammar = cscGrammar(plGrammar);
-            plGrammar = merge(plGrammar, finalCountGrammar, finalSplitGrammar);
+            final ConstrainedInsideOutsideGrammar premergeCscGrammar = cscGrammar(currentGrammar);
+            currentGrammar = merge(currentGrammar, premergeCscGrammar);
 
             //
             // TODO Run some more EM iterations on merged grammar - we'll have to 'partially-merge' the grammar,
@@ -205,19 +202,20 @@ public class TrainGrammar extends BaseCommandlineTool {
             // }
 
             // Add UNK productions
-            final ProductionListGrammar grammarWithUnks = finalCountGrammar.toProductionListGrammar(
-                    minimumRuleProbability, unkClassMap(finalCountGrammar.lexicon), openClassPreterminalThreshold,
-                    corpusWordCounts, rareWordThreshold);
+            final FractionalCountGrammar grammarWithUnks = currentGrammar.addUnkCounts(
+                    unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold, corpusWordCounts,
+                    rareWordThreshold);
 
             //
             // TODO Smooth
             //
 
             // Write merged grammar
+            // TODO Prune, output lexicon
             writeGrammarToFile(String.format("sm%d.gr.gz", cycle), grammarWithUnks);
 
-            // Populate constraining charts for the next SM cycle from a Viterbi 1-best parse with the current grammar
-            reloadConstrainingCharts(finalSplitGrammar, cscGrammar(plGrammar));
+            // Populate constraining charts for the next SM cycle from a Viterbi 1-best parse with the pre-merge grammar
+            reloadConstrainingCharts(premergeCscGrammar, cscGrammar(currentGrammar));
 
             // Output dev-set parse accuracy
             if (developmentSet != null) {
@@ -226,8 +224,8 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
     }
 
-    private ConstrainedInsideOutsideGrammar cscGrammar(final ProductionListGrammar plGrammar) {
-        return new ConstrainedInsideOutsideGrammar(plGrammar, GrammarFormatType.Berkeley,
+    private ConstrainedInsideOutsideGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
+        return new ConstrainedInsideOutsideGrammar(countGrammar, GrammarFormatType.Berkeley,
                 PerfectIntPairHashPackingFunction.class);
     }
 
@@ -240,12 +238,10 @@ public class TrainGrammar extends BaseCommandlineTool {
     }
 
     final void loadGoldTreesAndConstrainingCharts(final BufferedReader trainingCorpusReader,
-            final ProductionListGrammar plGrammar) throws IOException {
+            final FractionalCountGrammar markov0Grammar) throws IOException {
 
         // Convert Markov-0 grammar to CSC format
-        final SparseMatrixGrammar cscGrammar0 = new InsideOutsideCscSparseMatrixGrammar(plGrammar.binaryProductions,
-                plGrammar.unaryProductions, plGrammar.lexicalProductions, plGrammar.vocabulary, plGrammar.lexicon,
-                GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class, true);
+        final SparseMatrixGrammar cscGrammar0 = cscGrammar(markov0Grammar);
 
         // Load in constraining charts from training corpus
         BaseLogger.singleton().info("Loading gold trees and constraining charts...");
@@ -285,14 +281,14 @@ public class TrainGrammar extends BaseCommandlineTool {
     /**
      * Execute a single EM iteration
      * 
-     * @param cscGrammar
+     * @param currentGrammar
      * @param minimumRuleLogProbability
      * @return EM result, including the newly trained {@link ProductionListGrammar}
      */
-    EmIterationResult emIteration(final ProductionListGrammar plGrammar, final float minimumRuleLogProbability) {
+    EmIterationResult emIteration(final FractionalCountGrammar currentGrammar, final float minimumRuleLogProbability) {
 
         final long t0 = System.currentTimeMillis();
-        final ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(plGrammar);
+        final ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(currentGrammar);
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
@@ -311,18 +307,36 @@ public class TrainGrammar extends BaseCommandlineTool {
             parser.countRuleOccurrences(countGrammar);
         }
         final long t2 = System.currentTimeMillis();
-        final ProductionListGrammar finalPlGrammar = countGrammar.toProductionListGrammar(minimumRuleLogProbability);
 
-        return new EmIterationResult(countGrammar, finalPlGrammar, corpusLikelihood, (int) (t2 - t1),
-                (int) (System.currentTimeMillis() - t2 + t1 - t0));
+        // TODO Create a pruned count grammar
+        final FractionalCountGrammar prunedGrammar = countGrammar.clone(minimumRuleLogProbability);
+        return new EmIterationResult(countGrammar, corpusLikelihood, (int) (t2 - t1), (int) (System.currentTimeMillis()
+                - t2 + t1 - t0));
     }
 
-    private ProductionListGrammar merge(final ProductionListGrammar plGrammar,
-            final FractionalCountGrammar countGrammar, final ConstrainedInsideOutsideGrammar cscGrammar) {
+    /**
+     * For unit testing
+     * 
+     * @param countGrammar
+     * @return Copy of the supplied grammar with the less-beneficial non-terminals merged
+     */
+    FractionalCountGrammar merge(final FractionalCountGrammar countGrammar) {
+        return merge(countGrammar, cscGrammar(countGrammar));
+    }
+
+    /**
+     * Returns a copy of the supplied count grammar with the less-beneficial non-terminals merged
+     * 
+     * @param countGrammar
+     * @param cscGrammar {@link ConstrainedInsideOutsideGrammar} version of <code>countGrammar</code>
+     * @return Copy of the supplied count grammar with the less-beneficial non-terminals merged
+     */
+    private FractionalCountGrammar merge(final FractionalCountGrammar countGrammar,
+            final ConstrainedInsideOutsideGrammar cscGrammar) {
 
         // Special-case - just merge TOP_0
         if (mergeFraction == 0) {
-            final ProductionListGrammar mergedGrammar = plGrammar.merge(new short[] { 1 });
+            final FractionalCountGrammar mergedGrammar = countGrammar.merge(new short[] { 1 });
             BaseLogger.singleton().fine("Merged 1 nonterminal. Grammar size:  " + grammarSummaryString(mergedGrammar));
             return mergedGrammar;
         }
@@ -350,7 +364,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         if (BaseLogger.singleton().isLoggable(Level.FINER)) {
             final StringBuilder sb = new StringBuilder();
             for (int i = 0; i < tmpCost.length; i++) {
-                sb.append(plGrammar.vocabulary.getSymbol(tmpIndices[i]) + " " + tmpCost[i] + '\n');
+                sb.append(countGrammar.vocabulary.getSymbol(tmpIndices[i]) + " " + tmpCost[i] + '\n');
                 if (i == mergeIndices.length) {
                     sb.append("--------\n");
                 }
@@ -359,7 +373,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             BaseLogger.singleton().finer(sb.toString());
         }
         // Perform the merge
-        final ProductionListGrammar mergedGrammar = plGrammar.merge(mergeIndices);
+        final FractionalCountGrammar mergedGrammar = countGrammar.merge(mergeIndices);
         BaseLogger.singleton().config(
                 "Merged " + mergeIndices.length + " nonterminals. Grammar size:  "
                         + grammarSummaryString(mergedGrammar));
@@ -436,7 +450,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         if (BaseLogger.singleton().isLoggable(Level.FINE)) {
             BaseLogger.singleton().fine(
                     String.format("Iteration: %2d  Likelihood: %.2f  EM Time: %5dms  Grammar Time: %4dms  "
-                            + grammarSummaryString(result.plGrammar), i, result.corpusLikelihood, result.emTime,
+                            + grammarSummaryString(result.countGrammar), i, result.corpusLikelihood, result.emTime,
                             result.grammarConversionTime));
         } else {
             BaseLogger.singleton().config(
@@ -452,7 +466,7 @@ public class TrainGrammar extends BaseCommandlineTool {
      * @param grammar
      * @throws IOException
      */
-    private void writeGrammarToFile(String filename, final ProductionListGrammar grammar) throws IOException {
+    private void writeGrammarToFile(String filename, final FractionalCountGrammar grammar) throws IOException {
 
         filename = (outputGrammarPrefix != null ? outputGrammarPrefix : "") + filename;
 
@@ -470,10 +484,9 @@ public class TrainGrammar extends BaseCommandlineTool {
      * @param grammar
      * @return A short summary of statistics about the supplied grammar
      */
-    private String grammarSummaryString(final ProductionListGrammar grammar) {
+    private String grammarSummaryString(final FractionalCountGrammar grammar) {
         return String.format("%4d nonterminals  %7d binary rules  %6d unary rules  %7d lexical rules",
-                grammar.vocabulary.size(), grammar.binaryProductions.size(), grammar.unaryProductions.size(),
-                grammar.lexicalProductions.size());
+                grammar.vocabulary.size(), grammar.binaryRules(), grammar.unaryRules(), grammar.lexicalRules());
     }
 
     public static void main(final String[] args) {
@@ -482,16 +495,14 @@ public class TrainGrammar extends BaseCommandlineTool {
 
     public static class EmIterationResult {
 
-        final FractionalCountGrammar fcGrammar;
-        final ProductionListGrammar plGrammar;
+        final FractionalCountGrammar countGrammar;
         final float corpusLikelihood;
         final int emTime;
         final int grammarConversionTime;
 
-        public EmIterationResult(final FractionalCountGrammar fcGrammar, final ProductionListGrammar plGrammar,
-                final float corpusLikelihood, final int emTime, final int grammarConversionTime) {
-            this.fcGrammar = fcGrammar;
-            this.plGrammar = plGrammar;
+        public EmIterationResult(final FractionalCountGrammar countGrammar, final float corpusLikelihood,
+                final int emTime, final int grammarConversionTime) {
+            this.countGrammar = countGrammar;
             this.corpusLikelihood = corpusLikelihood;
             this.emTime = emTime;
             this.grammarConversionTime = grammarConversionTime;

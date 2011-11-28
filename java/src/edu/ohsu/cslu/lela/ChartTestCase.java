@@ -19,10 +19,10 @@ public class ChartTestCase {
     protected final static short[][] OPEN_CELLS = new short[][] { { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 },
             { 0, 2 }, { 3, 5 }, { 0, 3 }, { 0, 5 } };
 
-    protected ProductionListGrammar plGrammar0;
+    protected FractionalCountGrammar grammar0;
     protected ConstrainedInsideOutsideGrammar cscGrammar0;
 
-    ProductionListGrammar plGrammar1;
+    FractionalCountGrammar grammar1;
     ConstrainedInsideOutsideGrammar cscGrammar1;
 
     protected short top;
@@ -40,22 +40,22 @@ public class ChartTestCase {
                 null);
 
         // Construct a SparseMatrixGrammar from the induced grammar
-        plGrammar0 = new ProductionListGrammar(sg);
-        cscGrammar0 = new ConstrainedInsideOutsideGrammar(plGrammar0, GrammarFormatType.Berkeley,
+        grammar0 = sg.toFractionalCountGrammar();
+        cscGrammar0 = new ConstrainedInsideOutsideGrammar(grammar0, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
-        final SymbolSet<String> vocabulary = plGrammar0.vocabulary;
+        final SymbolSet<String> vocabulary = grammar0.vocabulary;
         top = (short) vocabulary.getIndex("top");
         a = (short) vocabulary.getIndex("a");
         b = (short) vocabulary.getIndex("b");
         c = (short) vocabulary.getIndex("c");
         d = (short) vocabulary.getIndex("d");
-        e = plGrammar0.lexicon.getIndex("e");
-        f = plGrammar0.lexicon.getIndex("f");
+        e = grammar0.lexicon.getIndex("e");
+        f = grammar0.lexicon.getIndex("f");
 
         // Split the grammar
-        plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
-        cscGrammar1 = new ConstrainedInsideOutsideGrammar(plGrammar1, GrammarFormatType.Berkeley,
+        grammar1 = grammar0.split();
+        cscGrammar1 = new ConstrainedInsideOutsideGrammar(grammar1, GrammarFormatType.Berkeley,
                 PerfectIntPairHashPackingFunction.class);
     }
 
