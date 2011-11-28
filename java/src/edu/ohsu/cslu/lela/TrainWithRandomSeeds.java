@@ -3,13 +3,13 @@ package edu.ohsu.cslu.lela;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Random;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
 
 public class TrainWithRandomSeeds extends BaseCommandlineTool {
@@ -27,49 +27,54 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
             tg.binarization = Binarization.RIGHT;
             tg.grammarFormatType = GrammarFormatType.Berkeley;
 
-            final ProductionListGrammar plg0 = new ProductionListGrammar(new StringCountGrammar(br, Binarization.RIGHT,
-                    GrammarFormatType.Berkeley));
+            final FractionalCountGrammar grammar0 = new StringCountGrammar(br, Binarization.RIGHT,
+                    GrammarFormatType.Berkeley).toFractionalCountGrammar();
             br.reset();
 
-            tg.loadGoldTreesAndConstrainingCharts(br, plg0);
+            tg.loadGoldTreesAndConstrainingCharts(br, grammar0);
             br.reset();
 
-            final NoiseGenerator noiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f, seed);
+            final Random random = new Random(seed);
 
             System.out.println("=== Seed: " + seed + " ===");
 
             // Split and train with the 1-split grammar
             System.out.println("Split 1");
-            final ProductionListGrammar plg1 = runEm(tg, plg0.split(noiseGenerator));
+            final FractionalCountGrammar split1 = grammar0.split();
+            split1.randomize(random, 0.01f);
+            final FractionalCountGrammar plg1 = runEm(tg, split1);
 
             // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
-            final ProductionListGrammar mergedPlg1 = plg1.merge(new short[] { 1 });
+            final FractionalCountGrammar mergedPlg1 = plg1.merge(new short[] { 1 });
             tg.reloadConstrainingCharts(cscGrammar(plg1), cscGrammar(mergedPlg1));
             System.out.println("Split 2");
-            final ProductionListGrammar plg2 = runEm(tg, mergedPlg1.split(noiseGenerator));
+            final FractionalCountGrammar split2 = mergedPlg1.split();
+            split2.randomize(random, 0.01f);
+            final FractionalCountGrammar plg2 = runEm(tg, split2);
 
             // Merge TOP_1 back into TOP, split again, and train with the new 3-split grammar
-            final ProductionListGrammar mergedPlg2 = plg2.merge(new short[] { 1 });
+            final FractionalCountGrammar mergedPlg2 = plg2.merge(new short[] { 1 });
             tg.reloadConstrainingCharts(cscGrammar(plg2), cscGrammar(mergedPlg2));
             System.out.println("Split 3");
-            runEm(tg, mergedPlg2.split(noiseGenerator));
+            final FractionalCountGrammar split3 = mergedPlg2.split();
+            split3.randomize(random, 0.01f);
+            runEm(tg, split3);
         }
     }
 
-    @SuppressWarnings("null")
-    private ProductionListGrammar runEm(final TrainGrammar tg, final ProductionListGrammar split) {
-        ProductionListGrammar plGrammar = split;
+    private FractionalCountGrammar runEm(final TrainGrammar tg, final FractionalCountGrammar splitGrammar) {
+        FractionalCountGrammar currentGrammar = splitGrammar;
         EmIterationResult result = null;
         for (int i = 0; i < 50; i++) {
-            result = tg.emIteration(plGrammar, -30f);
+            result = tg.emIteration(currentGrammar, -30f);
             System.out.format("Iteration: %2d  Likelihood: %.2f\n", i, result.corpusLikelihood);
-            plGrammar = result.plGrammar;
+            currentGrammar = result.countGrammar;
         }
-        return result.plGrammar;
+        return currentGrammar;
     }
 
-    private ConstrainedInsideOutsideGrammar cscGrammar(final ProductionListGrammar plg) {
-        return new ConstrainedInsideOutsideGrammar(plg, GrammarFormatType.Berkeley,
+    private ConstrainedInsideOutsideGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
+        return new ConstrainedInsideOutsideGrammar(countGrammar, GrammarFormatType.Berkeley,
                 PerfectIntPairHashPackingFunction.class);
     }
 

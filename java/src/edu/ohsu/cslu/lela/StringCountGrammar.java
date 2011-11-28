@@ -262,6 +262,50 @@ public final class StringCountGrammar implements CountGrammar {
         return new SymbolSet<String>(lexicalEntryOccurrences.keySet());
     }
 
+    /**
+     * Constructs a {@link FractionalCountGrammar} based on this {@link StringCountGrammar}, inducing a vocabulary
+     * sorted by binary parent count.
+     */
+    public FractionalCountGrammar toFractionalCountGrammar() {
+        final SplitVocabulary vocabulary = induceVocabulary(binaryParentCountComparator());
+        final SymbolSet<String> lexicon = induceLexicon();
+        final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null);
+
+        for (final String parent : binaryRuleCounts.keySet()) {
+            final HashMap<String, Object2IntMap<String>> leftChildMap = binaryRuleCounts.get(parent);
+
+            for (final String leftChild : leftChildMap.keySet()) {
+                final Object2IntMap<String> rightChildMap = leftChildMap.get(leftChild);
+
+                for (final String rightChild : rightChildMap.keySet()) {
+                    fcg.incrementBinaryCount((short) vocabulary.getIndex(parent),
+                            (short) vocabulary.getIndex(leftChild), (short) vocabulary.getIndex(rightChild),
+                            rightChildMap.getInt(rightChild));
+                }
+            }
+        }
+
+        for (final String parent : unaryRuleCounts.keySet()) {
+            final Object2IntMap<String> childMap = unaryRuleCounts.get(parent);
+
+            for (final String child : childMap.keySet()) {
+                fcg.incrementUnaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(child),
+                        childMap.getInt(child));
+            }
+        }
+
+        for (final String parent : lexicalRuleCounts.keySet()) {
+            final Object2IntMap<String> childMap = lexicalRuleCounts.get(parent);
+
+            for (final String child : childMap.keySet()) {
+                fcg.incrementLexicalCount((short) vocabulary.getIndex(parent), lexicon.getIndex(child),
+                        childMap.getInt(child));
+            }
+        }
+
+        return fcg;
+    }
+
     public ArrayList<Production> binaryProductions(final SymbolSet<String> vocabulary) {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
@@ -366,7 +410,7 @@ public final class StringCountGrammar implements CountGrammar {
 
         final Int2IntOpenHashMap wordCounts = new Int2IntOpenHashMap();
         wordCounts.defaultReturnValue(0);
-        
+
         for (final String parent : lexicalRuleCounts.keySet()) {
 
             final Object2IntMap<String> childMap = lexicalRuleCounts.get(parent);

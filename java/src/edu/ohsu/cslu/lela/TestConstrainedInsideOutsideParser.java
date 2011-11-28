@@ -25,10 +25,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Random;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.theories.DataPoint;
+import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
@@ -41,7 +42,6 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.lela.ProductionListGrammar.NoiseGenerator;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.JUnit;
 
@@ -54,23 +54,14 @@ import edu.ohsu.cslu.tests.JUnit;
 @RunWith(Theories.class)
 public class TestConstrainedInsideOutsideParser {
 
-    @DataPoint
-    public static NoiseGenerator zeroNoiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(0);
+    @DataPoints
+    public final static float[] RANDOMNESS = new float[] { 0f, .01f, .5f };
 
-    @DataPoint
-    public static NoiseGenerator biasedNoiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(0.01f);
-
-    @DataPoint
-    public static NoiseGenerator randomNoiseGenerator = new ProductionListGrammar.RandomNoiseGenerator(0.01f);
-
-    private ProductionListGrammar plGrammar0;
-    private ProductionListGrammar plGrammar1;
+    private FractionalCountGrammar grammar0;
+    private FractionalCountGrammar grammar1;
     private ConstrainingChart chart0;
     private ConstrainedInsideOutsideGrammar cscGrammar1;
     private ConstrainedInsideOutsideParser parser1;
-
-    private ProductionListGrammar biasedGrammar1;
-    private ConstrainedInsideOutsideGrammar biasedCscGrammar1;
 
     @Before
     public void setUp() throws IOException {
@@ -78,20 +69,15 @@ public class TestConstrainedInsideOutsideParser {
         // Induce a grammar from the sample tree and construct a basic constraining chart
         final StringCountGrammar sg = new StringCountGrammar(new StringReader(AllLelaTests.STRING_SAMPLE_TREE), null,
                 null);
-        plGrammar0 = new ProductionListGrammar(sg);
+        grammar0 = sg.toFractionalCountGrammar();
 
         // Create a basic constraining chart
         chart0 = new ConstrainingChart(BinaryTree.read(AllLelaTests.STRING_SAMPLE_TREE, String.class),
-                cscGrammar(plGrammar0));
+                cscGrammar(grammar0));
 
         // Split the grammar
-        plGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
-        cscGrammar1 = cscGrammar(plGrammar1);
-
-        // Split the M0 grammar, biasing all rule splits completely to the 1st option
-        // Split the grammar
-        biasedGrammar1 = plGrammar0.split(new ProductionListGrammar.BiasedNoiseGenerator(1f));
-        biasedCscGrammar1 = cscGrammar(biasedGrammar1);
+        grammar1 = grammar0.split();
+        cscGrammar1 = cscGrammar(grammar1);
     }
 
     /**
@@ -123,7 +109,7 @@ public class TestConstrainedInsideOutsideParser {
         final BinaryTree<String> parseTree1 = parseWithGrammar1();
         final ConstrainedChart chart1 = parser1.chart;
 
-        final SymbolSet<String> vocabulary = plGrammar1.vocabulary;
+        final SymbolSet<String> vocabulary = grammar1.vocabulary;
         final short top = (short) vocabulary.getIndex("top");
         final short a_0 = (short) vocabulary.getIndex("a_0");
         final short a_1 = (short) vocabulary.getIndex("a_1");
@@ -206,109 +192,13 @@ public class TestConstrainedInsideOutsideParser {
     }
 
     @Test
-    public void testBiased1SplitConstrainedParse() {
-
-        final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        parser1 = new ConstrainedInsideOutsideParser(opts, biasedCscGrammar1);
-        parser1.findBestParse(chart0);
-        final ConstrainedChart chart1 = parser1.chart;
-
-        final SymbolSet<String> vocabulary = plGrammar1.vocabulary;
-        final short top = (short) vocabulary.getIndex("top");
-        final short a_0 = (short) vocabulary.getIndex("a_0");
-        final short a_1 = (short) vocabulary.getIndex("a_1");
-        final short b_0 = (short) vocabulary.getIndex("b_0");
-        final short b_1 = (short) vocabulary.getIndex("b_1");
-        final short c_0 = (short) vocabulary.getIndex("c_0");
-        final short c_1 = (short) vocabulary.getIndex("c_1");
-        final short d_0 = (short) vocabulary.getIndex("d_0");
-        final short d_1 = (short) vocabulary.getIndex("d_1");
-
-        // Verify expected inside probabilities in a few cells
-        assertLogFractionEquals(Math.log(2f / 3), chart1.getInside(0, 1, c_0), .001f);
-        assertLogFractionEquals(Math.log(2f / 3), chart1.getInside(0, 1, c_1), .001f);
-        assertLogFractionEquals(Math.log(2f / 3), chart1.getInside(1, 2, c_0), .001f);
-        assertLogFractionEquals(Math.log(2f / 3), chart1.getInside(1, 2, c_1), .001f);
-        assertLogFractionEquals(Math.log(1f), chart1.getInside(2, 3, d_0), .001f);
-        assertLogFractionEquals(Math.log(1f), chart1.getInside(2, 3, d_1), .001f);
-
-        assertLogFractionEquals(Math.log(1f), chart1.getInside(3, 4, d_0, 1), .001f);
-        assertLogFractionEquals(Math.log(1f), chart1.getInside(3, 4, d_1, 1), .001f);
-        assertLogFractionEquals(Math.log(1f / 2), chart1.getInside(3, 4, b_0, 2), .001f);
-        assertLogFractionEquals(Math.log(1f / 2), chart1.getInside(3, 4, b_1, 2), .001f);
-        assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(4, 5, c_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 3), chart1.getInside(4, 5, c_1), .001f);
-
-        assertLogFractionEquals(Math.log(4f / 27), chart1.getInside(0, 2, a_0), .001f);
-        assertLogFractionEquals(Math.log(4f / 27), chart1.getInside(0, 2, a_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 2, b_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 2, b_1), .001f);
-
-        assertLogFractionEquals(Math.log(4f / 81), chart1.getInside(0, 3, a_0), .001f);
-        assertLogFractionEquals(Math.log(4f / 81), chart1.getInside(0, 3, a_1), .001f);
-
-        assertLogFractionEquals(Math.log(1f / 12), chart1.getInside(3, 5, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 12), chart1.getInside(3, 5, b_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(3, 5, a_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(3, 5, a_1), .001f);
-
-        assertLogFractionEquals(Math.log(1.0 / 729), chart1.getInside(0, 5, top), .001f);
-        assertLogFractionEquals(Math.log(1.0 / 729), chart1.getInside(0, 5, a_0), .001f);
-        assertLogFractionEquals(Math.log(1.0 / 729), chart1.getInside(0, 5, a_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 4, b_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart1.getInside(0, 4, b_1), .001f);
-
-        // And outside probabilities
-        assertLogFractionEquals(Math.log(1.0), chart1.getOutside(0, 5, top), .001f);
-
-        assertLogFractionEquals(0, chart1.getOutside(0, 5, a_0), .001f);
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, chart1.getOutside(0, 5, a_1), .001f);
-
-        final double outside03 = Math.log(1.0 / 72);
-        assertLogFractionEquals(outside03, chart1.getOutside(0, 3, a_0), .001f);
-        assertLogFractionEquals(outside03, chart1.getOutside(0, 3, a_1), .001f);
-
-        final double outside02 = Math.log(1.0 / 216);
-        assertLogFractionEquals(outside02, chart1.getOutside(0, 2, a_0), .001f);
-        assertLogFractionEquals(outside02, chart1.getOutside(0, 2, a_1), .001f);
-
-        final double outside01 = Math.log(1.0 / 972);
-        assertLogFractionEquals(outside01, chart1.getOutside(0, 1, c_0), .001f);
-        assertLogFractionEquals(outside01, chart1.getOutside(0, 1, c_1), .001f);
-
-        final double outside12 = Math.log(1.0 / 486);
-        assertLogFractionEquals(outside12, chart1.getOutside(1, 2, c_0), .001f);
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, chart1.getOutside(1, 2, a_1), .001f);
-
-        final double outside23 = Math.log(1.0 / 729);
-        assertLogFractionEquals(outside23, chart1.getOutside(2, 3, d_0), .001f);
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, chart1.getOutside(2, 3, d_1), .001f);
-
-        final double outside35 = Math.log(4.0 / 243);
-        assertLogFractionEquals(outside35, chart1.getOutside(3, 5, b_0), .001f);
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, chart1.getOutside(3, 5, b_1), .001f);
-
-        // Top-level probability for splits of b in 3,4
-        final double outside34 = Math.log(1.0 / 729);
-        assertLogFractionEquals(outside34, chart1.getOutside(3, 4, b_0, 2), .001f);
-        assertLogFractionEquals(outside34, chart1.getOutside(3, 4, b_1, 2), .001f);
-        assertLogFractionEquals(outside34, chart1.getOutside(3, 4, d_0, 1), .001f);
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, chart1.getOutside(3, 4, d_1, 1), .001f);
-
-        final double outside45 = Math.log(1.0 / 243);
-        assertLogFractionEquals(outside45, chart1.getOutside(4, 5, c_0), .001f);
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, chart1.getOutside(4, 5, c_1), .001f);
-    }
-
-    @Test
     public void test2SplitConstrainedParse() {
 
         // Parse with the split-1 grammar, creating a new constraining chart.
         parseWithGrammar1();
 
         // Split the grammar again
-        final ProductionListGrammar plGrammar2 = plGrammar1.split(new ProductionListGrammar.BiasedNoiseGenerator(0f));
+        final FractionalCountGrammar plGrammar2 = grammar1.split();
         final ConstrainedInsideOutsideGrammar cscGrammar2 = cscGrammar(plGrammar2);
 
         //
@@ -413,16 +303,17 @@ public class TestConstrainedInsideOutsideParser {
     }
 
     @Theory
-    public void testLongUnaryChain(final NoiseGenerator noiseGenerator) throws IOException {
+    public void testLongUnaryChain(final float randomness) throws IOException {
 
         // Induce a grammar from the corpus and construct a basic constraining chart
-        final ProductionListGrammar plg0 = induceProductionListGrammar(new StringReader(
+        final FractionalCountGrammar g0 = induceFractionalCountGrammar(new StringReader(
                 AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN));
-        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(plg0);
+        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
-        final ProductionListGrammar plg1 = plg0.split(noiseGenerator);
-        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(plg1);
+        final FractionalCountGrammar g1 = g0.split();
+        g1.randomize(new Random(), randomness);
+        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
 
         // Construct a constraining chart
         final NaryTree<String> goldTree = NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
@@ -440,28 +331,28 @@ public class TestConstrainedInsideOutsideParser {
         assertEquals(goldTree.toString(), unfactoredTree.toString());
     }
 
-    private ProductionListGrammar induceProductionListGrammar(final Reader reader) throws IOException {
+    private FractionalCountGrammar induceFractionalCountGrammar(final Reader reader) throws IOException {
         final StringCountGrammar sg = new StringCountGrammar(reader, Binarization.RIGHT, GrammarFormatType.Berkeley);
-        return new ProductionListGrammar(sg);
+        return sg.toFractionalCountGrammar();
     }
 
-    private ConstrainedInsideOutsideGrammar cscGrammar(final ProductionListGrammar plg) {
-        return new ConstrainedInsideOutsideGrammar(plg.binaryProductions, plg.unaryProductions, plg.lexicalProductions,
-                plg.vocabulary, plg.lexicon, GrammarFormatType.Berkeley,
-                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class, null);
+    private ConstrainedInsideOutsideGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
+        return new ConstrainedInsideOutsideGrammar(countGrammar, GrammarFormatType.Berkeley,
+                SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 
     @Theory
-    public void testWsjSubset1Split(final NoiseGenerator noiseGenerator) throws Exception {
+    public void testWsjSubset1Split(final float randomness) throws Exception {
         final String corpus = "parsing/wsj.24.trees.1-20";
 
         // Induce a grammar from the corpus
-        final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
-        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(plg0);
+        final FractionalCountGrammar g0 = induceFractionalCountGrammar(JUnit.unitTestDataAsReader(corpus));
+        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
-        final ProductionListGrammar plg1 = plg0.split(noiseGenerator);
-        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(plg1);
+        final FractionalCountGrammar g1 = g0.split();
+        g1.randomize(new Random(), randomness);
+        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
 
         // Parse each tree in the training corpus with the split-1 grammar
         parseAndCheck(JUnit.unitTestDataAsReader(corpus), csc0, csc1);
@@ -498,21 +389,21 @@ public class TestConstrainedInsideOutsideParser {
 
     @Test
     public void testWsjSubset2Splits() throws Exception {
-        // We have to bias these splits
-        final NoiseGenerator noiseGenerator = new ProductionListGrammar.BiasedNoiseGenerator(0.01f);
         final String corpus = "parsing/wsj.24.trees.1-20";
 
         // Induce a grammar from the corpus
-        final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
-        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(plg0);
+        final FractionalCountGrammar g0 = induceFractionalCountGrammar(JUnit.unitTestDataAsReader(corpus));
+        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
-        final ProductionListGrammar plg1 = plg0.split(noiseGenerator);
-        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(plg1);
+        final FractionalCountGrammar g1 = g0.split();
+        g1.randomize(new Random(), .01f);
+        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
 
         // Split the grammar again
-        final ProductionListGrammar plg2 = plg1.split(noiseGenerator);
-        final ConstrainedInsideOutsideGrammar csc2 = cscGrammar(plg2);
+        final FractionalCountGrammar g2 = g1.split();
+        g1.randomize(new Random(), .01f);
+        final ConstrainedInsideOutsideGrammar csc2 = cscGrammar(g2);
 
         // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the split-2
         // grammar (constrained by the split-1 parses). Convert each split-2 tree back to its split-1 form and ensure it
@@ -546,24 +437,24 @@ public class TestConstrainedInsideOutsideParser {
     // final String corpus = "parsing/wsj_24.mrgEC.1-20";
     //
     // // Induce a grammar from the corpus
-    // final ProductionListGrammar plg0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
-    // final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(plg0);
+    // final ProductionListGrammar g0 = induceProductionListGrammar(JUnit.unitTestDataAsReader(corpus));
+    // final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
     //
     // // Split the grammar
-    // final ProductionListGrammar plg1 = plg0.split(noiseGenerator);
-    // final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(plg1);
+    // final ProductionListGrammar g1 = g0.split(noiseGenerator);
+    // final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
     //
     // // Split the grammar again
-    // final ProductionListGrammar plg2 = plg1.split(noiseGenerator);
-    // final ConstrainedInsideOutsideGrammar csc2 = cscGrammar(plg2);
+    // final ProductionListGrammar g2 = g1.split(noiseGenerator);
+    // final ConstrainedInsideOutsideGrammar csc2 = cscGrammar(g2);
     //
     // // Re-merge some categories in the split-2 grammar
-    // final ProductionListGrammar plg2b = plg2.merge(new short[] { 2, 4, 8, 12, 20, 22, 26, 40, 46, 56, 70, 72, 100,
+    // final ProductionListGrammar g2b = g2.merge(new short[] { 2, 4, 8, 12, 20, 22, 26, 40, 46, 56, 70, 72, 100,
     // 110 });
-    // final ConstrainedInsideOutsideGrammar csc2b = cscGrammar(plg2b);
+    // final ConstrainedInsideOutsideGrammar csc2b = cscGrammar(g2b);
     //
     // // Split the merged 2-split grammar again (producing a 3-split grammar) and parse with that grammar
-    // final ProductionListGrammar plg3 = plg2b.split(noiseGenerator);
+    // final ProductionListGrammar plg3 = g2b.split(noiseGenerator);
     // final ConstrainedInsideOutsideGrammar csc3 = cscGrammar(plg3);
     //
     // // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the
@@ -634,37 +525,6 @@ public class TestConstrainedInsideOutsideParser {
 
         assertLogFractionEquals(Math.log(1f / 2 / 2), plg.unaryLogProbability("b_0", "d_1"), .01f);
         assertLogFractionEquals(Math.log(1f / 2 / 2), plg.unaryLogProbability("b_1", "d_0"), .01f);
-    }
-
-    @Test
-    public void testBiasedSplitRuleCount() {
-
-        final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        parser1 = new ConstrainedInsideOutsideParser(opts, biasedCscGrammar1);
-        parser1.findBestParse(chart0);
-
-        final FractionalCountGrammar countGrammar = new FractionalCountGrammar(parser1.grammar);
-        parser1.countRuleOccurrences(countGrammar);
-        final ProductionListGrammar plg = countGrammar.toProductionListGrammar(Float.NEGATIVE_INFINITY);
-
-        // Verify that we find the same probabilities in the original split grammar
-        assertLogFractionEquals(Math.log(1), plg.unaryLogProbability("top", "a_0"), .01f);
-        assertLogFractionEquals(Math.log(0), plg.unaryLogProbability("top", "a_1"), .01f);
-
-        assertLogFractionEquals(Math.log(3f / 5), plg.lexicalLogProbability("c_0", "e"), 0.01f);
-        assertLogFractionEquals(Math.log(1), plg.lexicalLogProbability("c_1", "e"), 0.01f);
-        assertLogFractionEquals(Math.log(2f / 5), plg.lexicalLogProbability("c_0", "f"), 0.01f);
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.lexicalLogProbability("c_1", "f"), 0.01f);
-
-        assertLogFractionEquals(Math.log(1), plg.lexicalLogProbability("d_0", "f"), 0.01f);
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.lexicalLogProbability("d_1", "f"), 0.01f);
-
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.unaryLogProbability("b_0", "d_1"), .01f);
-        assertLogFractionEquals(Math.log(1), plg.unaryLogProbability("b_1", "d_0"), .01f);
-
-        assertLogFractionEquals(Math.log(1f / 8), plg.binaryLogProbability("a_0", "c_0", "c_0"), .01f);
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.binaryLogProbability("a_0", "c_1", "c_1"), .01f);
     }
 
     private BinaryTree<String> toPreSplitTree(final BinaryTree<String> splitTree) {

@@ -82,7 +82,7 @@ public class TestConstrainingChart extends ChartTestCase {
         assertEquals(1, cc.unaryChainLength(4, 5));
 
         // And ensure that the extracted parse matches the input gold tree
-        assertEquals(AllLelaTests.STRING_SAMPLE_TREE, cc.extractBestParse(plGrammar0.vocabulary.getIndex("top"))
+        assertEquals(AllLelaTests.STRING_SAMPLE_TREE, cc.extractBestParse(grammar0.vocabulary.getIndex("top"))
                 .toString());
 
         JUnit.assertArrayEquals(OPEN_CELLS, cc.openCells);
@@ -121,7 +121,7 @@ public class TestConstrainingChart extends ChartTestCase {
         final String bracketedTree = "(top (a (top (a e) (b e))) (b e))";
         final ConstrainingChart cc = new ConstrainingChart(BinaryTree.read(bracketedTree, String.class), cscGrammar0);
         // Ensure that the extracted parse matches the input gold tree
-        assertEquals(bracketedTree, cc.extractBestParse(plGrammar0.vocabulary.getIndex("top")).toString());
+        assertEquals(bracketedTree, cc.extractBestParse(grammar0.vocabulary.getIndex("top")).toString());
     }
 
     /**
@@ -159,7 +159,7 @@ public class TestConstrainingChart extends ChartTestCase {
         // Create and populate a 1-split ConstrainedChart
         final ConstrainedChart constrainedChart = create1SplitConstrainedChart();
 
-        final ProductionListGrammar mergedPlg = plGrammar1.merge(new short[] { 1, 5, 7 });
+        final FractionalCountGrammar mergedPlg = grammar1.merge(new short[] { 1, 5, 7 });
         final ConstrainedInsideOutsideGrammar mergedCsc = new ConstrainedInsideOutsideGrammar(mergedPlg,
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
