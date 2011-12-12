@@ -103,8 +103,8 @@ public class SerializeModel extends BaseCommandlineTool {
                     new InputStreamReader(new GZIPInputStream(new FileInputStream(fomModelFileName))))
                     : new BufferedReader(new FileReader(fomModelFileName));
             switch (fomType) {
-            case BoundaryInOut:
-                fom = new BoundaryInOut(FOMType.BoundaryInOut, g, fomModelReader).createFOM();
+            case Boundary:
+                fom = new BoundaryInOut(FOMType.Boundary, g, fomModelReader).createFOM();
                 break;
             default:
                 throw new UnsupportedOperationException("FOM type not supported");

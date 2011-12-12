@@ -9,10 +9,12 @@
     <taskdef classpath="${dir.build.lib}/ant4hg.jar" resource="net/sourceforge/ant4hg/taskdefs/antlib.xml" />
 
     <target name="hgversion" unless="source-revision">
+<!--
         <hg cmd="log" dir="." >
             <arg value="-rtip"/>
         </hg>
         <property name="source-revision" value="${ant4hg.log.revision} (${ant4hg.log.changeset})" />
+-->
     </target>
 
     <!-- 

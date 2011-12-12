@@ -62,10 +62,12 @@ public class APGhostEdges extends AgendaParser {
     }
 
     @Override
-    protected void expandFrontier(final int nt, final HashSetChartCell cell) {
+    // protected void expandFrontier(final int nt, final HashSetChartCell cell) {
+    protected void expandFrontier(final int nt, final int start, final int end) {
         LinkedList<ChartEdge> possibleEdges;
         Collection<Production> possibleRules;
         ChartEdge curBestEdge;
+        final HashSetChartCell cell = chart.getCell(start, end);
 
         // unary edges are always possible in any cell, although we don't allow
         // unary chains
@@ -85,10 +87,10 @@ public class APGhostEdges extends AgendaParser {
              */
         } else {
             // connect ghost edges that need left side
-            possibleEdges = needLeftGhostEdges[nt][cell.end()];
+            possibleEdges = needLeftGhostEdges[nt][end];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
-                    curBestEdge = chart.getCell(cell.start(), ghostEdge.end()).getBestEdge(ghostEdge.prod.parent);
+                    curBestEdge = chart.getCell(start, ghostEdge.end()).getBestEdge(ghostEdge.prod.parent);
                     if (curBestEdge == null) {
                         // ghost edge inside prob = grammar rule prob + ONE
                         // CHILD inside prob
@@ -98,10 +100,10 @@ public class APGhostEdges extends AgendaParser {
             }
 
             // connect ghost edges that need right side
-            possibleEdges = needRightGhostEdges[nt][cell.start()];
+            possibleEdges = needRightGhostEdges[nt][start];
             if (possibleEdges != null) {
                 for (final ChartEdge ghostEdge : possibleEdges) {
-                    curBestEdge = chart.getCell(ghostEdge.start(), cell.end()).getBestEdge(ghostEdge.prod.parent);
+                    curBestEdge = chart.getCell(ghostEdge.start(), end).getBestEdge(ghostEdge.prod.parent);
                     if (curBestEdge == null) {
                         addEdgeToFrontier(chart.new ChartEdge(ghostEdge.prod, ghostEdge.leftCell, cell));
                     }
@@ -110,14 +112,14 @@ public class APGhostEdges extends AgendaParser {
 
             // create left ghost edges. Can't go left if we are on the very left
             // side of the chart
-            if (cell.start() > 0) {
+            if (start > 0) {
                 possibleRules = grammar.getBinaryProductionsWithRightChild(nt);
                 if (possibleRules != null) {
                     for (final Production p : possibleRules) {
-                        if (needLeftGhostEdges[p.leftChild][cell.start()] == null) {
-                            needLeftGhostEdges[p.leftChild][cell.start()] = new LinkedList<ChartEdge>();
+                        if (needLeftGhostEdges[p.leftChild][start] == null) {
+                            needLeftGhostEdges[p.leftChild][start] = new LinkedList<ChartEdge>();
                         }
-                        needLeftGhostEdges[p.leftChild][cell.start()].add(chart.new ChartEdge(p, null, cell));
+                        needLeftGhostEdges[p.leftChild][start].add(chart.new ChartEdge(p, null, cell));
                         nGhostEdges += 1;
                     }
                 }
@@ -129,10 +131,10 @@ public class APGhostEdges extends AgendaParser {
                 possibleRules = grammar.getBinaryProductionsWithLeftChild(nt);
                 if (possibleRules != null) {
                     for (final Production p : possibleRules) {
-                        if (needRightGhostEdges[p.rightChild][cell.end()] == null) {
-                            needRightGhostEdges[p.rightChild][cell.end()] = new LinkedList<ChartEdge>();
+                        if (needRightGhostEdges[p.rightChild][end] == null) {
+                            needRightGhostEdges[p.rightChild][end] = new LinkedList<ChartEdge>();
                         }
-                        needRightGhostEdges[p.rightChild][cell.end()].add(chart.new ChartEdge(p, cell, null));
+                        needRightGhostEdges[p.rightChild][end].add(chart.new ChartEdge(p, cell, null));
                         nGhostEdges += 1;
                     }
                 }

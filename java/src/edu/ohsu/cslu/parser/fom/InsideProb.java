@@ -18,7 +18,6 @@
  */
 package edu.ohsu.cslu.parser.fom;
 
-
 /**
  * Simple edge ranking by inside grammar probability.
  * 
@@ -27,11 +26,6 @@ package edu.ohsu.cslu.parser.fom;
 public class InsideProb extends FigureOfMerit {
 
     private static final long serialVersionUID = 1L;
-
-    // @Override
-    // public float calcFOM(final ChartEdge edge) {
-    // return edge.inside();
-    // }
 
     @Override
     public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {

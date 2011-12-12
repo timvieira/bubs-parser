@@ -29,7 +29,7 @@ import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 public class TrainFOM extends BaseCommandlineTool {
 
-    @Option(name = "-fom", required = true, usage = "FOM to train.  Supports BoundaryInOut,Discriminative")
+    @Option(name = "-fom", required = true, usage = "FOM to train.  Supports BoundaryInOut,Prior,Discriminative")
     private FOMType fomType = null;
 
     @Option(name = "-g", required = true, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
@@ -65,7 +65,7 @@ public class TrainFOM extends BaseCommandlineTool {
 
     @Override
     public void run() throws Exception {
-        if (fomType == FOMType.BoundaryInOut) {
+        if (fomType == FOMType.Boundary) {
             BoundaryInOut.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
         } else if (fomType == FOMType.Discriminative) {
             if (extractFeatures) {
@@ -73,6 +73,8 @@ public class TrainFOM extends BaseCommandlineTool {
             } else {
                 DiscriminativeFOM.train(inputStream, outputStream, grammarFile, featTemplate, iterations, learningRate);
             }
+        } else if (fomType == FOMType.Prior) {
+            PriorFOM.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts);
         } else {
             throw new IllegalArgumentException("FOM type '" + fomType + "' not supported.");
         }
