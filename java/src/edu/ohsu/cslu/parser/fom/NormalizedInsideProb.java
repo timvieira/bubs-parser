@@ -18,6 +18,7 @@
  */
 package edu.ohsu.cslu.parser.fom;
 
+import cltool4j.GlobalConfigProperties;
 
 /**
  * Normalizes inside grammar probability by span length.
@@ -35,9 +36,27 @@ public class NormalizedInsideProb extends InsideProb {
     // return edge.inside() + spanLength;
     // }
 
+    // float normInsideTune = (float) Math.log(GlobalConfigProperties.singleton().getFloatProperty("normInsideTune"));
+    float normInsideTune = GlobalConfigProperties.singleton().getFloatProperty("normInsideTune");
+
+    // float logAlpha = (float) Math.log(normInsideTune);
+    // float logOneMinusAlpha = (float) Math.log(1 - normInsideTune);
+
     @Override
     public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
-        return insideProbability;
+        // log [ nth root of insideProb + normInsideTune * insideProb ]
+        // log(nth root of x)) = log(x)/n
+        // return (float) Util.logSum(logAlpha + insideProbability / (end - start + 1), logOneMinusAlpha
+        // + insideProbability);
+        // return insideProbability / (end - start + 1);
+
+        // From first 10 sents, range btwn 0.7 - 0.9 gives a curve, but acc drops fast.
+        return (float) (insideProbability / Math.pow((end - start + 1), normInsideTune));
+
+        // System.out.println((end - start + 1) + "\t" + insideProbability);
+
+        // From first 10 sets, range btwn 4 and 6
+        // return insideProbability + normInsideTune * (end - start + 1);
     }
 
     @Override

@@ -38,7 +38,7 @@ public abstract class FigureOfMerit implements Serializable {
     private static final long serialVersionUID = 1L;
 
     static public enum FOMType {
-        Inside, NormalizedInside, BoundaryInOut, InsideWithFwdBkwd, WeightedFeatures, Discriminative
+        Inside, NormalizedInside, Boundary, Prior, InsideWithFwdBkwd, WeightedFeatures, Discriminative
     }
 
     // public abstract float calcFOM(ChartEdge edge);

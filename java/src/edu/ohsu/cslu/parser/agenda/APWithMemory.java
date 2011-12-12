@@ -18,17 +18,19 @@
  */
 package edu.ohsu.cslu.parser.agenda;
 
+import java.util.Arrays;
+
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 
 /**
  * @author Nathan Bodenstab
  */
 public class APWithMemory extends AgendaParser {
 
-    private ChartEdge agendaMemory[][][];
+    private float agendaMemory[][][];
 
     public APWithMemory(final ParserDriver opts, final LeftRightListsGrammar grammar) {
         super(opts, grammar);
@@ -37,19 +39,33 @@ public class APWithMemory extends AgendaParser {
     @Override
     protected void initParser(final ParseTask parseTask) {
         super.initParser(parseTask);
+        final int sentLen = parseTask.sentenceLength();
 
-        // TODO: this can be half the size since we only need to allocate space for chart cells that exist
-        agendaMemory = new ChartEdge[parseTask.sentenceLength() + 1][parseTask.sentenceLength() + 1][grammar
-                .numNonTerms()];
+        agendaMemory = new float[sentLen + 1][sentLen + 1][];
+
+        for (short span = 1; span <= sentLen; span++) {
+            for (short start = 0; start < sentLen - span + 1; start++) { // beginning
+                final int end = start + span;
+                agendaMemory[start][end] = new float[grammar.numNonTerms()];
+                Arrays.fill(agendaMemory[start][end], Float.NEGATIVE_INFINITY);
+            }
+        }
     }
 
     @Override
-    protected void addEdgeToFrontier(final ChartEdge edge) {
-        final ChartEdge bestAgendaEdge = agendaMemory[edge.start()][edge.end()][edge.prod.parent];
-        if (bestAgendaEdge == null || edge.fom > bestAgendaEdge.fom) {
-            nAgendaPush += 1;
-            agenda.add(edge);
-            agendaMemory[edge.start()][edge.end()][edge.prod.parent] = edge;
+    protected void addEdgeToFrontier(final Production p, final int start, final int mid, final int end) {
+        final int nt = p.parent;
+        float edgeInside;
+        if (mid < 0) {
+            edgeInside = chart.getInside(start, end, p.leftChild) + p.prob;
+        } else {
+            edgeInside = chart.getInside(start, mid, p.leftChild) + chart.getInside(mid, end, p.rightChild) + p.prob;
+        }
+        if (edgeInside > agendaMemory[start][end][nt]) {
+            super.addEdgeToFrontier(p, start, mid, end);
+            // nAgendaPush += 1;
+            // agenda.add(edge);
+            agendaMemory[start][end][nt] = edgeInside;
         }
     }
 }

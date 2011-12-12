@@ -249,6 +249,8 @@ public abstract class Chart {
             this.rightCell = null;
         }
 
+        // Computing the inside prob dynamically allows edges in a global agenda
+        // to change. This can be good and bad ...
         public float inside() {
             if (prod.isBinaryProd()) {
                 return prod.prob + leftCell.getInside(prod.leftChild) + rightCell.getInside(prod.rightChild);

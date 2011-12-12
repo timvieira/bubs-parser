@@ -20,7 +20,7 @@ package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.util.HashMap;
@@ -82,6 +82,7 @@ import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.DiscriminativeFOM;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
+import edu.ohsu.cslu.parser.fom.PriorFOM;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
@@ -181,7 +182,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     public boolean listResearchParsers = false;
 
     private long parseStartTime;
-    private int sentencesParsed = 0, failedParses = 0;
+    private int sentencesParsed = 0, wordsParsed = 0, failedParses = 0;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
     private final BracketEvaluator evaluator = new BracketEvaluator();
 
@@ -266,23 +267,32 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 tmp.close();
 
                 if (!keyValue.containsKey("model")) {
-                    throw new IllegalArgumentException("FOM model file has unexpected format");
+                    throw new IllegalArgumentException(
+                            "FOM model file has unexpected format.  Looking for 'model=' in first line.");
                 }
                 if (keyValue.get("model").equals("LogisticRegressor")) {
                     // Discriminative FOM
                     fomModel = new DiscriminativeFOM(FOMType.Discriminative, grammar,
                             fileAsBufferedReader(fomTypeOrModel));
-                } else if (keyValue.get("model").equals("FOM") && keyValue.containsKey("type")
-                        && keyValue.get("type").equals("BoundaryInOut")) {
-                    // BoundaryInOut FOM
-                    Grammar fomGrammar = grammar;
-                    if (this.coarseGrammarFile != null) {
-                        coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
-                        BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
-                        fomGrammar = coarseGrammar;
+                } else if (keyValue.get("model").equals("FOM") && keyValue.containsKey("type")) {
+                    if (keyValue.get("type").equals("BoundaryInOut")) {
+                        // BoundaryInOut FOM
+                        Grammar fomGrammar = grammar;
+                        if (this.coarseGrammarFile != null) {
+                            coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
+                            BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
+                            fomGrammar = coarseGrammar;
+                        }
+                        fomModel = new BoundaryInOut(FOMType.Boundary, fomGrammar, fileAsBufferedReader(fomTypeOrModel));
+                    } else if (keyValue.get("type").equals("Prior")) {
+                        fomModel = new PriorFOM(FOMType.Prior, grammar, fileAsBufferedReader(fomTypeOrModel));
+                    } else {
+                        throw new IllegalArgumentException("FOM model type '" + keyValue.get("type") + "' in file "
+                                + fomTypeOrModel + "' not expected.");
                     }
-                    fomModel = new BoundaryInOut(FOMType.BoundaryInOut, fomGrammar,
-                            fileAsBufferedReader(fomTypeOrModel));
+                } else {
+                    throw new IllegalArgumentException("Model value '" + keyValue.get("model") + "' in file "
+                            + fomTypeOrModel + "' not expected.");
                 }
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
@@ -308,9 +318,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      */
     public static Grammar readGrammar(final String grammarFile, final ResearchParserType researchParserType,
             final PackingFunctionType cartesianProductFunctionType) throws Exception {
-
         // Handle gzipped and non-gzipped grammar files
-        return createGrammar(new FileReader(grammarFile), researchParserType, cartesianProductFunctionType);
+        return createGrammar(new InputStreamReader(Util.file2inputStream(grammarFile)), researchParserType,
+                cartesianProductFunctionType);
     }
 
     /**
@@ -537,6 +547,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             System.out
                     .println(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels) + parseTask.statsString());
             sentencesParsed++;
+            wordsParsed += parseTask.sentenceLength();
             if (parseTask.parseFailed()) {
                 failedParses++;
             }
@@ -559,9 +570,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         final StringBuilder sb = new StringBuilder();
         // TODO Add cpuSecondsPerSent and switch avgSecondsPerSent to report mean latency (not mean
         // throughput)
-        sb.append(String.format(
-                "INFO: numSentences=%d numFail=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f",
-                sentencesParsed, failedParses, parseTime, cpuTime, cpuTime / sentencesParsed));
+        sb.append(String
+                .format("INFO: numSentences=%d numFail=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f wordsPerSec=%.3f",
+                        sentencesParsed, failedParses, parseTime, cpuTime, cpuTime / sentencesParsed, wordsParsed
+                                / cpuTime));
 
         if (parserInstances.getFirst() instanceof SparseMatrixVectorParser) {
             sb.append(String.format(" totalXProductTime=%d totalBinarySpMVTime=%d",

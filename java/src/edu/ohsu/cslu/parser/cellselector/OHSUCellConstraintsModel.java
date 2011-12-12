@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -72,27 +73,25 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 public class OHSUCellConstraintsModel implements CellSelectorModel {
 
-    private Vector<Vector<Float>> allBeginScores = new Vector<Vector<Float>>();
-    private Vector<Vector<Float>> allEndScores = new Vector<Vector<Float>>();
-    private Vector<Vector<Float>> allUnaryScores = new Vector<Vector<Float>>();
-    // private Vector<float[]> allBeginScores = new Vector<float[]>();
-    // private Vector<float[]> allEndScores = new Vector<float[]>();
-    // private Vector<float[]> allUnaryScores = new Vector<float[]>();
+    // private Vector<Vector<Float>> allBeginScores = new Vector<Vector<Float>>();
+    // private Vector<Vector<Float>> allEndScores = new Vector<Vector<Float>>();
+    // private Vector<Vector<Float>> allUnaryScores = new Vector<Vector<Float>>();
+    private Vector<float[]> allBeginScores = new Vector<float[]>();
+    private Vector<float[]> allEndScores = new Vector<float[]>();
+    private Vector<float[]> allUnaryScores = new Vector<float[]>();
 
     // Because we're getting the Cell Constraints scores pre-computed from Kristy for
     // certain sections, we can only parse sentences we have scores for. And when this
     // is done over the grid or threaded, then we need to keep track of which sentences is which
     private HashMap<String, Integer> sentToIndex = new HashMap<String, Integer>();
 
-    boolean[] beginClosed, endClosed, unaryClosed;
+    // boolean[] beginClosed, endClosed, unaryClosed;
     protected boolean grammarLeftFactored;
-    private int currentSentNumber;
 
     private float globalBegin = Float.POSITIVE_INFINITY;
     private float globalEnd = Float.POSITIVE_INFINITY;
     private float globalUnary = Float.POSITIVE_INFINITY;
-    private float hpTune = Float.NaN;
-    private int quadTune = Integer.MAX_VALUE, linearTune = Integer.MAX_VALUE;
+    private float hpTune = Float.NaN, quadTune = Float.NaN, logTune = Float.NaN, linearTune = Float.NaN;
 
     protected LinkedList<ChartCell> cellList;
     protected Iterator<ChartCell> cellListIterator;
@@ -104,7 +103,8 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             parseConstraintArgs(props.getProperty("chartConstraintsTune"));
             BaseLogger.singleton().fine(
                     "CC_PARAM: startThresh=" + globalBegin + " endThresh=" + globalEnd + " unaryThresh=" + globalUnary
-                            + " hpTune=" + hpTune + " quadTune=" + quadTune + " linearTune=" + linearTune);
+                            + " hpTune=" + hpTune + " quadTune=" + quadTune + " logTune=" + logTune + " linearTune="
+                            + linearTune);
 
             readModel(modelStream);
         } catch (final Exception e) {
@@ -126,19 +126,24 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 hpTune = Util.str2float(tokens[++i]);
                 if (hpTune < 0.0 || hpTune > 1.0) {
                     BaseLogger.singleton().severe(
-                            "High Precision param must be btwn 0 and 1 inclusive.  Found value: " + hpTune);
+                            "High Precision constraints param must be btwn 0 and 1 inclusive.  Found value: " + hpTune);
                 }
             } else if (tokens[i].equals("Q")) {
                 // Quadratic: Q,x [x is integer; n*x open begin/end positions]
                 quadTune = Integer.parseInt(tokens[++i]);
                 if (quadTune <= 0) {
-                    BaseLogger.singleton().severe("Quadratic param must be an integer greater than zero");
+                    BaseLogger.singleton().severe("O(N^2) constraints param must be an integer greater than zero");
+                }
+            } else if (tokens[i].equals("O")) {
+                logTune = Integer.parseInt(tokens[++i]);
+                if (quadTune <= 0) {
+                    BaseLogger.singleton().severe("O(NlogN) constraints param must be an integer greater than zero");
                 }
             } else if (tokens[i].equals("L")) {
                 // Linear: L,x [x is integer; x open begin/end positions]
                 linearTune = Integer.parseInt(tokens[++i]);
                 if (linearTune <= 0) {
-                    BaseLogger.singleton().severe("Linear param must be an integer greater than zero");
+                    BaseLogger.singleton().severe("O(N) constraints param must be an integer greater than zero");
                 }
             } else {
                 BaseLogger.singleton().severe("CC tune option not recognized.  Exiting.");
@@ -147,7 +152,19 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         }
     }
 
+    public float[] floatListToArray(final List<Float> items) {
+        final float[] x = new float[items.size()];
+        int i = 0;
+        for (final Float val : items) {
+            x[i++] = val;
+        }
+        return x;
+    }
+
     public void readModel(final BufferedReader inStream) throws Exception {
+        final List<Float> beginScores = new LinkedList<Float>();
+        final List<Float> endScores = new LinkedList<Float>();
+        final List<Float> unaryScores = new LinkedList<Float>();
         final List<String> sentenceTokens = new LinkedList<String>();
         boolean firstLine = true;
         String line = null;
@@ -156,23 +173,26 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             if (line.equals("") || firstLine) {
                 // new sentence
                 if (!firstLine) {
-                    sentToIndex.put(Util.join(sentenceTokens, " "), allBeginScores.size() - 1);
-                    sentenceTokens.clear();
+                    sentToIndex.put(Util.join(sentenceTokens, " "), allBeginScores.size());
+                    allBeginScores.add(floatListToArray(beginScores));
+                    allEndScores.add(floatListToArray(endScores));
+                    allUnaryScores.add(floatListToArray(unaryScores));
                 }
-                allBeginScores.add(new Vector<Float>());
-                allEndScores.add(new Vector<Float>());
-                allUnaryScores.add(new Vector<Float>());
                 firstLine = false;
+                sentenceTokens.clear();
+                beginScores.clear();
+                endScores.clear();
+                unaryScores.clear();
             }
 
             if (!line.equals("")) {
                 final String[] tokens = line.split("[ \t]+");
                 if (tokens.length >= 3) {
                     sentenceTokens.add(tokens[0]);
-                    allBeginScores.lastElement().add(Float.parseFloat(tokens[1]));
-                    allEndScores.lastElement().add(Float.parseFloat(tokens[2]));
+                    beginScores.add(Float.parseFloat(tokens[1]));
+                    endScores.add(Float.parseFloat(tokens[2]));
                     if (tokens.length == 4) {
-                        allUnaryScores.lastElement().add(Float.parseFloat(tokens[3]));
+                        unaryScores.add(Float.parseFloat(tokens[3]));
                     }
                 } else {
                     throw new Exception("ERROR: incorrect format for cellConstraintsFile on line: '" + line + "'");
@@ -180,23 +200,23 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             }
         }
         if (sentenceTokens.size() > 0) {
-            sentToIndex.put(Util.join(sentenceTokens, " "), allBeginScores.size() - 1);
+            sentToIndex.put(Util.join(sentenceTokens, " "), allBeginScores.size());
+            allBeginScores.add(floatListToArray(beginScores));
+            allEndScores.add(floatListToArray(endScores));
+            allUnaryScores.add(floatListToArray(unaryScores));
         }
     }
 
     // A threshold of 0 is the Bayes decision boundary. Move X% of closed
     // begin/end positions to open to increase precision (X=0 is original Bayes
     // decision boundary; X=1 results in no constraints).
-    public static float computeHighPrecisionThresh(final Vector<Float> bScores, final Vector<Float> eScores,
-            final float hpTune) {
-        final Vector<Float> positiveScores = new Vector<Float>();
-        for (final float value : bScores) {
-            if (value >= 0)
-                positiveScores.add(value);
-        }
-        for (final float value : eScores) {
-            if (value >= 0)
-                positiveScores.add(value);
+    public static float computeHighPrecisionThresh(final float[] bScores, final float[] eScores, final float hpTune) {
+        final List<Float> positiveScores = new LinkedList<Float>();
+        for (int i = 0; i < bScores.length; i++) {
+            if (bScores[i] >= 0)
+                positiveScores.add(bScores[i]);
+            if (eScores[i] >= 0)
+                positiveScores.add(eScores[i]);
         }
         Collections.sort(positiveScores);
 
@@ -208,22 +228,23 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         return positiveScores.get(index);
     }
 
-    // Given ranked begin/end classification scores, open the K*N highest-scoring
-    // word positions, where N=sentLength and K is a tuning param. This results
-    // in O(N^2) parsing complexity.
-    public static float computeQuadraticThresh(final Vector<Float> bScores, final Vector<Float> eScores,
-            final int quadTune) {
-        final int sentLen = bScores.size();
+    // Open the minimal number of begin/end constraints such that K*N chart cells
+    // are open to all constituents (leading to O(N^2) complexity.
+    public static float computeQuadraticThresh(final float[] bScores, final float[] eScores, final float quadTune) {
+        final int sentLen = bScores.length;
         final LinkedList<TagScore> allScores = new LinkedList<TagScore>();
         for (int i = 0; i < sentLen; i++) {
-            allScores.add(new TagScore(bScores.get(i), i, -1));
-            allScores.add(new TagScore(eScores.get(sentLen - i - 1), -1, sentLen - i));
+            allScores.add(new TagScore(bScores[i], i, -1));
+            allScores.add(new TagScore(eScores[sentLen - i - 1], -1, sentLen - i));
         }
         Collections.sort(allScores);
 
+        // We need to widen the threshold until a fixed number of cells in the chart
+        // are open. This requires computing the effects of opening each word position
+        // to the new begin or end constraint.
         final boolean beginOpen[] = new boolean[sentLen];
         final boolean endOpen[] = new boolean[sentLen + 1];
-        final int targetNumOpen = (quadTune * sentLen);
+        final int targetNumOpen = (int) (quadTune * sentLen);
         int numOpen = 0;
         TagScore s = null;
         while (numOpen < targetNumOpen && allScores.size() > 0) {
@@ -251,11 +272,15 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         return s.score;
     }
 
-    // Given ranked begin/end classification scores, open the K highest-scoring
-    // word positions, where K is a tuning param. This results in O(N) parsing complexity.
-    public static float getLinearConstraints(final Vector<Float> bScores, final Vector<Float> eScores) {
-
-        return 0;
+    // Given ranked begin OR end classification scores, open the K highest-scoring
+    // word positions, where K is a tuning param. This results in O(N) parsing complexity
+    // if K is constant or O(Nlog^2 N) if K is O(log N).
+    public static float computeFixedOpenConstraints(final float[] scores, final int fixedOpenTune) {
+        if (fixedOpenTune >= scores.length)
+            return Float.POSITIVE_INFINITY;
+        final float[] tmp = scores.clone();
+        Arrays.sort(tmp);
+        return tmp[fixedOpenTune];
     }
 
     private static class TagScore implements Comparable<TagScore> {
@@ -283,6 +308,9 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
     public class OHSUCellConstraints extends CellConstraints {
 
+        float[] beginScores, endScores, unaryScores;
+        float beginThresh, endThresh, unaryThresh;
+
         @Override
         public void initSentence(final ChartParser<?, ?> p) {
             // might have to hash the sentence number for the grid
@@ -295,31 +323,47 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 throw new IllegalArgumentException("ERROR: Sentence not found in Cell Constraints model:\n  "
                         + sentence);
             }
-            final Vector<Float> beginScores = allBeginScores.get(sentNumber);
-            final Vector<Float> endScores = allEndScores.get(sentNumber);
-            final Vector<Float> unaryScores = allUnaryScores.get(sentNumber);
+            beginScores = allBeginScores.get(sentNumber);
+            endScores = allEndScores.get(sentNumber);
+            unaryScores = allUnaryScores.get(sentNumber);
+            final int sentLen = beginScores.length;
 
-            float beginThresh = globalBegin;
-            float endThresh = globalEnd;
-            final float unaryThresh = globalUnary;
+            beginThresh = globalBegin;
+            endThresh = globalEnd;
+            unaryThresh = globalUnary;
 
             if (!Float.isNaN(hpTune)) {
                 final float precisionThresh = computeHighPrecisionThresh(beginScores, endScores, hpTune);
                 beginThresh = Math.min(beginThresh, precisionThresh);
                 endThresh = Math.min(endThresh, precisionThresh);
             }
-            if (quadTune != Integer.MAX_VALUE) {
+            if (!Float.isNaN(quadTune)) {
                 final float quadThresh = computeQuadraticThresh(beginScores, endScores, quadTune);
                 beginThresh = Math.min(beginThresh, quadThresh);
                 endThresh = Math.min(endThresh, quadThresh);
             }
+            if (!Float.isNaN(logTune)) {
+                final int fixedOpen = (int) (logTune * Math.log(sentLen) / Math.log(2));
+                if (grammarLeftFactored) {
+                    final float logThresh = computeFixedOpenConstraints(endScores, fixedOpen);
+                    endThresh = Math.min(endThresh, logThresh);
+                } else {
+                    final float logThresh = computeFixedOpenConstraints(beginScores, fixedOpen);
+                    beginThresh = Math.min(beginThresh, logThresh);
+                }
+            }
+            if (!Float.isNaN(linearTune)) {
+                if (grammarLeftFactored) {
+                    final float logThresh = computeFixedOpenConstraints(endScores, (int) linearTune);
+                    endThresh = Math.min(endThresh, logThresh);
+                } else {
+                    final float logThresh = computeFixedOpenConstraints(beginScores, (int) linearTune);
+                    beginThresh = Math.min(beginThresh, logThresh);
 
-            beginClosed = arrayCompare(beginScores, beginThresh);
-            endClosed = arrayCompare(endScores, endThresh);
-            unaryClosed = arrayCompare(unaryScores, unaryThresh);
+                }
+            }
 
             cellList = new LinkedList<ChartCell>();
-            final int sentLen = beginClosed.length;
             for (short span = 1; span <= sentLen; span++) {
                 for (short beg = 0; beg < sentLen - span + 1; beg++) { // beginning
                     final short end = (short) (beg + span);
@@ -329,7 +373,15 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 }
             }
             cellListIterator = cellList.iterator();
-            currentSentNumber = sentNumber;
+
+            // int bOpen = 0, eOpen = 0;
+            // for (int i = 0; i < sentLen; i++) {
+            // if (beginScores[i] < beginThresh)
+            // bOpen++;
+            // if (endScores[i] < endThresh)
+            // eOpen++;
+            // }
+            // System.out.println("beginOpen=" + bOpen + " endOpen=" + eOpen);
 
             final String ccStats = toString(true).trim();
             if (ParserDriver.chartConstraintsPrint) {
@@ -343,27 +395,16 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             }
         }
 
-        private boolean[] arrayCompare(final List<Float> floatVals, final float thresh) {
-            final int n = floatVals.size();
-            final boolean[] boolVals = new boolean[n]; // defaults to false
-            for (int i = 0; i < n; i++) {
-                if (floatVals.get(i) > thresh) {
-                    boolVals[i] = true;
-                }
-            }
-            return boolVals;
-        }
-
         @Override
         public boolean isCellOpen(final short start, final short end) {
             if (end - start == 1)
                 return true;
             if (grammarLeftFactored) {
-                if (endClosed[end - 1])
+                if (endScores[end - 1] > endThresh)
                     return false;
                 return true;
             }
-            if (beginClosed[start])
+            if (beginScores[start] > beginThresh)
                 return false;
             return true;
         }
@@ -373,11 +414,11 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             if (isCellClosed(start, end))
                 return false;
             if (grammarLeftFactored) {
-                if (beginClosed[start])
+                if (beginScores[start] > beginThresh)
                     return true;
                 return false;
             }
-            if (endClosed[end - 1])
+            if (endScores[end - 1] > endThresh)
                 return true;
             return false;
         }
@@ -387,19 +428,19 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             if (end - start > 1) {
                 return true;
             }
-            return !unaryClosed[start];
+            return unaryScores[start] <= unaryThresh;
         }
 
         public float getBeginScore(final int start) {
-            return allBeginScores.get(currentSentNumber).get(start);
+            return beginScores[start];
         }
 
         public float getEndScore(final int end) {
-            return allEndScores.get(currentSentNumber).get(end - 1);
+            return endScores[end - 1];
         }
 
         public float getUnaryScore(final int start) {
-            return allUnaryScores.get(currentSentNumber).get(start);
+            return unaryScores[start];
         }
 
         @Override
@@ -410,7 +451,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         public String toString(final boolean perCell) {
             int total = 0, nClosed = 0, nFact = 0, nUnaryClosed = 0;
             String s = "";
-            final int n = beginClosed.length;
+            final int n = beginScores.length;
             for (int span = 1; span <= n; span++) {
                 for (short beg = 0; beg < n - span + 1; beg++) {
                     final short end = (short) (beg + span);

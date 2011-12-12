@@ -54,7 +54,7 @@ public class APDecodeFOM extends APWithMemory {
         for (int i = 0; i < parseTask.sentenceLength(); i++) {
             cell = chart.getCell(i, i + 1);
             for (final int nt : cell.getPosNTs()) {
-                expandFrontier(nt, cell);
+                expandFrontier(nt, i, i + 1);
             }
         }
 
@@ -77,7 +77,7 @@ public class APDecodeFOM extends APWithMemory {
                 // first edge must have been better than the current edge because we pull edges
                 // from the agenda best-first. This also means that the entire frontier
                 // has already been added.
-                expandFrontier(nt, cell);
+                expandFrontier(nt, edge.start(), edge.end());
                 nChartEdges += 1;
             }
         }

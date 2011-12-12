@@ -88,7 +88,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     @Override
     public FigureOfMerit createFOM() {
         switch (type) {
-        case BoundaryInOut:
+        case Boundary:
             return new BoundaryInOutSelector();
         case InsideWithFwdBkwd:
             return new InsideWithFwdBkwd();
