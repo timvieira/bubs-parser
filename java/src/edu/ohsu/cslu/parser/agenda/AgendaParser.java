@@ -82,7 +82,6 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
             cell = chart.getCell(edge.start(), edge.end());
             final int nt = edge.prod.parent;
             if (edge.inside() > cell.getInside(nt)) {
-                // System.out.println(edge);
 
                 cell.updateInside(edge);
                 // if A->B C is added to chart but A->X Y was already in this chart cell, then the
@@ -91,25 +90,17 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
                 // has already been added.
                 expandFrontier(nt, edge.start(), edge.end());
                 nChartEdges += 1;
-
-                // final float treeProb = chart.getInside(0, parseTask.sentenceLength(), grammar.startSymbol);
-                // if (treeProb > Float.NEGATIVE_INFINITY) {
-                // System.out.println(grammar.nonTermSet.getSymbol(nt) + "\t" + edge.start() + "\t" + edge.end()
-                // + "\t" + edge.inside() + "\ttreeProb=" + treeProb);
-                // }
             }
 
             if (chart.hasCompleteParse(grammar.startSymbol)) {
                 if (targetNumPops < 0) {
                     targetNumPops = (int) (nAgendaPop * overParseTune);
-                    // System.out.println("nChartEdges=" + nChartEdges);
                 }
                 if (nAgendaPop >= targetNumPops) {
                     doneParsing = true;
                 }
             }
         }
-        // System.out.println("nChartEdges=" + nChartEdges);
 
         if (agenda.isEmpty()) {
             BaseLogger.singleton().info("WARNING: Agenda is empty.  All edges have been added to chart.");
@@ -150,56 +141,41 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
         }
     }
 
-    // protected void expandFrontier(final ChartEdge newEdge, final ChartCell cell) {
-    // protected void expandFrontier(final int nt, final HashSetChartCell cell) {
-    protected void expandFrontier(final int nt, final int edgeStart, final int edgeEnd) {
-        final ChartEdge leftEdge, rightEdge;
+    protected void expandFrontier(final int nt, final int start, final int end) {
         HashSetChartCell rightCell, leftCell;
+        final HashSetChartCell parCell;
         int mid;
+        final float edgeInside;
 
         // unary edges are always possible in any cell, although we don't allow unary chains
         // NATE: update: unary chains should be fine. They will just compete on the agenda
         for (final Production p : grammar.getUnaryProductionsWithChild(nt)) {
-            // if (p.parent == grammar.nonTermSet.getIndex("ROOT")) {
-            // System.out.println("  expand: " + chart.new ChartEdge(p, cell));
-            // }
-            // addEdgeToFrontier(chart.new ChartEdge(p, cell));
-            addEdgeToFrontier(p, edgeStart, -1, edgeEnd);
+            addEdgeToFrontier(p, start, -1, end);
         }
 
         // connect edge as possible right non-term
-        mid = edgeStart;
-        for (int beg = 0; beg < mid; beg++) {
-            leftCell = chart.getCell(beg, mid);
+        mid = start;
+        for (int newStart = 0; newStart < mid; newStart++) {
+            leftCell = chart.getCell(newStart, mid);
             for (final Production p : grammar.getBinaryProductionsWithRightChild(nt)) {
-                // leftEdge = leftCell.getBestEdge(p.leftChild);
-                // if (leftEdge != null && chart.getCell(beg, cell.end()).getBestEdge(p.parent) == null) {
-                // prob = p.prob + newEdge.inside + leftEdge.inside;
-                // System.out.println("LEFT:"+new ChartEdge(p, prob, leftCell, cell));
-                // addEdgeToFrontier(chart.new ChartEdge(p, leftCell, cell));
-                if (leftCell.getInside(p.leftChild) > Float.NEGATIVE_INFINITY) {
-                    addEdgeToFrontier(p, beg, mid, edgeEnd);
+                // NB: For some reason getInside() and getBestEdge() return different values. There
+                // should really only be one because they are somehow getting out of sync.
+                // if (leftCell.getInside(p.leftChild) > Float.NEGATIVE_INFINITY) {
+                if (leftCell.getBestEdge(p.leftChild) != null) {
+                    addEdgeToFrontier(p, newStart, mid, end);
                 }
             }
         }
 
         // connect edge as possible left non-term
-        mid = edgeEnd;
-        for (int end = mid + 1; end <= chart.size(); end++) {
-            rightCell = chart.getCell(mid, end);
+        mid = end;
+        for (int newEnd = mid + 1; newEnd <= chart.size(); newEnd++) {
+            rightCell = chart.getCell(mid, newEnd);
             for (final Production p : grammar.getBinaryProductionsWithLeftChild(nt)) {
-                // rightEdge = rightCell.getBestEdge(p.rightChild);
-                // if (p.parent == grammar.nonTermSet.getIndex("S")) {
-                // System.out.println("  expand: [" + cell.start() + "," + end + "]" + p + "\t rightEdge="+rightEdge);
-                // }
-                // if (rightEdge != null && chart.getCell(cell.start(), end).getBestEdge(p.parent) == null) {
-                // prob = p.prob + rightEdge.inside + newEdge.inside;
-                // System.out.println("RIGHT: "+new ChartEdge(p,prob, cell,rightCell));
-                // addEdgeToFrontier(chart.new ChartEdge(p, cell, rightCell));
-                if (rightCell.getInside(p.rightChild) > Float.NEGATIVE_INFINITY) {
-                    addEdgeToFrontier(p, edgeStart, mid, end);
+                // if (rightCell.getInside(p.rightChild) > Float.NEGATIVE_INFINITY) {
+                if (rightCell.getBestEdge(p.rightChild) != null) {
+                    addEdgeToFrontier(p, start, mid, newEnd);
                 }
-                // }
             }
         }
     }

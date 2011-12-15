@@ -42,7 +42,8 @@ public class PriorFOM extends FigureOfMeritModel {
         public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
             // System.out.println(grammar.nonTermSet.getSymbol(parent) + "[" + start + "," + end + "] = "
             // + insideProbability + " " + priorProb[parent]);
-            return insideProbability / (end - start + 1) + priorProb[parent];
+            // return insideProbability / (end - start + 1) + priorProb[parent];
+            return insideProbability + priorProb[parent];
         }
 
         @Override

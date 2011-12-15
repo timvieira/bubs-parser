@@ -59,7 +59,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         super(opts, grammar);
         hasPerceptronBeamWidth = this.cellSelector instanceof PerceptronBeamWidth;
 
-        // setBeamTuneParams(opts.beamTune);
         setBeamTuneParamsFromOptions();
 
         BaseLogger.singleton().fine(
@@ -71,10 +70,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final ConfigProperties props = GlobalConfigProperties.singleton();
         origBeamWidth = props.getIntProperty("maxBeamWidth");
         if (origBeamWidth <= 0) {
-            BaseLogger.singleton().info(
-                    "maxBeamWidth must be greater than zero for specified parser.  Current value is '" + origBeamWidth
-                            + "'");
-            System.exit(1);
+            origBeamWidth = Integer.MAX_VALUE;
         }
 
         origLocalBeamDelta = props.getFloatProperty("maxLocalDelta");
@@ -265,9 +261,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     protected void addEdgeToCollection(final ChartEdge edge) {
         cellConsidered++;
 
-        // BaseLogger.singleton().finest("Adding: " + ((BoundaryInOutSelector)
-        // fomModel).calcFOMToString(edge.start(), edge.end(),(short) edge.prod.parent, edge.inside()));
-
         if (fomCheckAndUpdate(edge)) {
             agenda.add(edge);
             cellPushed++;
@@ -280,9 +273,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         while (edge != null && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
             cellPopped++;
 
-            // BaseLogger.singleton().finer("Popping: "+ ((BoundaryInOutSelector)fomModel).calcFOMToString(edge.start(),
-            // edge.end(),(short) edge.prod.parent, edge.inside()));
-            BaseLogger.singleton().finer("Popping: " + edge.toString());
+            if (collectDetailedStatistics) {
+                BaseLogger.singleton().finer("Popping: " + edge.toString());
+            }
 
             if (edge.inside() > cell.getInside(edge.prod.parent)) {
                 cell.updateInside(edge);

@@ -56,15 +56,33 @@ public class APWithMemory extends AgendaParser {
     protected void addEdgeToFrontier(final Production p, final int start, final int mid, final int end) {
         final int nt = p.parent;
         float edgeInside;
+        final float fom;
+
+        // NB: adding this check doubles the speed and slightly increases acc (on first 10 sent
+        // of sec 22 w/ sm6 grammar and boundary FOM). Not sure why. It prevents us from doing
+        // over-parsing ...
+        // if (chart.getCell(start, end).getBestEdge(p.parent) != null)
+        // return;
+
         if (mid < 0) {
             edgeInside = chart.getInside(start, end, p.leftChild) + p.prob;
         } else {
             edgeInside = chart.getInside(start, mid, p.leftChild) + chart.getInside(mid, end, p.rightChild) + p.prob;
         }
+
+        // if (p.isLexProd()) {
+        // fom = this.fomModel.calcLexicalFOM(start, end, (short) p.parent, edgeInside);
+        // } else {
+        // fom = this.fomModel.calcFOM(start, end, (short) p.parent, edgeInside);
+        // }
+        //
+        // if (fom > agendaMemory[start][end][nt]) {
+        // super.addEdgeToFrontier(p, start, mid, end);
+        // agendaMemory[start][end][nt] = fom;
+        // }
+
         if (edgeInside > agendaMemory[start][end][nt]) {
             super.addEdgeToFrontier(p, start, mid, end);
-            // nAgendaPush += 1;
-            // agenda.add(edge);
             agendaMemory[start][end][nt] = edgeInside;
         }
     }

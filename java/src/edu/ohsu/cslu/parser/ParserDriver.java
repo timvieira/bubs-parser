@@ -57,6 +57,7 @@ import edu.ohsu.cslu.parser.agenda.APGhostEdges;
 import edu.ohsu.cslu.parser.agenda.APWithMemory;
 import edu.ohsu.cslu.parser.agenda.AgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
+import edu.ohsu.cslu.parser.beam.BSCPBeamConfTrain;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
 import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
@@ -163,6 +164,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-parseFromInputTags", hidden = true, usage = "Parse from input POS tags given by tagged or tree input.  Replaces 1-best tags from BoundaryInOut FOM if also specified.")
     public static boolean parseFromInputTags = false;
 
+    @Option(name = "-inputTreeBeamRank", hidden = true, usage = "Print rank of input tree constituents during beam-search parsing.")
+    public static boolean inputTreeBeamRank = false;
+
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
     private String fomTypeOrModel = "Inside";
 
@@ -233,6 +237,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
             researchParserType = parserType.researchParserType;
+        }
+        if (inputTreeBeamRank) {
+            researchParserType = ResearchParserType.BSCPBeamConfTrain;
         }
 
         BaseLogger.singleton().info(
@@ -483,8 +490,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             return new BSCPFomDecode(this, (LeftHashGrammar) grammar);
             // case BSCPBeamConf:
             // return new BSCPBeamConf(this, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
-            // case BSCPBeamConfTrain:
-            // return new BSCPBeamConfTrain(this, (LeftHashGrammar) grammar);
+        case BSCPBeamConfTrain:
+            return new BSCPBeamConfTrain(this, (LeftHashGrammar) grammar, "");
 
         case CoarseCellAgenda:
             return new CoarseCellAgendaParser(this, (LeftHashGrammar) grammar);

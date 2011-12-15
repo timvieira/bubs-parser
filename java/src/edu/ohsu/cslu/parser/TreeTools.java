@@ -79,6 +79,9 @@ public class TreeTools extends BaseCommandlineTool {
     @Option(name = "-knownWords", metaVar = "FILE", usage = "File listing words NOT to be labeled with UNK class, one per line.")
     private String knownWordsFile = null;
 
+    @Option(name = "-warn", usage = "Warn on error lines instead of dying.")
+    private boolean warn = false;
+
     private static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
     // private static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
@@ -105,7 +108,16 @@ public class TreeTools extends BaseCommandlineTool {
         }
 
         for (String sentence = inputStream.readLine(); sentence != null; sentence = inputStream.readLine()) {
-            final ParseTree tree = ParseTree.readBracketFormat(sentence);
+            ParseTree tree = null;
+            try {
+                tree = ParseTree.readBracketFormat(sentence);
+            } catch (final RuntimeException e) {
+                if (warn) {
+                    System.err.println("ERROR parsing line '" + sentence + "'.");
+                    continue;
+                }
+                throw e;
+            }
 
             if (unbinarize) {
                 unbinarizeTree(tree, grammarFormat);

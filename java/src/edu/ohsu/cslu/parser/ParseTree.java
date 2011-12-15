@@ -64,6 +64,18 @@ public class ParseTree {
             throw new RuntimeException("ERROR: Expecting tree in bracket format as input, got: " + str);
         }
 
+        int numOpen = 0, numClose = 0;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == '(')
+                numOpen++;
+            if (str.charAt(i) == ')')
+                numClose++;
+        }
+        if (numOpen != numClose) {
+            throw new RuntimeException("ERROR: parens not balanced; found " + numOpen + " open and " + numClose
+                    + " close braces.");
+        }
+
         final LinkedList<ParseTree> stack = new LinkedList<ParseTree>();
         int index = 0;
         while (index < str.length()) {
