@@ -44,19 +44,19 @@ public class NormalizedInsideProb extends InsideProb {
 
     @Override
     public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
+        final int span = end - start;
+
         // log [ nth root of insideProb + normInsideTune * insideProb ]
         // log(nth root of x)) = log(x)/n
-        // return (float) Util.logSum(logAlpha + insideProbability / (end - start + 1), logOneMinusAlpha
+        // return (float) Util.logSum(logAlpha + insideProbability / span, logOneMinusAlpha
         // + insideProbability);
-        // return insideProbability / (end - start + 1);
+        // return insideProbability / span;
 
         // From first 10 sents, range btwn 0.7 - 0.9 gives a curve, but acc drops fast.
-        return (float) (insideProbability / Math.pow((end - start + 1), normInsideTune));
+        // return (float) (insideProbability / Math.pow(span, normInsideTune));
 
-        // System.out.println((end - start + 1) + "\t" + insideProbability);
-
-        // From first 10 sets, range btwn 4 and 6
-        // return insideProbability + normInsideTune * (end - start + 1);
+        // From first 10 sents, range btwn 4 and 6
+        return insideProbability + span * normInsideTune;
     }
 
     @Override

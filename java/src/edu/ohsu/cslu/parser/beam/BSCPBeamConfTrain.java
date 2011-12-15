@@ -18,19 +18,21 @@
  */
 package edu.ohsu.cslu.parser.beam;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.PriorityQueue;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.ohsu.cslu.parser.chart.Chart;
 
 /*
 
@@ -50,16 +52,150 @@ import edu.ohsu.cslu.parser.chart.Chart;
 
  */
 
-public class BSCPBeamConfTrain extends BSCPPruneViterbi {
+//public class BSCPBeamConfTrain extends BSCPPruneViterbi {
+public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
-    // int nPopBinary, nPopUnary, nGoldEdges;
-
-    // Perceptron perceptron;
     String featTemplate;
+    ParseTask curTask;
+    GoldEdgeContainer goldEdgeChart[][];
+    boolean printRankInfo = ParserDriver.inputTreeBeamRank;
 
     public BSCPBeamConfTrain(final ParserDriver opts, final LeftHashGrammar grammar, final String featTemplate) {
         super(opts, grammar);
         this.featTemplate = featTemplate;
+    }
+
+    @Override
+    protected void initSentence(final ParseTask parseTask) {
+        super.initSentence(parseTask);
+        this.curTask = parseTask;
+
+        if (parseTask.inputTree == null) {
+            BaseLogger.singleton().info("ERROR: BSCPTrainFOMConfidence requires trees as input");
+            System.exit(1);
+        }
+
+        final int n = parseTask.sentenceLength();
+        final ArrayList<NaryTree<String>> leaves = new ArrayList<NaryTree<String>>(n);
+        int i = 0;
+        for (final NaryTree<String> leaf : parseTask.inputTree.leafTraversal()) {
+            leaves.add(i, leaf);
+            i++;
+        }
+
+        if (printRankInfo) {
+            System.out.println("RANK:\tRank\tSentLen\tSpan\tStart\tEnd\tEdge");
+        }
+
+        // Read gold productions from input tree and put them in an array by goldEdges[start][end]
+        // Note that there can be multiple edges per span when we include unary productions.
+        goldEdgeChart = new GoldEdgeContainer[n][n + 1];
+        for (int start = 0; start < n; start++) {
+            for (int end = start; end <= n; end++) {
+                goldEdgeChart[start][end] = new GoldEdgeContainer();
+            }
+        }
+        for (final NaryTree<String> node : parseTask.inputTree.preOrderTraversal()) {
+            if (!node.isLeaf() && !node.children().get(0).isLeaf()) {
+                int start = -1, mid = -1, end = -1;
+                for (i = 0; i < n; i++) {
+                    if (leaves.get(i) == node.leftmostLeaf()) {
+                        start = i;
+                    }
+                    if (node.children().size() == 2 && leaves.get(i) == node.children().get(0).rightmostLeaf()) {
+                        mid = i + 1;
+                    }
+                    if (leaves.get(i) == node.rightmostLeaf()) {
+                        end = i + 1;
+                    }
+                }
+                // System.out.println(start + " " + mid + " " + end + "\t" + node.childLabels().toString());
+
+                Production p;
+                ChartEdge edge = null;
+                if (node.children().size() == 2) {
+                    p = grammar.getBinaryProduction(node.label(), node.children().get(0).label(), node.children()
+                            .get(1).label());
+                    if (p != null) {
+                        edge = chart.new ChartEdge(p, chart.getCell(start, mid), chart.getCell(mid, end));
+                    }
+                } else {
+                    p = grammar.getUnaryProduction(node.label(), node.children().get(0).label());
+                    if (p != null) {
+                        edge = chart.new ChartEdge(p, chart.getCell(start, end));
+                    }
+                }
+                if (edge != null) {
+                    goldEdgeChart[start][end].edges.add(edge);
+                }
+            }
+        }
+
+    }
+
+    class GoldEdgeContainer {
+        List<ChartEdge> edges = new LinkedList<ChartEdge>();
+    }
+
+    @Override
+    protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
+
+        final int start = cell.start(), end = cell.end();
+        final List<ChartEdge> goldEdges = goldEdgeChart[start][end].edges;
+        boolean goldIsFactored = false;
+        int goldRank = 0;
+        final int numGoldEdges = goldEdges.size();
+        // final boolean hasGoldEdge = numGoldEdges > 0;
+        // if (hasGoldEdge) {
+        // goldRank = -1;
+        // }
+
+        ChartEdge edge = agenda.poll();
+        while (edge != null && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
+            cellPopped++;
+
+            // check if we just popped a gold edge
+            for (final ChartEdge goldEdge : goldEdges) {
+                if (edge.equals(goldEdge)) {
+                    goldRank = cellPopped; // set to the rank of the *last* gold edge (if there are more than one)
+                    if (grammar.getNonterminal(goldEdge.prod.parent).isFactored) {
+                        goldIsFactored = true;
+                    }
+                    if (printRankInfo) {
+                        System.out.println(String.format("RANK:\t%d\t%d\t%d\t%d\t%d\t%s", goldRank,
+                                curTask.sentenceLength(), end - start, start, end, edge));
+                    }
+                }
+            }
+
+            // add edge to chart
+            if (edge.inside() > cell.getInside(edge.prod.parent)) {
+                cell.updateInside(edge);
+
+                for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
+                    addEdgeToCollection(chart.new ChartEdge(p, cell));
+                }
+            }
+            edge = agenda.poll();
+        }
+
+        if (!printRankInfo) {
+            // Beam-width prediction features
+            final SparseBitVector cellFeats = chart.getCellFeatures(cell.start(), cell.end(),
+                    this.featTemplate.split("\\s+"));
+
+            // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
+            System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),
+                    numGoldEdges, bool2int(cell.width() == 1), cellFeats.vectorLength(),
+                    Util.intArray2Str(cellFeats.elements())));
+        }
+    }
+
+    private int bool2int(final boolean value) {
+        if (value == true) {
+            return 1;
+        }
+        return 0;
     }
 
     // @Override
@@ -105,112 +241,6 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
     // addEdgeCollectionToChart(cell);
     // }
 
-    @Override
-    protected void initSentence(final ParseTask parseTask) {
-        super.initSentence(parseTask);
-
-        if (parseTask.inputTree == null) {
-            BaseLogger.singleton().info("ERROR: BSCPTrainFOMConfidence requires gold trees as input");
-            System.exit(1);
-        }
-    }
-
-    @Override
-    protected void addEdgeCollectionToChart(final HashSetChartCell cell) {
-
-        agenda = new PriorityQueue<ChartEdge>();
-        for (final ChartEdge viterbiEdge : bestEdges) {
-            if (viterbiEdge != null && this.fomCheckAndUpdate(viterbiEdge)) {
-                agenda.add(viterbiEdge);
-                cellPushed++;
-            }
-        }
-
-        if (true)
-            throw new IllegalArgumentException(
-                    "InputTreeChart no longer exists.  Add code to BinaryTree to get nodes from a span");
-
-        final List<Chart.ChartEdge> goldEdges = null;
-        // final List<Chart.ChartEdge> goldEdges = (List<edu.ohsu.cslu.parser.chart.Chart.ChartEdge>)
-        // currentInput.inputTreeChart
-        // .getEdgeList(cell.start(), cell.end()).clone();
-
-        // remove lexical entries (we're adding them all by default) but keep unaries in span=1 cells
-        if (cell.width() == 1) {
-            int i = 0;
-            while (i < goldEdges.size()) {
-                if (goldEdges.get(i).prod.isLexProd()) {
-                    goldEdges.remove(i);
-                } else {
-                    i++;
-                }
-            }
-        }
-
-        boolean goldIsFactored = false;
-        for (final Chart.ChartEdge goldEdge : goldEdges) {
-            if (grammar.getNonterminal(goldEdge.prod.parent).isFactored) {
-                goldIsFactored = true;
-            }
-        }
-
-        int goldRank = 0;
-        final int numGoldEdges = goldEdges.size();
-        final boolean hasGoldEdge = numGoldEdges > 0;
-        if (hasGoldEdge) {
-            goldRank = 99999;
-        }
-
-        ChartEdge edge = agenda.poll();
-        while (edge != null && cellPopped < beamWidth && fomCheckAndUpdate(edge)) {
-            cellPopped++;
-
-            // check if we just popped a gold edge
-            if (hasGoldEdge) {
-                Chart.ChartEdge goldEdgeAdded = null;
-                for (final Chart.ChartEdge goldEdge : goldEdges) {
-                    if (edge.equals(goldEdge)) {
-                        goldEdgeAdded = goldEdge;
-                    }
-                }
-                if (goldEdgeAdded != null) {
-                    goldEdges.remove(goldEdgeAdded);
-                    if (goldEdges.size() == 0) {
-                        goldRank = cellPopped;
-                    }
-                }
-            }
-
-            // add edge to chart
-            if (edge.inside() > cell.getInside(edge.prod.parent)) {
-                cell.updateInside(edge);
-
-                // Add unary productions to agenda so they can compete with binary productions
-                for (final Production p : grammar.getUnaryProductionsWithChild(edge.prod.parent)) {
-                    cellConsidered++;
-                    final ChartEdge unaryEdge = chart.new ChartEdge(p, cell);
-                    if (fomCheckAndUpdate(unaryEdge)) {
-                        agenda.add(unaryEdge);
-                        cellPushed++;
-                    }
-                }
-            }
-            edge = agenda.poll();
-        }
-
-        final SparseBitVector cellFeats = chart.getCellFeatures(cell.start(), cell.end(),
-                this.featTemplate.split("\\s+"));
-
-        // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
-        System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),
-                numGoldEdges, bool2int(cell.width() == 1), cellFeats.vectorLength(),
-                Util.intArray2Str(cellFeats.elements())));
-        // System.out.println(String.format("DSTAT: %d : %d %s", goldRank, cellFeats.vectorLength(),
-        // ParserUtil.intArray2Str(cellFeats.elements())));
-
-        // perceptron.learnOnline(cellFeats, rank2bool(goldRank));
-    }
-
     // // for cell[i,j] that spans words w_i to w_j, we add the POS tags directly
     // // to the inside and outside of the constituent boundaries: i-1,i,j,j+1
     // public float[] getCellFeatures(final int start, final int end) {
@@ -249,13 +279,6 @@ public class BSCPBeamConfTrain extends BSCPPruneViterbi {
     // }
     // return tmp;
     // }
-
-    private int bool2int(final boolean value) {
-        if (value == true) {
-            return 1;
-        }
-        return 0;
-    }
 
     // // I can't believe we have to jump through these hoops to get a variable sized float vector
     // private List<Float> getPOSIndexFeatureArray(final int start) {

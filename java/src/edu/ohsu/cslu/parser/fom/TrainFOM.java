@@ -29,19 +29,19 @@ import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 public class TrainFOM extends BaseCommandlineTool {
 
-    @Option(name = "-fom", required = true, usage = "FOM to train.  Supports BoundaryInOut,Prior,Discriminative")
+    @Option(name = "-fom", required = true, usage = "FOM to train.  Supports Boundary, Prior, Discriminative")
     private FOMType fomType = null;
 
     @Option(name = "-g", required = true, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
     private String grammarFile = null;
 
-    @Option(name = "-counts", usage = "Write model counts instead of log probabilities (only BoundaryInOut)")
+    @Option(name = "-counts", usage = "Write model counts instead of log probabilities")
     private boolean writeCounts = false;
 
-    @Option(name = "-smooth", metaVar = "N", usage = "Apply add-N smoothing to model (only BoundaryInOut)")
+    @Option(name = "-smooth", metaVar = "N", usage = "Apply add-N smoothing to model")
     private float smoothingCount = (float) 0.5;
 
-    @Option(name = "-posNgramOrder", metaVar = "N", usage = "POS n-gram order for feature extraction (only BoundaryInOut)")
+    @Option(name = "-posNgramOrder", metaVar = "N", usage = "POS n-gram order for feature extraction (only Boundary)")
     private int posNgramOrder = 2;
 
     @Option(name = "-feats", usage = "Feature template file OR feature template string: lt rt lt_lt-1 rw_rt loc ...")

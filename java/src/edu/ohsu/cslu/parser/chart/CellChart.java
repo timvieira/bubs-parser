@@ -100,6 +100,7 @@ public class CellChart extends Chart {
         public float fom = Float.NEGATIVE_INFINITY;
         protected boolean isLexCell;
 
+        // NB: why do we have bestEdge AND inside? These could get out of sync...
         public ChartEdge[] bestEdge;
         public float[] inside;
         protected HashSet<Integer> childNTs = new HashSet<Integer>();
@@ -184,7 +185,6 @@ public class CellChart extends Chart {
                     bestEdge[nt].prod = p;
                     bestEdge[nt].leftCell = leftCell;
                     bestEdge[nt].rightCell = rightCell;
-                    // TODO: bestEdge[nt].fom ??
                 }
             }
             updateInside(nt, insideProb);
@@ -229,7 +229,7 @@ public class CellChart extends Chart {
         }
 
         // TODO: this is called a lot but it is creating a new array for each call!
-        // the whole point was NOT to do this. We need to use getNTs() where ever we can.
+        // the whole point was NOT to do this. We need to use getNTs() whereever we can.
         public int[] getNtArray() {
             final int[] array = new int[childNTs.size()];
             int i = 0;
