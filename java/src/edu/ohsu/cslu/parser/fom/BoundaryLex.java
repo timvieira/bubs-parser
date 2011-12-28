@@ -206,11 +206,10 @@ public final class BoundaryLex extends FigureOfMeritModel {
                 history.addLast(Grammar.nullSymbolStr); // pad history with nulls (for beginning of string)
             }
 
-            // iterate through POS tags using .rightNeighbor
-            // for (ParseTree posNode = tree.leftMostPOS(); posNode != null; posNode = posNode.rightNeighbor) {
+            // iterate through leaf nodes using .rightNeighbor
             for (ParseTree leafNode = tree.leftMostLeaf(); leafNode != null; leafNode = leafNode.rightNeighbor) {
                 if (!grammar.lexSet.contains(leafNode.contents)) {
-                    throw new IOException("Nonterminal '" + leafNode.contents
+                    throw new IOException("Lexical entry '" + leafNode.contents
                             + "' in input tree not found in grammar.  Exiting.");
                 }
                 historyStr = Util.join(history, joinString);
