@@ -219,7 +219,7 @@ public class Grammar implements Serializable {
             }
         }
 
-        // NATE: I'm not sure what is going in this Grammar constructor, but somewhere we
+        // NB: I'm not sure what is going in this Grammar constructor, but somewhere we
         // lost the function to decide if the grammar is right/left factored. Maybe this code should
         // go somewhere else?
         assert leftChildrenSet.size() > 0 && rightChildrenSet.size() > 0;
@@ -448,8 +448,10 @@ public class Grammar implements Serializable {
         for (String line = br.readLine(); line != null || lexicalRules.size() == 0; line = br.readLine()) {
             if (line != null) {
                 final String[] tokens = p.split(line);
-                if ((tokens.length > 0 && tokens[0].equals("#")) || line.trim().equals("")) {
-                    // '#' indicates a comment. Skip line.
+                // if ((tokens.length > 0 && tokens[0].equals("#")) || line.trim().equals("")) {
+                // NB: There are lexical productions that start with '#', namely '# -> #'
+                if (line.trim().equals("")) {
+                    // skip blank lines
                 } else if (tokens.length == 4) {
                     // expecting: A -> B prob
                     lexicalRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
