@@ -26,7 +26,6 @@ import java.util.LinkedList;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
-import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
@@ -42,43 +41,38 @@ import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
  * 
  * @author Nathan Bodenstab
  */
-public final class BoundaryInOut extends FigureOfMeritModel {
+public final class BoundaryLex extends FigureOfMeritModel {
 
     private Grammar grammar;
-    private CoarseGrammar coarseGrammar = null;
 
     // Model params learned from training data
-    private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
+    private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], bigramLogProb[][];
 
     final short nullSymbol;
     final short[] NULL_LIST;
     final float[] NULL_PROBABILITIES;
 
-    public BoundaryInOut(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
-            throws IOException {
+    public BoundaryLex(final FOMType type, final Grammar grammar, final BufferedReader modelStream) throws IOException {
 
         super(type);
 
         this.grammar = grammar;
-        if (grammar.isCoarseGrammar()) {
-            coarseGrammar = (CoarseGrammar) grammar;
-        }
 
         nullSymbol = (short) grammar.nullSymbol;
         NULL_LIST = new short[] { nullSymbol };
         NULL_PROBABILITIES = new float[] { 0f };
 
         final int numNT = grammar.numNonTerms();
-        final int maxPOSIndex = grammar.maxPOSIndex();
-        leftBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
-        rightBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
-        posTransitionLogProb = new float[maxPOSIndex + 1][maxPOSIndex + 1];
+        final int numLex = grammar.lexSet.size();
+        leftBoundaryLogProb = new float[numLex][numNT];
+        rightBoundaryLogProb = new float[numLex][numNT];
+        bigramLogProb = new float[numLex][numLex];
 
         // Init values to log(0) = -Inf
-        for (int i = 0; i < maxPOSIndex + 1; i++) {
+        for (int i = 0; i < numLex; i++) {
             Arrays.fill(leftBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
             Arrays.fill(rightBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
-            Arrays.fill(posTransitionLogProb[i], Float.NEGATIVE_INFINITY);
+            Arrays.fill(bigramLogProb[i], Float.NEGATIVE_INFINITY);
         }
 
         if (modelStream != null) {
@@ -89,10 +83,8 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     @Override
     public FigureOfMerit createFOM() {
         switch (type) {
-        case BoundaryPOS:
-            return new BoundaryInOutSelector();
-        case InsideWithFwdBkwd:
-            return new InsideWithFwdBkwd();
+        case BoundaryLex:
+            return new BoundaryLexSelector();
         default:
             return super.createFOM();
         }
@@ -147,7 +139,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 } else if (tokens[0].equals("RB")) {
                     rightBoundaryLogProb[numIndex][denomIndex] = prob;
                 } else if (tokens[0].equals("PN")) {
-                    posTransitionLogProb[numIndex][denomIndex] = prob;
+                    bigramLogProb[numIndex][denomIndex] = prob;
                 } else {
                     System.err.println("WARNING: ignoring line in model file '" + line + "'");
                 }
@@ -157,7 +149,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
     public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile)
             throws Exception {
-        BoundaryInOut.train(inStream, outStream, grammarFile, 0.5, false, 2);
+        BoundaryLex.train(inStream, outStream, grammarFile, 0.5, false, 2);
     }
 
     public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile,
@@ -167,7 +159,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         ParseTree tree;
         final SimpleCounterSet<String> leftBoundaryCount = new SimpleCounterSet<String>();
         final SimpleCounterSet<String> rightBoundaryCount = new SimpleCounterSet<String>();
-        final SimpleCounterSet<String> posTransitionCount = new SimpleCounterSet<String>();
+        final SimpleCounterSet<String> bigramCount = new SimpleCounterSet<String>();
 
         // To train a BoundaryInOut FOM model we need a grammar and
         // binarized gold input trees with NTs from same grammar
@@ -175,7 +167,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
         // TODO: note that we have to have the same training grammar as decoding grammar here
         // so the input needs to be binarized. If we are parsing with the Berkeley latent-variable
-        // grammar then we can't work with Gold trees. As an approximation we will take the
+        // grammar then we can't work with gold trees. As an approximation we will take the
         // 1-best from the Berkeley parser output (although constraining the coarse labels to match
         // the true gold tree would probably be a little better)
         // See Caraballo/Charniak 1998 for (what I think is) their inside/outside solution
@@ -189,12 +181,12 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             tree.linkLeavesLeftRight();
             for (final ParseTree node : tree.preOrderTraversal()) {
 
-                // leftBoundary = P(N[i:j] | POS[i-1]) = #(N[i:j], POS[i-1]) / #(*[i:*], POS[i-1])
-                // riteBoundary = P(POS[j+1] | N[i:j]) = #(N[i:j], POS[j+1]) / #(N[*:j], *[j+1])
-                // bi-gram POS model for POS[i-1:j+1]
+                // leftBoundary = P(N[i:j] | lex[i-1]) = #(N[i:j], lex[i-1]) / #(*[i:*], lex[i-1])
+                // riteBoundary = P(lex[j+1] | N[i:j]) = #(N[i:j], lex[j+1]) / #(N[*:j], *[j+1])
+                // bi-gram lex model for lex[i-1:j+1]
                 // counts we need:
-                // -- #(N[i:j], POS[i-1])
-                // -- #(*[i:*], POS[i-1]) -- number of times POS occurs just to the left of any span
+                // -- #(N[i:j], lex[i-1])
+                // -- #(*[i:*], lex[i-1]) -- number of times lex occurs just to the left of any span
 
                 if (node.isNonTerminal() == true) {
                     if (grammar.nonTermSet.contains(node.contents) == false) {
@@ -202,8 +194,8 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
                     leftBoundaryCount.increment(node.contents,
-                            convertNull(node.leftBoundaryPOSContents(), Grammar.nullSymbolStr));
-                    rightBoundaryCount.increment(convertNull(node.rightBoundaryPOSContents(), Grammar.nullSymbolStr),
+                            convertNull(node.leftBoundaryLexContents(), Grammar.nullSymbolStr));
+                    rightBoundaryCount.increment(convertNull(node.rightBoundaryLexContents(), Grammar.nullSymbolStr),
                             node.contents);
                 }
             }
@@ -215,116 +207,77 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             }
 
             // iterate through POS tags using .rightNeighbor
-            for (ParseTree posNode = tree.leftMostPOS(); posNode != null; posNode = posNode.rightNeighbor) {
-                if (grammar.nonTermSet.contains(posNode.contents) == false) {
-                    throw new IOException("Nonterminal '" + posNode.contents
+            // for (ParseTree posNode = tree.leftMostPOS(); posNode != null; posNode = posNode.rightNeighbor) {
+            for (ParseTree leafNode = tree.leftMostLeaf(); leafNode != null; leafNode = leafNode.rightNeighbor) {
+                if (!grammar.lexSet.contains(leafNode.contents)) {
+                    throw new IOException("Nonterminal '" + leafNode.contents
                             + "' in input tree not found in grammar.  Exiting.");
                 }
                 historyStr = Util.join(history, joinString);
-                posTransitionCount.increment(posNode.contents, historyStr);
+                bigramCount.increment(leafNode.contents, historyStr);
                 history.removeFirst();
-                history.addLast(posNode.contents);
+                history.addLast(leafNode.contents);
             }
 
             // finish up with final transition to <null>
             historyStr = Util.join(history, joinString);
-            posTransitionCount.increment(Grammar.nullSymbolStr, historyStr);
+            bigramCount.increment(Grammar.nullSymbolStr, historyStr);
         }
 
         final int numNT = grammar.numNonTerms();
-        final int numPOS = grammar.posSet.size();
+        final int numLex = grammar.lexSet.size();
 
         // smooth counts
         if (smoothingCount > 0) {
-            leftBoundaryCount.smoothAddConst(smoothingCount, numPOS);
+            leftBoundaryCount.smoothAddConst(smoothingCount, numLex);
             rightBoundaryCount.smoothAddConst(smoothingCount, numNT);
-            posTransitionCount.smoothAddConst(smoothingCount, numPOS);
+            bigramCount.smoothAddConst(smoothingCount, numLex);
         }
-
-        // writeModelCounts(new BufferedWriter(new FileWriter("fom.counts")), leftBoundaryCount, rightBoundaryCount,
-        // posTransitionCount);
-
-        // // turn counts into probs
-        //
-        // // left boundary = P(NT | POS-1)
-        // for (final int leftPOSIndex : grammar.posSet) {
-        // final String posStr = grammar.mapNonterminal(leftPOSIndex);
-        // for (int ntIndex = 0; ntIndex < numNT; ntIndex++) {
-        // final String ntStr = grammar.mapNonterminal(ntIndex);
-        // leftBoundaryLogProb[ntIndex][leftPOSIndex] = (float) Math.log(leftBoundaryCount.getProb(ntStr, posStr));
-        // }
-        // }
-        //
-        // // right boundary = P(POS+1 | NT)
-        // for (int ntIndex = 0; ntIndex < grammar.numNonTerms(); ntIndex++) {
-        // final String ntStr = grammar.mapNonterminal(ntIndex);
-        // for (final int rightPOSIndex : grammar.posSet) {
-        // final String posStr = grammar.mapNonterminal(rightPOSIndex);
-        // rightBoundaryLogProb[rightPOSIndex][ntIndex] = (float) Math.log(rightBoundaryCount.getProb(posStr,
-        // ntStr));
-        // }
-        // }
-        //
-        // // pos n-gram = P(POS | POS-1)
-        // for (final int histPos : grammar.posSet) {
-        // final String histPosStr = grammar.mapNonterminal(histPos);
-        // for (final int pos : grammar.posSet) {
-        // final String posStr = grammar.mapNonterminal(pos);
-        // posTransitionLogProb[pos][histPos] = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
-        // }
-        // }
 
         // Write model to file
         float score;
-        outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder + "\n");
+        outStream.write("# model=FOM type=BoundaryLex boundaryNgramOrder=2 lexNgramOrder=" + posNgramOrder + "\n");
 
         // left boundary = P(NT | POS-1)
-        for (final int leftPOSIndex : grammar.posSet) {
-            final String posStr = grammar.mapNonterminal(leftPOSIndex);
+        for (final String lexStr : grammar.lexSet) {
             for (final int ntIndex : grammar.phraseSet) {
                 final String ntStr = grammar.mapNonterminal(ntIndex);
-                // final float logProb = leftBoundaryLogProb[ntIndex][leftPOSIndex];
                 if (writeCounts) {
-                    score = leftBoundaryCount.getCount(ntStr, posStr);
+                    score = leftBoundaryCount.getCount(ntStr, lexStr);
                 } else {
-                    score = (float) Math.log(leftBoundaryCount.getProb(ntStr, posStr));
+                    score = (float) Math.log(leftBoundaryCount.getProb(ntStr, lexStr));
                 }
                 if (score > Float.NEGATIVE_INFINITY) {
-                    outStream.write("LB " + ntStr + " | " + posStr + " " + score + "\n");
+                    outStream.write("LB " + ntStr + " | " + lexStr + " " + score + "\n");
                 }
             }
         }
 
         // right boundary = P(POS+1 | NT)
-        for (final int ntIndex : grammar.phraseSet) {
-            final String ntStr = grammar.mapNonterminal(ntIndex);
+        for (final String lexStr : grammar.lexSet) {
             for (final int rightPOSIndex : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(rightPOSIndex);
-                // final float logProb = rightBoundaryLogProb[rightPOSIndex][ntIndex];
                 if (writeCounts) {
-                    score = rightBoundaryCount.getCount(posStr, ntStr);
+                    score = rightBoundaryCount.getCount(posStr, lexStr);
                 } else {
-                    score = (float) Math.log(rightBoundaryCount.getProb(posStr, ntStr));
+                    score = (float) Math.log(rightBoundaryCount.getProb(posStr, lexStr));
                 }
                 if (score > Float.NEGATIVE_INFINITY) {
-                    outStream.write("RB " + posStr + " | " + ntStr + " " + score + "\n");
+                    outStream.write("RB " + posStr + " | " + lexStr + " " + score + "\n");
                 }
             }
         }
 
         // pos n-gram = P(POS | POS-1)
-        for (final int histPos : grammar.posSet) {
-            final String histPosStr = grammar.mapNonterminal(histPos);
-            for (final int pos : grammar.posSet) {
-                final String posStr = grammar.mapNonterminal(pos);
-                // final float logProb = posTransitionLogProb[pos][histPos];
+        for (final String histLex : grammar.lexSet) {
+            for (final String lex : grammar.lexSet) {
                 if (writeCounts) {
-                    score = posTransitionCount.getCount(posStr, histPosStr);
+                    score = bigramCount.getCount(lex, histLex);
                 } else {
-                    score = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
+                    score = (float) Math.log(bigramCount.getProb(lex, histLex));
                 }
                 if (score > Float.NEGATIVE_INFINITY) {
-                    outStream.write("PN " + posStr + " | " + histPosStr + " " + score + "\n");
+                    outStream.write("PN " + lex + " | " + histLex + " " + score + "\n");
                 }
             }
         }
@@ -338,35 +291,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         return nonTerm;
     }
 
-    // private void writeModelCounts(final BufferedWriter outStream, final SimpleCounterSet<String> leftBoundaryCount,
-    // final SimpleCounterSet<String> rightBoundaryCount, final SimpleCounterSet<String> posTransitionCount)
-    // throws IOException {
-    //
-    // outStream.write("# columns: <type> X1 X2 ... | Y1 Y2 ... negLogProb = -1*log(P(X1,X2,..|Y1,Y2,..)) \n");
-    // outStream.write("# type = LB (left boundary), RB (right boundary), PN (POS n-gram)\n");
-    //
-    // for (final Entry<String, SimpleCounter<String>> posCounter : leftBoundaryCount.items.entrySet()) {
-    // for (final Entry<String, Float> ntCount : posCounter.getValue().entrySet()) {
-    // outStream.write("LB " + ntCount.getKey() + " " + ntCount.getValue() + "\n");
-    // }
-    // }
-    //
-    // for (final Entry<String, SimpleCounter<String>> ntCounter : rightBoundaryCount.items.entrySet()) {
-    // for (final Entry<String, Float> posCount : ntCounter.getValue().entrySet()) {
-    // outStream.write("RB " + posCount.getKey() + " " + posCount.getValue() + "\n");
-    // }
-    // }
-    //
-    // for (final Entry<String, SimpleCounter<String>> denomCounter : posTransitionCount.items.entrySet()) {
-    // for (final Entry<String, Float> numerCount : denomCounter.getValue().entrySet()) {
-    // outStream.write("PN " + numerCount.getKey() + " " + numerCount.getValue() + "\n");
-    // }
-    // }
-    //
-    // outStream.close();
-    // }
-
-    public class BoundaryInOutSelector extends FigureOfMerit {
+    public class BoundaryLexSelector extends FigureOfMerit {
 
         private static final long serialVersionUID = 1L;
 
@@ -379,15 +304,11 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         // private int bestPOSTag[];
         ParseTask parseTask;
 
-        public BoundaryInOutSelector() {
+        public BoundaryLexSelector() {
         }
 
         @Override
-        public float calcFOM(final int start, final int end, short parent, final float insideProbability) {
-            if (coarseGrammar != null) {
-                parent = (short) coarseGrammar.fineToCoarseNonTerm(parent);
-            }
-
+        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
             // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
             // are padded with a begin and end <null> value which shifts the entire array to
             // the right by one
@@ -400,36 +321,6 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 final float insideProbability) {
             return insideProbability;
         }
-
-        // TODO Appears to be unused. Remove?
-        public String calcFOMToString(final int start, final int end, final short parent, final float inside) {
-            Grammar fineGrammar = grammar;
-            short coarseParent = parent;
-            if (coarseGrammar != null) {
-                coarseParent = (short) coarseGrammar.fineToCoarseNonTerm(parent);
-                fineGrammar = coarseGrammar.getFineGrammar();
-            }
-
-            final int spanLength = end - start;
-            final float outside = outsideLeft[start][coarseParent] + outsideRight[end + 1][coarseParent];
-            final float fom = inside + outside;
-
-            String s = "FOM: chart[" + start + "," + end + "]";
-            s += " n=" + spanLength;
-            // s += " p=" + edge.prod.toString();
-            s += " i=" + inside;
-            s += " o=" + outside;
-            s += " oL[" + start + "][" + fineGrammar.mapNonterminal(parent) + "]=" + outsideLeft[start][coarseParent];
-            s += " oR[" + (end + 1) + "][" + fineGrammar.mapNonterminal(parent) + "]="
-                    + outsideRight[end + 1][coarseParent];
-            s += " fom=" + fom;
-
-            return s;
-        }
-
-        // public int get1bestPOSTag(final int i) {
-        // return bestPOSTag[i];
-        // }
 
         /**
          * Computes forward-backward and left/right boundary probs across ambiguous POS tags. Also computes 1-best POS
@@ -482,7 +373,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 for (int i = 0; i < posList.length; i++) {
                     final short curPOS = posList[i];
                     final float posEmissionLogProb = fwdPOSProbs[i];
-                    final float[] curPosTransitionLogProb = posTransitionLogProb[curPOS];
+                    final float[] curPosTransitionLogProb = bigramLogProb[curPOS];
                     float bestScore = Float.NEGATIVE_INFINITY;
                     short bestPrevPOS = -1;
 
@@ -536,7 +427,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
                 for (final short prevPOS : prevPOSList) {
                     final float prevScore = prevScores[prevPOS];
-                    final float[] prevPosTransitionLogProb = posTransitionLogProb[prevPOS];
+                    final float[] prevPosTransitionLogProb = bigramLogProb[prevPOS];
 
                     for (int i = 0; i < posList.length; i++) {
                         final short curPOS = posList[i];
@@ -583,38 +474,6 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                     // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
                 }
             }
-        }
-
-        // public final float leftBoundaryLogProb(final int nonTerm, final int pos) {
-        // return leftBoundaryLogProb[nonTerm][pos];
-        // }
-        //
-        // public final float rightBoundaryLogProb(final int pos, final int nonTerm) {
-        // return rightBoundaryLogProb[pos][nonTerm];
-        // }
-        //
-        // public final float posTransitionLogProb(final int pos, final int histPos) {
-        // return posTransitionLogProb[pos][histPos];
-        // }
-
-    }
-
-    // for Beam-Width Prediction, we need the 1-best POS tags from the chart. And
-    // to get these, we need to run the forward-backward algorithm with a model
-    // that has POS transition probabilities. Right now this is only done for the
-    // Boundary FOM, so instead of writing lots more code and creating new model files,
-    // we are simply hi-jacking all of that and overwriting the calcFOM() function to
-    // ignore most of the work that is done during setup.
-    public class InsideWithFwdBkwd extends BoundaryInOutSelector {
-
-        private static final long serialVersionUID = 1L;
-
-        public InsideWithFwdBkwd() {
-        }
-
-        @Override
-        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
-            return insideProbability;
         }
     }
 }

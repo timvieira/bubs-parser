@@ -290,7 +290,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                             BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
                             fomGrammar = coarseGrammar;
                         }
-                        fomModel = new BoundaryInOut(FOMType.Boundary, fomGrammar, fileAsBufferedReader(fomTypeOrModel));
+                        fomModel = new BoundaryInOut(FOMType.BoundaryPOS, fomGrammar,
+                                fileAsBufferedReader(fomTypeOrModel));
                     } else if (keyValue.get("type").equals("Prior")) {
                         fomModel = new PriorFOM(FOMType.Prior, grammar, fileAsBufferedReader(fomTypeOrModel));
                     } else {

@@ -232,6 +232,22 @@ public class ParseTree {
         return pos.contents;
     }
 
+    public String leftBoundaryLexContents() {
+        final ParseTree lex = leftMostLeaf().leftNeighbor;
+        if (lex == null) {
+            return null;
+        }
+        return lex.contents;
+    }
+
+    public String rightBoundaryLexContents() {
+        final ParseTree lex = rightMostLeaf().rightNeighbor;
+        if (lex == null) {
+            return null;
+        }
+        return lex.contents;
+    }
+
     // TODO Inline in consumers
     public ParseTree rightBoundaryPOS() {
         return rightMostPOS().rightNeighbor;

@@ -29,7 +29,7 @@ import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 public class TrainFOM extends BaseCommandlineTool {
 
-    @Option(name = "-fom", required = true, usage = "FOM to train.  Supports Boundary, Prior, Discriminative")
+    @Option(name = "-fom", required = true, usage = "FOM to train.  Supports BoundaryPOS, BoundaryLex, Prior, Discriminative")
     private FOMType fomType = null;
 
     @Option(name = "-g", required = true, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
@@ -65,8 +65,10 @@ public class TrainFOM extends BaseCommandlineTool {
 
     @Override
     public void run() throws Exception {
-        if (fomType == FOMType.Boundary) {
+        if (fomType == FOMType.BoundaryPOS) {
             BoundaryInOut.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
+        } else if (fomType == FOMType.BoundaryLex) {
+            BoundaryLex.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
         } else if (fomType == FOMType.Discriminative) {
             if (extractFeatures) {
                 DiscriminativeFOM.extractFeatures(inputStream, outputStream, grammarFile, featTemplate);
