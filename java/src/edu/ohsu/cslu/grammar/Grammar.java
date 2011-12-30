@@ -122,16 +122,17 @@ public class Grammar implements Serializable {
     public int startSymbol = -1;
 
     // == Grammar stats ==
+    public String startSymbolStr;
     public int numPosSymbols;
     private boolean isLeftFactored;
     // public boolean isLatentVariableGrammar;
     // public boolean annotatePOS;
-    // public int horizontalMarkov;
-    // public int verticalMarkov;
+    public int horizontalMarkov;
+    public int verticalMarkov;
+    public String binarization;
+    public String language;
 
     // == Aaron's Grammar variables ==
-    /** TODO Is this really needed? String representation of the start symbol (s-dagger) */
-    public String startSymbolStr;
     public final int leftChildrenStart; // The first NT valid as a left child.
     public final int leftChildrenEnd; // The last non-POS NT valid as a left child.
     public final int rightChildrenStart; // The first non-POS NT valid as a right child.
@@ -257,7 +258,7 @@ public class Grammar implements Serializable {
             final short ntIndex = (short) nonTermSet.addSymbol(nt.label);
 
             // Added by nate to make Cell Constraints work again
-            getNonterminal(ntIndex).isFactored = grammarFormat.isFactored(nt.label);
+            getOrAddNonterm(ntIndex).isFactored = grammarFormat.isFactored(nt.label);
 
             // final String evalNT = grammarFormat.getEvalNonTerminal(nt.label);
             // int evalNTIndex = evalNonTermSet.addSymbol(evalNT);
@@ -414,6 +415,14 @@ public class Grammar implements Serializable {
             // startSymbolStr = p.matcher(firstLine).group(1);
             final HashMap<String, String> keyVals = Util.readKeyValuePairs(firstLine.trim());
             startSymbolStr = keyVals.get("start");
+            try {
+                horizontalMarkov = Integer.parseInt(keyVals.get("hMarkov"));
+                verticalMarkov = Integer.parseInt(keyVals.get("vMarkov"));
+                language = keyVals.get("language");
+                binarization = keyVals.get("binarization");
+            } catch (final Exception e) {
+                // If grammar doesn't contain these values, just ignore it.
+            }
         } else if (firstLine.split(" ").length > 1) {
             // The first line was not a start symbol.
             // Roark-format assumes 'TOP'. Reset the reader and re-process that line
@@ -669,7 +678,7 @@ public class Grammar implements Serializable {
 
     // TODO: I don't like that we have getNonterminal() and mapNonterminal()
     // methods. Should mapNonterminal return a NonTerminal instead of a string?
-    public final NonTerminal getNonterminal(final int index) {
+    public final NonTerminal getOrAddNonterm(final int index) {
         if (nonTermInfo.size() > index && nonTermInfo.get(index) != null) {
             return nonTermInfo.get(index);
         }
@@ -694,6 +703,10 @@ public class Grammar implements Serializable {
 
     public final String mapLexicalEntry(final int lexicalEntry) {
         return lexSet.getSymbol(lexicalEntry);
+    }
+
+    public final int mapLexicalEntry(final String lexStr) {
+        return lexSet.getIndex(lexStr);
     }
 
     // TODO: can probably get rid of this and just derive it where necessary
@@ -937,7 +950,7 @@ public class Grammar implements Serializable {
     public String getStats() {
         int nFactored = 0, nUnFactored = 0;
         for (final String nt : nonTermSet) {
-            if (getNonterminal(mapNonterminal(nt)).isFactored()) {
+            if (getOrAddNonterm(mapNonterminal(nt)).isFactored()) {
                 nFactored++;
             } else {
                 nUnFactored++;
@@ -969,7 +982,7 @@ public class Grammar implements Serializable {
 
         int nFactored = 0, nUnFactored = 0;
         for (final String nt : nonTermSet) {
-            if (getNonterminal(mapNonterminal(nt)).isFactored()) {
+            if (getOrAddNonterm(mapNonterminal(nt)).isFactored()) {
                 nFactored++;
             } else {
                 nUnFactored++;

@@ -90,7 +90,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
                     possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                     if (possibleProds != null) {
                         for (final Production p : possibleProds) {
-                            if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
+                            if (!onlyFactored || grammar.getOrAddNonterm(p.parent).isFactored()) {
                                 // final float prob = p.prob + leftCell.getInside(leftNT) +
                                 // rightCell.getInside(rightNT);
                                 edge = chart.new ChartEdge(p, leftCell, rightCell);

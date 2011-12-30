@@ -210,7 +210,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 for (final int leftNT : leftCell.getLeftChildNTs()) {
                     for (final int rightNT : rightCell.getRightChildNTs()) {
                         for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
-                            if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
+                            if (!onlyFactored || grammar.getOrAddNonterm(p.parent).isFactored()) {
                                 edge = chart.new ChartEdge(p, leftCell, rightCell);
                                 addEdgeToCollection(edge);
                             }

@@ -18,6 +18,9 @@
  */
 package edu.ohsu.cslu.grammar;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.Serializable;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -31,6 +34,45 @@ public class Tokenizer implements Serializable {
 
     public Tokenizer(final SymbolSet<String> lexSet) {
         this.lexSet = lexSet;
+    }
+
+    public Tokenizer(final String lexCountFile) throws NumberFormatException, IOException {
+        this(lexCountFile, 0);
+    }
+
+    // Build tokenizer from lexical count file with entries per line: <count> <word>
+    public Tokenizer(final String lexCountFile, final int unkThresh) throws NumberFormatException, IOException {
+        final SymbolSet<String> unkWords = new SymbolSet<String>();
+        this.lexSet = new SymbolSet<String>();
+        this.lexSet.addSymbol("UNK");
+        String line;
+        final BufferedReader f = new BufferedReader(new FileReader(lexCountFile));
+        while ((line = f.readLine()) != null) {
+            final String[] toks = line.split("[ \t]+");
+            if (toks.length == 2) {
+                final int count = Integer.parseInt(toks[0]);
+                if (count > unkThresh) {
+                    lexSet.addSymbol(toks[1]);
+                } else {
+                    unkWords.addSymbol(toks[1]);
+                }
+            } else {
+                System.err.println("WARNING: Unexpected linke in lex count file: '" + line.trim() + "'");
+            }
+        }
+        for (final String word : unkWords) {
+            lexSet.addSymbol(wordToUnkString(word, false));
+            lexSet.addSymbol(wordToUnkString(word, true));
+        }
+    }
+
+    public boolean hasWord(final String word) {
+        return lexSet.hasSymbol(word);
+    }
+
+    public int lexSize() {
+        lexSet.finalize(); // After getting the size, make sure it doesn't change.
+        return lexSet.size();
     }
 
     public static String treebankTokenize(final String sentence) {
@@ -96,7 +138,7 @@ public class Tokenizer implements Serializable {
     public String[] tokenize(final String sentence) {
         final String treebankTokens[] = treebankTokenize(sentence).split(" ");
         for (int i = 0; i < treebankTokens.length; i++) {
-            treebankTokens[i] = mapToLexSetEntry(treebankTokens[i], i == 0);
+            treebankTokens[i] = wordToLexSetEntry(treebankTokens[i], i == 0);
         }
         return treebankTokens;
     }
@@ -106,7 +148,7 @@ public class Tokenizer implements Serializable {
         final String tokens[] = sentence.split("\\s+");
         final int tokenIndices[] = new int[tokens.length];
         for (int i = 0; i < tokens.length; i++) {
-            tokenIndices[i] = lexSet.getIndex(mapToLexSetEntry(tokens[i], i == 0));
+            tokenIndices[i] = wordToLexSetIndex(tokens[i], i == 0);
         }
         return tokenIndices;
     }
@@ -115,17 +157,28 @@ public class Tokenizer implements Serializable {
         final int tokenIndices[] = new int[sentence.leaves()];
         int i = 0;
         for (final NaryTree<String> leaf : sentence.leafTraversal()) {
-            tokenIndices[i++] = lexSet.getIndex(mapToLexSetEntry(leaf.label(), i == 0));
+            tokenIndices[i++] = wordToLexSetIndex(leaf.label(), i == 0);
         }
         return tokenIndices;
     }
 
-    public String mapToLexSetEntry(final String word, final boolean sentenceInitial) {
+    public int wordToLexSetIndex(final String word, final boolean sentenceInitial) {
+        return lexSet.getIndex(wordToLexSetEntry(word, sentenceInitial));
+    }
+
+    public String wordToLexSetEntry(final String word, final boolean sentenceInitial) {
         if (lexSet.hasSymbol(word)) {
             return word;
         }
 
-        String unkStr = wordToUnkString(word, sentenceInitial);
+        return wordToUnkEntry(word, sentenceInitial);
+    }
+
+    public String wordToUnkEntry(final String word, final boolean sentenceInitial) {
+        return unkToUnkEntry(wordToUnkString(word, sentenceInitial));
+    }
+
+    public String unkToUnkEntry(String unkStr) {
         // remove last feature from unk string until we find a matching entry in the lexicon
         while (!lexSet.hasSymbol(unkStr) && unkStr.contains("-")) {
             unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
@@ -144,10 +197,14 @@ public class Tokenizer implements Serializable {
         // we suck in all classes into all tools (and breaks the build for most tools, since we don't package
         // OpenCL libraries by default).
         if (ParserDriver.oldUNK == true) {
-            return wordToUnkStringVer1(word);
+            return wordToUnkStringVer1(word, lexSet);
         }
         return berkeleyGetSignature(word, sentenceInitial);
     }
+
+    // private String wordToUnkStringVer1(String word) {
+    // return wordToUnkStringVer1(word, lexSet);
+    // }
 
     /**
      * Translates an unknown word into a unknown-word string, using a decision-tree approach adopted from the Berkeley
@@ -162,7 +219,7 @@ public class Tokenizer implements Serializable {
      * @param sentIndex
      * @return A string token representing the unknown word
      */
-    private String wordToUnkStringVer1(final String word) {
+    public static String wordToUnkStringVer1(final String word, final SymbolSet<String> lexSet) {
         String unkStr = "UNK";
 
         // word case
