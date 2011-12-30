@@ -97,6 +97,7 @@ public class ParseTree {
                     if (index != str.length()) {
                         throw new RuntimeException("Expecting end of string but found '" + str.charAt(index) + "'");
                     }
+                    stack.getLast().linkLeavesLeftRight();
                     return stack.getLast();
                 }
                 // add last ParseTree as child to previous ParseTree

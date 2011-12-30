@@ -39,7 +39,19 @@ public class TrainFOM extends BaseCommandlineTool {
     private boolean writeCounts = false;
 
     @Option(name = "-smooth", metaVar = "N", usage = "Apply add-N smoothing to model")
-    private float smoothingCount = (float) 0.5;
+    private float smoothingCount = (float) 0.0;
+
+    @Option(name = "-prune", metaVar = "N", usage = "Prune entries with count less than N")
+    private int pruneCount = 0;
+
+    @Option(name = "-lexCounts", metaVar = "FILE", usage = "Lines <word> <count> for all lexical entries")
+    private String lexCountFile = null;
+
+    @Option(name = "-lexMap", metaVar = "FILE", usage = "Lines <word> <class> for all lexical entries")
+    private String lexMapFile = null;
+
+    @Option(name = "-unkThresh", metaVar = "N", usage = "Convert lexical items to UNK with frequency <= N")
+    private int unkThresh = 0;
 
     @Option(name = "-posNgramOrder", metaVar = "N", usage = "POS n-gram order for feature extraction (only Boundary)")
     private int posNgramOrder = 2;
@@ -68,7 +80,9 @@ public class TrainFOM extends BaseCommandlineTool {
         if (fomType == FOMType.BoundaryPOS) {
             BoundaryInOut.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
         } else if (fomType == FOMType.BoundaryLex) {
-            BoundaryLex.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
+            final BoundaryLex model = new BoundaryLex(FOMType.BoundaryLex);
+            model.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder, pruneCount,
+                    lexCountFile, unkThresh, lexMapFile);
         } else if (fomType == FOMType.Discriminative) {
             if (extractFeatures) {
                 DiscriminativeFOM.extractFeatures(inputStream, outputStream, grammarFile, featTemplate);

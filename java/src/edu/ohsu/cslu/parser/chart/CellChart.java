@@ -212,7 +212,7 @@ public class CellChart extends Chart {
 
         protected void addToHashSets(final int ntIndex) {
             childNTs.add(ntIndex);
-            final NonTerminal nt = grammar.getNonterminal(ntIndex);
+            final NonTerminal nt = grammar.getOrAddNonterm(ntIndex);
             if (nt.isLeftChild) {
                 leftChildNTs.add(ntIndex);
             }

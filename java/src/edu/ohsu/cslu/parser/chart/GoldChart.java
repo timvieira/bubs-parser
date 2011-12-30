@@ -91,7 +91,7 @@ public class GoldChart extends Chart {
                         // prod = grammar.getLexicalProduction(A, B);
                         // NOTE: don't want to add new words to the lexicon because they
                         // won't get mapped to UNK during decoding
-                        B = g.tokenizer.mapToLexSetEntry(B, false);
+                        B = g.tokenizer.wordToLexSetEntry(B, false);
                         prod = new Production(A, B, Float.NEGATIVE_INFINITY, true, g.nonTermSet, g.lexSet);
                     } else {
                         // prod = grammar.getUnaryProduction(A, B);

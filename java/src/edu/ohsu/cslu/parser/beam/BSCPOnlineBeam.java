@@ -74,7 +74,7 @@ public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellC
                         possibleProds = grammar.getBinaryProductionsWithChildren(leftNT, rightNT);
                         if (possibleProds != null) {
                             for (final Production p : possibleProds) {
-                                if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
+                                if (!onlyFactored || grammar.getOrAddNonterm(p.parent).isFactored()) {
                                     edge = chart.new ChartEdge(p, leftCell, rightCell);
                                     processEdge(edge, cell);
                                 }

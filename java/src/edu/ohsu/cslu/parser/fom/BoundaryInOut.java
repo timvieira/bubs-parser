@@ -32,6 +32,7 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.TreeTools;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
@@ -183,8 +184,10 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         while ((line = inStream.readLine()) != null) {
             tree = ParseTree.readBracketFormat(line);
             if (tree.isBinaryTree() == false) {
-                System.err.println("ERROR: Training trees must be binarized exactly as used in decoding grammar");
-                System.exit(1);
+                // System.err.println("ERROR: Training trees must be binarized exactly as used in decoding grammar");
+                // System.exit(1);
+                TreeTools.binarizeTree(tree, grammar.isRightFactored(), grammar.horizontalMarkov,
+                        grammar.verticalMarkov, false, grammar.grammarFormat);
             }
             tree.linkLeavesLeftRight();
             for (final ParseTree node : tree.preOrderTraversal()) {
@@ -276,7 +279,8 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
         // Write model to file
         float score;
-        outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder + "\n");
+        outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder
+                + " smooth=" + smoothingCount + "\n");
 
         // left boundary = P(NT | POS-1)
         for (final int leftPOSIndex : grammar.posSet) {

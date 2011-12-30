@@ -80,6 +80,7 @@ import edu.ohsu.cslu.parser.ecp.ECPGrammarLoop;
 import edu.ohsu.cslu.parser.ecp.ECPGrammarLoopBerkFilter;
 import edu.ohsu.cslu.parser.ecp.ECPInsideOutside;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
+import edu.ohsu.cslu.parser.fom.BoundaryLex;
 import edu.ohsu.cslu.parser.fom.DiscriminativeFOM;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
@@ -292,6 +293,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                         }
                         fomModel = new BoundaryInOut(FOMType.BoundaryPOS, fomGrammar,
                                 fileAsBufferedReader(fomTypeOrModel));
+                    } else if (keyValue.get("type").equals("BoundaryLex")) {
+                        fomModel = new BoundaryLex(FOMType.BoundaryLex, grammar, fileAsBufferedReader(fomTypeOrModel));
                     } else if (keyValue.get("type").equals("Prior")) {
                         fomModel = new PriorFOM(FOMType.Prior, grammar, fileAsBufferedReader(fomTypeOrModel));
                     } else {

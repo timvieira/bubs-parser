@@ -20,64 +20,72 @@ package edu.ohsu.cslu.parser.fom;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Map;
 
-import cltool4j.BaseLogger;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.TreeTools;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 /**
- * Implements Caraballo and Charniak's (1998) boundary in-out figure-of-merit with ambiguous POS tags by running the
- * forward/backward algorithm.
- * 
  * @author Nathan Bodenstab
  */
 public final class BoundaryLex extends FigureOfMeritModel {
 
     private Grammar grammar;
+    private float OOV_SCORE;
+    private int lexMap[] = null;
+    private SymbolSet<String> wordClasses;
+    private Tokenizer fomTokenizer = null; // old way to map lex
 
     // Model params learned from training data
-    private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], bigramLogProb[][];
+    private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][];// , bigramLogProb[][];
 
-    final short nullSymbol;
-    final short[] NULL_LIST;
-    final float[] NULL_PROBABILITIES;
+    // private SimpleCounterSet<Integer> bigramLogProb;
 
     public BoundaryLex(final FOMType type, final Grammar grammar, final BufferedReader modelStream) throws IOException {
-
         super(type);
 
         this.grammar = grammar;
 
-        nullSymbol = (short) grammar.nullSymbol;
-        NULL_LIST = new short[] { nullSymbol };
-        NULL_PROBABILITIES = new float[] { 0f };
-
         final int numNT = grammar.numNonTerms();
         final int numLex = grammar.lexSet.size();
+        // TODO: only need number of classes here ... but would have to parse file first
+
         leftBoundaryLogProb = new float[numLex][numNT];
         rightBoundaryLogProb = new float[numLex][numNT];
-        bigramLogProb = new float[numLex][numLex];
+        // bigramLogProb = new SimpleCounterSet<Integer>();
+        // bigramLogProb = new float[numLex][numLex];
 
-        // Init values to log(0) = -Inf
+        OOV_SCORE = GlobalConfigProperties.singleton().getFloatProperty("boundaryLexOOV");
         for (int i = 0; i < numLex; i++) {
-            Arrays.fill(leftBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
-            Arrays.fill(rightBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
-            Arrays.fill(bigramLogProb[i], Float.NEGATIVE_INFINITY);
+            Arrays.fill(leftBoundaryLogProb[i], OOV_SCORE);
+            Arrays.fill(rightBoundaryLogProb[i], OOV_SCORE);
+            // Arrays.fill(bigramLogProb[i], Float.NEGATIVE_INFINITY);
         }
 
         if (modelStream != null) {
             readModel(modelStream);
         }
+    }
+
+    public BoundaryLex(final FOMType type) {
+        super(type);
+        leftBoundaryLogProb = null;
+        rightBoundaryLogProb = null;
     }
 
     @Override
@@ -91,55 +99,34 @@ public final class BoundaryLex extends FigureOfMeritModel {
     }
 
     public void readModel(final BufferedReader inStream) throws IOException {
-        String line, numStr, denomStr;
-        int numIndex, denomIndex;
-        float prob;
-        final LinkedList<String> numerator = new LinkedList<String>();
-        final LinkedList<String> denom = new LinkedList<String>();
+        String line;
+
+        if (lexMap == null) {
+            lexMap = new int[grammar.lexSet.size()];
+            wordClasses = new SymbolSet<String>();
+        }
+
         while ((line = inStream.readLine()) != null) {
-            // line format: label num1 num2 ... | den1 den2 ... prob
+            // line format: label num | denom prob
             final String[] tokens = line.split("\\s+");
             if (tokens.length > 0 && !tokens[0].equals("#")) {
-                numerator.clear();
-                denom.clear();
-                boolean foundBar = false;
-                for (int i = 1; i < tokens.length - 1; i++) {
-                    if (tokens[i].equals("|")) {
-                        foundBar = true;
-                    } else {
-                        if (foundBar == false) {
-                            numerator.addLast(tokens[i]);
-                        } else {
-                            denom.addLast(tokens[i]);
-                        }
-                    }
-                }
 
-                numStr = Util.join(numerator, " ");
-                numIndex = grammar.mapNonterminal(numStr);
-                if (numIndex < 0) {
-                    BaseLogger.singleton().info(
-                            "ERROR: non-terminal '" + numStr + "' from FOM model not found in grammar.");
-                    System.exit(1);
-                }
-                denomStr = Util.join(denom, " ");
-                denomIndex = grammar.mapNonterminal(denomStr);
-                if (denomIndex < 0) {
-                    BaseLogger.singleton().info(
-                            "ERROR: non-terminal '" + denomStr + "' from FOM model not found in grammar.");
-                    System.exit(1);
-                }
-                prob = Float.parseFloat(tokens[tokens.length - 1]);
-
-                if (tokens[0].equals("#")) {
-                    // model meta-data
-                    // ex: # model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=2
-                } else if (tokens[0].equals("LB")) {
-                    leftBoundaryLogProb[denomIndex][numIndex] = prob;
+                if (tokens[0].equals("LB")) {
+                    // LB: nt | lex prob
+                    leftBoundaryLogProb[wordClasses.addSymbol(tokens[3])][getNonTermIndex(tokens[1])] = Float
+                            .parseFloat(tokens[4]);
+                    ;
                 } else if (tokens[0].equals("RB")) {
-                    rightBoundaryLogProb[numIndex][denomIndex] = prob;
+                    // RB: lex | nt prob;
+                    rightBoundaryLogProb[wordClasses.addSymbol(tokens[1])][getNonTermIndex(tokens[3])] = Float
+                            .parseFloat(tokens[4]);
                 } else if (tokens[0].equals("PN")) {
-                    bigramLogProb[numIndex][denomIndex] = prob;
+                    // PN: lex | lexHist prob
+                    // bigramLogProb.increment(getLexIndex(denomStr), getLexIndex(numStr), prob);
+                } else if (tokens[0].equals("MAP")) {
+                    final int word = grammar.mapLexicalEntry(tokens[1]);
+                    final int wordClass = wordClasses.addSymbol(tokens[3]);
+                    lexMap[word] = wordClass;
                 } else {
                     System.err.println("WARNING: ignoring line in model file '" + line + "'");
                 }
@@ -147,13 +134,51 @@ public final class BoundaryLex extends FigureOfMeritModel {
         }
     }
 
-    public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile)
-            throws Exception {
-        BoundaryLex.train(inStream, outStream, grammarFile, 0.5, false, 2);
+    private int getNonTermIndex(final String nt) {
+        final int i = grammar.mapNonterminal(nt);
+        if (i < 0) {
+            throw new RuntimeException("ERROR: non-terminal '" + nt + "' from FOM model not found in grammar.");
+        }
+        return i;
     }
 
-    public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile,
-            final double smoothingCount, final boolean writeCounts, final int posNgramOrder) throws Exception {
+    // private int getLexIndex(final String lex) {
+    // final int i = grammar.mapLexicalEntry(lex);
+    // if (i < 0) {
+    // throw new RuntimeException("ERROR: lexical entry '" + lex + "' from FOM model not found in grammar.");
+    // }
+    // return i;
+    // }
+
+    private void parseLexMapFile(final String file, final Tokenizer tokenizer, final String defaultClass)
+            throws IOException {
+        wordClasses = new SymbolSet<String>();
+        final int defaultClassIndex = wordClasses.addSymbol(defaultClass);
+        lexMap = new int[tokenizer.lexSize()];
+        Arrays.fill(lexMap, defaultClassIndex);
+        lexMap[grammar.nullWord] = wordClasses.addSymbol(Grammar.nullSymbolStr);
+
+        String line;
+        final BufferedReader f = new BufferedReader(new FileReader(file));
+        while ((line = f.readLine()) != null) {
+            final String[] toks = line.split("[ \t]+");
+            // Expecting format: <word> <class>
+            if (toks.length >= 2) {
+                final int word = tokenizer.wordToLexSetIndex(toks[0], false);
+                final int wordClass = wordClasses.addSymbol(toks[1]);
+                lexMap[word] = wordClass;
+                // NB: Multiple words may be mapped to the same UNK class with different clusters.
+                // We could take the most frequent class from this set. Right now we are just
+                // taking the last occurance.
+            } else {
+                System.err.println("WARNING: Unexpected linke in lex count file: '" + line.trim() + "'");
+            }
+        }
+    }
+
+    public void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile,
+            final double smoothingCount, final boolean writeCounts, final int posNgramOrder, final int pruneCount,
+            final String lexCountFile, final int unkThresh, final String lexMapFile) throws Exception {
         String line, historyStr;
         final String joinString = " ";
         ParseTree tree;
@@ -161,42 +186,35 @@ public final class BoundaryLex extends FigureOfMeritModel {
         final SimpleCounterSet<String> rightBoundaryCount = new SimpleCounterSet<String>();
         final SimpleCounterSet<String> bigramCount = new SimpleCounterSet<String>();
 
-        // To train a BoundaryInOut FOM model we need a grammar and
-        // binarized gold input trees with NTs from same grammar
-        final Grammar grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
+        grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
 
-        // TODO: note that we have to have the same training grammar as decoding grammar here
-        // so the input needs to be binarized. If we are parsing with the Berkeley latent-variable
-        // grammar then we can't work with gold trees. As an approximation we will take the
-        // 1-best from the Berkeley parser output (although constraining the coarse labels to match
-        // the true gold tree would probably be a little better)
-        // See Caraballo/Charniak 1998 for (what I think is) their inside/outside solution
-        // to the same (or a similar) problem.
+        if (lexCountFile != null) {
+            fomTokenizer = new Tokenizer(lexCountFile, unkThresh);
+        } else if (lexMapFile != null) {
+            parseLexMapFile(lexMapFile, grammar.tokenizer, "0");
+        } else {
+            throw new RuntimeException("Expecting lexCountFile or lexMapFile in BoundaryLex FOM training.");
+        }
+
         while ((line = inStream.readLine()) != null) {
             tree = ParseTree.readBracketFormat(line);
             if (tree.isBinaryTree() == false) {
-                System.err.println("ERROR: Training trees must be binarized exactly as used in decoding grammar");
-                System.exit(1);
+                // System.err.println("ERROR: Training trees must be binarized exactly as used in decoding grammar");
+                // System.exit(1);
+                TreeTools.binarizeTree(tree, grammar.isRightFactored(), grammar.horizontalMarkov,
+                        grammar.verticalMarkov, false, grammar.grammarFormat);
             }
-            tree.linkLeavesLeftRight();
+            // tree.linkLeavesLeftRight();
             for (final ParseTree node : tree.preOrderTraversal()) {
-
-                // leftBoundary = P(N[i:j] | lex[i-1]) = #(N[i:j], lex[i-1]) / #(*[i:*], lex[i-1])
-                // riteBoundary = P(lex[j+1] | N[i:j]) = #(N[i:j], lex[j+1]) / #(N[*:j], *[j+1])
-                // bi-gram lex model for lex[i-1:j+1]
-                // counts we need:
-                // -- #(N[i:j], lex[i-1])
-                // -- #(*[i:*], lex[i-1]) -- number of times lex occurs just to the left of any span
 
                 if (node.isNonTerminal() == true) {
                     if (grammar.nonTermSet.contains(node.contents) == false) {
                         throw new IOException("Nonterminal '" + node.contents
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
-                    leftBoundaryCount.increment(node.contents,
-                            convertNull(node.leftBoundaryLexContents(), Grammar.nullSymbolStr));
-                    rightBoundaryCount.increment(convertNull(node.rightBoundaryLexContents(), Grammar.nullSymbolStr),
-                            node.contents);
+
+                    leftBoundaryCount.increment(node.contents, mapLex(node.leftMostLeaf().leftNeighbor));
+                    rightBoundaryCount.increment(mapLex(node.rightMostLeaf().rightNeighbor), node.contents);
                 }
             }
 
@@ -208,14 +226,11 @@ public final class BoundaryLex extends FigureOfMeritModel {
 
             // iterate through leaf nodes using .rightNeighbor
             for (ParseTree leafNode = tree.leftMostLeaf(); leafNode != null; leafNode = leafNode.rightNeighbor) {
-                if (!grammar.lexSet.contains(leafNode.contents)) {
-                    throw new IOException("Lexical entry '" + leafNode.contents
-                            + "' in input tree not found in grammar.  Exiting.");
-                }
                 historyStr = Util.join(history, joinString);
-                bigramCount.increment(leafNode.contents, historyStr);
+                final String word = mapLex(leafNode);
+                bigramCount.increment(word, historyStr);
                 history.removeFirst();
-                history.addLast(leafNode.contents);
+                history.addLast(word);
             }
 
             // finish up with final transition to <null>
@@ -223,71 +238,122 @@ public final class BoundaryLex extends FigureOfMeritModel {
             bigramCount.increment(Grammar.nullSymbolStr, historyStr);
         }
 
-        final int numNT = grammar.numNonTerms();
-        final int numLex = grammar.lexSet.size();
-
-        // smooth counts
         if (smoothingCount > 0) {
-            leftBoundaryCount.smoothAddConst(smoothingCount, numLex);
-            rightBoundaryCount.smoothAddConst(smoothingCount, numNT);
-            bigramCount.smoothAddConst(smoothingCount, numLex);
+            throw new RuntimeException(
+                    "Smoothing param found to be "
+                            + smoothingCount
+                            + " but explicit smoothing not implemented for BoundaryLex FOM because model size becomes too large.");
         }
+        // final int numNT = grammar.numNonTerms();
+        // final int numLex = grammar.lexSet.size();
+        // smooth counts
+        // if (smoothingCount > 0) {
+        // leftBoundaryCount.smoothAddConst(smoothingCount, numLex);
+        // rightBoundaryCount.smoothAddConst(smoothingCount, numNT);
+        // bigramCount.smoothAddConst(smoothingCount, numLex);
+        // }
 
         // Write model to file
         float score;
         outStream.write("# model=FOM type=BoundaryLex boundaryNgramOrder=2 lexNgramOrder=" + posNgramOrder + "\n");
 
+        if (lexMap != null) {
+            for (int i = 0; i < lexMap.length; i++) {
+                outStream.write("MAP " + grammar.mapLexicalEntry(i) + " => " + wordClasses.getSymbol(lexMap[i]) + "\n");
+            }
+        }
+
         // left boundary = P(NT | POS-1)
-        for (final String lexStr : grammar.lexSet) {
-            for (final int ntIndex : grammar.phraseSet) {
-                final String ntStr = grammar.mapNonterminal(ntIndex);
+        for (final String lexStr : leftBoundaryCount.items.keySet()) {
+            for (final Map.Entry<String, Float> entry : leftBoundaryCount.items.get(lexStr).entrySet()) {
+                final String ntStr = entry.getKey();
+                final int count = (int) leftBoundaryCount.getCount(ntStr, lexStr);
                 if (writeCounts) {
-                    score = leftBoundaryCount.getCount(ntStr, lexStr);
+                    score = count;
                 } else {
                     score = (float) Math.log(leftBoundaryCount.getProb(ntStr, lexStr));
                 }
-                if (score > Float.NEGATIVE_INFINITY) {
+                if (score > Float.NEGATIVE_INFINITY && count >= pruneCount) {
                     outStream.write("LB " + ntStr + " | " + lexStr + " " + score + "\n");
                 }
             }
         }
 
         // right boundary = P(POS+1 | NT)
-        for (final String lexStr : grammar.lexSet) {
-            for (final int rightPOSIndex : grammar.posSet) {
-                final String posStr = grammar.mapNonterminal(rightPOSIndex);
+        for (final String ntStr : rightBoundaryCount.items.keySet()) {
+            for (final Map.Entry<String, Float> entry : rightBoundaryCount.items.get(ntStr).entrySet()) {
+                final String lexStr = entry.getKey();
+                final int count = (int) rightBoundaryCount.getCount(lexStr, ntStr);
                 if (writeCounts) {
-                    score = rightBoundaryCount.getCount(posStr, lexStr);
+                    score = count;
                 } else {
-                    score = (float) Math.log(rightBoundaryCount.getProb(posStr, lexStr));
+                    score = (float) Math.log(rightBoundaryCount.getProb(lexStr, ntStr));
                 }
-                if (score > Float.NEGATIVE_INFINITY) {
-                    outStream.write("RB " + posStr + " | " + lexStr + " " + score + "\n");
+                if (score > Float.NEGATIVE_INFINITY && count >= pruneCount) {
+                    outStream.write("RB " + lexStr + " | " + ntStr + " " + score + "\n");
                 }
             }
         }
 
         // pos n-gram = P(POS | POS-1)
-        for (final String histLex : grammar.lexSet) {
-            for (final String lex : grammar.lexSet) {
-                if (writeCounts) {
-                    score = bigramCount.getCount(lex, histLex);
-                } else {
-                    score = (float) Math.log(bigramCount.getProb(lex, histLex));
-                }
-                if (score > Float.NEGATIVE_INFINITY) {
-                    outStream.write("PN " + lex + " | " + histLex + " " + score + "\n");
-                }
-            }
-        }
+        // for (final String histLex : bigramCount.items.keySet()) {
+        // for (final Map.Entry<String, Float> entry : bigramCount.items.get(histLex).entrySet()) {
+        // final String lex = entry.getKey();
+        // final int count = (int) bigramCount.getCount(lex, histLex);
+        // if (writeCounts) {
+        // score = count;
+        // } else {
+        // score = (float) Math.log(bigramCount.getProb(lex, histLex));
+        // }
+        // if (score > Float.NEGATIVE_INFINITY && count >= pruneCount) {
+        // outStream.write("PN " + lex + " | " + histLex + " " + score + "\n");
+        // }
+        // }
+        // }
+
         outStream.close();
     }
 
-    private static String convertNull(final String nonTerm, final String replacementStr) {
-        if (nonTerm == null) {
-            return replacementStr;
+    private String mapLex(final ParseTree leaf) {
+        if (leaf == null) {
+            return Grammar.nullSymbolStr;
         }
-        return nonTerm;
+        // Not computing if sentence initial because word in the model are isolated
+        // and never observed in context
+        // final boolean sentenceInitial = (leaf.leftNeighbor == null);
+        return mapLex(leaf.contents);
+    }
+
+    private int mapLexToIndex(final String word) {
+        if (word == null) {
+            return grammar.nullWord;
+        }
+        if (fomTokenizer != null) {
+            // Pretty much the identity mapping.
+            // Use the lexical set from the FOM model (potentially more restrictive) to
+            // choose if words are lexicalized or converted to UNK-xxx. But after this choice
+            // is made, convert words to an entry in the grammar lexicon (which may or may not
+            // be different).
+            if (fomTokenizer.hasWord(word)) {
+                // return grammar.tokenizer.wordToLexSetEntry(word, false);
+                return grammar.tokenizer.wordToLexSetIndex(word, false);
+            }
+            // return grammar.tokenizer.wordToUnkEntry(word, false);
+            return grammar.mapLexicalEntry(grammar.tokenizer.wordToUnkEntry(word, false));
+        }
+
+        // Otherwise, use the lexMap
+        final int wordIndex = grammar.tokenizer.wordToLexSetIndex(word, false);
+        return lexMap[wordIndex];
+        // final int classIndex = lexMap[wordIndex];
+        // return wordClasses.getSymbol(classIndex);
+    }
+
+    private String mapLex(final String word) {
+        if (fomTokenizer != null) {
+            return grammar.mapLexicalEntry(mapLexToIndex(word));
+        }
+        return wordClasses.getSymbol(mapLexToIndex(word));
     }
 
     public class BoundaryLexSelector extends FigureOfMerit {
@@ -295,24 +361,26 @@ public final class BoundaryLex extends FigureOfMeritModel {
         private static final long serialVersionUID = 1L;
 
         // pre-computed left/right FOM outside scores for current sentence
-        private float outsideLeft[][], outsideRight[][];
-        private short[][] backPointer;
-        private float[] scores;
-        private float[] prevScores;
-
-        // private int bestPOSTag[];
-        ParseTask parseTask;
+        // private float outsideLeft[][], outsideRight[][];
+        private int tokens[];
 
         public BoundaryLexSelector() {
         }
 
         @Override
-        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
-            // leftIndex and rightIndex have +1 because the outsideLeft and outsideRight arrays
-            // are padded with a begin and end <null> value which shifts the entire array to
-            // the right by one
-            final float outside = outsideLeft[start][parent] + outsideRight[end + 1][parent];
-            return insideProbability + outside;
+        public float calcFOM(final int start, final int end, final short nt, final float insideProbability) {
+            // String left = Grammar.nullSymbolStr;
+            // if (start > 0) {
+            // left = grammar.mapLexicalEntry(tokens[start - 1]);
+            // }
+            // String right = Grammar.nullSymbolStr;
+            // if (end < tokens.length) {
+            // right = grammar.mapLexicalEntry(tokens[end]);
+            // }
+            // System.out.println(grammar.mapNonterminal(parent) + "[" + start + "," + end + "]: left[" + left + "]="
+            // + outsideLeft(start, parent) + " right[" + right + "]=" + outsideRight(end, parent));
+
+            return insideProbability + outsideLeft(start, nt) + outsideRight(end, nt);
         }
 
         @Override
@@ -321,158 +389,69 @@ public final class BoundaryLex extends FigureOfMeritModel {
             return insideProbability;
         }
 
+        private float outsideLeft(final int start, final int nt) {
+            if (start == 0) {
+                return leftBoundaryLogProb[grammar.nullWord][nt];
+            }
+            return leftBoundaryLogProb[tokens[start - 1]][nt];
+        }
+
+        private float outsideRight(final int end, final int nt) {
+            if (end == tokens.length) {
+                return rightBoundaryLogProb[grammar.nullWord][nt];
+            }
+            return rightBoundaryLogProb[tokens[end]][nt];
+        }
+
         /**
          * Computes forward-backward and left/right boundary probs across ambiguous POS tags. Also computes 1-best POS
          * tag sequence based on viterbi-max decoding
          */
         @Override
         public void initSentence(final ParseTask task, final Chart chart) {
-            final int sentLen = task.sentenceLength();
-            final int fbSize = sentLen + 2;
-            final int posSize = grammar.maxPOSIndex() + 1;
+            this.tokens = task.tokens;
 
-            if (outsideLeft == null || outsideLeft.length < fbSize) {
-                outsideLeft = new float[fbSize + 10][grammar.numNonTerms()];
-                outsideRight = new float[fbSize + 10][grammar.numNonTerms()];
-                backPointer = new short[fbSize + 10][posSize];
-            }
+            // final int sentLen = task.sentenceLength();
+            // final int fbSize = sentLen + 2;
 
-            if (scores == null) {
-                scores = new float[posSize];
-                prevScores = new float[posSize];
-            }
+            // if (outsideLeft == null || outsideLeft.length < fbSize) {
+            // outsideLeft = new float[fbSize + 10][grammar.numNonTerms()];
+            // outsideRight = new float[fbSize + 10][grammar.numNonTerms()];
+            // }
 
-            for (int i = 0; i < fbSize; i++) {
-                Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
-                Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
-                Arrays.fill(backPointer[i], (short) 0);
-            }
+            // for (int i = 0; i < fbSize; i++) {
+            // Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
+            // Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
+            // }
 
-            short[] prevPOSList = NULL_LIST;
+            // final float ngramScore[] = new float[fbSize];
+            // ngramScore[0] = 0f;
+            // for (int i = 1; i < fbSize; i++) {
+            // final int prevWord = fbIndexToWordIndex(i - 1, task.tokens);
+            // final int word = fbIndexToWordIndex(i, task.tokens);
+            // float prob = bigramLogProb.getCount(prevWord, word);
+            // // TODO: Should smooth unobserved bigrams in the model
+            // if (prob == 0) {
+            // prob = OOV_SCORE;
+            // }
+            // ngramScore[i] = ngramScore[i - 1] + prob;
+            // }
 
-            // Forward pass
-            prevScores[nullSymbol] = 0f;
-
-            System.arraycopy(leftBoundaryLogProb[nullSymbol], 0, outsideLeft[0], 0, grammar.numNonTerms());
-
-            for (int fwdIndex = 1; fwdIndex < fbSize; fwdIndex++) {
-
-                Arrays.fill(scores, Float.NEGATIVE_INFINITY);
-
-                // Forward-backward Chart is one off from the parser chart
-                final int fwdChartIndex = fwdIndex - 1;
-
-                final short[] posList = fwdChartIndex >= sentLen ? NULL_LIST : grammar
-                        .lexicalParents(task.tokens[fwdChartIndex]);
-                final float[] fwdPOSProbs = fwdChartIndex >= sentLen ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(task.tokens[fwdChartIndex]);
-
-                final short[] currentBackpointer = backPointer[fwdIndex];
-
-                for (int i = 0; i < posList.length; i++) {
-                    final short curPOS = posList[i];
-                    final float posEmissionLogProb = fwdPOSProbs[i];
-                    final float[] curPosTransitionLogProb = bigramLogProb[curPOS];
-                    float bestScore = Float.NEGATIVE_INFINITY;
-                    short bestPrevPOS = -1;
-
-                    for (final short prevPOS : prevPOSList) {
-                        final float score = prevScores[prevPOS] + curPosTransitionLogProb[prevPOS] + posEmissionLogProb;
-                        if (score > bestScore) {
-                            bestScore = score;
-                            bestPrevPOS = prevPOS;
-                        }
-                    }
-                    scores[curPOS] = bestScore;
-                    currentBackpointer[curPOS] = bestPrevPOS;
-                }
-
-                // compute left outside scores to be used during decoding
-                // FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
-                final float[] currentOutsideLeft = outsideLeft[fwdIndex];
-                for (final short pos : posList) {
-                    final float posScore = scores[pos];
-                    final float[] posLeftBoundaryLogProb = leftBoundaryLogProb[pos];
-
-                    for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
-                        final float score = posScore + posLeftBoundaryLogProb[nonTerm];
-                        if (score > currentOutsideLeft[nonTerm]) {
-                            currentOutsideLeft[nonTerm] = score;
-                        }
-                    }
-                }
-
-                final float[] tmp = prevScores;
-                prevScores = scores;
-                scores = tmp;
-                prevPOSList = posList;
-            }
-
-            // Backward pass
-            System.arraycopy(rightBoundaryLogProb[nullSymbol], 0, outsideRight[fbSize - 1], 0, grammar.numNonTerms());
-
-            prevPOSList = NULL_LIST;
-            prevScores[nullSymbol] = 0f;
-
-            for (int bkwIndex = fbSize - 2; bkwIndex >= 0; bkwIndex--) {
-
-                Arrays.fill(scores, Float.NEGATIVE_INFINITY);
-
-                final int bkwChartIndex = bkwIndex - 1;
-                final short[] posList = bkwChartIndex < 0 ? NULL_LIST : grammar
-                        .lexicalParents(task.tokens[bkwChartIndex]);
-                final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
-                        .lexicalLogProbabilities(task.tokens[bkwChartIndex]);
-
-                for (final short prevPOS : prevPOSList) {
-                    final float prevScore = prevScores[prevPOS];
-                    final float[] prevPosTransitionLogProb = bigramLogProb[prevPOS];
-
-                    for (int i = 0; i < posList.length; i++) {
-                        final short curPOS = posList[i];
-                        final float score = prevScore + prevPosTransitionLogProb[curPOS] + bkwPOSProbs[i];
-                        if (score > scores[curPOS]) {
-                            scores[curPOS] = score;
-                        }
-                    }
-                }
-
-                // compute right outside scores to be used during decoding
-                // FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
-                final float[] currentOutsideRight = outsideRight[bkwIndex];
-                for (final short pos : posList) {
-                    final float posScore = scores[pos];
-                    final float[] posRightBoundaryLogProb = rightBoundaryLogProb[pos];
-
-                    for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
-                        final float score = posScore + posRightBoundaryLogProb[nonTerm];
-                        if (score > currentOutsideRight[nonTerm]) {
-                            currentOutsideRight[nonTerm] = score;
-                        }
-                    }
-                }
-
-                final float[] tmp = prevScores;
-                prevScores = scores;
-                scores = tmp;
-                prevPOSList = posList;
-            }
-
-            // tags from parseTask.tags are used for chart cell feature extraction when
-            // using BoundaryInOut FOM. If parseFromInputTags is true, then the tags
-            // from the input will already be in place. Otherwise, fill in the tags array
-            // with the 1-best result from this forward-backwards run.
-            if (ParserDriver.parseFromInputTags == false) {
-                task.fomTags = new int[sentLen];
-                // track backpointers to extract best POS sequence
-                // start at the end of the sentence with the nullSymbol and trace backwards
-                int bestPOS = nullSymbol;
-                for (int i = sentLen - 1; i >= 0; i--) {
-                    bestPOS = backPointer[i + 2][bestPOS];
-                    task.fomTags[i] = bestPOS;
-                    // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
-                }
-            }
+            // for (int i = 0; i < fbSize; i++) {
+            // final int word = fbIndexToWordIndex(i, task.tokens);
+            // // final float ngramFwd = ngramScore[i];
+            // // final float ngramBkw = ngramScore[fbSize - 1] - ngramScore[i];
+            // for (int nt = 0; nt < grammar.numNonTerms(); nt++) {
+            // // outsideLeft[i][nt] = ngramFwd + leftBoundaryLogProb[word][nt];
+            // // outsideRight[i][nt] = ngramBkw + rightBoundaryLogProb[word][nt];
+            // outsideLeft[i][nt] = leftBoundaryLogProb[word][nt];
+            // outsideRight[i][nt] = rightBoundaryLogProb[word][nt];
+            // //System.out.println("LB: outLeft[" + i + "][" + grammar.mapNonterminal(nt) + "] = leftBound["
+            // // + grammar.mapLexicalEntry(word) + "][" + grammar.mapNonterminal(nt) + "]");
+            // //System.out.println("LB: outRite[" + i + "][" + grammar.mapNonterminal(nt) + "] = riteBound["
+            // // + grammar.mapLexicalEntry(word) + "][" + grammar.mapNonterminal(nt) + "]");
+            // }
+            // }
         }
     }
 }
