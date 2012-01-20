@@ -116,6 +116,8 @@ public class Grammar implements Serializable {
 
     public final static String nullSymbolStr = "<null>";
     public static Production nullProduction;
+    // public static float UNSEEN_LEX_PROB = GlobalConfigProperties.singleton().getFloatProperty("unseenLexProb");
+    public static float UNSEEN_LEX_PROB = -9999;
 
     public int nullSymbol = -1;
     public int nullWord = -1;
@@ -895,7 +897,7 @@ public class Grammar implements Serializable {
      */
     public float lexicalLogProbability(final int parent, final int child) {
         final int i = Arrays.binarySearch(lexicalParents(child), (short) parent);
-        return (i < 0) ? Float.NEGATIVE_INFINITY : lexicalLogProbabilities[child][i];
+        return (i < 0) ? UNSEEN_LEX_PROB : lexicalLogProbabilities[child][i];
         // return lexicalLogProbabilityMaps[child].get((short) parent);
     }
 
@@ -910,7 +912,7 @@ public class Grammar implements Serializable {
         if (nonTermSet.hasSymbol(parent) && lexSet.hasSymbol(child)) {
             return lexicalLogProbability(nonTermSet.getIndex(parent), lexSet.getIndex(child));
         }
-        return Float.NEGATIVE_INFINITY;
+        return UNSEEN_LEX_PROB;
     }
 
     /**
