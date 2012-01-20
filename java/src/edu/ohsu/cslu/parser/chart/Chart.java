@@ -137,18 +137,18 @@ public abstract class Chart {
         return null;
     }
 
-    public String getStats() {
-        int con = 0, add = 0;
-
-        for (int start = 0; start < size(); start++) {
-            for (int end = start + 1; end < size() + 1; end++) {
-                con += getCell(start, end).numEdgesConsidered;
-                add += getCell(start, end).numEdgesAdded;
-            }
-        }
-
-        return "chartEdges=" + add + " processedEdges=" + con;
-    }
+    // public String getStats() {
+    // int con = 0, add = 0;
+    //
+    // for (int start = 0; start < size(); start++) {
+    // for (int end = start + 1; end < size() + 1; end++) {
+    // con += getCell(start, end).numEdgesConsidered;
+    // add += getCell(start, end).numEdgesAdded;
+    // }
+    // }
+    //
+    // return "chartEdges=" + add + " processedEdges=" + con;
+    // }
 
     public static abstract class ChartCell {
 
