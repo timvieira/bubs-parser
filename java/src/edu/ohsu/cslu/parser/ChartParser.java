@@ -155,7 +155,6 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
     @Override
     public String getStats() {
-        // return chart.getStats();
-        return "";
+        return chart.getStats();
     }
 }

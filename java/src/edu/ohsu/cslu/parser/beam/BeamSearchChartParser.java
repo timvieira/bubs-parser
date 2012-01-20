@@ -293,7 +293,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     @Override
     public String getStats() {
-        // return super.getStats() + " numReparses=" + numReparses;
-        return " numReparses=" + numReparses;
+        return super.getStats() + " numReparses=" + numReparses;
     }
 }
