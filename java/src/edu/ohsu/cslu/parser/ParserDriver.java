@@ -183,9 +183,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
 
-    @Option(name = "-help-rp", hidden = true, usage = "List possible research parsers")
-    public boolean listResearchParsers = false;
+    @Option(name = "-help-long", usage = "List all research parsers and options")
+    public boolean longHelp = false;
 
+    // corpus stats
     private long parseStartTime;
     private int sentencesParsed = 0, wordsParsed = 0, failedParses = 0;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
@@ -225,11 +226,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     // run once at initialization regardless of number of threads
     public void setup() throws Exception {
 
-        if (this.listResearchParsers) {
-            BaseLogger.singleton().info("Possible values for -rp PARSER:");
+        if (this.longHelp) {
+
+            BaseLogger.singleton().info("\nPossible values for -rp PARSER:");
             for (final ResearchParserType type : Parser.ResearchParserType.values()) {
                 BaseLogger.singleton().info("\t" + type.toString());
             }
+            // NB: Is there a way to print the entire properties file, comments and all?
+            BaseLogger.singleton().info(
+                    "\nDefault options using -O <key>=<value>:\n\t"
+                            + GlobalConfigProperties.singleton().toString().replaceAll("\n", "\n\t"));
             System.exit(0);
         } else if (grammarFile == null && modelFile == null) {
             throw new IllegalArgumentException("-g GRAMMAR or -m MODEL is required");
