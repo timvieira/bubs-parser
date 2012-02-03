@@ -19,7 +19,6 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 import edu.ohsu.cslu.perceptron.LogisticRegressor;
@@ -41,12 +40,7 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
 
     @Override
     public FigureOfMerit createFOM() {
-        switch (type) {
-        case Discriminative:
-            return new DiscriminativeFOMSelector();
-        default:
-            return super.createFOM();
-        }
+        return new DiscriminativeFOMSelector();
     }
 
     public void readModel(final BufferedReader inStream) throws IOException {

@@ -74,6 +74,10 @@ public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, Ce
             BaseLogger.singleton().info("ERROR: BSCPTrainFOMConfidence requires trees as input");
             System.exit(1);
         }
+        if (parseTask.inputTree.isBinaryTree() == false) {
+            BaseLogger.singleton().info("ERROR: BSCPTrainFOMConfidence requires input trees to be binarized");
+            System.exit(1);
+        }
 
         final int n = parseTask.sentenceLength();
         final ArrayList<NaryTree<String>> leaves = new ArrayList<NaryTree<String>>(n);

@@ -62,9 +62,6 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
         addLexicalProductions(parseTask.tokens);
         fomModel.initSentence(parseTask, chart);
 
-        // for (final ChartEdge lexEdge : edgesToExpand) {
-        // expandFrontier(lexEdge, chart.getCell(lexEdge.start(), lexEdge.end()));
-        // }
         for (int i = 0; i < parseTask.sentenceLength(); i++) {
             cell = chart.getCell(i, i + 1);
             for (final int nt : cell.getPosNTs()) {
@@ -77,7 +74,9 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
         while (!agenda.isEmpty() && !doneParsing) {
             edge = agenda.poll(); // get and remove top agenda edge
             nAgendaPop += 1;
-            // System.out.println("AgendaPop: " + edge);
+            if (collectDetailedStatistics) {
+                BaseLogger.singleton().finer("Popping: " + edge.toString());
+            }
 
             cell = chart.getCell(edge.start(), edge.end());
             final int nt = edge.prod.parent;
@@ -115,12 +114,17 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
     }
 
     protected void addEdgeToFrontier(final Production p, final int start, final int mid, final int end) {
-        // System.out.println("AgendaPush: " + edge);
+        ChartEdge edge;
         nAgendaPush += 1;
         if (mid < 0) {
-            agenda.add(chart.new ChartEdge(p, chart.getCell(start, end)));
+            edge = chart.new ChartEdge(p, chart.getCell(start, end));
         } else {
-            agenda.add(chart.new ChartEdge(p, chart.getCell(start, mid), chart.getCell(mid, end)));
+            edge = chart.new ChartEdge(p, chart.getCell(start, mid), chart.getCell(mid, end));
+        }
+        agenda.add(edge);
+
+        if (collectDetailedStatistics) {
+            BaseLogger.singleton().finer("Pushing: " + edge.toString());
         }
     }
 
@@ -143,12 +147,9 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
 
     protected void expandFrontier(final int nt, final int start, final int end) {
         HashSetChartCell rightCell, leftCell;
-        final HashSetChartCell parCell;
         int mid;
-        final float edgeInside;
 
-        // unary edges are always possible in any cell, although we don't allow unary chains
-        // NATE: update: unary chains should be fine. They will just compete on the agenda
+        // unary edges are always possible in any cell. Unary chains can exist. They will just compete on the agenda
         for (final Production p : grammar.getUnaryProductionsWithChild(nt)) {
             addEdgeToFrontier(p, start, -1, end);
         }
@@ -192,6 +193,6 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
 
     @Override
     public float getOutside(final int start, final int end, final int nt) {
-        return chart.getInside(start, end, nt);
+        return chart.getOutside(start, end, nt);
     }
 }

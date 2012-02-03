@@ -35,7 +35,7 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.GoldChart;
 import edu.ohsu.cslu.util.Strings;
 
-public class WeightedFeatures extends FigureOfMerit {
+public class WeightedFeatures extends FigureOfMeritModel {
 
     private static final long serialVersionUID = 1L;
 
@@ -44,6 +44,7 @@ public class WeightedFeatures extends FigureOfMerit {
     private GoldChart goldChart;
 
     public WeightedFeatures(final Grammar grammar) {
+        super(FigureOfMeritModel.FOMType.WeightedFeatures);
         this.grammar = grammar;
         this.numFeatures = 4;
     }
@@ -63,7 +64,6 @@ public class WeightedFeatures extends FigureOfMerit {
         return feats;
     }
 
-    @Override
     public void train(final BufferedReader inStream) throws IOException {
         String line;
         final ParserDriver opts = new ParserDriver();
@@ -143,6 +143,12 @@ public class WeightedFeatures extends FigureOfMerit {
                 }
             }
         }
+    }
+
+    @Override
+    public FigureOfMerit createFOM() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

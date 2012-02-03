@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 import cltool4j.BaseLogger;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
@@ -35,7 +36,6 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.TreeTools;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 /**
  * Implements Caraballo and Charniak's (1998) boundary in-out figure-of-merit with ambiguous POS tags by running the
@@ -54,7 +54,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     final short nullSymbol;
     final short[] NULL_LIST;
     final float[] NULL_PROBABILITIES;
-    final float UNSEEN_BOUNDARY_PROB = -200;
+    final float UNSEEN_BOUNDARY_SCORE;
 
     public BoundaryInOut(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
             throws IOException {
@@ -77,10 +77,11 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         posTransitionLogProb = new float[maxPOSIndex + 1][maxPOSIndex + 1];
 
         // Init values to log(0) = -Inf
+        UNSEEN_BOUNDARY_SCORE = GlobalConfigProperties.singleton().getFloatProperty("unseenBoundaryScore");
         for (int i = 0; i < maxPOSIndex + 1; i++) {
-            Arrays.fill(leftBoundaryLogProb[i], UNSEEN_BOUNDARY_PROB);
-            Arrays.fill(rightBoundaryLogProb[i], UNSEEN_BOUNDARY_PROB);
-            Arrays.fill(posTransitionLogProb[i], UNSEEN_BOUNDARY_PROB);
+            Arrays.fill(leftBoundaryLogProb[i], UNSEEN_BOUNDARY_SCORE);
+            Arrays.fill(rightBoundaryLogProb[i], UNSEEN_BOUNDARY_SCORE);
+            Arrays.fill(posTransitionLogProb[i], UNSEEN_BOUNDARY_SCORE);
         }
 
         if (modelStream != null) {
@@ -96,7 +97,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         case InsideWithFwdBkwd:
             return new InsideWithFwdBkwd();
         default:
-            return super.createFOM();
+            BaseLogger.singleton().info("ERROR: FOMType " + type + " not supported.");
+            System.exit(1);
+            return null;
         }
     }
 

@@ -112,7 +112,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
     @Override
     protected void initSentence(final ParseTask parseTask) {
         chart = new CellChart(parseTask, this);
-        numReparses = -1;
 
         final long startTimeMS = System.currentTimeMillis();
         fomModel.initSentence(parseTask, chart);
@@ -125,25 +124,11 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     @Override
     public BinaryTree<String> findBestParse(final ParseTask parseTask) {
+        numReparses = 0;
         initSentence(parseTask);
 
-        while (numReparses < opts.reparse && chart.hasCompleteParse(grammar.startSymbol) == false) {
-            numReparses++;
-            globalBestFOM = Float.NEGATIVE_INFINITY;
-
-            reparseFactor = (int) Math.pow(2, numReparses);
-            // Math.max to prevent overflow problems
-            beamWidth = Math.max(origBeamWidth * reparseFactor, origBeamWidth);
-            factoredBeamWidth = Math.max(origFactoredBeamWidth * reparseFactor, origFactoredBeamWidth);
-            globalBeamDelta = Math.max(origGlobalBeamDelta * reparseFactor, origGlobalBeamDelta);
-            localBeamDelta = Math.max(origLocalBeamDelta * reparseFactor, origLocalBeamDelta);
-
-            BaseLogger.singleton().finest(
-                    "INFO: reparseNum=" + (numReparses + 1) + " beamWidth=" + beamWidth + " globalThresh="
-                            + globalBeamDelta + " localThresh=" + localBeamDelta + " factBeamWidth="
-                            + factoredBeamWidth);
-
-            // cellSelector.reset();
+        while (numReparses <= opts.reparse && chart.hasCompleteParse(grammar.startSymbol) == false) {
+            updateBeamParams(parseTask);
             while (cellSelector.hasNext()) {
 
                 final short[] startAndEnd = cellSelector.next();
@@ -153,9 +138,33 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 parseTask.totalPops += cellPopped;
                 parseTask.totalConsidered += cellConsidered;
             }
+            numReparses++;
         }
+        numReparses--;
 
         return chart.extractBestParse(grammar.startSymbol);
+    }
+
+    protected void updateBeamParams(final ParseTask parseTask) {
+        globalBestFOM = Float.NEGATIVE_INFINITY;
+
+        reparseFactor = (int) Math.pow(2, numReparses);
+        // Math.max to prevent overflow problems
+        beamWidth = Math.max(origBeamWidth * reparseFactor, origBeamWidth);
+        factoredBeamWidth = Math.max(origFactoredBeamWidth * reparseFactor, origFactoredBeamWidth);
+        globalBeamDelta = Math.max(origGlobalBeamDelta * reparseFactor, origGlobalBeamDelta);
+        localBeamDelta = Math.max(origLocalBeamDelta * reparseFactor, origLocalBeamDelta);
+
+        // The cellSelector is initially reset when created (on the first pass) but
+        // we need to reset it when we're reparsing.
+        if (numReparses > 0) {
+            chart = new CellChart(parseTask, this);
+            cellSelector.reset();
+        }
+
+        BaseLogger.singleton().finer(
+                "INFO: reparseNum=" + numReparses + " beamWidth=" + beamWidth + " globalThresh=" + globalBeamDelta
+                        + " localThresh=" + localBeamDelta + " factBeamWidth=" + factoredBeamWidth);
     }
 
     @Override
