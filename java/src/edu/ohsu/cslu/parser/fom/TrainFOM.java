@@ -25,11 +25,11 @@ import java.io.OutputStreamWriter;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 
 public class TrainFOM extends BaseCommandlineTool {
 
-    @Option(name = "-fom", required = true, usage = "FOM to train.  Supports BoundaryPOS, BoundaryLex, Prior, Discriminative")
+    @Option(name = "-fom", required = true, usage = "FOM to train.  Supports BoundaryPOS, BoundaryLex, Prior, Discriminative, Ngram")
     private FOMType fomType = null;
 
     @Option(name = "-g", required = true, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
@@ -81,8 +81,8 @@ public class TrainFOM extends BaseCommandlineTool {
             BoundaryInOut.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
         } else if (fomType == FOMType.BoundaryLex) {
             final BoundaryLex model = new BoundaryLex(FOMType.BoundaryLex);
-            model.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder, pruneCount,
-                    lexCountFile, unkThresh, lexMapFile);
+            model.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, pruneCount, lexCountFile,
+                    unkThresh, lexMapFile);
         } else if (fomType == FOMType.Discriminative) {
             if (extractFeatures) {
                 DiscriminativeFOM.extractFeatures(inputStream, outputStream, grammarFile, featTemplate);
@@ -91,6 +91,10 @@ public class TrainFOM extends BaseCommandlineTool {
             }
         } else if (fomType == FOMType.Prior) {
             PriorFOM.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts);
+        } else if (fomType == FOMType.Ngram) {
+            final NGramOutside model = new NGramOutside();
+            model.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, pruneCount, lexCountFile,
+                    unkThresh);
         } else {
             throw new IllegalArgumentException("FOM type '" + fomType + "' not supported.");
         }

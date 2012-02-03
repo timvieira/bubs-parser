@@ -10,7 +10,7 @@ import java.util.zip.GZIPInputStream;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 
 /**

@@ -25,7 +25,7 @@ import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;

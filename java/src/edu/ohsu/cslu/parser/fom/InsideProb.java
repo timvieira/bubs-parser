@@ -23,17 +23,30 @@ package edu.ohsu.cslu.parser.fom;
  * 
  * @author Nathan Bodenstab
  */
-public class InsideProb extends FigureOfMerit {
 
-    private static final long serialVersionUID = 1L;
+public final class InsideProb extends FigureOfMeritModel {
 
-    @Override
-    public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
-        return insideProbability;
+    public InsideProb() {
+        super(FOMType.Inside);
     }
 
     @Override
-    public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
-        return insideProbability;
+    public FigureOfMerit createFOM() {
+        return new InsideProbSelector();
+    }
+
+    public class InsideProbSelector extends FigureOfMerit {
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
+            return normInside(start, end, insideProbability);
+        }
+
+        @Override
+        public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
+            return insideProbability;
+        }
     }
 }

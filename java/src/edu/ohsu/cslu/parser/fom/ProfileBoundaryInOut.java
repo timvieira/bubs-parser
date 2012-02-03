@@ -34,7 +34,7 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**

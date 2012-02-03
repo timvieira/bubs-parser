@@ -35,8 +35,8 @@ import cltool4j.GlobalConfigProperties;
 import cltool4j.args4j.Argument;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
 
 /**
  * Command-line tool to convert textual grammar formats to Java serialized object format.

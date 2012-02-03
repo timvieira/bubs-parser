@@ -18,9 +18,17 @@
  */
 package edu.ohsu.cslu.parser.fom;
 
-import cltool4j.BaseLogger;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Serializable;
+
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
+import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.fom.NGramOutside.NGramSelector;
 
 /**
  * Represents a figure of merit model and creates instances using that model (see {@link FigureOfMerit} ).
@@ -32,9 +40,17 @@ import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
  * instances returned are not expected to be thread-safe. To parse multiple sentences simultaneously, the user should
  * obtain a {@link FigureOfMerit} instance for each thread, using {@link #createFOM(Grammar)}.
  */
-public class FigureOfMeritModel {
+public abstract class FigureOfMeritModel {
 
     protected FOMType type;
+    public NGramOutside ngramOutsideModel = null;
+    float normInsideTune = GlobalConfigProperties.singleton().getFloatProperty("normInsideTune");
+
+    // float ngramOutsideTune = GlobalConfigProperties.singleton().getFloatProperty("ngramOutsideTune");
+
+    static public enum FOMType {
+        Inside, BoundaryPOS, BoundaryLex, Prior, InsideWithFwdBkwd, WeightedFeatures, Discriminative, Ngram
+    }
 
     public FigureOfMeritModel(final FOMType type) {
         this.type = type;
@@ -43,18 +59,65 @@ public class FigureOfMeritModel {
     /**
      * @return a new {@link FigureOfMerit} instance based on this model.
      */
-    public FigureOfMerit createFOM() {
-        switch (type) {
-        case Inside:
-            return new InsideProb();
-        case NormalizedInside:
-            return new NormalizedInsideProb();
-            // case WeightedFeatures:
-            // return new WeightedFeatures(grammar);
-        default:
-            BaseLogger.singleton().info("ERROR: FOMType " + type + " not supported.");
-            System.exit(1);
-            return null;
+    public abstract FigureOfMerit createFOM();
+
+    public abstract class FigureOfMerit implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+        protected NGramSelector ngramOutsideSelector = null;
+
+        public FigureOfMerit() {
+            if (ngramOutsideModel != null) {
+                ngramOutsideSelector = ngramOutsideModel.new NGramSelector();
+            }
         }
+
+        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
+            throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
+        }
+
+        public float calcLexicalFOM(final int start, final int end, final short parent, final float insideProbability) {
+            throw new UnsupportedOperationException("Not implemented in " + getClass().getName());
+        }
+
+        public void initSentence(final ParseTask parseTask, final Chart chart) {
+            if (ngramOutsideModel != null) {
+                ngramOutsideSelector.initSentence(parseTask, chart);
+            }
+        }
+
+        protected float normInside(final int start, final int end, final float insideProb) {
+            if (ngramOutsideModel != null) {
+                // anything other than ngramOutsideTune == 1 is bad
+                // return insideProb + ngramOutsideTune * ngramOutsideSelector.outside(start, end);
+                return insideProb + ngramOutsideSelector.outside(start, end);
+            }
+
+            return insideProb + (end - start) * normInsideTune;
+
+        }
+
+        /**
+         * @throws IOException if input from the {@link Reader} fails
+         */
+        public void train(final BufferedReader reader) throws IOException {
+            throw new UnsupportedOperationException("Not implemented.");
+        }
+
+        /**
+         * @throws IOException if input from the {@link Reader} fails
+         */
+        public void readModel(final BufferedReader reader) throws IOException {
+            // NOTE: some models have nothing to be read
+            // throw new Exception("Not implemented.");
+        }
+
+        /**
+         * @throws IOException if input from the {@link Reader} fails
+         */
+        public void writeModel(final BufferedWriter reader) throws IOException {
+            throw new UnsupportedOperationException("Not implemented.");
+        }
+
     }
 }

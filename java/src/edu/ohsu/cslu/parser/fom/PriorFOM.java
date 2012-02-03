@@ -10,7 +10,6 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 
 public class PriorFOM extends FigureOfMeritModel {
 
@@ -26,31 +25,7 @@ public class PriorFOM extends FigureOfMeritModel {
         priorProb = new float[numNT];
         Arrays.fill(priorProb, Float.NEGATIVE_INFINITY); // Init values to log(0) = -Inf
 
-        // if (modelStream != null) {
         readModel(modelStream);
-        // }
-    }
-
-    public class PriorFOMSelector extends FigureOfMerit {
-
-        private static final long serialVersionUID = 1L;
-
-        public PriorFOMSelector() {
-        }
-
-        @Override
-        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
-            // System.out.println(grammar.nonTermSet.getSymbol(parent) + "[" + start + "," + end + "] = "
-            // + insideProbability + " " + priorProb[parent]);
-            // return insideProbability / (end - start + 1) + priorProb[parent];
-            return insideProbability + priorProb[parent];
-        }
-
-        @Override
-        public final float calcLexicalFOM(final int start, final int end, final short parent,
-                final float insideProbability) {
-            return insideProbability + priorProb[parent];
-        }
     }
 
     @Override
@@ -127,5 +102,21 @@ public class PriorFOM extends FigureOfMeritModel {
         }
 
         outStream.close();
+    }
+
+    public class PriorFOMSelector extends FigureOfMerit {
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
+            return normInside(start, end, insideProbability) + priorProb[parent];
+        }
+
+        @Override
+        public final float calcLexicalFOM(final int start, final int end, final short parent,
+                final float insideProbability) {
+            return insideProbability + priorProb[parent];
+        }
     }
 }

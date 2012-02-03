@@ -82,8 +82,10 @@ import edu.ohsu.cslu.parser.ecp.ECPInsideOutside;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.BoundaryLex;
 import edu.ohsu.cslu.parser.fom.DiscriminativeFOM;
-import edu.ohsu.cslu.parser.fom.FigureOfMerit.FOMType;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
+import edu.ohsu.cslu.parser.fom.InsideProb;
+import edu.ohsu.cslu.parser.fom.NGramOutside;
 import edu.ohsu.cslu.parser.fom.PriorFOM;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
@@ -117,7 +119,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     // Global vars to create parser
     public CellSelectorModel cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
-    public FigureOfMeritModel fomModel = new FigureOfMeritModel(FOMType.Inside);
+    public FigureOfMeritModel fomModel = null;// new InsideProb();
     Grammar grammar, coarseGrammar;
     static String commandLineArgStr = "";
 
@@ -159,7 +161,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-decode", metaVar = "TYPE", hidden = true, usage = "Method to extract best tree from forest")
     public DecodeMethod decodeMethod = DecodeMethod.ViterbiMax;
 
-    @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse N times")
+    @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse.  Repeat N times")
     public int reparse = 0;
 
     @Option(name = "-parseFromInputTags", hidden = true, usage = "Parse from input POS tags given by tagged or tree input.  Replaces 1-best tags from BoundaryInOut FOM if also specified.")
@@ -176,6 +178,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     @Option(name = "-beamModel", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
+
+    @Option(name = "-ngramOutsideModel", metaVar = "FILE", usage = "N-gram model for inside normalization.  Only needed for agenda parsers")
+    private String ngramOutsideModelFileName = null;
 
     @Option(name = "-ccModel", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
@@ -269,11 +274,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType, packingFunctionType);
 
             if (fomTypeOrModel.equals("Inside")) {
-                fomModel = new FigureOfMeritModel(FOMType.Inside);
-            } else if (fomTypeOrModel.equals("NormalizedInside")) {
-                fomModel = new FigureOfMeritModel(FOMType.NormalizedInside);
+                fomModel = new InsideProb();
             } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
-                fomModel = new FigureOfMeritModel(FOMType.InsideWithFwdBkwd);
+                // fomModel = new BoundaryInOut(FOMType.InsideWithFwdBkwd);
+                throw new IllegalArgumentException("FOM InsideWithFwdBkwd no longer supported");
             } else if (new File(fomTypeOrModel).exists()) {
                 // read first line and extract model type
                 final BufferedReader tmp = fileAsBufferedReader(fomTypeOrModel);
@@ -322,6 +326,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
             if (beamModelFileName != null) {
                 cellSelectorModel = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
+            }
+
+            if (ngramOutsideModelFileName != null) {
+                fomModel.ngramOutsideModel = new NGramOutside(grammar, fileAsBufferedReader(ngramOutsideModelFileName));
             }
         }
 
