@@ -182,6 +182,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-ngramOutsideModel", metaVar = "FILE", usage = "N-gram model for inside normalization.  Only needed for agenda parsers")
     private String ngramOutsideModelFileName = null;
 
+    @Option(name = "-geometricInsideNorm", hidden = true, usage = "Use the geometric mean of the Inside score. Only needed for agenda parsers")
+    public static boolean geometricInsideNorm = false;
+
     @Option(name = "-ccModel", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
 

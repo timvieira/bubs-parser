@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 import cltool4j.BaseLogger;
-import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
@@ -54,7 +53,6 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     final short nullSymbol;
     final short[] NULL_LIST;
     final float[] NULL_PROBABILITIES;
-    final float UNSEEN_BOUNDARY_SCORE;
 
     public BoundaryInOut(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
             throws IOException {
@@ -76,12 +74,12 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         rightBoundaryLogProb = new float[maxPOSIndex + 1][numNT];
         posTransitionLogProb = new float[maxPOSIndex + 1][maxPOSIndex + 1];
 
-        // Init values to log(0) = -Inf
-        UNSEEN_BOUNDARY_SCORE = GlobalConfigProperties.singleton().getFloatProperty("unseenBoundaryScore");
+        // Init values to log(0) = -Inf. All entries in model are explicitly smoothed
+        // so no score should be left with -Inf
         for (int i = 0; i < maxPOSIndex + 1; i++) {
-            Arrays.fill(leftBoundaryLogProb[i], UNSEEN_BOUNDARY_SCORE);
-            Arrays.fill(rightBoundaryLogProb[i], UNSEEN_BOUNDARY_SCORE);
-            Arrays.fill(posTransitionLogProb[i], UNSEEN_BOUNDARY_SCORE);
+            Arrays.fill(leftBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
+            Arrays.fill(rightBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
+            Arrays.fill(posTransitionLogProb[i], Float.NEGATIVE_INFINITY);
         }
 
         if (modelStream != null) {
