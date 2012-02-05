@@ -141,6 +141,7 @@
             <param name="root-class" value="edu.ohsu.cslu.parser.fom.TrainFOM" />
             <param name="tool-name" value="train-fom" />
             <param name="package-gpl-libs" value="true" />
+        	<param name="default-options" value="java/tools/parser-defaults.properties" />
         </antcall>
     </target>
 

@@ -27,6 +27,7 @@ import java.io.Serializable;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.fom.NGramOutside.NGramSelector;
 
@@ -91,10 +92,14 @@ public abstract class FigureOfMeritModel {
                 // anything other than ngramOutsideTune == 1 is bad
                 // return insideProb + ngramOutsideTune * ngramOutsideSelector.outside(start, end);
                 return insideProb + ngramOutsideSelector.outside(start, end);
+            } else if (ParserDriver.geometricInsideNorm) {
+                // Geometric mean normalization (used by C&C)
+                // non-log: sqrt(span, insideProb)
+                return insideProb / (end - start);
             }
-
+            // Gives larger spread of constituent scores over all span lengths (compared to geometric mean)
+            // non-log: insideProb * e^(span*X)
             return insideProb + (end - start) * normInsideTune;
-
         }
 
         /**

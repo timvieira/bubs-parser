@@ -44,11 +44,10 @@ import edu.ohsu.cslu.parser.chart.Chart;
 public final class BoundaryLex extends FigureOfMeritModel {
 
     private Grammar grammar;
-    // private float unseenBoundaryScore;
     private int lexToClassMap[] = null;
     private HashMap<String, LinkedList<Integer>> classToLexMap = null;
     private SymbolSet<String> wordClasses;
-    private Tokenizer fomTokenizer = null; // old way to map lex
+    // private Tokenizer fomTokenizer = null; // old way to map lex
 
     // Model params learned from training data
     private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][];
@@ -67,8 +66,6 @@ public final class BoundaryLex extends FigureOfMeritModel {
         unkLBLogProb = new float[numLex];
         unkRBLogProb = new float[numNT];
 
-        // fomSmoothLexTune = GlobalConfigProperties.singleton().getFloatProperty("fomSmoothLexTune");
-        // unseenBoundaryScore = GlobalConfigProperties.singleton().getFloatProperty("unseenBoundaryScore");
         for (int i = 0; i < numLex; i++) {
             Arrays.fill(leftBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
             Arrays.fill(rightBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
@@ -120,15 +117,6 @@ public final class BoundaryLex extends FigureOfMeritModel {
                         classToLexMap.put(cls, new LinkedList<Integer>());
                     }
                     classToLexMap.get(cls).add(grammar.mapLexicalEntry(tokens[1]));
-                    // if (lexMap == null) {
-                    // lexMap = new int[grammar.lexSet.size()];
-                    // Arrays.fill(lexMap, -1);
-                    // wordClasses = new SymbolSet<String>();
-                    // lexMap[grammar.nullWord] = wordClasses.addSymbol(Grammar.nullSymbolStr);
-                    // }
-                    // final int word = grammar.mapLexicalEntry(tokens[1]);
-                    // final int wordClass = wordClasses.addSymbol(tokens[3]);
-                    // lexMap[word] = wordClass;
                 } else if (tokens[0].equals("UNK")) {
                     if (tokens[1].equals("RB")) {
                         final int ntIndex = grammar.mapNonterminal(tokens[2]);
@@ -136,10 +124,14 @@ public final class BoundaryLex extends FigureOfMeritModel {
                     } else { // LB
                         // int classIndex = wordClasses.getIndex(tokens[2]);
                         final float score = Float.parseFloat(tokens[3]);
-                        for (final int lexIndex : classToLexMap.get(tokens[2])) {
-                            // map prob to all lex entries that are mapped to this class for faster retrieval during
-                            // parsing
-                            unkLBLogProb[lexIndex] = score;
+                        if (classToLexMap != null) {
+                            for (final int lexIndex : classToLexMap.get(tokens[2])) {
+                                // map prob to all lex entries that are mapped to this class for faster retrieval during
+                                // parsing
+                                unkLBLogProb[lexIndex] = score;
+                            }
+                        } else {
+                            unkLBLogProb[grammar.mapLexicalEntry(tokens[2])] = score;
                         }
                     }
                 } else {
@@ -248,13 +240,15 @@ public final class BoundaryLex extends FigureOfMeritModel {
             final int unkThresh, final String lexMapFile) throws Exception {
         String line;
         ParseTree tree;
+        HashMap<String, Integer> lexCounts = null;
         final SimpleCounterSet<String> leftBoundaryCount = new SimpleCounterSet<String>();
         final SimpleCounterSet<String> rightBoundaryCount = new SimpleCounterSet<String>();
 
         grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
 
         if (lexCountFile != null) {
-            fomTokenizer = new Tokenizer(lexCountFile, unkThresh);
+            lexCounts = Tokenizer.readLexCountFile(lexCountFile);
+            wordClasses = grammar.lexSet;
         } else if (lexMapFile != null) {
             parseLexMapFile(lexMapFile, grammar.tokenizer, "0");
         } else {
@@ -267,17 +261,37 @@ public final class BoundaryLex extends FigureOfMeritModel {
                 TreeTools.binarizeTree(tree, grammar.isRightFactored(), grammar.horizontalMarkov,
                         grammar.verticalMarkov, false, grammar.grammarFormat);
             }
-            // tree.linkLeavesLeftRight();
-            for (final ParseTree node : tree.preOrderTraversal()) {
 
+            for (final ParseTree node : tree.preOrderTraversal()) {
                 if (node.isNonTerminal() == true) {
                     if (grammar.nonTermSet.contains(node.contents) == false) {
                         throw new IOException("Nonterminal '" + node.contents
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
+                    final ParseTree lbNode = node.leftMostLeaf().leftNeighbor;
+                    final ParseTree rbNode = node.rightMostLeaf().rightNeighbor;
 
-                    leftBoundaryCount.increment(node.contents, lexStrToClusterStr(node.leftMostLeaf().leftNeighbor));
-                    rightBoundaryCount.increment(lexStrToClusterStr(node.rightMostLeaf().rightNeighbor), node.contents);
+                    leftBoundaryCount.increment(node.contents, lexStrToClusterStr(lbNode));
+                    rightBoundaryCount.increment(lexStrToClusterStr(rbNode), node.contents);
+
+                    // extra UNK counts when not clustering
+                    if (lexCounts != null) {
+                        if (lbNode != null) {
+                            final String word = lbNode.contents;
+                            if (!lexCounts.containsKey(word) || lexCounts.get(word) <= unkThresh) {
+                                final String unkWord = grammar.tokenizer.wordToUnkString(word,
+                                        lbNode.leftNeighbor == null);
+                                leftBoundaryCount.increment(node.contents, unkWord);
+                            }
+                        }
+                        if (rbNode != null) {
+                            final String word = rbNode.contents;
+                            if (!lexCounts.containsKey(word) || lexCounts.get(word) <= unkThresh) {
+                                final String unkWord = grammar.tokenizer.wordToUnkString(word, false);
+                                rightBoundaryCount.increment(unkWord, node.contents);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -336,7 +350,12 @@ public final class BoundaryLex extends FigureOfMeritModel {
         // write the unobserved transition probs once for each denominator
         // to save space in the model files
         for (final String classStr : wordClasses) {
-            final float unkProb = (float) Math.log(leftBoundaryCount.getProb("DOES-NOT-EXIST", classStr));
+            float unkProb = (float) Math.log(leftBoundaryCount.getProb("DOES-NOT-EXIST", classStr));
+            if (unkProb == Float.NEGATIVE_INFINITY) {
+                // word never observed at boundary
+                unkProb = (float) Math.log(leftBoundaryCount.getProb("DOES-NOT-EXIST",
+                        grammar.tokenizer.wordToUnkString(classStr, false)));
+            }
             outStream.write("UNK LB " + classStr + " " + unkProb + "\n");
         }
         for (final int ntIndex : grammar.phraseSet) {
@@ -348,39 +367,26 @@ public final class BoundaryLex extends FigureOfMeritModel {
         outStream.close();
     }
 
-    // private String mapLex(final ParseTree leaf) {
-    // if (leaf == null) {
-    // return Grammar.nullSymbolStr;
-    // }
-    // // Not computing if sentence initial because word in the model are isolated
-    // // and never observed in context
-    // // final boolean sentenceInitial = (leaf.leftNeighbor == null);
-    // //return mapLex(leaf.contents);
-    // if (fomTokenizer != null) {
-    // return grammar.mapLexicalEntry(mapLexToIndex(leaf.contents));
-    // }
-    // return wordClasses.getSymbol(mapLexToIndex(leaf.contents));
-    // }
-
     private String lexStrToClusterStr(final ParseTree leaf) {
         if (leaf == null) {
             return Grammar.nullSymbolStr;
         }
         final String word = leaf.contents;
 
-        if (fomTokenizer != null) {
-            // Pretty much the identity mapping.
-            // Use the lexical set from the FOM model (potentially more restrictive) to
-            // choose if words are lexicalized or converted to UNK-xxx. But after this choice
-            // is made, convert words to an entry in the grammar lexicon (which may or may not
-            // be different).
-            if (fomTokenizer.hasWord(word)) {
-                // return grammar.tokenizer.wordToLexSetIndex(word, false);
-                return grammar.tokenizer.wordToLexSetEntry(word, false);
-            }
-            // return grammar.mapLexicalEntry(grammar.tokenizer.wordToUnkEntry(word, false));
-            return grammar.tokenizer.wordToUnkEntry(word, false);
-        } else if (lexToClassMap != null) {
+        // if (fomTokenizer != null) {
+        // // Pretty much the identity mapping.
+        // // Use the lexical set from the FOM model (potentially more restrictive) to
+        // // choose if words are lexicalized or converted to UNK-xxx. But after this choice
+        // // is made, convert words to an entry in the grammar lexicon (which may or may not
+        // // be different).
+        // if (fomTokenizer.hasWord(word)) {
+        // // return grammar.tokenizer.wordToLexSetIndex(word, false);
+        // return grammar.tokenizer.wordToLexSetEntry(word, false);
+        // }
+        // // return grammar.mapLexicalEntry(grammar.tokenizer.wordToUnkEntry(word, false));
+        // return grammar.tokenizer.wordToUnkEntry(word, false);
+        // } else
+        if (lexToClassMap != null) {
             final int wordIndex = grammar.tokenizer.wordToLexSetIndex(word, false);
             final int clusterIndex = lexToClassMap[wordIndex];
             return wordClasses.getSymbol(clusterIndex);
@@ -389,13 +395,6 @@ public final class BoundaryLex extends FigureOfMeritModel {
         // no mapping -- just use lexical entry directly
         return word;
     }
-
-    // private String mapLex(final String word) {
-    // if (fomTokenizer != null) {
-    // return grammar.mapLexicalEntry(mapLexToIndex(word));
-    // }
-    // return wordClasses.getSymbol(mapLexToIndex(word));
-    // }
 
     public class BoundaryLexSelector extends FigureOfMerit {
 

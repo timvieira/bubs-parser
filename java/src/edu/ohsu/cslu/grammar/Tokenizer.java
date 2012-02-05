@@ -22,6 +22,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -42,28 +44,42 @@ public class Tokenizer implements Serializable {
 
     // Build tokenizer from lexical count file with entries per line: <count> <word>
     public Tokenizer(final String lexCountFile, final int unkThresh) throws NumberFormatException, IOException {
-        final SymbolSet<String> unkWords = new SymbolSet<String>();
         this.lexSet = new SymbolSet<String>();
         this.lexSet.addSymbol("UNK");
-        String line;
-        final BufferedReader f = new BufferedReader(new FileReader(lexCountFile));
-        while ((line = f.readLine()) != null) {
-            final String[] toks = line.split("[ \t]+");
-            if (toks.length == 2) {
-                final int count = Integer.parseInt(toks[0]);
-                if (count > unkThresh) {
-                    lexSet.addSymbol(toks[1]);
-                } else {
-                    unkWords.addSymbol(toks[1]);
-                }
+        final SymbolSet<String> unkWords = new SymbolSet<String>();
+
+        // must build complete lexSet before adding UNKs because
+        // it matches to the set of UNKs in the lexSet.
+        final HashMap<String, Integer> lexCounts = readLexCountFile(lexCountFile);
+        for (final Entry<String, Integer> entry : lexCounts.entrySet()) {
+            if (entry.getValue() > unkThresh) {
+                lexSet.addSymbol(entry.getKey());
             } else {
-                System.err.println("WARNING: Unexpected linke in lex count file: '" + line.trim() + "'");
+                unkWords.addSymbol(entry.getKey());
             }
         }
+
         for (final String word : unkWords) {
             lexSet.addSymbol(wordToUnkString(word, false));
             lexSet.addSymbol(wordToUnkString(word, true));
         }
+    }
+
+    public static HashMap<String, Integer> readLexCountFile(final String fileName) throws NumberFormatException,
+            IOException {
+        final HashMap<String, Integer> lexCounts = new HashMap<String, Integer>();
+        String line;
+        final BufferedReader f = new BufferedReader(new FileReader(fileName));
+        while ((line = f.readLine()) != null) {
+            final String[] toks = line.split("[ \t]+");
+            if (toks.length == 2) {
+                final int count = Integer.parseInt(toks[0]);
+                lexCounts.put(toks[1], count);
+            } else {
+                System.err.println("WARNING: Unexpected line in lex count file: '" + line.trim() + "'");
+            }
+        }
+        return lexCounts;
     }
 
     public boolean hasWord(final String word) {
