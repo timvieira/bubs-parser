@@ -53,6 +53,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     final short nullSymbol;
     final short[] NULL_LIST;
     final float[] NULL_PROBABILITIES;
+    final short[] grammarPhraseSet;
 
     public BoundaryInOut(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
             throws IOException {
@@ -84,6 +85,12 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
         if (modelStream != null) {
             readModel(modelStream);
+        }
+
+        this.grammarPhraseSet = new short[grammar.phraseSet.size()];
+        int i = 0;
+        for (final int nt : grammar.phraseSet) {
+            this.grammarPhraseSet[i++] = (short) nt;
         }
     }
 
@@ -507,7 +514,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                     final float[] posLeftBoundaryLogProb = leftBoundaryLogProb[pos];
 
                     // for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
-                    for (final int nonTerm : grammar.phraseSet) {
+                    for (final short nonTerm : grammarPhraseSet) {
                         final float score = posScore + posLeftBoundaryLogProb[nonTerm];
                         // System.out.println("LEFT: " + grammar.mapNonterminal(pos) + " => "
                         // + grammar.mapNonterminal(nonTerm) + " posScore=" + posScore + " leftBound="
@@ -559,7 +566,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 for (final short pos : posList) {
                     final float posScore = scores[pos];
                     final float[] posRightBoundaryLogProb = rightBoundaryLogProb[pos];
-                    for (final int nonTerm : grammar.phraseSet) {
+                    for (final short nonTerm : grammarPhraseSet) {
                         // for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
                         final float score = posScore + posRightBoundaryLogProb[nonTerm];
                         // System.out.println("RITE: " + grammar.mapNonterminal(pos) + " => "
