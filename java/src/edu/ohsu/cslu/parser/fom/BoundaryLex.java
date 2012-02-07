@@ -53,7 +53,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
     private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][];
     private final float unkLBLogProb[], unkRBLogProb[];
 
-    public BoundaryLex(final FOMType type, final Grammar grammar, final BufferedReader modelStream) throws IOException {
+    public BoundaryLex(final FOMType type, final Grammar grammar, final BufferedReader modelStream) throws Exception {
         super(type);
 
         this.grammar = grammar;
@@ -89,7 +89,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         return new BoundaryLexSelector();
     }
 
-    public void readModel(final BufferedReader inStream) throws IOException {
+    public void readModel(final BufferedReader inStream) throws Exception {
         String line;
 
         while ((line = inStream.readLine()) != null) {
@@ -97,45 +97,53 @@ public final class BoundaryLex extends FigureOfMeritModel {
             final String[] tokens = line.split("\\s+");
             if (tokens.length > 0 && !tokens[0].equals("#")) {
 
-                if (tokens[0].equals("LB")) {
-                    // LB: nt | lex prob
-                    for (final int lexIndex : getLexInClass(tokens[3])) {
-                        leftBoundaryLogProb[lexIndex][getNonTermIndex(tokens[1])] = Float.parseFloat(tokens[4]);
-                    }
-                } else if (tokens[0].equals("RB")) {
-                    // RB: lex | nt prob;
-                    for (final int lexIndex : getLexInClass(tokens[1])) {
-                        rightBoundaryLogProb[lexIndex][getNonTermIndex(tokens[3])] = Float.parseFloat(tokens[4]);
-                    }
-                } else if (tokens[0].equals("MAP")) {
-                    // If MAP is going to be used, all MAP lines must occur before LB or RB lines
-                    if (classToLexMap == null) {
-                        classToLexMap = new HashMap<String, LinkedList<Integer>>();
-                    }
-                    final String cls = tokens[3];
-                    if (!classToLexMap.containsKey(cls)) {
-                        classToLexMap.put(cls, new LinkedList<Integer>());
-                    }
-                    classToLexMap.get(cls).add(grammar.mapLexicalEntry(tokens[1]));
-                } else if (tokens[0].equals("UNK")) {
-                    if (tokens[1].equals("RB")) {
-                        final int ntIndex = grammar.mapNonterminal(tokens[2]);
-                        unkRBLogProb[ntIndex] = Float.parseFloat(tokens[3]);
-                    } else { // LB
-                        // int classIndex = wordClasses.getIndex(tokens[2]);
-                        final float score = Float.parseFloat(tokens[3]);
-                        if (classToLexMap != null) {
-                            for (final int lexIndex : classToLexMap.get(tokens[2])) {
-                                // map prob to all lex entries that are mapped to this class for faster retrieval during
-                                // parsing
-                                unkLBLogProb[lexIndex] = score;
-                            }
-                        } else {
-                            unkLBLogProb[grammar.mapLexicalEntry(tokens[2])] = score;
+                try {
+
+                    if (tokens[0].equals("LB")) {
+                        // LB: nt | lex prob
+                        for (final int lexIndex : getLexInClass(tokens[3])) {
+                            leftBoundaryLogProb[lexIndex][getNonTermIndex(tokens[1])] = Float.parseFloat(tokens[4]);
                         }
+                    } else if (tokens[0].equals("RB")) {
+                        // RB: lex | nt prob;
+                        for (final int lexIndex : getLexInClass(tokens[1])) {
+                            rightBoundaryLogProb[lexIndex][getNonTermIndex(tokens[3])] = Float.parseFloat(tokens[4]);
+                        }
+                    } else if (tokens[0].equals("MAP")) {
+                        // If MAP is going to be used, all MAP lines must occur before LB or RB lines
+                        if (classToLexMap == null) {
+                            classToLexMap = new HashMap<String, LinkedList<Integer>>();
+                        }
+                        final String cls = tokens[3];
+                        if (!classToLexMap.containsKey(cls)) {
+                            classToLexMap.put(cls, new LinkedList<Integer>());
+                        }
+                        classToLexMap.get(cls).add(grammar.mapLexicalEntry(tokens[1]));
+                    } else if (tokens[0].equals("UNK")) {
+                        if (tokens[1].equals("RB")) {
+                            final int ntIndex = grammar.mapNonterminal(tokens[2]);
+                            unkRBLogProb[ntIndex] = Float.parseFloat(tokens[3]);
+                        } else { // LB
+                            // int classIndex = wordClasses.getIndex(tokens[2]);
+                            final float score = Float.parseFloat(tokens[3]);
+                            if (classToLexMap != null) {
+                                for (final int lexIndex : classToLexMap.get(tokens[2])) {
+                                    // map prob to all lex entries that are mapped to this class for faster retrieval
+                                    // during
+                                    // parsing
+                                    unkLBLogProb[lexIndex] = score;
+                                }
+                            } else {
+                                unkLBLogProb[grammar.mapLexicalEntry(tokens[2])] = score;
+                            }
+                        }
+                    } else {
+                        System.err.println("WARNING: ignoring line in model file '" + line + "'");
                     }
-                } else {
-                    System.err.println("WARNING: ignoring line in model file '" + line + "'");
+
+                } catch (final Exception e) {
+                    System.err.println("ERROR parsing: " + line);
+                    throw e;
                 }
             }
         }
@@ -165,7 +173,11 @@ public final class BoundaryLex extends FigureOfMeritModel {
         if (classToLexMap == null) {
             // there are no classes. Lex => Lex
             final LinkedList<Integer> tmpList = new LinkedList<Integer>();
-            tmpList.add(grammar.mapLexicalEntry(classStr));
+            // tmpList.add(grammar.mapLexicalEntry(classStr));
+            // NB: When using the SM5 grammar, all lexical items in the training set
+            // were not included in the grammar. This caused the above line to return
+            // -1 and failed.
+            tmpList.add(grammar.tokenizer.wordToLexSetIndex(classStr, false));
             return tmpList;
         }
         return classToLexMap.get(classStr);
