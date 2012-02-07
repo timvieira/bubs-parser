@@ -41,7 +41,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         initChart(parseTask);
 
         insidePass();
-        if (BaseLogger.singleton().isLoggable(Level.FINEST)) {
+        if (BaseLogger.singleton().isLoggable(Level.ALL)) {
             BaseLogger.singleton().finest(chart.toString());
         }
         return extract();
