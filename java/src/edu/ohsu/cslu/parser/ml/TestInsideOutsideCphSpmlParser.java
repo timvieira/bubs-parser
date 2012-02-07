@@ -24,6 +24,7 @@ import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.InsideOutsideChart;
+import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.tests.JUnit;
 
 public class TestInsideOutsideCphSpmlParser {
@@ -115,6 +116,7 @@ public class TestInsideOutsideCphSpmlParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.Goodman;
+        opts.fomModel = new InsideProb();
         final String sentence = "The fish market stands last";
 
         // Max-recall decoding
@@ -140,6 +142,7 @@ public class TestInsideOutsideCphSpmlParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.SplitSum;
+        opts.fomModel = new InsideProb();
         final String sentence = "The fish market stands last";
 
         // Max-recall decoding
@@ -162,6 +165,7 @@ public class TestInsideOutsideCphSpmlParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.Goodman;
+        opts.fomModel = new InsideProb();
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
@@ -173,6 +177,7 @@ public class TestInsideOutsideCphSpmlParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.SplitSum;
+        opts.fomModel = new InsideProb();
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
@@ -183,6 +188,7 @@ public class TestInsideOutsideCphSpmlParser {
     public void testSentence2SplitSum() throws Exception {
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.SplitSum;
+        opts.fomModel = new InsideProb();
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
