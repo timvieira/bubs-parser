@@ -27,6 +27,7 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
+import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 
 public abstract class ChartParser<G extends Grammar, C extends Chart> extends Parser<G> {
 
@@ -44,7 +45,16 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         if (BaseLogger.singleton().isLoggable(Level.ALL)) {
             BaseLogger.singleton().finest(chart.toString());
         }
-        return extract();
+        return extract(parseTask.recoveryStrategy);
+    }
+
+    @Override
+    public ParseTask parseSentence(final String input, final RecoveryStrategy recoveryStrategy) {
+        final ParseTask task = super.parseSentence(input, recoveryStrategy);
+        if (task.binaryParse == null && recoveryStrategy != null) {
+            task.recoveryParse = chart.extractRecoveryParse(recoveryStrategy);
+        }
+        return task;
     }
 
     /**
@@ -125,7 +135,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         }
     }
 
-    protected final BinaryTree<String> extract() {
+    protected final BinaryTree<String> extract(final RecoveryStrategy recoveryStrategy) {
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
             final BinaryTree<String> parseTree = chart.extractBestParse(grammar.startSymbol);

@@ -20,6 +20,11 @@ package edu.ohsu.cslu.parser.chart;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
@@ -137,18 +142,101 @@ public abstract class Chart {
         return null;
     }
 
-    // public String getStats() {
-    // int con = 0, add = 0;
-    //
-    // for (int start = 0; start < size(); start++) {
-    // for (int end = start + 1; end < size() + 1; end++) {
-    // con += getCell(start, end).numEdgesConsidered;
-    // add += getCell(start, end).numEdgesAdded;
-    // }
-    // }
-    //
-    // return "chartEdges=" + add + " processedEdges=" + con;
-    // }
+    /**
+     * Extracts a 'recovery' tree when the parse has failed (i.e. the parse process failed to populate the top chart
+     * cell, so {@link #extractBestParse(int, int, int)} would return null). Parse failures should normally be quite
+     * rare, but can be caused by too-aggressive pruning or a too-sparse grammar.
+     * 
+     * @param recoveryStrategy Recovery strategy
+     * @throws Exception
+     */
+    public NaryTree<String> extractRecoveryParse(final RecoveryStrategy recoveryStrategy) {
+
+        // Hallucinate start symbol -> S at the top of the tree (S is the most-likely guess for an entry at the top of
+        // the tree)
+        final NaryTree<String> tree = new NaryTree<String>(grammar.startSymbolStr);
+        final NaryTree<String> s = tree.addChild("S");
+
+        // Add the most-probable parse fragments found lower in the tree as direct children of the S
+        s.addChildNodes(extractRecoveryParseNodes(0, size, recoveryStrategy));
+
+        return tree;
+    }
+
+    private List<NaryTree<String>> extractRecoveryParseNodes(final int start, final int end,
+            final RecoveryStrategy recoveryStrategy) {
+
+        final LinkedList<NaryTree<String>> list = new LinkedList<NaryTree<String>>();
+
+        // Start at the specified cell and find the most probable entry.
+        final ChartCell cell = getCell(start, end);
+        if (cell.getNumNTs() > 0) {
+            list.add(extractParseFragment(cell));
+        } else {
+
+            // The cell is empty; search down the chart looking for a populated cell.
+            switch (recoveryStrategy) {
+
+            case RightBiased:
+                // Favor the right-most populated candidate cell - this bias is specific to right-branching languages
+                for (int span = end - start - 1; span >= 1; span--) {
+                    for (int e = end; e >= start + span; e--) {
+
+                        final ChartCell c = getCell(e - span, e);
+                        if (c.getNumNTs() > 0) {
+
+                            if (c.start > start) {
+                                // Add left sibling(s)
+                                list.addAll(extractRecoveryParseNodes(start, c.start, recoveryStrategy));
+                            }
+
+                            // Add the subtree rooted at this cell
+                            list.add(extractParseFragment(c));
+
+                            if (c.end < end) {
+                                // Add right sibling(s)
+                                list.addAll(extractRecoveryParseNodes(c.end, end, recoveryStrategy));
+                            }
+                            return list;
+                        }
+                    }
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * @param cell
+     * @return unfactored tree rooted by the most-probable entry in the specified cell
+     */
+    private NaryTree<String> extractParseFragment(final ChartCell cell) {
+        // Find the most probable entry in the chart cell
+        // TODO Favor or disfavor unaries?
+        short maxNt = -1;
+        final float maxInside = Float.NEGATIVE_INFINITY;
+        for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
+            if (cell.getInside(nt) > maxInside) {
+                maxNt = nt;
+            }
+        }
+
+        // Extract and unfactor the tree fragment rooted by the most-probable entry
+        return extractBestParse(cell.start, cell.end, maxNt).unfactor(grammar.grammarFormat);
+    }
+
+    public String getStats() {
+        int con = 0, add = 0;
+
+        for (int start = 0; start < size(); start++) {
+            for (int end = start + 1; end < size() + 1; end++) {
+                con += getCell(start, end).numEdgesConsidered;
+                add += getCell(start, end).numEdgesAdded;
+            }
+        }
+
+        return "chartEdges=" + add + " processedEdges=" + con;
+    }
 
     public static abstract class ChartCell {
 
@@ -486,5 +574,13 @@ public abstract class Chart {
             return grammar.nullWord;
         }
         return parseTask.tokens[tokIndex];
+    }
+
+    public static enum RecoveryStrategy {
+        RightBiased("rb"); // For the moment, we only implement one recovery strategy.
+
+        private RecoveryStrategy(final String... aliases) {
+            EnumAliasMap.singleton().addAliases(this, aliases);
+        }
     }
 }

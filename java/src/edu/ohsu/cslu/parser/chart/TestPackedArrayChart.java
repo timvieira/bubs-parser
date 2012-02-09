@@ -59,7 +59,7 @@ public class TestPackedArrayChart {
 
     @Test
     public void testUnprunedFinalizeCell() throws Exception {
-        // chart = new PackedArrayChart(new int[] { 1, 2, 3, 4, 5 }, simpleGrammar2);
+
         chart = new PackedArrayChart(new ParseTask("The fish market stands last", Parser.InputFormat.Text,
                 simpleGrammar2), simpleGrammar2);
         final ChartCell cell_2_3 = chart.getCell(2, 3);
@@ -83,6 +83,7 @@ public class TestPackedArrayChart {
 
     @Test
     public void testPrunedFinalizeCell() throws Exception {
+
         chart = new PackedArrayChart(new ParseTask("The fish market stands last", Parser.InputFormat.Text,
                 simpleGrammar2), simpleGrammar2, 2, 2);
         final ChartCell cell_2_3 = chart.getCell(2, 3);

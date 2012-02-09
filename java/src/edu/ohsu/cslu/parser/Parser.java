@@ -25,6 +25,7 @@ import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
+import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
@@ -116,7 +117,20 @@ public abstract class Parser<G extends Grammar> {
      * @param input
      * @return
      */
-    public ParseTask parseSentence(String input) {
+    public ParseTask parseSentence(final String input) {
+        return parseSentence(input, null);
+    }
+
+    /**
+     * Wraps parse tree from findBestParse() with additional stats and cleans up output for consumption. Input can be a
+     * sentence string or a parse tree. The input format is set to {@link InputFormat#Tree} if the input string starts
+     * with '((', '(TOP', or '(ROOT'.
+     * 
+     * @param input
+     * @param recoveryStrategy Recovery strategy in case of parse failure
+     * @return
+     */
+    public ParseTask parseSentence(String input, final RecoveryStrategy recoveryStrategy) {
 
         input = input.trim();
         if (input.length() == 0) {
@@ -131,25 +145,23 @@ public abstract class Parser<G extends Grammar> {
 
         // TODO: make parseTask local and pass it around to required methods. Will probably need to add
         // instance methods of CellSelector, FOM, and Chart to it. Should make parse thread-safe.
-        final ParseTask newTask = new ParseTask(input, opts.inputFormat, grammar);
+        final ParseTask task = new ParseTask(input, opts.inputFormat, grammar, recoveryStrategy);
 
-        if (newTask.sentenceLength() > opts.maxLength) {
+        if (task.sentenceLength() > opts.maxLength) {
             BaseLogger.singleton().info(
-                    "INFO: Skipping sentence. Length of " + newTask.sentenceLength() + " is greater than maxLength ("
+                    "INFO: Skipping sentence. Length of " + task.sentenceLength() + " is greater than maxLength ("
                             + opts.maxLength + ")");
         } else {
-            newTask.startTime();
-            // try {
-            newTask.binaryParse = findBestParse(newTask);
-            // } catch (final Exception e) {
-            // BaseLogger.singleton().fine("ERROR: " + e);
-            // }
-            newTask.stopTime();
-            newTask.insideProbability = getInside(0, newTask.sentenceLength(), grammar.startSymbol);
-            newTask.chartStats = getStats();
+            task.startTime();
+
+            task.binaryParse = findBestParse(task);
+
+            task.stopTime();
+            task.insideProbability = getInside(0, task.sentenceLength(), grammar.startSymbol);
+            task.chartStats = getStats();
         }
 
-        return newTask;
+        return task;
     }
 
     /**
