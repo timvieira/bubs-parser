@@ -23,6 +23,9 @@ import java.util.Arrays;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.parser.ParseTask;
 
 /**
@@ -43,10 +46,10 @@ import edu.ohsu.cslu.parser.ParseTask;
  * The ancillary data structures are relatively small, so the total size consumed is approximately = n * (n-1) / 2 * V *
  * 10 bytes.
  * 
- * Similar to {@link PackedArrayChart}, and slightly more space-efficient, but the observed non-terminals in a cell are
- * not `packed' together at the beginning of the cell's array range. This saves a packing scan in
- * {@link DenseVectorChartCell#finalizeCell()}, but may result in less efficient access when populating subsequent
- * cells.
+ * Similar to {@link PackedArrayChart}, but the observed non-terminals in a cell are not `packed' together at the
+ * beginning of the cell's array range. This saves a packing scan in {@link DenseVectorChartCell#finalizeCell()}, but
+ * results in less efficient access when populating subsequent cells, especially if the chart population is pruned
+ * significantly.
  * 
  * @see PackedArrayChart
  * @author Aaron Dunlop
@@ -76,7 +79,13 @@ public class DenseVectorChart extends ParallelArrayChart {
 
     @Override
     public BinaryTree<String> extractBestParse(final int start, final int end, final int parent) {
-        // return super.extractBestParse(start, end, parent);
+        return extractBestParse(start, end, parent, sparseMatrixGrammar.nonTermSet, sparseMatrixGrammar.lexSet,
+                sparseMatrixGrammar.packingFunction);
+    }
+
+    public BinaryTree<String> extractBestParse(final int start, final int end, final int parent,
+            final Vocabulary vocabulary, final SymbolSet<String> lexicon, final PackingFunction packingFunction) {
+
         final DenseVectorChartCell packedCell = getCell(start, end);
 
         if (packedCell == null) {
@@ -91,15 +100,15 @@ public class DenseVectorChart extends ParallelArrayChart {
         final int edgeChildren = packedChildren[parentIndex];
         final short edgeMidpoint = midpoints[parentIndex];
 
-        final BinaryTree<String> subtree = new BinaryTree<String>(sparseMatrixGrammar.nonTermSet.getSymbol(parent));
-        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(edgeChildren);
-        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(edgeChildren);
+        final BinaryTree<String> subtree = new BinaryTree<String>(vocabulary.getSymbol(parent));
+        final int leftChild = packingFunction.unpackLeftChild(edgeChildren);
+        final int rightChild = packingFunction.unpackRightChild(edgeChildren);
 
         if (rightChild == Production.UNARY_PRODUCTION) {
             subtree.addChild(extractBestParse(start, end, leftChild));
 
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-            subtree.addChild(new BinaryTree<String>(sparseMatrixGrammar.lexSet.getSymbol(leftChild)));
+            subtree.addChild(new BinaryTree<String>(lexicon.getSymbol(leftChild)));
 
         } else {
             // binary production

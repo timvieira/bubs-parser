@@ -49,14 +49,12 @@ public class InsideOutsideCphSpmlParser extends
 
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
-            chart.decode(opts.decodeMethod);
-            final BinaryTree<String> parseTree = chart.extract(0, chart.size(), opts.decodeMethod);
+            final BinaryTree<String> parseTree = chart.decode(opts.decodeMethod);
             parseTask.extractTimeMs = System.currentTimeMillis() - t3;
             return parseTree;
         }
 
-        chart.decode(opts.decodeMethod);
-        return chart.extract(0, chart.size(), opts.decodeMethod);
+        return chart.decode(opts.decodeMethod);
     }
 
     /**
@@ -67,15 +65,13 @@ public class InsideOutsideCphSpmlParser extends
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final PackingFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction pf = grammar.cartesianProductFunction();
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
         final short start = cell.start();
         final short end = cell.end();
         targetCell.allocateTemporaryStorage();
 
-        final int[] targetCellChildren = targetCell.tmpCell.packedChildren;
         final float[] targetCellProbabilities = targetCell.tmpCell.insideProbabilities;
-        final short[] targetCellMidpoints = targetCell.tmpCell.midpoints;
 
         final float[] maxInsideProbabilities = new float[targetCellProbabilities.length];
         Arrays.fill(maxInsideProbabilities, Float.NEGATIVE_INFINITY);
@@ -98,7 +94,7 @@ public class InsideOutsideCphSpmlParser extends
 
                 // And over children in the right child cell
                 for (int j = rightStart; j <= rightEnd; j++) {
-                    final int column = cpf.pack(leftChild, chart.nonTerminalIndices[j]);
+                    final int column = pf.pack(leftChild, chart.nonTerminalIndices[j]);
                     if (column == Integer.MIN_VALUE) {
                         continue;
                     }
@@ -111,13 +107,6 @@ public class InsideOutsideCphSpmlParser extends
                         final int parent = grammar.cscBinaryRowIndices[k];
                         targetCellProbabilities[parent] = Math
                                 .logSum(targetCellProbabilities[parent], jointProbability);
-
-                        // Keep track of viterbi best-path backpointers, even though we don't really have to.
-                        if (jointProbability > maxInsideProbabilities[parent]) {
-                            targetCellChildren[parent] = column;
-                            maxInsideProbabilities[parent] = jointProbability;
-                            targetCellMidpoints[parent] = midpoint;
-                        }
                     }
                 }
             }
@@ -136,10 +125,6 @@ public class InsideOutsideCphSpmlParser extends
             unaryAndPruning(targetCell, start, end);
             targetCell.finalizeCell();
         }
-        // targetCell.allocateTemporaryStorage();
-        // unaryAndPruning(targetCell, start, end, targetCell.tmpPackedChildren, targetCell.tmpInsideProbabilities,
-        // targetCell.tmpMidpoints);
-        // targetCell.finalizeCell();
     }
 
     @Override
@@ -305,7 +290,7 @@ public class InsideOutsideCphSpmlParser extends
         }
     }
 
-    private void computeSiblingOutsideProbabilities(final float[] tmpOutsideProbabilities, final PackingFunction cpf,
+    private void computeSiblingOutsideProbabilities(final float[] tmpOutsideProbabilities, final PackingFunction pf,
             final float[] cscBinaryProbabilities, final short[] cscBinaryRowIndices, final int[] cscColumnOffsets,
             final int parentStartIndex, final int parentEndIndex, final int siblingStartIndex, final int siblingEndIndex) {
 
@@ -317,7 +302,7 @@ public class InsideOutsideCphSpmlParser extends
             // foreach entry in the parent cell
             for (int j = parentStartIndex; j <= parentEndIndex; j++) {
 
-                final int column = cpf.pack(chart.nonTerminalIndices[j], siblingEntry);
+                final int column = pf.pack(chart.nonTerminalIndices[j], siblingEntry);
                 if (column == Integer.MIN_VALUE) {
                     continue;
                 }
