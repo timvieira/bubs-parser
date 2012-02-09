@@ -98,7 +98,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
         final short[] midpoints = new short[g.cartesianProductFunction().packedArraySize()];
 
-        populateSimpleGrammar2Rows1_3(chart);
+        populateSimpleGrammar2Rows1_3(chart, g);
 
         //
         // Test SpMV for cell 0,4
@@ -152,8 +152,8 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         //
         // Test SpMV for cell 0,5
         //
-        populateSimpleGrammar2Rows1_3(chart);
-        populateSimpleGrammar2Row4(chart);
+        populateSimpleGrammar2Rows1_3(chart, g);
+        populateSimpleGrammar2Row4(chart, g);
 
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
 
@@ -277,8 +277,8 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         p.initSentence(parseTask);
         final Chart chart = p.chart;
 
-        populateSimpleGrammar2Rows1_3(chart);
-        populateSimpleGrammar2Row4(chart);
+        populateSimpleGrammar2Rows1_3(chart, g);
+        populateSimpleGrammar2Row4(chart, g);
 
         // Row of span 5
         final ChartCell cell_0_5 = chart.getCell(0, 5);
@@ -347,8 +347,8 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         p.initSentence(parseTask);
         final Chart chart = p.chart;
 
-        populateSimpleGrammar2Rows1_3(chart);
-        populateSimpleGrammar2Row4(chart);
+        populateSimpleGrammar2Rows1_3(chart, g);
+        populateSimpleGrammar2Row4(chart, g);
 
         // Row of span 5
         final ChartCell cell_0_5 = chart.getCell(0, 5);

@@ -54,6 +54,7 @@ public class TestInsideOutsideCphSpmlParser {
 
     @Before
     public void setUp() throws Exception {
+        GlobalConfigProperties.singleton().setProperty("normInsideTune", "0");
         grammar = new InsideOutsideCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"),
                 PerfectIntPairHashPackingFunction.class);
 
@@ -158,6 +159,19 @@ public class TestInsideOutsideCphSpmlParser {
                 PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (DT The) (NN fish) (NN market) (VB stands) (RB last)))", parser.parseSentence(sentence)
                 .parseBracketString(false, false));
+    }
+
+    @Test
+    public void testSimpleGrammar2MaxRuleProd() throws Exception {
+
+        final ParserDriver opts = new ParserDriver();
+        opts.decodeMethod = DecodeMethod.MaxRuleProd;
+        final String sentence = "The fish market stands last";
+
+        parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                PerfectIntPairHashPackingFunction.class));
+        assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
+                .parseSentence(sentence).parseBracketString(false, false));
     }
 
     @Test
