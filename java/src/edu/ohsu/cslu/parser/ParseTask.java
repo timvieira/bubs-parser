@@ -27,6 +27,7 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
+import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 import edu.ohsu.cslu.util.Strings;
@@ -55,6 +56,10 @@ public class ParseTask {
     public float insideProbability = Float.NEGATIVE_INFINITY;
     private EvalbResult evalb = null;
     public String chartStats = ""; // move all of these stats into this class
+
+    // Recovery strategy in case of parse failure
+    public final RecoveryStrategy recoveryStrategy;
+    public NaryTree<String> recoveryParse = null;
 
     //
     // Statistics
@@ -91,7 +96,8 @@ public class ParseTask {
 
     long startTime;
 
-    public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar) {
+    public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar,
+            final RecoveryStrategy recoveryStrategy) {
 
         this.grammar = grammar;
 
@@ -147,6 +153,11 @@ public class ParseTask {
         }
 
         this.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
+        this.recoveryStrategy = recoveryStrategy;
+    }
+
+    public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar) {
+        this(input, inputFormat, grammar, null);
     }
 
     public ParseTask(final int[] tokens, final Grammar grammar) {
@@ -155,6 +166,7 @@ public class ParseTask {
         this.sentence = null;
         this.inputTags = null;
         this.fomTags = null;
+        this.recoveryStrategy = null;
     }
 
     protected int getInputTagIndex(final String posStr) {
@@ -192,6 +204,9 @@ public class ParseTask {
 
     public String parseBracketString(final boolean binaryTree, final boolean printUnkLabels) {
         if (binaryParse == null) {
+            if (recoveryStrategy != null) {
+                return naryParse().toString();
+            }
             return "()";
         }
         if (printUnkLabels == false) {
@@ -205,7 +220,7 @@ public class ParseTask {
 
     public NaryTree<String> naryParse() {
         if (binaryParse == null) {
-            return null;
+            return recoveryParse;
         }
         return binaryParse.unfactor(grammar.grammarFormat);
     }
@@ -223,13 +238,12 @@ public class ParseTask {
     }
 
     public boolean parseFailed() {
-        return binaryParse == null;
+        return binaryParse == null && recoveryParse == null;
     }
 
     public void evaluate(final BracketEvaluator evaluator) {
         if (inputTree != null && !parseFailed()) {
             evalb = evaluator.evaluate(inputTree, naryParse());
         }
-
     }
 }

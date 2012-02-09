@@ -71,6 +71,7 @@ import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHash;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop2;
@@ -160,6 +161,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     // == Processing options ==
     @Option(name = "-decode", metaVar = "TYPE", hidden = true, usage = "Method to extract best tree from forest")
     public DecodeMethod decodeMethod = DecodeMethod.ViterbiMax;
+
+    @Option(name = "-recovery", metaVar = "strategy", hidden = true, usage = "Recovery strategy in case of parse failure")
+    public RecoveryStrategy recoveryStrategy = null;
 
     @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse.  Repeat N times")
     public int reparse = 0;
@@ -563,7 +567,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
             @Override
             public ParseTask call() throws Exception {
-                return getLocal().parseSentence(input);
+                return getLocal().parseSentence(input, recoveryStrategy);
             }
         });
     }
