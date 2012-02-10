@@ -236,8 +236,7 @@ public abstract class Parser<G extends Grammar> {
     }
 
     /**
-     * Various input formats are supported, including free text, pre-tokenized text, and (possibly eventually), gold POS
-     * tags and gold trees
+     * Various input formats are supported, including free text, pre-tokenized text, gold trees, and gold POS tags.
      */
     static public enum InputFormat {
         Text, Token, Tree, Tagged; // CoNNL

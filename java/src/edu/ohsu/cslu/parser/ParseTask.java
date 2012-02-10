@@ -37,16 +37,19 @@ import edu.ohsu.cslu.util.Strings;
 // the chart should be handled in this class eventually)
 public class ParseTask {
 
-    //
-    // Input
-    //
+    /** Input sentence */
     public final String sentence;
+
+    /** Input sentence mapped into the lexicon */
     public final int[] tokens;
 
-    public final int[] inputTags;
-    public int[] fomTags = null; // TODO: this should be moved to the FOM class
-
+    /** Gold tree */
     public NaryTree<String> inputTree = null;
+
+    /** Gold tags */
+    public final int[] inputTags;
+
+    public int[] fomTags = null; // TODO: this should be moved to the FOM class
     public final Grammar grammar;
 
     //
@@ -57,8 +60,9 @@ public class ParseTask {
     private EvalbResult evalb = null;
     public String chartStats = ""; // move all of these stats into this class
 
-    // Recovery strategy in case of parse failure
+    /** Recovery strategy in case of parse failure */
     public final RecoveryStrategy recoveryStrategy;
+    /** Recovery parse (only populated in case of parse failure) */
     public NaryTree<String> recoveryParse = null;
 
     //
