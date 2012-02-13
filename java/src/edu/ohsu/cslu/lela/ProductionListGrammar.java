@@ -35,6 +35,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -46,7 +47,7 @@ import edu.ohsu.cslu.tests.JUnit;
  */
 public class ProductionListGrammar implements Cloneable {
 
-    public final SplitVocabulary vocabulary;
+    public final Vocabulary vocabulary;
     public final SymbolSet<String> lexicon;
 
     public final ArrayList<Production> binaryProductions;
@@ -79,7 +80,7 @@ public class ProductionListGrammar implements Cloneable {
     /**
      * Constructs a production-list grammar based on lists of productions.
      */
-    ProductionListGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon,
+    ProductionListGrammar(final Vocabulary vocabulary, final SymbolSet<String> lexicon,
             final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
             final ArrayList<Production> lexicalProductions) {
 
@@ -94,7 +95,7 @@ public class ProductionListGrammar implements Cloneable {
         this.baseGrammar = this;
     }
 
-    private ProductionListGrammar(final ProductionListGrammar parentGrammar, final SplitVocabulary vocabulary,
+    private ProductionListGrammar(final ProductionListGrammar parentGrammar, final Vocabulary vocabulary,
             final SymbolSet<String> lexicon) {
         this.vocabulary = vocabulary;
         this.lexicon = lexicon;

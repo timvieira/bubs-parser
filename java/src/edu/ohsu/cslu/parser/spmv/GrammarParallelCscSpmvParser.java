@@ -103,7 +103,7 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
             protected PackedArrayChart.TemporaryChartCell[] initialValue() {
                 final PackedArrayChart.TemporaryChartCell[] tcs = new PackedArrayChart.TemporaryChartCell[grammarThreads];
                 for (int j = 0; j < grammarThreads; j++) {
-                    tcs[j] = new PackedArrayChart.TemporaryChartCell(grammar.numNonTerms());
+                    tcs[j] = new PackedArrayChart.TemporaryChartCell(grammar);
                 }
                 return tcs;
             }

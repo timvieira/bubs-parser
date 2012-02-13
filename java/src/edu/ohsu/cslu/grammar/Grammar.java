@@ -40,6 +40,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.util.StringPool;
 
@@ -336,7 +337,7 @@ public class Grammar implements Serializable {
             final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
             final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat) {
         this.nonTermSet = (Vocabulary) vocabulary;
-        this.startSymbol = 0;
+        this.startSymbol = nonTermSet.startSymbol();
         this.nullSymbol = -1;
         this.startSymbolStr = vocabulary.getSymbol(startSymbol);
         this.nonTermInfo = null;
@@ -926,6 +927,41 @@ public class Grammar implements Serializable {
             return p.prob;
         }
         return Float.NEGATIVE_INFINITY;
+    }
+
+    public Grammar toUnsplitGrammar() {
+        final Vocabulary baseVocabulary = nonTermSet.baseVocabulary();
+        final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(baseVocabulary, lexSet, null);
+
+        for (final Production p : binaryProductions) {
+            final short unsplitParent = nonTermSet.getBaseIndex((short) p.parent);
+            final short unsplitLeftChild = nonTermSet.getBaseIndex((short) p.leftChild);
+            final short unsplitRightChild = nonTermSet.getBaseIndex((short) p.rightChild);
+            unsplitGrammar.incrementBinaryCount(unsplitParent, unsplitLeftChild, unsplitRightChild, Math.exp(p.prob));
+        }
+
+        for (final Production p : unaryProductions) {
+            final short unsplitParent = nonTermSet.getBaseIndex((short) p.parent);
+            final short unsplitChild = nonTermSet.getBaseIndex((short) p.leftChild);
+            unsplitGrammar.incrementUnaryCount(unsplitParent, unsplitChild, Math.exp(p.prob));
+        }
+
+        for (final Production p : lexicalProductions) {
+            final short unsplitParent = nonTermSet.getBaseIndex((short) p.parent);
+            unsplitGrammar.incrementLexicalCount(unsplitParent, p.leftChild, Math.exp(p.prob));
+        }
+
+        try {
+            return getClass().getConstructor(
+                    new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class, SymbolSet.class,
+                            GrammarFormatType.class }).newInstance(
+                    new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
+                            unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
+                            unsplitGrammar.lexicalProductions(Float.NEGATIVE_INFINITY), baseVocabulary, lexSet,
+                            grammarFormat });
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

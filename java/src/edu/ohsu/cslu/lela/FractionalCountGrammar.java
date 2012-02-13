@@ -41,13 +41,14 @@ import edu.ohsu.cslu.grammar.Language;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.tests.JUnit;
 
 public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
     private final static Pattern SUBSTATE_PATTERN = Pattern.compile("^.*_[0-9]+$");
 
-    public final SplitVocabulary vocabulary;
+    public final Vocabulary vocabulary;
     public final SymbolSet<String> lexicon;
     protected final String startSymbol;
 
@@ -65,7 +66,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
     private final PackingFunction packingFunction;
 
-    public FractionalCountGrammar(final SplitVocabulary vocabulary, final SymbolSet<String> lexicon,
+    public FractionalCountGrammar(final Vocabulary vocabulary, final SymbolSet<String> lexicon,
             final PackingFunction packingFunction) {
 
         this.vocabulary = vocabulary;
@@ -77,10 +78,10 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     }
 
     public FractionalCountGrammar(final InsideOutsideCscSparseMatrixGrammar cscGrammar) {
-        this((SplitVocabulary) cscGrammar.nonTermSet, cscGrammar.lexSet, cscGrammar.packingFunction);
+        this(cscGrammar.nonTermSet, cscGrammar.lexSet, cscGrammar.packingFunction);
     }
 
-    protected void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
+    public void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
             final double increment) {
 
         Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
@@ -144,7 +145,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         incrementUnaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(child), increment);
     }
 
-    protected void incrementLexicalCount(final short parent, final int child, final double increment) {
+    public void incrementLexicalCount(final short parent, final int child, final double increment) {
 
         Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
         if (childMap == null) {

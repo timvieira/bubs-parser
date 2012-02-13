@@ -101,7 +101,7 @@ public class TestConstrainingChart extends ChartTestCase {
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final ConstrainingChart cc = new ConstrainingChart(NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN,
-                String.class).factor(GrammarFormatType.Berkeley, Binarization.RIGHT), cscg);
+                String.class).binarize(GrammarFormatType.Berkeley, Binarization.RIGHT), cscg);
 
         // Verify some unary chain lengths
         assertEquals(3, cc.maxUnaryChainLength());

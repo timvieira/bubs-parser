@@ -39,8 +39,7 @@ public abstract class SparseMatrixLoopParserTestCase<P extends ChartParser<? ext
     }
 
     /**
-     * Ensure the grammar is constructed with the Constructs the grammar (if necessary) and a new parser instance. Run
-     * prior to each test method.
+     * Constructs the grammar (if necessary) and a new parser instance. Run prior to each test method.
      * 
      * @throws Exception if unable to construct grammar or parser.
      */

@@ -104,7 +104,7 @@ public final class StringCountGrammar implements CountGrammar {
             if (binarization == null) {
                 tree = BinaryTree.read(line, String.class);
             } else {
-                tree = NaryTree.read(line, String.class).factor(grammarFormatType, binarization);
+                tree = NaryTree.read(line, String.class).binarize(grammarFormatType, binarization);
             }
             trees.add(tree);
 

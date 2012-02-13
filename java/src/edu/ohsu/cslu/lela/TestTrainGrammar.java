@@ -40,6 +40,7 @@ import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
 import edu.ohsu.cslu.tests.JUnit;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
@@ -393,7 +394,10 @@ public class TestTrainGrammar {
 
     private double parseFScore(final Grammar grammar, final List<NaryTree<String>> goldTrees) {
         final LeftCscSparseMatrixGrammar cscGrammar = new LeftCscSparseMatrixGrammar(grammar);
-        final CartesianProductHashSpmlParser parser = new CartesianProductHashSpmlParser(new ParserDriver(), cscGrammar);
+        GlobalConfigProperties.singleton().setProperty("normInsideTune", "0");
+        final ParserDriver opts = new ParserDriver();
+        opts.fomModel = new InsideProb();
+        final CartesianProductHashSpmlParser parser = new CartesianProductHashSpmlParser(opts, cscGrammar);
 
         final BracketEvaluator evaluator = new BracketEvaluator();
 

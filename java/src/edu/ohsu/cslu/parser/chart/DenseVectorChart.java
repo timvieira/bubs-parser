@@ -272,8 +272,8 @@ public class DenseVectorChart extends ParallelArrayChart {
                 if (insideProbability > Float.NEGATIVE_INFINITY) {
                     final int childProductions = packedChildren[index];
                     final int midpoint = midpoints[index];
-                    sb.append(formatCellEntry(index - offset, childProductions, insideProbability, midpoint,
-                            formatFractions));
+                    sb.append(formatCellEntry(sparseMatrixGrammar, index - offset, childProductions, insideProbability,
+                            midpoint, formatFractions));
                 }
             }
             return sb.toString();
