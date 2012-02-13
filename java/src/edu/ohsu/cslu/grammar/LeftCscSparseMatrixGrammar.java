@@ -69,6 +69,7 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
             final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
+
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
                 functionClass, initCscMatrices);
 
@@ -76,6 +77,14 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
         this.cscBinaryLeftChildStartIndices = new int[numNonTerms() + 1];
         this.cscBinaryLeftChildEndIndices = new int[numNonTerms() + 1];
         init();
+    }
+
+    public LeftCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
+            final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
+            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat) {
+
+        this(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
+                PerfectIntPairHashPackingFunction.class, true);
     }
 
     public LeftCscSparseMatrixGrammar(final Grammar g) {
@@ -95,5 +104,4 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
             cscBinaryLeftChildEndIndices[leftChild] = i;
         }
     }
-
 }

@@ -33,6 +33,7 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
+import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
 
 /**
  * Base class for all chart parsers which represent the chart as a parallel array and operate on matrix-encoded
@@ -43,10 +44,10 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart> extends
         ChartParser<G, C> {
 
-    protected final int beamWidth;
-    protected final int lexicalRowBeamWidth;
-    protected final int lexicalRowUnaries;
-    protected final float maxLocalDelta;
+    protected int beamWidth;
+    protected int lexicalRowBeamWidth;
+    protected int lexicalRowUnaries;
+    protected float maxLocalDelta;
     protected final boolean exhaustiveSearch;
 
     protected final ThreadLocal<BoundedPriorityQueue> threadLocalBoundedPriorityQueue;
@@ -59,7 +60,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         final ConfigProperties props = GlobalConfigProperties.singleton();
 
         // Pruning Parameters
-        if (props.containsKey(PROPERTY_MAX_BEAM_WIDTH) && props.getIntProperty(PROPERTY_MAX_BEAM_WIDTH) > 0) {
+        if ((props.containsKey(PROPERTY_MAX_BEAM_WIDTH) && props.getIntProperty(PROPERTY_MAX_BEAM_WIDTH) > 0)
+                || implicitPruning()) {
             this.beamWidth = props.getIntProperty(Parser.PROPERTY_MAX_BEAM_WIDTH);
             this.lexicalRowBeamWidth = props.getIntProperty(PROPERTY_LEXICAL_ROW_BEAM_WIDTH, beamWidth);
             this.lexicalRowUnaries = props.getIntProperty(PROPERTY_LEXICAL_ROW_UNARIES, lexicalRowBeamWidth / 3);
@@ -80,7 +82,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             this.threadLocalQueueEdges = new ThreadLocal<TemporaryChartCell>() {
                 @Override
                 protected TemporaryChartCell initialValue() {
-                    return new TemporaryChartCell(grammar.numNonTerms());
+                    return new TemporaryChartCell(grammar);
                 }
             };
 
@@ -238,10 +240,9 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         if (collectDetailedStatistics) {
             chart.parseTask.unaryAndPruningNs += System.nanoTime() - t0;
         }
-
     }
 
-    private void unaryAndPruning(final TemporaryChartCell tmpCell, final int cellBeamWidth, final short start,
+    protected final void unaryAndPruning(final TemporaryChartCell tmpCell, final int cellBeamWidth, final short start,
             final short end) {
         // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
         final boolean allowUnaries = !cellSelector.hasCellConstraints()
@@ -309,8 +310,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             return;
         }
 
-        // FOM of each non-terminal populated in the cell (i.e., each NT which was survived pruning and popped from the
-        // queue). Parallel to the temporary storage arrays in the chart cell which only store inside probability.
+        // FOM of each non-terminal populated in the cell (i.e., each NT which survived pruning and was popped from the
+        // queue). Parallel array to the temporary storage arrays in the chart cell which only store inside probability.
         final float[] cellFoms = threadLocalTmpFoms.get();
         Arrays.fill(cellFoms, Float.NEGATIVE_INFINITY);
 
@@ -358,12 +359,20 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                                 // storage to reflect the new unary child and probability
                                 queueEdges.packedChildren[parent] = grammar.cartesianProductFunction().packUnary(child);
                                 queueEdges.insideProbabilities[parent] = jointProbability;
-                                tmpCell.midpoints[parent] = end;
+                                queueEdges.midpoints[parent] = tmpCell.midpoints[parent] = end;
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    /**
+     * @return True if this {@link Parser} implementation does implicit pruning (regardless of configuration
+     *         properties); e.g. {@link ConstrainedCphSpmlParser}.
+     */
+    protected boolean implicitPruning() {
+        return false;
     }
 }

@@ -37,7 +37,7 @@ public class SplitVocabulary extends Vocabulary {
     private static final long serialVersionUID = 1L;
 
     /** Parent (pre-split or pre-merge) vocabulary */
-    final SplitVocabulary parentVocabulary;
+    final Vocabulary parentVocabulary;
 
     /**
      * Maps from the indices of a parent vocabulary to indices in this {@link SplitVocabulary}. Only populated if this
@@ -51,7 +51,7 @@ public class SplitVocabulary extends Vocabulary {
      */
     final ShortOpenHashSet mergedIndices;
 
-    public SplitVocabulary(final SplitVocabulary parentVocabulary) {
+    public SplitVocabulary(final Vocabulary parentVocabulary) {
         super(GrammarFormatType.Berkeley);
         this.parentVocabulary = parentVocabulary;
         this.parent2IndexMap = null;
@@ -65,7 +65,7 @@ public class SplitVocabulary extends Vocabulary {
         this.mergedIndices = null;
     }
 
-    public SplitVocabulary(final Collection<String> symbols, final SplitVocabulary parentVocabulary,
+    public SplitVocabulary(final Collection<String> symbols, final Vocabulary parentVocabulary,
             final Short2ShortOpenHashMap parent2IndexMap, final ShortOpenHashSet mergedIndices) {
         super(symbols, GrammarFormatType.Berkeley);
         this.parentVocabulary = parentVocabulary;

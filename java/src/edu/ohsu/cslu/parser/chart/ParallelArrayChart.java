@@ -217,22 +217,22 @@ public abstract class ParallelArrayChart extends Chart {
         return sb.toString();
     }
 
-    protected String formatCellEntry(final int nonterminal, final int childProductions, final float insideProbability,
-            final int midpoint, final boolean formatFractions) {
-        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
-        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
+    protected static String formatCellEntry(final SparseMatrixGrammar g, final int nonterminal,
+            final int childProductions, final float insideProbability, final int midpoint, final boolean formatFractions) {
+        final int leftChild = g.cartesianProductFunction().unpackLeftChild(childProductions);
+        final int rightChild = g.cartesianProductFunction().unpackRightChild(childProductions);
 
         if (rightChild == Production.UNARY_PRODUCTION) {
             // Unary Production
-            return String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
-                    sparseMatrixGrammar.mapNonterminal(leftChild), insideProbability, midpoint);
+            return String.format("%s -> %s (%.5f, %d)\n", g.mapNonterminal(nonterminal),
+                    g.mapNonterminal(leftChild), insideProbability, midpoint);
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
             // Lexical Production
-            return String.format("%s -> %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
-                    sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint);
+            return String.format("%s -> %s (%.5f, %d)\n", g.mapNonterminal(nonterminal),
+                    g.mapLexicalEntry(leftChild), insideProbability, midpoint);
         } else {
-            return String.format("%s -> %s %s (%.5f, %d)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
-                    sparseMatrixGrammar.mapNonterminal(leftChild), sparseMatrixGrammar.mapNonterminal(rightChild),
+            return String.format("%s -> %s %s (%.5f, %d)\n", g.mapNonterminal(nonterminal),
+                    g.mapNonterminal(leftChild), g.mapNonterminal(rightChild),
                     insideProbability, midpoint);
         }
     }

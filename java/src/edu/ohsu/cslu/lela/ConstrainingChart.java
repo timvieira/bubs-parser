@@ -91,6 +91,7 @@ public class ConstrainingChart extends PackedArrayChart {
             if (unaryChainLength[cellIndex] == 0) {
                 unaryChainLength[cellIndex] = (byte) (unaryChainHeight + 1);
             }
+            numNonTerminals[cellIndex] = unaryChainLength[cellIndex];
 
             // Find the index of this non-terminal in the main chart array.
             // Unary children are positioned _after_ parents
@@ -103,21 +104,33 @@ public class ConstrainingChart extends PackedArrayChart {
             if (node.rightChild() == null) {
                 if (node.leftChild().isLeaf()) {
                     // Lexical production
-                    midpoints[cellIndex] = 0;
+                    midpoints[cellIndex] = (short) (start + 1);
                     final int child = sparseMatrixGrammar.lexSet.getIndex(node.leftChild().label());
                     packedChildren[i] = sparseMatrixGrammar.packingFunction.packLexical(child);
+                    if (packedChildren[i] < -2000000) {
+                        throw new ArrayIndexOutOfBoundsException("Out of range");
+                    }
 
                     tokenList.add(child);
                 } else {
                     // Unary production
                     final short child = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.leftChild().label());
                     packedChildren[i] = sparseMatrixGrammar.packingFunction.packUnary(child);
+                    if (packedChildren[i] < -2000000) {
+                        throw new ArrayIndexOutOfBoundsException("Out of range");
+                    }
                 }
             } else {
                 // Binary production
                 final short leftChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.leftChild().label());
                 final short rightChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.rightChild().label());
                 packedChildren[i] = sparseMatrixGrammar.packingFunction.pack(leftChild, rightChild);
+                if (packedChildren[i] < -2000000) {
+                    final String sLeftChild = sparseMatrixGrammar.nonTermSet.getSymbol(leftChild);
+                    final String sRightChild = sparseMatrixGrammar.nonTermSet.getSymbol(rightChild);
+                    sparseMatrixGrammar.packingFunction.pack(leftChild, rightChild);
+                    throw new ArrayIndexOutOfBoundsException("Out of range");
+                }
                 final short midpoint = (short) (start + node.leftChild().leaves());
                 midpoints[cellIndex] = midpoint;
 
@@ -459,7 +472,7 @@ public class ConstrainingChart extends PackedArrayChart {
      * @param cellIndex
      * @return The length of the unary chain in the specified cell (1 <= length <= maxUnaryChainLength).
      */
-    int unaryChainLength(final int cellIndex) {
+    public int unaryChainLength(final int cellIndex) {
         return unaryChainLength[cellIndex];
     }
 
@@ -468,16 +481,15 @@ public class ConstrainingChart extends PackedArrayChart {
      * @param end
      * @return The length of the unary chain in the specified cell (1 <= length <= maxUnaryChainLength).
      */
-    int unaryChainLength(final int start, final int end) {
+    public int unaryChainLength(final int start, final int end) {
         return unaryChainLength(cellIndex(start, end));
     }
 
     /**
-     * For unit testing
-     * 
-     * @return maximum unary chain length
+     * @return The length of the longest unary chain (i.e., the binary parent + any unary parents) 1 <=
+     *         maxUnaryChainLength <= n
      */
-    int maxUnaryChainLength() {
+    public int maxUnaryChainLength() {
         return maxUnaryChainLength;
     }
 
@@ -536,5 +548,23 @@ public class ConstrainingChart extends PackedArrayChart {
             return String.format("%s -> binary (%.5f)\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
                     insideProbability);
         }
+    }
+
+    @Override
+    public PackedArrayChartCell getCell(final int start, final int end) {
+        final PackedArrayChartCell cell = new PackedArrayChartCell(start, end);
+        cell.tmpCell = new TemporaryChartCell(grammar);
+        final int cellIndex = cellIndex(start, end);
+        for (int i = 0; i < beamWidth; i++) {
+            final int entryOffset = offset(cellIndex) + i;
+            final short nt = nonTerminalIndices[entryOffset];
+            if (nt >= 0) {
+                cell.tmpCell.insideProbabilities[nt] = insideProbabilities[entryOffset];
+                cell.tmpCell.midpoints[nt] = (i == unaryChainLength[cellIndex] - 1) ? midpoints[cellIndex]
+                        : (short) end;
+                cell.tmpCell.packedChildren[nt] = packedChildren[entryOffset];
+            }
+        }
+        return cell;
     }
 }

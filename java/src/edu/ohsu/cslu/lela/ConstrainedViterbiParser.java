@@ -31,7 +31,7 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
  * parent grammar (i.e., when training a split grammar, the constraining chart is populated with 1-best parses using the
  * previous grammar)
  * 
- * Analagous to {@link ConstrainedInsideOutsideParser}, but performs Viterbi 1-best inference instead of summing over
+ * Analogous to {@link ConstrainedInsideOutsideParser}, but performs Viterbi 1-best inference instead of summing over
  * matching children and rules. Used to populate a {@link ConstrainingChart} to constrain the next split-merge cycle.
  * 
  * If we perform this parse in the real semiring, we occasionally choose a combination of node labels for which no rule

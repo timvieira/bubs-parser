@@ -251,7 +251,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             final NaryTree<String> goldTree = NaryTree.read(line, String.class);
             goldTrees.add(goldTree);
 
-            final BinaryTree<String> factoredTree = goldTree.factor(grammarFormatType, binarization);
+            final BinaryTree<String> factoredTree = goldTree.binarize(grammarFormatType, binarization);
             constrainingCharts.add(new ConstrainingChart(factoredTree, cscGrammar0));
         }
     }

@@ -268,7 +268,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     /**
-     * Returns the cartesian-product function in use
+     * Returns the cartesian-product function in use TODO Rename to packingFunction()
      * 
      * @return the cartesian-product function in use
      */

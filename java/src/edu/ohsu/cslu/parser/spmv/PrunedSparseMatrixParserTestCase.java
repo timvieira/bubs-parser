@@ -40,12 +40,15 @@ import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
+import edu.ohsu.cslu.parser.ecp.ChartParserTestCase;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
  * Tests FOM-pruned parsing, using row-level threading.
+ * 
+ * TODO Extend {@link ChartParserTestCase} and share as much code as possible
  * 
  * @author Aaron Dunlop
  * @since Mar 9, 2011

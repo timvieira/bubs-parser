@@ -184,8 +184,9 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
         final FractionalCountGrammar merged = split1.merge(new short[] { 1 });
 
         assertEquals(split1.vocabulary.size() - 1, merged.vocabulary.size());
-        assertEquals(1, merged.vocabulary.mergedIndices.size());
-        assertTrue("Expected mergedIndices to contain '0'", merged.vocabulary.mergedIndices.contains((short) 0));
+        final SplitVocabulary mergedVocabulary = (SplitVocabulary) merged.vocabulary;
+        assertEquals(1, mergedVocabulary.mergedIndices.size());
+        assertTrue("Expected mergedIndices to contain '0'", mergedVocabulary.mergedIndices.contains((short) 0));
         assertEquals(split1.unaryLogProbability("top", "a_0"), merged.unaryLogProbability("top", "a_0"), .01f);
     }
 
