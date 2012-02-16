@@ -21,8 +21,6 @@ package edu.ohsu.cslu.parser.ml;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.FileWriter;
-
 import org.cjunit.FilteredRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,10 +71,6 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
 
     @Test
     public void testF2_21() throws Exception {
-        final FileWriter tmpFile = new FileWriter("/tmp/base.gr");
-        tmpFile.write(((ConstrainedCphSpmlParser) parser).baseGrammar.toString());
-        tmpFile.close();
-
         final String constrainingTree = "(ROOT (S (S (NP (ADJP (NP (DT The) (NN economy) (POS 's))) (NN temperature)) (VP (MD will) (VP (VB be) (VP (VP (VP (VBN taken) (PP (IN from) (NP (NP (JJ several) (NN vantage)) (NNS points)))) (NP (DT this) (NN week))) (, ,) (PP (IN with) (NP (NP (NNS readings)) (PP (IN on) (NP (NN trade) (, ,) (NN output) (, ,) (NN housing) (, ,) (CC and) (NN inflation))))))))) (. .)))";
 
         final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, f2_21_grammar, null);
