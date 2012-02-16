@@ -228,7 +228,8 @@ public abstract class Parser<G extends Grammar> {
         CartesianProductBinarySearchLeftChildMl("cplbs"),
         CartesianProductHashMl("cph"),
         CartesianProductLeftChildHashMl("cplch"),
-        InsideOutsideCartesianProductHash("iocph");
+        InsideOutsideCartesianProductHash("iocph"),
+        ConstrainedCartesianProductHashMl("const");
 
         private ResearchParserType(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);

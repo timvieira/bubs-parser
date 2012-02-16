@@ -91,7 +91,7 @@ public class CartesianProductHashSpmlParser extends
                     for (int k = binaryColumnOffsets[column]; k < binaryColumnOffsets[column + 1]; k++) {
 
                         final float jointProbability = binaryProbabilities[k] + childProbability;
-                        final int parent = binaryRowIndices[k];
+                        final short parent = binaryRowIndices[k];
 
                         if (jointProbability > tmpCell.insideProbabilities[parent]) {
                             tmpCell.packedChildren[parent] = column;

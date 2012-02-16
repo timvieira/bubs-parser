@@ -282,7 +282,7 @@ public class ConstrainedChart extends ConstrainingChart {
     }
 
     @Override
-    public String toString(final boolean formatFractions) {
+    public String toString(final boolean formatFractions, final boolean includeEmptyCells) {
         final StringBuilder sb = new StringBuilder(1024);
 
         for (int span = 1; span <= size; span++) {
@@ -301,8 +301,8 @@ public class ConstrainedChart extends ConstrainingChart {
                 sb2.append(formatEntries(bottomEntryOffset, false, formatFractions));
                 sb2.append("\n\n");
 
-                // Skip empty cells
-                if (sb2.length() > 2) {
+                // Optionally skip empty cells
+                if (sb2.length() > 2 || includeEmptyCells) {
                     sb.append("ConstrainedChartCell[" + start + "][" + end + "]\n");
                     sb.append(sb2.toString());
                 }

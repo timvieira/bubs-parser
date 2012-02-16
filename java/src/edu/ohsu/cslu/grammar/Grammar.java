@@ -40,6 +40,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.util.StringPool;
@@ -127,12 +128,11 @@ public class Grammar implements Serializable {
     // == Grammar stats ==
     public String startSymbolStr;
     public int numPosSymbols;
-    private boolean isLeftFactored;
     // public boolean isLatentVariableGrammar;
     // public boolean annotatePOS;
     public int horizontalMarkov;
     public int verticalMarkov;
-    public String binarization;
+    private Binarization binarization;
     public String language;
 
     // == Aaron's Grammar variables ==
@@ -228,11 +228,7 @@ public class Grammar implements Serializable {
         // go somewhere else?
         assert leftChildrenSet.size() > 0 && rightChildrenSet.size() > 0;
         // System.out.println("#left=" + leftChildrenSet.size() + " #right=" + rightChildrenSet.size());
-        if (leftChildrenSet.size() < rightChildrenSet.size()) {
-            this.isLeftFactored = true;
-        } else {
-            this.isLeftFactored = false;
-        }
+        this.binarization = leftChildrenSet.size() > rightChildrenSet.size() ? Binarization.LEFT : Binarization.RIGHT;
 
         // Special cases for the start symbol and the null symbol (used for start/end of sentence markers and
         // dummy non-terminals). Label null symbol as a POS, and start symbol as not.
@@ -363,9 +359,6 @@ public class Grammar implements Serializable {
         this.numPosSymbols = -1;
         this.grammarFormat = grammarFormat;
 
-        // TODO Correct this; replace with Binarization.LEFT or Binarization.RIGHT
-        this.isLeftFactored = false;
-
         // Initialize start and end indices
         final int[] startAndEndIndices = startAndEndIndices();
         this.leftChildrenStart = startAndEndIndices[0];
@@ -374,6 +367,8 @@ public class Grammar implements Serializable {
         this.rightChildrenEnd = startAndEndIndices[3];
         this.posStart = startAndEndIndices[4];
         this.posEnd = startAndEndIndices[5];
+
+        this.binarization = binarization(binaryProductions);
     }
 
     /**
@@ -392,7 +387,7 @@ public class Grammar implements Serializable {
         this.numPosSymbols = g.numPosSymbols;
         this.grammarFormat = g.grammarFormat;
 
-        this.isLeftFactored = g.isLeftFactored;
+        this.binarization = g.binarization;
     }
 
     // Read in the grammar file.
@@ -419,10 +414,10 @@ public class Grammar implements Serializable {
             final HashMap<String, String> keyVals = Util.readKeyValuePairs(firstLine.trim());
             startSymbolStr = keyVals.get("start");
             try {
-                horizontalMarkov = Integer.parseInt(keyVals.get("hMarkov"));
-                verticalMarkov = Integer.parseInt(keyVals.get("vMarkov"));
-                language = keyVals.get("language");
-                binarization = keyVals.get("binarization");
+                this.horizontalMarkov = Integer.parseInt(keyVals.get("hMarkov"));
+                this.verticalMarkov = Integer.parseInt(keyVals.get("vMarkov"));
+                this.language = keyVals.get("language");
+                this.binarization = Binarization.valueOf(keyVals.get("binarization"));
             } catch (final Exception e) {
                 // If grammar doesn't contain these values, just ignore it.
             }
@@ -436,7 +431,6 @@ public class Grammar implements Serializable {
             throw new IllegalArgumentException("Unexpected first line of grammar file: " + firstLine);
         }
 
-        // for (String line = br.readLine(); line != null && !line.equals(DELIMITER); line = br.readLine()) {
         final Pattern p = Pattern.compile("\\s");
         for (String line = br.readLine(); !line.equals(LEXICON_DELIMITER); line = br.readLine()) {
             final String[] tokens = p.split(line);
@@ -476,6 +470,17 @@ public class Grammar implements Serializable {
         return gf;
     }
 
+    private Binarization binarization(final Collection<Production> binaryProds) {
+        for (final Production p : binaryProds) {
+            if (grammarFormat.isFactored(nonTermSet.getSymbol(p.leftChild))) {
+                return Binarization.LEFT;
+            } else if (grammarFormat.isFactored(nonTermSet.getSymbol(p.rightChild))) {
+                return Binarization.RIGHT;
+            }
+        }
+        return null;
+    }
+
     /**
      * Populates lexicalLogProbabilities and lexicalParents
      * 
@@ -495,23 +500,23 @@ public class Grammar implements Serializable {
 
     private int[] startAndEndIndices() {
 
-        int leftChildrenStart = Integer.MAX_VALUE, leftChildrenEnd = 0;
-        int rightChildrenStart = Integer.MAX_VALUE, rightChildrenEnd = 0;
-        int posStart = Integer.MAX_VALUE, posEnd = 0;
+        int tmpLeftChildrenStart = Integer.MAX_VALUE, tmpLeftChildrenEnd = 0;
+        int tmpRightChildrenStart = Integer.MAX_VALUE, tmpRightChildrenEnd = 0;
+        int tmpPosStart = Integer.MAX_VALUE, tmpPosEnd = 0;
         int parentEnd = 0;
 
         for (final Production p : binaryProductions) {
-            if (p.leftChild < leftChildrenStart) {
-                leftChildrenStart = p.leftChild;
+            if (p.leftChild < tmpLeftChildrenStart) {
+                tmpLeftChildrenStart = p.leftChild;
             }
-            if (p.leftChild > leftChildrenEnd) {
-                leftChildrenEnd = p.leftChild;
+            if (p.leftChild > tmpLeftChildrenEnd) {
+                tmpLeftChildrenEnd = p.leftChild;
             }
-            if (p.rightChild < rightChildrenStart) {
-                rightChildrenStart = p.rightChild;
+            if (p.rightChild < tmpRightChildrenStart) {
+                tmpRightChildrenStart = p.rightChild;
             }
-            if (p.rightChild > rightChildrenEnd) {
-                rightChildrenEnd = p.rightChild;
+            if (p.rightChild > tmpRightChildrenEnd) {
+                tmpRightChildrenEnd = p.rightChild;
             }
             if (p.parent > parentEnd) {
                 parentEnd = p.parent;
@@ -519,11 +524,11 @@ public class Grammar implements Serializable {
         }
 
         for (final Production p : unaryProductions) {
-            if (p.leftChild < leftChildrenStart) {
-                leftChildrenStart = p.leftChild;
+            if (p.leftChild < tmpLeftChildrenStart) {
+                tmpLeftChildrenStart = p.leftChild;
             }
-            if (p.leftChild > leftChildrenEnd) {
-                leftChildrenEnd = p.leftChild;
+            if (p.leftChild > tmpLeftChildrenEnd) {
+                tmpLeftChildrenEnd = p.leftChild;
             }
             if (p.parent > parentEnd) {
                 parentEnd = p.parent;
@@ -534,22 +539,22 @@ public class Grammar implements Serializable {
             if (p.parent > parentEnd) {
                 parentEnd = p.parent;
             }
-            if (p.parent < posStart) {
-                posStart = p.parent;
+            if (p.parent < tmpPosStart) {
+                tmpPosStart = p.parent;
             }
-            if (p.parent > posEnd) {
-                posEnd = p.parent;
+            if (p.parent > tmpPosEnd) {
+                tmpPosEnd = p.parent;
             }
         }
 
-        if (posStart > this.nullSymbol) {
-            posStart = nullSymbol;
+        if (tmpPosStart > this.nullSymbol) {
+            tmpPosStart = nullSymbol;
         }
-        if (posEnd < this.nullSymbol) {
-            posEnd = nullSymbol;
+        if (tmpPosEnd < this.nullSymbol) {
+            tmpPosEnd = nullSymbol;
         }
 
-        return new int[] { leftChildrenStart, leftChildrenEnd, rightChildrenStart, rightChildrenEnd, posStart, posEnd,
+        return new int[] { tmpLeftChildrenStart, tmpLeftChildrenEnd, tmpRightChildrenStart, tmpRightChildrenEnd, tmpPosStart, tmpPosEnd,
                 parentEnd };
     }
 
@@ -745,14 +750,21 @@ public class Grammar implements Serializable {
      * @return true if this grammar is left-factored
      */
     public boolean isLeftFactored() {
-        return isLeftFactored;
+        return binarization == Binarization.LEFT;
     }
 
     /**
      * @return true if this grammar is right-factored
      */
     public boolean isRightFactored() {
-        return !isLeftFactored;
+        return binarization == Binarization.RIGHT;
+    }
+
+    /**
+     * @return Binarization direction
+     */
+    public Binarization binarization() {
+        return binarization;
     }
 
     /*
