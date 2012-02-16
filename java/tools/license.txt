@@ -1,5 +1,5 @@
 Unless otherwise noted in the source code, this software is 
-    Copyright 2010,2011 Nathan Bodenstab and Aaron Dunlop.
+    Copyright 2010-2012 Nathan Bodenstab and Aaron Dunlop.
 
 This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as 
@@ -12,18 +12,19 @@ We anticipate that this program will primarily be used for research
     less restrictive license, including commercial licensing, please 
     contact:
     
-    Aaron Dunlop (dunlopa@cslu.ogi.edu)
-    Nathan Bodenstab (bodenstab@csee.ogi.edu)
+    Aaron Dunlop (aaron.dunlop@gmail.com)
+    Nathan Bodenstab (bodenstab@gmail.com)
     
 =============================================================================
 
 Exceptions and notes:
 
-    The argument-parsing code in the cltool4j.args4j package is descended
+    The argument-parsing code in the cltool4j.args4j package is licensed 
+    under the Apache License 2.0. The cltool4j project is descended
     (distantly) from the Args4J project available at 
     <https://args4j.dev.java.net/>. The original Args4J code is distributed
     under the MIT license; if you prefer, you may use code from 
-    cltool4j.args4j under the MIT license in place of the AGPL.
+    cltool4j.args4j under the MIT license in place of the Apache License 2.0.
 
     The fastutil project (the it.unimi.dsi.fastutil package) is distributed 
     under the LGPL. You are free to use the fastutil code distributed with 
@@ -661,47 +662,3 @@ reviewing courts shall apply local law that most closely approximates
 an absolute waiver of all civil liability in connection with the
 Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
-
-                     END OF TERMS AND CONDITIONS
-
-            How to Apply These Terms to Your New Programs
-
-  If you develop a new program, and you want it to be of the greatest
-possible use to the public, the best way to achieve this is to make it
-free software which everyone can redistribute and change under these terms.
-
-  To do so, attach the following notices to the program.  It is safest
-to attach them to the start of each source file to most effectively
-state the exclusion of warranty; and each file should have at least
-the "copyright" line and a pointer to where the full notice is found.
-
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-Also add information on how to contact you by electronic and paper mail.
-
-  If your software can interact with users remotely through a computer
-network, you should also make sure that it provides a way for users to
-get its source.  For example, if your program is a web application, its
-interface could display a "Source" link that leads users to an archive
-of the code.  There are many ways you could offer source, and different
-solutions will be better for different programs; see section 13 for the
-specific requirements.
-
-  You should also get your employer (if you work as a programmer) or school,
-if any, to sign a "copyright disclaimer" for the program, if necessary.
-For more information on this, and how to apply and follow the GNU AGPL, see
-<http://www.gnu.org/licenses/>.
