@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, 2011 Aaron Dunlop and Nathan Bodenstab
+ * Copyright 2010-2012 Aaron Dunlop and Nathan Bodenstab
  * 
  * This file is part of the BUBS Parser.
  * 
@@ -22,6 +22,7 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.cellselector.ArrayCellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
+import edu.ohsu.cslu.parser.ml.ConstrainedChartParser;
 
 /**
  * {@link CellSelector} implementation which constrains parsing according to a gold tree represented in a
@@ -43,7 +44,7 @@ public class ConstrainedCellSelector extends ArrayCellSelector {
     @Override
     public void initSentence(final ChartParser<?, ?> p) {
         super.initSentence(p);
-        this.cellIndices = ((ConstrainedInsideOutsideParser) p).constrainingChart.openCells;
+        this.cellIndices = ((ConstrainedChartParser) p).constrainingChart().openCells;
         this.openCells = cellIndices.length;
     }
 }

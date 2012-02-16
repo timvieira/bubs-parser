@@ -26,6 +26,7 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
+import edu.ohsu.cslu.parser.ml.ConstrainedChartParser;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
 import edu.ohsu.cslu.util.Math;
 
@@ -52,7 +53,7 @@ import edu.ohsu.cslu.util.Math;
  * @author Aaron Dunlop
  */
 public class ConstrainedInsideOutsideParser extends
-        SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, ConstrainedChart> {
+        SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, ConstrainedChart> implements ConstrainedChartParser {
 
     ConstrainingChart constrainingChart;
 
@@ -755,5 +756,10 @@ public class ConstrainedInsideOutsideParser extends
     @Override
     protected void computeInsideProbabilities(final ChartCell cell) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ConstrainingChart constrainingChart() {
+        return constrainingChart;
     }
 }

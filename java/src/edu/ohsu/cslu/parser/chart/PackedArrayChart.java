@@ -67,7 +67,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     /**
      * The number of non-terminals populated in each cell. Indexed by cell index ({@link #cellIndex(int, int)} ).
      */
-    protected final int[] numNonTerminals;
+    public final int[] numNonTerminals;
 
     /**
      * The index in the main chart array of the first non-terminal in each cell which is valid as a left child. Indexed

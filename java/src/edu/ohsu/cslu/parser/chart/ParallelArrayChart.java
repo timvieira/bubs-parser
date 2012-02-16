@@ -200,17 +200,20 @@ public abstract class ParallelArrayChart extends Chart {
 
     @Override
     public String toString() {
-        return toString(false);
+        return toString(false, false);
     }
 
-    public String toString(final boolean formatFractions) {
+    public String toString(final boolean formatFractions, final boolean includeEmptyCells) {
         final StringBuilder sb = new StringBuilder();
 
         for (int span = 1; span <= size; span++) {
             for (int start = 0; start <= size - span; start++) {
                 final int end = start + span;
-                sb.append(getCell(start, end).toString(formatFractions));
-                sb.append("\n\n");
+                final ParallelArrayChartCell cell = getCell(start, end);
+                if (cell.getNumNTs() > 0 || includeEmptyCells) {
+                    sb.append(cell.toString(formatFractions));
+                    sb.append("\n\n");
+                }
             }
         }
 
@@ -224,16 +227,15 @@ public abstract class ParallelArrayChart extends Chart {
 
         if (rightChild == Production.UNARY_PRODUCTION) {
             // Unary Production
-            return String.format("%s -> %s (%.5f, %d)\n", g.mapNonterminal(nonterminal),
-                    g.mapNonterminal(leftChild), insideProbability, midpoint);
+            return String.format("%s -> %s (%.5f, %d)\n", g.mapNonterminal(nonterminal), g.mapNonterminal(leftChild),
+                    insideProbability, midpoint);
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
             // Lexical Production
-            return String.format("%s -> %s (%.5f, %d)\n", g.mapNonterminal(nonterminal),
-                    g.mapLexicalEntry(leftChild), insideProbability, midpoint);
+            return String.format("%s -> %s (%.5f, %d)\n", g.mapNonterminal(nonterminal), g.mapLexicalEntry(leftChild),
+                    insideProbability, midpoint);
         } else {
             return String.format("%s -> %s %s (%.5f, %d)\n", g.mapNonterminal(nonterminal),
-                    g.mapNonterminal(leftChild), g.mapNonterminal(rightChild),
-                    insideProbability, midpoint);
+                    g.mapNonterminal(leftChild), g.mapNonterminal(rightChild), insideProbability, midpoint);
         }
     }
 

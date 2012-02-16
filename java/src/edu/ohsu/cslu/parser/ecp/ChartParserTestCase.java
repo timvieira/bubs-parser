@@ -34,8 +34,6 @@ import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.cellselector.CellSelector;
-import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.fom.InsideProb;
@@ -84,7 +82,7 @@ public abstract class ChartParserTestCase<P extends ChartParser<? extends Gramma
         }
 
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAX_BEAM_WIDTH, "0");
-        parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
+        parser = createParser(f2_21_grammar, parserOptions(), configProperties());
     }
 
     public static Reader simpleGrammar2() throws Exception {
@@ -153,15 +151,16 @@ public abstract class ChartParserTestCase<P extends ChartParser<? extends Gramma
      * Creates the appropriate parser for each test class. Ugly reflection code, but at least it's all localized here.
      * 
      * @param grammar The grammar to use when parsing
-     * @param cellSelectorModel Model to produce {@link CellSelector} controlling chart traversal
      * @return Parser instance
      */
     @SuppressWarnings("unchecked")
-    protected final P createParser(final Grammar grammar, final CellSelectorModel cellSelectorModel,
-            final ParserDriver options, final ConfigProperties configProperties) {
-        if (options != null) {
-            options.cellSelectorModel = cellSelectorModel;
+    protected final P createParser(final Grammar grammar, final ParserDriver options,
+            final ConfigProperties configProperties) {
+
+        if (options != null && options.cellSelectorModel == null) {
+            options.cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
         }
+
         try {
             final Class<P> parserClass = ((Class<P>) ((ParameterizedType) getClass().getGenericSuperclass())
                     .getActualTypeArguments()[0]);

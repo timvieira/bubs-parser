@@ -29,10 +29,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import cltool4j.GlobalConfigProperties;
+import edu.ohsu.cslu.grammar.GrammarFormatType;
+import edu.ohsu.cslu.lela.ConstrainedCellSelector;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
-import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ecp.ChartParserTestCase;
+import edu.ohsu.cslu.parser.fom.InsideProb;
 
 /**
  * @author Aaron Dunlop
@@ -45,12 +48,22 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
     @Before
     public void setUp() throws Exception {
         GlobalConfigProperties.singleton().setProperty("normInsideTune", "0");
+        GlobalConfigProperties.singleton().setProperty("maxLocalDelta", "1000000");
         super.setUp();
+    }
+
+    @Override
+    protected ParserDriver parserOptions() throws Exception {
+        final ParserDriver options = new ParserDriver();
+        options.binaryTreeOutput = true;
+        options.fomModel = new InsideProb();
+        options.cellSelectorModel = ConstrainedCellSelector.MODEL;
+        return options;
     }
 
     @Test
     public void testSimpleGrammar2() throws Exception {
-        parser = createParser(simpleGrammar2, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
+        parser = createParser(simpleGrammar2, parserOptions(), configProperties());
 
         final String constrainingTree = "(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))";
         final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, simpleGrammar2, null);
@@ -64,11 +77,9 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
         tmpFile.write(((ConstrainedCphSpmlParser) parser).baseGrammar.toString());
         tmpFile.close();
 
-        final String constrainingTree = "(ROOT (S (S (NP (NP (NP (DT The) (NN economy) (POS 's))) (NN temperature)) (VP (MD will) (VP (VB be) (VP (VP (VP (VP (VBN taken) (PP (IN from) (NP (NP (JJ several) (NN vantage)) (NNS points)))) (NP (DT this) (NN week))) (, ,)) (PP (IN with) (NP (NP (NNS readings)) (PP (IN on) (NP (NP (NN trade) (, ,) (NN output) (, ,) (NN housing) (, ,) (CC and) (NN inflation)))))))))) (. .)))";
+        final String constrainingTree = "(ROOT (S (S (NP (ADJP (NP (DT The) (NN economy) (POS 's))) (NN temperature)) (VP (MD will) (VP (VB be) (VP (VP (VP (VBN taken) (PP (IN from) (NP (NP (JJ several) (NN vantage)) (NNS points)))) (NP (DT this) (NN week))) (, ,) (PP (IN with) (NP (NP (NNS readings)) (PP (IN on) (NP (NN trade) (, ,) (NN output) (, ,) (NN housing) (, ,) (CC and) (NN inflation))))))))) (. .)))";
 
         final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, f2_21_grammar, null);
-        assertEquals(
-                "(ROOT (S (S|<NP-VP> (NP (NP (NP|<DT-NN> (DT The) (NN economy) (POS 's))) (NN temperature)) (VP (MD will) (VP (VB be) (VP (VP|<NP-,> (VP|<PP-NP> (VP|<VBN-PP> (VBN taken) (PP (IN from) (NP (NP|<JJ-NN> (JJ several) (NN vantage)) (NNS points)))) (NP (DT this) (NN week))) (, ,)) (PP (IN with) (NP (NP (NNS readings)) (PP (IN on) (NP (NN trade) (, ,) (NN output) (, ,) (NN housing) (CC and) (NN inflation))))))))) (. .)))",
-                parser.findBestParse(task).toString());
+        assertEquals(constrainingTree, parser.findBestParse(task).unfactor(GrammarFormatType.CSLU).toString());
     }
 }

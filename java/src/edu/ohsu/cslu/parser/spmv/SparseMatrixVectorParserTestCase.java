@@ -35,7 +35,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
@@ -93,7 +92,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
             simpleGrammar2 = createGrammar(simpleGrammar2());
         }
 
-        parser = createParser(f2_21_grammar, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
+        parser = createParser(f2_21_grammar, parserOptions(), configProperties());
     }
 
     @After
@@ -113,7 +112,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final P p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
+        final P p = createParser(g, parserOptions(), configProperties());
         final ParseTask parseTask = new ParseTask("systems analyst arbitration chef", Parser.InputFormat.Text, g);
         p.initSentence(parseTask);
         // p.parseSentence("systems analyst arbitration chef");
@@ -175,8 +174,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar1;
-        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(),
-                configProperties());
+        final SparseMatrixVectorParser<?, ?> p = createParser(g, parserOptions(), configProperties());
         final ParseTask parseTask = new ParseTask("systems analyst arbitration chef", Parser.InputFormat.Text, g);
         p.initSentence(parseTask);
         // p.initSentence(new int[4]);
@@ -310,8 +308,7 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
         // Create the parser
         final SparseMatrixGrammar g = (SparseMatrixGrammar) simpleGrammar2;
-        final SparseMatrixVectorParser<?, ?> p = createParser(g, LeftRightBottomTopTraversal.MODEL, parserOptions(),
-                configProperties());
+        final SparseMatrixVectorParser<?, ?> p = createParser(g, parserOptions(), configProperties());
         final ParseTask parseTask = new ParseTask("The fish market stands last", Parser.InputFormat.Text, g);
         p.initSentence(parseTask);
         // p.initSentence(new int[5]);

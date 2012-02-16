@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
@@ -93,7 +92,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      */
     @Test
     public void testSimpleGrammar1() throws Exception {
-        parser = createParser(simpleGrammar1, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
+        parser = createParser(simpleGrammar1, parserOptions(), configProperties());
 
         String parse = parser.parseSentence("systems analyst arbitration chef").parseBracketString(true, false);
         assertEquals("(ROOT (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", parse);
@@ -113,7 +112,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      */
     @Test
     public void testSimpleGrammar2() throws Exception {
-        parser = createParser(simpleGrammar2, LeftRightBottomTopTraversal.MODEL, parserOptions(), configProperties());
+        parser = createParser(simpleGrammar2, parserOptions(), configProperties());
 
         String parse = parser.parseSentence("The fish market stands last").parseBracketString(true, false);
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parse);

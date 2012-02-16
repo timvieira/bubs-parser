@@ -48,6 +48,7 @@ import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.lela.ConstrainedCellSelector;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
@@ -92,6 +93,7 @@ import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
 import edu.ohsu.cslu.parser.ml.CartesianProductLeftChildHashSpmlParser;
+import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
 import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
@@ -456,6 +458,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         case InsideOutsideCartesianProductHash:
             return new InsideOutsideCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
 
+        case ConstrainedCartesianProductHashMl:
+            return new LeftCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
+
         default:
             throw new IllegalArgumentException("Unsupported parser type: " + researchParserType);
         }
@@ -555,6 +560,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
         case InsideOutsideCartesianProductHash:
             return new InsideOutsideCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
+
+        case ConstrainedCartesianProductHashMl:
+            cellSelectorModel = ConstrainedCellSelector.MODEL;
+            return new ConstrainedCphSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
 
         default:
             throw new IllegalArgumentException("Unsupported parser type");
