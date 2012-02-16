@@ -162,28 +162,58 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
     }
 
     /**
-     * Processes unary rules if the gold tree contains one or more unaries in the current cell. Removes any
-     * non-terminals which do not match the unsplit categories from the gold tree.
+     * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and
+     * populates this chart cell. Used to populate unary rules.
+     * 
+     * @param chartCell
      */
-    protected void unaryAndPruning(final PackedArrayChartCell spvChartCell,
-            final PackedArrayChartCell constrainingCell, final short start, final short end) {
+    protected void unaryAndPruning(final PackedArrayChartCell chartCell, final PackedArrayChartCell constrainingCell,
+            final short start, final short end) {
 
-        // Perform normal unary processing
-        final TemporaryChartCell tmpCell = spvChartCell.tmpCell;
-        unaryAndPruning(tmpCell, beamWidth, start, end);
+        chartCell.allocateTemporaryStorage();
+        final int[] chartCellChildren = chartCell.tmpCell.packedChildren;
+        final short[] chartCellMidpoints = chartCell.tmpCell.midpoints;
+        final float[] chartCellProbabilities = chartCell.tmpCell.insideProbabilities;
 
-        // Remove any non-terminals populated in tmpCell that do not match the constraining cell
-        // TODO This check could be considerably more efficient
-        for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-            final short baseNt = grammar.nonTermSet.getBaseIndex(nt);
+        final PackingFunction cpf = grammar.cartesianProductFunction();
 
-            if (constrainingCell.getInside(baseNt) == Float.NEGATIVE_INFINITY
-                    || constrainingCell.getMidpoint(baseNt) != tmpCell.midpoints[nt]) {
-                tmpCell.insideProbabilities[nt] = Float.NEGATIVE_INFINITY;
+        final int constrainingCellIndex = constrainingChart.cellIndex(start, end);
+        final int constrainingCellOffset = constrainingChart.offset(constrainingCellIndex);
+
+        // Iterate over populated children (matrix columns)
+        for (short child = 0; child < grammar.numNonTerms(); child++) {
+
+            if (chartCellProbabilities[child] == Float.NEGATIVE_INFINITY) {
+                continue;
+            }
+            final short baseChild = grammar.nonTermSet.getBaseIndex(child);
+
+            // Iterate over possible parents of the child (rows with non-zero entries)
+            for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
+
+                final short parent = grammar.cscUnaryRowIndices[i];
+                final float grammarProbability = grammar.cscUnaryProbabilities[i];
+                final short baseParent = grammar.nonTermSet.getBaseIndex(parent);
+
+                // Skip this edge if it doesn't match the constraining edge
+                final int constrainingIndex = Arrays.binarySearch(constrainingChart.nonTerminalIndices,
+                        constrainingCellOffset, constrainingCellOffset
+                                + constrainingChart.numNonTerminals[constrainingCellIndex], baseParent);
+                if (constrainingIndex < 0
+                        || baseGrammar.packingFunction
+                                .unpackLeftChild(constrainingChart.packedChildren[constrainingIndex]) != baseChild) {
+                    continue;
+                }
+
+                final float jointProbability = grammarProbability + chartCellProbabilities[child];
+                if (jointProbability > chartCellProbabilities[parent]) {
+                    chartCellProbabilities[parent] = jointProbability;
+                    chartCellChildren[parent] = cpf.packUnary(child);
+                    chartCellMidpoints[parent] = end;
+                }
             }
         }
-
-        spvChartCell.finalizeCell();
+        chartCell.finalizeCell();
     }
 
     @Override
