@@ -175,6 +175,17 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
         final short[] chartCellMidpoints = chartCell.tmpCell.midpoints;
         final float[] chartCellProbabilities = chartCell.tmpCell.insideProbabilities;
 
+        // Remove any non-terminals populated in tmpCell that do not match the constraining cell
+        // TODO This check could be considerably more efficient
+        for (short nt = 0; nt < chartCellProbabilities.length; nt++) {
+            final short baseNt = grammar.nonTermSet.getBaseIndex(nt);
+
+            if (constrainingCell.getInside(baseNt) == Float.NEGATIVE_INFINITY
+                    || constrainingCell.getMidpoint(baseNt) != chartCellMidpoints[nt]) {
+                chartCellProbabilities[nt] = Float.NEGATIVE_INFINITY;
+            }
+        }
+
         final PackingFunction cpf = grammar.cartesianProductFunction();
 
         final int constrainingCellIndex = constrainingChart.cellIndex(start, end);
