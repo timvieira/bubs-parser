@@ -94,14 +94,14 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar1() throws Exception {
         parser = createParser(simpleGrammar1, parserOptions(), configProperties());
 
-        String parse = parser.parseSentence("systems analyst arbitration chef").parseBracketString(true, false);
+        String parse = parser.parseSentence("systems analyst arbitration chef").parseBracketString(true);
         assertEquals("(ROOT (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN chef)))", parse);
 
         // Tests with an unknown word.
-        parse = parser.parseSentence("systems XXX arbitration chef").parseBracketString(true, false);
+        parse = parser.parseSentence("systems XXX arbitration chef").parseBracketString(true);
         assertEquals("(ROOT (NP (NP (NP (NN systems) (NN XXX)) (NN arbitration)) (NN chef)))", parse);
 
-        parse = parser.parseSentence("systems analyst arbitration XXX").parseBracketString(true, false);
+        parse = parser.parseSentence("systems analyst arbitration XXX").parseBracketString(true);
         assertEquals("(ROOT (NP (NP (NP (NN systems) (NN analyst)) (NN arbitration)) (NN XXX)))", parse);
     }
 
@@ -114,17 +114,17 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     public void testSimpleGrammar2() throws Exception {
         parser = createParser(simpleGrammar2, parserOptions(), configProperties());
 
-        String parse = parser.parseSentence("The fish market stands last").parseBracketString(true, false);
+        String parse = parser.parseSentence("The fish market stands last").parseBracketString(true);
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parse);
 
         // Tests with an unknown word
-        parse = parser.parseSentence("The XXX market stands last").parseBracketString(true, false);
+        parse = parser.parseSentence("The XXX market stands last").parseBracketString(true);
         assertEquals("(ROOT (S (NP (DT The) (NP (NN XXX) (NN market))) (VP (VB stands) (RB last))))", parse);
 
-        parse = parser.parseSentence("The fish market stands XXX").parseBracketString(true, false);
+        parse = parser.parseSentence("The fish market stands XXX").parseBracketString(true);
         assertEquals("(ROOT (S (NP (DT The) (NN fish)) (VP (VB market) (VP|VB (NP (NN stands) (NN XXX))))))", parse);
 
-        parse = parser.parseSentence("The fish market stands last XXX").parseBracketString(true, false);
+        parse = parser.parseSentence("The fish market stands last XXX").parseBracketString(true);
         assertEquals("()", parse);
 
         //
@@ -132,10 +132,10 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
         // lexical items contain special characters)
         //
 
-        parse = parser.parseSentence("The fish market @stands last").parseBracketString(true, false);
+        parse = parser.parseSentence("The fish market @stands last").parseBracketString(true);
         assertEquals("(ROOT (S (NP (DT The) (NN fish)) (VP (VB market) (VP|VB (NP (NN @stands) (RB last))))))", parse);
 
-        parse = parser.parseSentence("The fish market stands|X last").parseBracketString(true, false);
+        parse = parser.parseSentence("The fish market stands|X last").parseBracketString(true);
         assertEquals("(ROOT (S (NP (DT The) (NN fish)) (VP (VB market) (VP|VB (NP (NN stands|X) (RB last))))))", parse);
     }
 
@@ -215,7 +215,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
     }
 
     protected void parseTreebankSentence(final int index) throws Exception {
-        final String parse = parser.parseSentence(sentences.get(index)[0]).parseBracketString(true, false);
+        final String parse = parser.parseSentence(sentences.get(index)[0]).parseBracketString(true);
 
         String correctParse;
         final Class<P> parserClass = parserClass();

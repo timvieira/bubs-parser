@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.Reader;
@@ -35,6 +36,8 @@ import cltool4j.GlobalConfigProperties;
 import cltool4j.ThreadLocalLinewiseClTool;
 import cltool4j.Threadable;
 import cltool4j.args4j.Option;
+import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
+import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
@@ -185,6 +188,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-beamModel", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
 
+    @Option(name = "-head-rules", hidden = true, metaVar = "ruleset or file", usage = "Enables head-finding using a Charniak-style head-finding ruleset. Specify ruleset as 'charniak' or a rule file. Ignored if -binary is specified.")
+    private String headRules = null;
+    private HeadPercolationRuleset headPercolationRuleset = null;
+
     @Option(name = "-ngramOutsideModel", metaVar = "FILE", usage = "N-gram model for inside normalization.  Only needed for agenda parsers")
     private String ngramOutsideModelFileName = null;
 
@@ -266,6 +273,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         BaseLogger.singleton().info(
                 "INFO: parser=" + researchParserType + " fom=" + fomTypeOrModel + " decode=" + decodeMethod);
         BaseLogger.singleton().info("INFO: " + commandLineArgStr);
+
+        if (headRules != null) {
+            if (headRules.equalsIgnoreCase("charniak")) {
+                headPercolationRuleset = new CharniakHeadPercolationRuleset();
+            } else {
+                headPercolationRuleset = new HeadPercolationRuleset(new FileReader(headRules));
+            }
+        }
 
         if (modelFile != null) {
             final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(modelFile));
@@ -585,8 +600,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     protected void output(final ParseTask parseTask) {
         if (parseTask != null) {
             parseTask.evaluate(evaluator);
-            System.out
-                    .println(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels) + parseTask.statsString());
+            System.out.println(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels, headPercolationRuleset)
+                    + parseTask.statsString());
             sentencesParsed++;
             wordsParsed += parseTask.sentenceLength();
             if (parseTask.parseFailed()) {

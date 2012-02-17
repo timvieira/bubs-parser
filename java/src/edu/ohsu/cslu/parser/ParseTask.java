@@ -23,6 +23,7 @@ import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Tokenizer;
@@ -206,7 +207,8 @@ public class ParseTask {
         return result.toString();
     }
 
-    public String parseBracketString(final boolean binaryTree, final boolean printUnkLabels) {
+    public String parseBracketString(final boolean binaryTree, final boolean printUnkLabels,
+            final HeadPercolationRuleset headRules) {
         if (binaryParse == null) {
             if (recoveryStrategy != null) {
                 return naryParse().toString();
@@ -219,7 +221,30 @@ public class ParseTask {
         if (binaryTree) {
             return binaryParse.toString();
         }
+
+        if (headRules != null) {
+            // Output head rules
+            return naryParseWithHeadLabels(headRules).toString();
+        }
+
+        // Otherwise, just return the nary parse tree
         return naryParse().toString();
+    }
+
+    public String parseBracketString(final boolean binaryTree) {
+        return parseBracketString(binaryTree, false, null);
+    }
+
+    public NaryTree<String> naryParseWithHeadLabels(final HeadPercolationRuleset headRules) {
+        final NaryTree<String> tree = naryParse();
+
+        for (final NaryTree<String> node : tree.preOrderTraversal()) {
+            // Skip leaf and preterminal nodes
+            if (node.height() > 2) {
+                node.setLabel(node.label() + ' ' + headRules.headChild(node.label(), node.childLabels()));
+            }
+        }
+        return tree;
     }
 
     public NaryTree<String> naryParse() {
