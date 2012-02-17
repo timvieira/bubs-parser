@@ -125,14 +125,14 @@ public class TestInsideOutsideCphSpmlParser {
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
                 PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
-                .parseSentence(sentence).parseBracketString(false, false));
+                .parseSentence(sentence).parseBracketString(false));
 
         // Max-precision decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
                 PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))",
-                parser.parseSentence(sentence).parseBracketString(false, false));
+                parser.parseSentence(sentence).parseBracketString(false));
     }
 
     /**
@@ -151,14 +151,14 @@ public class TestInsideOutsideCphSpmlParser {
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
                 PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
-                .parseSentence(sentence).parseBracketString(false, false));
+                .parseSentence(sentence).parseBracketString(false));
 
         // Max-precision decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
                 PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (DT The) (NN fish) (NN market) (VB stands) (RB last)))", parser.parseSentence(sentence)
-                .parseBracketString(false, false));
+                .parseBracketString(false));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class TestInsideOutsideCphSpmlParser {
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
                 PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
-                .parseSentence(sentence).parseBracketString(false, false));
+                .parseSentence(sentence).parseBracketString(false));
     }
 
     @Test
@@ -183,7 +183,7 @@ public class TestInsideOutsideCphSpmlParser {
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
-                parser.parseSentence("The report is due out tomorrow .").parseBracketString(false, false));
+                parser.parseSentence("The report is due out tomorrow .").parseBracketString(false));
     }
 
     @Test
@@ -195,7 +195,7 @@ public class TestInsideOutsideCphSpmlParser {
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
-                parser.parseSentence("The report is due out tomorrow .").parseBracketString(false, false));
+                parser.parseSentence("The report is due out tomorrow .").parseBracketString(false));
     }
 
     @Test
@@ -206,7 +206,7 @@ public class TestInsideOutsideCphSpmlParser {
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
                 "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
-                parser.parseSentence(sentences.get(1)[0]).parseBracketString(false, false));
+                parser.parseSentence(sentences.get(1)[0]).parseBracketString(false));
     }
 
     // @Test

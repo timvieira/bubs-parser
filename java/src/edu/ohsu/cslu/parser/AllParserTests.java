@@ -34,7 +34,7 @@ import edu.ohsu.cslu.parser.spmv.AllSparseMatrixVectorParserTests;
         // TODO AllGrammarTests.class,
         TestParser.class, TestECPGramLoop.class, TestECPGramLoopBerkFilter.class, TestECPCellCrossHash.class,
         TestECPCellCrossList.class, TestECPCellCrossMatrix.class, AllSparseMatrixVectorParserTests.class,
-        AllMatrixLoopParserTests.class })
+        AllMatrixLoopParserTests.class, TestParserDriver.class })
 public class AllParserTests {
 
 }
