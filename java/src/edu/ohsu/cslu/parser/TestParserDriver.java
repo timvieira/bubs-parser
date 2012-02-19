@@ -32,6 +32,8 @@ import cltool4j.ToolTestCase;
  */
 public class TestParserDriver extends ToolTestCase {
 
+    private final static String M0_GRAMMAR = "unit-test-data/grammars/eng.R0.gr.gz";
+
     /**
      * Tests finding and labeling heads using Charniak's ruleset. Parses with a Markov-0 grammar and outputs head rules
      * in the format requested by Ginger Software, Feb 2012.
@@ -51,16 +53,22 @@ public class TestParserDriver extends ToolTestCase {
                 .append("(ROOT 0 (S 1 (NP 2 (DT The) (ADJP 1 (RBS most) (JJ troublesome)) (NN report)) (VP 0 (MD may) (VP 0 (VB be) (NP 4 (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (ADJP 0 (JJ due) (PP 0 (IN out) (NP 0 (NN tomorrow)))))) (. .)))\n");
 
         // Using the built-in Charniak rules
-        String output = executeTool(new ParserDriver(),
-                "-g unit-test-data/grammars/eng.R0.gr.gz -O normInsideTune=0 -head-rules charniak", input.toString());
+        String output = executeTool(new ParserDriver(), "-g " + M0_GRAMMAR
+                + " -O normInsideTune=0 -head-rules charniak", input.toString());
         assertEquals(expectedOutput.toString(), treeOutput(output));
 
         // Using a rule file
-        output = executeTool(
-                new ParserDriver(),
-                "-g unit-test-data/grammars/eng.R0.gr.gz -O normInsideTune=0 -head-rules unit-test-data/parsing/charniak.head.rules",
-                input.toString());
+        output = executeTool(new ParserDriver(), "-g " + M0_GRAMMAR
+                + " -O normInsideTune=0 -head-rules unit-test-data/parsing/charniak.head.rules", input.toString());
         assertEquals(expectedOutput.toString(), treeOutput(output));
+    }
+
+    @Test
+    public void testRecovery() throws Exception {
+        final String input = "(ROOT (SQ (VBZ Is) (NP (NNP Nikon) (NNP low) (NNP end)) (VP (VBG moving) (PP (IN toward) (NP (NP (DT the) (JJ hellish) (NNS ergonomics)) (PP (IN of) (NP (DT the) (NNP Canon) (NNP Rebel)))))) (. ?)))";
+        final String output = executeTool(new ParserDriver(), "-g " + M0_GRAMMAR
+                + " -rp const -O maxBeamWidth=10 -O normInsideTune=0 -recovery rb", input.toString());
+        assertEquals("".toString(), treeOutput(output));
     }
 
     private String treeOutput(final String output) {
