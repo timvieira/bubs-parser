@@ -231,13 +231,24 @@ public class DenseVectorChart extends ParallelArrayChart {
 
         @Override
         public int getNumNTs() {
-            int numNTs = 0;
+            int count = 0;
             for (int i = offset; i < (offset + sparseMatrixGrammar.numNonTerms()); i++) {
                 if (insideProbabilities[i] != Float.NEGATIVE_INFINITY) {
-                    numNTs++;
+                    count++;
                 }
             }
-            return numNTs;
+            return count;
+        }
+
+        @Override
+        public int getNumUnfactoredNTs() {
+            int count = 0;
+            for (short nt = 0; nt < sparseMatrixGrammar.numNonTerms(); nt++) {
+                if (insideProbabilities[nt + offset] != Float.NEGATIVE_INFINITY && !grammar.nonTermSet.isFactored(nt)) {
+                    count++;
+                }
+            }
+            return count;
         }
 
         @Override

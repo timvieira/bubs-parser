@@ -170,7 +170,7 @@ public abstract class Chart {
 
         // Start at the specified cell and find the most probable entry.
         final ChartCell cell = getCell(start, end);
-        if (cell.getNumNTs() > 0) {
+        if (cell.getNumUnfactoredNTs() > 0) {
             list.add(extractParseFragment(cell));
         } else {
 
@@ -183,7 +183,7 @@ public abstract class Chart {
                     for (int e = end; e >= start + span; e--) {
 
                         final ChartCell c = getCell(e - span, e);
-                        if (c.getNumNTs() > 0) {
+                        if (c.getNumUnfactoredNTs() > 0) {
 
                             if (c.start > start) {
                                 // Add left sibling(s)
@@ -216,7 +216,7 @@ public abstract class Chart {
         short maxNt = -1;
         final float maxInside = Float.NEGATIVE_INFINITY;
         for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
-            if (cell.getInside(nt) > maxInside) {
+            if (!grammar.nonTermSet.isFactored(nt) && cell.getInside(nt) > maxInside) {
                 maxNt = nt;
             }
         }
@@ -296,6 +296,11 @@ public abstract class Chart {
          * @return the number of populated non-terminals in this cell
          */
         public abstract int getNumNTs();
+
+        /**
+         * @return The number of unfactored non-terminals populated in this cell
+         */
+        public abstract int getNumUnfactoredNTs();
 
         @Override
         public boolean equals(final Object o) {

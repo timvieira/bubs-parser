@@ -607,16 +607,38 @@ public class PackedArrayChart extends ParallelArrayChart {
         @Override
         public int getNumNTs() {
             if (tmpCell != null) {
-                int numNTs = 0;
-                for (int i = 0; i < tmpCell.insideProbabilities.length; i++) {
-                    if (tmpCell.insideProbabilities[i] != Float.NEGATIVE_INFINITY) {
-                        numNTs++;
+                int count = 0;
+                for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
+                    if (tmpCell.insideProbabilities[nt] != Float.NEGATIVE_INFINITY) {
+                        count++;
                     }
                 }
-                return numNTs;
+                return count;
             }
 
             return numNonTerminals[cellIndex(start, end)];
+        }
+
+        @Override
+        public int getNumUnfactoredNTs() {
+            if (tmpCell != null) {
+                int count = 0;
+                for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
+                    if (tmpCell.insideProbabilities[nt] != Float.NEGATIVE_INFINITY
+                            && !grammar.nonTermSet.isFactored(nt)) {
+                        count++;
+                    }
+                }
+                return count;
+            }
+
+            int count = 0;
+            for (int i = offset; i < offset + numNonTerminals[cellIndex(start, end)]; i++) {
+                if (!grammar.nonTermSet.isFactored(nonTerminalIndices[i])) {
+                    count++;
+                }
+            }
+            return count;
         }
 
         public int leftChildren() {

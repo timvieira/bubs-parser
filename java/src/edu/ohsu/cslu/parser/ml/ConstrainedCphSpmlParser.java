@@ -96,58 +96,57 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
         final int constrainingCellIndex = constrainingChart.cellIndex(start, end);
         final int constrainingCellOffset = constrainingChart.offset(constrainingCellIndex);
 
-        // Iterate over all possible midpoints
-        for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
-            final int leftCellIndex = chart.cellIndex(start, midpoint);
-            final int rightCellIndex = chart.cellIndex(midpoint, end);
+        final short midpoint = constrainingChart.midpoints[constrainingCellIndex];
 
-            // Iterate over children in the left child cell
-            final int leftStart = chart.minLeftChildIndex(leftCellIndex);
-            final int leftEnd = chart.maxLeftChildIndex(leftCellIndex);
+        final int leftCellIndex = chart.cellIndex(start, midpoint);
+        final int rightCellIndex = chart.cellIndex(midpoint, end);
 
-            final int rightStart = chart.minRightChildIndex(rightCellIndex);
-            final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
+        // Iterate over children in the left child cell
+        final int leftStart = chart.minLeftChildIndex(leftCellIndex);
+        final int leftEnd = chart.maxLeftChildIndex(leftCellIndex);
 
-            for (int i = leftStart; i <= leftEnd; i++) {
-                final short leftChild = chart.nonTerminalIndices[i];
-                final short baseLeftChild = grammar.nonTermSet.getBaseIndex(leftChild);
-                final float leftProbability = chart.insideProbabilities[i];
+        final int rightStart = chart.minRightChildIndex(rightCellIndex);
+        final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
 
-                // And over children in the right child cell
-                for (int j = rightStart; j <= rightEnd; j++) {
-                    final short rightChild = chart.nonTerminalIndices[j];
-                    final short baseRightChild = grammar.nonTermSet.getBaseIndex(rightChild);
-                    final int column = cpf.pack(leftChild, rightChild);
+        for (int i = leftStart; i <= leftEnd; i++) {
+            final short leftChild = chart.nonTerminalIndices[i];
+            final short baseLeftChild = grammar.nonTermSet.getBaseIndex(leftChild);
+            final float leftProbability = chart.insideProbabilities[i];
 
-                    if (column == Integer.MIN_VALUE) {
+            // And over children in the right child cell
+            for (int j = rightStart; j <= rightEnd; j++) {
+                final short rightChild = chart.nonTerminalIndices[j];
+                final short baseRightChild = grammar.nonTermSet.getBaseIndex(rightChild);
+                final int column = cpf.pack(leftChild, rightChild);
+
+                if (column == Integer.MIN_VALUE) {
+                    continue;
+                }
+
+                final float childProbability = leftProbability + chart.insideProbabilities[j];
+
+                for (int k = binaryColumnOffsets[column]; k < binaryColumnOffsets[column + 1]; k++) {
+
+                    final float jointProbability = binaryProbabilities[k] + childProbability;
+                    final short parent = binaryRowIndices[k];
+                    final short baseParent = grammar.nonTermSet.getBaseIndex(parent);
+
+                    // Skip this edge if it doesn't match the constraining edge
+                    final int constrainingIndex = Arrays.binarySearch(constrainingChart.nonTerminalIndices,
+                            constrainingCellOffset, constrainingCellOffset
+                                    + constrainingChart.numNonTerminals[constrainingCellIndex], baseParent);
+                    if (constrainingIndex < 0
+                            || baseGrammar.packingFunction
+                                    .unpackLeftChild(constrainingChart.packedChildren[constrainingIndex]) != baseLeftChild
+                            || baseGrammar.packingFunction
+                                    .unpackRightChild(constrainingChart.packedChildren[constrainingIndex]) != baseRightChild) {
                         continue;
                     }
 
-                    final float childProbability = leftProbability + chart.insideProbabilities[j];
-
-                    for (int k = binaryColumnOffsets[column]; k < binaryColumnOffsets[column + 1]; k++) {
-
-                        final float jointProbability = binaryProbabilities[k] + childProbability;
-                        final short parent = binaryRowIndices[k];
-                        final short baseParent = grammar.nonTermSet.getBaseIndex(parent);
-
-                        // Skip this edge if it doesn't match the constraining edge
-                        final int constrainingIndex = Arrays.binarySearch(constrainingChart.nonTerminalIndices,
-                                constrainingCellOffset, constrainingCellOffset
-                                        + constrainingChart.numNonTerminals[constrainingCellIndex], baseParent);
-                        if (constrainingIndex < 0
-                                || baseGrammar.packingFunction
-                                        .unpackLeftChild(constrainingChart.packedChildren[constrainingIndex]) != baseLeftChild
-                                || baseGrammar.packingFunction
-                                        .unpackRightChild(constrainingChart.packedChildren[constrainingIndex]) != baseRightChild) {
-                            continue;
-                        }
-
-                        if (jointProbability > tmpCell.insideProbabilities[parent]) {
-                            tmpCell.packedChildren[parent] = column;
-                            tmpCell.insideProbabilities[parent] = jointProbability;
-                            tmpCell.midpoints[parent] = midpoint;
-                        }
+                    if (jointProbability > tmpCell.insideProbabilities[parent]) {
+                        tmpCell.packedChildren[parent] = column;
+                        tmpCell.insideProbabilities[parent] = jointProbability;
+                        tmpCell.midpoints[parent] = midpoint;
                     }
                 }
             }
@@ -159,6 +158,24 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
 
         // Apply unary rules
         unaryAndPruning(targetCell, constrainingCell, start, end);
+
+        // We need to ensure that one or more splits of the constraining non-terminal are populated in the target cell.
+        // If the cell is empty, we must choose one or more such splits; without a principled way to choose between
+        // those splits, we populate _all_ splits matching the constraining edge, assign probability 1 to the sum of
+        // those splits, and divide the probability mass between them. This operation is in effect hallucinating
+        // additional grammar rules. The proper children for those rules is also unknown, so we simply choose the first
+        // populated child in the child cells.
+
+        // final short constrainingNt = constrainingChart.nonTerminalIndices[constrainingCellIndex];
+        // final short leftChild = constrainingNt = constrainingChart.nonTerminalIndices[constrainingCellIndex];
+        // int count = 0;
+        // for (short nt = 0; nt < grammar.nonTermSet.size(); nt++) {
+        // if (grammar.nonTermSet.getBaseIndex(nt) == constrainingNt) {
+        // count++;
+        // }
+        // }
+
+        targetCell.finalizeCell();
     }
 
     /**
@@ -175,16 +192,16 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
         final short[] chartCellMidpoints = chartCell.tmpCell.midpoints;
         final float[] chartCellProbabilities = chartCell.tmpCell.insideProbabilities;
 
-        // Remove any non-terminals populated in tmpCell that do not match the constraining cell
-        // TODO This check could be considerably more efficient
-        for (short nt = 0; nt < chartCellProbabilities.length; nt++) {
-            final short baseNt = grammar.nonTermSet.getBaseIndex(nt);
-
-            if (constrainingCell.getInside(baseNt) == Float.NEGATIVE_INFINITY
-                    || constrainingCell.getMidpoint(baseNt) != chartCellMidpoints[nt]) {
-                chartCellProbabilities[nt] = Float.NEGATIVE_INFINITY;
-            }
-        }
+        // // Remove any non-terminals populated in tmpCell that do not match the constraining cell
+        // // TODO This check could be considerably more efficient
+        // for (short nt = 0; nt < chartCellProbabilities.length; nt++) {
+        // final short baseNt = grammar.nonTermSet.getBaseIndex(nt);
+        //
+        // if (constrainingCell.getInside(baseNt) == Float.NEGATIVE_INFINITY
+        // || constrainingCell.getMidpoint(baseNt) != chartCellMidpoints[nt]) {
+        // chartCellProbabilities[nt] = Float.NEGATIVE_INFINITY;
+        // }
+        // }
 
         final PackingFunction cpf = grammar.cartesianProductFunction();
 
@@ -224,7 +241,6 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
                 }
             }
         }
-        chartCell.finalizeCell();
     }
 
     @Override
