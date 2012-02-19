@@ -180,6 +180,11 @@ public class GoldChart extends Chart {
         }
 
         @Override
+        public int getNumUnfactoredNTs() {
+            throw new UnsupportedOperationException("getNumUnfactoredNTs() not implemented for GoldChart");
+        }
+
+        @Override
         public void updateInside(final ChartEdge edge) {
             throw new UnsupportedOperationException("updateInside() not implemented for GoldChart");
 

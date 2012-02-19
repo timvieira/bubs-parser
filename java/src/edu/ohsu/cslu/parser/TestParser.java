@@ -28,7 +28,6 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
  * Unit tests for {@link Parser} class.
  * 
  * @author Aaron Dunlop
- * @since May 20, 2010
  */
 public class TestParser {
 

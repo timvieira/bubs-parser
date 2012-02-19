@@ -261,6 +261,22 @@ public class CellChart extends Chart {
             return childNTs.size();
         }
 
+        /**
+         * This certainly isn't efficient, but it's not used in the main parsing loop
+         * 
+         * @return The number of unfactored non-terminals populated in this cell
+         */
+        @Override
+        public int getNumUnfactoredNTs() {
+            int count = 0;
+            for (final int child : childNTs) {
+                if (grammar.nonTermSet.isFactored((short) child)) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
         @Override
         public boolean equals(final Object o) {
             return this == o;
