@@ -68,7 +68,9 @@ public class TestParserDriver extends ToolTestCase {
         final String input = "(ROOT (SQ (VBZ Is) (NP (NNP Nikon) (NNP low) (NNP end)) (VP (VBG moving) (PP (IN toward) (NP (NP (DT the) (JJ hellish) (NNS ergonomics)) (PP (IN of) (NP (DT the) (NNP Canon) (NNP Rebel)))))) (. ?)))";
         final String output = executeTool(new ParserDriver(), "-g " + M0_GRAMMAR
                 + " -rp const -O maxBeamWidth=10 -O normInsideTune=0 -recovery rb", input.toString());
-        assertEquals("".toString(), treeOutput(output));
+        assertEquals(
+                "(ROOT (SQ (VBZ Is) (NP (NNP Nikon) (JJ low) (JJ end)) (VP (VBG moving) (PP (IN toward) (NP (NP (DT the) (JJ hellish) (NNS ergonomics)) (PP (IN of) (NP (DT the) (NNP Canon) (NN Rebel)))))) (. ?)))\n",
+                treeOutput(output));
     }
 
     private String treeOutput(final String output) {
