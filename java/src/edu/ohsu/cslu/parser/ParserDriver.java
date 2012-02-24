@@ -474,7 +474,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             return new InsideOutsideCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
 
         case ConstrainedCartesianProductHashMl:
-            return new LeftCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
+            return new LeftCscSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
 
         default:
             throw new IllegalArgumentException("Unsupported parser type: " + researchParserType);
@@ -591,7 +591,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
             @Override
             public ParseTask call() throws Exception {
-                return getLocal().parseSentence(input, recoveryStrategy);
+                try {
+                    return getLocal().parseSentence(input, recoveryStrategy);
+                } catch (final Exception e) {
+                    BaseLogger.singleton().log(Level.SEVERE, e.toString());
+                    return null;
+                }
             }
         });
     }
@@ -607,6 +612,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             if (parseTask.parseFailed()) {
                 failedParses++;
             }
+        } else {
+            System.out.println("()");
         }
     }
 
