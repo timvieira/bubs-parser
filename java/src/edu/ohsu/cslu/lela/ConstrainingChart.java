@@ -46,7 +46,7 @@ public class ConstrainingChart extends PackedArrayChart {
     short[] siblingCellIndices;
 
     /** Length of unary chain for each cell. 1 <= unaryChainLength <= maxUnaryChainLength */
-    protected final byte[] unaryChainLength;
+    public final byte[] unaryChainLength;
 
     /**
      * The length of the longest unary chain (i.e., the binary parent + any unary parents) 1 <= maxUnaryChainLength <= n
@@ -513,7 +513,7 @@ public class ConstrainingChart extends PackedArrayChart {
                     continue;
                 }
 
-                sb.append("ConstrainingChartCell[" + start + "][" + end + "]\n");
+                sb.append("ConstrainingChartCell[" + start + "][" + end + "](" + midpoints[cellIndex] + ")\n");
 
                 // Format unary parents first, followed by the two bottom entries
                 final int bottomEntryOffset = offset + (unaryChainLength(cellIndex) - 1);

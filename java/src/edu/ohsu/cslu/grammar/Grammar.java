@@ -554,8 +554,8 @@ public class Grammar implements Serializable {
             tmpPosEnd = nullSymbol;
         }
 
-        return new int[] { tmpLeftChildrenStart, tmpLeftChildrenEnd, tmpRightChildrenStart, tmpRightChildrenEnd, tmpPosStart, tmpPosEnd,
-                parentEnd };
+        return new int[] { tmpLeftChildrenStart, tmpLeftChildrenEnd, tmpRightChildrenStart, tmpRightChildrenEnd,
+                tmpPosStart, tmpPosEnd, parentEnd };
     }
 
     public static Grammar read(final String grammarFile) throws IOException, ClassNotFoundException {
@@ -966,13 +966,24 @@ public class Grammar implements Serializable {
         try {
             return getClass().getConstructor(
                     new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class, SymbolSet.class,
-                            GrammarFormatType.class }).newInstance(
+                            GrammarFormatType.class, Class.class, boolean.class }).newInstance(
                     new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
                             unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
                             unsplitGrammar.lexicalProductions(Float.NEGATIVE_INFINITY), baseVocabulary, lexSet,
-                            grammarFormat });
+                            grammarFormat, ((SparseMatrixGrammar) this).packingFunction.getClass(), true });
         } catch (final Exception e) {
-            throw new RuntimeException(e);
+            try {
+                return getClass().getConstructor(
+                        new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class,
+                                SymbolSet.class, GrammarFormatType.class }).newInstance(
+                        new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
+                                unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
+                                unsplitGrammar.lexicalProductions(Float.NEGATIVE_INFINITY), baseVocabulary, lexSet,
+                                grammarFormat });
+
+            } catch (final Exception e2) {
+                throw new RuntimeException(e2);
+            }
         }
     }
 
