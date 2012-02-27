@@ -52,5 +52,12 @@ public class TestParser {
                         + " (PP^<NP> (IN that) (NP^<PP> (NNP Shane) (NNP Longman))))"
                         + " (VP^<S> (AUX is) (VP^<VP> (VBG going) (S^<VP> (VP^<S> (TO to)"
                         + " (VP^<VP> (VB recoup) (NP^<VP> (NN today)))))))) (. .)))", GrammarFormatType.CSLU));
+
+        assertEquals(
+                "(S (NP (JJ R) (: _) (-LRB- -LRB-) (NN n) (-RRB- -RRB-)) (VP (VP (VBZ represents) (NP (NP (DT the) (NN number)) (PP (IN of) (NP (NNS documents)))))))",
+                TreeTools
+                        .unfactor(
+                                "(S_0 (NP_2 (JJ_0 R) (@NP_1 (:_1 _) (@NP_2 (-LRB-_1 -LRB-) (@NP_3 (NN_1 n) (-RRB-_0 -RRB-))))) (VP_0 (VP_0 (VBZ_1 represents) (NP_2 (NP_1 (DT_0 the) (NN_1 number)) (PP_2 (IN_3 of) (NP_3 (NNS_1 documents)))))))",
+                                GrammarFormatType.Berkeley));
     }
 }
