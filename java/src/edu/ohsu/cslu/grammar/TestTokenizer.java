@@ -18,7 +18,10 @@ public class TestTokenizer {
                 Tokenizer.treebankTokenize("He said, \"The children's parents won't go.\""));
         assertEquals("I 'm gon na go !", Tokenizer.treebankTokenize("I'm gonna go!"));
         assertEquals("-LRB- -LSB- -LCB- -RCB- -RSB- -RRB-", Tokenizer.treebankTokenize("([{}])"));
-        assertEquals("-LRB- a -LSB- b -LCB- c -RCB- -RSB- -RRB-", Tokenizer.treebankTokenize("(a [b {c}])"));
+        assertEquals("-LRB- a -LSB- b -LCB- c -LRB- d -RRB- -RCB- -RSB- -RRB-",
+                Tokenizer.treebankTokenize("(a [b {c (d)}])"));
         assertEquals("Testing ellipses ...", Tokenizer.treebankTokenize("Testing ellipses..."));
+        assertEquals("R_ -LRB- n -RRB- represents the number of documents retrieved",
+                Tokenizer.treebankTokenize("R_(n ) represents the number of documents retrieved"));
     }
 }

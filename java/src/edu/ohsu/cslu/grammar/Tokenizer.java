@@ -108,11 +108,11 @@ public class Tokenizer implements Serializable {
         // s = s.replaceAll("([^.])([.])([\\])}>\"']*)\\s*$", "$1 $2$3 ");
 
         // Parentheses, brackets, etc.
-        s = s.replaceAll("\\(", "-LRB- ");
+        s = s.replaceAll(" *\\(", " -LRB- ");
         s = s.replaceAll("\\)", " -RRB-");
-        s = s.replaceAll("\\[", "-LSB- ");
+        s = s.replaceAll(" *\\[", " -LSB- ");
         s = s.replaceAll("\\]", " -RSB-");
-        s = s.replaceAll("\\{", "-LCB- ");
+        s = s.replaceAll(" *\\{", " -LCB- ");
         s = s.replaceAll("\\}", " -RCB-");
         s = s.replaceAll("--", " -- ");
 
