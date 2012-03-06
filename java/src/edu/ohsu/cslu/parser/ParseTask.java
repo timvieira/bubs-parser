@@ -267,7 +267,9 @@ public class ParseTask {
     }
 
     public boolean parseFailed() {
-        return binaryParse == null && recoveryParse == null;
+        // If we fell all the way back to the 'recovery' parse, even though we output a parse structure, we count
+        // that as a failed parse
+        return binaryParse == null;
     }
 
     public void evaluate(final BracketEvaluator evaluator) {
