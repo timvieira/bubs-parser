@@ -69,7 +69,7 @@
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
             <param name="tool-name" value="summarize-grammar" />
-            <param name="heap-size" value="512m" />
+            <param name="heap-size" value="1024m" />
             <!-- TODO We currently have to include all the GPL libraries (including OpenCL4J) because all parsers are referenced statically -->
             <param name="package-gpl-libs" value="true" />
         </antcall>
