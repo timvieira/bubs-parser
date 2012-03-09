@@ -23,5 +23,15 @@ public class TestTokenizer {
         assertEquals("Testing ellipses ...", Tokenizer.treebankTokenize("Testing ellipses..."));
         assertEquals("R_ -LRB- n -RRB- represents the number of documents retrieved",
                 Tokenizer.treebankTokenize("R_(n ) represents the number of documents retrieved"));
+
+        // A couple tests for mid-sentence periods
+        assertEquals("Testing etc. in mid-sentence .", Tokenizer.treebankTokenize("Testing etc. in mid-sentence."));
+        assertEquals("Testing Ltd. in mid-sentence .", Tokenizer.treebankTokenize("Testing Ltd. in mid-sentence."));
+        assertEquals("Testing Ph. D. in mid-sentence .", Tokenizer.treebankTokenize("Testing Ph.D. in mid-sentence."));
+
+        // And for mid-sentence punctuation
+        assertEquals("`` What happens with a question mark ? '' said Bob .",
+                Tokenizer.treebankTokenize("\"What happens with a question mark?\" said Bob."));
+        assertEquals("`` Ouch ! '' said Fred .", Tokenizer.treebankTokenize("\"Ouch!\" said Fred."));
     }
 }
