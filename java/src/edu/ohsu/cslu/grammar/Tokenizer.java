@@ -96,16 +96,20 @@ public class Tokenizer implements Serializable {
         // Directional open and close quotes
         s = s.replaceAll("^\"", "`` ");
         s = s.replaceAll("([ \\(\\[{<])\"", "$1 `` ");
-        s = s.replaceAll("\"", "''");
+        s = s.replaceAll("\"", " ''");
 
-        // Add spaces around question marks, exclamation points, and other punctuation
-        s = s.replaceAll("([.,;@#$%&?!\\]])", " $1 ");
+        // Add spaces around question marks, exclamation points, and other punctuation (excluding periods)
+        s = s.replaceAll("([,;@#$%&?!\\]])", " $1 ");
 
-        // Re-collapse ellipses
-        s = s.replaceAll("\\.  \\.  \\.", "...");
+        // Split _final_ periods only
+        s = s.replaceAll("[.]$", " .");
+        s = s.replaceAll("[.] ([\\[\\({}\\)\\]\"']*)$", " . $1");
 
-        // // Split _final_ periods only
-        // s = s.replaceAll("([^.])([.])([\\])}>\"']*)\\s*$", "$1 $2$3 ");
+        // The Penn Treebank splits Ph.D. -> 'Ph. D.', so we'll special-case that
+        s = s.replaceAll("Ph\\.D\\.", "Ph. D.");
+
+        // Segment ellipses and re-collapse if it was split
+        s = s.replaceAll("\\.\\. ?\\.", " ...");
 
         // Parentheses, brackets, etc.
         s = s.replaceAll(" *\\(", " -LRB- ");
