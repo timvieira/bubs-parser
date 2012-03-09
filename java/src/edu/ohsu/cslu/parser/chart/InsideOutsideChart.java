@@ -277,6 +277,9 @@ public class InsideOutsideChart extends PackedArrayChart {
      * Extracts the max-recall/max-precision/combined parse (Goodman's 'Labeled Recall' algorithm), using the maxc
      * values computed by {@link #decode(DecodeMethod)}.
      * 
+     * Precondition: {@link #maxcEntries} is populated with the indices of the non-terminals (in {@link #maxcVocabulary}
+     * ) which maximize the decoding criteria. {@link maxcScores} is populated with the scores of those entries.
+     * 
      * @param start
      * @param end
      * @param decodingMethod
@@ -367,25 +370,20 @@ public class InsideOutsideChart extends PackedArrayChart {
         // LeftShift function to pack children. But separate arrays is probably clearer (if less efficient)
 
         // score = current-cell q * child cell q's (accumulating max-rule product up the chart)
-        // All 2-d arrays indexed by cellIndex, base (Markov-0) vocabulary
+        // All 2-d arrays indexed by cellIndex and base (Markov-0) vocabulary
         final float[][] maxScores = new float[cells][maxcVocabulary.size()];
         final short[][] maxScoreMidpoints = new short[cells][maxcVocabulary.size()];
         final short[][] maxScoreLeftChildren = new short[cells][maxcVocabulary.size()];
         final short[][] maxScoreRightChildren = new short[cells][maxcVocabulary.size()];
 
-        // Initialize maxScores for lexical entries
-        for (short start = 0; start < size; start++) {
-            final short end = (short) (start + 1);
-            final int cellIndex = cellIndex(start, end);
-
-        }
-        // Since Petrov's 'r' is a sum over unsplit categories, we compute a temporary r array for each
-        // midpoint and then maximize over midpoints
-        // currentMidpointR is indexed by base parent, base left child, base right child
-        final float[][][] currentMidpointR = new float[maxcVocabulary.size()][][];
-
         for (short span = 1; span <= size; span++) {
             for (short start = 0; start < size - span + 1; start++) {
+
+                // Since Petrov's 'r' is a sum over unsplit categories, we compute a temporary r array for each
+                // midpoint and then maximize over midpoints
+                // currentMidpointR is indexed by base parent, base left child, base right child
+                final float[][][] currentMidpointR = new float[maxcVocabulary.size()][][];
+
                 final short end = (short) (start + span);
                 final int cellIndex = cellIndex(start, end);
                 Arrays.fill(maxScoreMidpoints[cellIndex], (short) -1);
@@ -399,6 +397,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                         maxScores[cellIndex][unsplitParent] = edu.ohsu.cslu.util.Math.logSum(
                                 maxScores[cellIndex][unsplitParent], insideProbabilities[i]);
                         maxScoreMidpoints[cellIndex][unsplitParent] = end;
+                        maxScoreRightChildren[cellIndex][unsplitParent] = Production.LEXICAL_PRODUCTION;
                     }
                 }
 
@@ -454,32 +453,34 @@ public class InsideOutsideChart extends PackedArrayChart {
                     }
 
                     // Merge current-midpoint r array into the viterbi-max q array
-                    for (int parent = 0; parent < currentMidpointR.length; parent++) {
+                    for (int unsplitParent = 0; unsplitParent < currentMidpointR.length; unsplitParent++) {
 
-                        if (currentMidpointR[parent] != null) {
-                            final float[][] leftChildArray = currentMidpointR[parent];
+                        if (currentMidpointR[unsplitParent] != null) {
+                            final float[][] leftChildR = currentMidpointR[unsplitParent];
                             float maxProbability = Float.NEGATIVE_INFINITY;
                             short maxLeftChild = Short.MIN_VALUE;
                             short maxRightChild = Short.MIN_VALUE;
 
-                            for (short leftChild = 0; leftChild < leftChildArray.length; leftChild++) {
+                            for (short leftChild = 0; leftChild < leftChildR.length; leftChild++) {
 
-                                if (leftChildArray[leftChild] != null) {
-                                    final float[] rightChildArray = currentMidpointR[parent][leftChild];
+                                if (leftChildR[leftChild] != null) {
+                                    final float[] rightChildR = currentMidpointR[unsplitParent][leftChild];
 
-                                    for (short rightChild = 0; rightChild < rightChildArray.length; rightChild++) {
-                                        if (rightChildArray[rightChild] > maxProbability) {
-                                            maxProbability = rightChildArray[rightChild];
+                                    for (short rightChild = 0; rightChild < rightChildR.length; rightChild++) {
+                                        if (rightChildR[rightChild] > maxProbability) {
+                                            maxProbability = rightChildR[rightChild];
                                             maxLeftChild = leftChild;
                                             maxRightChild = rightChild;
                                         }
                                     }
                                 }
                             }
-                            maxScores[cellIndex][parent] = maxProbability - startSymbolInsideProbability;
-                            maxScoreMidpoints[cellIndex][parent] = midpoint;
-                            maxScoreLeftChildren[cellIndex][parent] = maxLeftChild;
-                            maxScoreRightChildren[cellIndex][parent] = maxRightChild;
+                            if (maxProbability - startSymbolInsideProbability > maxScores[cellIndex][unsplitParent]) {
+                                maxScores[cellIndex][unsplitParent] = maxProbability - startSymbolInsideProbability;
+                                maxScoreMidpoints[cellIndex][unsplitParent] = midpoint;
+                                maxScoreLeftChildren[cellIndex][unsplitParent] = maxLeftChild;
+                                maxScoreRightChildren[cellIndex][unsplitParent] = maxRightChild;
+                            }
                         }
                     }
                 }
@@ -488,17 +489,18 @@ public class InsideOutsideChart extends PackedArrayChart {
                 final float[][] unaryR = new float[maxcVocabulary.size()][];
                 for (short child = 0; child < grammar.numNonTerms(); child++) {
 
-                    if (maxScores[cellIndex][child] == Float.NEGATIVE_INFINITY) {
+                    final short unsplitChild = cscGrammar.nonTermSet.getBaseIndex(child);
+                    if (maxScores[cellIndex][unsplitChild] == Float.NEGATIVE_INFINITY) {
                         continue;
                     }
-                    final short unsplitChild = cscGrammar.nonTermSet.getBaseIndex(child);
 
                     // Iterate over possible parents of the child (grammar matrix rows with non-zero entries)
                     for (int i = cscGrammar.cscUnaryColumnOffsets[child]; i < cscGrammar.cscUnaryColumnOffsets[child + 1]; i++) {
 
                         final short parent = cscGrammar.cscUnaryRowIndices[i];
                         final short unsplitParent = cscGrammar.nonTermSet.getBaseIndex(parent);
-                        final float jointScore = maxScores[cellIndex][child] + cscGrammar.cscUnaryProbabilities[i];
+                        final float jointScore = maxScores[cellIndex][unsplitChild]
+                                + cscGrammar.cscUnaryProbabilities[i];
                         if (unaryR[unsplitParent] == null) {
                             unaryR[unsplitParent] = new float[maxcVocabulary.size()];
                             Arrays.fill(unaryR[unsplitParent], Float.NEGATIVE_INFINITY);
@@ -554,7 +556,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                     maxScoreLeftChildren, maxScoreRightChildren));
 
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-            subtree.addChild(new BinaryTree<String>(sparseMatrixGrammar.lexSet.getSymbol(leftChild)));
+            subtree.addChild(new BinaryTree<String>(sparseMatrixGrammar.lexSet.getSymbol(tokens[start])));
 
         } else {
             // binary production

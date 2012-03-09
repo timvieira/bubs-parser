@@ -166,6 +166,7 @@ public class TestInsideOutsideCphSpmlParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.MaxRuleProd;
+        opts.fomModel = new InsideProb();
         final String sentence = "The fish market stands last";
 
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
@@ -199,9 +200,32 @@ public class TestInsideOutsideCphSpmlParser {
     }
 
     @Test
+    public void testPartialSentence2MaxRuleProd() throws Exception {
+
+        final ParserDriver opts = new ParserDriver();
+        opts.decodeMethod = DecodeMethod.MaxRuleProd;
+        opts.fomModel = new InsideProb();
+        parser = new InsideOutsideCphSpmlParser(opts, grammar);
+        assertEquals(
+                "(ROOT (S (NP (DT The) (NN report)) (VP (VBZ is) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
+                parser.parseSentence("The report is due out tomorrow .").parseBracketString(false));
+    }
+
+    @Test
     public void testSentence2SplitSum() throws Exception {
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.SplitSum;
+        opts.fomModel = new InsideProb();
+        parser = new InsideOutsideCphSpmlParser(opts, grammar);
+        assertEquals(
+                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
+                parser.parseSentence(sentences.get(1)[0]).parseBracketString(false));
+    }
+
+    @Test
+    public void testSentence2MaxRuleProd() throws Exception {
+        final ParserDriver opts = new ParserDriver();
+        opts.decodeMethod = DecodeMethod.MaxRuleProd;
         opts.fomModel = new InsideProb();
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
