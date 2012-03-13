@@ -49,12 +49,12 @@ public class InsideOutsideCphSpmlParser extends
 
         if (collectDetailedStatistics) {
             final long t3 = System.currentTimeMillis();
-            final BinaryTree<String> parseTree = chart.decode(opts.decodeMethod);
+            final BinaryTree<String> parseTree = chart.decode();
             parseTask.extractTimeMs = System.currentTimeMillis() - t3;
             return parseTree;
         }
 
-        return chart.decode(opts.decodeMethod);
+        return chart.decode();
     }
 
     /**
