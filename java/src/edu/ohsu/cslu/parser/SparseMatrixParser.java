@@ -44,11 +44,16 @@ import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
 public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart> extends
         ChartParser<G, C> {
 
+    // TODO Add unit tests for reparsing
+    // Add configuredBeamWidth, configuredLexical...; set these in constructor
+    // Override findBestParse or parseSentence (what's the difference between the two?)
+    // Set beamWidth, etc at each reparse loop iteration
+
     protected int beamWidth;
     protected int lexicalRowBeamWidth;
     protected int lexicalRowUnaries;
     protected float maxLocalDelta;
-    protected final boolean exhaustiveSearch;
+    protected boolean exhaustiveSearch;
 
     protected final ThreadLocal<BoundedPriorityQueue> threadLocalBoundedPriorityQueue;
     protected final ThreadLocal<float[]> threadLocalTmpFoms;
@@ -101,6 +106,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
     @Override
     protected void initSentence(final ParseTask parseTask) {
         final int sentLength = parseTask.sentenceLength();
+        // TODO chart.size() isn't the right comparison if reparsing with a larger beamWidth
         if (chart != null && chart.size() >= sentLength) {
             chart.reset(parseTask);
         } else {
