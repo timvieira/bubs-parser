@@ -631,8 +631,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         final float cpuTime = parseTime * threads;
 
         final StringBuilder sb = new StringBuilder();
-        // TODO Add cpuSecondsPerSent and switch avgSecondsPerSent to report mean latency (not mean
-        // throughput)
+        // TODO Add cpuSecondsPerSent
         sb.append(String
                 .format("INFO: numSentences=%d numFail=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f wordsPerSec=%.3f",
                         sentencesParsed, failedParses, parseTime, cpuTime, cpuTime / sentencesParsed, wordsParsed
