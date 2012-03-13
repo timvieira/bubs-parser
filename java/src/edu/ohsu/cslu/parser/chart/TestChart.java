@@ -53,7 +53,7 @@ public class TestChart {
         final SparseMatrixGrammar simpleGrammar2 = GrammarTestCase.createGrammar(LeftCscSparseMatrixGrammar.class,
                 ExhaustiveChartParserTestCase.simpleGrammar2());
         final Chart chart = new PackedArrayChart(new ParseTask("The fish market stands last", Parser.InputFormat.Text,
-                simpleGrammar2, RecoveryStrategy.RightBiased), simpleGrammar2);
+                simpleGrammar2, RecoveryStrategy.RightBiased, null), simpleGrammar2);
         SparseMatrixVectorParserTestCase.populateSimpleGrammar2Rows1_3(chart, simpleGrammar2);
 
         final NaryTree<String> tree = chart.extractRecoveryParse(RecoveryStrategy.RightBiased);
