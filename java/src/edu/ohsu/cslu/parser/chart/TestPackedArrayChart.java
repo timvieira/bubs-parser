@@ -31,6 +31,7 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.ecp.ExhaustiveChartParserTestCase;
 
@@ -61,7 +62,7 @@ public class TestPackedArrayChart {
     public void testUnprunedFinalizeCell() throws Exception {
 
         chart = new PackedArrayChart(new ParseTask("The fish market stands last", Parser.InputFormat.Text,
-                simpleGrammar2), simpleGrammar2);
+                simpleGrammar2, DecodeMethod.ViterbiMax), simpleGrammar2);
         final ChartCell cell_2_3 = chart.getCell(2, 3);
 
         // Three binary productions
@@ -85,7 +86,7 @@ public class TestPackedArrayChart {
     public void testPrunedFinalizeCell() throws Exception {
 
         chart = new PackedArrayChart(new ParseTask("The fish market stands last", Parser.InputFormat.Text,
-                simpleGrammar2), simpleGrammar2, 2, 2);
+                simpleGrammar2, DecodeMethod.ViterbiMax), simpleGrammar2, 2, 2);
         final ChartCell cell_2_3 = chart.getCell(2, 3);
 
         // Three binary productions

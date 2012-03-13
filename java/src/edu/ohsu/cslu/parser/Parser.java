@@ -145,7 +145,7 @@ public abstract class Parser<G extends Grammar> {
 
         // TODO: make parseTask local and pass it around to required methods. Will probably need to add
         // instance methods of CellSelector, FOM, and Chart to it. Should make parse thread-safe.
-        final ParseTask task = new ParseTask(input, opts.inputFormat, grammar, recoveryStrategy);
+        final ParseTask task = new ParseTask(input, opts.inputFormat, grammar, recoveryStrategy, opts.decodeMethod);
 
         if (task.sentenceLength() > opts.maxLength) {
             BaseLogger.singleton().info(
