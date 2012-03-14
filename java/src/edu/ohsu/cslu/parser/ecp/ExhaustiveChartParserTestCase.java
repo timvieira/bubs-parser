@@ -30,7 +30,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -58,8 +57,6 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      */
     @BeforeClass
     public static void suiteSetUp() throws Exception {
-        GlobalConfigProperties.singleton().setProperty("normInsideTune", "0");
-
         // Read test sentences
         // TODO Parameterize test sentences (this will require a custom Runner implementation)
         final BufferedReader tokenizedReader = new BufferedReader(new InputStreamReader(

@@ -54,7 +54,6 @@ public class TestInsideOutsideCphSpmlParser {
 
     @Before
     public void setUp() throws Exception {
-        GlobalConfigProperties.singleton().setProperty("normInsideTune", "0");
         grammar = new InsideOutsideCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"),
                 PerfectIntPairHashPackingFunction.class);
 

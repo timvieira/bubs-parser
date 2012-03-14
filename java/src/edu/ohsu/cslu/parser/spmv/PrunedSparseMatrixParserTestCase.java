@@ -59,7 +59,6 @@ public abstract class PrunedSparseMatrixParserTestCase<G extends SparseMatrixGra
 
     @Before
     public void setUp() throws IOException {
-        GlobalConfigProperties.singleton().setProperty("normInsideTune", "0");
         final G grammar = createGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"),
                 PerfectIntPairHashPackingFunction.class);
         final ParserDriver opts = new ParserDriver();

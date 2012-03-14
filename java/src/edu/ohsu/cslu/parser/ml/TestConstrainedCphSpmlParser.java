@@ -50,7 +50,6 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
     @Override
     @Before
     public void setUp() throws Exception {
-        GlobalConfigProperties.singleton().setProperty("normInsideTune", "0");
         GlobalConfigProperties.singleton().setProperty("maxLocalDelta", "1000000");
         super.setUp();
     }

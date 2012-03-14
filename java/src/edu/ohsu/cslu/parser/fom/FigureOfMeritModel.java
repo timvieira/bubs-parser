@@ -45,7 +45,7 @@ public abstract class FigureOfMeritModel {
 
     protected FOMType type;
     public NGramOutside ngramOutsideModel = null;
-    float normInsideTune = GlobalConfigProperties.singleton().getFloatProperty("normInsideTune");
+    float normInsideTune = GlobalConfigProperties.singleton().getFloatProperty("normInsideTune", 0);
 
     // float ngramOutsideTune = GlobalConfigProperties.singleton().getFloatProperty("ngramOutsideTune");
 
