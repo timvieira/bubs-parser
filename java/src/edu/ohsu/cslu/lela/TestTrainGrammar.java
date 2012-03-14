@@ -394,7 +394,6 @@ public class TestTrainGrammar {
 
     private double parseFScore(final Grammar grammar, final List<NaryTree<String>> goldTrees) {
         final LeftCscSparseMatrixGrammar cscGrammar = new LeftCscSparseMatrixGrammar(grammar);
-        GlobalConfigProperties.singleton().setProperty("normInsideTune", "0");
         final ParserDriver opts = new ParserDriver();
         opts.fomModel = new InsideProb();
         final CartesianProductHashSpmlParser parser = new CartesianProductHashSpmlParser(opts, cscGrammar);
