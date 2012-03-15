@@ -70,8 +70,6 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
         final String constrainingTree = "(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))";
         final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, simpleGrammar2, null);
         assertEquals(constrainingTree, parser.findBestParse(task).toString());
-        // assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
-        // .findBestParse(task).toString());
     }
 
     /**
