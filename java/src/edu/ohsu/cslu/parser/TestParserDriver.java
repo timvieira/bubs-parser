@@ -53,13 +53,12 @@ public class TestParserDriver extends ToolTestCase {
                 .append("(ROOT 0 (S 1 (NP 2 (DT The) (ADJP 1 (RBS most) (JJ troublesome)) (NN report)) (VP 0 (MD may) (VP 0 (VB be) (NP 4 (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (ADJP 0 (JJ due) (PP 0 (IN out) (NP 0 (NN tomorrow)))))) (. .)))\n");
 
         // Using the built-in Charniak rules
-        String output = executeTool(new ParserDriver(), "-g " + M0_GRAMMAR
-                + " -O normInsideTune=0 -head-rules charniak", input.toString());
+        String output = executeTool(new ParserDriver(), "-g " + M0_GRAMMAR + " -head-rules charniak", input.toString());
         assertEquals(expectedOutput.toString(), treeOutput(output));
 
         // Using a rule file
         output = executeTool(new ParserDriver(), "-g " + M0_GRAMMAR
-                + " -O normInsideTune=0 -head-rules unit-test-data/parsing/charniak.head.rules", input.toString());
+                + " -head-rules unit-test-data/parsing/charniak.head.rules", input.toString());
         assertEquals(expectedOutput.toString(), treeOutput(output));
     }
 
@@ -67,9 +66,19 @@ public class TestParserDriver extends ToolTestCase {
     public void testRecovery() throws Exception {
         final String input = "(ROOT (SQ (VBZ Is) (NP (NNP Nikon) (NNP low) (NNP end)) (VP (VBG moving) (PP (IN toward) (NP (NP (DT the) (JJ hellish) (NNS ergonomics)) (PP (IN of) (NP (DT the) (NNP Canon) (NNP Rebel)))))) (. ?)))";
         final String output = executeTool(new ParserDriver(), "-g " + M0_GRAMMAR
-                + " -rp const -O maxBeamWidth=10 -O normInsideTune=0 -recovery rb", input.toString());
+                + " -rp const -O maxBeamWidth=2 -recovery rb", input.toString());
         assertEquals(
-                "(ROOT (SQ (VBZ Is) (NP (NNP Nikon) (JJ low) (JJ end)) (VP (VBG moving) (PP (IN toward) (NP (NP (DT the) (JJ hellish) (NNS ergonomics)) (PP (IN of) (NP (DT the) (NNP Canon) (NN Rebel)))))) (. ?)))\n",
+                "(ROOT (SQ (VBZ Is) (NP (NNP Nikon) (NNP low) (NNP end)) (VP (VBG moving) (PP (IN toward) (NP (NP (DT the) (JJ hellish) (NNS ergonomics)) (PP (IN of) (NP (DT the) (NNP Canon) (NNP Rebel)))))) (. ?)))\n",
+                treeOutput(output));
+    }
+
+    @Test
+    public void testReparsing() throws Exception {
+        final String input = "Bavaria crew replaced the mooring rope and attaches bristles on bow and stern.";
+        final String output = executeTool(new ParserDriver(), "-reparse escalate -g " + M0_GRAMMAR
+                + " -O maxBeamWidth=1 -O lexicalRowBeamWidth=1 -O lexicalRowUnaries=0 -if text -v 2", input.toString());
+        assertEquals(
+                "(ROOT (S (NP (NNP Bavaria)) (NP (NN crew)) (VP (VP (VBD replaced) (NP (DT the) (VBG mooring) (NN rope))) (CC and) (VP (VBZ attaches) (VP (VBZ bristles) (PP (IN on) (UCP (NN bow) (CC and) (JJ stern)))))) (. .)))\n",
                 treeOutput(output));
     }
 

@@ -76,6 +76,7 @@ public abstract class ParallelArrayChart extends Chart {
      */
     protected ParallelArrayChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar,
             final int beamWidth, final int lexicalRowBeamWidth) {
+
         super(parseTask, sparseMatrixGrammar);
         this.sparseMatrixGrammar = sparseMatrixGrammar;
         this.beamWidth = Math.min(beamWidth, sparseMatrixGrammar.numNonTerms());
@@ -83,13 +84,13 @@ public abstract class ParallelArrayChart extends Chart {
 
         cells = size * (size + 1) / 2;
 
-        chartArraySize = size * this.lexicalRowBeamWidth + (cells - size) * this.beamWidth;
-        insideProbabilities = new float[chartArraySize];
+        this.chartArraySize = chartArraySize(this.size, this.beamWidth, this.lexicalRowBeamWidth);
+        this.insideProbabilities = new float[chartArraySize];
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
-        packedChildren = new int[chartArraySize];
-        midpoints = new short[chartArraySize];
+        this.packedChildren = new int[chartArraySize];
+        this.midpoints = new short[chartArraySize];
 
-        cellOffsets = new int[cells];
+        this.cellOffsets = new int[cells];
 
         // Calculate all cell offsets, etc
         for (int start = 0; start < size; start++) {
@@ -190,12 +191,22 @@ public abstract class ParallelArrayChart extends Chart {
         return chartArraySize;
     }
 
+    public int chartArraySize(final int newSize, final int newBeamWidth, final int newLexicalRowBeamWidth) {
+        return newSize * newLexicalRowBeamWidth + (cells - size) * newBeamWidth;
+    }
+
     public int beamWidth() {
         return beamWidth;
     }
 
     public int lexicalRowBeamWidth() {
         return lexicalRowBeamWidth;
+    }
+
+    public void reset(final ParseTask newParseTask, final int newBeamWidth, final int newLexicalRowBeamWidth) {
+        this.beamWidth = newBeamWidth;
+        this.lexicalRowBeamWidth = newLexicalRowBeamWidth;
+        reset(newParseTask);
     }
 
     @Override

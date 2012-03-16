@@ -253,7 +253,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     @Override
     public float getInside(final int start, final int end, final int nonTerminal) {
         final int cellIndex = cellIndex(start, end);
-        final int offset = cellIndex * beamWidth;
+        final int offset = offset(cellIndex);
         final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
                 (short) nonTerminal);
         if (index < 0) {

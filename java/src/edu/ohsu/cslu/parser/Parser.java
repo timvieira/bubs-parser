@@ -287,6 +287,61 @@ public abstract class Parser<G extends Grammar> {
         private Language(final String... aliases) {
             EnumAliasMap.singleton().addAliases(this, aliases);
         }
+    }
 
+    /**
+     * Possible strategies for reparsing. The 'DoubleBeam...' options are intended to duplicate current behavior for the
+     * '-reparse' command-line option, doubling 1-5X respectively. {@link #Escalate} defines an escalation hierarchy and
+     * will likely be the normal strategy when reparsing is required.
+     */
+    static public enum ReparseStrategy {
+        /** Normal parsing */
+        None("default", Stage.NORMAL),
+
+        /** 1 doubling */
+        DoubleBeam1x("1", Stage.NORMAL, Stage.DOUBLE),
+
+        /** 2 doublings */
+        DoubleBeam2x("2", Stage.NORMAL, Stage.DOUBLE, Stage.DOUBLE),
+
+        /** 3 doublings */
+        DoubleBeam3x("3", Stage.NORMAL, Stage.DOUBLE, Stage.DOUBLE, Stage.DOUBLE),
+
+        /** 4 doublings */
+        DoubleBeam4x("4", Stage.NORMAL, Stage.DOUBLE, Stage.DOUBLE, Stage.DOUBLE, Stage.DOUBLE),
+
+        /** 5 doublings */
+        DoubleBeam5x("5", Stage.NORMAL, Stage.DOUBLE, Stage.DOUBLE, Stage.DOUBLE, Stage.DOUBLE, Stage.DOUBLE),
+
+        /** Remove beam width prediction and cell closure, double beam 5X, and finally parse exhaustively */
+        Escalate(null, Stage.NORMAL, Stage.FIXED_BEAM, Stage.DOUBLE, Stage.DOUBLE, Stage.DOUBLE, Stage.DOUBLE,
+                Stage.DOUBLE, Stage.EXHAUSTIVE);
+
+        private Stage[] stages;
+
+        private ReparseStrategy(final String alias, final Stage... stages) {
+            if (alias != null) {
+                EnumAliasMap.singleton().addAliases(this, alias);
+            }
+            this.stages = stages;
+        }
+
+        public Stage[] stages() {
+            return stages;
+        }
+
+        static public enum Stage {
+            /** Parse with the specified maximum beam, cell closure, and beam width prediction */
+            NORMAL,
+
+            /** Parse with the specified maximum beam, no cell closure or beam width prediction */
+            FIXED_BEAM,
+
+            /** Double the previous beam width and add a constant to maxLocalDelta */
+            DOUBLE,
+
+            /** Exhaustive parsing */
+            EXHAUSTIVE;
+        }
     }
 }

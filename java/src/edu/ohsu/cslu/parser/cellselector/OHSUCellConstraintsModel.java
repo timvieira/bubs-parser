@@ -397,6 +397,10 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
         @Override
         public boolean isCellOpen(final short start, final short end) {
+            if (!constraintsEnabled) {
+                return true;
+            }
+
             if (end - start == 1)
                 return true;
             if (grammarLeftFactored) {
@@ -411,7 +415,11 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
         @Override
         public boolean isCellOnlyFactored(final short start, final short end) {
-            if (isCellClosed(start, end))
+            if (!constraintsEnabled) {
+                return false;
+            }
+
+            if (!isCellOpen(start, end))
                 return false;
             if (grammarLeftFactored) {
                 if (beginScores[start] > beginThresh)
@@ -425,6 +433,10 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
         @Override
         public boolean isUnaryOpen(final short start, final short end) {
+            if (!constraintsEnabled) {
+                return true;
+            }
+
             if (end - start > 1) {
                 return true;
             }
@@ -457,12 +469,12 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                     final short end = (short) (beg + span);
                     total += 1;
                     if (span == 1) {
-                        if (isUnaryClosed(beg, end)) {
+                        if (!isUnaryOpen(beg, end)) {
                             s += beg + "," + end + "=3 ";
                             nUnaryClosed += 1;
                         }
                     } else {
-                        if (isCellClosed(beg, end)) {
+                        if (!isCellOpen(beg, end)) {
                             s += beg + "," + end + "=4 ";
                             nClosed += 1;
                         } else if (isCellOnlyFactored(beg, end)) {
