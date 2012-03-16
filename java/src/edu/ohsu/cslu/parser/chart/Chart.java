@@ -106,7 +106,7 @@ public abstract class Chart {
     }
 
     public boolean hasCompleteParse(final int startSymbol) {
-        return getRootCell().getBestEdge(startSymbol) != null;
+        return getRootCell().getInside(startSymbol) > Float.NEGATIVE_INFINITY;
     }
 
     public BinaryTree<String> extractBestParse(final int startSymbol) {

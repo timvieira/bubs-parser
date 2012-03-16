@@ -31,6 +31,7 @@ import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellConstraints;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel.PerceptronBeamWidth;
@@ -127,7 +128,13 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         numReparses = 0;
         initSentence(parseTask);
 
-        while (numReparses <= opts.reparse && chart.hasCompleteParse(grammar.startSymbol) == false) {
+        for (final Parser.ReparseStrategy.Stage stage : opts.reparseStrategy.stages()) {
+
+            // This parser only implements beam-doubling, so ignore any other reparsing stages
+            if (stage != Parser.ReparseStrategy.Stage.DOUBLE) {
+                continue;
+            }
+
             updateBeamParams(parseTask);
             while (cellSelector.hasNext()) {
 
@@ -138,11 +145,15 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 parseTask.totalPops += cellPopped;
                 parseTask.totalConsidered += cellConsidered;
             }
+
+            if (chart.hasCompleteParse(grammar.startSymbol)) {
+                return chart.extractBestParse(grammar.startSymbol);
+            }
+
             numReparses++;
         }
-        numReparses--;
 
-        return chart.extractBestParse(grammar.startSymbol);
+        return null;
     }
 
     protected void updateBeamParams(final ParseTask parseTask) {

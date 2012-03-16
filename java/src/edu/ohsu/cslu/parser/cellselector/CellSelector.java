@@ -79,6 +79,10 @@ public abstract class CellSelector implements Iterator<short[]> {
     }
 
     public void reset() {
+        reset(true);
+    }
+
+    public void reset(final boolean enableConstraints) {
         throw new UnsupportedOperationException();
     }
 

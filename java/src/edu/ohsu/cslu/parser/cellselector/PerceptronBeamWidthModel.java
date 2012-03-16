@@ -68,12 +68,6 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             e.printStackTrace();
         }
 
-        // if (ParserDriver.multiBin) {
-        // beamWidthModel = new AveragedPerceptron(modelStream);
-        // } else {
-        // beamWidthModel = new BinaryPerceptronSet(modelStream);
-        // }
-
         final ConfigProperties props = GlobalConfigProperties.singleton();
         final String beamModelBias = props.getProperty("beamModelBias");
         beamWidthModel.setBias(beamModelBias);
@@ -113,12 +107,10 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
             final String[] featureNames = beamWidthModel.getFeatureTemplate().split("\\s+");
 
-            // traverse in a top-down order so we can remember when we first see a non-empty cell
-            // only works for right factored (berkeley) grammars right now.
-            // for (int end = 1; end < n + 1; end++) {
+            // Traverse in a top-down order so we can remember when we first see a non-empty cell
+            // This only works for right factored (berkeley) grammars right now.
             for (int start = 0; start < n; start++) {
                 boolean foundOpenCell = false;
-                // for (int start = 0; start < end; start++) {
                 for (int end = n; end > start; end--) {
                     if (end - start == 1 && classifyBaseCells == false) {
                         openCells++;
@@ -175,18 +167,38 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                     classCounts.append(" class" + i + "=" + beamClassCounts[i]);
                 }
                 BaseLogger.singleton().finer("INFO: beamconf: " + classCounts);
-                // BaseLogger.singleton().finer("INFO: beamconf: " + toString());
+            }
+        }
+
+        @Override
+        public void reset(final boolean enableConstraints) {
+            super.reset(enableConstraints);
+
+            if (!enableConstraints) {
+                // Replace cellIndices with all chart cells.
+                final int sentenceLength = parser.chart.size();
+                openCells = sentenceLength * (sentenceLength + 1) / 2;
+                if (cellIndices == null || cellIndices.length < openCells) {
+                    cellIndices = new short[openCells][2];
+                }
+
+                int i = 0;
+                for (short span = 1; span <= sentenceLength; span++) {
+                    for (short start = 0; start < sentenceLength - span + 1; start++) { // beginning
+                        cellIndices[i++] = new short[] { start, (short) (start + span) };
+                    }
+                }
             }
         }
 
         @Override
         public boolean isCellOpen(final short start, final short end) {
-            return beamWidthValues[start][end] > 0 && onlyFactored[start][end] == false;
+            return !constraintsEnabled || (beamWidthValues[start][end] > 0 && onlyFactored[start][end] == false);
         }
 
         @Override
         public boolean isCellOnlyFactored(final short start, final short end) {
-            return onlyFactored[start][end];
+            return !constraintsEnabled || onlyFactored[start][end];
         }
 
         @Override
@@ -196,7 +208,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
         @Override
         public int getBeamWidth(final short start, final short end) {
-            return beamWidthValues[start][end];
+            return constraintsEnabled ? beamWidthValues[start][end] : Integer.MAX_VALUE;
         }
 
         @Override

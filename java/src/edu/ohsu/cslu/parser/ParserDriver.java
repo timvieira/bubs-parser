@@ -55,6 +55,7 @@ import edu.ohsu.cslu.lela.ConstrainedCellSelector;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
+import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.agenda.APDecodeFOM;
 import edu.ohsu.cslu.parser.agenda.APGhostEdges;
@@ -170,8 +171,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-recovery", metaVar = "strategy", hidden = true, usage = "Recovery strategy in case of parse failure")
     public RecoveryStrategy recoveryStrategy = null;
 
-    @Option(name = "-reparse", metaVar = "N", hidden = true, usage = "If no solution, loosen constraints and reparse.  Repeat N times")
-    public int reparse = 0;
+    @Option(name = "-reparse", metaVar = "strategy or count", hidden = true, usage = "If no solution, loosen constraints and reparse using the specified strategy or double-beam-width n times")
+    public ReparseStrategy reparseStrategy = ReparseStrategy.None;
 
     @Option(name = "-parseFromInputTags", hidden = true, usage = "Parse from input POS tags given by tagged or tree input.  Replaces 1-best tags from BoundaryInOut FOM if also specified.")
     public static boolean parseFromInputTags = false;
@@ -209,7 +210,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     // corpus stats
     private long parseStartTime;
-    private int sentencesParsed = 0, wordsParsed = 0, failedParses = 0;
+    private int sentencesParsed = 0, wordsParsed = 0, failedParses = 0, reparsedSentences = 0, totalReparses = 0;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
     private final BracketEvaluator evaluator = new BracketEvaluator();
 
@@ -284,6 +285,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         if (modelFile != null) {
             final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(modelFile));
+            @SuppressWarnings("unused")
             final String metadata = (String) ois.readObject();
             final ConfigProperties props = (ConfigProperties) ois.readObject();
             GlobalConfigProperties.singleton().mergeUnder(props);
@@ -611,7 +613,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             wordsParsed += parseTask.sentenceLength();
             if (parseTask.parseFailed()) {
                 failedParses++;
+            } else if (parseTask.reparseStages > 0) {
+                reparsedSentences++;
             }
+            totalReparses += parseTask.reparseStages;
         } else {
             System.out.println("()");
         }
@@ -622,8 +627,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         final float parseTime = (System.currentTimeMillis() - parseStartTime) / 1000f;
 
         // If the individual parser configured a thread count (e.g. CellParallelCsrSpmvParser), compute
-        // CPU-time using
-        // that thread count; otherwise, assume maxThreads is correct
+        // CPU-time using that thread count; otherwise, assume maxThreads is correct
         final int threads = GlobalConfigProperties.singleton().containsKey(OPT_CONFIGURED_THREAD_COUNT) ? GlobalConfigProperties
                 .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT) : maxThreads;
 
@@ -633,9 +637,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         final StringBuilder sb = new StringBuilder();
         // TODO Add cpuSecondsPerSent
         sb.append(String
-                .format("INFO: numSentences=%d numFail=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f wordsPerSec=%.3f",
-                        sentencesParsed, failedParses, parseTime, cpuTime, cpuTime / sentencesParsed, wordsParsed
-                                / cpuTime));
+                .format("INFO: numSentences=%d numFail=%d reparsedSentences=%d totalReparses=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f wordsPerSec=%.3f",
+                        sentencesParsed, failedParses, reparsedSentences, totalReparses, parseTime, cpuTime, cpuTime
+                                / sentencesParsed, wordsParsed / cpuTime));
 
         if (parserInstances.getFirst() instanceof SparseMatrixVectorParser) {
             sb.append(String.format(" totalXProductTime=%d totalBinarySpMVTime=%d",

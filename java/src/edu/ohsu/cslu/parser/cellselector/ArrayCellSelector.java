@@ -11,6 +11,8 @@ import edu.ohsu.cslu.parser.ChartParser;
  */
 public abstract class ArrayCellSelector extends CellSelector {
 
+    protected boolean constraintsEnabled = true;
+
     protected short[][] cellIndices;
     private int nextCell = 0;
     protected int openCells;
@@ -53,7 +55,8 @@ public abstract class ArrayCellSelector extends CellSelector {
     }
 
     @Override
-    public void reset() {
+    public void reset(final boolean enableConstraints) {
+        this.constraintsEnabled = enableConstraints;
         nextCell = 0;
     }
 

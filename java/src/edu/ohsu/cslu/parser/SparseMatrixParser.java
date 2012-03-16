@@ -21,9 +21,12 @@ package edu.ohsu.cslu.parser;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.logging.Level;
 
+import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
@@ -44,10 +47,8 @@ import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
 public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart> extends
         ChartParser<G, C> {
 
-    // TODO Add unit tests for reparsing
-    // Add configuredBeamWidth, configuredLexical...; set these in constructor
-    // Override findBestParse or parseSentence (what's the difference between the two?)
-    // Set beamWidth, etc at each reparse loop iteration
+    /** The amount to increase {@link #maxLocalDelta} at each reparsing stage */
+    public final static float MAX_LOCAL_DELTA_MULTIPLIER = 1.5f;
 
     protected int beamWidth;
     protected int lexicalRowBeamWidth;
@@ -62,16 +63,11 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
     public SparseMatrixParser(final ParserDriver opts, final G grammar) {
         super(opts, grammar);
 
-        final ConfigProperties props = GlobalConfigProperties.singleton();
+        initDefaultPruningParams();
 
-        // Pruning Parameters
-        if ((props.containsKey(PROPERTY_MAX_BEAM_WIDTH) && props.getIntProperty(PROPERTY_MAX_BEAM_WIDTH) > 0)
-                || implicitPruning()) {
-            this.beamWidth = props.getIntProperty(Parser.PROPERTY_MAX_BEAM_WIDTH);
-            this.lexicalRowBeamWidth = props.getIntProperty(PROPERTY_LEXICAL_ROW_BEAM_WIDTH, beamWidth);
-            this.lexicalRowUnaries = props.getIntProperty(PROPERTY_LEXICAL_ROW_UNARIES, lexicalRowBeamWidth / 3);
-            this.maxLocalDelta = props.getFloatProperty(PROPERTY_MAX_LOCAL_DELTA, 8f);
-            this.exhaustiveSearch = false;
+        // If we're pruning, initialize the thread-local pruning storage
+        if (beamWidth > 0 || implicitPruning()) {
+
             this.threadLocalBoundedPriorityQueue = new ThreadLocal<BoundedPriorityQueue>() {
                 @Override
                 protected BoundedPriorityQueue initialValue() {
@@ -92,23 +88,124 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             };
 
         } else {
-            this.beamWidth = grammar.numNonTerms();
-            this.lexicalRowBeamWidth = grammar.numNonTerms();
-            this.lexicalRowUnaries = 0;
-            this.maxLocalDelta = 0f;
-            this.exhaustiveSearch = true;
             this.threadLocalBoundedPriorityQueue = null;
             this.threadLocalTmpFoms = null;
             this.threadLocalQueueEdges = null;
         }
     }
 
+    private void initDefaultPruningParams() {
+
+        final ConfigProperties props = GlobalConfigProperties.singleton();
+
+        // Pruning Parameters
+        if ((props.containsKey(PROPERTY_MAX_BEAM_WIDTH) && props.getIntProperty(PROPERTY_MAX_BEAM_WIDTH) > 0)
+                || implicitPruning()) {
+            this.beamWidth = props.getIntProperty(Parser.PROPERTY_MAX_BEAM_WIDTH);
+            this.lexicalRowBeamWidth = props.getIntProperty(PROPERTY_LEXICAL_ROW_BEAM_WIDTH, beamWidth);
+            this.lexicalRowUnaries = props.getIntProperty(PROPERTY_LEXICAL_ROW_UNARIES, lexicalRowBeamWidth / 3);
+            this.maxLocalDelta = props.getFloatProperty(PROPERTY_MAX_LOCAL_DELTA, 8f);
+            this.exhaustiveSearch = false;
+        } else {
+            this.beamWidth = grammar.numNonTerms();
+            this.lexicalRowBeamWidth = grammar.numNonTerms();
+            this.lexicalRowUnaries = grammar.numNonTerms();
+            this.maxLocalDelta = 0f;
+            this.exhaustiveSearch = true;
+        }
+    }
+
+    @Override
+    public BinaryTree<String> findBestParse(final ParseTask parseTask) {
+
+        // return super.findBestParse(parseTask);
+        initChart(parseTask);
+        parseTask.reparseStages = -1;
+
+        for (final Parser.ReparseStrategy.Stage stage : opts.reparseStrategy.stages()) {
+
+            final long stageStartTime = System.currentTimeMillis();
+            parseTask.reparseStages++;
+
+            switch (stage) {
+            case NORMAL:
+                initDefaultPruningParams();
+                break;
+
+            case FIXED_BEAM:
+                initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta);
+                cellSelector.reset(false);
+                break;
+
+            case DOUBLE:
+                // Skip this doubling if it results in exhaustive parsing. We'll get to EXHAUSTIVE later if it's
+                // included in the hierarchy.
+                if ((beamWidth << 1) >= grammar.nonTermSet.size()) {
+                    continue;
+                }
+                initSentence(parseTask, beamWidth << 1, lexicalRowBeamWidth << 1, lexicalRowUnaries << 1, maxLocalDelta
+                        * MAX_LOCAL_DELTA_MULTIPLIER);
+                cellSelector.reset(false);
+                break;
+
+            case EXHAUSTIVE:
+                initSentence(parseTask, grammar.nonTermSet.size(), grammar.nonTermSet.size(),
+                        grammar.nonTermSet.size(), Float.MAX_VALUE);
+                cellSelector.reset(false);
+                break;
+            }
+
+            insidePass();
+
+            if (BaseLogger.singleton().isLoggable(Level.ALL)) {
+                BaseLogger.singleton().finest(chart.toString());
+            }
+
+            if (chart.hasCompleteParse(grammar.startSymbol)) {
+                BaseLogger.singleton().finer(
+                        String.format("INFO: stage=%s time=%d success=true", stage.toString(),
+                                System.currentTimeMillis() - stageStartTime));
+                return chart.extractBestParse(grammar.startSymbol);
+            }
+            BaseLogger.singleton().finer(
+                    String.format("INFO: stage=%s time=%d success=false", stage.toString(), System.currentTimeMillis()
+                            - stageStartTime));
+        }
+
+        return extract(parseTask.recoveryStrategy);
+    }
+
     @Override
     protected void initSentence(final ParseTask parseTask) {
-        final int sentLength = parseTask.sentenceLength();
-        // TODO chart.size() isn't the right comparison if reparsing with a larger beamWidth
-        if (chart != null && chart.size() >= sentLength) {
-            chart.reset(parseTask);
+        initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta);
+    }
+
+    protected void initSentence(final ParseTask parseTask, final int newBeamWidth, final int newLexicalRowBeamWidth,
+            final int newLexicalRowUnaries, final float newMaxLocalDelta) {
+
+        // Set beam width parameters
+        if (newBeamWidth >= grammar.nonTermSet.size()) {
+            this.beamWidth = this.lexicalRowBeamWidth = this.lexicalRowUnaries = grammar.nonTermSet.size();
+            this.exhaustiveSearch = true;
+        } else {
+            this.beamWidth = newBeamWidth;
+        }
+        this.lexicalRowBeamWidth = Math.min(newLexicalRowBeamWidth, grammar.nonTermSet.size());
+        this.lexicalRowUnaries = Math.min(newLexicalRowUnaries, grammar.nonTermSet.size());
+        this.maxLocalDelta = newMaxLocalDelta;
+
+        // Replace the pruning priority queue if the beam width has increased beyond its capacity
+        if (threadLocalBoundedPriorityQueue != null
+                && Math.max(newBeamWidth, newLexicalRowBeamWidth) > threadLocalBoundedPriorityQueue.get().size()) {
+            threadLocalBoundedPriorityQueue.set(new BoundedPriorityQueue(
+                    Math.max(newBeamWidth, newLexicalRowBeamWidth), grammar));
+        }
+
+        if (chart != null
+                && chart.size() >= parseTask.sentenceLength()
+                && chart.chartArraySize() >= chart.chartArraySize(parseTask.sentenceLength(), this.beamWidth,
+                        this.lexicalRowBeamWidth)) {
+            chart.reset(parseTask, this.beamWidth, this.lexicalRowBeamWidth);
         } else {
             // Construct a chart of the appropriate type
             try {
@@ -206,8 +303,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
         final TemporaryChartCell tmpCell = spvChartCell.tmpCell;
 
-        final int cellBeamWidth = (end - start == 1 ? lexicalRowBeamWidth : Math.min(
-                cellSelector.getBeamWidth(start, end), beamWidth));
+        final int cellBeamWidth = Math.min(cellSelector.getBeamWidth(start, end),
+                (end - start == 1 ? lexicalRowBeamWidth : beamWidth));
         if (cellBeamWidth == 1) {
             // Special-case when we are pruning down to only a single entry. We can't add any unary productions, so just
             // choose the NT with the maximum FOM.

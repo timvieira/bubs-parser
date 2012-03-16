@@ -22,23 +22,37 @@ public abstract class CellConstraints extends ArrayCellSelector {
 
     protected abstract boolean isGrammarLeftFactored();
 
+    /**
+     * Returns true if the specified cell is 'open'.
+     * 
+     * @param start
+     * @param end
+     * @return true if the specified cell is 'open'
+     */
     public abstract boolean isCellOpen(final short start, final short end);
 
+    /**
+     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
+     * complete constituent).
+     * 
+     * @param start
+     * @param end
+     * @return true if the specified cell is 'open' only to factored parents
+     */
     public abstract boolean isCellOnlyFactored(short start, short end);
 
+    /**
+     * Returns true if the specified cell is 'open' to unary productions.
+     * 
+     * @param start
+     * @param end
+     * @return true if the specified cell is 'open' to unary productions.
+     */
     public abstract boolean isUnaryOpen(short start, short end);
-
-    public boolean isCellClosed(final short start, final short end) {
-        return !isCellOpen(start, end);
-    }
-
-    public boolean isUnaryClosed(final short start, final short end) {
-        return !isUnaryOpen(start, end);
-    }
 
     @Override
     public boolean hasCellConstraints() {
-        return true;
+        return constraintsEnabled;
     }
 
     @Override
@@ -54,17 +68,4 @@ public abstract class CellConstraints extends ArrayCellSelector {
             return end - 1;
         return start + 1; // only allow one midpoint
     }
-
-    /**
-     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
-     * complete constituent).
-     * 
-     * @param start
-     * @param end
-     * @return true if the specified cell is 'open' only to factored parents
-     */
-    // public boolean factoredParentsOnly(final short start, final short end) {
-    // return isOpenOnlyFactored(start, end);
-    // }
-
 }
