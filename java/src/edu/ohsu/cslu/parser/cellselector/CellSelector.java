@@ -25,9 +25,111 @@ import java.util.Iterator;
 
 import edu.ohsu.cslu.parser.ChartParser;
 
+/**
+ * Iterates through open cells in a chart. Some implementations (e.g. {@link LeftRightBottomTopTraversal}) use a simple
+ * and predictable iteration order; others implement cell constraints (see Roark and Hollingshead, 2008 and 2009) or
+ * constrain iteration via a gold chart.
+ */
 public abstract class CellSelector implements Iterator<short[]> {
 
-    public abstract void initSentence(final ChartParser<?, ?> parser);
+    protected boolean constraintsEnabled = true;
+
+    protected short[] cellIndices;
+    private int nextCell = 0;
+    protected int openCells;
+
+    // TODO: If we really need a parser instance to call parser.waitForActiveTasks(), then
+    // this should be passed in when the model is created, not at each sentence init.
+    protected ChartParser<?, ?> parser;
+
+    protected CellSelector() {
+    }
+
+    public short[] next() {
+        return new short[] { cellIndices[nextCell << 1], cellIndices[(nextCell++ << 1) + 1] };
+    }
+
+    public void initSentence(final ChartParser<?, ?> p) {
+        this.parser = p;
+        nextCell = 0;
+    }
+
+    /**
+     * Returns true if the cell selector has more cells available. The parser should call {@link #hasNext()} until it
+     * returns <code>false</code> to ensure the sentence is fully parsed.
+     * 
+     * @return true if the cell selector has more cells.
+     */
+    @Override
+    public boolean hasNext() {
+        // In left-to-right and bottom-to-top traversal, each row depends on the row below. Wait for active
+        // tasks (if any) before proceeding on to the next row and before returning false when parsing is complete.
+        if (nextCell >= 1) {
+            if (nextCell >= openCells) {
+                parser.waitForActiveTasks();
+                return false;
+            }
+            final int nextSpan = cellIndices[(nextCell << 1) + 1] - cellIndices[nextCell << 1];
+            final int currentSpan = cellIndices[((nextCell - 1) << 1) + 1] - cellIndices[(nextCell - 1) << 1];
+            if (nextSpan > currentSpan) {
+                parser.waitForActiveTasks();
+            }
+        }
+
+        return nextCell < openCells;
+    }
+
+    /**
+     * This {@link Iterator} implementation does not support removal.
+     */
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Reset the {@link Iterator} to the first cell. Used for reparsing and in grammar estimation.
+     */
+    public void reset() {
+        reset(true);
+    }
+
+    /**
+     * Reset the {@link Iterator} to the first cell, optionally disabling cell constraints (e.g., for reparsing).
+     * 
+     * @param enableConstraints
+     */
+    public void reset(final boolean enableConstraints) {
+        this.constraintsEnabled = enableConstraints;
+        nextCell = 0;
+    }
+
+    /**
+     * @return an iterator which supplies cells in the reverse order of this {@link CellSelector} (e.g. for populating
+     *         outside probabilities in inside-outside parsing after a normal inside pass).
+     */
+    public final Iterator<short[]> reverseIterator() {
+        return new Iterator<short[]>() {
+
+            private int nextCell = openCells;
+
+            @Override
+            public boolean hasNext() {
+                return nextCell > 0;
+            }
+
+            @Override
+            public short[] next() {
+                --nextCell;
+                return new short[] { cellIndices[nextCell << 1], cellIndices[(nextCell << 1) + 1] };
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
 
     /**
      * @throws IOException if the write fails
@@ -43,6 +145,9 @@ public abstract class CellSelector implements Iterator<short[]> {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * @return true if this {@link CellSelector} implementation supports cell constraints
+     */
     public boolean hasCellConstraints() {
         return false;
     }
@@ -63,30 +168,6 @@ public abstract class CellSelector implements Iterator<short[]> {
     }
 
     /**
-     * Returns true if the cell selector has more cells available. The parser should call {@link #hasNext()} until it
-     * returns <code>false</code> to ensure the sentence is fully parsed.
-     * 
-     * @return true if the cell selector has more cells.
-     */
-    @Override
-    public abstract boolean hasNext();
-
-    public abstract short[] next();
-
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
-
-    public void reset() {
-        reset(true);
-    }
-
-    public void reset(final boolean enableConstraints) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Returns the beam width for the current cell. Consumers generally set the cell beam width to
      * java.lang.Math.min(getCelValue(), beamWidth), so they will not attempt to search a range larger than the maximum
      * beam width of the parser.
@@ -95,13 +176,5 @@ public abstract class CellSelector implements Iterator<short[]> {
      */
     public int getBeamWidth(final short start, final short end) {
         return Integer.MAX_VALUE;
-    }
-
-    /**
-     * @return an iterator which supplies cells in the reverse order of this {@link CellSelector} (e.g. for populating
-     *         outside probabilities in inside-outside parsing after a normal inside pass).
-     */
-    public Iterator<short[]> reverseIterator() {
-        throw new UnsupportedOperationException();
     }
 }

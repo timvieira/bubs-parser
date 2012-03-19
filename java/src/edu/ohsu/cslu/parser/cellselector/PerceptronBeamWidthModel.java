@@ -150,13 +150,14 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
             // init cell list here because we don't classify cells in bottom-up order above
             if (cellIndices == null || cellIndices.length < openCells) {
-                cellIndices = new short[openCells][2];
+                cellIndices = new short[openCells * 2];
             }
             int i = 0;
-            for (int span = 1; span <= n; span++) {
-                for (int start = 0; start < n - span + 1; start++) { // beginning
+            for (short span = 1; span <= n; span++) {
+                for (short start = 0; start < n - span + 1; start++) { // beginning
                     if (beamWidthValues[start][start + span] > 0) {
-                        cellIndices[i++] = new short[] { (short) start, (short) (start + span) };
+                        cellIndices[i++] = start;
+                        cellIndices[i++] = (short) (start + span);
                     }
                 }
             }
@@ -179,13 +180,14 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 final int sentenceLength = parser.chart.size();
                 openCells = sentenceLength * (sentenceLength + 1) / 2;
                 if (cellIndices == null || cellIndices.length < openCells) {
-                    cellIndices = new short[openCells][2];
+                    cellIndices = new short[openCells * 2];
                 }
 
                 int i = 0;
                 for (short span = 1; span <= sentenceLength; span++) {
                     for (short start = 0; start < sentenceLength - span + 1; start++) { // beginning
-                        cellIndices[i++] = new short[] { start, (short) (start + span) };
+                        cellIndices[i++] = start;
+                        cellIndices[i++] = (short) (start + span);
                     }
                 }
             }

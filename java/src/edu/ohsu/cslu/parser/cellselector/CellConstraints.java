@@ -18,7 +18,7 @@
  */
 package edu.ohsu.cslu.parser.cellselector;
 
-public abstract class CellConstraints extends ArrayCellSelector {
+public abstract class CellConstraints extends CellSelector {
 
     protected abstract boolean isGrammarLeftFactored();
 
