@@ -36,7 +36,7 @@ public class TestGrammarParallelCsrSpmvParser extends
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "13460", "d820", "5014" })
+    @PerformanceTest({ "mbp", "3869", "d820", "5014" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

@@ -21,7 +21,9 @@ package edu.ohsu.cslu.parser;
 
 import static org.junit.Assert.assertEquals;
 
+import org.cjunit.FilteredRunner;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import cltool4j.ToolTestCase;
 
@@ -30,6 +32,7 @@ import cltool4j.ToolTestCase;
  * 
  * @author Aaron Dunlop
  */
+@RunWith(FilteredRunner.class)
 public class TestParserDriver extends ToolTestCase {
 
     private final static String M0_GRAMMAR = "unit-test-data/grammars/eng.R0.gr.gz";
