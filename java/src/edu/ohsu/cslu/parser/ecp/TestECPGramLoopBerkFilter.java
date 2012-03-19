@@ -31,7 +31,7 @@ public class TestECPGramLoopBerkFilter extends ExhaustiveChartParserTestCase<ECP
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "13164", "d820", "10414" })
+    @PerformanceTest({ "mbp", "5313", "d820", "10414" })
     public void profileSentences11Through20() throws Exception {
         super.internalProfileSentences11Through20();
     }

@@ -8,11 +8,13 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 
+import org.cjunit.FilteredRunner;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
@@ -27,6 +29,7 @@ import edu.ohsu.cslu.parser.chart.InsideOutsideChart;
 import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.tests.JUnit;
 
+@RunWith(FilteredRunner.class)
 public class TestInsideOutsideCphSpmlParser {
 
     private InsideOutsideCscSparseMatrixGrammar grammar;

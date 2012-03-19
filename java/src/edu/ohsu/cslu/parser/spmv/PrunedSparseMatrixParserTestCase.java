@@ -25,11 +25,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import org.cjunit.FilteredRunner;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
@@ -53,6 +55,7 @@ import edu.ohsu.cslu.tests.JUnit;
  * @author Aaron Dunlop
  * @since Mar 9, 2011
  */
+@RunWith(FilteredRunner.class)
 public abstract class PrunedSparseMatrixParserTestCase<G extends SparseMatrixGrammar> {
 
     private SparseMatrixParser<G, PackedArrayChart> parser;

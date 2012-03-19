@@ -20,7 +20,9 @@ package edu.ohsu.cslu.parser;
 
 import static org.junit.Assert.assertEquals;
 
+import org.cjunit.FilteredRunner;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 
@@ -29,6 +31,7 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
  * 
  * @author Aaron Dunlop
  */
+@RunWith(FilteredRunner.class)
 public class TestParser {
 
     @Test
