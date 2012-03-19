@@ -27,7 +27,7 @@ import edu.ohsu.cslu.parser.ChartParser;
  * @author Nathan Bodenstab
  * @since Dec 17, 2009
  */
-public class LeftRightBottomTopTraversal extends ArrayCellSelector {
+public class LeftRightBottomTopTraversal extends CellSelector {
 
     public static CellSelectorModel MODEL = new CellSelectorModel() {
 
@@ -47,14 +47,15 @@ public class LeftRightBottomTopTraversal extends ArrayCellSelector {
         final short sentenceLength = (short) p.chart.size();
 
         openCells = sentenceLength * (sentenceLength + 1) / 2;
-        if (cellIndices == null || cellIndices.length < openCells) {
-            cellIndices = new short[openCells][2];
+        if (cellIndices == null || cellIndices.length < openCells * 2) {
+            cellIndices = new short[openCells * 2];
         }
 
         int i = 0;
         for (short span = 1; span <= sentenceLength; span++) {
             for (short start = 0; start < sentenceLength - span + 1; start++) { // beginning
-                cellIndices[i++] = new short[] { start, (short) (start + span) };
+                cellIndices[i++] = start;
+                cellIndices[i++] = (short) (start + span);
             }
         }
     }
