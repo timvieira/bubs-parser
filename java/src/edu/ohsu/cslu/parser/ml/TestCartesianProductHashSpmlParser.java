@@ -57,19 +57,19 @@ public class TestCartesianProductHashSpmlParser extends ExhaustiveChartParserTes
     public void setUp() throws Exception {
         if (f2_21_grammar != null
                 && (f2_21_grammar.getClass() != grammarClass() || ((SparseMatrixGrammar) f2_21_grammar)
-                        .cartesianProductFunction().getClass() != PACKING_FUNCTION_CLASS)) {
+                        .packingFunction().getClass() != PACKING_FUNCTION_CLASS)) {
             f2_21_grammar = null;
         }
 
         if (simpleGrammar1 != null
                 && (simpleGrammar1.getClass() != grammarClass() || ((SparseMatrixGrammar) simpleGrammar1)
-                        .cartesianProductFunction().getClass() != PACKING_FUNCTION_CLASS)) {
+                        .packingFunction().getClass() != PACKING_FUNCTION_CLASS)) {
             simpleGrammar1 = null;
         }
 
         if (simpleGrammar2 != null
                 && (simpleGrammar2.getClass() != grammarClass() || ((SparseMatrixGrammar) simpleGrammar2)
-                        .cartesianProductFunction().getClass() != PACKING_FUNCTION_CLASS)) {
+                        .packingFunction().getClass() != PACKING_FUNCTION_CLASS)) {
             simpleGrammar2 = null;
         }
 

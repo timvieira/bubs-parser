@@ -52,7 +52,7 @@ public class CartesianProductBinarySearchSpmlParser extends
     @Override
     protected void computeInsideProbabilities(final ChartCell cell) {
 
-        final PackingFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.packingFunction();
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
         final short start = cell.start();
         final short end = cell.end();

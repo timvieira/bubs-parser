@@ -268,20 +268,18 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     /**
-     * Returns the cartesian-product function in use TODO Rename to packingFunction()
+     * Returns the packing function in use
      * 
-     * @return the cartesian-product function in use
+     * @return the packing function in use
      */
-    public final PackingFunction cartesianProductFunction() {
+    public final PackingFunction packingFunction() {
         return packingFunction;
     }
 
-    @Override
     public final boolean isValidRightChild(final int nonTerminal) {
         return nonTerminal >= rightChildrenStart && nonTerminal <= rightChildrenEnd && nonTerminal != nullSymbol;
     }
 
-    @Override
     public final boolean isValidLeftChild(final int nonTerminal) {
         return nonTerminal >= leftChildrenStart && nonTerminal <= leftChildrenEnd && nonTerminal != nullSymbol;
     }

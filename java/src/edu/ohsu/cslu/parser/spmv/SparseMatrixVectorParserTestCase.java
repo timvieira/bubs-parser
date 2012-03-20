@@ -138,19 +138,19 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         final short nn = (short) g.mapNonterminal("NN");
         final short np = (short) g.mapNonterminal("NP");
 
-        final float[] probabilities = new float[g.cartesianProductFunction().packedArraySize()];
+        final float[] probabilities = new float[g.packingFunction().packedArraySize()];
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
-        final short[] midpoints = new short[g.cartesianProductFunction().packedArraySize()];
+        final short[] midpoints = new short[g.packingFunction().packedArraySize()];
 
-        final int nnNp = g.cartesianProductFunction().pack(nn, np);
+        final int nnNp = g.packingFunction().pack(nn, np);
         probabilities[nnNp] = -1.897f;
         midpoints[nnNp] = 1;
 
-        final int npNp = g.cartesianProductFunction().pack(np, np);
+        final int npNp = g.packingFunction().pack(np, np);
         probabilities[npNp] = -1.386f;
         midpoints[npNp] = 2;
 
-        final int npNn = g.cartesianProductFunction().pack(np, nn);
+        final int npNn = g.packingFunction().pack(np, nn);
         probabilities[npNn] = -1.897f;
         midpoints[npNn] = 3;
 

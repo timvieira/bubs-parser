@@ -270,7 +270,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
     protected void unarySpmv(final int[] chartCellChildren, final float[] chartCellProbabilities,
             final short[] chartCellMidpoints, final int offset, final short chartCellEnd) {
 
-        final PackingFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.packingFunction();
 
         // Iterate over populated children (matrix columns)
         for (short child = 0; child < grammar.numNonTerms(); child++) {
@@ -460,7 +460,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                             if (parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
                                 // The FOM was high enough that the edge was added to the queue; update temporary
                                 // storage to reflect the new unary child and probability
-                                queueEdges.packedChildren[parent] = grammar.cartesianProductFunction().packUnary(child);
+                                queueEdges.packedChildren[parent] = grammar.packingFunction().packUnary(child);
                                 queueEdges.insideProbabilities[parent] = jointProbability;
                                 queueEdges.midpoints[parent] = tmpCell.midpoints[parent] = end;
                             }

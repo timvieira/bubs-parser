@@ -101,14 +101,14 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             final StringWriter prefix = new StringWriter();
             prefix.write("#define UNARY_PRODUCTION " + Production.UNARY_PRODUCTION + '\n');
             prefix.write("#define LEXICAL_PRODUCTION " + Production.LEXICAL_PRODUCTION + '\n');
-            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift
+            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.packingFunction()).shift
                     + '\n');
             prefix.write("#define MAX_PACKED_LEXICAL_PRODUCTION "
-                    + ((LeftShiftFunction) grammar.cartesianProductFunction()).maxPackedLexicalProduction + '\n');
-            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.cartesianProductFunction()).shift
+                    + ((LeftShiftFunction) grammar.packingFunction()).maxPackedLexicalProduction + '\n');
+            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.packingFunction()).shift
                     + '\n');
-            prefix.write(grammar.cartesianProductFunction().openClPackDefine() + '\n');
-            prefix.write(grammar.cartesianProductFunction().openClUnpackLeftChild() + '\n');
+            prefix.write(grammar.packingFunction().openClPackDefine() + '\n');
+            prefix.write(grammar.packingFunction().openClUnpackLeftChild() + '\n');
 
             // Compile kernels shared by all implementing classes
             final CLProgram clSharedProgram = OpenClUtils.compileClKernels(context, OpenClSpmvParser.class,
@@ -142,13 +142,13 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
         // And for cross-product storage
         clCartesianProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
-                .cartesianProductFunction().packedArraySize());
+                .packingFunction().packedArraySize());
         clCartesianProductMidpoints0 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
-                .cartesianProductFunction().packedArraySize());
+                .packingFunction().packedArraySize());
         clCartesianProductProbabilities1 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
-                .cartesianProductFunction().packedArraySize());
+                .packingFunction().packedArraySize());
         clCartesianProductMidpoints1 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
-                .cartesianProductFunction().packedArraySize());
+                .packingFunction().packedArraySize());
     }
 
     @Override
@@ -284,7 +284,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
         internalCartesianProductUnion(start, end);
 
-        final int packedArraySize = grammar.cartesianProductFunction().packedArraySize();
+        final int packedArraySize = grammar.packingFunction().packedArraySize();
         final float[] probabilities = OpenClUtils.copyFromDevice(clQueue, clCartesianProductProbabilities0,
                 packedArraySize);
         final short[] midpoints = OpenClUtils.copyFromDevice(clQueue, clCartesianProductMidpoints0, packedArraySize);
@@ -310,10 +310,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         long t0 = System.currentTimeMillis();
 
         // Fill the buffer with negative infinity
-        fillFloatKernel.setArgs(clCartesianProductProbabilities0, grammar.cartesianProductFunction().packedArraySize(),
+        fillFloatKernel.setArgs(clCartesianProductProbabilities0, grammar.packingFunction().packedArraySize(),
                 Float.NEGATIVE_INFINITY);
         final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(
-                grammar.cartesianProductFunction().packedArraySize(), LOCAL_WORK_SIZE);
+                grammar.packingFunction().packedArraySize(), LOCAL_WORK_SIZE);
         fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
         clQueue.finish();
 
@@ -334,7 +334,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             t0 = System.currentTimeMillis();
 
             // Initialize the target cartesian product array
-            fillFloatKernel.setArgs(clCartesianProductProbabilities1, grammar.cartesianProductFunction()
+            fillFloatKernel.setArgs(clCartesianProductProbabilities1, grammar.packingFunction()
                     .packedArraySize(), Float.NEGATIVE_INFINITY);
             fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
             clQueue.finish();
@@ -348,7 +348,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
             // Union the new cross-product with the existing cross-product
             cartesianProductUnionKernel.setArgs(clCartesianProductProbabilities0, clCartesianProductMidpoints0,
-                    clCartesianProductProbabilities1, clCartesianProductMidpoints1, grammar.cartesianProductFunction()
+                    clCartesianProductProbabilities1, clCartesianProductMidpoints1, grammar.packingFunction()
                             .packedArraySize());
             cartesianProductUnionKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize },
                     new int[] { LOCAL_WORK_SIZE });

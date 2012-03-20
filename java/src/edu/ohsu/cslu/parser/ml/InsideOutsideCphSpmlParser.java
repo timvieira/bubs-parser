@@ -65,7 +65,7 @@ public class InsideOutsideCphSpmlParser extends
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final PackingFunction pf = grammar.cartesianProductFunction();
+        final PackingFunction pf = grammar.packingFunction();
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
         final short start = cell.start();
         final short end = cell.end();

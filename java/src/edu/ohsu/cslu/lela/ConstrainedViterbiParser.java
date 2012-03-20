@@ -84,7 +84,7 @@ public class ConstrainedViterbiParser extends ConstrainedInsideOutsideParser {
     @Override
     protected void computeInsideProbabilities(final short start, final short end) {
 
-        final PackingFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.packingFunction();
 
         final int cellIndex = chart.cellIndex(start, end);
         final int offset = chart.offset(cellIndex);

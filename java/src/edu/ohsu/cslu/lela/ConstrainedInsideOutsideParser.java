@@ -168,7 +168,7 @@ public class ConstrainedInsideOutsideParser extends
      */
     protected void computeInsideProbabilities(final short start, final short end) {
 
-        final PackingFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.packingFunction();
 
         final int cellIndex = chart.cellIndex(start, end);
         final int offset = chart.offset(cellIndex);
@@ -478,7 +478,7 @@ public class ConstrainedInsideOutsideParser extends
     private void countBinaryRuleOccurrences(final FractionalCountGrammar countGrammar, final short start,
             final short end, final float sentenceInsideLogProb) {
 
-        final PackingFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.packingFunction();
 
         final int cellIndex = chart.cellIndex(start, end);
         // 0 <= unaryLevels < maxUnaryChainLength

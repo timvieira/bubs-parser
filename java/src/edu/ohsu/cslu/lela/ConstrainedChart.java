@@ -155,7 +155,7 @@ public class ConstrainedChart extends ConstrainingChart {
 
         if (packedChildren[entryOffset] < 0) {
             // Lexical production
-            final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.cartesianProductFunction()
+            final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.packingFunction()
                     .unpackLeftChild(packedChildren[entryOffset]));
             subtree.addChild(new BinaryTree<String>(sChild));
         } else {
@@ -185,20 +185,20 @@ public class ConstrainedChart extends ConstrainingChart {
             entryOffset = (insideProbabilities[entry0Offset + 1] > insideProbabilities[entry0Offset]) ? entry0Offset + 1
                     : entry0Offset;
             subtree = subtree.addChild(grammar.nonTermSet.getSymbol(nonTerminalIndices[entryOffset]));
-            parent = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(packedChildren[entryOffset]);
+            parent = sparseMatrixGrammar.packingFunction().unpackLeftChild(packedChildren[entryOffset]);
         }
 
         if (packedChildren[entryOffset] < 0) {
             // Lexical production
-            final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.cartesianProductFunction()
+            final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.packingFunction()
                     .unpackLeftChild(packedChildren[entryOffset]));
             subtree.addChild(new BinaryTree<String>(sChild));
         } else {
             // Binary production
             final short edgeMidpoint = midpoints[cellIndex(start, end)];
-            subtree.addChild(extractViterbiParse(start, edgeMidpoint, sparseMatrixGrammar.cartesianProductFunction()
+            subtree.addChild(extractViterbiParse(start, edgeMidpoint, sparseMatrixGrammar.packingFunction()
                     .unpackLeftChild(packedChildren[entryOffset])));
-            subtree.addChild(extractViterbiParse(edgeMidpoint, end, sparseMatrixGrammar.cartesianProductFunction()
+            subtree.addChild(extractViterbiParse(edgeMidpoint, end, sparseMatrixGrammar.packingFunction()
                     .unpackRightChild(packedChildren[entryOffset])));
         }
 
@@ -328,8 +328,8 @@ public class ConstrainedChart extends ConstrainingChart {
     protected String formatCellEntry(final int nonterminal, final int childProductions, final boolean unary,
             final float insideProbability, final float outsideProbability, final boolean formatFractions) {
 
-        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
-        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
+        final int leftChild = sparseMatrixGrammar.packingFunction().unpackLeftChild(childProductions);
+        final int rightChild = sparseMatrixGrammar.packingFunction().unpackRightChild(childProductions);
 
         if (rightChild == Production.LEXICAL_PRODUCTION) {
             // Lexical Production

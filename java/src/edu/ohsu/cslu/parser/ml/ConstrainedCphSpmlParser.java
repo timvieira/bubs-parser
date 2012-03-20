@@ -123,7 +123,7 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final PackingFunction packingFunction = grammar.cartesianProductFunction();
+        final PackingFunction packingFunction = grammar.packingFunction();
 
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
         final short start = cell.start();
@@ -241,7 +241,7 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
         targetCell.allocateTemporaryStorage();
         final TemporaryChartCell tmpCell = targetCell.tmpCell;
 
-        final PackingFunction packingFunction = grammar.cartesianProductFunction();
+        final PackingFunction packingFunction = grammar.packingFunction();
         final int constrainingCellIndex = constrainingChart.cellIndex(start, end);
 
         for (int unaryHeight = 1; unaryHeight < constrainingChart.unaryChainLength(constrainingCellIndex); unaryHeight++) {

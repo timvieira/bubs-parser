@@ -94,9 +94,9 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
         p.initSentence(parseTask);
         final Chart chart = p.chart;
 
-        final float[] probabilities = new float[g.cartesianProductFunction().packedArraySize()];
+        final float[] probabilities = new float[g.packingFunction().packedArraySize()];
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);
-        final short[] midpoints = new short[g.cartesianProductFunction().packedArraySize()];
+        final short[] midpoints = new short[g.packingFunction().packedArraySize()];
 
         populateSimpleGrammar2Rows1_3(chart, g);
 
@@ -433,6 +433,6 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
     }
 
     private int pack(final SparseMatrixGrammar grammar, final int leftChild, final int rightChild) {
-        return grammar.cartesianProductFunction().pack((short) leftChild, (short) rightChild);
+        return grammar.packingFunction().pack((short) leftChild, (short) rightChild);
     }
 }

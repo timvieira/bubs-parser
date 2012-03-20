@@ -45,8 +45,8 @@ public class CartesianProductLeftChildHashSpmlParser extends
 
         final int[][] keyPairs = new int[2][grammar.cscBinaryPopulatedColumns.length];
         for (int i = 0; i < grammar.cscBinaryPopulatedColumns.length; i++) {
-            keyPairs[0][i] = grammar.cartesianProductFunction().unpackLeftChild(grammar.cscBinaryPopulatedColumns[i]);
-            keyPairs[1][i] = grammar.cartesianProductFunction().unpackRightChild(grammar.cscBinaryPopulatedColumns[i]);
+            keyPairs[0][i] = grammar.packingFunction().unpackLeftChild(grammar.cscBinaryPopulatedColumns[i]);
+            keyPairs[1][i] = grammar.packingFunction().unpackRightChild(grammar.cscBinaryPopulatedColumns[i]);
         }
 
         childPair2ColumnOffsetHash = new PerfectIntPair2IntHash(keyPairs);
@@ -60,7 +60,7 @@ public class CartesianProductLeftChildHashSpmlParser extends
     protected void computeInsideProbabilities(final ChartCell cell) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
-        final PackingFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.packingFunction();
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
         final short start = cell.start();
         final short end = cell.end();
