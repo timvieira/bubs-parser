@@ -148,7 +148,7 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
         final PerfectIntPairHashPackingFunction pf = (PerfectIntPairHashPackingFunction) grammar
-                .cartesianProductFunction();
+                .packingFunction();
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 

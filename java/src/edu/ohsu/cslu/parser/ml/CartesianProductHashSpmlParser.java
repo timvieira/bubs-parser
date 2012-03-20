@@ -61,7 +61,7 @@ public class CartesianProductHashSpmlParser extends
         final short[] binaryRowIndices = factoredOnly ? grammar.factoredCscBinaryRowIndices
                 : grammar.cscBinaryRowIndices;
 
-        final PackingFunction cpf = grammar.cartesianProductFunction();
+        final PackingFunction cpf = grammar.packingFunction();
 
         // Iterate over all possible midpoints
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {

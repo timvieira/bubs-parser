@@ -780,8 +780,8 @@ public class InsideOutsideChart extends PackedArrayChart {
                 final float insideProbability, final int midpoint, final float outsideProbability,
                 final boolean formatFractions) {
 
-            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
-            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
+            final int leftChild = sparseMatrixGrammar.packingFunction().unpackLeftChild(childProductions);
+            final int rightChild = sparseMatrixGrammar.packingFunction().unpackRightChild(childProductions);
 
             if (formatFractions) {
                 if (rightChild == Production.UNARY_PRODUCTION) {

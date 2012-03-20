@@ -94,7 +94,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
         // Pre-allocate cartesian-product vector arrays for each thread
         cpvProbabilities = new float[threads][];
         cpvMidpoints = new short[threads][];
-        final int arrayLength = grammar.cartesianProductFunction().packedArraySize();
+        final int arrayLength = grammar.packingFunction().packedArraySize();
         for (int j = 0; j < threads; j++) {
             cpvProbabilities[j] = new float[arrayLength];
             cpvMidpoints[j] = new short[arrayLength];
@@ -113,7 +113,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
         final PerfectIntPairHashPackingFunction pf = (PerfectIntPairHashPackingFunction) grammar
-                .cartesianProductFunction();
+                .packingFunction();
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 

@@ -69,7 +69,7 @@ public class RightChildLoopSpmlParser extends SparseMatrixLoopParser<RightCscSpa
 
                     // Unpack the grammar rule's right child
                     final int packedChildPair = grammar.cscBinaryPopulatedColumns[j];
-                    final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(packedChildPair);
+                    final int leftChild = grammar.packingFunction().unpackLeftChild(packedChildPair);
 
                     // Look up the right child NT's probability in the right child cell
                     final float leftInsideProbability = chart.insideProbabilities[leftCellOffset + leftChild];

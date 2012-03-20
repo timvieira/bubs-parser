@@ -83,7 +83,6 @@ public class Grammar implements Serializable {
     private final static long serialVersionUID = 3L;
 
     /** Marks the switch from PCFG to lexicon entries in the grammar file */
-    public final static String GRAMMAR_DELIMITER = "===== GRAMMAR =====";
     public final static String LEXICON_DELIMITER = "===== LEXICON =====";
 
     // == Grammar Basics ==
@@ -724,26 +723,6 @@ public class Grammar implements Serializable {
 
     public final boolean isPos(final int nonTerminal) {
         return nonTerminal >= posStart && nonTerminal <= posEnd;
-    }
-
-    /**
-     * Returns true if the non-terminal occurs as a right child in the grammar.
-     * 
-     * @param nonTerminal
-     * @return true if the non-terminal occurs as a right child in the grammar.
-     */
-    public boolean isValidRightChild(final int nonTerminal) {
-        return nonTerminal >= rightChildrenStart && nonTerminal <= rightChildrenEnd;
-    }
-
-    /**
-     * Returns true if the non-terminal occurs as a left child in the grammar.
-     * 
-     * @param nonTerminal
-     * @return true if the non-terminal occurs as a left child in the grammar.
-     */
-    public boolean isValidLeftChild(final int nonTerminal) {
-        return nonTerminal >= leftChildrenStart && nonTerminal <= leftChildrenEnd;
     }
 
     /**

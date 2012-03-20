@@ -155,12 +155,12 @@ public class DenseVectorChart extends ParallelArrayChart {
 
             if (insideProbability > insideProbabilities[index]) {
                 if (p.isBinaryProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().pack((short) p.leftChild,
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction().pack((short) p.leftChild,
                             (short) p.rightChild);
                 } else if (p.isLexProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packLexical(p.leftChild);
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction().packLexical(p.leftChild);
                 } else {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction().packUnary(
                             (short) p.leftChild);
                 }
                 insideProbabilities[index] = insideProbability;
@@ -181,13 +181,13 @@ public class DenseVectorChart extends ParallelArrayChart {
             if (edge.inside() > insideProbabilities[index]) {
 
                 if (edge.prod.isBinaryProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().pack(
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction().pack(
                             (short) edge.prod.leftChild, (short) edge.prod.rightChild);
                 } else if (edge.prod.isLexProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packLexical(
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction().packLexical(
                             edge.prod.leftChild);
                 } else {
-                    packedChildren[index] = sparseMatrixGrammar.cartesianProductFunction().packUnary(
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction().packUnary(
                             (short) edge.prod.leftChild);
                 }
                 insideProbabilities[index] = edge.inside();
@@ -206,8 +206,8 @@ public class DenseVectorChart extends ParallelArrayChart {
             final int edgeChildren = packedChildren[index];
             final short edgeMidpoint = midpoints[index];
 
-            final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(edgeChildren);
-            final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(edgeChildren);
+            final int leftChild = sparseMatrixGrammar.packingFunction().unpackLeftChild(edgeChildren);
+            final int rightChild = sparseMatrixGrammar.packingFunction().unpackRightChild(edgeChildren);
 
             final DenseVectorChartCell leftChildCell = getCell(start(), edgeMidpoint);
             final DenseVectorChartCell rightChildCell = edgeMidpoint < end ? (DenseVectorChartCell) getCell(

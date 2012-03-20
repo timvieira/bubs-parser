@@ -69,8 +69,8 @@ public class GrammarLoopSpmlParser extends SparseMatrixLoopParser<CsrSparseMatri
                 for (int i = grammar.csrBinaryRowIndices[parent]; i < grammar.csrBinaryRowIndices[parent + 1]; i++) {
                     final int packedChildPair = grammar.csrBinaryColumnIndices[i];
 
-                    final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(packedChildPair);
-                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(packedChildPair);
+                    final int leftChild = grammar.packingFunction().unpackLeftChild(packedChildPair);
+                    final int rightChild = grammar.packingFunction().unpackRightChild(packedChildPair);
 
                     final float leftInsideProbability = chartInsideProbabilities[leftCellOffset + leftChild];
                     if (leftInsideProbability == Float.NEGATIVE_INFINITY) {

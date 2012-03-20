@@ -456,7 +456,7 @@ public class ConstrainingChart extends PackedArrayChart {
 
         if (packedChildren[entryIndex] < 0) {
             // Lexical production
-            final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.cartesianProductFunction()
+            final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.packingFunction()
                     .unpackLeftChild(packedChildren[entryIndex]));
             subtree.addChild(new BinaryTree<String>(sChild));
         } else {
@@ -533,8 +533,8 @@ public class ConstrainingChart extends PackedArrayChart {
     protected String formatCellEntry(final int nonterminal, final int childProductions, final boolean unary,
             final float insideProbability, final boolean formatFractions) {
 
-        final int leftChild = sparseMatrixGrammar.cartesianProductFunction().unpackLeftChild(childProductions);
-        final int rightChild = sparseMatrixGrammar.cartesianProductFunction().unpackRightChild(childProductions);
+        final int leftChild = sparseMatrixGrammar.packingFunction().unpackLeftChild(childProductions);
+        final int rightChild = sparseMatrixGrammar.packingFunction().unpackRightChild(childProductions);
 
         if (rightChild == Production.LEXICAL_PRODUCTION) {
             // Lexical Production

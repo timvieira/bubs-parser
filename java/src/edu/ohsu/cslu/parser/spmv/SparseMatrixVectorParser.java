@@ -234,8 +234,8 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
                 // probabilities and use Float.NEGATIVE_INFINITY. Since toString() isn't time-crucial, check
                 // both.
                 if (midpoints[i] != 0 && probabilities[i] != Float.NEGATIVE_INFINITY) {
-                    final int leftChild = grammar.cartesianProductFunction().unpackLeftChild(i);
-                    final int rightChild = grammar.cartesianProductFunction().unpackRightChild(i);
+                    final int leftChild = grammar.packingFunction().unpackLeftChild(i);
+                    final int rightChild = grammar.packingFunction().unpackRightChild(i);
                     final int midpoint = midpoints[i];
                     final float probability = probabilities[i];
 
