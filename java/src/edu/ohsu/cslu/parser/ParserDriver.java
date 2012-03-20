@@ -368,10 +368,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * Used by other tools
      */
     public static Grammar readGrammar(final String grammarFile, final ResearchParserType researchParserType,
-            final PackingFunctionType cartesianProductFunctionType) throws Exception {
+            final PackingFunctionType packingFunctionType) throws Exception {
         // Handle gzipped and non-gzipped grammar files
         return createGrammar(new InputStreamReader(Util.file2inputStream(grammarFile)), researchParserType,
-                cartesianProductFunctionType);
+                packingFunctionType);
     }
 
     /**
@@ -385,7 +385,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * @throws Exception
      */
     public static Grammar createGrammar(final Reader grammarFile, final ResearchParserType researchParserType,
-            final PackingFunctionType cartesianProductFunctionType) throws Exception {
+            final PackingFunctionType packingFunctionType) throws Exception {
 
         switch (researchParserType) {
         case ECPInsideOutside:
@@ -426,14 +426,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         case CsrSpmv:
         case GrammarParallelCsrSpmv:
-            switch (cartesianProductFunctionType) {
+            switch (packingFunctionType) {
             case Simple:
                 return new CsrSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
             case PerfectHash:
                 return new CsrSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
             default:
-                throw new IllegalArgumentException("Unsupported cartesian-product-function type: "
-                        + cartesianProductFunctionType);
+                throw new IllegalArgumentException("Unsupported packing-function type: " + packingFunctionType);
             }
 
         case PackedOpenClSpmv:
@@ -442,14 +441,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         case CscSpmv:
         case GrammarParallelCscSpmv:
-            switch (cartesianProductFunctionType) {
+            switch (packingFunctionType) {
             case Simple:
                 return new LeftCscSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
             case PerfectHash:
                 return new LeftCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
             default:
-                throw new IllegalArgumentException("Unsupported cartesian-product-function type: "
-                        + cartesianProductFunctionType);
+                throw new IllegalArgumentException("Unsupported packing-function type: " + packingFunctionType);
             }
 
         case LeftChildMl:
@@ -457,7 +455,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         case CartesianProductBinarySearchLeftChildMl:
         case CartesianProductHashMl:
         case CartesianProductLeftChildHashMl:
-            switch (cartesianProductFunctionType) {
+            switch (packingFunctionType) {
             case Simple:
                 return new LeftCscSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
             case Hash:
@@ -465,8 +463,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             case PerfectHash:
                 return new LeftCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
             default:
-                throw new IllegalArgumentException("Unsupported cartesian-product-function type: "
-                        + cartesianProductFunctionType);
+                throw new IllegalArgumentException("Unsupported packing-function type: " + packingFunctionType);
             }
         case RightChildMl:
             return new RightCscSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
