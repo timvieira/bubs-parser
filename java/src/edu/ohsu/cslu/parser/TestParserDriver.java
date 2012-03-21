@@ -85,6 +85,40 @@ public class TestParserDriver extends ToolTestCase {
                 treeOutput(output));
     }
 
+    @Test
+    public void testListParser() throws Exception {
+        final StringBuilder input = new StringBuilder(256);
+        input.append("The economy 's temperature will be taken from several vantage points this week , with readings on trade , output , housing and inflation .\n");
+        input.append("The most troublesome report may be the August merchandise trade deficit due out tomorrow .\n");
+
+        final StringBuilder expectedOutput = new StringBuilder(1024);
+        expectedOutput
+                .append("(ROOT (S (NP (NP (DT The) (NN economy) (POS 's)) (NN temperature)) (VP (MD will) (VP (VB be) (VBN taken) (PP (IN from) (NP (JJ several) (NN vantage) (NNS points))) (VP (NP (DT this) (NN week)) (, ,) (PP (IN with) (NP (NP (NNS readings)) (PP (IN on) (NP (NP (NP (NP (NN trade)) (, ,) (NN output)) (, ,) (NN housing)) (CC and) (NN inflation)))))))) (. .)))\n");
+        expectedOutput
+                .append("(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow)))))) (. .)))\n");
+
+        final String output = executeTool(new ParserDriver(), "-rp ecpccl -g " + M0_GRAMMAR + " -if token -v 2",
+                input.toString());
+        assertEquals(expectedOutput.toString(), treeOutput(output));
+    }
+
+    @Test
+    public void testAgendaParser() throws Exception {
+        final StringBuilder input = new StringBuilder(256);
+        input.append("The economy 's temperature will be taken from several vantage points this week , with readings on trade , output , housing and inflation .\n");
+        input.append("The most troublesome report may be the August merchandise trade deficit due out tomorrow .\n");
+
+        final StringBuilder expectedOutput = new StringBuilder(1024);
+        expectedOutput
+                .append("(ROOT (S (NP (NP (DT The) (NN economy) (POS 's)) (NN temperature)) (VP (MD will) (VP (VB be) (VBN taken) (PP (IN from) (NP (JJ several) (NN vantage) (NNS points))) (VP (NP (DT this) (NN week)) (, ,) (PP (IN with) (NP (NP (NP (NP (NP (NNS readings)) (PP (IN on) (NP (NN trade)))) (, ,) (NN output)) (, ,) (NN housing)) (CC and) (NN inflation)))))) (. .)))\n");
+        expectedOutput
+                .append("(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (ADJP (JJ due) (PP (IN out) (NP (NN tomorrow)))))) (. .)))\n");
+
+        final String output = executeTool(new ParserDriver(), "-rp apall -g " + M0_GRAMMAR
+                + " -if token -v 2 -O overParseTune=2", input.toString());
+        assertEquals(expectedOutput.toString(), treeOutput(output));
+    }
+
     private String treeOutput(final String output) {
         final StringBuilder treeOutput = new StringBuilder(512);
         for (final String outputLine : output.split("\n")) {

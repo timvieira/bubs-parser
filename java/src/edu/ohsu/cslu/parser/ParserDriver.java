@@ -638,7 +638,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                         sentencesParsed, failedParses, reparsedSentences, totalReparses, parseTime, cpuTime, cpuTime
                                 / sentencesParsed, wordsParsed / cpuTime));
 
-        if (parserInstances.getFirst() instanceof SparseMatrixVectorParser) {
+        if (!parserInstances.isEmpty() && parserInstances.getFirst() instanceof SparseMatrixVectorParser) {
             sb.append(String.format(" totalXProductTime=%d totalBinarySpMVTime=%d",
                     SparseMatrixVectorParser.totalCartesianProductTime, SparseMatrixVectorParser.totalBinarySpmvNs));
         }
