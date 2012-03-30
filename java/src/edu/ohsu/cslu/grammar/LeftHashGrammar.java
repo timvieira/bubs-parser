@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-public class LeftHashGrammar extends Grammar {
+public class LeftHashGrammar extends ListGrammar {
 
     private static final long serialVersionUID = 1L;
 

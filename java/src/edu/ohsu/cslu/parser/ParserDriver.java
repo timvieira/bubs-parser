@@ -47,6 +47,7 @@ import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.grammar.ListGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
@@ -210,7 +211,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     // corpus stats
     private long parseStartTime;
-    private int sentencesParsed = 0, wordsParsed = 0, failedParses = 0, reparsedSentences = 0, totalReparses = 0;
+    private volatile int sentencesParsed = 0, wordsParsed = 0, failedParses = 0, reparsedSentences = 0,
+            totalReparses = 0;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
     private final BracketEvaluator evaluator = new BracketEvaluator();
 
@@ -402,7 +404,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         case ECPGrammarLoop:
         case ECPGrammarLoopBerkeleyFilter:
-            return new Grammar(grammarFile);
+            return new ListGrammar(grammarFile);
 
         case AgendaParser:
         case APWithMemory:
@@ -500,9 +502,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         case ECPCellCrossMatrix:
             return new ECPCellCrossMatrix(this, (ChildMatrixGrammar) grammar);
         case ECPGrammarLoop:
-            return new ECPGrammarLoop(this, grammar);
+            return new ECPGrammarLoop(this, (ListGrammar) grammar);
         case ECPGrammarLoopBerkeleyFilter:
-            return new ECPGrammarLoopBerkFilter(this, grammar);
+            return new ECPGrammarLoopBerkFilter(this, (ListGrammar) grammar);
         case ECPInsideOutside:
             return new ECPInsideOutside(this, (LeftListGrammar) grammar);
             // return new ECPInsideOutside2(parserOptions, (LeftHashGrammar) grammar);

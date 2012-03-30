@@ -78,7 +78,7 @@ import edu.ohsu.cslu.util.StringPool;
  * 
  *        $Id$
  */
-public class Grammar implements Serializable {
+public abstract class Grammar implements Serializable {
 
     private final static long serialVersionUID = 3L;
 
@@ -107,8 +107,6 @@ public class Grammar implements Serializable {
     protected final ArrayList<Production> unaryProductions;
     protected final ArrayList<Production> lexicalProductions;
 
-    protected final Collection<Production>[] unaryProductionsByChild;
-    protected final Collection<Production>[] lexicalProdsByChild;
     protected final short[][] lexicalParents; // [lexIndex][valid parent ntIndex]
     protected final float[][] lexicalLogProbabilities;
 
@@ -291,12 +289,9 @@ public class Grammar implements Serializable {
             }
         }
 
-        unaryProductionsByChild = storeProductionByChild(unaryProductions, nonTermSet.size() - 1);
-        lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
-
-        this.lexicalParents = new short[lexicalProdsByChild.length][];
-        this.lexicalLogProbabilities = new float[lexicalProdsByChild.length][];
-        initLexicalProbabilities();
+        this.lexicalParents = new short[lexSet.size()][];
+        this.lexicalLogProbabilities = new float[lexSet.size()][];
+        initLexicalProbabilitiesFromStringProductions(lexicalRules);
 
         stringPool = null; // We no longer need the String intern map, so let it be GC'd
 
@@ -324,10 +319,6 @@ public class Grammar implements Serializable {
         }
     }
 
-    public Grammar(final String grammarFile) throws IOException {
-        this(new InputStreamReader(Util.file2inputStream(grammarFile)));
-    }
-
     protected Grammar(final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
             final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
             final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat) {
@@ -347,12 +338,9 @@ public class Grammar implements Serializable {
         this.unaryProductions = unaryProductions;
         this.lexicalProductions = lexicalProductions;
 
-        this.unaryProductionsByChild = null;
-        this.lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
-
-        this.lexicalParents = new short[lexicalProdsByChild.length][];
-        this.lexicalLogProbabilities = new float[lexicalProdsByChild.length][];
-        initLexicalProbabilities();
+        this.lexicalParents = new short[lexSet.size()][];
+        this.lexicalLogProbabilities = new float[lexSet.size()][];
+        initLexicalProbabilitiesFromProductions(lexicalProductions);
 
         this.maxPOSIndex = -1;
         this.numPosSymbols = -1;
@@ -469,6 +457,10 @@ public class Grammar implements Serializable {
         return gf;
     }
 
+    public abstract Collection<Production> getUnaryProductionsWithChild(final int child);
+
+    public abstract Collection<Production> getLexicalProductionsWithChild(final int child);
+
     private Binarization binarization(final Collection<Production> binaryProds) {
         for (final Production p : binaryProds) {
             if (grammarFormat.isFactored(nonTermSet.getSymbol(p.leftChild))) {
@@ -482,10 +474,45 @@ public class Grammar implements Serializable {
 
     /**
      * Populates lexicalLogProbabilities and lexicalParents
-     * 
-     * @return
      */
-    private void initLexicalProbabilities() {
+    private void initLexicalProbabilitiesFromStringProductions(final Collection<StringProduction> lexicalRules) {
+        @SuppressWarnings("unchecked")
+        final LinkedList<StringProduction>[] lexicalProdsByChild = new LinkedList[lexSet.size()];
+
+        for (int i = 0; i < lexicalProdsByChild.length; i++) {
+            lexicalProdsByChild[i] = new LinkedList<StringProduction>();
+        }
+
+        for (final StringProduction p : lexicalRules) {
+            lexicalProdsByChild[lexSet.getIndex(p.leftChild)].add(p);
+        }
+
+        for (int child = 0; child < lexicalProdsByChild.length; child++) {
+            lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
+            lexicalLogProbabilities[child] = new float[lexicalProdsByChild[child].size()];
+            int j = 0;
+            for (final StringProduction p : lexicalProdsByChild[child]) {
+                lexicalParents[child][j] = (short) nonTermSet.getIndex(p.parent);
+                lexicalLogProbabilities[child][j++] = p.probability;
+            }
+        }
+    }
+
+    /**
+     * Populates lexicalLogProbabilities and lexicalParents
+     */
+    private void initLexicalProbabilitiesFromProductions(final Collection<Production> lexicalRules) {
+        @SuppressWarnings("unchecked")
+        final LinkedList<Production>[] lexicalProdsByChild = new LinkedList[lexSet.size()];
+
+        for (int i = 0; i < lexicalProdsByChild.length; i++) {
+            lexicalProdsByChild[i] = new LinkedList<Production>();
+        }
+
+        for (final Production p : lexicalRules) {
+            lexicalProdsByChild[p.leftChild].add(p);
+        }
+
         for (int child = 0; child < lexicalProdsByChild.length; child++) {
             lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
             lexicalLogProbabilities[child] = new float[lexicalProdsByChild[child].size()];
@@ -579,7 +606,7 @@ public class Grammar implements Serializable {
             return (Grammar) ois.readObject();
         }
 
-        return new Grammar(new InputStreamReader(bis));
+        return new ListGrammar(new InputStreamReader(bis));
     }
 
     /**
@@ -617,45 +644,6 @@ public class Grammar implements Serializable {
      */
     public final String startSymbol() {
         return nonTermSet.getSymbol(startSymbol);
-    }
-
-    @SuppressWarnings({ "cast", "unchecked" })
-    public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods, final int maxIndex) {
-        final Collection<Production>[] prodsByChild = (LinkedList<Production>[]) new LinkedList[maxIndex + 1];
-
-        for (int i = 0; i < prodsByChild.length; i++) {
-            prodsByChild[i] = new LinkedList<Production>();
-        }
-
-        for (final Production p : prods) {
-            prodsByChild[p.child()].add(p);
-        }
-
-        return prodsByChild;
-    }
-
-    public static Collection<Production>[] storeProductionByChild(final Collection<Production> prods) {
-        int maxChildIndex = -1;
-        for (final Production p : prods) {
-            if (p.child() > maxChildIndex) {
-                maxChildIndex = p.child();
-            }
-        }
-        return storeProductionByChild(prods, maxChildIndex);
-    }
-
-    public Collection<Production> getUnaryProductionsWithChild(final int child) {
-        if (child > unaryProductionsByChild.length - 1 || unaryProductionsByChild[child] == null) {
-            return new LinkedList<Production>();
-        }
-        return unaryProductionsByChild[child];
-    }
-
-    public final Collection<Production> getLexicalProductionsWithChild(final int child) {
-        if (child > lexicalProdsByChild.length - 1 || lexicalProdsByChild[child] == null) {
-            return new LinkedList<Production>();
-        }
-        return lexicalProdsByChild[child];
     }
 
     /**
@@ -964,27 +952,6 @@ public class Grammar implements Serializable {
                 throw new RuntimeException(e2);
             }
         }
-    }
-
-    /**
-     * Returns a string representation of all child pairs recognized by this grammar.
-     * 
-     * @return a string representation of all child pairs recognized by this grammar.
-     */
-    public String recognitionMatrix() {
-
-        final HashSet<String> validChildPairs = new HashSet<String>(binaryProductions.size() / 2);
-        for (final Production p : binaryProductions) {
-            validChildPairs.add(p.leftChild + "," + p.rightChild);
-        }
-
-        final StringBuilder sb = new StringBuilder(10 * 1024);
-        for (final String childPair : validChildPairs) {
-            sb.append(childPair + '\n');
-        }
-
-        sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
     }
 
     public String getStats() {
