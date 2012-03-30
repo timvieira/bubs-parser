@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedList;
 
-public class ChildMatrixGrammar extends Grammar {
+public class ChildMatrixGrammar extends ListGrammar {
 
     private static final long serialVersionUID = 1L;
 

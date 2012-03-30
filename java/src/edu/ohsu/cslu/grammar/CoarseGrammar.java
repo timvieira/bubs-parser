@@ -22,7 +22,7 @@ import java.io.IOException;
 
 import cltool4j.BaseLogger;
 
-public class CoarseGrammar extends Grammar {
+public class CoarseGrammar extends ListGrammar {
 
     private static final long serialVersionUID = 1L;
 

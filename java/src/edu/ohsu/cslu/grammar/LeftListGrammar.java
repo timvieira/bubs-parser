@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedList;
 
-public class LeftListGrammar extends Grammar {
+public class LeftListGrammar extends ListGrammar {
 
     private static final long serialVersionUID = 1L;
 

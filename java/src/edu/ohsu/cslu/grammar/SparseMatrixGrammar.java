@@ -21,7 +21,6 @@ package edu.ohsu.cslu.grammar;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2IntRBTreeMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.shorts.Short2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 
@@ -87,7 +86,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
             throws IOException {
         super(grammarFile);
 
-        this.packingFunction = createCartesianProductFunction(functionClass);
+        this.packingFunction = createPackingFunction(functionClass);
 
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
@@ -116,7 +115,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
-        this.packingFunction = createCartesianProductFunction(functionClass);
+        this.packingFunction = createPackingFunction(functionClass);
 
         // And all unary productions
         cscUnaryColumnOffsets = new int[numNonTerms() + 1];
@@ -189,7 +188,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     @SuppressWarnings("unchecked")
-    private PackingFunction createCartesianProductFunction(Class<? extends PackingFunction> functionClass) {
+    private PackingFunction createPackingFunction(Class<? extends PackingFunction> functionClass) {
         try {
             if (functionClass == null) {
                 functionClass = PerfectIntPairHashPackingFunction.class;
@@ -205,7 +204,26 @@ public abstract class SparseMatrixGrammar extends Grammar {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
+    }
 
+    @Override
+    public Collection<Production> getUnaryProductionsWithChild(final int child) {
+
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /**
+     * This method creates {@link Production} instances on the fly, so it can be pretty inefficient. In general, it's
+     * better to use {@link #lexicalParents(int)} and {@link #lexicalLogProbabilities(int)} instead.
+     */
+    @Override
+    public Collection<Production> getLexicalProductionsWithChild(final int child) {
+        final ArrayList<Production> list = new ArrayList<Production>(lexicalParents[child].length);
+        for (int i = 0; i < lexicalParents[child].length; i++) {
+            list.add(new Production(lexicalParents[child][i], child, lexicalLogProbabilities[child][i], true, this));
+        }
+        return list;
     }
 
     /**
@@ -241,16 +259,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
             }
         }
         return Float.NEGATIVE_INFINITY;
-        // for (int i = csrUnaryRowStartIndices[parent]; i <= csrUnaryRowStartIndices[parent + 1]; i++) {
-        // final int column = csrUnaryColumnIndices[i];
-        // if (column == child) {
-        // return csrUnaryProbabilities[i];
-        // }
-        // if (column > child) {
-        // return Float.NEGATIVE_INFINITY;
-        // }
-        // }
-        // return Float.NEGATIVE_INFINITY;
     }
 
     private void storeRightSiblingIndices() {
@@ -282,30 +290,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     public final boolean isValidLeftChild(final int nonTerminal) {
         return nonTerminal >= leftChildrenStart && nonTerminal <= leftChildrenEnd && nonTerminal != nullSymbol;
-    }
-
-    /**
-     * Returns a string representation of all child pairs recognized by this grammar.
-     * 
-     * @return a string representation of all child pairs recognized by this grammar.
-     */
-    @Override
-    public String recognitionMatrix() {
-
-        final IntSet validChildPairs = new IntOpenHashSet(binaryProductions.size() / 2);
-        for (final Production p : binaryProductions) {
-            validChildPairs.add(packingFunction.pack((short) p.leftChild, (short) p.rightChild));
-        }
-
-        final StringBuilder sb = new StringBuilder(10 * 1024);
-        for (final int childPair : validChildPairs) {
-            final int leftChild = packingFunction.unpackLeftChild(childPair);
-            final int rightChild = packingFunction.unpackRightChild(childPair);
-            sb.append(leftChild + "," + rightChild + ',' + childPair + '\n');
-        }
-
-        sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
     }
 
     @Override

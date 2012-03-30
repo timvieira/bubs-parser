@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.HashSet;
 import java.util.Set;
@@ -54,27 +55,27 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         final long startTime = System.currentTimeMillis();
 
         // Handle gzipped and non-gzipped grammar files
-        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(
-            new FileInputStream(grammarFile)) : new FileInputStream(grammarFile);
+        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
+                grammarFile)) : new FileInputStream(grammarFile);
 
         // Read the generic grammar in either text or binary-serialized format.
-        final Grammar genericGrammar = Grammar.read(grammarInputStream);
+        final SummaryGrammar g = new SummaryGrammar(new InputStreamReader(grammarInputStream));
 
         switch (mode) {
-            case SUMMARY:
-                System.out.println(new SummaryGrammar(genericGrammar).getStats());
-                break;
-            case NTS:
-                for (final String nt : genericGrammar.nonTermSet) {
-                    System.out.println(nt);
-                }
-                break;
-            case PARENTS:
-                System.out.print(new SummaryGrammar(genericGrammar).parents());
-                break;
-            case PRE_TERMINALS:
-                System.out.print(new SummaryGrammar(genericGrammar).preTerminals());
-                break;
+        case SUMMARY:
+            System.out.println(g.getStats());
+            break;
+        case NTS:
+            for (final String nt : g.nonTermSet) {
+                System.out.println(nt);
+            }
+            break;
+        case PARENTS:
+            System.out.print(g.parents());
+            break;
+        case PRE_TERMINALS:
+            System.out.print(g.preTerminals());
+            break;
         }
 
         if (time) {
@@ -82,7 +83,7 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         }
     }
 
-    private class SummaryGrammar extends Grammar {
+    private class SummaryGrammar extends ListGrammar {
 
         private static final long serialVersionUID = 1L;
 

@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
+import edu.ohsu.cslu.grammar.ListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -39,11 +39,11 @@ public class WeightedFeatures extends FigureOfMeritModel {
 
     private static final long serialVersionUID = 1L;
 
-    private Grammar grammar;
+    private ListGrammar grammar;
     private int numFeatures;
     private GoldChart goldChart;
 
-    public WeightedFeatures(final Grammar grammar) {
+    public WeightedFeatures(final ListGrammar grammar) {
         super(FigureOfMeritModel.FOMType.WeightedFeatures);
         this.grammar = grammar;
         this.numFeatures = 4;
