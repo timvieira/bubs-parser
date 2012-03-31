@@ -150,8 +150,8 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             }
 
             // init cell list here because we don't classify cells in bottom-up order above
-            if (cellIndices == null || cellIndices.length < openCells) {
-                cellIndices = new short[openCells * 2];
+            if (cellIndices == null || cellIndices.length < (openCells << 1)) {
+                cellIndices = new short[openCells << 1];
             }
             int i = 0;
             for (short span = 1; span <= n; span++) {
@@ -180,8 +180,8 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 // Replace cellIndices with all chart cells.
                 final int sentenceLength = parser.chart.size();
                 openCells = sentenceLength * (sentenceLength + 1) / 2;
-                if (cellIndices == null || cellIndices.length < openCells) {
-                    cellIndices = new short[openCells * 2];
+                if (cellIndices == null || cellIndices.length < (openCells << 1)) {
+                    cellIndices = new short[openCells << 1];
                 }
 
                 int i = 0;
