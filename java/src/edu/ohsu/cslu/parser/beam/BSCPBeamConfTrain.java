@@ -162,7 +162,7 @@ public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, Ce
             for (final ChartEdge goldEdge : goldEdges) {
                 if (edge.equals(goldEdge)) {
                     goldRank = cellPopped; // set to the rank of the *last* gold edge (if there are more than one)
-                    if (grammar.getOrAddNonterm(goldEdge.prod.parent).isFactored) {
+                    if (grammar.getOrAddNonterm((short) goldEdge.prod.parent).isFactored) {
                         goldIsFactored = true;
                     }
                     if (printRankInfo) {

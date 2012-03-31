@@ -100,7 +100,7 @@ public class EdgeCellChart extends CellChart {
             final int parent = edge.prod.parent;
             numEdgesAdded++;
             bestEdge[parent] = edge;
-            if (isLexCell && parser.grammar.getOrAddNonterm(parent).isPOS()) {
+            if (isLexCell && grammar.isPos((short) parent)) {
                 // posNTs.addLast(parent);
                 posNTs.add(parent);
             }

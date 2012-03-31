@@ -101,7 +101,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
             // add only one POS => word production given by input (or 1-best) tags
             final int posTag = chart.parseTask.inputTags[cell.start()];
             final int word = chart.parseTask.tokens[cell.start()];
-            Production lexProd = grammar.getLexicalProduction(posTag, word);
+            Production lexProd = grammar.getLexicalProduction((short) posTag, word);
             if (lexProd == null) {
                 // TODO: create a new lexical production with a smoothed prob, maybe from the UNK classes
                 // final int parent, final int child, final float prob, final boolean isLex, final Grammar grammar

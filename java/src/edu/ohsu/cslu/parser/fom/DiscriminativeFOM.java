@@ -182,7 +182,7 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
             final SparseBitVector features = this.chart.getCellFeatures(start, end, featureNames);
             // System.out.print(String.format("%d %d %s[%d,%d]\t%f", nt, grammar.phraseSet.getIndex((int)
             // nt),grammar.nonTermSet.getSymbol(nt), start, end, insideProbability));
-            final float fom = model.predict(features).getFloat(grammar.phraseSet.getIndex((int) nt));
+            final float fom = model.predict(features).getFloat(grammar.phraseSet.getIndex(nt));
             // System.out.println("\t" + fom);
             // TODO: really bad! Only need to compute one, not all. Should pre-compute a lot of this
             return fom;

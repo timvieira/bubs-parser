@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.ohsu.cslu.grammar.NonTerminal;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
@@ -32,7 +32,7 @@ import edu.ohsu.cslu.parser.Util;
 
 public class CellChart extends Chart {
 
-    protected Parser<?> parser;
+    protected Parser<? extends Grammar> parser;
     protected HashSetChartCell chart[][];
     protected boolean viterbiMax;
 
@@ -212,14 +212,13 @@ public class CellChart extends Chart {
 
         protected void addToHashSets(final int ntIndex) {
             childNTs.add(ntIndex);
-            final NonTerminal nt = grammar.getOrAddNonterm(ntIndex);
-            if (nt.isLeftChild) {
+            if (grammar.isLeftChild((short) ntIndex)) {
                 leftChildNTs.add(ntIndex);
             }
-            if (nt.isRightChild) {
+            if (grammar.isRightChild((short) ntIndex)) {
                 rightChildNTs.add(ntIndex);
             }
-            if (nt.isPOS) {
+            if (grammar.isPos((short) ntIndex)) {
                 posNTs.add(ntIndex);
             }
         }
