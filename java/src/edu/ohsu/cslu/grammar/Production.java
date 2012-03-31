@@ -64,9 +64,6 @@ public class Production implements Serializable, Cloneable {
     public Production(final int parent, final int leftChild, final int rightChild, final float prob,
             final Grammar grammar) {
         this(parent, leftChild, rightChild, prob, grammar.nonTermSet, grammar.lexSet);
-
-        grammar.getOrAddNonterm(leftChild).isLeftChild = true;
-        grammar.getOrAddNonterm(rightChild).isRightChild = true;
     }
 
     // Binary production
@@ -104,12 +101,6 @@ public class Production implements Serializable, Cloneable {
     // Unary or lexical production
     public Production(final int parent, final int child, final float prob, final boolean isLex, final Grammar grammar) {
         this(parent, child, prob, isLex, grammar.nonTermSet, grammar.lexSet);
-        if (isLex) {
-            grammar.getOrAddNonterm(parent).isPOS = true;
-            if (parent > grammar.maxPOSIndex) {
-                grammar.maxPOSIndex = parent;
-            }
-        }
     }
 
     // Unary or lexical production

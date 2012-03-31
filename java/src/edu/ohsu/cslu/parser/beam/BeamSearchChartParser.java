@@ -195,7 +195,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             if (ParserDriver.parseFromInputTags) {
                 // add only one POS => word production given by input (or 1-best) tags
                 lexProdSet = new LinkedList<Production>();
-                final Production lexProd = grammar.getLexicalProduction(chart.parseTask.inputTags[start],
+                final Production lexProd = grammar.getLexicalProduction((short) chart.parseTask.inputTags[start],
                         chart.parseTask.tokens[start]);
                 if (lexProd == null) {
                     // TODO: create a new lexical production with a smoothed prob, maybe from the UNK classes
@@ -230,7 +230,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 for (final int leftNT : leftCell.getLeftChildNTs()) {
                     for (final int rightNT : rightCell.getRightChildNTs()) {
                         for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
-                            if (!onlyFactored || grammar.getOrAddNonterm(p.parent).isFactored()) {
+                            if (!onlyFactored || grammar.getOrAddNonterm((short) p.parent).isFactored()) {
                                 edge = chart.new ChartEdge(p, leftCell, rightCell);
                                 addEdgeToCollection(edge);
                             }

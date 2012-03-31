@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.Util;
@@ -242,7 +243,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
         @Override
         protected boolean isGrammarLeftFactored() {
-            return parser.grammar.isLeftFactored();
+            return parser.grammar.binarization() == Binarization.LEFT;
         }
     }
 }

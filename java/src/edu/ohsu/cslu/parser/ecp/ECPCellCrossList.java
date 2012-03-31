@@ -58,7 +58,7 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 leftInside = leftCell.getInside(leftNT);
                 for (final Production p : grammar.getBinaryProductionsWithLeftChild(leftNT)) {
-                    if (!onlyFactored || grammar.getOrAddNonterm(p.parent).isFactored()) {
+                    if (!onlyFactored || grammar.getOrAddNonterm((short) p.parent).isFactored()) {
                         rightInside = rightCell.getInside(p.rightChild);
                         if (rightInside > Float.NEGATIVE_INFINITY) {
                             cell.updateInside(p, leftCell, rightCell, p.prob + leftInside + rightInside);

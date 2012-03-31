@@ -39,7 +39,7 @@ public class CoarseGrammar extends ListGrammar {
 
         // create mapping from parent grammar non-terms to the non-terms in this grammar
         fineToCoarseIndex = new int[fineGrammar.numNonTerms()];
-        for (int i = 0; i < fineGrammar.numNonTerms(); i++) {
+        for (short i = 0; i < fineGrammar.numNonTerms(); i++) {
             final String fineNTStr = fineGrammar.mapNonterminal(i);
             final String coarseNTStr = fineToCoarseNonTermString(fineNTStr);
             // System.out.println(parentNonTermString + " => " + projNTStr);
