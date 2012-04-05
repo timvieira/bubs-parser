@@ -42,12 +42,6 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
  * grammars which have been factored into binary-branching form, enabling much more efficient computational approaches
  * to be used.
  * 
- * TODO Fix this comment
- * 
- * Note - there will always be more productions than categories, but all categories except the special S-dagger category
- * are also productions. The index of a category will be the same when used as a production as it is when used as a
- * category.
- * 
  * TODO Implement an even simpler grammar for use as an intermediate form when transforming one grammar to another.
  * 
  * @author Nathan Bodenstab
@@ -57,6 +51,8 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
  *        $Id$
  */
 public abstract class Grammar implements Serializable {
+
+    private static final long serialVersionUID = 4L;
 
     /** Marks the switch from PCFG to lexicon entries in the grammar file */
     public final static String LEXICON_DELIMITER = "===== LEXICON =====";
