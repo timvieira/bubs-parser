@@ -76,14 +76,6 @@ public class ListGrammar extends Grammar {
     private Binarization binarization;
     public String language;
 
-    // == Aaron's Grammar variables ==
-    public final short leftChildrenStart; // The first NT valid as a left child.
-    public final short leftChildrenEnd; // The last non-POS NT valid as a left child.
-    public final short rightChildrenStart; // The first non-POS NT valid as a right child.
-    public final short rightChildrenEnd; // The last non-POS NT valid as a right child.
-    public final short posStart; // The first POS.
-    public final short posEnd; // The last POS.
-
     // == Nate's Grammar variables ==
     // Nate's way of keeping meta data on each NonTerm; Aaron orders them and returns
     // info based on index range.
@@ -244,18 +236,6 @@ public class ListGrammar extends Grammar {
 
         // this.tokenizer = new Tokenizer(lexSet);
 
-        // Initialize indices
-        final short[] startAndEndIndices = startAndEndIndices();
-        this.leftChildrenStart = startAndEndIndices[0];
-        this.leftChildrenEnd = startAndEndIndices[1];
-        this.rightChildrenStart = startAndEndIndices[2];
-        this.rightChildrenEnd = startAndEndIndices[3];
-        this.posStart = startAndEndIndices[4];
-        this.posEnd = startAndEndIndices[5];
-
-        this.numPosSymbols = posEnd - posStart + 1;
-        this.maxPOSIndex = posEnd;
-
         // reduce range of POS indices so we can store the features more efficiently
         for (short i = 0; i < numNonTerms(); i++) {
             if (pos.contains(nonTermSet.getSymbol(i))) {
@@ -294,15 +274,6 @@ public class ListGrammar extends Grammar {
         this.maxPOSIndex = -1;
         this.numPosSymbols = -1;
         this.grammarFormat = grammarFormat;
-
-        // Initialize start and end indices
-        final short[] startAndEndIndices = startAndEndIndices();
-        this.leftChildrenStart = startAndEndIndices[0];
-        this.leftChildrenEnd = startAndEndIndices[1];
-        this.rightChildrenStart = startAndEndIndices[2];
-        this.rightChildrenEnd = startAndEndIndices[3];
-        this.posStart = startAndEndIndices[4];
-        this.posEnd = startAndEndIndices[5];
 
         this.binarization = binarization(binaryProductions);
 
@@ -483,66 +454,6 @@ public class ListGrammar extends Grammar {
         }
     }
 
-    private short[] startAndEndIndices() {
-
-        short tmpLeftChildrenStart = Short.MAX_VALUE, tmpLeftChildrenEnd = 0;
-        short tmpRightChildrenStart = Short.MAX_VALUE, tmpRightChildrenEnd = 0;
-        short tmpPosStart = Short.MAX_VALUE, tmpPosEnd = 0;
-        short parentEnd = 0;
-
-        for (final Production p : binaryProductions) {
-            if (p.leftChild < tmpLeftChildrenStart) {
-                tmpLeftChildrenStart = (short) p.leftChild;
-            }
-            if (p.leftChild > tmpLeftChildrenEnd) {
-                tmpLeftChildrenEnd = (short) p.leftChild;
-            }
-            if (p.rightChild < tmpRightChildrenStart) {
-                tmpRightChildrenStart = (short) p.rightChild;
-            }
-            if (p.rightChild > tmpRightChildrenEnd) {
-                tmpRightChildrenEnd = (short) p.rightChild;
-            }
-            if (p.parent > parentEnd) {
-                parentEnd = (short) p.parent;
-            }
-        }
-
-        for (final Production p : unaryProductions) {
-            if (p.leftChild < tmpLeftChildrenStart) {
-                tmpLeftChildrenStart = (short) p.leftChild;
-            }
-            if (p.leftChild > tmpLeftChildrenEnd) {
-                tmpLeftChildrenEnd = (short) p.leftChild;
-            }
-            if (p.parent > parentEnd) {
-                parentEnd = (short) p.parent;
-            }
-        }
-
-        for (final Production p : lexicalProductions) {
-            if (p.parent > parentEnd) {
-                parentEnd = (short) p.parent;
-            }
-            if (p.parent < tmpPosStart) {
-                tmpPosStart = (short) p.parent;
-            }
-            if (p.parent > tmpPosEnd) {
-                tmpPosEnd = (short) p.parent;
-            }
-        }
-
-        if (tmpPosStart > this.nullSymbol) {
-            tmpPosStart = nullSymbol;
-        }
-        if (tmpPosEnd < this.nullSymbol) {
-            tmpPosEnd = nullSymbol;
-        }
-
-        return new short[] { tmpLeftChildrenStart, tmpLeftChildrenEnd, tmpRightChildrenStart, tmpRightChildrenEnd,
-                tmpPosStart, tmpPosEnd, parentEnd };
-    }
-
     public static Grammar read(final String grammarFile) throws IOException, ClassNotFoundException {
         final InputStream is = Util.file2inputStream(grammarFile);
         final Grammar grammar = ListGrammar.read(is);
@@ -655,17 +566,17 @@ public class ListGrammar extends Grammar {
 
     @Override
     public boolean isLeftChild(final short nonTerminal) {
-        return nonTerminal >= leftChildrenStart && nonTerminal <= leftChildrenEnd;
+        return nonTermInfo.get(nonTerminal).isLeftChild();
     }
 
     @Override
     public boolean isRightChild(final short nonTerminal) {
-        return nonTerminal >= rightChildrenStart && nonTerminal <= rightChildrenEnd;
+        return nonTermInfo.get(nonTerminal).isRightChild();
     }
 
     @Override
     public final boolean isPos(final short nonTerminal) {
-        return nonTerminal >= posStart && nonTerminal <= posEnd;
+        return nonTermInfo.get(nonTerminal).isPOS();
     }
 
     /**
@@ -1019,15 +930,6 @@ public class ListGrammar extends Grammar {
             }
 
             return o1.label.compareTo(o2.label);
-        }
-    }
-
-    private static class PosFirstComparator extends StringNonTerminalComparator {
-
-        public PosFirstComparator() {
-            map.put(NonTerminalClass.POS, 0);
-            map.put(NonTerminalClass.EITHER_CHILD, 1);
-            map.put(NonTerminalClass.FACTORED_SIDE_CHILDREN_ONLY, 1);
         }
     }
 
