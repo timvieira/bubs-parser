@@ -27,6 +27,7 @@ import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.BinaryPerceptronSet;
@@ -53,6 +54,11 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             modelStream.mark(10000);
             String line = modelStream.readLine();
             while (line != null && !line.trim().contains("# === ")) {
+                // # PerceptronBeamWidthModel inferFactoredCells=0 classifyBaseCells=0
+                if (line.startsWith("# PerceptronBeamWidthModel")) {
+                    inferFactoredCells = line.split(" ")[2].split("=")[1].equals("1");
+                    classifyBaseCells = line.split(" ")[3].split("=")[1].equals("1");
+                }
                 line = modelStream.readLine();
             }
             modelStream.reset();
@@ -100,6 +106,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             beamWidthValues = new int[n][n + 1];
             onlyFactored = new boolean[n][n + 1];
             openCells = 0;
+            int numOnlyFactored = 0, totalCells = 0;
 
             // Count classes if we're at a verbose logging level
             final int[] beamClassCounts = BaseLogger.singleton().isLoggable(Level.FINER) ? new int[beamWidthModel
@@ -107,11 +114,14 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
             final String[] featureNames = beamWidthModel.getFeatureTemplate().split("\\s+");
 
-            // Traverse in a top-down order so we can remember when we first see a non-empty cell
-            // This only works for right factored (berkeley) grammars right now.
+            // traverse in a top-down order so we can remember when we first see a non-empty cell
+            // only works for right factored (berkeley) grammars right now.
+            // for (int end = 1; end < n + 1; end++) {
             for (int start = 0; start < n; start++) {
                 boolean foundOpenCell = false;
+                // for (int start = 0; start < end; start++) {
                 for (int end = n; end > start; end--) {
+                    totalCells++;
                     if (end - start == 1 && classifyBaseCells == false) {
                         openCells++;
                         beamWidthValues[start][end] = Integer.MAX_VALUE;
@@ -123,33 +133,32 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                         if (beamClassCounts != null) {
                             beamClassCounts[guessClass]++;
                         }
-                        // guessBeamWidth = (int) Math.min(beamWidthModel.class2value(guessClass),
-                        // maxBeamWidth);
                         guessBeamWidth = (int) beamWidthModel.class2value(guessClass);
 
-                        // need to allow factored productions for classifiers that don't predict these cells
-                        if (inferFactoredCells == true && guessBeamWidth == 0 && foundOpenCell) {
-                            // guessBeamWidth = maxFactoredBeamWidth;
-                            guessBeamWidth = Integer.MAX_VALUE;
-                            onlyFactored[start][end] = true;
-                            // cellStats += String.format("%d,%d=2 ", start, end);
-                        } else if (guessBeamWidth > 0) {
+                        if (guessBeamWidth > 0) {
                             foundOpenCell = true;
+                            openCells++;
                             // cellStats += String.format("%d,%d=%d ", start, end, guessBeamWidth > 0 ? 4 :
                             // 0);
                             // cellStats += String.format("%d,%d=%d ", start, end, guessBeamWidth);
+                        } else if (inferFactoredCells && foundOpenCell) {
+                            // need to allow factored productions for classifiers that don't predict these cells
+                            // if (inferFactoredCells && guessBeamWidth == 0 && foundOpenCell) {
+                            // guessBeamWidth = maxFactoredBeamWidth;
+                            guessBeamWidth = Integer.MAX_VALUE;
+                            onlyFactored[start][end] = true;
+                            numOnlyFactored++;
+                            openCells++;
+                            // cellStats += String.format("%d,%d=2 ", start, end);
                         }
 
                         beamWidthValues[start][end] = guessBeamWidth;
-                        if (guessBeamWidth > 0) {
-                            openCells++;
-                        }
                     }
                 }
             }
 
             // init cell list here because we don't classify cells in bottom-up order above
-            if (cellIndices == null || cellIndices.length < openCells) {
+            if (cellIndices == null || cellIndices.length < openCells * 2) {
                 cellIndices = new short[openCells * 2];
             }
             int i = 0;
@@ -167,7 +176,13 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 for (i = 0; i < beamWidthModel.numClasses(); i++) {
                     classCounts.append(" class" + i + "=" + beamClassCounts[i]);
                 }
-                BaseLogger.singleton().finer("INFO: beamconf: " + classCounts);
+                BaseLogger.singleton().finer(
+                        "INFO: beamconf: " + classCounts + " open=" + (openCells - numOnlyFactored) + " openFactored="
+                                + numOnlyFactored + " closed=" + (totalCells - openCells));
+            }
+            if (ParserDriver.chartConstraintsPrint) {
+                BaseLogger.singleton().info("CC_SENT: " + parser.chart.parseTask.sentence);
+                BaseLogger.singleton().info("CC_CELLS: " + toString());
             }
         }
 
@@ -192,7 +207,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 }
             }
         }
-
+        
         @Override
         public boolean isCellOpen(final short start, final short end) {
             return !constraintsEnabled || (beamWidthValues[start][end] > 0 && onlyFactored[start][end] == false);
@@ -219,21 +234,14 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             final StringBuilder cellStats = new StringBuilder(4096);
             for (int start = 0; start < n; start++) {
                 for (int end = n; end > start; end--) {
-                    final int x = beamWidthValues[start][end];
-                    if (x > 0) {
-                        if (onlyFactored[start][end]) {
-                            cellStats.append(start);
-                            cellStats.append(',');
-                            cellStats.append(end);
-                            cellStats.append("=FACT ");
-                        } else {
-                            cellStats.append(start);
-                            cellStats.append(',');
-                            cellStats.append(end);
-                            cellStats.append('=');
-                            cellStats.append(x);
-                            cellStats.append(' ');
-                        }
+                    int x = beamWidthValues[start][end];
+                    if (x > 5)
+                        x = 5;
+                    x = 5 - x;
+                    if (onlyFactored[start][end]) {
+                        cellStats.append(start + "," + end + "=FACT ");
+                    } else if (x > 0) {
+                        cellStats.append(start + "," + end + "=" + x + " ");
                     }
                 }
             }
