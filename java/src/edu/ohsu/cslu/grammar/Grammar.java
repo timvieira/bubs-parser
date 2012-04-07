@@ -59,6 +59,12 @@ public abstract class Grammar implements Serializable {
 
     public final static String nullSymbolStr = "<null>";
 
+    /**
+     * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same command-line option
+     * for serialized and text grammars and auto-detect the format
+     */
+    protected final static short OBJECT_SIGNATURE = (short) 0xACED;
+
     // == Grammar Basics ==
     public SymbolSet<String> lexSet = new SymbolSet<String>();
     public Tokenizer tokenizer = new Tokenizer(lexSet);
@@ -157,6 +163,21 @@ public abstract class Grammar implements Serializable {
      * @return The number of lexical entries (words) mapped by this grammar
      */
     public abstract int numLexSymbols();
+
+    /**
+     * @return the number of binary productions in this grammar
+     */
+    public abstract int numBinaryProds();
+
+    /**
+     * @return the number of unary productions in this grammar
+     */
+    public abstract int numUnaryProds();
+
+    /**
+     * @return the number of lexical productions in this grammar
+     */
+    public abstract int numLexProds();
 
     /**
      * Convenience method

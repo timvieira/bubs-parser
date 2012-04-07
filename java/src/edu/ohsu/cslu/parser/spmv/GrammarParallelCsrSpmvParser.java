@@ -45,7 +45,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
     private final int threads;
 
     /**
-     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into segments of
+     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowOffsets} splitting the binary rule-set into segments of
      * roughly equal size for distribution between threads. Length is {@link #threads} + 1 (to avoid falling off the
      * end)
      */
@@ -66,12 +66,12 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
         final int segmentSize = grammar.csrBinaryColumnIndices.length / requestedThreads + 1;
         segments[0] = 0;
         int i = 1;
-        for (int j = 1; j < grammar.csrBinaryRowIndices.length; j++) {
-            if (grammar.csrBinaryRowIndices[j] - grammar.csrBinaryRowIndices[segments[i - 1]] >= segmentSize) {
+        for (int j = 1; j < grammar.csrBinaryRowOffsets.length; j++) {
+            if (grammar.csrBinaryRowOffsets[j] - grammar.csrBinaryRowOffsets[segments[i - 1]] >= segmentSize) {
                 segments[i++] = j;
             }
         }
-        segments[i] = grammar.csrBinaryRowIndices.length - 1;
+        segments[i] = grammar.csrBinaryRowOffsets.length - 1;
 
         this.threads = i;
         GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
@@ -82,7 +82,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
         if (BaseLogger.singleton().isLoggable(Level.FINE)) {
             final StringBuilder sb = new StringBuilder();
             for (int j = 1; j < binaryRowSegments.length; j++) {
-                sb.append((grammar.csrBinaryRowIndices[binaryRowSegments[j]] - grammar.csrBinaryRowIndices[binaryRowSegments[j - 1]])
+                sb.append((grammar.csrBinaryRowOffsets[binaryRowSegments[j]] - grammar.csrBinaryRowOffsets[binaryRowSegments[j - 1]])
                         + " ");
             }
             BaseLogger.singleton().fine("CSR Binary Grammar segments of length: " + sb.toString());
@@ -227,7 +227,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
             short winningMidpoint = 0;
 
             // Iterate over possible children of the parent (columns with non-zero entries)
-            for (int i = grammar.csrBinaryRowIndices[parent]; i < grammar.csrBinaryRowIndices[parent + 1]; i++) {
+            for (int i = grammar.csrBinaryRowOffsets[parent]; i < grammar.csrBinaryRowOffsets[parent + 1]; i++) {
                 final int grammarChildren = grammar.csrBinaryColumnIndices[i];
 
                 if (cartesianProductVector.midpoints[grammarChildren] == 0) {
