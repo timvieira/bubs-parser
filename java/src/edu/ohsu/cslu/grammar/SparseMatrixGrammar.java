@@ -77,10 +77,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     private final static long serialVersionUID = 4L;
 
-    // TODO Remove these lists and create them on-the-fly if/when needed
-    protected final ArrayList<Production> binaryProductions;
-    protected final ArrayList<Production> unaryProductions;
-
     public final int numLexProds;
 
     protected final short[][] lexicalParents; // [lexIndex][valid parent ntIndex]
@@ -96,8 +92,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     // == Grammar stats ==
     public final int numPosSymbols;
-    // public boolean isLatentVariableGrammar;
-    // public boolean annotatePOS;
     public int horizontalMarkov;
     public int verticalMarkov;
     private Binarization binarization;
@@ -111,6 +105,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     public final short posStart; // The first POS.
     public final short posEnd; // The last POS.
 
+    /** Maps a pair of (short) nonterminal indices into a single 32-bit integer */
     public final PackingFunction packingFunction;
 
     /**
@@ -140,13 +135,13 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * internalize Strings indefinitely, so we map them ourselves and allow the map to be GC'd after we're done
      * constructing the grammar.
      */
-    private StringPool stringPool;
+    private StringPool tmpStringPool;
 
     /**
-     * Signature of the first 2 bytes of a binary Java Serialized Object. Allows us to use the same command-line option
-     * for serialized and text grammars and auto-detect the format
+     * Temporary storage of binary productions, used only in constructors and removed to save memory after
+     * initialization
      */
-    private final static short OBJECT_SIGNATURE = (short) 0xACED;
+    protected ArrayList<Production> tmpBinaryProductions;
 
     /**
      * Default Constructor. This constructor does an inordinate amount of work directly in the constructor specifically
@@ -164,7 +159,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
 
         BaseLogger.singleton().finer("INFO: Reading grammar ... ");
-        this.stringPool = new StringPool();
+        this.tmpStringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
         nonTermSet = new Vocabulary(grammarFormat);
@@ -231,6 +226,9 @@ public abstract class SparseMatrixGrammar extends Grammar {
         for (final String nt : nonTerminals) {
             sortedNonTerminals.add(create(nt, pos, nonPosSet, rightChildrenSet));
         }
+        for (final StringNonTerminal nt : sortedNonTerminals) {
+            nonTermSet.addSymbol(nt.label);
+        }
 
         this.startSymbol = nonTermSet.addSymbol(startSymbolStr);
         nonTermSet.setStartSymbol((short) startSymbol);
@@ -238,12 +236,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.nullWord = lexSet.addSymbol(nullSymbolStr);
 
         // And unary and binary rules
-        binaryProductions = new ArrayList<Production>();
-        unaryProductions = new ArrayList<Production>();
+        tmpBinaryProductions = new ArrayList<Production>();
+        final ArrayList<Production> unaryProductions = new ArrayList<Production>();
 
         for (final StringProduction grammarRule : pcfgRules) {
             if (grammarRule instanceof BinaryStringProduction) {
-                binaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
+                tmpBinaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild,
                         ((BinaryStringProduction) grammarRule).rightChild, grammarRule.probability, this));
             } else {
                 unaryProductions.add(new Production(grammarRule.parent, grammarRule.leftChild, grammarRule.probability,
@@ -255,10 +253,10 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.lexicalLogProbabilities = new float[lexSet.size()][];
         initLexicalProbabilitiesFromStringProductions(lexicalRules);
 
-        stringPool = null; // We no longer need the String intern map, so let it be GC'd
+        tmpStringPool = null; // We no longer need the String intern map, so let it be GC'd
 
         // Initialize indices
-        final short[] startAndEndIndices = startAndEndIndices();
+        final short[] startAndEndIndices = startAndEndIndices(tmpBinaryProductions, unaryProductions);
         this.leftChildrenStart = startAndEndIndices[0];
         this.leftChildrenEnd = startAndEndIndices[1];
         this.rightChildrenStart = startAndEndIndices[2];
@@ -277,16 +275,16 @@ public abstract class SparseMatrixGrammar extends Grammar {
             }
         }
 
-        this.packingFunction = createPackingFunction(functionClass);
+        this.packingFunction = createPackingFunction(functionClass, tmpBinaryProductions);
 
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
-        storeRightSiblingIndices();
+        storeRightSiblingIndices(tmpBinaryProductions);
 
         // And all unary productions
         cscUnaryColumnOffsets = new int[numNonTerms() + 1];
-        cscUnaryRowIndices = new short[numUnaryProds()];
-        cscUnaryProbabilities = new float[numUnaryProds()];
+        cscUnaryRowIndices = new short[unaryProductions.size()];
+        cscUnaryProbabilities = new float[unaryProductions.size()];
 
         storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
     }
@@ -314,8 +312,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.posSet = null;
         this.phraseSet = null;
 
-        this.binaryProductions = binaryProductions;
-        this.unaryProductions = unaryProductions;
         this.numLexProds = lexicalProductions.size();
 
         this.lexicalParents = new short[lexSet.size()][];
@@ -326,7 +322,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.grammarFormat = grammarFormat;
 
         // Initialize start and end indices
-        final short[] startAndEndIndices = startAndEndIndices();
+        final short[] startAndEndIndices = startAndEndIndices(binaryProductions, unaryProductions);
         this.leftChildrenStart = startAndEndIndices[0];
         this.leftChildrenEnd = startAndEndIndices[1];
         this.rightChildrenStart = startAndEndIndices[2];
@@ -337,12 +333,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.binarization = binarization(binaryProductions);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
-        this.packingFunction = createPackingFunction(functionClass);
+        this.packingFunction = createPackingFunction(functionClass, binaryProductions);
 
         // And all unary productions
         cscUnaryColumnOffsets = new int[numNonTerms() + 1];
-        cscUnaryRowIndices = new short[numUnaryProds()];
-        cscUnaryProbabilities = new float[numUnaryProds()];
+        cscUnaryRowIndices = new short[unaryProductions.size()];
+        cscUnaryProbabilities = new float[unaryProductions.size()];
 
         if (initCscMatrices) {
             storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices,
@@ -350,7 +346,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
-        storeRightSiblingIndices();
+        storeRightSiblingIndices(binaryProductions);
 
     }
 
@@ -362,7 +358,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * @param functionClass
      */
     protected SparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
-        this(((SparseMatrixGrammar) g).binaryProductions, ((SparseMatrixGrammar) g).unaryProductions,
+        this(((SparseMatrixGrammar) g).getBinaryProductions(), ((SparseMatrixGrammar) g).getUnaryProductions(),
                 ((SparseMatrixGrammar) g).getLexicalProductions(), ((SparseMatrixGrammar) g).nonTermSet,
                 ((SparseMatrixGrammar) g).lexSet, ((SparseMatrixGrammar) g).grammarFormat, functionClass, true);
         final SparseMatrixGrammar smg = ((SparseMatrixGrammar) g);
@@ -429,8 +425,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 pcfgRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
             } else if (tokens.length == 5) {
                 // Binary production: expecting: A -> B C prob
-                pcfgRules.add(new BinaryStringProduction(stringPool.intern(tokens[0]), stringPool.intern(tokens[2]),
-                        stringPool.intern(tokens[3]), Float.valueOf(tokens[4])));
+                pcfgRules.add(new BinaryStringProduction(tmpStringPool.intern(tokens[0]), tmpStringPool
+                        .intern(tokens[2]), tmpStringPool.intern(tokens[3]), Float.valueOf(tokens[4])));
             } else {
                 throw new IllegalArgumentException("Unexpected line in grammar PCFG\n\t" + line);
             }
@@ -519,7 +515,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
-    private short[] startAndEndIndices() {
+    private short[] startAndEndIndices(final ArrayList<Production> binaryProductions,
+            final ArrayList<Production> unaryProductions) {
 
         short tmpLeftChildrenStart = Short.MAX_VALUE, tmpLeftChildrenEnd = 0;
         short tmpRightChildrenStart = Short.MAX_VALUE, tmpRightChildrenEnd = 0;
@@ -612,14 +609,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return lexSet.size();
     }
 
-    public int numBinaryProds() {
-        return binaryProductions.size();
-    }
-
+    @Override
     public int numUnaryProds() {
-        return unaryProductions.size();
+        return cscUnaryProbabilities.length;
     }
 
+    @Override
     public int numLexProds() {
         return numLexProds;
     }
@@ -701,16 +696,14 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return binarization;
     }
 
-    /*
-     * Binary Productions
+    /**
+     * @return List of binary productions
      */
-    public Collection<Production> getBinaryProductions() {
-        return binaryProductions;
-    }
+    public abstract ArrayList<Production> getBinaryProductions();
 
-    public Collection<Production> getFactoredBinaryProductions() {
-        final List<Production> factoredProductions = new LinkedList<Production>();
-        for (final Production p : binaryProductions) {
+    public ArrayList<Production> getFactoredBinaryProductions() {
+        final ArrayList<Production> factoredProductions = new ArrayList<Production>();
+        for (final Production p : getBinaryProductions()) {
             if (p.isBinaryProd() && grammarFormat.isFactored(mapNonterminal(p.parent))) {
                 factoredProductions.add(p);
             }
@@ -718,8 +711,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return factoredProductions;
     }
 
-    public Production getBinaryProduction(final int parent, final int leftChild, final int rightChild) {
-        for (final Production p : binaryProductions) {
+    public Production getBinaryProduction(final short parent, final short leftChild, final short rightChild) {
+        for (final Production p : getBinaryProductions()) {
             if (p.parent == parent && p.leftChild == leftChild && p.rightChild == rightChild) {
                 return p;
             }
@@ -731,7 +724,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
     // It's only reference is from CellChart#addParseTreeToChart(ParseTree)
     public Production getBinaryProduction(final String A, final String B, final String C) {
         if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
-            return getBinaryProduction(nonTermSet.getIndex(A), nonTermSet.getIndex(B), nonTermSet.getIndex(C));
+            return getBinaryProduction((short) nonTermSet.getIndex(A), (short) nonTermSet.getIndex(B),
+                    (short) nonTermSet.getIndex(C));
         }
         return null;
     }
@@ -753,10 +747,17 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return Float.NEGATIVE_INFINITY;
     }
 
-    /*
-     * Unary Productions
+    /**
+     * @return List of unary productions
      */
-    public Collection<Production> getUnaryProductions() {
+    public ArrayList<Production> getUnaryProductions() {
+        final ArrayList<Production> unaryProductions = new ArrayList<Production>(cscUnaryProbabilities.length);
+        for (int child = 0; child < cscUnaryColumnOffsets.length - 1; child++) {
+            for (int i = cscUnaryColumnOffsets[child]; i < cscUnaryColumnOffsets[child + 1]; i++) {
+                unaryProductions
+                        .add(new Production(cscUnaryRowIndices[i], child, cscUnaryProbabilities[i], false, this));
+            }
+        }
         return unaryProductions;
     }
 
@@ -864,7 +865,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         final Vocabulary baseVocabulary = nonTermSet.baseVocabulary();
         final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(baseVocabulary, lexSet, null);
 
-        for (final Production p : binaryProductions) {
+        for (final Production p : getBinaryProductions()) {
             final short unsplitParent = nonTermSet.getBaseIndex((short) p.parent);
             final short unsplitLeftChild = nonTermSet.getBaseIndex((short) p.leftChild);
             final short unsplitRightChild = nonTermSet.getBaseIndex((short) p.rightChild);
@@ -872,7 +873,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
                     java.lang.Math.exp(p.prob));
         }
 
-        for (final Production p : unaryProductions) {
+        for (final Production p : getUnaryProductions()) {
             final short unsplitParent = nonTermSet.getBaseIndex((short) p.parent);
             final short unsplitChild = nonTermSet.getBaseIndex((short) p.leftChild);
             unsplitGrammar.incrementUnaryCount(unsplitParent, unsplitChild, java.lang.Math.exp(p.prob));
@@ -974,7 +975,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     private StringNonTerminal create(final String label, final HashSet<String> pos, final Set<String> nonPosSet,
             final Set<String> rightChildren) {
-        final String internLabel = stringPool.intern(label);
+        final String internLabel = tmpStringPool.intern(label);
 
         if (startSymbolStr.equals(internLabel)) {
             return new StringNonTerminal(internLabel, NonTerminalClass.EITHER_CHILD);
@@ -1072,12 +1073,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         sb.append(nonTermSet.getSymbol(startSymbol) + '\n');
 
-        for (final Production p : binaryProductions) {
+        for (final Production p : getBinaryProductions()) {
             sb.append(String.format("%s -> %s %s %.4f\n", nonTermSet.getSymbol(p.parent),
                     nonTermSet.getSymbol(p.leftChild), nonTermSet.getSymbol(p.rightChild), p.prob));
         }
 
-        for (final Production p : unaryProductions) {
+        for (final Production p : getUnaryProductions()) {
             sb.append(String.format("%s -> %s %.4f\n", nonTermSet.getSymbol(p.parent),
                     nonTermSet.getSymbol(p.leftChild), p.prob));
         }
@@ -1144,7 +1145,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     @SuppressWarnings("unchecked")
-    private PackingFunction createPackingFunction(Class<? extends PackingFunction> functionClass) {
+    private PackingFunction createPackingFunction(Class<? extends PackingFunction> functionClass,
+            final ArrayList<Production> binaryProductions) {
         try {
             if (functionClass == null) {
                 functionClass = PerfectIntPairHashPackingFunction.class;
@@ -1152,11 +1154,17 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
             Constructor<PackingFunction> c;
             try {
-                c = (Constructor<PackingFunction>) functionClass.getConstructor(SparseMatrixGrammar.class);
+                c = (Constructor<PackingFunction>) functionClass.getConstructor(SparseMatrixGrammar.class,
+                        ArrayList.class);
             } catch (final NoSuchMethodException e) {
-                c = (Constructor<PackingFunction>) functionClass.getConstructor(getClass());
+                try {
+                    c = (Constructor<PackingFunction>) functionClass.getConstructor(getClass(), ArrayList.class);
+                } catch (final NoSuchMethodException e2) {
+                    return ((Constructor<PackingFunction>) functionClass.getConstructor(SparseMatrixGrammar.class))
+                            .newInstance(this);
+                }
             }
-            return c.newInstance(this);
+            return c.newInstance(this, binaryProductions);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -1225,7 +1233,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return Float.NEGATIVE_INFINITY;
     }
 
-    private void storeRightSiblingIndices() {
+    private void storeRightSiblingIndices(final ArrayList<Production> binaryProductions) {
         Arrays.fill(minRightSiblingIndices, Short.MAX_VALUE);
         Arrays.fill(maxRightSiblingIndices, Short.MIN_VALUE);
 
@@ -1265,7 +1273,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
             maps[i] = new Short2FloatOpenHashMap(1000);
         }
 
-        for (final Production p : unaryProductions) {
+        for (final Production p : getUnaryProductions()) {
             maps[p.parent].put((short) p.leftChild, p.prob);
         }
 
@@ -1517,7 +1525,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         private final int[] cscColumnOffsets;
 
-        public Int2IntHashPackingFunction() {
+        public Int2IntHashPackingFunction(final ArrayList<Production> binaryProductions) {
             super(rightChildrenEnd);
             map.defaultReturnValue(Integer.MIN_VALUE);
 
@@ -1603,17 +1611,17 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         private final int size;
 
-        public PerfectIntPairHashPackingFunction() {
+        public PerfectIntPairHashPackingFunction(final ArrayList<Production> binaryProductions) {
             this(binaryProductions, rightChildrenEnd);
         }
 
-        public PerfectIntPairHashPackingFunction(final ArrayList<Production> productions,
+        public PerfectIntPairHashPackingFunction(final ArrayList<Production> binaryProductions,
                 final int maxUnshiftedNonTerminal) {
             super(maxUnshiftedNonTerminal);
 
-            final int[][] childPairs = new int[2][productions.size()];
+            final int[][] childPairs = new int[2][binaryProductions.size()];
             int k = 0;
-            for (final Production p : productions) {
+            for (final Production p : binaryProductions) {
                 childPairs[0][k] = p.leftChild;
                 childPairs[1][k++] = p.rightChild;
             }

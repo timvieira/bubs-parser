@@ -128,7 +128,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
 
         // Allocate OpenCL-hosted memory for binary rules and copy to the device
         clBinaryRuleMatrixRowIndices = OpenClUtils
-                .copyToDevice(clQueue, grammar.csrBinaryRowIndices, CLMem.Usage.Input);
+                .copyToDevice(clQueue, grammar.csrBinaryRowOffsets, CLMem.Usage.Input);
         clBinaryRuleMatrixColumnIndices = OpenClUtils.copyToDevice(clQueue, grammar.csrBinaryColumnIndices,
                 CLMem.Usage.Input);
         clBinaryRuleMatrixProbabilities = OpenClUtils.copyToDevice(clQueue, grammar.csrBinaryProbabilities,

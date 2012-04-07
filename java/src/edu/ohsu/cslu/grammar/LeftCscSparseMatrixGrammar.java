@@ -88,7 +88,7 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
     }
 
     public LeftCscSparseMatrixGrammar(final Grammar g) {
-        this(((SparseMatrixGrammar) g).binaryProductions, ((SparseMatrixGrammar) g).unaryProductions,
+        this(((SparseMatrixGrammar) g).getBinaryProductions(), ((SparseMatrixGrammar) g).getUnaryProductions(),
                 ((SparseMatrixGrammar) g).getLexicalProductions(), ((SparseMatrixGrammar) g).nonTermSet,
                 ((SparseMatrixGrammar) g).lexSet, ((SparseMatrixGrammar) g).grammarFormat,
                 PerfectIntPairHashPackingFunction.class, true);

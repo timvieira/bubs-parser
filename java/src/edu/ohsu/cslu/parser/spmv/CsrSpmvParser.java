@@ -58,7 +58,7 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
             short winningMidpoint = 0;
 
             // Iterate over possible children of the parent (columns with non-zero entries)
-            for (int i = grammar.csrBinaryRowIndices[parent]; i < grammar.csrBinaryRowIndices[parent + 1]; i++) {
+            for (int i = grammar.csrBinaryRowOffsets[parent]; i < grammar.csrBinaryRowOffsets[parent + 1]; i++) {
                 final int grammarChildren = grammar.csrBinaryColumnIndices[i];
 
                 if (cartesianProductVector.midpoints[grammarChildren] == 0) {
