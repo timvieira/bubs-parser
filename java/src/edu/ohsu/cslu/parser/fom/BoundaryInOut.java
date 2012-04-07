@@ -26,6 +26,7 @@ import java.util.LinkedList;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTask;
@@ -61,11 +62,11 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         super(type);
 
         this.grammar = grammar;
-        if (grammar.isCoarseGrammar()) {
+        if (grammar instanceof CoarseGrammar) {
             coarseGrammar = (CoarseGrammar) grammar;
         }
 
-        nullSymbol = (short) grammar.nullSymbol;
+        nullSymbol = grammar.nullSymbol();
         NULL_LIST = new short[] { nullSymbol };
         NULL_PROBABILITIES = new float[] { 0f };
 
@@ -195,7 +196,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             if (tree.isBinaryTree() == false) {
                 // System.err.println("ERROR: Training trees must be binarized exactly as used in decoding grammar");
                 // System.exit(1);
-                TreeTools.binarizeTree(tree, grammar.isRightFactored(), grammar.horizontalMarkov,
+                TreeTools.binarizeTree(tree, grammar.binarization() == Binarization.RIGHT, grammar.horizontalMarkov,
                         grammar.verticalMarkov, false, grammar.grammarFormat);
             }
             tree.linkLeavesLeftRight();
@@ -292,9 +293,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 + " smooth=" + smoothingCount + "\n");
 
         // left boundary = P(NT | POS-1)
-        for (final int leftPOSIndex : grammar.posSet) {
+        for (final short leftPOSIndex : grammar.posSet) {
             final String posStr = grammar.mapNonterminal(leftPOSIndex);
-            for (final int ntIndex : grammar.phraseSet) {
+            for (final short ntIndex : grammar.phraseSet) {
                 final String ntStr = grammar.mapNonterminal(ntIndex);
                 // final float logProb = leftBoundaryLogProb[ntIndex][leftPOSIndex];
                 if (writeCounts) {
@@ -309,9 +310,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         }
 
         // right boundary = P(POS+1 | NT)
-        for (final int ntIndex : grammar.phraseSet) {
+        for (final short ntIndex : grammar.phraseSet) {
             final String ntStr = grammar.mapNonterminal(ntIndex);
-            for (final int rightPOSIndex : grammar.posSet) {
+            for (final short rightPOSIndex : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(rightPOSIndex);
                 // final float logProb = rightBoundaryLogProb[rightPOSIndex][ntIndex];
                 if (writeCounts) {
@@ -326,9 +327,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         }
 
         // pos n-gram = P(POS | POS-1)
-        for (final int histPos : grammar.posSet) {
+        for (final short histPos : grammar.posSet) {
             final String histPosStr = grammar.mapNonterminal(histPos);
-            for (final int pos : grammar.posSet) {
+            for (final short pos : grammar.posSet) {
                 final String posStr = grammar.mapNonterminal(pos);
                 // final float logProb = posTransitionLogProb[pos][histPos];
                 if (writeCounts) {

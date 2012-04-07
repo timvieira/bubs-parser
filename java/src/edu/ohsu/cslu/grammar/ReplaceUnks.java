@@ -18,7 +18,7 @@ public class ReplaceUnks extends BaseCommandlineTool {
 
     @Override
     protected void run() throws Exception {
-        final Grammar g = new Grammar(fileAsBufferedReader(grammarFile));
+        final Grammar g = new ListGrammar(fileAsBufferedReader(grammarFile));
 
         for (final String s : inputLines()) {
             System.out.println(Strings.join(g.tokenizer.tokenize(s), " "));

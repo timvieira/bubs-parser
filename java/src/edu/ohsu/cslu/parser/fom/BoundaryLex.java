@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import edu.ohsu.cslu.counters.SimpleCounterSet;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
@@ -221,7 +222,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         final int defaultClassIndex = wordClasses.addSymbol(defaultClass);
         lexToClassMap = new int[tokenizer.lexSize()];
         Arrays.fill(lexToClassMap, defaultClassIndex);
-        lexToClassMap[grammar.nullWord] = wordClasses.addSymbol(Grammar.nullSymbolStr);
+        lexToClassMap[grammar.nullSymbol()] = wordClasses.addSymbol(Grammar.nullSymbolStr);
 
         String line;
         final BufferedReader f = new BufferedReader(new FileReader(file));
@@ -270,7 +271,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         while ((line = inStream.readLine()) != null) {
             tree = ParseTree.readBracketFormat(line);
             if (tree.isBinaryTree() == false) {
-                TreeTools.binarizeTree(tree, grammar.isRightFactored(), grammar.horizontalMarkov,
+                TreeTools.binarizeTree(tree, grammar.binarization() == Binarization.RIGHT, grammar.horizontalMarkov,
                         grammar.verticalMarkov, false, grammar.grammarFormat);
             }
 
@@ -370,7 +371,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
             }
             outStream.write("UNK LB " + classStr + " " + unkProb + "\n");
         }
-        for (final int ntIndex : grammar.phraseSet) {
+        for (final short ntIndex : grammar.phraseSet) {
             final String ntStr = grammar.mapNonterminal(ntIndex);
             final float unkProb = (float) Math.log(rightBoundaryCount.getProb("DOES-NOT-EXIST", ntStr));
             outStream.write("UNK RB " + ntStr + " " + unkProb + "\n");
@@ -441,7 +442,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         private float outsideLeft(final int start, final int nt) {
             int lex;
             if (start <= 0) {
-                lex = grammar.nullWord;
+                lex = grammar.nullSymbol();
             } else {
                 lex = tokens[start - 1];
             }
@@ -455,7 +456,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         private float outsideRight(final int end, final int nt) {
             int lex;
             if (end >= tokens.length) {
-                lex = grammar.nullWord;
+                lex = grammar.nullSymbol();
             } else {
                 lex = tokens[end];
             }

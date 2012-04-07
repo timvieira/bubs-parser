@@ -510,11 +510,10 @@ public class PackedArrayChart extends ParallelArrayChart {
 
             if (insideProbability > tmpCell.insideProbabilities[p.parent]) {
                 if (p.isBinaryProd()) {
-                    tmpCell.packedChildren[parent] = sparseMatrixGrammar.packingFunction().pack(
-                            (short) p.leftChild, (short) p.rightChild);
+                    tmpCell.packedChildren[parent] = sparseMatrixGrammar.packingFunction().pack((short) p.leftChild,
+                            (short) p.rightChild);
                 } else if (p.isLexProd()) {
-                    tmpCell.packedChildren[parent] = sparseMatrixGrammar.packingFunction().packLexical(
-                            p.leftChild);
+                    tmpCell.packedChildren[parent] = sparseMatrixGrammar.packingFunction().packLexical(p.leftChild);
                 } else {
                     tmpCell.packedChildren[parent] = sparseMatrixGrammar.packingFunction().packUnary(
                             (short) p.leftChild);
@@ -590,15 +589,16 @@ public class PackedArrayChart extends ParallelArrayChart {
 
             Production p;
             if (rightChild == Production.LEXICAL_PRODUCTION) {
-                final float probability = sparseMatrixGrammar.lexicalLogProbability(nonTerminal, leftChild);
+                final float probability = sparseMatrixGrammar.lexicalLogProbability((short) nonTerminal, leftChild);
                 p = new Production(nonTerminal, leftChild, probability, true, sparseMatrixGrammar);
 
             } else if (rightChild == Production.UNARY_PRODUCTION) {
-                final float probability = sparseMatrixGrammar.unaryLogProbability(nonTerminal, leftChild);
+                final float probability = sparseMatrixGrammar.unaryLogProbability((short) nonTerminal,
+                        (short) leftChild);
                 p = new Production(nonTerminal, leftChild, probability, false, sparseMatrixGrammar);
 
             } else {
-                final float probability = sparseMatrixGrammar.binaryLogProbability(nonTerminal, edgeChildren);
+                final float probability = sparseMatrixGrammar.binaryLogProbability((short) nonTerminal, edgeChildren);
                 p = new Production(nonTerminal, leftChild, rightChild, probability, sparseMatrixGrammar);
             }
             return new ChartEdge(p, leftChildCell, rightChildCell);

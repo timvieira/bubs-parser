@@ -60,7 +60,7 @@ public class InOutCellChart extends CellChart {
             if (start == 0 && end == size()) {
                 outside[parser.grammar.startSymbol] = 0; // log(1)
                 BaseLogger.singleton().finest(
-                        "setting " + parser.grammar.startSymbol() + " index=" + parser.grammar.startSymbol + " to 0");
+                        "setting " + parser.grammar.startSymbol + " index=" + parser.grammar.startSymbol + " to 0");
             }
         }
 

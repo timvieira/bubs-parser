@@ -53,7 +53,7 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
     private final int cpvSegments;
 
     /**
-     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowIndices} splitting the binary rule-set into segments of
+     * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowOffsets} splitting the binary rule-set into segments of
      * roughly equal size for distribution between threads. Length is {@link #grammarThreads} + 1 (to avoid falling off
      * the end)
      */

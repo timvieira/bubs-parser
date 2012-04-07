@@ -88,7 +88,7 @@ public class SerializeModel extends BaseCommandlineTool {
         final ObjectOutputStream oos = new ObjectOutputStream(os);
 
         BaseLogger.singleton().info("Reading grammar...");
-        Grammar g = new Grammar(grammarReader);
+        Grammar g = new ListGrammar(grammarReader);
 
         if (grammarClass != null && grammarClass != Grammar.class.getName()) {
             BaseLogger.singleton().info("Converting grammar...");

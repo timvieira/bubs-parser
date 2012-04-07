@@ -18,7 +18,7 @@
  */
 package edu.ohsu.cslu.parser.ecp;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.ListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -31,9 +31,9 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
  * 
  * @author Nathan Bodenstab
  */
-public class ECPGrammarLoop extends ChartParser<Grammar, CellChart> {
+public class ECPGrammarLoop extends ChartParser<ListGrammar, CellChart> {
 
-    public ECPGrammarLoop(final ParserDriver opts, final Grammar grammar) {
+    public ECPGrammarLoop(final ParserDriver opts, final ListGrammar grammar) {
         super(opts, grammar);
     }
 
