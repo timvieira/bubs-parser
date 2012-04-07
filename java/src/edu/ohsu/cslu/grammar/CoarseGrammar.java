@@ -22,7 +22,7 @@ import java.io.IOException;
 
 import cltool4j.BaseLogger;
 
-public class CoarseGrammar extends Grammar {
+public class CoarseGrammar extends ListGrammar {
 
     private static final long serialVersionUID = 1L;
 
@@ -39,7 +39,7 @@ public class CoarseGrammar extends Grammar {
 
         // create mapping from parent grammar non-terms to the non-terms in this grammar
         fineToCoarseIndex = new int[fineGrammar.numNonTerms()];
-        for (int i = 0; i < fineGrammar.numNonTerms(); i++) {
+        for (short i = 0; i < fineGrammar.numNonTerms(); i++) {
             final String fineNTStr = fineGrammar.mapNonterminal(i);
             final String coarseNTStr = fineToCoarseNonTermString(fineNTStr);
             // System.out.println(parentNonTermString + " => " + projNTStr);

@@ -102,16 +102,17 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         super(grammarFile, cartesianProductFunctionClass);
 
         // All binary productions
-        final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(binaryProductions, packingFunction);
+        final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(tmpBinaryProductions, packingFunction);
         cscBinaryPopulatedColumns = new int[populatedBinaryColumnIndices.length];
         cscBinaryPopulatedColumnOffsets = new int[cscBinaryPopulatedColumns.length + 1];
-        cscBinaryRowIndices = new short[numBinaryProds()];
-        cscBinaryProbabilities = new float[numBinaryProds()];
+        cscBinaryRowIndices = new short[tmpBinaryProductions.size()];
+        cscBinaryProbabilities = new float[tmpBinaryProductions.size()];
         cscBinaryColumnOffsets = new int[packingFunction.packedArraySize()];
         factoredCscBinaryColumnOffsets = new int[packingFunction.packedArraySize()];
 
-        storeRulesAsMatrix(binaryProductions, packingFunction, populatedBinaryColumnIndices, cscBinaryPopulatedColumns,
-                cscBinaryPopulatedColumnOffsets, cscBinaryColumnOffsets, cscBinaryRowIndices, cscBinaryProbabilities);
+        storeRulesAsMatrix(tmpBinaryProductions, packingFunction, populatedBinaryColumnIndices,
+                cscBinaryPopulatedColumns, cscBinaryPopulatedColumnOffsets, cscBinaryColumnOffsets,
+                cscBinaryRowIndices, cscBinaryProbabilities);
 
         // TODO De-duplicate; move into storeRulesAsMatrix?
         for (int i = 0; i < cscBinaryPopulatedColumns.length; i++) {
@@ -137,6 +138,9 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         storeRulesAsMatrix(factoredBinaryProductions, packingFunction, factoredPopulatedBinaryColumnIndices,
                 factoredCscBinaryPopulatedColumns, factoredCscBinaryPopulatedColumnOffsets,
                 factoredCscBinaryColumnOffsets, factoredCscBinaryRowIndices, factoredCscBinaryProbabilities);
+
+        // Allow temporary binary production array to be GC'd
+        tmpBinaryProductions = null;
     }
 
     protected CscSparseMatrixGrammar(final Reader grammarFile) throws IOException {
@@ -159,8 +163,8 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(binaryProductions, packingFunction);
         cscBinaryPopulatedColumns = new int[populatedBinaryColumnIndices.length];
         cscBinaryPopulatedColumnOffsets = new int[cscBinaryPopulatedColumns.length + 1];
-        cscBinaryRowIndices = new short[numBinaryProds()];
-        cscBinaryProbabilities = new float[numBinaryProds()];
+        cscBinaryRowIndices = new short[binaryProductions.size()];
+        cscBinaryProbabilities = new float[binaryProductions.size()];
         cscBinaryColumnOffsets = new int[packingFunction.packedArraySize()];
 
         storeRulesAsMatrix(binaryProductions, packingFunction, populatedBinaryColumnIndices, cscBinaryPopulatedColumns,
@@ -182,7 +186,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     }
 
     protected int[] populatedBinaryColumnIndices(final Collection<Production> productions, final PackingFunction pf) {
-        final IntSet populatedBinaryColumnIndices = new IntOpenHashSet(binaryProductions.size() / 10);
+        final IntSet populatedBinaryColumnIndices = new IntOpenHashSet(productions.size() / 10);
         for (final Production p : productions) {
             // TODO Remove
             final int packed = pf.pack((short) p.leftChild, (short) p.rightChild);
@@ -282,5 +286,26 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             }
         }
         return Float.NEGATIVE_INFINITY;
+    }
+
+    @Override
+    public int numBinaryProds() {
+        return cscBinaryProbabilities.length;
+    }
+
+    @Override
+    public ArrayList<Production> getBinaryProductions() {
+        final ArrayList<Production> binaryProductions = new ArrayList<Production>(cscUnaryProbabilities.length);
+
+        for (int childPair = 0; childPair < cscBinaryColumnOffsets.length - 1; childPair++) {
+            final short leftChild = (short) packingFunction.unpackLeftChild(childPair);
+            final short rightChild = packingFunction.unpackRightChild(childPair);
+
+            for (int i = cscBinaryColumnOffsets[childPair]; i < cscBinaryColumnOffsets[childPair + 1]; i++) {
+                binaryProductions.add(new Production(cscBinaryRowIndices[i], leftChild, rightChild,
+                        cscBinaryProbabilities[i], this));
+            }
+        }
+        return binaryProductions;
     }
 }

@@ -38,6 +38,7 @@ import cltool4j.Threadable;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
@@ -47,6 +48,7 @@ import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
+import edu.ohsu.cslu.grammar.ListGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
@@ -210,7 +212,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     // corpus stats
     private long parseStartTime;
-    private int sentencesParsed = 0, wordsParsed = 0, failedParses = 0, reparsedSentences = 0, totalReparses = 0;
+    private volatile int sentencesParsed = 0, wordsParsed = 0, failedParses = 0, reparsedSentences = 0,
+            totalReparses = 0;
     private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
     private final BracketEvaluator evaluator = new BracketEvaluator();
 
@@ -347,7 +350,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
             if (chartConstraintsModel != null) {
                 cellSelectorModel = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel),
-                        grammar.isLeftFactored());
+                        grammar.binarization() == Binarization.LEFT);
             }
 
             if (beamModelFileName != null) {
@@ -402,7 +405,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         case ECPGrammarLoop:
         case ECPGrammarLoopBerkeleyFilter:
-            return new Grammar(grammarFile);
+            return new ListGrammar(grammarFile);
 
         case AgendaParser:
         case APWithMemory:
@@ -500,9 +503,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         case ECPCellCrossMatrix:
             return new ECPCellCrossMatrix(this, (ChildMatrixGrammar) grammar);
         case ECPGrammarLoop:
-            return new ECPGrammarLoop(this, grammar);
+            return new ECPGrammarLoop(this, (ListGrammar) grammar);
         case ECPGrammarLoopBerkeleyFilter:
-            return new ECPGrammarLoopBerkFilter(this, grammar);
+            return new ECPGrammarLoopBerkFilter(this, (ListGrammar) grammar);
         case ECPInsideOutside:
             return new ECPInsideOutside(this, (LeftListGrammar) grammar);
             // return new ECPInsideOutside2(parserOptions, (LeftHashGrammar) grammar);
@@ -603,9 +606,18 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Override
     protected void output(final ParseTask parseTask) {
         if (parseTask != null) {
-            parseTask.evaluate(evaluator);
-            System.out.println(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels, headPercolationRuleset)
-                    + parseTask.statsString());
+            final StringBuilder output = new StringBuilder(512);
+            output.append(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels, headPercolationRuleset));
+            try {
+                parseTask.evaluate(evaluator);
+                output.append(parseTask.statsString());
+            } catch (final Exception e) {
+                if (BaseLogger.singleton().isLoggable(Level.SEVERE)) {
+                    output.append("\nERROR: Evaluation failed: " + e.toString());
+                }
+                output.append(parseTask.statsString());
+            }
+            System.out.println(output.toString());
             sentencesParsed++;
             wordsParsed += parseTask.sentenceLength();
             if (parseTask.parseFailed()) {

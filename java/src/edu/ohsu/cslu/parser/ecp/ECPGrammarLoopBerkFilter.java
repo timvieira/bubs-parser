@@ -21,7 +21,7 @@ package edu.ohsu.cslu.parser.ecp;
 import java.util.Arrays;
 import java.util.Collection;
 
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.ListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
@@ -37,7 +37,7 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
  * 
  * @author Nathan Bodenstab
  */
-public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
+public class ECPGrammarLoopBerkFilter extends ChartParser<ListGrammar, CellChart> {
 
     // tracks the spans of nonTerms in the chart so we don't have to consider them
     // in the inner loop of fillChart()
@@ -51,7 +51,7 @@ public class ECPGrammarLoopBerkFilter extends ChartParser<Grammar, CellChart> {
     private int possibleMidpointMin = -1;
     private int possibleMidpointMax = -1;
 
-    public ECPGrammarLoopBerkFilter(final ParserDriver opts, final Grammar grammar) {
+    public ECPGrammarLoopBerkFilter(final ParserDriver opts, final ListGrammar grammar) {
         super(opts, grammar);
     }
 

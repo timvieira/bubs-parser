@@ -160,8 +160,7 @@ public class DenseVectorChart extends ParallelArrayChart {
                 } else if (p.isLexProd()) {
                     packedChildren[index] = sparseMatrixGrammar.packingFunction().packLexical(p.leftChild);
                 } else {
-                    packedChildren[index] = sparseMatrixGrammar.packingFunction().packUnary(
-                            (short) p.leftChild);
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction().packUnary((short) p.leftChild);
                 }
                 insideProbabilities[index] = insideProbability;
 
@@ -181,14 +180,13 @@ public class DenseVectorChart extends ParallelArrayChart {
             if (edge.inside() > insideProbabilities[index]) {
 
                 if (edge.prod.isBinaryProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.packingFunction().pack(
-                            (short) edge.prod.leftChild, (short) edge.prod.rightChild);
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction().pack((short) edge.prod.leftChild,
+                            (short) edge.prod.rightChild);
                 } else if (edge.prod.isLexProd()) {
-                    packedChildren[index] = sparseMatrixGrammar.packingFunction().packLexical(
-                            edge.prod.leftChild);
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction().packLexical(edge.prod.leftChild);
                 } else {
-                    packedChildren[index] = sparseMatrixGrammar.packingFunction().packUnary(
-                            (short) edge.prod.leftChild);
+                    packedChildren[index] = sparseMatrixGrammar.packingFunction()
+                            .packUnary((short) edge.prod.leftChild);
                 }
                 insideProbabilities[index] = edge.inside();
 
@@ -215,15 +213,16 @@ public class DenseVectorChart extends ParallelArrayChart {
 
             Production p;
             if (rightChild == Production.LEXICAL_PRODUCTION) {
-                final float probability = sparseMatrixGrammar.lexicalLogProbability(nonTerminal, leftChild);
+                final float probability = sparseMatrixGrammar.lexicalLogProbability((short) nonTerminal, leftChild);
                 p = new Production(nonTerminal, leftChild, probability, true, sparseMatrixGrammar);
 
             } else if (rightChild == Production.UNARY_PRODUCTION) {
-                final float probability = sparseMatrixGrammar.unaryLogProbability(nonTerminal, leftChild);
+                final float probability = sparseMatrixGrammar.unaryLogProbability((short) nonTerminal,
+                        (short) leftChild);
                 p = new Production(nonTerminal, leftChild, probability, false, sparseMatrixGrammar);
 
             } else {
-                final float probability = sparseMatrixGrammar.binaryLogProbability(nonTerminal, edgeChildren);
+                final float probability = sparseMatrixGrammar.binaryLogProbability((short) nonTerminal, edgeChildren);
                 p = new Production(nonTerminal, leftChild, rightChild, probability, sparseMatrixGrammar);
             }
             return new ChartEdge(p, leftChildCell, rightChildCell);

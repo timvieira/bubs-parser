@@ -231,7 +231,7 @@ public class TestInsideOutsideCphSpmlParser {
         opts.fomModel = new InsideProb();
         parser = new InsideOutsideCphSpmlParser(opts, grammar);
         assertEquals(
-                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
+                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (PP (JJ due) (IN out) (NP (NN tomorrow))))) (. .)))",
                 parser.parseSentence(sentences.get(1)[0]).parseBracketString(false));
     }
 

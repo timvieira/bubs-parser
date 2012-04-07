@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -194,8 +195,8 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 // Replace cellIndices with all chart cells.
                 final int sentenceLength = parser.chart.size();
                 openCells = sentenceLength * (sentenceLength + 1) / 2;
-                if (cellIndices == null || cellIndices.length < openCells) {
-                    cellIndices = new short[openCells * 2];
+                if (cellIndices == null || cellIndices.length < (openCells << 1)) {
+                    cellIndices = new short[openCells << 1];
                 }
 
                 int i = 0;
@@ -250,7 +251,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
         @Override
         protected boolean isGrammarLeftFactored() {
-            return parser.grammar.isLeftFactored();
+            return parser.grammar.binarization() == Binarization.LEFT;
         }
     }
 }

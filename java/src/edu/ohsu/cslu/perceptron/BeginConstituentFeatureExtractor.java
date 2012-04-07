@@ -167,8 +167,9 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
                 beginsMultiwordConstituent = new boolean[sentenceLength];
 
                 for (int k = 0; k < markovOrder; k++) {
-                    mappedTokens[k] = grammar.nullWord;
-                    mappedTokens[mappedTokens.length - k - 1] = grammar.nullWord;
+                    final short nullWord = grammar.mapNonterminal(Grammar.nullSymbolStr);
+                    mappedTokens[k] = nullWord;
+                    mappedTokens[mappedTokens.length - k - 1] = nullWord;
                 }
 
                 int k = markovOrder;
@@ -188,8 +189,9 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
                 beginsMultiwordConstituent = null;
 
                 for (int k = 0; k < markovOrder; k++) {
-                    mappedTokens[k] = grammar.nullWord;
-                    mappedTokens[mappedTokens.length - k - 1] = grammar.nullWord;
+                    final short nullWord = grammar.mapNonterminal(Grammar.nullSymbolStr);
+                    mappedTokens[k] = nullWord;
+                    mappedTokens[mappedTokens.length - k - 1] = nullWord;
                 }
             }
         }

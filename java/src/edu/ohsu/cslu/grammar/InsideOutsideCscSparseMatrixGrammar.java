@@ -60,7 +60,8 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
         super(grammarFile, cartesianProductFunctionClass);
 
         // Left child grammar
-        final ArrayList<Production> binaryProductionsByLeftChild = binaryProductionsByLeftChild();
+        final ArrayList<Production> binaryProductions = getBinaryProductions();
+        final ArrayList<Production> binaryProductionsByLeftChild = binaryProductionsByLeftChild(binaryProductions);
         this.leftChildPackingFunction = new PerfectIntPairHashPackingFunction(binaryProductionsByLeftChild,
                 numNonTerms() - 1);
 
@@ -77,7 +78,7 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
                 leftChildCscBinaryRowIndices, leftChildCscBinaryProbabilities);
 
         // Right child grammar
-        final ArrayList<Production> binaryProductionsByRightChild = binaryProductionsByRightChild();
+        final ArrayList<Production> binaryProductionsByRightChild = binaryProductionsByRightChild(binaryProductions);
         this.rightChildPackingFunction = new PerfectIntPairHashPackingFunction(binaryProductionsByRightChild,
                 numNonTerms() - 1);
 
@@ -113,7 +114,7 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
         // Initialization code duplicated from constructor above to allow these fields to be final
 
         // Left child grammar
-        final ArrayList<Production> binaryProductionsByLeftChild = binaryProductionsByLeftChild();
+        final ArrayList<Production> binaryProductionsByLeftChild = binaryProductionsByLeftChild(binaryProductions);
         this.leftChildPackingFunction = new PerfectIntPairHashPackingFunction(binaryProductionsByLeftChild,
                 numNonTerms() - 1);
 
@@ -130,7 +131,7 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
                 leftChildCscBinaryRowIndices, leftChildCscBinaryProbabilities);
 
         // Right child grammar
-        final ArrayList<Production> binaryProductionsByRightChild = binaryProductionsByRightChild();
+        final ArrayList<Production> binaryProductionsByRightChild = binaryProductionsByRightChild(binaryProductions);
         this.rightChildPackingFunction = new PerfectIntPairHashPackingFunction(binaryProductionsByRightChild,
                 numNonTerms() - 1);
 
@@ -155,7 +156,7 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
         storeUnaryRulesAsCsrMatrix(csrUnaryRowStartIndices, csrUnaryColumnIndices, csrUnaryProbabilities);
     }
 
-    private ArrayList<Production> binaryProductionsByLeftChild() {
+    private ArrayList<Production> binaryProductionsByLeftChild(final ArrayList<Production> binaryProductions) {
         final ArrayList<Production> productionsByLeftChild = new ArrayList<Production>(binaryProductions.size());
         for (final Production p : binaryProductions) {
             productionsByLeftChild.add(new Production(p.leftChild, p.parent, p.rightChild, p.prob, nonTermSet, lexSet));
@@ -163,7 +164,7 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
         return productionsByLeftChild;
     }
 
-    private ArrayList<Production> binaryProductionsByRightChild() {
+    private ArrayList<Production> binaryProductionsByRightChild(final ArrayList<Production> binaryProductions) {
         final ArrayList<Production> productionsByRightChild = new ArrayList<Production>(binaryProductions.size());
         for (final Production p : binaryProductions) {
             productionsByRightChild
