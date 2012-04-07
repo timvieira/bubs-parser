@@ -283,7 +283,12 @@ public class ParseTask {
 
     public void evaluate(final BracketEvaluator evaluator) {
         if (inputTree != null && !parseFailed()) {
-            evalb = evaluator.evaluate(inputTree, naryParse());
+            try {
+                evalb = evaluator.evaluate(inputTree, naryParse());
+            } catch (final Exception e) {
+                BaseLogger.singleton().info("ERROR: input tree " + inputTree + " is ill-formd.  Skipping evaluation.");
+                evalb = null;
+            }
         }
     }
 }
