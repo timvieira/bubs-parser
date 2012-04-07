@@ -122,6 +122,9 @@ public class NGramOutside extends FigureOfMeritModel {
         @Override
         public float calcFOM(final int start, final int end, final short nt, final float insideProbability) {
             return insideProbability + outside(start, end);
+            // For edge A(b,e) we can either add (mult) by ngram prob of
+            // words outside the span (n_0 ... n_b-1, n_e+1 ... n_N) or subtract (divide)
+            // by the ngram prob inside the span (n_b ... n_e). We are doing the former.
         }
 
         @Override

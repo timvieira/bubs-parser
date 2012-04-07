@@ -21,6 +21,7 @@ package edu.ohsu.cslu.parser.ecp;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
@@ -34,8 +35,16 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
  */
 public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
 
+    private long numConsidered = 0;
+
     public ECPCellCrossList(final ParserDriver opts, final LeftListGrammar grammar) {
         super(opts, grammar);
+    }
+
+    @Override
+    protected void initSentence(final ParseTask parseTask) {
+        super.initSentence(parseTask);
+        numConsidered = 0;
     }
 
     @Override
@@ -58,6 +67,7 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 leftInside = leftCell.getInside(leftNT);
                 for (final Production p : grammar.getBinaryProductionsWithLeftChild(leftNT)) {
+                    numConsidered++;
                     if (!onlyFactored || grammar.getOrAddNonterm(p.parent).isFactored()) {
                         rightInside = rightCell.getInside(p.rightChild);
                         if (rightInside > Float.NEGATIVE_INFINITY) {
@@ -75,9 +85,15 @@ public class ECPCellCrossList extends ChartParser<LeftListGrammar, CellChart> {
         if (cellSelector.hasCellConstraints() == false || cellSelector.getCellConstraints().isUnaryOpen(start, end)) {
             for (final int childNT : cell.getNtArray()) {
                 for (final Production p : grammar.getUnaryProductionsWithChild(childNT)) {
+                    numConsidered++;
                     cell.updateInside(p, p.prob + cell.getInside(childNT));
                 }
             }
         }
+    }
+
+    @Override
+    public String getStats() {
+        return super.getStats() + "numConsidered=" + numConsidered;
     }
 }
