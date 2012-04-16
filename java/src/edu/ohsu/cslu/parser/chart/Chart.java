@@ -569,7 +569,7 @@ public abstract class Chart {
     // map from sparse POS index to compact ordering by using grammar.posSet
     private int getPOSFeat(final int tokIndex) {
         if (tokIndex < 0 || tokIndex >= parseTask.sentenceLength()) {
-            return grammar.nullSymbol();
+            return grammar.posSet.getIndex(grammar.nullSymbol());
         }
         return grammar.posSet.getIndex((short) parseTask.fomTags[tokIndex]);
     }
