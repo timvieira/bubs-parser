@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser.cellselector;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
@@ -30,6 +31,8 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.chart.Chart.Feature;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.BinaryPerceptronSet;
 import edu.ohsu.cslu.perceptron.Classifier;
@@ -44,6 +47,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
     protected Classifier beamWidthModel;
     private boolean inferFactoredCells = false, classifyBaseCells = false;
+    protected List<Feature> featureList;
 
     public PerceptronBeamWidthModel(final BufferedReader modelStream) {
 
@@ -82,6 +86,8 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
         BaseLogger.singleton().finer(
                 "INFO: beamconf: inferFactoredCells=" + Util.bool2int(inferFactoredCells) + " classifyBaseCells="
                         + Util.bool2int(classifyBaseCells));
+
+        this.featureList = Chart.featureTemplateStrToEnum(beamWidthModel.getFeatureTemplate().split("\\s+"));
     }
 
     public CellSelector createCellSelector() {
@@ -113,8 +119,6 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             final int[] beamClassCounts = BaseLogger.singleton().isLoggable(Level.FINER) ? new int[beamWidthModel
                     .numClasses()] : null;
 
-            final String[] featureNames = beamWidthModel.getFeatureTemplate().split("\\s+");
-
             // traverse in a top-down order so we can remember when we first see a non-empty cell
             // only works for right factored (berkeley) grammars right now.
             // for (int end = 1; end < n + 1; end++) {
@@ -129,7 +133,9 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                         // beamWidthValues[start][end] = maxBeamWidth;
                         // cellStats += String.format("%d,%d=%d ", start, end, maxBeamWidth);
                     } else {
-                        final SparseBitVector feats = parser.chart.getCellFeatures(start, end, featureNames);
+                        final SparseBitVector feats = parser.chart.getCellFeatures(start, end, featureList);
+                        // final SparseBitVector feats = parser.chart.getCellFeatures(start, end, beamWidthModel
+                        // .getFeatureTemplate().split("\\s+"));
                         guessClass = beamWidthModel.classify(feats);
                         if (beamClassCounts != null) {
                             beamClassCounts[guessClass]++;
@@ -195,8 +201,8 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 // Replace cellIndices with all chart cells.
                 final int sentenceLength = parser.chart.size();
                 openCells = sentenceLength * (sentenceLength + 1) / 2;
-                if (cellIndices == null || cellIndices.length < (openCells << 1)) {
-                    cellIndices = new short[openCells << 1];
+                if (cellIndices == null || cellIndices.length < openCells * 2) {
+                    cellIndices = new short[openCells * 2];
                 }
 
                 int i = 0;
@@ -208,7 +214,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 }
             }
         }
-        
+
         @Override
         public boolean isCellOpen(final short start, final short end) {
             return !constraintsEnabled || (beamWidthValues[start][end] > 0 && onlyFactored[start][end] == false);

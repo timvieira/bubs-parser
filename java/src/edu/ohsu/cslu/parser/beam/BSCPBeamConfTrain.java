@@ -33,36 +33,59 @@ import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.chart.Chart.Feature;
 
 /*
+ Generates features to be used to train a regression model of the form:
+
+ goldRank goldIsFactored numGold isSpan1Cell : numFeats feat1 feat2 ...
+
+ where
+ goldRank: The integer rank of the gold constituent in the local agenda.  If
+ more than one gold constituent exists (i.e., a binary and unary entry) then the
+ rank is the highest of the two. A value of 0 indicates that no gold constituent
+ exists in the cell.
+
+ goldIsFactored: 1 if the binary gold constituent is headed by a factored non-terminal, 0 otherwise
+
+ numGold: the number of gold constituents in the chart cell
+
+ isSpan1Cell: 1 if chart cell spans a single word, 0 otherwise
+ */
+
+/*
+ TODO: 
 
  Once we start pruning the beam-width on cells, it will change
  the ranking of gold edges in higher cells.  We should be able
  to adapt to this by slowly using the perceptron predictions
  and refining them with the gold edge results over time. 
 
- TODO: (1) static learning of beam-width: fill all chart cells
+ (1) static learning of beam-width: fill all chart cells
  with all possible edges to determine the gold beam-width
 
  (2) graduated learning (there must be a better name for this):
  Init with all predictions for beam-width=INF.  At each cell,
  predict the beam-width and use it.  If a gold edge exists
  in the cell, but is not placed in the cell because the beam
- width is too low, penalize the cell (gold-rank=INF).  
+ width is too small, penalize the cell.  
 
  */
 
 //public class BSCPBeamConfTrain extends BSCPPruneViterbi {
 public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
-    String featTemplate;
+    String[] featTemplate;
+    List<Feature> featList;
     ParseTask curTask;
     GoldEdgeContainer goldEdgeChart[][];
     boolean printRankInfo = ParserDriver.inputTreeBeamRank;
 
     public BSCPBeamConfTrain(final ParserDriver opts, final LeftHashGrammar grammar, final String featTemplate) {
         super(opts, grammar);
-        this.featTemplate = featTemplate;
+        this.featTemplate = featTemplate.split("\\s+");
+        this.featList = Chart.featureTemplateStrToEnum(featTemplate.split("\\s+"));
     }
 
     @Override
@@ -185,8 +208,8 @@ public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, Ce
 
         if (!printRankInfo) {
             // Beam-width prediction features
-            final SparseBitVector cellFeats = chart.getCellFeatures(cell.start(), cell.end(),
-                    this.featTemplate.split("\\s+"));
+            final SparseBitVector cellFeats = chart.getCellFeatures(cell.start(), cell.end(), this.featList);
+            // final SparseBitVector cellFeats = chart.getCellFeatures(cell.start(), cell.end(), this.featTemplate);
 
             // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
             System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),
