@@ -82,6 +82,8 @@ public abstract class Grammar implements Serializable {
     // extracting chart cell features for beam width prediction.
     public SymbolSet<Short> posSet;
     public SymbolSet<Short> phraseSet; // phraseSet + posSet == nonTermSet
+    public short nullSymbol = -1;
+    public int nullWord = -1;
 
     public abstract Production getLexicalProduction(final short parent, final int lex);
 

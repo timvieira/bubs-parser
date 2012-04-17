@@ -66,9 +66,6 @@ public class ListGrammar extends Grammar {
     // public static float UNSEEN_LEX_PROB = GlobalConfigProperties.singleton().getFloatProperty("unseenLexProb");
     public static float UNSEEN_LEX_PROB = -9999;
 
-    public short nullSymbol = -1;
-    public int nullWord = -1;
-
     // == Grammar stats ==
     public int numPosSymbols;
     // public boolean isLatentVariableGrammar;
@@ -499,14 +496,17 @@ public class ListGrammar extends Grammar {
         return numPosSymbols;
     }
 
+    @Override
     public int numBinaryProds() {
         return binaryProductions.size();
     }
 
+    @Override
     public int numUnaryProds() {
         return unaryProductions.size();
     }
 
+    @Override
     public int numLexProds() {
         return lexicalProductions.size();
     }

@@ -87,9 +87,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
     // public static float UNSEEN_LEX_PROB = GlobalConfigProperties.singleton().getFloatProperty("unseenLexProb");
     public static float UNSEEN_LEX_PROB = -9999;
 
-    public short nullSymbol = -1;
-    public int nullWord = -1;
-
     // == Grammar stats ==
     public final int numPosSymbols;
     public int horizontalMarkov;
@@ -166,6 +163,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
         posSet = new SymbolSet<Short>();
         phraseSet = new SymbolSet<Short>();
 
+        this.nullWord = lexSet.addSymbol(nullSymbolStr);
+
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
@@ -233,7 +232,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.startSymbol = nonTermSet.addSymbol(startSymbolStr);
         nonTermSet.setStartSymbol((short) startSymbol);
         this.nullSymbol = (short) nonTermSet.addSymbol(nullSymbolStr);
-        this.nullWord = lexSet.addSymbol(nullSymbolStr);
 
         // And unary and binary rules
         tmpBinaryProductions = new ArrayList<Production>();
