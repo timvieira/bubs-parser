@@ -68,6 +68,9 @@ public class TrainFOM extends BaseCommandlineTool {
     @Option(name = "-l", aliases = { "--learningRate" }, usage = "Learning rate for Logistic Regression model")
     private float learningRate = 1.0f;
 
+    @Option(name = "-input", usage = "Input treebank file")
+    private String inputFileName;
+
     public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
     public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
@@ -84,10 +87,12 @@ public class TrainFOM extends BaseCommandlineTool {
             model.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, pruneCount, lexCountFile,
                     unkThresh, lexMapFile);
         } else if (fomType == FOMType.Discriminative) {
+            DiscriminativeFOM.train(inputFileName, outputStream, grammarFile, featTemplate, iterations, learningRate);
             if (extractFeatures) {
-                DiscriminativeFOM.extractFeatures(inputStream, outputStream, grammarFile, featTemplate);
+                // DiscriminativeFOMLR.extractFeatures(inputStream, outputStream, grammarFile, featTemplate);
             } else {
-                DiscriminativeFOM.train(inputStream, outputStream, grammarFile, featTemplate, iterations, learningRate);
+                // DiscriminativeFOMLR.train(inputStream, outputStream, grammarFile, featTemplate, iterations,
+                // learningRate);
             }
         } else if (fomType == FOMType.Prior) {
             PriorFOM.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts);

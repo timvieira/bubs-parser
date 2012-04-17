@@ -30,6 +30,7 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTask;
 
 public abstract class Chart {
@@ -38,6 +39,7 @@ public abstract class Chart {
     public int[] tokens;
     protected Grammar grammar;
     public ParseTask parseTask;
+    SymbolSet<String> featHash = new SymbolSet<String>();
 
     protected Chart() {
     }
@@ -316,6 +318,11 @@ public abstract class Chart {
         }
     }
 
+    public static class SimpleChartEdge {
+        public short A = -1, B = -1, C = -1;
+        public short start = -1, mid = -1, end = -1;
+    }
+
     public static class ChartEdge {
 
         public Production prod;
@@ -446,17 +453,247 @@ public abstract class Chart {
         }
     }
 
-    public SparseBitVector getCellFeatures(final int start, final int end, final String[] featureNames) {
+    /* @formatter:off */
+    
+    // L=Left, R=Right, T=POSTag, W=Word
+    // LX = left X positions
+    // X_Y = joint features
+    // example: LTR2 = Left Tag Right 2 = The POS tag right two positions from the consttuent's left boundary
+    public static enum Feature {
+        lt, ltl1, ltl2, ltr1, ltr2, lt_ltl1, rt, rtl1, rtl2, rtr1, rtr2, rt_rtr1,
+        lw, lwl1, lw_lt, lwl1_ltl1, rw, rwr1, rw_rt, rwr1_rtr1,
+        Span, Rule};
+        
+    public static List<Feature> featureTemplateStrToEnum(final String[] featureNames) {
+        final List<Feature> feats = new LinkedList<Feature>();
+        for (final String featStr : featureNames) {
+            if (featStr.equals("lt")) feats.add(Feature.lt);
+            else if (featStr.equals("lt-1")) feats.add(Feature.ltl1);
+            else if (featStr.equals("lt-2")) feats.add(Feature.ltl2);
+            else if (featStr.equals("lt+1")) feats.add(Feature.ltr1);
+            else if (featStr.equals("lt+2")) feats.add(Feature.ltr2);
+            else if (featStr.equals("lt_lt-1")) feats.add(Feature.lt_ltl1);
+            else if (featStr.equals("rt")) feats.add(Feature.rt);
+            else if (featStr.equals("rt-1")) feats.add(Feature.rtl1);
+            else if (featStr.equals("rt-2")) feats.add(Feature.rtl2);
+            else if (featStr.equals("rt+1")) feats.add(Feature.rtr1);
+            else if (featStr.equals("rt+2")) feats.add(Feature.rtr2);
+            else if (featStr.equals("rt_rt+1")) feats.add(Feature.rt_rtr1);
+            else if (featStr.equals("lw")) feats.add(Feature.lw);
+            else if (featStr.equals("lw-1")) feats.add(Feature.lwl1);
+            else if (featStr.equals("lw_lt")) feats.add(Feature.lw_lt);
+            else if (featStr.equals("lw-1_lt-1")) feats.add(Feature.lwl1_ltl1);
+            else if (featStr.equals("rw")) feats.add(Feature.rw);
+            else if (featStr.equals("rw+1")) feats.add(Feature.rwr1);
+            else if (featStr.equals("rw_rt")) feats.add(Feature.rw_rt);
+            else if (featStr.equals("rw+1_rt+1")) feats.add(Feature.rwr1_rtr1);
+            else if (featStr.equals("loc")) feats.add(Feature.Span);
+            else if (featStr.equals("rule")) feats.add(Feature.Rule);
+            else {
+                throw new IllegalArgumentException("ERROR parsing feature template.  Not expecting '" + featStr + "'");
+            }
+        }
+        return feats;
+    }
+    
+    /* @formatter:on */
+
+    public static void printFeatMap(final Grammar gram) {
+        System.out.println("FEAT NULLPOS " + gram.posSet.getIndex(gram.nullSymbol()));
+        System.out.println("FEAT NULLWORD " + gram.nullWord);
+        for (final Short posIndex : gram.posSet) {
+            System.out.println("FEAT POS " + gram.mapNonterminal(posIndex) + " " + gram.posSet.getIndex(posIndex));
+        }
+        for (final String nt : gram.nonTermSet) {
+            System.out.println("FEAT NT " + nt + " " + gram.nonTermSet.getIndex(nt));
+        }
+        for (final String lex : gram.lexSet) {
+            System.out.println("FEAT LEX " + lex + " " + gram.lexSet.getIndex(lex));
+        }
+    }
+
+    public SparseBitVector getEdgeFeatures(final SimpleChartEdge edge) {
+        return getEdgeFeatures(edge.start, edge.mid, edge.end, edge.A, edge.B, edge.C);
+    }
+
+    // TODO: VERY Inefficient!!! Need to move to an integer-based lookup and not use strings.
+    // how to make this compact??? could go over training set and find all instances, then map them
+    // to a list of indicies. Could hash. ...
+    public SparseBitVector getEdgeFeatures(final short start, final short mid, final short end, final short A,
+            final short B, final short C) {
+        // int numFeats = 104729;
+        final IntList featIndices = new IntArrayList(10);
+        int largestFeatIndex = -1;
+
+        // int n=grammar.numNonTerms();
+
+        // for (final Feature f : features) {
+        // switch (f) {
+        // case Rule:
+        final String strRule = String.format("%s%s%s", A, B, C);
+        featIndices.add(featHash.addSymbol(strRule));
+
+        final int leftWord = getWordFeat(start);
+        final int rightWord = getWordFeat(end - 1);
+        final int span = end - start;
+        final String strWordEdge = String.format("%s lw=%s rw=%s s=%s", A, leftWord, rightWord, span);
+        featIndices.add(featHash.addSymbol(strWordEdge));
+
+        // NB: Can only use POS feats of we do 1-best tagging (with POS FOM)
+
+        // final int leftPOS = getPOSFeat(start);
+        // final int rightPOS = getPOSFeat(end - 1);
+        // final String strPOSEdge = String.format("%s lp=%s rp=%s s=%s", A, leftPOS, rightPOS, span);
+        // featIndices.add(featHash.addSymbol(strPOSEdge));
+
+        // final int leftInPOS = getPOSFeat(start + 1);
+        // final int rightInPOS = getPOSFeat(end - 2);
+        // final String strPOSInEdge = String.format("%s lpi=%s rpi=%s s=%s", A, leftInPOS, rightInPOS, span);
+        // featIndices.add(featHash.addSymbol(strPOSInEdge));
+
+        for (final int x : featIndices) {
+            if (x > largestFeatIndex)
+                largestFeatIndex = x;
+        }
+
+        // break;
+        // }
+        // }
+        return new SparseBitVector(largestFeatIndex + 1, featIndices.toIntArray());
+    }
+
+    public SparseBitVector getCellFeatures(final int start, final int end, final List<Feature> features) {
         int numFeats = 0;
         final IntList featIndices = new IntArrayList(10);
 
         final int numTags = grammar.posSet.size();
         final int numWords = grammar.lexSet.size();
 
-        // TODO Create a feature enum. Pre-tokenize the feature template once per sentence into an EnumSet (in
-        // CellSelector.initSentence()) and make this a large switch statement. Should help with
-        // initialization time,
-        // although it's not a huge priority, since that init time is only ~5% of the total time.
+        for (final Feature f : features) {
+            switch (f) {
+            // Left tags
+            case lt:
+                featIndices.add(numFeats + getPOSFeat(start));
+                numFeats += numTags;
+                break;
+            case ltr1:
+                featIndices.add(numFeats + getPOSFeat(start + 1));
+                numFeats += numTags;
+                break;
+            case ltr2:
+                featIndices.add(numFeats + getPOSFeat(start + 2));
+                numFeats += numTags;
+                break;
+            case ltl1:
+                featIndices.add(numFeats + getPOSFeat(start - 1));
+                numFeats += numTags;
+                break;
+            case ltl2:
+                featIndices.add(numFeats + getPOSFeat(start - 2));
+                numFeats += numTags;
+                break;
+            case lt_ltl1:
+                featIndices.add(numFeats + getPOSFeat(start) + numTags * getPOSFeat(start - 1));
+                numFeats += numTags * numTags;
+                break;
+            // Right tags -- to get the last tag inside the constituent, we need to subtract 1
+            case rt:
+                featIndices.add(numFeats + getPOSFeat(end - 1));
+                numFeats += numTags;
+                break;
+            case rtr1:
+                featIndices.add(numFeats + getPOSFeat(end));
+                numFeats += numTags;
+                break;
+            case rtr2:
+                featIndices.add(numFeats + getPOSFeat(end + 1));
+                numFeats += numTags;
+                break;
+            case rtl1:
+                featIndices.add(numFeats + getPOSFeat(end - 2));
+                numFeats += numTags;
+                break;
+            case rtl2:
+                featIndices.add(numFeats + getPOSFeat(end - 3));
+                numFeats += numTags;
+                break;
+            case rt_rtr1:
+                featIndices.add(numFeats + getPOSFeat(end) + numTags * getPOSFeat(end + 1));
+                numFeats += numTags * numTags;
+                break;
+            // Left words
+            case lw:
+                featIndices.add(numFeats + getWordFeat(start));
+                numFeats += numWords;
+                break;
+            case lwl1:
+                featIndices.add(numFeats + getWordFeat(start - 1));
+                numFeats += numWords;
+                break;
+            case lw_lt:
+                featIndices.add(numFeats + getWordFeat(start) + numWords * getPOSFeat(start));
+                numFeats += numWords * numTags;
+                break;
+            case lwl1_ltl1:
+                featIndices.add(numFeats + getWordFeat(start - 1) + numWords * getPOSFeat(start - 1));
+                numFeats += numWords * numTags;
+                break;
+            // Right words
+            case rw:
+                featIndices.add(numFeats + getWordFeat(end - 1));
+                numFeats += numWords;
+                break;
+            case rwr1:
+                featIndices.add(numFeats + getWordFeat(end));
+                numFeats += numWords;
+                break;
+            case rw_rt:
+                featIndices.add(numFeats + getWordFeat(end - 1) + numWords * getPOSFeat(end - 1));
+                numFeats += numWords * numTags;
+                break;
+            case rwr1_rtr1:
+                featIndices.add(numFeats + getWordFeat(end) + numWords * getPOSFeat(end));
+                numFeats += numWords * numTags;
+                break;
+            case Span:
+                final int span = end - start;
+                final int sentLen = parseTask.sentenceLength();
+                for (int i = 1; i <= 5; i++) {
+                    if (span == i) {
+                        featIndices.add(numFeats); // span length 1-5
+                    }
+                    numFeats++;
+                    if (span >= i * 10) {
+                        featIndices.add(numFeats); // span > 10,20,30,40,50
+                    }
+                    numFeats++;
+                    if ((float) span / sentLen >= i / 5.0) {
+                        featIndices.add(numFeats); // relative span width btwn 0 and 1
+                    }
+                    numFeats++;
+                }
+
+                if (span == sentLen) {
+                    featIndices.add(numFeats); // TOP cell
+                }
+                numFeats++;
+                break;
+
+            default:
+                throw new IllegalArgumentException("ERROR parsing Feature list.  Not expecting '" + f + "'");
+            }
+        }
+
+        return new SparseBitVector(numFeats, featIndices.toIntArray());
+    }
+
+    public SparseBitVector getCellFeaturesOld(final int start, final int end, final String[] featureNames) {
+        int numFeats = 0;
+        final IntList featIndices = new IntArrayList(10);
+
+        final int numTags = grammar.posSet.size();
+        final int numWords = grammar.lexSet.size();
+
         for (final String featStr : featureNames) {
 
             // Left tags
@@ -576,7 +813,9 @@ public abstract class Chart {
 
     private int getWordFeat(final int tokIndex) {
         if (tokIndex < 0 || tokIndex >= parseTask.sentenceLength()) {
-            return grammar.mapNonterminal(Grammar.nullSymbolStr);
+            // System.out.println("old=" + grammar.mapNonterminal(Grammar.nullSymbolStr) + " new=" + grammar.nullWord);
+            // return grammar.mapNonterminal(Grammar.nullSymbolStr);
+            return grammar.nullWord;
         }
         return parseTask.tokens[tokIndex];
     }
@@ -588,4 +827,31 @@ public abstract class Chart {
             EnumAliasMap.singleton().addAliases(this, aliases);
         }
     }
+
+    // // Maps all features to a bit value (1,2,4,8,...) This same mapping of all features MUST be used
+    // // for both training and testing, although every feature from this mapping does not need to
+    // // be activated.
+    // public HashMap<String, Integer> mapFeaturStrToBit(String [] allFeatureStrs) {
+    // HashMap<String, Integer> featMap = new HashMap<String, Integer>();
+    // for (int i=0; i<allFeatureStrs.length; i++) {
+    // featMap.put(allFeatureStrs[i], (int)Math.pow(2, i));
+    // }
+    // return featMap;
+    // }
+    //
+    // // This only needs to be computed once per parsing session over then entire corpus. This simply
+    // // maps the feature names to a unique bit vector (int) to facilitate easy training/testing of
+    // // different feature sets.
+    // public int featureStrToBitVector(String[] allFeatureStrs, String[] activeFeatureStrs) {
+    // HashMap<String, Integer> featMap = mapFeaturStrToBit(allFeatureStrs);
+    // int featValue=0;
+    // for (final String featStr : activeFeatureStrs) {
+    // if(featMap.containsKey(featStr)) {
+    // featValue |= featMap.get(featStr);
+    // } else {
+    // throw new IllegalArgumentException("ERROR parsing feature template.  Not expecting '" + featStr + "'");
+    // }
+    // }
+    // return featValue;
+    // }
 }

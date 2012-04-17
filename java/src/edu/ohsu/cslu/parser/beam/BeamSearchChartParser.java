@@ -131,9 +131,9 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         for (final Parser.ReparseStrategy.Stage stage : opts.reparseStrategy.stages()) {
 
             // This parser only implements beam-doubling, so ignore any other reparsing stages
-            if (stage != Parser.ReparseStrategy.Stage.DOUBLE) {
-                continue;
-            }
+            // if (stage != Parser.ReparseStrategy.Stage.DOUBLE) {
+            // continue;
+            // }
 
             updateBeamParams(parseTask);
             while (cellSelector.hasNext()) {

@@ -26,7 +26,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.zip.GZIPInputStream;
+
+import cltool4j.BaseLogger;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.datastructs.narytree.Tree;
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.parser.chart.Chart.SimpleChartEdge;
 
 public class Util {
 
@@ -185,5 +192,64 @@ public class Util {
 
     public static HashMap<String, String> readKeyValuePairs(final String line) {
         return readKeyValuePairs(line, "=");
+    }
+
+    public static Collection<SimpleChartEdge> getEdgesFromTree(final BinaryTree<String> tree, final Grammar grammar) {
+        return getEdgesFromTree(tree, grammar, false);
+    }
+
+    public static Collection<SimpleChartEdge> getEdgesFromTree(final BinaryTree<String> tree, final Grammar grammar,
+            final boolean includeLeaves) {
+
+        final Collection<SimpleChartEdge> edgeList = new LinkedList<SimpleChartEdge>();
+        final LinkedList<Tree<String>> lexLeaves = new LinkedList<Tree<String>>();
+        for (final Tree<String> leaf : tree.leafTraversal()) {
+            lexLeaves.add(leaf);
+        }
+
+        for (final BinaryTree<String> node : tree.preOrderTraversal()) {
+            if (node.isLeaf())
+                continue;
+            if (!includeLeaves && node.children().get(0).isLeaf()) {
+                continue;
+            }
+            final SimpleChartEdge edge = new SimpleChartEdge();
+            edge.start = (short) lexLeaves.indexOf(node.leftmostLeaf());
+            edge.end = (short) (lexLeaves.indexOf(node.rightmostLeaf()) + 1);
+            if (node.children().size() == 2) {
+                edge.mid = (short) (lexLeaves.indexOf(node.children().get(0).rightmostLeaf()) + 1);
+            }
+
+            final String A = node.label(), B = node.children().get(0).label();
+            if (node.children().size() == 2) {
+                final String C = node.children().get(1).label();
+                System.out.println("Looking at " + A + " => " + B + " " + C + " prob="
+                        + grammar.binaryLogProbability(A, B, C));
+                System.out.println("A=" + grammar.nonTermSet.getIndex(A) + " B=" + grammar.nonTermSet.getIndex(B)
+                        + " C=" + grammar.nonTermSet.getIndex(C));
+                if (grammar.binaryLogProbability(A, B, C) <= Float.NEGATIVE_INFINITY) {
+                    BaseLogger.singleton().fine(
+                            "IGNORING binary edge not in grammar: [" + edge.start + "," + edge.mid + "," + edge.end
+                                    + "] " + A + " => " + B + " " + C);
+                } else {
+                    edge.A = grammar.mapNonterminal(A);
+                    edge.B = grammar.mapNonterminal(B);
+                    edge.C = grammar.mapNonterminal(C);
+                }
+            } else {
+                if (grammar.unaryLogProbability(A, B) <= Float.NEGATIVE_INFINITY) {
+                    BaseLogger.singleton().fine(
+                            "IGNORING unary edge not in grammar: [" + edge.start + ",-1," + edge.end + "] " + A
+                                    + " => " + B);
+                } else {
+                    edge.A = grammar.mapNonterminal(A);
+                    edge.B = grammar.mapNonterminal(B);
+                }
+            }
+            if (edge.A != -1) {
+                edgeList.add(edge);
+            }
+        }
+        return edgeList;
     }
 }

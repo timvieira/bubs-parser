@@ -78,6 +78,7 @@ import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.chart.CellChart;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHash;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop;
@@ -89,7 +90,6 @@ import edu.ohsu.cslu.parser.ecp.ECPGrammarLoopBerkFilter;
 import edu.ohsu.cslu.parser.ecp.ECPInsideOutside;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.BoundaryLex;
-import edu.ohsu.cslu.parser.fom.DiscriminativeFOM;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.fom.InsideProb;
@@ -210,6 +210,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-help-long", usage = "List all research parsers and options")
     public boolean longHelp = false;
 
+    @Option(name = "-debug", hidden = true, usage = "Exit on error with trace")
+    public boolean debug = false;
+
+    @Option(name = "-printFeatMap", hidden = true, usage = "Write lex/pos/nt feature strings and indicies for beam-width prediction and disc FOM to stdout.  Note this mapping must be identical for training and testing.")
+    public boolean printFeatMap = false;
+
     // corpus stats
     private long parseStartTime;
     private volatile int sentencesParsed = 0, wordsParsed = 0, failedParses = 0, reparsedSentences = 0,
@@ -302,6 +308,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         } else {
             this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType, packingFunctionType);
 
+            if (printFeatMap) {
+                Chart.printFeatMap(grammar);
+                System.exit(1);
+            }
+
             if (fomTypeOrModel.equals("Inside")) {
                 fomModel = new InsideProb();
             } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
@@ -317,10 +328,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                     throw new IllegalArgumentException(
                             "FOM model file has unexpected format.  Looking for 'model=' in first line.");
                 }
-                if (keyValue.get("model").equals("LogisticRegressor")) {
+                if (keyValue.get("model").equals("DiscriminativeFOM")) {
                     // Discriminative FOM
-                    fomModel = new DiscriminativeFOM(FOMType.Discriminative, grammar,
-                            fileAsBufferedReader(fomTypeOrModel));
+                    // fomModel = new DiscriminativeFOMLR(FOMType.Discriminative, grammar,
+                    // fileAsBufferedReader(fomTypeOrModel));
                 } else if (keyValue.get("model").equals("FOM") && keyValue.containsKey("type")) {
                     if (keyValue.get("type").equals("BoundaryInOut")) {
                         // BoundaryInOut FOM
@@ -593,6 +604,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
             @Override
             public ParseTask call() throws Exception {
+                if (debug) {
+                    return getLocal().parseSentence(input, recoveryStrategy);
+                }
                 try {
                     return getLocal().parseSentence(input, recoveryStrategy);
                 } catch (final Exception e) {

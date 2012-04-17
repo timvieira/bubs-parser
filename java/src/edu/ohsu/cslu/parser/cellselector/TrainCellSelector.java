@@ -6,7 +6,9 @@ public class TrainCellSelector extends BaseCommandlineTool {
 
     @Override
     protected void run() throws Exception {
-        // TODO Auto-generated method stub
+        // Moved to edu.ohsu.cslu.parser.beam.BSCPBeamConfTrain.java
+        // In general, the trainers just output features that can then be used to
+        // separately train a perceptron/avg perceptron/etc model
 
     }
     /*
