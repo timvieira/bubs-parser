@@ -404,21 +404,21 @@ public class ListGrammar extends Grammar {
      */
     private void initLexicalProbabilitiesFromStringProductions(final Collection<StringProduction> lexicalRules) {
         @SuppressWarnings("unchecked")
-        final LinkedList<StringProduction>[] lexicalProdsByChild = new LinkedList[lexSet.size()];
+        final LinkedList<StringProduction>[] tmpLexicalProdsByChild = new LinkedList[lexSet.size()];
 
-        for (int i = 0; i < lexicalProdsByChild.length; i++) {
-            lexicalProdsByChild[i] = new LinkedList<StringProduction>();
+        for (int i = 0; i < tmpLexicalProdsByChild.length; i++) {
+            tmpLexicalProdsByChild[i] = new LinkedList<StringProduction>();
         }
 
         for (final StringProduction p : lexicalRules) {
-            lexicalProdsByChild[lexSet.getIndex(p.leftChild)].add(p);
+            tmpLexicalProdsByChild[lexSet.getIndex(p.leftChild)].add(p);
         }
 
-        for (int child = 0; child < lexicalProdsByChild.length; child++) {
-            lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
-            lexicalLogProbabilities[child] = new float[lexicalProdsByChild[child].size()];
+        for (int child = 0; child < tmpLexicalProdsByChild.length; child++) {
+            lexicalParents[child] = new short[tmpLexicalProdsByChild[child].size()];
+            lexicalLogProbabilities[child] = new float[tmpLexicalProdsByChild[child].size()];
             int j = 0;
-            for (final StringProduction p : lexicalProdsByChild[child]) {
+            for (final StringProduction p : tmpLexicalProdsByChild[child]) {
                 lexicalParents[child][j] = (short) nonTermSet.getIndex(p.parent);
                 lexicalLogProbabilities[child][j++] = p.probability;
             }
@@ -430,21 +430,21 @@ public class ListGrammar extends Grammar {
      */
     private void initLexicalProbabilitiesFromProductions(final Collection<Production> lexicalRules) {
         @SuppressWarnings("unchecked")
-        final LinkedList<Production>[] lexicalProdsByChild = new LinkedList[lexSet.size()];
+        final LinkedList<Production>[] tmpLexicalProdsByChild = new LinkedList[lexSet.size()];
 
-        for (int i = 0; i < lexicalProdsByChild.length; i++) {
-            lexicalProdsByChild[i] = new LinkedList<Production>();
+        for (int i = 0; i < tmpLexicalProdsByChild.length; i++) {
+            tmpLexicalProdsByChild[i] = new LinkedList<Production>();
         }
 
         for (final Production p : lexicalRules) {
-            lexicalProdsByChild[p.leftChild].add(p);
+            tmpLexicalProdsByChild[p.leftChild].add(p);
         }
 
-        for (int child = 0; child < lexicalProdsByChild.length; child++) {
-            lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
-            lexicalLogProbabilities[child] = new float[lexicalProdsByChild[child].size()];
+        for (int child = 0; child < tmpLexicalProdsByChild.length; child++) {
+            lexicalParents[child] = new short[tmpLexicalProdsByChild[child].size()];
+            lexicalLogProbabilities[child] = new float[tmpLexicalProdsByChild[child].size()];
             int j = 0;
-            for (final Production p : lexicalProdsByChild[child]) {
+            for (final Production p : tmpLexicalProdsByChild[child]) {
                 lexicalParents[child][j] = (short) p.parent;
                 lexicalLogProbabilities[child][j++] = p.prob;
             }
