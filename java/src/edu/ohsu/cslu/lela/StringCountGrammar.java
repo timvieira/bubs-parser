@@ -19,8 +19,8 @@
 package edu.ohsu.cslu.lela;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -54,17 +53,21 @@ public final class StringCountGrammar implements CountGrammar {
      * non-terminals which don't occur as binary parents. And we may be able to save execution time by sorting other
      * data structures according to frequency counts.
      */
-    final Object2IntMap<String> binaryParentCounts = new Object2IntOpenHashMap<String>();
+    final Object2FloatMap<String> binaryParentCounts = new Object2FloatOpenHashMap<String>();
 
     /** Occurrence counts for each non-terminal which occurs as a unary parent. */
-    final Object2IntMap<String> unaryParentCounts = new Object2IntOpenHashMap<String>();
+    final Object2FloatMap<String> unaryParentCounts = new Object2FloatOpenHashMap<String>();
 
     /** Occurrence counts for each non-terminal which occurs as a lexical parent. */
-    final Object2IntMap<String> lexicalParentCounts = new Object2IntOpenHashMap<String>();
+    final Object2FloatMap<String> lexicalParentCounts = new Object2FloatOpenHashMap<String>();
 
-    private final HashMap<String, HashMap<String, Object2IntMap<String>>> binaryRuleCounts = new HashMap<String, HashMap<String, Object2IntMap<String>>>();
-    private final HashMap<String, Object2IntMap<String>> unaryRuleCounts = new HashMap<String, Object2IntMap<String>>();
-    private final HashMap<String, Object2IntMap<String>> lexicalRuleCounts = new HashMap<String, Object2IntMap<String>>();
+    private final HashMap<String, HashMap<String, Object2FloatMap<String>>> binaryRuleCounts = new HashMap<String, HashMap<String, Object2FloatMap<String>>>();
+    private final HashMap<String, Object2FloatMap<String>> unaryRuleCounts = new HashMap<String, Object2FloatMap<String>>();
+    private final HashMap<String, Object2FloatMap<String>> lexicalRuleCounts = new HashMap<String, Object2FloatMap<String>>();
+
+    private float totalBinaryRuleCounts;
+    private float totalUnaryRuleCounts;
+    private float totalLexicalRuleCounts;
 
     private int binaryRules;
     private int unaryRules;
@@ -73,7 +76,7 @@ public final class StringCountGrammar implements CountGrammar {
     String startSymbol;
 
     private final LinkedHashSet<String> observedNonTerminals = new LinkedHashSet<String>();
-    private final Object2IntOpenHashMap<String> lexicalEntryOccurrences = new Object2IntOpenHashMap<String>();
+    private final Object2FloatOpenHashMap<String> lexicalEntryOccurrences = new Object2FloatOpenHashMap<String>();
 
     /**
      * Induces a grammar from a treebank, formatted in standard Penn-Treebank format, one bracketed sentence per line.
@@ -95,22 +98,24 @@ public final class StringCountGrammar implements CountGrammar {
         // maps after collapsing unknown words in the lexicon
 
         final BufferedReader br = new BufferedReader(reader);
-        LinkedList<BinaryTree<String>> trees = new LinkedList<BinaryTree<String>>();
-        final SymbolSet<String> knownWords = new SymbolSet<String>();
 
         // Get word counts from corpus
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             BinaryTree<String> tree;
+
+            // Skip empty trees
+            if (line.equals("()") || line.equals("")) {
+                continue;
+            }
+
             if (binarization == null) {
                 tree = BinaryTree.read(line, String.class);
             } else {
                 tree = NaryTree.read(line, String.class).binarize(grammarFormatType, binarization);
             }
-            trees.add(tree);
 
             if (startSymbol == null) {
-                startSymbol = tree.label();
-                observedNonTerminals.add(startSymbol);
+                setStartSymbol(tree.label());
             }
 
             for (final BinaryTree<String> node : tree.inOrderTraversal()) {
@@ -120,47 +125,48 @@ public final class StringCountGrammar implements CountGrammar {
                 }
 
                 final String parent = node.label().intern();
-                observedNonTerminals.add(parent);
                 final String leftChild = node.leftChild().label().intern();
 
                 if (node.rightChild() != null) {
                     // Binary rule
                     final String rightChild = node.rightChild().label().intern();
-                    observedNonTerminals.add(leftChild);
-                    observedNonTerminals.add(rightChild);
-                    incrementBinaryCount(parent, leftChild, rightChild);
+                    incrementBinaryCount(parent, leftChild, rightChild, 1);
 
                 } else {
                     if (node.leftChild().isLeaf()) {
                         // Lexical rule
-                        incrementLexicalCount(parent, leftChild);
-                        lexicalEntryOccurrences.put(leftChild, lexicalEntryOccurrences.getInt(leftChild) + 1);
-                        knownWords.addSymbol(leftChild);
+                        incrementLexicalCount(parent, leftChild, 1);
                     } else {
                         // Unary rule
-                        incrementUnaryCount(parent, leftChild);
-                        observedNonTerminals.add(leftChild);
+                        incrementUnaryCount(parent, leftChild, 1);
                     }
                 }
             }
         }
-
-        trees = null;
     }
 
-    private void incrementBinaryCount(final String parent, final String leftChild, final String rightChild) {
+    public void setStartSymbol(final String startSymbol) {
+        this.startSymbol = startSymbol;
+        observedNonTerminals.add(startSymbol);
+    }
 
-        binaryParentCounts.put(parent, binaryParentCounts.getInt(parent) + 1);
+    void incrementBinaryCount(final String parent, final String leftChild, final String rightChild,
+            final float increment) {
 
-        HashMap<String, Object2IntMap<String>> leftChildMap = binaryRuleCounts.get(parent);
+        observedNonTerminals.add(parent);
+        observedNonTerminals.add(leftChild);
+        observedNonTerminals.add(rightChild);
+        binaryParentCounts.put(parent, binaryParentCounts.getFloat(parent) + increment);
+
+        HashMap<String, Object2FloatMap<String>> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {
-            leftChildMap = new HashMap<String, Object2IntMap<String>>();
+            leftChildMap = new HashMap<String, Object2FloatMap<String>>();
             binaryRuleCounts.put(parent, leftChildMap);
         }
 
-        Object2IntMap<String> rightChildMap = leftChildMap.get(leftChild);
+        Object2FloatMap<String> rightChildMap = leftChildMap.get(leftChild);
         if (rightChildMap == null) {
-            rightChildMap = new Object2IntOpenHashMap<String>();
+            rightChildMap = new Object2FloatOpenHashMap<String>();
             leftChildMap.put(leftChild, rightChildMap);
         }
 
@@ -168,16 +174,19 @@ public final class StringCountGrammar implements CountGrammar {
             binaryRules++;
         }
 
-        rightChildMap.put(rightChild, rightChildMap.getInt(rightChild) + 1);
+        rightChildMap.put(rightChild, rightChildMap.getFloat(rightChild) + increment);
+        totalBinaryRuleCounts += increment;
     }
 
-    private void incrementUnaryCount(final String parent, final String child) {
+    void incrementUnaryCount(final String parent, final String child, final float increment) {
 
-        unaryParentCounts.put(parent, unaryParentCounts.getInt(parent) + 1);
+        observedNonTerminals.add(parent);
+        observedNonTerminals.add(child);
+        unaryParentCounts.put(parent, unaryParentCounts.getFloat(parent) + increment);
 
-        Object2IntMap<String> childMap = unaryRuleCounts.get(parent);
+        Object2FloatMap<String> childMap = unaryRuleCounts.get(parent);
         if (childMap == null) {
-            childMap = new Object2IntOpenHashMap<String>();
+            childMap = new Object2FloatOpenHashMap<String>();
             unaryRuleCounts.put(parent, childMap);
         }
 
@@ -185,16 +194,19 @@ public final class StringCountGrammar implements CountGrammar {
             unaryRules++;
         }
 
-        childMap.put(child, childMap.getInt(child) + 1);
+        childMap.put(child, childMap.getFloat(child) + increment);
+        totalUnaryRuleCounts += increment;
     }
 
-    private void incrementLexicalCount(final String parent, final String child) {
+    void incrementLexicalCount(final String parent, final String child, final float increment) {
 
-        lexicalParentCounts.put(parent, lexicalParentCounts.getInt(parent) + 1);
+        observedNonTerminals.add(parent);
+        lexicalEntryOccurrences.put(child, lexicalEntryOccurrences.getFloat(child) + increment);
+        lexicalParentCounts.put(parent, lexicalParentCounts.getFloat(parent) + increment);
 
-        Object2IntMap<String> childMap = lexicalRuleCounts.get(parent);
+        Object2FloatMap<String> childMap = lexicalRuleCounts.get(parent);
         if (childMap == null) {
-            childMap = new Object2IntOpenHashMap<String>();
+            childMap = new Object2FloatOpenHashMap<String>();
             lexicalRuleCounts.put(parent, childMap);
         }
 
@@ -202,45 +214,46 @@ public final class StringCountGrammar implements CountGrammar {
             lexicalRules++;
         }
 
-        childMap.put(child, childMap.getInt(child) + 1);
+        childMap.put(child, childMap.getFloat(child) + increment);
+        totalLexicalRuleCounts += increment;
     }
 
     @Override
     public final double binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
 
-        final HashMap<String, Object2IntMap<String>> leftChildMap = binaryRuleCounts.get(parent);
+        final HashMap<String, Object2FloatMap<String>> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {
             return 0;
         }
 
-        final Object2IntMap<String> rightChildMap = leftChildMap.get(leftChild);
+        final Object2FloatMap<String> rightChildMap = leftChildMap.get(leftChild);
         if (rightChildMap == null) {
             return 0;
         }
 
-        return rightChildMap.getInt(rightChild);
+        return rightChildMap.getFloat(rightChild);
     }
 
     @Override
     public final double unaryRuleObservations(final String parent, final String child) {
 
-        final Object2IntMap<String> childMap = unaryRuleCounts.get(parent);
+        final Object2FloatMap<String> childMap = unaryRuleCounts.get(parent);
         if (childMap == null) {
             return 0;
         }
 
-        return childMap.getInt(child);
+        return childMap.getFloat(child);
     }
 
     @Override
     public final double lexicalRuleObservations(final String parent, final String child) {
 
-        final Object2IntMap<String> childMap = lexicalRuleCounts.get(parent);
+        final Object2FloatMap<String> childMap = lexicalRuleCounts.get(parent);
         if (childMap == null) {
             return 0;
         }
 
-        return childMap.getInt(child);
+        return childMap.getFloat(child);
     }
 
     /**
@@ -272,34 +285,34 @@ public final class StringCountGrammar implements CountGrammar {
         final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null);
 
         for (final String parent : binaryRuleCounts.keySet()) {
-            final HashMap<String, Object2IntMap<String>> leftChildMap = binaryRuleCounts.get(parent);
+            final HashMap<String, Object2FloatMap<String>> leftChildMap = binaryRuleCounts.get(parent);
 
             for (final String leftChild : leftChildMap.keySet()) {
-                final Object2IntMap<String> rightChildMap = leftChildMap.get(leftChild);
+                final Object2FloatMap<String> rightChildMap = leftChildMap.get(leftChild);
 
                 for (final String rightChild : rightChildMap.keySet()) {
                     fcg.incrementBinaryCount((short) vocabulary.getIndex(parent),
                             (short) vocabulary.getIndex(leftChild), (short) vocabulary.getIndex(rightChild),
-                            rightChildMap.getInt(rightChild));
+                            rightChildMap.getFloat(rightChild));
                 }
             }
         }
 
         for (final String parent : unaryRuleCounts.keySet()) {
-            final Object2IntMap<String> childMap = unaryRuleCounts.get(parent);
+            final Object2FloatMap<String> childMap = unaryRuleCounts.get(parent);
 
             for (final String child : childMap.keySet()) {
                 fcg.incrementUnaryCount((short) vocabulary.getIndex(parent), (short) vocabulary.getIndex(child),
-                        childMap.getInt(child));
+                        childMap.getFloat(child));
             }
         }
 
         for (final String parent : lexicalRuleCounts.keySet()) {
-            final Object2IntMap<String> childMap = lexicalRuleCounts.get(parent);
+            final Object2FloatMap<String> childMap = lexicalRuleCounts.get(parent);
 
             for (final String child : childMap.keySet()) {
                 fcg.incrementLexicalCount((short) vocabulary.getIndex(parent), lexicon.getIndex(child),
-                        childMap.getInt(child));
+                        childMap.getFloat(child));
             }
         }
 
@@ -318,7 +331,7 @@ public final class StringCountGrammar implements CountGrammar {
                 continue;
             }
 
-            final HashMap<String, Object2IntMap<String>> leftChildMap = binaryRuleCounts.get(sParent);
+            final HashMap<String, Object2FloatMap<String>> leftChildMap = binaryRuleCounts.get(sParent);
 
             for (short leftChild = 0; leftChild < vocabulary.size(); leftChild++) {
                 final String sLeftChild = vocabulary.getSymbol(leftChild);
@@ -326,7 +339,7 @@ public final class StringCountGrammar implements CountGrammar {
                     continue;
                 }
 
-                final Object2IntMap<String> rightChildMap = leftChildMap.get(sLeftChild);
+                final Object2FloatMap<String> rightChildMap = leftChildMap.get(sLeftChild);
 
                 for (short rightChild = 0; rightChild < vocabulary.size(); rightChild++) {
                     final String sRightChild = vocabulary.getSymbol(rightChild);
@@ -356,7 +369,7 @@ public final class StringCountGrammar implements CountGrammar {
                 continue;
             }
 
-            final Object2IntMap<String> childMap = unaryRuleCounts.get(sParent);
+            final Object2FloatMap<String> childMap = unaryRuleCounts.get(sParent);
 
             for (short child = 0; child < vocabulary.size(); child++) {
                 final String sChild = vocabulary.getSymbol(child);
@@ -389,7 +402,7 @@ public final class StringCountGrammar implements CountGrammar {
                 continue;
             }
 
-            final Object2IntMap<String> childMap = lexicalRuleCounts.get(sParent);
+            final Object2FloatMap<String> childMap = lexicalRuleCounts.get(sParent);
 
             for (int child = 0; child < lexicon.size(); child++) {
                 final String sChild = lexicon.getSymbol(child);
@@ -413,11 +426,11 @@ public final class StringCountGrammar implements CountGrammar {
 
         for (final String parent : lexicalRuleCounts.keySet()) {
 
-            final Object2IntMap<String> childMap = lexicalRuleCounts.get(parent);
+            final Object2FloatMap<String> childMap = lexicalRuleCounts.get(parent);
 
             for (final String word : childMap.keySet()) {
                 final int index = lexicon.getIndex(word);
-                wordCounts.put(index, wordCounts.get(index) + childMap.getInt(word));
+                wordCounts.put(index, wordCounts.get(index) + Math.round(childMap.getFloat(word)));
             }
         }
         return wordCounts;
@@ -439,8 +452,8 @@ public final class StringCountGrammar implements CountGrammar {
                     return 1;
                 }
 
-                final int count1 = binaryParentCounts.getInt(o1);
-                final int count2 = binaryParentCounts.getInt(o2);
+                final float count1 = binaryParentCounts.getFloat(o1);
+                final float count2 = binaryParentCounts.getFloat(o2);
                 if (count1 > count2) {
                     return -1;
                 } else if (count1 < count2) {
@@ -471,20 +484,24 @@ public final class StringCountGrammar implements CountGrammar {
         return lexicalRules;
     }
 
+    public float totalRuleCounts() {
+        return totalBinaryRuleCounts + totalUnaryRuleCounts + totalLexicalRuleCounts;
+    }
+
     @Override
     public final double observations(final String parent) {
         int count = 0;
 
         if (binaryRuleCounts.containsKey(parent)) {
-            count += binaryParentCounts.getInt(parent);
+            count += binaryParentCounts.getFloat(parent);
         }
 
         if (unaryRuleCounts.containsKey(parent)) {
-            count += unaryParentCounts.getInt(parent);
+            count += unaryParentCounts.getFloat(parent);
         }
 
         if (lexicalRuleCounts.containsKey(parent)) {
-            count += lexicalParentCounts.getInt(parent);
+            count += lexicalParentCounts.getFloat(parent);
         }
 
         return count;

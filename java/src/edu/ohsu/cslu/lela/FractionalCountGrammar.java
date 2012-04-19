@@ -25,13 +25,16 @@ import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import edu.ohsu.cslu.grammar.Grammar;
@@ -1118,44 +1121,30 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
     public String toString(final boolean fraction, final Language language, final GrammarFormatType grammarFormatType,
             final int lexicalUnkThreshold) {
-        final TreeSet<String> binaryRules = new TreeSet<String>();
-        for (final Production p : binaryProductions(Float.NEGATIVE_INFINITY)) {
-            if (fraction) {
-                binaryRules.add(String.format("%s -> %s %s %s", vocabulary.getSymbol(p.parent),
-                        vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), JUnit.fraction(p.prob)));
-            } else {
-                binaryRules.add(String.format("%s -> %s %s %.4f", vocabulary.getSymbol(p.parent),
-                        vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), p.prob));
-            }
+        try {
+            final StringWriter w = new StringWriter(totalRules() * 20);
+            write(new PrintWriter(w), fraction, language, grammarFormatType, lexicalUnkThreshold);
+            return w.toString();
+        } catch (final IOException e) {
+            // StringWriter should never IOException
+            return null;
         }
+    }
 
-        final TreeSet<String> unaryRules = new TreeSet<String>();
-        for (final Production p : unaryProductions(Float.NEGATIVE_INFINITY)) {
-            if (fraction) {
-                unaryRules.add(String.format("%s -> %s %s", vocabulary.getSymbol(p.parent),
-                        vocabulary.getSymbol(p.leftChild), JUnit.fraction(p.prob)));
-            } else {
-                unaryRules.add(String.format("%s -> %s %.4f", vocabulary.getSymbol(p.parent),
-                        vocabulary.getSymbol(p.leftChild), p.prob));
-            }
-        }
+    public void write(final PrintWriter writer, final boolean fraction, final Language language,
+            final GrammarFormatType grammarFormatType, final int lexicalUnkThreshold) throws IOException {
 
-        final TreeSet<String> lexicalRules = new TreeSet<String>();
-        for (final Production p : lexicalProductions(Float.NEGATIVE_INFINITY)) {
-            if (fraction) {
-                lexicalRules.add(String.format("%s -> %s %s", vocabulary.getSymbol(p.parent),
-                        lexicon.getSymbol(p.leftChild), JUnit.fraction(p.prob)));
-            } else {
-                lexicalRules.add(String.format("%s -> %s %.4f", vocabulary.getSymbol(p.parent),
-                        lexicon.getSymbol(p.leftChild), p.prob));
-            }
-        }
+        final BufferedWriter bw = new BufferedWriter(writer);
 
         // TODO Consolidate into base Grammar class
         final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
         final String dateNowStr = dateFormat.format(new Date());
 
-        final StringBuilder sb = new StringBuilder(1024);
+        final int nBinary = binaryRules();
+        final int nUnary = unaryRules();
+        final int nLex = lexicalRules();
+
+        final StringBuilder sb = new StringBuilder(256);
         sb.append("lang=" + (language != null ? language : "UNK"));
         sb.append(" format=" + grammarFormatType);
         sb.append(" unkThresh=" + lexicalUnkThreshold);
@@ -1164,22 +1153,41 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         sb.append(" vMarkov=UNK");
         sb.append(" date=" + dateNowStr);
         sb.append(" vocabSize=" + vocabulary.size());
-        sb.append(" nBinary=" + binaryRules.size());
-        sb.append(" nUnary=" + unaryRules.size());
-        sb.append(" nLex=" + lexicalRules.size());
+        sb.append(" nBinary=" + nBinary);
+        sb.append(" nUnary=" + nUnary);
+        sb.append(" nLex=" + nLex);
         sb.append("\n");
+        bw.write(sb.toString());
 
-        for (final String rule : binaryRules) {
-            sb.append(rule + '\n');
-        }
-        for (final String rule : unaryRules) {
-            sb.append(rule + '\n');
+        for (final Production p : binaryProductions(Float.NEGATIVE_INFINITY)) {
+            if (fraction) {
+                bw.write(String.format("%s -> %s %s %s\n", vocabulary.getSymbol(p.parent),
+                        vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), JUnit.fraction(p.prob)));
+            } else {
+                bw.write(String.format("%s -> %s %s %.4f\n", vocabulary.getSymbol(p.parent),
+                        vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), p.prob));
+            }
         }
 
-        sb.append(Grammar.LEXICON_DELIMITER + '\n');
-        for (final String rule : lexicalRules) {
-            sb.append(rule + '\n');
+        for (final Production p : unaryProductions(Float.NEGATIVE_INFINITY)) {
+            if (fraction) {
+                bw.write(String.format("%s -> %s %s\n", vocabulary.getSymbol(p.parent),
+                        vocabulary.getSymbol(p.leftChild), JUnit.fraction(p.prob)));
+            } else {
+                bw.write(String.format("%s -> %s %.4f\n", vocabulary.getSymbol(p.parent),
+                        vocabulary.getSymbol(p.leftChild), p.prob));
+            }
         }
-        return sb.toString();
+
+        bw.write(Grammar.LEXICON_DELIMITER + '\n');
+        for (final Production p : lexicalProductions(Float.NEGATIVE_INFINITY)) {
+            if (fraction) {
+                bw.write(String.format("%s -> %s %s\n", vocabulary.getSymbol(p.parent), lexicon.getSymbol(p.leftChild),
+                        JUnit.fraction(p.prob)));
+            } else {
+                bw.write(String.format("%s -> %s %.4f\n", vocabulary.getSymbol(p.parent),
+                        lexicon.getSymbol(p.leftChild), p.prob));
+            }
+        }
     }
 }
