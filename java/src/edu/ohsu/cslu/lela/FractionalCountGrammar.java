@@ -1189,5 +1189,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
                         lexicon.getSymbol(p.leftChild), p.prob));
             }
         }
+        bw.flush();
     }
 }
