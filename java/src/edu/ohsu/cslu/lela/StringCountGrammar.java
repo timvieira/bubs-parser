@@ -101,45 +101,50 @@ public final class StringCountGrammar implements CountGrammar {
 
         // Get word counts from corpus
         for (String line = br.readLine(); line != null; line = br.readLine()) {
-            BinaryTree<String> tree;
+            readLine(line, binarization, grammarFormatType, 1);
+        }
+    }
 
-            // Skip empty trees
-            if (line.equals("()") || line.equals("")) {
+    public void readLine(final String line, final Binarization binarization, final GrammarFormatType grammarFormatType,
+            final float increment) {
+        BinaryTree<String> tree;
+
+        // Skip empty trees
+        if (line.equals("()") || line.equals("")) {
+            return;
+        }
+
+        if (binarization == null) {
+            tree = BinaryTree.read(line, String.class);
+        } else {
+            tree = NaryTree.read(line, String.class).binarize(grammarFormatType, binarization);
+        }
+
+        if (startSymbol == null) {
+            setStartSymbol(tree.label());
+        }
+
+        for (final BinaryTree<String> node : tree.inOrderTraversal()) {
+            // Skip leaf nodes - only internal nodes are parents
+            if (node.isLeaf()) {
                 continue;
             }
 
-            if (binarization == null) {
-                tree = BinaryTree.read(line, String.class);
+            final String parent = node.label().intern();
+            final String leftChild = node.leftChild().label().intern();
+
+            if (node.rightChild() != null) {
+                // Binary rule
+                final String rightChild = node.rightChild().label().intern();
+                incrementBinaryCount(parent, leftChild, rightChild, increment);
+
             } else {
-                tree = NaryTree.read(line, String.class).binarize(grammarFormatType, binarization);
-            }
-
-            if (startSymbol == null) {
-                setStartSymbol(tree.label());
-            }
-
-            for (final BinaryTree<String> node : tree.inOrderTraversal()) {
-                // Skip leaf nodes - only internal nodes are parents
-                if (node.isLeaf()) {
-                    continue;
-                }
-
-                final String parent = node.label().intern();
-                final String leftChild = node.leftChild().label().intern();
-
-                if (node.rightChild() != null) {
-                    // Binary rule
-                    final String rightChild = node.rightChild().label().intern();
-                    incrementBinaryCount(parent, leftChild, rightChild, 1);
-
+                if (node.leftChild().isLeaf()) {
+                    // Lexical rule
+                    incrementLexicalCount(parent, leftChild, increment);
                 } else {
-                    if (node.leftChild().isLeaf()) {
-                        // Lexical rule
-                        incrementLexicalCount(parent, leftChild, 1);
-                    } else {
-                        // Unary rule
-                        incrementUnaryCount(parent, leftChild, 1);
-                    }
+                    // Unary rule
+                    incrementUnaryCount(parent, leftChild, increment);
                 }
             }
         }

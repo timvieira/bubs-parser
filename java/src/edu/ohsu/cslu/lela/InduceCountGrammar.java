@@ -45,6 +45,9 @@ import edu.ohsu.cslu.parser.Util;
  */
 public class InduceCountGrammar extends BaseCommandlineTool {
 
+    @Option(name = "-u", metaVar = "file,weight", usage = "Tree file which should be upweighted relative to other counts (filename,weight e.g. foo.trees,2)")
+    private String[] upweightedFiles;
+
     @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Grammar Format; required if binarization is specified")
     private GrammarFormatType grammarFormatType = GrammarFormatType.Berkeley;
 
@@ -72,6 +75,18 @@ public class InduceCountGrammar extends BaseCommandlineTool {
         // Induce grammar from training corpus
         final StringCountGrammar scg = new StringCountGrammar(new BufferedReader(new InputStreamReader(System.in)),
                 binarization, grammarFormatType);
+
+        // Incorporate upweighted files (if supplied)
+        if (upweightedFiles != null) {
+            for (final String f : upweightedFiles) {
+                final String[] split = f.split(",");
+                final int increment = split.length > 1 ? Integer.parseInt(split[1]) : 1;
+                final BufferedReader br = new BufferedReader(new FileReader(split[0]));
+                for (String line = br.readLine(); line != null; line = br.readLine()) {
+                    scg.readLine(line, binarization, grammarFormatType, increment);
+                }
+            }
+        }
 
         final float corpusCounts = scg.totalRuleCounts();
 
