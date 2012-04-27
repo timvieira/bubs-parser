@@ -32,24 +32,35 @@ import edu.ohsu.cslu.parser.Util;
  * Represents an averaged perceptron (see Collins, 2002). The model should be trained with
  * {@link #train(int, SparseBitVector)}, and applied with {@link #classify(Vector)}.
  * 
- * NOTE: clients are responsible to include their own bias feature in the training and testing instances,
- * meaning that there is a single feature which is always on (value=1) for all instances.
+ * NOTE: clients are responsible to include their own bias feature in the training and testing instances, meaning that
+ * there is a single feature which is always on (value=1) for all instances.
  * 
  * @author Aaron Dunlop, Nathan Bodenstab
  * @since Oct 12, 2010
  */
 public class AveragedPerceptron extends Perceptron {
 
+    private static final long serialVersionUID = 1L;
+
     private FloatVector[] avgWeights = null;
-    private IntVector lastAveraged; // same for every model since we update all at once
+    private IntVector lastAveraged = null; // same for every model since we update all at once
     private int lastExampleAllUpdated = 0;
 
     public AveragedPerceptron() {
         this(0.1f, new ZeroOneLoss(), "0", null, null);
     }
 
-    public AveragedPerceptron(final float learningRate, final LossFunction lossFunction,
-            final String binsStr, final String featureTemplate, final float[] initialWeights) {
+    public AveragedPerceptron(final int classes, final int features) {
+        super(0.1f, new ZeroOneLoss(), classes, features);
+        this.avgWeights = new FloatVector[classes];
+        for (int i = 0; i < classes; i++) {
+            this.avgWeights[i] = new FloatVector(features);
+        }
+        this.lastAveraged = new IntVector(features, 0);
+    }
+
+    public AveragedPerceptron(final float learningRate, final LossFunction lossFunction, final String binsStr,
+            final String featureTemplate, final float[] initialWeights) {
         super(learningRate, lossFunction, binsStr, featureTemplate, initialWeights);
     }
 
@@ -60,7 +71,6 @@ public class AveragedPerceptron extends Perceptron {
             e.printStackTrace();
         }
 
-        this.lastAveraged = null;
         this.lossFunction = null;
         this.rawWeights = null;
         this.learningRate = 0;
@@ -101,13 +111,12 @@ public class AveragedPerceptron extends Perceptron {
     }
 
     @Override
-    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector,
-            final int example) {
+    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector, final int example) {
         float newAvg, oldAvgValue, oldRawValue, newRawValue;
         for (final int featIndex : featureVector.elements()) {
             final int lastAvgExample = lastAveraged.getInt(featIndex); // default=0
             if (lastAvgExample < example) {
-                for (int i = 0; i < numClasses(); i++) {
+                for (int i = 0; i < avgWeights.length; i++) {
                     // all values between lastAvgExample and example-1 are assumed to be unchanged
                     oldAvgValue = avgWeights[i].getFloat(featIndex);
                     oldRawValue = rawWeights[i].getFloat(featIndex);

@@ -20,6 +20,7 @@ package edu.ohsu.cslu.perceptron;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
@@ -28,6 +29,8 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
 
 public class Perceptron extends Classifier {
+
+    private static final long serialVersionUID = 1L;
 
     protected FloatVector[] rawWeights = null;
     protected int trainExampleNumber = 0;
@@ -41,6 +44,19 @@ public class Perceptron extends Classifier {
 
     public Perceptron() {
         this(0.1f, new ZeroOneLoss(), "0", null, null);
+    }
+
+    public Perceptron(final float learningRate, final LossFunction lossFunction, final int classes, final int features) {
+
+        this.learningRate = learningRate;
+        this.lossFunction = lossFunction;
+        bias = new float[classes];
+        Arrays.fill(bias, 0.0f); // default to no bias
+
+        rawWeights = new FloatVector[classes];
+        for (int i = 0; i < classes; i++) {
+            rawWeights[i] = new FloatVector(features);
+        }
     }
 
     public Perceptron(final float learningRate, final LossFunction lossFunction, final String binsStr,
@@ -98,7 +114,7 @@ public class Perceptron extends Classifier {
     public int classify(final FloatVector[] model, final Vector featureVector) {
         int bestClass = -1;
         float score, bestScore = Float.NEGATIVE_INFINITY;
-        for (int i = 0; i < numClasses(); i++) {
+        for (int i = 0; i < model.length; i++) {
             score = model[i].dotProduct(featureVector) + bias[i];
             if (score > bestScore) {
                 bestScore = score;
@@ -162,14 +178,17 @@ public class Perceptron extends Classifier {
     }
 
     protected String modelToString(final FloatVector[] model) {
-        String s = "# === Perceptron Model ===\n";
-        s += String.format("numFeats=%d numClasses=%d bins=%s numTrainExamples=%d \n", model[0].length(), numClasses(),
-                binsStr, trainExampleNumber);
-        s += String.format("featTemplate: %s\n", featureTemplate);
-        for (int i = 0; i < numClasses(); i++) {
-            s += model[i].toString() + "\n";
+        final StringBuilder sb = new StringBuilder(model.length * model[0].length() * 8);
+
+        sb.append("# === Perceptron Model ===\n");
+        sb.append(String.format("numFeats=%d numClasses=%d bins=%s numTrainExamples=%d \n", model[0].length(),
+                model.length, binsStr, trainExampleNumber));
+        sb.append(String.format("featTemplate: %s\n", featureTemplate));
+        for (int i = 0; i < model.length; i++) {
+            sb.append(model[i].toString());
+            sb.append('\n');
         }
-        return s;
+        return sb.toString();
     }
 
     @Override
@@ -182,7 +201,10 @@ public class Perceptron extends Classifier {
         return lossFunction.computeLoss(goldClass, guessClass);
     }
 
-    public static abstract class LossFunction {
+    public static abstract class LossFunction implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
         public abstract float computeLoss(int goldClass, int guessClass);
     }
 
@@ -191,6 +213,8 @@ public class Perceptron extends Classifier {
      * others.
      */
     public static class ZeroOneLoss extends LossFunction {
+
+        private static final long serialVersionUID = 1L;
 
         @Override
         public float computeLoss(final int goldClass, final int guessClass) {
@@ -203,6 +227,8 @@ public class Perceptron extends Classifier {
 
     // TODO: should also test out sliding scale -- more penalty the farther from the gold prediction
     public static class OverUnderLoss extends LossFunction {
+
+        private static final long serialVersionUID = 1L;
 
         private float overPenalty, underPenalty;
 
