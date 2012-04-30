@@ -20,9 +20,9 @@ package edu.ohsu.cslu.perceptron;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
-import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
 
 /**
  * Extracts features for classifying whether a lexical item can begin a multiword constituent. Depends only on lexical
@@ -35,7 +35,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * @author Aaron Dunlop
  * @since Oct 15, 2010
  */
-public class BeginConstituentFeatureExtractor extends FeatureExtractor {
+public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence> {
 
     private final Grammar grammar;
     private final int markovOrder;
@@ -91,8 +91,8 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
      * @return a feature vector representing the specified token and tags
      */
     @Override
-    public SparseBitVector forwardFeatureVector(final Object source, final int tokenIndex, final float[] tagScores) {
-        final Sentence s = (Sentence) source;
+    public SparseBitVector forwardFeatureVector(final Sentence source, final int tokenIndex, final float[] tagScores) {
+        final Sentence s = source;
         final int windowSize = markovOrder * 2 + 1;
 
         int offset = 0;
@@ -124,20 +124,7 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor {
     }
 
     @Override
-    public Vector forwardFeatureVector(final Object source, final int tokenIndex) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Vector backwardFeatureVector(final Object source, final int tokenIndex) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Vector backwardFeatureVector(final Object source, final int tokenIndex, final float[] tagScores) {
-        // TODO Auto-generated method stub
+    public SparseBitVector forwardFeatureVector(final Sentence source, final int tokenIndex) {
         return null;
     }
 
