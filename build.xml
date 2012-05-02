@@ -120,6 +120,26 @@
     </target>
 
 
+    <target name="merge-count-file" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.lela.MergeCountFile" />
+            <param name="tool-name" value="merge-count-file" />
+            <param name="heap-size" value="1024m" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+
+    <target name="merge-grammars" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.lela.MergeGrammars" />
+            <param name="tool-name" value="merge-grammars" />
+            <param name="heap-size" value="1024m" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+            
     <target name="unfactor" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.tools.Unfactor" />
