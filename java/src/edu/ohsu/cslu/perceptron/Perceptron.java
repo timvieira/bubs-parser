@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import edu.ohsu.cslu.datastructs.vectors.DenseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
+import edu.ohsu.cslu.datastructs.vectors.HashSparseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
@@ -31,6 +33,8 @@ import edu.ohsu.cslu.parser.Util;
 public class Perceptron extends Classifier {
 
     private static final long serialVersionUID = 1L;
+
+    public static int MAX_DENSE_STORAGE_SIZE = 1000000;
 
     protected FloatVector[] rawWeights = null;
     protected int trainExampleNumber = 0;
@@ -55,7 +59,8 @@ public class Perceptron extends Classifier {
 
         rawWeights = new FloatVector[classes];
         for (int i = 0; i < classes; i++) {
-            rawWeights[i] = new FloatVector(features);
+            rawWeights[i] = features > MAX_DENSE_STORAGE_SIZE ? new HashSparseFloatVector(features)
+                    : new DenseFloatVector(features);
         }
     }
 
@@ -95,7 +100,7 @@ public class Perceptron extends Classifier {
     protected void initModel(final float[] initialWeights) {
         rawWeights = new FloatVector[numClasses()];
         for (int i = 0; i < numClasses(); i++) {
-            rawWeights[i] = new FloatVector(initialWeights.clone());
+            rawWeights[i] = new DenseFloatVector(initialWeights.clone());
         }
     }
 
@@ -115,7 +120,7 @@ public class Perceptron extends Classifier {
         int bestClass = -1;
         float score, bestScore = Float.NEGATIVE_INFINITY;
         for (int i = 0; i < model.length; i++) {
-            score = model[i].dotProduct(featureVector) + bias[i];
+            score = featureVector.dotProduct(model[i]) + bias[i];
             if (score > bestScore) {
                 bestScore = score;
                 bestClass = i;

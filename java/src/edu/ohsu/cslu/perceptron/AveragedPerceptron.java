@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Arrays;
 
+import edu.ohsu.cslu.datastructs.vectors.DenseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
@@ -54,7 +55,7 @@ public class AveragedPerceptron extends Perceptron {
         super(0.1f, new ZeroOneLoss(), classes, features);
         this.avgWeights = new FloatVector[classes];
         for (int i = 0; i < classes; i++) {
-            this.avgWeights[i] = new FloatVector(features);
+            this.avgWeights[i] = new DenseFloatVector(features);
         }
         this.lastAveraged = new IntVector(features, 0);
     }
@@ -86,13 +87,13 @@ public class AveragedPerceptron extends Perceptron {
 
         avgWeights = new FloatVector[numClasses()];
         for (int i = 0; i < numClasses(); i++) {
-            avgWeights[i] = new FloatVector(initialWeights.clone());
+            avgWeights[i] = new DenseFloatVector(initialWeights.clone());
         }
         lastAveraged = new IntVector(initialWeights.length, 0);
     }
 
     /**
-     * Returns the binary output of the averaged perceptron model for the specified feature vector.
+     * Returns the class output of the averaged perceptron model for the specified feature vector.
      * 
      * @param featureVector
      * @return the binary output of the averaged perceptron model for the specified feature vector.
@@ -108,6 +109,36 @@ public class AveragedPerceptron extends Perceptron {
             averageAllFeatures();
         }
         return classify(avgWeights, featureVector);
+    }
+
+    /**
+     * Returns the class output of the averaged perceptron model for the specified feature vector.
+     * 
+     * @param featureVector
+     * @return the classification and confidence score
+     */
+    public ScoredClassification scoredClassify(final Vector featureVector) {
+        // We don't need to rely on the user to update the final model since we can
+        // keep track of it ourself. update() is only called for *incorrect* classifications
+        // so if we run through additional *correct* training examples, we need to re-average
+        // the model.
+        // NOTE: also need to do this when writing the model
+        if (lastExampleAllUpdated < trainExampleNumber) {
+            averageAllFeatures();
+        }
+        int bestClass = -1;
+        float bestScore = 0, totalScore = 0;
+        for (int i = 0; i < avgWeights.length; i++) {
+            // The derived probability of a classification is the logistic of the averaged score
+            final float score = (float) (1.0 / 1 + Math.exp(-(avgWeights[i].dotProduct(featureVector) + bias[i])));
+            totalScore += score;
+            if (score > bestScore) {
+                bestScore = score;
+                bestClass = i;
+            }
+        }
+        // Normalize by the sum of the probabilities of all classifications
+        return new ScoredClassification(bestClass, bestScore / totalScore);
     }
 
     @Override
@@ -212,11 +243,25 @@ public class AveragedPerceptron extends Perceptron {
             for (int i = 0; i < tokens.length; i++) {
                 weights[i] = Float.parseFloat(tokens[i]);
             }
-            this.avgWeights[classIndex] = new FloatVector(weights);
+            this.avgWeights[classIndex] = new DenseFloatVector(weights);
 
             // if (classIndex != numClasses() - 1) {
             inputReader.readLine(); // blank line
             // }
+        }
+    }
+
+    /**
+     * Represents the class assigned by this {@link Classifier} and a score in the range 0..1
+     */
+    public static class ScoredClassification {
+        public final int classification;
+        public final float score;
+
+        private ScoredClassification(final int classification, final float score) {
+            super();
+            this.classification = classification;
+            this.score = score;
         }
     }
 

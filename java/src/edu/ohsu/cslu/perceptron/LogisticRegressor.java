@@ -3,14 +3,18 @@ package edu.ohsu.cslu.perceptron;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.datastructs.vectors.DenseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.Util;
 
-public class LogisticRegressor {
+public class LogisticRegressor implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     protected FloatVector[] weights = null;
     // protected FloatMatrix modelMatrix;
@@ -21,7 +25,7 @@ public class LogisticRegressor {
     public String featureString;
 
     public LogisticRegressor(final int numFeatures, final int numModels) {
-        this(numFeatures, numModels, 0f, null);
+        this(numFeatures, numModels, 0.1f, new DifferenceLoss());
     }
 
     public LogisticRegressor(final int numFeatures, final int numModels, final float learningRate,
@@ -32,7 +36,7 @@ public class LogisticRegressor {
         this.numModels = numModels;
         this.weights = new FloatVector[numModels];
         for (int i = 0; i < numModels; i++) {
-            this.weights[i] = new FloatVector(numFeatures);
+            this.weights[i] = new DenseFloatVector(numFeatures);
         }
     }
 
@@ -41,7 +45,7 @@ public class LogisticRegressor {
         final FloatVector predictedValues = predict(featureVector);
         for (int i = 0; i < numModels; i++) {
             lossPerModel[i] = lossFunction.computeLoss(goldValues.getFloat(i), predictedValues.getFloat(i));
-            if (lossPerModel[i] > Float.NEGATIVE_INFINITY) {
+            if (lossPerModel[i] != 0) {
                 weights[i].inPlaceAdd(featureVector, learningRate * lossPerModel[i]);
             }
         }
@@ -49,18 +53,24 @@ public class LogisticRegressor {
     }
 
     public FloatVector predict(final SparseBitVector featureVector) {
-        final FloatVector result = new FloatVector(numModels);
+        final FloatVector result = new DenseFloatVector(numModels);
         for (int i = 0; i < numModels; i++) {
             result.set(i, weights[i].dotProduct(featureVector));
         }
         return result;
     }
 
-    public static abstract class LossFunction {
+    public static abstract class LossFunction implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
         public abstract float computeLoss(float goldValue, float guessValue);
     }
 
     public static class DifferenceLoss extends LossFunction {
+
+        private static final long serialVersionUID = 1L;
+
         @Override
         public float computeLoss(final float goldValue, final float guessValue) {
             return goldValue - guessValue;
