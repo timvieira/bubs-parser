@@ -44,7 +44,13 @@ public class TrainDepParser extends BaseDepParser {
         //
         final LinkedList<DependencyGraph> trainingExamples = new LinkedList<DependencyGraph>();
         for (final BufferedReader br = inputAsBufferedReader(); br.ready();) {
-            trainingExamples.add(DependencyGraph.readConll(br));
+            try {
+                final DependencyGraph g = DependencyGraph.readConll(br);
+                // If we can't produce a derivation, skip this example
+                g.derivation();
+                trainingExamples.add(g);
+            } catch (final IllegalArgumentException ignore) {
+            }
         }
 
         LinkedList<DependencyGraph> devExamples = null;
@@ -57,6 +63,8 @@ public class TrainDepParser extends BaseDepParser {
 
         final SymbolSet<String> tokens = new SymbolSet<String>();
         final SymbolSet<String> pos = new SymbolSet<String>();
+        final SymbolSet<String> labels = new SymbolSet<String>();
+
         for (final DependencyGraph example : trainingExamples) {
             for (int i = 0; i < example.arcs.length; i++) {
                 final Arc arc = example.arcs[i];
@@ -64,14 +72,16 @@ public class TrainDepParser extends BaseDepParser {
 
                 // Add an entry for the UNK label as well
                 tokens.addSymbol(Tokenizer.berkeleyGetSignature(arc.token, i == 0, tokens));
-                pos.addSymbol(arc.coarsePos);
+                pos.addSymbol(arc.pos);
+                labels.addSymbol(arc.label);
             }
         }
 
         final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor(tokens, pos);
 
         // At each step, we have 3 possible actions (shift, reduce-left, reduce-right)
-        final AveragedPerceptron classifier = new AveragedPerceptron(3, fe.featureCount());
+        final AveragedPerceptron actionClassifier = new AveragedPerceptron(3, fe.featureCount());
+        final AveragedPerceptron labelClassifier = new AveragedPerceptron(labels.size(), fe.featureCount());
 
         //
         // Iterate through the training instances
@@ -89,20 +99,26 @@ public class TrainDepParser extends BaseDepParser {
                         final SparseBitVector featureVector = fe.forwardFeatureVector(context, i);
 
                         switch (derivation[step]) {
+
                         case SHIFT:
-                            classifier.train(Action.SHIFT.ordinal(), featureVector);
+                            actionClassifier.train(Action.SHIFT.ordinal(), featureVector);
                             stack.addFirst(arcs[i++]);
                             break;
+
                         case REDUCE_LEFT:
-                            classifier.train(Action.REDUCE_LEFT.ordinal(), featureVector);
-                            stack.removeFirst();
+                            actionClassifier.train(Action.REDUCE_LEFT.ordinal(), featureVector);
+                            final Arc right = stack.removeFirst();
+
+                            labelClassifier.train(labels.getIndex(right.label), featureVector);
                             break;
 
                         case REDUCE_RIGHT:
-                            classifier.train(Action.REDUCE_RIGHT.ordinal(), featureVector);
+                            actionClassifier.train(Action.REDUCE_RIGHT.ordinal(), featureVector);
                             final Arc tmp = stack.removeFirst();
-                            stack.removeFirst();
+                            final Arc left = stack.removeFirst();
                             stack.addFirst(tmp);
+
+                            labelClassifier.train(labels.getIndex(left.label), featureVector);
                             break;
                         }
                     }
@@ -116,33 +132,53 @@ public class TrainDepParser extends BaseDepParser {
             System.out.println(iteration + 1);
 
             if (BaseLogger.singleton().isLoggable(Level.FINE)) {
-                test(trainingExamples, "Training-set", classifier, tokens, pos);
+                test(trainingExamples, "Training-set", actionClassifier, labelClassifier, tokens, pos, labels);
             }
             if (devExamples != null) {
-                test(devExamples, "Dev-set", classifier, tokens, pos);
+                test(devExamples, "Dev-set", actionClassifier, labelClassifier, tokens, pos, labels);
             }
         }
 
         final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputModelFile));
-        oos.writeObject(classifier);
+        oos.writeObject(actionClassifier);
+        oos.writeObject(labelClassifier);
         oos.writeObject(tokens);
         oos.writeObject(pos);
+        oos.writeObject(labels);
         oos.close();
     }
 
     private void test(final LinkedList<DependencyGraph> examples, final String label,
-            final AveragedPerceptron classifier, final SymbolSet<String> tokens, final SymbolSet<String> pos) {
-        int correct = 0, total = 0;
+            final AveragedPerceptron actionClassifier, final AveragedPerceptron labelClassifier,
+            final SymbolSet<String> tokens, final SymbolSet<String> pos, final SymbolSet<String> labels) {
+
+        final long startTime = System.currentTimeMillis();
+
+        int correctArcs = 0, correctLabels = 0, total = 0;
         for (final DependencyGraph example : examples) {
             total += example.size() - 1;
-            final DependencyGraph parse = parse(example, classifier, tokens, pos);
+            int sentenceCorrect = 0;
+            float sentenceScore = 0f;
+            final DependencyGraph parse = parse(example, actionClassifier, labelClassifier, tokens, pos, labels);
             for (int i = 0; i < example.size() - 1; i++) {
                 if (parse.arcs[i].head == example.arcs[i].head) {
-                    correct++;
+                    correctArcs++;
+                    sentenceCorrect++;
+                    sentenceScore += parse.arcs[i].score;
+
+                    if (parse.arcs[i].label.equals(example.arcs[i].label)) {
+                        correctLabels++;
+                    }
+                } else {
+                    sentenceScore -= parse.arcs[i].score;
                 }
             }
+            BaseLogger.singleton().finer(
+                    String.format("%.3f %.3f", sentenceCorrect * 1.0 / (example.size() - 1), sentenceScore));
         }
-        System.out.format("%s accuracy: %.2f\n", label, correct * 1.0 / total);
+        final long time = System.currentTimeMillis() - startTime;
+        System.out.format("%s accuracy: %.3f unlabeled %.3f labeled (%d ms, %.2f words/sec)\n", label, correctArcs
+                * 1.0 / total, correctLabels * 1.0 / total, time, total * 1000.0 / time);
     }
 
     public static void main(final String[] args) {
