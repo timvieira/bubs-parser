@@ -19,15 +19,17 @@ public class NivreDepParser extends BaseDepParser {
     protected void run() throws Exception {
 
         final ObjectInputStream ois = new ObjectInputStream(new FileInputStream(modelFile));
-        final AveragedPerceptron model = (AveragedPerceptron) ois.readObject();
+        final AveragedPerceptron actionClassifier = (AveragedPerceptron) ois.readObject();
+        final AveragedPerceptron labelClassifier = (AveragedPerceptron) ois.readObject();
         final SymbolSet<String> tokens = (SymbolSet<String>) ois.readObject();
         final SymbolSet<String> pos = (SymbolSet<String>) ois.readObject();
+        final SymbolSet<String> labels = (SymbolSet<String>) ois.readObject();
         ois.close();
 
         for (final BufferedReader br = inputAsBufferedReader(); br.ready();) {
 
             final DependencyGraph g = DependencyGraph.readConll(br);
-            System.out.println(parse(g, model, tokens, pos));
+            System.out.println(parse(g, actionClassifier, labelClassifier, tokens, pos, labels));
         }
     }
 

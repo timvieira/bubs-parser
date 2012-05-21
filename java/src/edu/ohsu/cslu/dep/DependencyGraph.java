@@ -213,6 +213,7 @@ public class DependencyGraph implements Cloneable {
         public int head;
         public String label;
         private int incomingBackwardArcs;
+        public float score;
 
         public Arc(final String token, final String coarsePos, final String pos, final int index, final int head,
                 final String label) {
@@ -226,6 +227,10 @@ public class DependencyGraph implements Cloneable {
 
         @Override
         public Arc clone() {
+            if (this == ROOT) {
+                return this;
+            }
+
             try {
                 return (Arc) super.clone();
             } catch (final CloneNotSupportedException e) {
@@ -236,7 +241,7 @@ public class DependencyGraph implements Cloneable {
 
         @Override
         public String toString() {
-            return token + "(" + coarsePos + ") : " + index + " : " + head + " (" + incomingBackwardArcs + ")";
+            return token + "(" + pos + ") : " + index + " : " + head + " (" + incomingBackwardArcs + ")";
         }
     }
 }
