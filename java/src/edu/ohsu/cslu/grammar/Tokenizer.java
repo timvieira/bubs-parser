@@ -309,7 +309,8 @@ public class Tokenizer implements Serializable {
      */
     public static String berkeleyGetSignature(final String word, final boolean sentenceInitial,
             final SymbolSet<String> lexSet) {
-        final StringBuffer sb = new StringBuffer("UNK");
+        final StringBuilder sb = new StringBuilder(12);
+        sb.append("UNK");
 
         // Reformed Mar 2004 (cdm); hopefully much better now.
         // { -CAPS, -INITC ap, -LC lowercase, 0 } +
