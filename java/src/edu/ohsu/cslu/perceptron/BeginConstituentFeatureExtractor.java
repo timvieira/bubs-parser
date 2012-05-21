@@ -95,6 +95,7 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
         final Sentence s = source;
         final int windowSize = markovOrder * 2 + 1;
 
+        // TODO Clean up vector creation a bit
         int offset = 0;
         // Token features
         final int[] vector = new int[windowSize * 3 + markovOrder];
