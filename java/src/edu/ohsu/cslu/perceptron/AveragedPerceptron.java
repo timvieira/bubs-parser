@@ -22,9 +22,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Arrays;
 
+import edu.ohsu.cslu.datastructs.vectors.BaseNumericVector;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.DenseFloatVector;
+import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
-import edu.ohsu.cslu.datastructs.vectors.IntVector;
+import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.LargeSparseFloatVector;
+import edu.ohsu.cslu.datastructs.vectors.LargeSparseIntVector;
+import edu.ohsu.cslu.datastructs.vectors.MutableSparseFloatVector;
+import edu.ohsu.cslu.datastructs.vectors.MutableSparseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
@@ -44,20 +51,33 @@ public class AveragedPerceptron extends Perceptron {
     private static final long serialVersionUID = 1L;
 
     private FloatVector[] avgWeights = null;
-    private IntVector lastAveraged = null; // same for every model since we update all at once
+    private BaseNumericVector lastAveraged = null; // same for every model since we update all at once
     private int lastExampleAllUpdated = 0;
 
     public AveragedPerceptron() {
         this(0.1f, new ZeroOneLoss(), "0", null, null);
     }
 
-    public AveragedPerceptron(final int classes, final int features) {
+    public AveragedPerceptron(final int classes, final long features) {
         super(0.1f, new ZeroOneLoss(), classes, features);
         this.avgWeights = new FloatVector[classes];
-        for (int i = 0; i < classes; i++) {
-            this.avgWeights[i] = new DenseFloatVector(features);
+
+        if (features <= MAX_DENSE_STORAGE_SIZE) {
+            for (int i = 0; i < classes; i++) {
+                this.avgWeights[i] = new DenseFloatVector((int) features);
+            }
+            this.lastAveraged = new DenseIntVector((int) features, 0);
+        } else if (features <= Integer.MAX_VALUE) {
+            for (int i = 0; i < classes; i++) {
+                this.avgWeights[i] = new MutableSparseFloatVector((int) features);
+            }
+            this.lastAveraged = new MutableSparseIntVector((int) features);
+        } else {
+            for (int i = 0; i < classes; i++) {
+                this.avgWeights[i] = new LargeSparseFloatVector(features);
+            }
+            this.lastAveraged = new LargeSparseIntVector(features);
         }
-        this.lastAveraged = new IntVector(features, 0);
     }
 
     public AveragedPerceptron(final float learningRate, final LossFunction lossFunction, final String binsStr,
@@ -89,7 +109,7 @@ public class AveragedPerceptron extends Perceptron {
         for (int i = 0; i < numClasses(); i++) {
             avgWeights[i] = new DenseFloatVector(initialWeights.clone());
         }
-        lastAveraged = new IntVector(initialWeights.length, 0);
+        lastAveraged = new DenseIntVector(initialWeights.length, 0);
     }
 
     /**
@@ -142,10 +162,12 @@ public class AveragedPerceptron extends Perceptron {
     }
 
     @Override
-    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector, final int example) {
+    protected void update(final int goldClass, final float alpha, final BitVector featureVector, final int example) {
         float newAvg, oldAvgValue, oldRawValue, newRawValue;
-        for (final int featIndex : featureVector.elements()) {
+        for (final long featIndex : featureVector.longValues()) {
+
             final int lastAvgExample = lastAveraged.getInt(featIndex); // default=0
+
             if (lastAvgExample < example) {
                 for (int i = 0; i < avgWeights.length; i++) {
                     // all values between lastAvgExample and example-1 are assumed to be unchanged
@@ -165,8 +187,12 @@ public class AveragedPerceptron extends Perceptron {
                         newAvg = (oldAvgValue * lastAvgExample + oldRawValue * numExamplesRawUnchanged + newRawValue * 1)
                                 / example;
                     }
-                    avgWeights[i].set(featIndex, newAvg);
-                    rawWeights[i].set(featIndex, newRawValue);
+                    if (newAvg != 0) {
+                        avgWeights[i].set(featIndex, newAvg);
+                    }
+                    if (newRawValue != 0) {
+                        rawWeights[i].set(featIndex, newRawValue);
+                    }
                 }
                 lastAveraged.set(featIndex, example);
             }
@@ -174,9 +200,8 @@ public class AveragedPerceptron extends Perceptron {
     }
 
     private void averageAllFeatures() {
-        final boolean[] featsToUpdate = new boolean[rawWeights[0].length()];
-        Arrays.fill(featsToUpdate, true);
-        update(0, 0, new SparseBitVector(featsToUpdate), trainExampleNumber);
+        update(0, 0, new LargeSparseBitVector(rawWeights[0].length(), rawWeights[0].populatedDimensions()),
+                trainExampleNumber);
 
         // manually record when we last updated all features. Check during
         // classification and model writing to ensure model is up-to-date

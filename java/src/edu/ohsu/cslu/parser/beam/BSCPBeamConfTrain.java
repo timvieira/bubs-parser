@@ -213,7 +213,7 @@ public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, Ce
 
             // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
             System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),
-                    numGoldEdges, bool2int(cell.width() == 1), cellFeats.vectorLength(),
+                    numGoldEdges, bool2int(cell.width() == 1), cellFeats.length(),
                     Util.intArray2Str(cellFeats.elements())));
         }
     }

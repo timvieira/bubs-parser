@@ -27,7 +27,8 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  * Subclasses will generally be instantiated with a sequence of tokens (e.g. a sentence), and consumers will call a
  * <code>featureVector</code> method for each token.
  * 
- * TODO This class is currently specific to bi-tag tasks; could it be generalized to other tagging or regression tasks?
+ * TODO This class is currently specific to sequence tagging tasks; could it be generalized to other tagging or
+ * regression tasks?
  * 
  * @author Aaron Dunlop
  * @since Oct 15, 2010
@@ -37,7 +38,7 @@ public abstract class FeatureExtractor<T> {
     /**
      * @return the length of the feature vectors produced by this extractor
      */
-    public abstract int featureCount();
+    public abstract long featureCount();
 
     /**
      * Returns a feature vector suitable for use with a {@link Perceptron}. If previous or subsequent tags are
