@@ -58,7 +58,7 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
     }
 
     @Override
-    public int featureCount() {
+    public long featureCount() {
         return featureCount;
     }
 

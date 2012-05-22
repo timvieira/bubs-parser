@@ -22,7 +22,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
 
-import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 public abstract class Classifier implements Serializable {
@@ -31,7 +31,7 @@ public abstract class Classifier implements Serializable {
 
     protected int bins[];
 
-    public abstract void train(final int goldClass, final SparseBitVector featureVector);
+    public abstract void train(final int goldClass, final BitVector featureVector);
 
     public abstract int classify(final Vector featureVector);
 

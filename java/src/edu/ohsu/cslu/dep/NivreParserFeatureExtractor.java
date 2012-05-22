@@ -92,7 +92,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
     }
 
     @Override
-    public int featureCount() {
+    public long featureCount() {
         return featureVectorLength;
     }
 

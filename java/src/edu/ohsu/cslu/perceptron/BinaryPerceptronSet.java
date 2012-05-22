@@ -23,7 +23,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 
 import cltool4j.BaseLogger;
-import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
@@ -111,7 +111,7 @@ public class BinaryPerceptronSet extends Classifier {
     // I guess what it comes down to is if we do a decision tree-like classification: (1) open
     // or closed then (2) beam-width OR if we include the closed cells in every classification step
     @Override
-    public void train(final int goldClass, final SparseBitVector featureVector) {
+    public void train(final int goldClass, final BitVector featureVector) {
 
         for (int i = 0; i < numClassifiers; i++) {
             classifiers[i].train(goldClass <= i ? 0 : 1, featureVector);

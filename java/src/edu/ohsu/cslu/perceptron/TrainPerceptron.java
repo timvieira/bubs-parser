@@ -21,15 +21,11 @@ package edu.ohsu.cslu.perceptron;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.BaseLogger;
@@ -38,13 +34,11 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.ListGrammar;
 import edu.ohsu.cslu.parser.Util;
-import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
 
 /**
  * Trains a perceptron model from a corpus. Features and objective tags are derived using a {@link FeatureExtractor}.
  * 
- * @author Aaron Dunlop
- * @since Oct 9, 2010
+ * @author Nathan Bodenstab
  */
 public class TrainPerceptron extends BaseCommandlineTool {
 
@@ -63,9 +57,6 @@ public class TrainPerceptron extends BaseCommandlineTool {
 
     @Option(name = "-d", metaVar = "file", usage = "Development set. If specified, test results are output after each training iteration.")
     private File devSet;
-
-    @Option(name = "-s", metaVar = "file", usage = "Output model file (Java Serialized Object)")
-    private File outputModelFile;
 
     @Option(name = "-overLoss", hidden = true)
     private float overPenalty = 1;
@@ -99,87 +90,6 @@ public class TrainPerceptron extends BaseCommandlineTool {
 
         final TrainPerceptron m = new TrainPerceptron();
         m.natesTraining();
-    }
-
-    public void aaronsTraining() throws IOException, ClassNotFoundException {
-
-        // Read grammar
-        // grammar = Grammar.read(grammarFile.getName());
-
-        final ArrayList<SparseBitVector[]> trainingCorpusFeatures = new ArrayList<SparseBitVector[]>();
-        final ArrayList<boolean[]> trainingCorpusGoldTags = new ArrayList<boolean[]>();
-
-        // TODO Generalize to use other feature extractors
-        final BeginConstituentFeatureExtractor fe = new BeginConstituentFeatureExtractor(grammar, markovOrder);
-
-        // Read in the training corpus and map each token
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        for (String line = br.readLine(); line != null; line = br.readLine()) {
-            final Sentence s = fe.new Sentence(line);
-            final SparseBitVector[] featureVectors = s.featureVectors();
-            trainingCorpusFeatures.add(featureVectors);
-            trainingCorpusGoldTags.add(s.goldTags());
-        }
-        br.close();
-
-        // final AveragedPerceptron model = new AveragedPerceptron();
-
-        // Iterate over training corpus
-        for (int i = 1; i <= iterations; i++) {
-            for (int j = 0; j < trainingCorpusFeatures.size(); j++) {
-                final SparseBitVector[] featureVectors = trainingCorpusFeatures.get(j);
-                // final boolean[] goldTags = trainingCorpusGoldTags.get(j);
-
-                // TODO Do forward-backward estimation here
-                for (int k = 0; k < featureVectors.length; k++) {
-                    // example++;
-                    final SparseBitVector featureVector = featureVectors[k];
-                    if (BaseLogger.singleton().isLoggable(Level.FINEST)) {
-                        BaseLogger.singleton().finest(featureVectorToString(featureVector));
-                    }
-
-                    // TODO: fix this to work with ints instead of bools
-                    // model.train(goldTags[k], featureVector);
-
-                    if (BaseLogger.singleton().isLoggable(Level.FINER)) {
-                        BaseLogger.singleton().finer(toString());
-                    }
-                }
-            }
-
-            if (devSet != null) {
-                // Test the development set
-                int total = 0;
-                final int correct = 0;
-                InputStream is = new FileInputStream(devSet);
-                if (devSet.getName().endsWith(".gz")) {
-                    is = new GZIPInputStream(is);
-                }
-                br = new BufferedReader(new InputStreamReader(is));
-                for (String line = br.readLine(); line != null; line = br.readLine()) {
-
-                    final Sentence s = fe.new Sentence(line);
-                    final int[] predictedTags = new int[s.length()];
-
-                    for (int k = 0; k < predictedTags.length; k++) {
-                        // TODO: fix this to work with ints instead of bools
-
-                        // predictedTags[k] = model.classify(fe.featureVector(s, k, predictedTags));
-                        // if (predictedTags[k] == s.goldTags()[k]) {
-                        // correct++;
-                        // }
-                        total++;
-                    }
-                }
-                System.out.format("Iteration=%d DevsetAccuracy=%.2f\n", i, correct * 100f / total);
-                br.close();
-            }
-        }
-
-        // Write out the model file
-        if (outputModelFile != null) {
-
-        }
     }
 
     public void natesTraining() throws Exception {

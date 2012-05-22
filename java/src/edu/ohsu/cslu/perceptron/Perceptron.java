@@ -23,10 +23,11 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.DenseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
-import edu.ohsu.cslu.datastructs.vectors.HashSparseFloatVector;
-import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.LargeSparseFloatVector;
+import edu.ohsu.cslu.datastructs.vectors.MutableSparseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
 
@@ -50,7 +51,7 @@ public class Perceptron extends Classifier {
         this(0.1f, new ZeroOneLoss(), "0", null, null);
     }
 
-    public Perceptron(final float learningRate, final LossFunction lossFunction, final int classes, final int features) {
+    public Perceptron(final float learningRate, final LossFunction lossFunction, final int classes, final long features) {
 
         this.learningRate = learningRate;
         this.lossFunction = lossFunction;
@@ -59,8 +60,13 @@ public class Perceptron extends Classifier {
 
         rawWeights = new FloatVector[classes];
         for (int i = 0; i < classes; i++) {
-            rawWeights[i] = features > MAX_DENSE_STORAGE_SIZE ? new HashSparseFloatVector(features)
-                    : new DenseFloatVector(features);
+            if (features <= MAX_DENSE_STORAGE_SIZE) {
+                rawWeights[i] = new DenseFloatVector((int) features);
+            } else if (features <= Integer.MAX_VALUE) {
+                rawWeights[i] = new MutableSparseFloatVector((int) features);
+            } else {
+                rawWeights[i] = new LargeSparseFloatVector(features);
+            }
         }
     }
 
@@ -136,12 +142,12 @@ public class Perceptron extends Classifier {
 
     // also used by AveragedPerceptron
     @Override
-    public void train(final int goldClass, final SparseBitVector featureVector) {
+    public void train(final int goldClass, final BitVector featureVector) {
 
         // since we don't require a user to specify the number of features in their model
         // we need to extract that number from the training data and init the new model
         if (rawWeights == null) {
-            initModel(featureVector.vectorLength());
+            initModel(new float[(int) featureVector.length()]);
         }
 
         // final boolean rawGuessClass = this.classifyRaw(featureVector);
@@ -163,7 +169,7 @@ public class Perceptron extends Classifier {
      * @param example The number of examples seen in the training corpus (i.e., the index of the example which caused
      *            this update, 1-indexed).
      */
-    protected void update(final int goldClass, final float alpha, final SparseBitVector featureVector, final int example) {
+    protected void update(final int goldClass, final float alpha, final BitVector featureVector, final int example) {
         for (int i = 0; i < numClasses(); i++) {
             if (i == goldClass) {
                 rawWeights[i].inPlaceAdd(featureVector, alpha);
@@ -183,7 +189,7 @@ public class Perceptron extends Classifier {
     }
 
     protected String modelToString(final FloatVector[] model) {
-        final StringBuilder sb = new StringBuilder(model.length * model[0].length() * 8);
+        final StringBuilder sb = new StringBuilder((int) (model.length * model[0].length() * 8));
 
         sb.append("# === Perceptron Model ===\n");
         sb.append(String.format("numFeats=%d numClasses=%d bins=%s numTrainExamples=%d \n", model[0].length(),
