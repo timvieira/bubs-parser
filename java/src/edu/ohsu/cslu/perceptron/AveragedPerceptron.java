@@ -163,7 +163,6 @@ public class AveragedPerceptron extends Perceptron {
 
     @Override
     protected void update(final int goldClass, final float alpha, final BitVector featureVector, final int example) {
-        float newAvg, oldAvgValue, oldRawValue, newRawValue;
         for (final long featIndex : featureVector.longValues()) {
 
             final int lastAvgExample = lastAveraged.getInt(featIndex); // default=0
@@ -171,23 +170,18 @@ public class AveragedPerceptron extends Perceptron {
             if (lastAvgExample < example) {
                 for (int i = 0; i < avgWeights.length; i++) {
                     // all values between lastAvgExample and example-1 are assumed to be unchanged
-                    oldAvgValue = avgWeights[i].getFloat(featIndex);
-                    oldRawValue = rawWeights[i].getFloat(featIndex);
+                    final float oldAvgValue = avgWeights[i].getFloat(featIndex);
+                    final float oldRawValue = rawWeights[i].getFloat(featIndex);
 
-                    if (goldClass == i) {
-                        newRawValue = oldRawValue + alpha;
-                    } else {
-                        newRawValue = oldRawValue - alpha;
-                    }
+                    final float newRawValue = (goldClass == i) ? oldRawValue + alpha : oldRawValue - alpha;
 
                     if (lastAvgExample == 0) {
-                        newAvg = newRawValue / example;
+                        avgWeights[i].set(featIndex, newRawValue / example);
                     } else {
-                        final int numExamplesRawUnchanged = example - lastAvgExample - 1;
-                        newAvg = (oldAvgValue * lastAvgExample + oldRawValue * numExamplesRawUnchanged + newRawValue * 1)
-                                / example;
+                        final float avgUpdate = (oldRawValue - oldAvgValue) * (example - lastAvgExample - 1)
+                                / (example - 1);
+                        avgWeights[i].set(featIndex, oldAvgValue + avgUpdate);
                     }
-                    avgWeights[i].set(featIndex, newAvg);
                     rawWeights[i].set(featIndex, newRawValue);
                 }
                 lastAveraged.set(featIndex, example);
