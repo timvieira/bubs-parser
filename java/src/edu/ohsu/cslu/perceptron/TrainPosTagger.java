@@ -63,9 +63,7 @@ public class TrainPosTagger extends BaseCommandlineTool {
     @Override
     protected void run() throws Exception {
 
-        // Read grammar
-        // grammar = Grammar.read(grammarFile.getName());
-
+        final long startTime = System.currentTimeMillis();
         final ArrayList<TagSequence> trainingCorpusSequences = new ArrayList<TrainPosTagger.TagSequence>();
         final ArrayList<BitVector[]> trainingCorpusFeatures = new ArrayList<BitVector[]>();
 
@@ -74,14 +72,18 @@ public class TrainPosTagger extends BaseCommandlineTool {
         final SymbolSet<String> posSet = new SymbolSet<String>();
         posSet.addSymbol(NULL_TOKEN);
 
+        //
         // Read in the training corpus and map each token
+        //
         for (final String line : inputLines()) {
 
             final TagSequence tagSequence = new TagSequence(line, lexicon, posSet);
             trainingCorpusSequences.add(tagSequence);
         }
 
+        //
         // Pre-compute all features
+        //
         final PosFeatureExtractor fe = new PosFeatureExtractor(lexicon, posSet);
         for (final TagSequence tagSequence : trainingCorpusSequences) {
 
@@ -94,7 +96,9 @@ public class TrainPosTagger extends BaseCommandlineTool {
 
         final AveragedPerceptron model = new AveragedPerceptron(posSet.size(), fe.featureCount());
 
+        //
         // Iterate over training corpus
+        //
         for (int i = 1; i <= iterations; i++) {
             for (int j = 0; j < trainingCorpusFeatures.size(); j++) {
                 final TagSequence tagSequence = trainingCorpusSequences.get(j);
@@ -125,7 +129,7 @@ public class TrainPosTagger extends BaseCommandlineTool {
                         if (predictedTag == tagSequence.tags[k]) {
                             correct++;
                         }
-                        // tagSequence.tags[k] = predictedTag;
+                        tagSequence.tags[k] = predictedTag;
                         total++;
                     }
                 }
@@ -142,6 +146,8 @@ public class TrainPosTagger extends BaseCommandlineTool {
             oos.writeObject(model);
             oos.close();
         }
+
+        System.out.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000);
     }
 
     public static void main(final String[] args) {
@@ -247,8 +253,7 @@ public class TrainPosTagger extends BaseCommandlineTool {
     }
 
     /**
-     * Extracts features for POS tagging:
-     * 
+     * Extracts features for POS tagging
      */
     public static class PosFeatureExtractor extends FeatureExtractor<TagSequence> {
 
