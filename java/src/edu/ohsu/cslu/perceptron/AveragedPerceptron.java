@@ -27,11 +27,6 @@ import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.DenseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
-import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
-import edu.ohsu.cslu.datastructs.vectors.LargeSparseFloatVector;
-import edu.ohsu.cslu.datastructs.vectors.LargeSparseIntVector;
-import edu.ohsu.cslu.datastructs.vectors.MutableSparseFloatVector;
-import edu.ohsu.cslu.datastructs.vectors.MutableSparseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
@@ -60,24 +55,29 @@ public class AveragedPerceptron extends Perceptron {
 
     public AveragedPerceptron(final int classes, final long features) {
         super(0.1f, new ZeroOneLoss(), classes, features);
-        this.avgWeights = new FloatVector[classes];
-
-        if (features <= MAX_DENSE_STORAGE_SIZE) {
-            for (int i = 0; i < classes; i++) {
-                this.avgWeights[i] = new DenseFloatVector((int) features);
-            }
-            this.lastAveraged = new DenseIntVector((int) features, 0);
-        } else if (features <= Integer.MAX_VALUE) {
-            for (int i = 0; i < classes; i++) {
-                this.avgWeights[i] = new MutableSparseFloatVector((int) features);
-            }
-            this.lastAveraged = new MutableSparseIntVector((int) features);
-        } else {
-            for (int i = 0; i < classes; i++) {
-                this.avgWeights[i] = new LargeSparseFloatVector(features);
-            }
-            this.lastAveraged = new LargeSparseIntVector(features);
+        this.avgWeights = new DenseFloatVector[classes];
+        for (int i = 0; i < classes; i++) {
+            this.avgWeights[i] = new DenseFloatVector(features);
         }
+        this.lastAveraged = new DenseIntVector(features, 0);
+        // this.avgWeights = new FloatVector[classes];
+        //
+        // if (features <= MAX_DENSE_STORAGE_SIZE) {
+        // for (int i = 0; i < classes; i++) {
+        // this.avgWeights[i] = new DenseFloatVector((int) features);
+        // }
+        // this.lastAveraged = new DenseIntVector((int) features, 0);
+        // } else if (features <= Integer.MAX_VALUE) {
+        // for (int i = 0; i < classes; i++) {
+        // this.avgWeights[i] = new MutableSparseFloatVector((int) features);
+        // }
+        // this.lastAveraged = new MutableSparseIntVector((int) features);
+        // } else {
+        // for (int i = 0; i < classes; i++) {
+        // this.avgWeights[i] = new LargeSparseFloatVector(features);
+        // }
+        // this.lastAveraged = new LargeSparseIntVector(features);
+        // }
     }
 
     public AveragedPerceptron(final float learningRate, final LossFunction lossFunction, final String binsStr,
@@ -187,12 +187,8 @@ public class AveragedPerceptron extends Perceptron {
                         newAvg = (oldAvgValue * lastAvgExample + oldRawValue * numExamplesRawUnchanged + newRawValue * 1)
                                 / example;
                     }
-                    if (newAvg != 0) {
-                        avgWeights[i].set(featIndex, newAvg);
-                    }
-                    if (newRawValue != 0) {
-                        rawWeights[i].set(featIndex, newRawValue);
-                    }
+                    avgWeights[i].set(featIndex, newAvg);
+                    rawWeights[i].set(featIndex, newRawValue);
                 }
                 lastAveraged.set(featIndex, example);
             }
@@ -200,8 +196,9 @@ public class AveragedPerceptron extends Perceptron {
     }
 
     private void averageAllFeatures() {
-        update(0, 0, new LargeSparseBitVector(rawWeights[0].length(), rawWeights[0].populatedDimensions()),
-                trainExampleNumber);
+        final boolean[] featsToUpdate = new boolean[(int) rawWeights[0].length()];
+        Arrays.fill(featsToUpdate, true);
+        update(0, 0, new SparseBitVector(featsToUpdate), trainExampleNumber);
 
         // manually record when we last updated all features. Check during
         // classification and model writing to ensure model is up-to-date
