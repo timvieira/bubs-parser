@@ -23,14 +23,18 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Tokenizer;
 
 /**
  * Trains an averaged-perceptron part-of-speech tagger.
@@ -63,7 +67,7 @@ public class TrainPosTagger extends BaseCommandlineTool {
         // grammar = Grammar.read(grammarFile.getName());
 
         final ArrayList<TagSequence> trainingCorpusSequences = new ArrayList<TrainPosTagger.TagSequence>();
-        final ArrayList<LargeSparseBitVector[]> trainingCorpusFeatures = new ArrayList<LargeSparseBitVector[]>();
+        final ArrayList<BitVector[]> trainingCorpusFeatures = new ArrayList<BitVector[]>();
 
         final SymbolSet<String> lexicon = new SymbolSet<String>();
         lexicon.addSymbol(NULL_TOKEN);
@@ -81,20 +85,20 @@ public class TrainPosTagger extends BaseCommandlineTool {
         final PosFeatureExtractor fe = new PosFeatureExtractor(lexicon, posSet);
         for (final TagSequence tagSequence : trainingCorpusSequences) {
 
-            final LargeSparseBitVector[] featureVectors = new LargeSparseBitVector[tagSequence.tags.length];
+            final BitVector[] featureVectors = new BitVector[tagSequence.tags.length];
             for (int i = 0; i < featureVectors.length; i++) {
-                featureVectors[i] = (LargeSparseBitVector) fe.forwardFeatureVector(tagSequence, i);
+                featureVectors[i] = (BitVector) fe.forwardFeatureVector(tagSequence, i);
             }
             trainingCorpusFeatures.add(featureVectors);
         }
 
-        final AveragedPerceptron model = new AveragedPerceptron(posSet.size(), (int) fe.featureCount());
+        final AveragedPerceptron model = new AveragedPerceptron(posSet.size(), fe.featureCount());
 
         // Iterate over training corpus
         for (int i = 1; i <= iterations; i++) {
             for (int j = 0; j < trainingCorpusFeatures.size(); j++) {
                 final TagSequence tagSequence = trainingCorpusSequences.get(j);
-                final LargeSparseBitVector[] featureVectors = trainingCorpusFeatures.get(j);
+                final BitVector[] featureVectors = trainingCorpusFeatures.get(j);
 
                 for (int k = 0; k < featureVectors.length; k++) {
                     model.train(tagSequence.tags[k], featureVectors[k]);
@@ -114,12 +118,14 @@ public class TrainPosTagger extends BaseCommandlineTool {
                 for (String line = br.readLine(); line != null; line = br.readLine()) {
                     final TagSequence tagSequence = new TagSequence(line, lexicon, posSet);
 
-                    for (int k = 0; k < tagSequence.tokens.length; k++) {
+                    for (int k = 0; k < tagSequence.mappedTokens.length; k++) {
+                        // final short predictedTag = (short) model.classify(model.rawWeights,
+                        // fe.forwardFeatureVector(tagSequence, k));
                         final short predictedTag = (short) model.classify(fe.forwardFeatureVector(tagSequence, k));
                         if (predictedTag == tagSequence.tags[k]) {
                             correct++;
                         }
-                        tagSequence.tags[k] = predictedTag;
+                        // tagSequence.tags[k] = predictedTag;
                         total++;
                     }
                 }
@@ -130,7 +136,11 @@ public class TrainPosTagger extends BaseCommandlineTool {
 
         // Write out the model file
         if (outputModelFile != null) {
-
+            final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputModelFile));
+            oos.writeObject(lexicon);
+            oos.writeObject(posSet);
+            oos.writeObject(model);
+            oos.close();
         }
     }
 
@@ -142,7 +152,9 @@ public class TrainPosTagger extends BaseCommandlineTool {
      * Represents a sequence of (possibly-tagged) tokens.
      */
     public static class TagSequence {
-        final int[] tokens;
+        final int[] mappedTokens;
+        final int[] mappedUnkSymbols;
+        final String[] tokens;
         final short[] tags;
         final int length;
         final SymbolSet<String> lexicon;
@@ -151,16 +163,22 @@ public class TrainPosTagger extends BaseCommandlineTool {
         /**
          * Constructor for tagged training sequence
          * 
-         * @param tokens
+         * @param mappedTokens
          * @param tags
          */
-        public TagSequence(final int[] tokens, final short[] tags, final SymbolSet<String> lexicon,
-                final SymbolSet<String> posSet) {
+        public TagSequence(final String[] tokens, final int[] mappedTokens, final short[] tags,
+                final SymbolSet<String> lexicon, final SymbolSet<String> posSet) {
             this.tokens = tokens;
-            this.tags = tags;
-            this.length = tokens.length;
+            this.mappedTokens = mappedTokens;
+            this.tags = tags != null ? tags : new short[tokens.length];
+            this.length = mappedTokens.length;
             this.lexicon = lexicon;
             this.posSet = posSet;
+
+            this.mappedUnkSymbols = new int[tokens.length];
+            for (int i = 0; i < tokens.length; i++) {
+                mappedUnkSymbols[i] = lexicon.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0, lexicon));
+            }
         }
 
         /**
@@ -168,37 +186,42 @@ public class TrainPosTagger extends BaseCommandlineTool {
          * 
          * @param tokens
          */
-        public TagSequence(final int[] tokens, final SymbolSet<String> lexicon, final SymbolSet<String> posSet) {
-            this.tokens = tokens;
-            this.tags = new short[tokens.length];
-            this.length = tokens.length;
-            this.lexicon = lexicon;
-            this.posSet = posSet;
+        public TagSequence(final String[] tokens, final int[] mappedTokens, final SymbolSet<String> lexicon,
+                final SymbolSet<String> posSet) {
+            this(tokens, mappedTokens, null, lexicon, posSet);
         }
 
         public TagSequence(final String sentence, final SymbolSet<String> lexicon, final SymbolSet<String> posSet) {
             // If the sentence starts with '(', treat it as a tagged sequence
             if (sentence.startsWith("(")) {
                 final String[] split = sentence.replaceAll(" ?\\(", "").split("\\)");
-                this.tokens = new int[split.length];
+                this.tokens = new String[split.length];
+                this.mappedTokens = new int[split.length];
+                this.mappedUnkSymbols = new int[split.length];
                 this.tags = new short[split.length];
                 this.length = split.length;
 
                 for (int i = 0; i < split.length; i++) {
                     final String[] tokenAndPos = split[i].split(" ");
                     tags[i] = (short) posSet.addSymbol(tokenAndPos[0]);
-                    tokens[i] = lexicon.addSymbol(tokenAndPos[1]);
+                    tokens[i] = tokenAndPos[1];
+                    mappedTokens[i] = lexicon.addSymbol(tokenAndPos[1]);
+                    mappedUnkSymbols[i] = lexicon.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0, lexicon));
                 }
             } else {
                 // Otherwise, assume it is untagged
                 final String[] split = sentence.split(" ");
-                this.tokens = new int[split.length];
+                this.tokens = new String[split.length];
+                this.mappedTokens = new int[split.length];
+                this.mappedUnkSymbols = new int[split.length];
                 this.tags = new short[split.length];
                 Arrays.fill(tags, (short) -1);
                 this.length = split.length;
 
                 for (int i = 0; i < split.length; i++) {
-                    tokens[i] = lexicon.addSymbol(split[i]);
+                    mappedTokens[i] = lexicon.addSymbol(split[i]);
+                    tokens[i] = split[i];
+                    mappedUnkSymbols[i] = lexicon.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0, lexicon));
                 }
             }
             this.lexicon = lexicon;
@@ -212,7 +235,7 @@ public class TrainPosTagger extends BaseCommandlineTool {
                 sb.append('(');
                 sb.append(posSet.getSymbol(tags[i]));
                 sb.append(' ');
-                sb.append(lexicon.getSymbol(tokens[i]));
+                sb.append(lexicon.getSymbol(mappedTokens[i]));
                 sb.append(')');
 
                 if (i < (length - 1)) {
@@ -233,7 +256,7 @@ public class TrainPosTagger extends BaseCommandlineTool {
         final SymbolSet<String> posSet;
 
         final long featureCount;
-        final int lexiconSize, posSetSize;
+        final long lexiconSize, posSetSize;
 
         // w token unigram
         // w-1 token unigram
@@ -250,12 +273,13 @@ public class TrainPosTagger extends BaseCommandlineTool {
         // t-2 unigram POS
         //
         // t-2, t-1 POS bigram
+        // t-3, t-2, t-1 POS trigram
         // t-1, w POS/token bigram
 
         final long w_unigramOffset, w1_unigramOffset, w2_unigramOffset, wp1_unigramOffset, wp2_unigramOffset;
         final long w2_w1_bigramOffset, w1_w_bigramOffset, w_wp1_bigramOffset, wp1_wp2_bigramOffset;
         final long t1_unigramOffset, t2_unigramOffset;
-        final long t2_t1_bigramOffset, t1_w_bigramOffset;
+        final long t2_t1_bigramOffset, t3_t2_t1_trigramOffset, t1_w_bigramOffset, t2_t1_w_trigramOffset;
 
         final int NULL_TOKEN_INDEX, NULL_POS_INDEX;
 
@@ -284,9 +308,11 @@ public class TrainPosTagger extends BaseCommandlineTool {
             this.t2_unigramOffset = t1_unigramOffset + posSetSize;
 
             this.t2_t1_bigramOffset = t2_unigramOffset + posSetSize;
-            this.t1_w_bigramOffset = t2_t1_bigramOffset + posSetSize * posSetSize;
+            this.t3_t2_t1_trigramOffset = t2_t1_bigramOffset + posSetSize * posSetSize;
+            this.t1_w_bigramOffset = t2_t1_bigramOffset + posSetSize * posSetSize * posSetSize;
+            this.t2_t1_w_trigramOffset = t1_w_bigramOffset + posSetSize * lexiconSize;
 
-            this.featureCount = t1_w_bigramOffset + posSetSize * lexiconSize;
+            this.featureCount = t2_t1_w_trigramOffset + posSetSize * posSetSize * lexiconSize;
 
             this.NULL_TOKEN_INDEX = lexicon.getIndex(NULL_TOKEN);
             this.NULL_POS_INDEX = posSet.getIndex(NULL_TOKEN);
@@ -313,34 +339,37 @@ public class TrainPosTagger extends BaseCommandlineTool {
             if (tokenIndex == 0) {
                 featureIndices.add(w2_w1_bigramOffset + NULL_TOKEN_INDEX * lexiconSize + NULL_TOKEN_INDEX);
             } else if (tokenIndex == 1) {
-                featureIndices.add(w2_w1_bigramOffset + NULL_TOKEN_INDEX * lexiconSize + source.tokens[tokenIndex - 1]);
+                featureIndices.add(w2_w1_bigramOffset + NULL_TOKEN_INDEX * lexiconSize
+                        + source.mappedTokens[tokenIndex - 1]);
             } else {
-                featureIndices.add(w2_w1_bigramOffset + source.tokens[tokenIndex - 2] * lexiconSize
-                        + source.tokens[tokenIndex - 1]);
+                featureIndices.add(w2_w1_bigramOffset + source.mappedTokens[tokenIndex - 2] * lexiconSize
+                        + source.mappedTokens[tokenIndex - 1]);
             }
 
             if (tokenIndex == 0) {
-                featureIndices.add(w1_w_bigramOffset + NULL_TOKEN_INDEX * lexiconSize + source.tokens[tokenIndex]);
+                featureIndices
+                        .add(w1_w_bigramOffset + NULL_TOKEN_INDEX * lexiconSize + source.mappedTokens[tokenIndex]);
             } else {
-                featureIndices.add(w1_w_bigramOffset + source.tokens[tokenIndex - 1] * lexiconSize
-                        + source.tokens[tokenIndex]);
+                featureIndices.add(w1_w_bigramOffset + source.mappedTokens[tokenIndex - 1] * lexiconSize
+                        + source.mappedTokens[tokenIndex]);
             }
 
             if (tokenIndex == source.length - 1) {
-                featureIndices.add(w_wp1_bigramOffset + source.tokens[tokenIndex] * lexiconSize + NULL_TOKEN_INDEX);
+                featureIndices.add(w_wp1_bigramOffset + source.mappedTokens[tokenIndex] * lexiconSize
+                        + NULL_TOKEN_INDEX);
             } else {
-                featureIndices.add(w_wp1_bigramOffset + source.tokens[tokenIndex] * lexiconSize
-                        + source.tokens[tokenIndex + 1]);
+                featureIndices.add(w_wp1_bigramOffset + source.mappedTokens[tokenIndex] * lexiconSize
+                        + source.mappedTokens[tokenIndex + 1]);
             }
 
             if (tokenIndex == source.length - 1) {
                 featureIndices.add(wp1_wp2_bigramOffset + NULL_TOKEN_INDEX * lexiconSize + NULL_TOKEN_INDEX);
             } else if (tokenIndex == source.length - 2) {
-                featureIndices.add(wp1_wp2_bigramOffset + source.tokens[tokenIndex + 1] * lexiconSize
+                featureIndices.add(wp1_wp2_bigramOffset + source.mappedTokens[tokenIndex + 1] * lexiconSize
                         + NULL_TOKEN_INDEX);
             } else {
-                featureIndices.add(wp1_wp2_bigramOffset + source.tokens[tokenIndex + 1] * lexiconSize
-                        + source.tokens[tokenIndex + 2]);
+                featureIndices.add(wp1_wp2_bigramOffset + source.mappedTokens[tokenIndex + 1] * lexiconSize
+                        + source.mappedTokens[tokenIndex + 2]);
             }
 
             // POS Unigram features
@@ -356,6 +385,7 @@ public class TrainPosTagger extends BaseCommandlineTool {
                 featureIndices.add(t2_unigramOffset + source.tags[tokenIndex - 2]);
             }
 
+            // POS Bigram
             if (tokenIndex == 0) {
                 featureIndices.add(t2_t1_bigramOffset + NULL_POS_INDEX * posSetSize + NULL_POS_INDEX);
             } else if (tokenIndex == 1) {
@@ -365,11 +395,39 @@ public class TrainPosTagger extends BaseCommandlineTool {
                         + source.tags[tokenIndex - 1]);
             }
 
+            // POS Trigram
+            if (tokenIndex == 0) {
+                featureIndices.add(t3_t2_t1_trigramOffset + NULL_POS_INDEX * posSetSize * posSetSize + NULL_POS_INDEX
+                        * posSetSize + NULL_POS_INDEX);
+            } else if (tokenIndex == 1) {
+                featureIndices.add(t3_t2_t1_trigramOffset + NULL_POS_INDEX * posSetSize * posSetSize + NULL_POS_INDEX
+                        * posSetSize + source.tags[tokenIndex - 1]);
+            } else if (tokenIndex == 2) {
+                featureIndices.add(t3_t2_t1_trigramOffset + NULL_POS_INDEX * posSetSize * posSetSize
+                        + source.tags[tokenIndex - 2] * posSetSize + source.tags[tokenIndex - 1]);
+            } else {
+                featureIndices.add(t3_t2_t1_trigramOffset + source.tags[tokenIndex - 3] * posSetSize * posSetSize
+                        + source.tags[tokenIndex - 2] * posSetSize + source.tags[tokenIndex - 1]);
+            }
+
+            // Previous POS and current word
             if (tokenIndex == 0) {
                 featureIndices.add(t1_w_bigramOffset + NULL_POS_INDEX * lexiconSize + NULL_TOKEN_INDEX);
             } else {
                 featureIndices.add(t1_w_bigramOffset + source.tags[tokenIndex - 1] * lexiconSize
-                        + source.tokens[tokenIndex]);
+                        + source.mappedTokens[tokenIndex]);
+            }
+
+            // Previous 2 POS and current word
+            if (tokenIndex == 0) {
+                featureIndices.add(t1_w_bigramOffset + NULL_POS_INDEX * posSetSize * lexiconSize + NULL_POS_INDEX
+                        * lexiconSize + NULL_TOKEN_INDEX);
+            } else if (tokenIndex == 1) {
+                featureIndices.add(t1_w_bigramOffset + NULL_POS_INDEX * posSetSize * lexiconSize
+                        + source.tags[tokenIndex - 1] * lexiconSize + source.mappedTokens[tokenIndex]);
+            } else {
+                featureIndices.add(t1_w_bigramOffset + source.tags[tokenIndex - 2] * posSetSize * lexiconSize
+                        + source.tags[tokenIndex - 1] * lexiconSize + source.mappedTokens[tokenIndex]);
             }
 
             return new LargeSparseBitVector(featureCount, featureIndices.toLongArray());
@@ -381,9 +439,9 @@ public class TrainPosTagger extends BaseCommandlineTool {
             if (index < 0 || index >= source.length) {
                 featureIndices.add(offset + lexicon.getIndex(NULL_TOKEN));
             } else {
-                featureIndices.add(offset + source.tokens[index]);
+                featureIndices.add(offset + source.mappedTokens[index]);
+                featureIndices.add(offset + source.mappedUnkSymbols[index]);
             }
-            // TODO UNK-symbol
         }
 
         @Override
