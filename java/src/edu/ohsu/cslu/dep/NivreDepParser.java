@@ -19,7 +19,9 @@ public class NivreDepParser extends BaseDepParser {
     protected void run() throws Exception {
 
         final ObjectInputStream ois = new ObjectInputStream(new FileInputStream(modelFile));
-        final AveragedPerceptron actionClassifier = (AveragedPerceptron) ois.readObject();
+        final NivreParserFeatureExtractor featureExtractor = (NivreParserFeatureExtractor) ois.readObject();
+        final AveragedPerceptron shiftReduceClassifier = (AveragedPerceptron) ois.readObject();
+        final AveragedPerceptron reduceDirectionClassifier = (AveragedPerceptron) ois.readObject();
         final AveragedPerceptron labelClassifier = (AveragedPerceptron) ois.readObject();
         final SymbolSet<String> tokens = (SymbolSet<String>) ois.readObject();
         final SymbolSet<String> pos = (SymbolSet<String>) ois.readObject();
@@ -29,7 +31,8 @@ public class NivreDepParser extends BaseDepParser {
         for (final BufferedReader br = inputAsBufferedReader(); br.ready();) {
 
             final DependencyGraph g = DependencyGraph.readConll(br);
-            System.out.println(parse(g, actionClassifier, labelClassifier, tokens, pos, labels));
+            System.out.println(parse(g, featureExtractor, shiftReduceClassifier, reduceDirectionClassifier, labelClassifier, tokens,
+                    pos, labels));
         }
     }
 

@@ -20,6 +20,9 @@
 package edu.ohsu.cslu.dep;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+
+import java.util.List;
+
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
@@ -35,31 +38,27 @@ import edu.ohsu.cslu.perceptron.FeatureExtractor;
  */
 public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserContext> {
 
-    final static int PREVIOUS_START = 0;
-    final static int NEXT_END = PREVIOUS_START + 1;
+    private static final long serialVersionUID = 1L;
 
-    final static int DISTANCE_1 = NEXT_END + 1;
+    public final static String NULL = "<null>";
+
+    final static int DISTANCE_1 = 0;
     final static int DISTANCE_2 = DISTANCE_1 + 1;
     final static int DISTANCE_3 = DISTANCE_2 + 1;
     final static int DISTANCE_45 = DISTANCE_3 + 1;
     final static int DISTANCE_6 = DISTANCE_45 + 1;
+    final static int DISTANCE_BINS = 5;
+
+    final TemplateElements[][] templates;
+    final int[] featureOffsets;
 
     final SymbolSet<String> tokens;
     final SymbolSet<String> pos;
+    final int nullPosTag, nullToken;
+    final int tokenSetSize, posSetSize;
     final int featureVectorLength;
 
-    final int tokenSetSize, posSetSize;
-    final int bigramFeatureOffset, bigramFeatureOffset2, indicatorFeatureOffset;
-
-    // 2nd on stack, top-of-stack, and next unshifted word
-    final int previousWordOffset, wordOffset, nextWordOffset;
-
     public NivreParserFeatureExtractor(final SymbolSet<String> tokens, final SymbolSet<String> pos) {
-        this.tokens = tokens;
-        this.tokenSetSize = tokens.size();
-        this.pos = pos;
-        this.posSetSize = pos.size();
-
         // Features:
         //
         // Previous word (on the stack), current word (top-of-stack), next word (not-yet-shifted),
@@ -72,23 +71,94 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         //
         // End-of-string indicator for next word
         //
-        // Current word + previous POS
-        // Current POS + previous word
+        // Previous POS + current POS
+        // Previous POS + current word
+        // Previous word + current POS
         //
         // Distance between the top two words on the stack (the two under consideration for reduce operations)
         // Binned: 1, 2, 3, 4-5, 6+ words
         //
+        this("sw2,sw1,iw1,st2,st1,it1,it1_it2,iw1_it2,it1_iw2,d", tokens, pos);
+    }
 
-        this.previousWordOffset = 0;
-        this.wordOffset = previousWordOffset + tokenSetSize + posSetSize;
-        this.nextWordOffset = wordOffset + tokenSetSize + posSetSize;
+    /**
+     * Supported template abbreviations:
+     * 
+     * sw3, sw2, sw1, iw1, iw1, iw3, iw4
+     * 
+     * st3, st2, st1, it1, it2, it3, it4
+     * 
+     * d
+     * 
+     * @param featureTemplates
+     * @param tokens
+     * @param pos
+     */
+    public NivreParserFeatureExtractor(final String featureTemplates, final SymbolSet<String> tokens,
+            final SymbolSet<String> pos) {
 
-        this.bigramFeatureOffset = nextWordOffset + tokenSetSize + posSetSize;
-        this.bigramFeatureOffset2 = bigramFeatureOffset + posSetSize * tokenSetSize;
+        this.tokens = tokens;
+        this.tokenSetSize = tokens.size();
+        this.nullToken = tokens.getIndex(NULL);
+        this.pos = pos;
+        this.posSetSize = pos.size();
+        this.nullPosTag = pos.getIndex(NULL);
 
-        this.indicatorFeatureOffset = bigramFeatureOffset2 + posSetSize * tokenSetSize;
+        final String[] templateStrings = featureTemplates.split(",");
+        this.templates = new TemplateElements[templateStrings.length][];
+        this.featureOffsets = new int[this.templates.length];
 
-        this.featureVectorLength = indicatorFeatureOffset + 7;
+        for (int i = 0; i < featureOffsets.length; i++) {
+            templates[i] = template(templateStrings[i]);
+        }
+
+        for (int i = 1; i < featureOffsets.length; i++) {
+            featureOffsets[i] = featureOffsets[i - 1] + templateSize(templates[i - 1]);
+        }
+        this.featureVectorLength = featureOffsets[featureOffsets.length - 1]
+                + templateSize(templates[templates.length - 1]);
+    }
+
+    private TemplateElements[] template(final String templateString) {
+        final String[] split = templateString.split("_");
+        final TemplateElements[] template = new TemplateElements[split.length];
+        for (int i = 0; i < split.length; i++) {
+            template[i] = TemplateElements.valueOf(TemplateElements.class, split[i]);
+        }
+        return template;
+    }
+
+    private int templateSize(final TemplateElements[] template) {
+        int size = 1;
+        for (int i = 0; i < template.length; i++) {
+            switch (template[i]) {
+            case st3:
+            case st2:
+            case st1:
+            case it1:
+            case it2:
+            case it3:
+            case it4:
+                size *= posSetSize;
+                break;
+
+            case sw3:
+            case sw2:
+            case sw1:
+            case iw1:
+            case iw2:
+            case iw3:
+            case iw4:
+                size *= tokenSetSize;
+                break;
+
+            case d:
+                size *= DISTANCE_BINS;
+                break;
+
+            }
+        }
+        return size;
     }
 
     @Override
@@ -101,78 +171,176 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
 
         final IntArrayList featureIndices = new IntArrayList();
 
-        if (source.stack.size() > 1) {
-            // Previous word on stack
-            final Arc previousWord = source.stack.get(1);
-            // Top word on the stack
-            final Arc currentWord = source.stack.peek();
+        // TODO Handle UNKs
+        for (int i = 0; i < templates.length; i++) {
+            try {
+                int feature = 0;
+                final TemplateElements[] template = templates[i];
+                for (int j = 0; j < template.length; j++) {
+                    switch (template[j]) {
+                    case st3:
+                    case st2:
+                    case st1:
+                        feature *= posSetSize;
+                        feature += tag(source.stack, template[j].index);
+                        break;
+                    case it1:
+                    case it2:
+                    case it3:
+                    case it4:
+                        feature *= posSetSize;
+                        feature += tag(source.arcs, tokenIndex + template[j].index);
+                        break;
 
-            addFeatures(featureIndices, previousWord, previousWordOffset);
+                    case sw3:
+                    case sw2:
+                    case sw1:
+                        feature *= tokenSetSize;
+                        feature += token(source.stack, template[j].index);
+                        break;
+                    case iw1:
+                    case iw2:
+                    case iw3:
+                    case iw4:
+                        feature *= tokenSetSize;
+                        feature += token(source.arcs, tokenIndex + template[j].index);
+                        break;
 
-            // Current word on stack
-            addFeatures(featureIndices, currentWord, wordOffset);
+                    case d:
+                        if (source.stack.size() < 2) {
+                            throw new InvalidFeatureException();
+                        }
+                        // Previous word on the stack
+                        final Arc previousWord = source.stack.get(1);
+                        // Top word on the stack
+                        final Arc currentWord = source.stack.get(0);
 
-            if (currentWord != DependencyGraph.ROOT) {
-                // Next word to be shifted
-                final Arc nextWord = source.arcs[tokenIndex];
+                        // Distance between top two words on stack
+                        switch (currentWord.index - previousWord.index) {
+                        case 1:
+                            feature += DISTANCE_1;
+                            break;
+                        case 2:
+                            feature += DISTANCE_2;
+                            break;
+                        case 3:
+                            feature += DISTANCE_3;
+                            break;
+                        case 4:
+                        case 5:
+                            feature += DISTANCE_45;
+                            break;
+                        default:
+                            feature += DISTANCE_6;
+                            break;
+                        }
+                        if (j < template.length - 1) {
+                            feature *= DISTANCE_BINS;
+                        }
+                        break;
+                    }
 
-                addFeatures(featureIndices, nextWord, nextWordOffset);
+                }
+                featureIndices.add(featureOffsets[i] + feature);
+            } catch (final InvalidFeatureException e) {
+                // Just skip this feature
             }
-
-            featureIndices.add(bigramFeatureOffset + pos.getIndex(currentWord.pos) * tokenSetSize
-                    + tokens.getIndex(previousWord.token));
-
-            featureIndices.add(bigramFeatureOffset2 + pos.getIndex(previousWord.pos) * tokenSetSize
-                    + tokens.getIndex(currentWord.token));
-
-            if (previousWord.index == 0) {
-                featureIndices.add(indicatorFeatureOffset + PREVIOUS_START);
-            }
-            if (tokenIndex == source.arcs.length - 1) {
-                featureIndices.add(indicatorFeatureOffset + NEXT_END);
-            }
-
-            // Distance betwen top two words on stack
-            switch (currentWord.index - previousWord.index) {
-            case 1:
-                featureIndices.add(indicatorFeatureOffset + DISTANCE_1);
-                break;
-            case 2:
-                featureIndices.add(indicatorFeatureOffset + DISTANCE_2);
-                break;
-            case 3:
-                featureIndices.add(indicatorFeatureOffset + DISTANCE_3);
-                break;
-            case 4:
-            case 5:
-                featureIndices.add(indicatorFeatureOffset + DISTANCE_45);
-                break;
-            default:
-                featureIndices.add(indicatorFeatureOffset + DISTANCE_6);
-                break;
-            }
-
         }
 
         return new SparseBitVector(featureVectorLength, featureIndices.toIntArray());
     }
 
-    private void addFeatures(final IntArrayList featureIndices, final Arc arc, final int offset) {
-
-        if (tokens.contains(arc.token)) {
-            featureIndices.add(offset + tokens.getIndex(arc.token)); // word
+    /**
+     * @param stack
+     * @param index
+     * @return
+     */
+    private int token(final List<Arc> stack, final int index) {
+        if (index < 0 || index >= stack.size()) {
+            return nullToken;
         }
+        return tokens.getIndex(stack.get(index).token);
+    }
 
-        // UNK-symbol
-        featureIndices.add(offset + tokens.getIndex(Tokenizer.berkeleyGetSignature(arc.token, arc.index == 0, tokens)));
+    /**
+     * @param arcs
+     * @param i
+     * @return
+     */
+    private int token(final Arc[] arcs, final int i) {
+        if (i < 0 || i >= arcs.length) {
+            return nullToken;
+        }
+        return tokens.getIndex(arcs[i].token);
+    }
 
-        featureIndices.add(offset + tokenSetSize + pos.getIndex(arc.pos)); // POS
+    /**
+     * @param arcs
+     * @param i
+     * @return
+     */
+    private int tag(final List<Arc> stack, final int index) {
+        if (index < 0 || index >= stack.size()) {
+            return nullPosTag;
+        }
+        return pos.getIndex(stack.get(index).pos);
+    }
+
+    /**
+     * @param arcs
+     * @param i
+     * @return
+     */
+    private int tag(final Arc[] arcs, final int i) {
+        if (i < 0 || i >= arcs.length) {
+            return nullPosTag;
+        }
+        return pos.getIndex(arcs[i].pos);
+    }
+
+    /**
+     * @param arcs
+     * @param i
+     * @return
+     */
+    private int unk(final Arc[] arcs, final int i) {
+        if (i < 0 || i >= arcs.length) {
+            return nullToken;
+        }
+        return tokens.getIndex(Tokenizer.berkeleyGetSignature(arcs[i].token, i == 0, tokens));
     }
 
     @Override
     public Vector forwardFeatureVector(final NivreParserContext source, final int tokenIndex, final float[] tagScores) {
-        // TODO Auto-generated method stub
         return null;
     }
 
+    private enum TemplateElements {
+        sw3(2),
+        sw2(1),
+        sw1(0),
+        iw1(0),
+        iw2(1),
+        iw3(2),
+        iw4(3),
+        st3(2),
+        st2(1),
+        st1(0),
+        it1(0),
+        it2(1),
+        it3(2),
+        it4(3),
+        d(-1);
+
+        final int index;
+
+        private TemplateElements(final int index) {
+            this.index = index;
+        }
+    }
+
+    private class InvalidFeatureException extends Exception {
+
+        private static final long serialVersionUID = 1L;
+    }
 }

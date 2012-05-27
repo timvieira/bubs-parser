@@ -453,6 +453,300 @@ public class TrainPosTagger extends BaseCommandlineTool {
         public Vector forwardFeatureVector(final TagSequence source, final int tokenIndex, final float[] tagScores) {
             return null;
         }
-
     }
 }
+
+// public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserContext> {
+//
+// public final static String NULL = "<null>";
+//
+// final static int DISTANCE_1 = 0;
+// final static int DISTANCE_2 = DISTANCE_1 + 1;
+// final static int DISTANCE_3 = DISTANCE_2 + 1;
+// final static int DISTANCE_45 = DISTANCE_3 + 1;
+// final static int DISTANCE_6 = DISTANCE_45 + 1;
+// final static int DISTANCE_BINS = 5;
+//
+// final TemplateElements[][] templates;
+// final int[] featureOffsets;
+//
+// final SymbolSet<String> tokens;
+// final SymbolSet<String> pos;
+// final int nullPosTag, nullToken;
+// final int tokenSetSize, posSetSize;
+// final int featureVectorLength;
+//
+// public NivreParserFeatureExtractor(final SymbolSet<String> tokens, final SymbolSet<String> pos) {
+// // Features:
+// //
+// // Previous word (on the stack), current word (top-of-stack), next word (not-yet-shifted),
+// //
+// // UNK symbol for each of those 3 words (in the same range as the tokens themselves)
+// //
+// // POS for each of those 3 words
+// //
+// // Start-of-string indicator for previous word
+// //
+// // End-of-string indicator for next word
+// //
+// // Previous POS + current POS
+// // Previous POS + current word
+// // Previous word + current POS
+// //
+// // Distance between the top two words on the stack (the two under consideration for reduce operations)
+// // Binned: 1, 2, 3, 4-5, 6+ words
+// //
+// this("w1,w0,wp1,t1,t0,tp1,t1_t0,t1_w0,w1_t0,d", tokens, pos);
+// }
+//
+// /**
+// * Supported template abbreviations:
+// *
+// * w3, w2, w1, w0, wp1, wp2, wp3
+// *
+// * t3, t2, t1, t0, tp1, tp2, tp3
+// *
+// * d
+// *
+// * @param featureTemplates
+// * @param tokens
+// * @param pos
+// */
+// public NivreParserFeatureExtractor(final String featureTemplates, final SymbolSet<String> tokens,
+// final SymbolSet<String> pos) {
+//
+// this.tokens = tokens;
+// this.tokenSetSize = tokens.size();
+// this.nullToken = tokens.getIndex(NULL);
+// this.pos = pos;
+// this.posSetSize = pos.size();
+// this.nullPosTag = pos.getIndex(NULL);
+//
+// final String[] templateStrings = featureTemplates.split(",");
+// this.templates = new TemplateElements[templateStrings.length][];
+// this.featureOffsets = new int[this.templates.length];
+//
+// for (int i = 0; i < featureOffsets.length; i++) {
+// templates[i] = template(templateStrings[i]);
+// }
+//
+// for (int i = 1; i < featureOffsets.length; i++) {
+// featureOffsets[i] = featureOffsets[i - 1] + templateSize(templates[i - 1]);
+// }
+// this.featureVectorLength = featureOffsets[featureOffsets.length - 1]
+// + templateSize(templates[templates.length - 1]);
+// }
+//
+// private TemplateElements[] template(final String templateString) {
+// final String[] split = templateString.split("_");
+// final TemplateElements[] template = new TemplateElements[split.length];
+// for (int i = 0; i < split.length; i++) {
+// template[i] = TemplateElements.valueOf(TemplateElements.class, split[i]);
+// }
+// return template;
+// }
+//
+// private int templateSize(final TemplateElements[] template) {
+// int size = 1;
+// for (int i = 0; i < template.length; i++) {
+// switch (template[i]) {
+// case t0:
+// case t1:
+// case t2:
+// case t3:
+// case tp1:
+// case tp2:
+// case tp3:
+// size *= posSetSize;
+// break;
+//
+// case w3:
+// case w2:
+// case w1:
+// case w0:
+// case wp1:
+// case wp2:
+// case wp3:
+// size *= tokenSetSize;
+// break;
+//
+// case d:
+// size *= DISTANCE_BINS;
+// break;
+//
+// }
+// }
+// return size;
+// }
+//
+// @Override
+// public long featureCount() {
+// return featureVectorLength;
+// }
+//
+// @Override
+// public SparseBitVector forwardFeatureVector(final NivreParserContext source, final int tokenIndex) {
+//
+// final IntArrayList featureIndices = new IntArrayList();
+//
+// // TODO Handle UNKs
+// for (int i = 0; i < templates.length; i++) {
+// int feature = 0;
+// final TemplateElements[] template = templates[i];
+// for (int j = 0; j < template.length; j++) {
+// switch (template[j]) {
+// case t3:
+// case t2:
+// case t1:
+// feature *= posSetSize;
+// feature += tag(source.stack, template[j].offset);
+// break;
+// case t0:
+// case tp1:
+// case tp2:
+// case tp3:
+// feature *= posSetSize;
+// feature += tag(source.arcs, tokenIndex + template[j].offset);
+// break;
+//
+// case w3:
+// case w2:
+// case w1:
+// feature *= tokenSetSize;
+// feature += token(source.stack, template[j].offset);
+// break;
+// case w0:
+// case wp1:
+// case wp2:
+// case wp3:
+// feature *= tokenSetSize;
+// feature += token(source.arcs, tokenIndex + template[j].offset);
+// break;
+//
+// case d:
+// // Top word on the stack
+// final Arc previousWord = source.stack.get(0);
+// // Next word in the buffer
+// final Arc currentWord = source.arcs[tokenIndex];
+//
+// // Distance between top two words on stack
+// switch (currentWord.index - previousWord.index) {
+// case 1:
+// feature += DISTANCE_1;
+// break;
+// case 2:
+// feature += DISTANCE_2;
+// break;
+// case 3:
+// feature += DISTANCE_3;
+// break;
+// case 4:
+// case 5:
+// feature += DISTANCE_45;
+// break;
+// default:
+// feature += DISTANCE_6;
+// break;
+// }
+// if (j < template.length - 1) {
+// feature *= DISTANCE_BINS;
+// }
+// break;
+// }
+//
+// }
+// featureIndices.add(featureOffsets[i] + feature);
+// }
+//
+// return new SparseBitVector(featureVectorLength, featureIndices.toIntArray());
+// }
+//
+// /**
+// * @param stack
+// * @param index
+// * @return
+// */
+// private int token(final List<Arc> stack, final int index) {
+// if (index < 0 || index >= stack.size()) {
+// return nullToken;
+// }
+// return tokens.getIndex(stack.get(index).token);
+// }
+//
+// /**
+// * @param arcs
+// * @param i
+// * @return
+// */
+// private int token(final Arc[] arcs, final int i) {
+// if (i < 0 || i >= arcs.length) {
+// return nullToken;
+// }
+// return tokens.getIndex(arcs[i].token);
+// }
+//
+// /**
+// * @param arcs
+// * @param i
+// * @return
+// */
+// private int tag(final List<Arc> stack, final int index) {
+// if (index < 0 || index >= stack.size()) {
+// return nullPosTag;
+// }
+// return pos.getIndex(stack.get(index).pos);
+// }
+//
+// /**
+// * @param arcs
+// * @param i
+// * @return
+// */
+// private int tag(final Arc[] arcs, final int i) {
+// if (i < 0 || i >= arcs.length) {
+// return nullPosTag;
+// }
+// return pos.getIndex(arcs[i].pos);
+// }
+//
+// /**
+// * @param arcs
+// * @param i
+// * @return
+// */
+// private int unk(final Arc[] arcs, final int i) {
+// if (i < 0 || i >= arcs.length) {
+// return nullToken;
+// }
+// return tokens.getIndex(Tokenizer.berkeleyGetSignature(arcs[i].token, i == 0, tokens));
+// }
+//
+// @Override
+// public Vector forwardFeatureVector(final NivreParserContext source, final int tokenIndex, final float[] tagScores) {
+// return null;
+// }
+//
+// private enum TemplateElements {
+// w3(-3),
+// w2(-2),
+// w1(-1),
+// w0(0),
+// wp1(1),
+// wp2(2),
+// wp3(3),
+// t3(-3),
+// t2(-2),
+// t1(-1),
+// t0(0),
+// tp1(1),
+// tp2(2),
+// tp3(3),
+// d(-1);
+//
+// final int offset;
+//
+// private TemplateElements(final int offset) {
+// this.offset = offset;
+// }
+// }
+// }

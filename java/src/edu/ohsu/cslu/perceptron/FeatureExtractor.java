@@ -18,6 +18,8 @@
  */
 package edu.ohsu.cslu.perceptron;
 
+import java.io.Serializable;
+
 import edu.ohsu.cslu.datastructs.vectors.NumericVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 
@@ -33,7 +35,9 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  * @author Aaron Dunlop
  * @since Oct 15, 2010
  */
-public abstract class FeatureExtractor<T> {
+public abstract class FeatureExtractor<T> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * @return the length of the feature vectors produced by this extractor

@@ -18,7 +18,7 @@ public class DependencyGraph implements Cloneable {
 
     final Arc[] arcs;
 
-    private Action[] derivation = null;
+    private DerivationAction[] derivation = null;
 
     public DependencyGraph(final int sentenceLength) {
         arcs = new Arc[sentenceLength + 1];
@@ -67,7 +67,7 @@ public class DependencyGraph implements Cloneable {
     }
 
     public void printDerivation() {
-        final Action[] d = derivation();
+        final DerivationAction[] d = derivation();
 
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         int step = 0;
@@ -75,7 +75,7 @@ public class DependencyGraph implements Cloneable {
         for (int i = 0; i < arcs.length || (stack.size() != 1 || stack.peek() != ROOT);) {
             if (stack.size() < 2) {
                 stack.addFirst(arcs[i++]);
-                d[step++] = Action.SHIFT;
+                d[step++] = DerivationAction.SHIFT;
                 System.out.println("Shifting " + stack.peek());
             } else {
                 final Arc last = stack.get(0);
@@ -105,20 +105,20 @@ public class DependencyGraph implements Cloneable {
      * @return Ordered shift-reduce derivation of the dependency graph
      * @throws IllegalArgumentException if the graph encodes one or more non-projective dependencies
      */
-    public Action[] derivation() {
+    public DerivationAction[] derivation() {
 
         if (derivation != null) {
             return derivation;
         }
 
-        final Action[] tmpDerivation = new Action[arcs.length * 2 - 1];
+        final DerivationAction[] tmpDerivation = new DerivationAction[arcs.length * 2 - 1];
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         int step = 0;
 
         for (int i = 0; i < arcs.length || (stack.size() != 1 || stack.peek() != ROOT);) {
             if (stack.size() < 2) {
                 stack.addFirst(arcs[i++]);
-                tmpDerivation[step++] = Action.SHIFT;
+                tmpDerivation[step++] = DerivationAction.SHIFT;
             } else {
                 final Arc last = stack.get(0);
                 final Arc previous = stack.get(1);
@@ -126,12 +126,12 @@ public class DependencyGraph implements Cloneable {
                 // Can we reduce the top two on the stack?
                 if (last.head == previous.index && last.incomingBackwardArcs == 0) {
                     // Reduce left
-                    tmpDerivation[step++] = Action.REDUCE_LEFT;
+                    tmpDerivation[step++] = DerivationAction.REDUCE_LEFT;
                     previous.incomingBackwardArcs--;
                     stack.removeFirst();
                 } else if (previous.head == last.index && previous.incomingBackwardArcs == 0) {
                     // Reduce right
-                    tmpDerivation[step++] = Action.REDUCE_RIGHT;
+                    tmpDerivation[step++] = DerivationAction.REDUCE_RIGHT;
                     final Arc tmp = stack.removeFirst();
                     stack.removeFirst();
                     stack.addFirst(tmp);
@@ -140,7 +140,7 @@ public class DependencyGraph implements Cloneable {
                         throw new IllegalArgumentException("Unable to derive shift-reduce derivation");
                     }
                     stack.addFirst(arcs[i++]);
-                    tmpDerivation[step++] = Action.SHIFT;
+                    tmpDerivation[step++] = DerivationAction.SHIFT;
                 }
             }
         }
@@ -153,6 +153,14 @@ public class DependencyGraph implements Cloneable {
         return arcs.length;
     }
 
+    public DependencyGraph clear() {
+        for (int i = 0; i < arcs.length; i++) {
+            arcs[i].head = -1;
+            arcs[i].label = null;
+        }
+        return this;
+    }
+
     @Override
     public DependencyGraph clone() {
         final DependencyGraph clone = new DependencyGraph(size() - 1);
@@ -163,7 +171,8 @@ public class DependencyGraph implements Cloneable {
     }
 
     /**
-     * Outputs in CoNLL format, with or without heads
+     * Outputs in CoNLL format, with or without heads (Note: if the head is populated and scored, the score is included,
+     * which breaks CoNLL format)
      */
     @Override
     public String toString() {
@@ -173,8 +182,13 @@ public class DependencyGraph implements Cloneable {
             for (int i = 0; i < arcs.length; i++) {
                 final Arc a = arcs[i];
                 if (a != ROOT) {
-                    sb.append(String.format("%d\t%s\t_\t%s\t%s\t_\t%d\t%s\t_\t_\n", i + 1, a.token, a.coarsePos, a.pos,
-                            a.head, a.label));
+                    if (a.score != 0) {
+                        sb.append(String.format("%d\t%s\t_\t%s\t%s\t_\t%d\t%s\t_\t_\t%.5f\n", i + 1, a.token,
+                                a.coarsePos, a.pos, a.head, a.label, a.score));
+                    } else {
+                        sb.append(String.format("%d\t%s\t_\t%s\t%s\t_\t%d\t%s\t_\t_\n", i + 1, a.token, a.coarsePos,
+                                a.pos, a.head, a.label));
+                    }
                 }
             }
         } else {
@@ -189,20 +203,19 @@ public class DependencyGraph implements Cloneable {
         return sb.toString();
     }
 
-    public static enum Action {
+    public static enum DerivationAction {
         SHIFT, REDUCE_LEFT, REDUCE_RIGHT;
 
-        final static Int2ObjectOpenHashMap<Action> ordinalValueMap = new Int2ObjectOpenHashMap<DependencyGraph.Action>();
+        final static Int2ObjectOpenHashMap<DerivationAction> ordinalValueMap = new Int2ObjectOpenHashMap<DependencyGraph.DerivationAction>();
         static {
-            for (final Action a : EnumSet.allOf(Action.class)) {
+            for (final DerivationAction a : EnumSet.allOf(DerivationAction.class)) {
                 ordinalValueMap.put(a.ordinal(), a);
             }
         }
 
-        public static Action forInt(final int ordinalValue) {
+        public static DerivationAction forInt(final int ordinalValue) {
             return ordinalValueMap.get(ordinalValue);
         }
-
     }
 
     public static class Arc implements Cloneable {
@@ -241,7 +254,7 @@ public class DependencyGraph implements Cloneable {
 
         @Override
         public String toString() {
-            return token + "(" + pos + ") : " + index + " : " + head + " (" + incomingBackwardArcs + ")";
+            return String.format("%s (%s) : %d : %d (%d,%.5f)", token, pos, index, head, incomingBackwardArcs, score);
         }
     }
 }
