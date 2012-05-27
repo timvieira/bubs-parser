@@ -137,7 +137,7 @@ public class InsideOutsideCphSpmlParser extends
                 && cellSelector.getCellConstraints().isCellOnlyFactored(start, end) && (end - start > 1);
         final boolean allowUnaries = !cellSelector.hasCellConstraints()
                 || cellSelector.getCellConstraints().isUnaryOpen(start, end);
-        final float minInsideProbability = edu.ohsu.cslu.util.Math.max(spvChartCell.tmpCell.insideProbabilities)
+        final float minInsideProbability = edu.ohsu.cslu.util.Math.floatMax(spvChartCell.tmpCell.insideProbabilities)
                 - maxLocalDelta;
 
         // We will push all binary or lexical edges onto a bounded priority queue, and then (if unaries are allowed),

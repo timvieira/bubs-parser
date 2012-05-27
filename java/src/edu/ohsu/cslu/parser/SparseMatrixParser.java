@@ -351,7 +351,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         final boolean allowUnaries = !cellSelector.hasCellConstraints()
                 || cellSelector.getCellConstraints().isUnaryOpen(start, end)
                 && !(cellSelector.getCellConstraints().isCellOnlyFactored(start, end) && (end - start > 1));
-        final float minInsideProbability = edu.ohsu.cslu.util.Math.max(tmpCell.insideProbabilities) - maxLocalDelta;
+        final float minInsideProbability = edu.ohsu.cslu.util.Math.floatMax(tmpCell.insideProbabilities)
+                - maxLocalDelta;
 
         /*
          * Populate the chart cell with the most probable n edges (n = beamWidth).
