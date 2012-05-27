@@ -120,8 +120,7 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
             }
         }
 
-        // TODO Add a direct constructor to SparseBitVector
-        return new SparseBitVector(vector, false);
+        return new SparseBitVector(featureCount, vector);
     }
 
     @Override

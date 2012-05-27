@@ -8,7 +8,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import cltool4j.BaseCommandlineTool;
-import edu.ohsu.cslu.dep.DependencyGraph.Action;
+import edu.ohsu.cslu.dep.DependencyGraph.DerivationAction;
 
 public class TestDependencyGraph extends BaseCommandlineTool {
 
@@ -22,10 +22,11 @@ public class TestDependencyGraph extends BaseCommandlineTool {
         sb.append("5	fast	_	NN	NN	_	4	SBJ	_	_\n");
 
         final DependencyGraph g = DependencyGraph.readConll(sb.toString());
-        final DependencyGraph.Action[] derivation = g.derivation();
-        assertArrayEquals(new Action[] { Action.SHIFT, Action.SHIFT, Action.SHIFT, Action.REDUCE_RIGHT,
-                Action.REDUCE_RIGHT, Action.SHIFT, Action.REDUCE_RIGHT, Action.SHIFT, Action.REDUCE_LEFT, Action.SHIFT,
-                Action.REDUCE_RIGHT }, derivation);
+        final DependencyGraph.DerivationAction[] derivation = g.derivation();
+        assertArrayEquals(new DerivationAction[] { DerivationAction.SHIFT, DerivationAction.SHIFT,
+                DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT, DerivationAction.REDUCE_RIGHT,
+                DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT, DerivationAction.SHIFT,
+                DerivationAction.REDUCE_LEFT, DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT }, derivation);
     }
 
     @Test
@@ -45,12 +46,16 @@ public class TestDependencyGraph extends BaseCommandlineTool {
         sb.append("12	U.S.	_	NN	NNP	_	10	PMOD	_	_\n");
 
         final DependencyGraph g = DependencyGraph.readConll(sb.toString());
-        final DependencyGraph.Action[] derivation = g.derivation();
-        assertArrayEquals(new Action[] { Action.SHIFT, Action.SHIFT, Action.SHIFT, Action.SHIFT, Action.REDUCE_RIGHT,
-                Action.REDUCE_RIGHT, Action.REDUCE_RIGHT, Action.SHIFT, Action.SHIFT, Action.REDUCE_RIGHT,
-                Action.SHIFT, Action.REDUCE_RIGHT, Action.REDUCE_RIGHT, Action.SHIFT, Action.SHIFT,
-                Action.REDUCE_RIGHT, Action.REDUCE_LEFT, Action.SHIFT, Action.SHIFT, Action.SHIFT, Action.REDUCE_RIGHT,
-                Action.REDUCE_LEFT, Action.REDUCE_LEFT, Action.SHIFT, Action.REDUCE_RIGHT }, derivation);
+        final DependencyGraph.DerivationAction[] derivation = g.derivation();
+        assertArrayEquals(new DerivationAction[] { DerivationAction.SHIFT, DerivationAction.SHIFT,
+                DerivationAction.SHIFT, DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT,
+                DerivationAction.REDUCE_RIGHT, DerivationAction.REDUCE_RIGHT, DerivationAction.SHIFT,
+                DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT, DerivationAction.SHIFT,
+                DerivationAction.REDUCE_RIGHT, DerivationAction.REDUCE_RIGHT, DerivationAction.SHIFT,
+                DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT, DerivationAction.REDUCE_LEFT,
+                DerivationAction.SHIFT, DerivationAction.SHIFT, DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT,
+                DerivationAction.REDUCE_LEFT, DerivationAction.REDUCE_LEFT, DerivationAction.SHIFT,
+                DerivationAction.REDUCE_RIGHT }, derivation);
     }
 
     @Override

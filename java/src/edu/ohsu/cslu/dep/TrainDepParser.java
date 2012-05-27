@@ -10,7 +10,6 @@ import java.util.logging.Level;
 import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
-import edu.ohsu.cslu.dep.DependencyGraph.Action;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
@@ -35,6 +34,9 @@ public class TrainDepParser extends BaseDepParser {
 
     @Option(name = "-d", metaVar = "file", usage = "Development set in CoNLL 2007 format")
     private File devSet;
+
+    @Option(name = "-f", metaVar = "file", usage = "Development set in CoNLL 2007 format")
+    private String featureTemplates = "st2,st1,it1,it2,it3,it4,sw2,sw1,iw1,iw2";
 
     @Override
     protected void run() throws Exception {
@@ -77,10 +79,14 @@ public class TrainDepParser extends BaseDepParser {
             }
         }
 
-        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor(tokens, pos);
+        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor(featureTemplates, tokens, pos);
 
-        // At each step, we have 3 possible actions (shift, reduce-left, reduce-right)
-        final AveragedPerceptron actionClassifier = new AveragedPerceptron(3, fe.featureCount());
+        // At each step, we have 3 possible actions (shift, reduce-left, reduce-right), but we divide them into 2
+        // classifiers - one to decide between shift and reduce, and one to select reduce direction. For the moment, we
+        // use the same feature-set for both.
+        final AveragedPerceptron shiftReduceClassifier = new AveragedPerceptron(2, fe.featureCount());
+        final AveragedPerceptron reduceDirectionClassifier = new AveragedPerceptron(2, fe.featureCount());
+        // We also attempt to label arcs, with a third classifier
         final AveragedPerceptron labelClassifier = new AveragedPerceptron(labels.size(), fe.featureCount());
 
         //
@@ -89,7 +95,7 @@ public class TrainDepParser extends BaseDepParser {
         for (int iteration = 0, examples = 0; iteration < trainingIterations; iteration++, examples = 0) {
             for (final DependencyGraph example : trainingExamples) {
                 try {
-                    final DependencyGraph.Action[] derivation = example.derivation();
+                    final DependencyGraph.DerivationAction[] derivation = example.derivation();
 
                     final Arc[] arcs = example.arcs;
                     final LinkedList<Arc> stack = new LinkedList<Arc>();
@@ -101,19 +107,24 @@ public class TrainDepParser extends BaseDepParser {
                         switch (derivation[step]) {
 
                         case SHIFT:
-                            actionClassifier.train(Action.SHIFT.ordinal(), featureVector);
+                            if (stack.size() >= 2) {
+                                shiftReduceClassifier.train(ParserAction.SHIFT.ordinal(), featureVector);
+                            }
                             stack.addFirst(arcs[i++]);
                             break;
 
                         case REDUCE_LEFT:
-                            actionClassifier.train(Action.REDUCE_LEFT.ordinal(), featureVector);
+                            shiftReduceClassifier.train(ParserAction.REDUCE.ordinal(), featureVector);
+                            reduceDirectionClassifier.train(ReduceDirection.LEFT.ordinal(), featureVector);
                             final Arc right = stack.removeFirst();
 
                             labelClassifier.train(labels.getIndex(right.label), featureVector);
                             break;
 
                         case REDUCE_RIGHT:
-                            actionClassifier.train(Action.REDUCE_RIGHT.ordinal(), featureVector);
+                            shiftReduceClassifier.train(ParserAction.REDUCE.ordinal(), featureVector);
+                            reduceDirectionClassifier.train(ReduceDirection.RIGHT.ordinal(), featureVector);
+
                             final Arc tmp = stack.removeFirst();
                             final Arc left = stack.removeFirst();
                             stack.addFirst(tmp);
@@ -132,15 +143,19 @@ public class TrainDepParser extends BaseDepParser {
             System.out.println(iteration + 1);
 
             if (BaseLogger.singleton().isLoggable(Level.FINE)) {
-                test(trainingExamples, "Training-set", actionClassifier, labelClassifier, tokens, pos, labels);
+                test(trainingExamples, "Training-set", fe, shiftReduceClassifier, reduceDirectionClassifier,
+                        labelClassifier, tokens, pos, labels);
             }
             if (devExamples != null) {
-                test(devExamples, "Dev-set", actionClassifier, labelClassifier, tokens, pos, labels);
+                test(devExamples, "Dev-set", fe, shiftReduceClassifier, reduceDirectionClassifier, labelClassifier,
+                        tokens, pos, labels);
             }
         }
 
         final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputModelFile));
-        oos.writeObject(actionClassifier);
+        oos.writeObject(fe);
+        oos.writeObject(shiftReduceClassifier);
+        oos.writeObject(reduceDirectionClassifier);
         oos.writeObject(labelClassifier);
         oos.writeObject(tokens);
         oos.writeObject(pos);
@@ -149,7 +164,8 @@ public class TrainDepParser extends BaseDepParser {
     }
 
     private void test(final LinkedList<DependencyGraph> examples, final String label,
-            final AveragedPerceptron actionClassifier, final AveragedPerceptron labelClassifier,
+            final NivreParserFeatureExtractor featureExtractor, final AveragedPerceptron shiftReduceClassifier,
+            final AveragedPerceptron reduceDirectionClassifier, final AveragedPerceptron labelClassifier,
             final SymbolSet<String> tokens, final SymbolSet<String> pos, final SymbolSet<String> labels) {
 
         final long startTime = System.currentTimeMillis();
@@ -159,7 +175,8 @@ public class TrainDepParser extends BaseDepParser {
             total += example.size() - 1;
             int sentenceCorrect = 0;
             float sentenceScore = 0f;
-            final DependencyGraph parse = parse(example, actionClassifier, labelClassifier, tokens, pos, labels);
+            final DependencyGraph parse = parse(example, featureExtractor, shiftReduceClassifier,
+                    reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
             for (int i = 0; i < example.size() - 1; i++) {
                 if (parse.arcs[i].head == example.arcs[i].head) {
                     correctArcs++;

@@ -35,7 +35,7 @@ public class Perceptron extends Classifier {
 
     private static final long serialVersionUID = 1L;
 
-    public static int MAX_DENSE_STORAGE_SIZE = 1000000;
+    public static int MAX_DENSE_STORAGE_SIZE = 3000000;
 
     protected FloatVector[] rawWeights = null;
     protected int trainExampleNumber = 0;
