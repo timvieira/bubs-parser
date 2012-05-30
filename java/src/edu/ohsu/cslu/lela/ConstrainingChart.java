@@ -37,6 +37,8 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
  */
 public class ConstrainingChart extends PackedArrayChart {
 
+    public int[] tokens;
+
     short[][] openCells;
 
     /** Indices of parent cells, indexed by child cell cellIndex. Used for outside-probability computation. */
@@ -456,8 +458,8 @@ public class ConstrainingChart extends PackedArrayChart {
 
         if (packedChildren[entryIndex] < 0) {
             // Lexical production
-            final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.packingFunction()
-                    .unpackLeftChild(packedChildren[entryIndex]));
+            final String sChild = grammar.lexSet.getSymbol(sparseMatrixGrammar.packingFunction().unpackLeftChild(
+                    packedChildren[entryIndex]));
             subtree.addChild(new BinaryTree<String>(sChild));
         } else {
             // Binary production

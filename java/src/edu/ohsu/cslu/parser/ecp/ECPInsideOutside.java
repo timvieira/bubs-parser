@@ -365,7 +365,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                 }
 
                 if (span == 1) {
-                    addBackptrToChart(start, -1, end, bestNT[start][end], chart.tokens[start],
+                    addBackptrToChart(start, -1, end, bestNT[start][end], chart.parseTask.tokens[start],
                             Production.LEXICAL_PRODUCTION);
                 } else if (maxc[start][end] > Float.NEGATIVE_INFINITY) {
                     // find best midpoint
@@ -423,7 +423,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                 }
 
                 if (span == 1) {
-                    addBackptrToChart(start, -1, end, bestNT[start][end], chart.tokens[start],
+                    addBackptrToChart(start, -1, end, bestNT[start][end], chart.parseTask.tokens[start],
                             Production.LEXICAL_PRODUCTION);
                 } else if (maxc[start][end] > Float.NEGATIVE_INFINITY) {
                     float maxSplitScore = Float.NEGATIVE_INFINITY;
