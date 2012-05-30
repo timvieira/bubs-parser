@@ -57,7 +57,7 @@ public class InsideOutsideChart extends PackedArrayChart {
         switch (parseTask.decodeMethod) {
         case Goodman:
         case SplitSum:
-            final int maxcArraySize = tokens.length * (tokens.length + 1) / 2;
+            final int maxcArraySize = parseTask.tokens.length * (parseTask.tokens.length + 1) / 2;
             this.maxcEntries = new short[maxcArraySize];
             this.maxcScores = new double[maxcArraySize];
             this.maxcMidpoints = new short[maxcArraySize];
@@ -432,7 +432,7 @@ public class InsideOutsideChart extends PackedArrayChart {
                             // Left child is implied by marking the production as lexical. Unaries will be handled
                             // below.
                             r[baseParent] = edu.ohsu.cslu.util.Math.logSum(r[baseParent], outsideProbabilities[i]
-                                    + cscGrammar.lexicalLogProbability(parent, tokens[start]));
+                                    + cscGrammar.lexicalLogProbability(parent, parseTask.tokens[start]));
                             maxQRightChildren[cellIndex][baseParent] = Production.LEXICAL_PRODUCTION;
                         }
                     }
@@ -636,7 +636,7 @@ public class InsideOutsideChart extends PackedArrayChart {
             subtree.addChild(extractMaxQParse(start, end, leftChild, vocabulary));
 
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-            subtree.addChild(new BinaryTree<String>(sparseMatrixGrammar.lexSet.getSymbol(tokens[start])));
+            subtree.addChild(new BinaryTree<String>(sparseMatrixGrammar.lexSet.getSymbol(parseTask.tokens[start])));
 
         } else {
             // binary production
@@ -852,7 +852,8 @@ public class InsideOutsideChart extends PackedArrayChart {
                 } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                     // Lexical Production
                     return String.format("%s -> %s (%s, %d)\n", maxcVocabulary.getSymbol(nonterminal),
-                            sparseMatrixGrammar.mapLexicalEntry(tokens[midpoint - 1]), JUnit.fraction(score), midpoint);
+                            sparseMatrixGrammar.mapLexicalEntry(parseTask.tokens[midpoint - 1]), JUnit.fraction(score),
+                            midpoint);
                 } else {
                     return String.format("%s -> %s %s (%s, %d)\n", maxcVocabulary.getSymbol(nonterminal),
                             maxcVocabulary.getSymbol(leftChild), maxcVocabulary.getSymbol(rightChild),
@@ -867,7 +868,7 @@ public class InsideOutsideChart extends PackedArrayChart {
             } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                 // Lexical Production
                 return String.format("%s -> %s (%.5f, %d)\n", maxcVocabulary.getSymbol(nonterminal),
-                        sparseMatrixGrammar.mapLexicalEntry(tokens[midpoint - 1]), score, midpoint);
+                        sparseMatrixGrammar.mapLexicalEntry(parseTask.tokens[midpoint - 1]), score, midpoint);
             } else {
                 return String.format("%s -> %s %s (%.5f, %d)\n", maxcVocabulary.getSymbol(nonterminal),
                         maxcVocabulary.getSymbol(leftChild), maxcVocabulary.getSymbol(rightChild), score, midpoint);

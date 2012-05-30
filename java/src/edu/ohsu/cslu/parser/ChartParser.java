@@ -60,7 +60,7 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
     /**
      * Initialize the chart structure, edge selector, and cell selector
      * 
-     * @param tokens
+     * @param parseTask
      */
     protected void initChart(final ParseTask parseTask) {
         if (collectDetailedStatistics) {

@@ -84,8 +84,6 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
             sentenceLeftChildPopulation = 0;
             sentenceRightChildPopulation = 0;
         }
-
-        chart.tokens = parseTask.tokens;
     }
 
     @Override

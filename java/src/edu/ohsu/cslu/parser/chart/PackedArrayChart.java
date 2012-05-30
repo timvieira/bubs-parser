@@ -109,7 +109,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     /**
      * Constructs a chart
      * 
-     * @param tokens Sentence tokens, mapped to integer indices
+     * @param parseTask Current task
      * @param sparseMatrixGrammar Grammar
      * @param beamWidth
      * @param lexicalRowBeamWidth
@@ -149,7 +149,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     /**
      * Constructs a chart
      * 
-     * @param tokens Sentence tokens, mapped to integer indices
+     * @param parseTask Current task
      * @param sparseMatrixGrammar Grammar
      * @param beamWidth
      * @param lexicalRowBeamWidth
@@ -162,7 +162,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     /**
      * Constructs a chart for exhaustive inference.
      * 
-     * @param tokens Sentence tokens, mapped to integer indices
+     * @param parseTask Current task
      * @param sparseMatrixGrammar Grammar
      */
     public PackedArrayChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar) {
@@ -240,7 +240,7 @@ public class PackedArrayChart extends ParallelArrayChart {
             subtree.addChild(extractBestParse(start, end, leftChild));
 
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
-            subtree.addChild(new BinaryTree<String>(sparseMatrixGrammar.lexSet.getSymbol(leftChild)));
+            subtree.addChild(new BinaryTree<String>(sparseMatrixGrammar.lexSet.getSymbol(parseTask.tokens[start])));
 
         } else {
             // binary production

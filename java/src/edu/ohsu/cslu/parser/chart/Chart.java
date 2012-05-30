@@ -36,7 +36,6 @@ import edu.ohsu.cslu.parser.ParseTask;
 public abstract class Chart {
 
     protected int size;
-    public int[] tokens;
     protected Grammar grammar;
     public ParseTask parseTask;
     SymbolSet<String> featHash = new SymbolSet<String>();
@@ -47,8 +46,7 @@ public abstract class Chart {
     public Chart(final ParseTask parseTask, final Grammar grammar) {
         this.parseTask = parseTask;
         this.grammar = grammar;
-        this.tokens = parseTask.tokens;
-        this.size = tokens.length;
+        this.size = parseTask.tokens.length;
     }
 
     /**
@@ -454,48 +452,90 @@ public abstract class Chart {
     }
 
     /* @formatter:off */
-    
+
     // L=Left, R=Right, T=POSTag, W=Word
     // LX = left X positions
     // X_Y = joint features
     // example: LTR2 = Left Tag Right 2 = The POS tag right two positions from the consttuent's left boundary
     public static enum Feature {
-        lt, ltl1, ltl2, ltr1, ltr2, lt_ltl1, rt, rtl1, rtl2, rtr1, rtr2, rt_rtr1,
-        lw, lwl1, lw_lt, lwl1_ltl1, rw, rwr1, rw_rt, rwr1_rtr1,
-        Span, Rule};
-        
+        lt,
+        ltl1,
+        ltl2,
+        ltr1,
+        ltr2,
+        lt_ltl1,
+        rt,
+        rtl1,
+        rtl2,
+        rtr1,
+        rtr2,
+        rt_rtr1,
+        lw,
+        lwl1,
+        lw_lt,
+        lwl1_ltl1,
+        rw,
+        rwr1,
+        rw_rt,
+        rwr1_rtr1,
+        Span,
+        Rule
+    };
+
     public static List<Feature> featureTemplateStrToEnum(final String[] featureNames) {
         final List<Feature> feats = new LinkedList<Feature>();
         for (final String featStr : featureNames) {
-            if (featStr.equals("lt")) feats.add(Feature.lt);
-            else if (featStr.equals("lt-1")) feats.add(Feature.ltl1);
-            else if (featStr.equals("lt-2")) feats.add(Feature.ltl2);
-            else if (featStr.equals("lt+1")) feats.add(Feature.ltr1);
-            else if (featStr.equals("lt+2")) feats.add(Feature.ltr2);
-            else if (featStr.equals("lt_lt-1")) feats.add(Feature.lt_ltl1);
-            else if (featStr.equals("rt")) feats.add(Feature.rt);
-            else if (featStr.equals("rt-1")) feats.add(Feature.rtl1);
-            else if (featStr.equals("rt-2")) feats.add(Feature.rtl2);
-            else if (featStr.equals("rt+1")) feats.add(Feature.rtr1);
-            else if (featStr.equals("rt+2")) feats.add(Feature.rtr2);
-            else if (featStr.equals("rt_rt+1")) feats.add(Feature.rt_rtr1);
-            else if (featStr.equals("lw")) feats.add(Feature.lw);
-            else if (featStr.equals("lw-1")) feats.add(Feature.lwl1);
-            else if (featStr.equals("lw_lt")) feats.add(Feature.lw_lt);
-            else if (featStr.equals("lw-1_lt-1")) feats.add(Feature.lwl1_ltl1);
-            else if (featStr.equals("rw")) feats.add(Feature.rw);
-            else if (featStr.equals("rw+1")) feats.add(Feature.rwr1);
-            else if (featStr.equals("rw_rt")) feats.add(Feature.rw_rt);
-            else if (featStr.equals("rw+1_rt+1")) feats.add(Feature.rwr1_rtr1);
-            else if (featStr.equals("loc")) feats.add(Feature.Span);
-            else if (featStr.equals("rule")) feats.add(Feature.Rule);
+            if (featStr.equals("lt"))
+                feats.add(Feature.lt);
+            else if (featStr.equals("lt-1"))
+                feats.add(Feature.ltl1);
+            else if (featStr.equals("lt-2"))
+                feats.add(Feature.ltl2);
+            else if (featStr.equals("lt+1"))
+                feats.add(Feature.ltr1);
+            else if (featStr.equals("lt+2"))
+                feats.add(Feature.ltr2);
+            else if (featStr.equals("lt_lt-1"))
+                feats.add(Feature.lt_ltl1);
+            else if (featStr.equals("rt"))
+                feats.add(Feature.rt);
+            else if (featStr.equals("rt-1"))
+                feats.add(Feature.rtl1);
+            else if (featStr.equals("rt-2"))
+                feats.add(Feature.rtl2);
+            else if (featStr.equals("rt+1"))
+                feats.add(Feature.rtr1);
+            else if (featStr.equals("rt+2"))
+                feats.add(Feature.rtr2);
+            else if (featStr.equals("rt_rt+1"))
+                feats.add(Feature.rt_rtr1);
+            else if (featStr.equals("lw"))
+                feats.add(Feature.lw);
+            else if (featStr.equals("lw-1"))
+                feats.add(Feature.lwl1);
+            else if (featStr.equals("lw_lt"))
+                feats.add(Feature.lw_lt);
+            else if (featStr.equals("lw-1_lt-1"))
+                feats.add(Feature.lwl1_ltl1);
+            else if (featStr.equals("rw"))
+                feats.add(Feature.rw);
+            else if (featStr.equals("rw+1"))
+                feats.add(Feature.rwr1);
+            else if (featStr.equals("rw_rt"))
+                feats.add(Feature.rw_rt);
+            else if (featStr.equals("rw+1_rt+1"))
+                feats.add(Feature.rwr1_rtr1);
+            else if (featStr.equals("loc"))
+                feats.add(Feature.Span);
+            else if (featStr.equals("rule"))
+                feats.add(Feature.Rule);
             else {
                 throw new IllegalArgumentException("ERROR parsing feature template.  Not expecting '" + featStr + "'");
             }
         }
         return feats;
     }
-    
+
     /* @formatter:on */
 
     public static void printFeatMap(final Grammar gram) {
