@@ -35,8 +35,11 @@ public class TrainDepParser extends BaseDepParser {
     @Option(name = "-d", metaVar = "file", usage = "Development set in CoNLL 2007 format")
     private File devSet;
 
-    @Option(name = "-f", metaVar = "file", usage = "Development set in CoNLL 2007 format")
-    private String featureTemplates = "st2,st1,it1,it2,it3,it4,sw2,sw1,iw1,iw2";
+    @Option(name = "-f", metaVar = "features", usage = "Feature templates")
+    private String featureTemplates = "st1,st2,st3,it1,it2,it3,sw1,sw2,iw1";
+
+    @Option(name = "-l", usage = "Label arcs (if false, no arc labels will be assigned)")
+    private boolean classifyLabels = false;
 
     @Override
     protected void run() throws Exception {
@@ -64,8 +67,14 @@ public class TrainDepParser extends BaseDepParser {
         }
 
         final SymbolSet<String> tokens = new SymbolSet<String>();
+        tokens.addSymbol(DependencyGraph.NULL);
+        tokens.addSymbol(DependencyGraph.ROOT.token);
         final SymbolSet<String> pos = new SymbolSet<String>();
+        pos.addSymbol(DependencyGraph.NULL);
+        pos.addSymbol(DependencyGraph.ROOT.pos);
         final SymbolSet<String> labels = new SymbolSet<String>();
+        labels.addSymbol(DependencyGraph.NULL);
+        labels.addSymbol(DependencyGraph.ROOT.label);
 
         for (final DependencyGraph example : trainingExamples) {
             for (int i = 0; i < example.arcs.length; i++) {
@@ -79,21 +88,22 @@ public class TrainDepParser extends BaseDepParser {
             }
         }
 
-        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor(featureTemplates, tokens, pos);
+        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor(featureTemplates, tokens, pos, labels);
 
         // At each step, we have 3 possible actions (shift, reduce-left, reduce-right), but we divide them into 2
         // classifiers - one to decide between shift and reduce, and one to select reduce direction. For the moment, we
         // use the same feature-set for both.
         final AveragedPerceptron shiftReduceClassifier = new AveragedPerceptron(2, fe.featureCount());
         final AveragedPerceptron reduceDirectionClassifier = new AveragedPerceptron(2, fe.featureCount());
-        // We also attempt to label arcs, with a third classifier
-        final AveragedPerceptron labelClassifier = new AveragedPerceptron(labels.size(), fe.featureCount());
-
+        // Label arcs, with a third classifier
+        final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(labels.size(),
+                fe.featureCount()) : null;
         //
         // Iterate through the training instances
         //
         for (int iteration = 0, examples = 0; iteration < trainingIterations; iteration++, examples = 0) {
             for (final DependencyGraph example : trainingExamples) {
+                example.clear();
                 try {
                     final DependencyGraph.DerivationAction[] derivation = example.derivation();
 
@@ -113,24 +123,31 @@ public class TrainDepParser extends BaseDepParser {
                             stack.addFirst(arcs[i++]);
                             break;
 
-                        case REDUCE_LEFT:
+                        case REDUCE_LEFT: {
                             shiftReduceClassifier.train(ParserAction.REDUCE.ordinal(), featureVector);
                             reduceDirectionClassifier.train(ReduceDirection.LEFT.ordinal(), featureVector);
-                            final Arc right = stack.removeFirst();
+                            final Arc top = stack.removeFirst();
+                            top.predictedHead = stack.peek().index;
 
-                            labelClassifier.train(labels.getIndex(right.label), featureVector);
+                            if (labelClassifier != null) {
+                                labelClassifier.train(labels.getIndex(top.label), featureVector);
+                            }
                             break;
-
-                        case REDUCE_RIGHT:
+                        }
+                        case REDUCE_RIGHT: {
                             shiftReduceClassifier.train(ParserAction.REDUCE.ordinal(), featureVector);
                             reduceDirectionClassifier.train(ReduceDirection.RIGHT.ordinal(), featureVector);
 
-                            final Arc tmp = stack.removeFirst();
-                            final Arc left = stack.removeFirst();
-                            stack.addFirst(tmp);
+                            final Arc top = stack.removeFirst();
+                            final Arc second = stack.removeFirst();
+                            second.predictedHead = top.index;
+                            stack.addFirst(top);
 
-                            labelClassifier.train(labels.getIndex(left.label), featureVector);
+                            if (labelClassifier != null) {
+                                labelClassifier.train(labels.getIndex(second.label), featureVector);
+                            }
                             break;
+                        }
                         }
                     }
                 } catch (final IllegalArgumentException ignore) {
@@ -171,31 +188,45 @@ public class TrainDepParser extends BaseDepParser {
         final long startTime = System.currentTimeMillis();
 
         int correctArcs = 0, correctLabels = 0, total = 0;
+        int shiftReduceClassifications = 0, correctShiftReduceClassifications = 0, reduceDirectionClassifications = 0, correctReduceDirectionClassifications = 0;
+
         for (final DependencyGraph example : examples) {
             total += example.size() - 1;
-            int sentenceCorrect = 0;
-            float sentenceScore = 0f;
+            final int sentenceCorrect = 0;
+            // float sentenceScore = 0f;
             final DependencyGraph parse = parse(example, featureExtractor, shiftReduceClassifier,
                     reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
-            for (int i = 0; i < example.size() - 1; i++) {
-                if (parse.arcs[i].head == example.arcs[i].head) {
-                    correctArcs++;
-                    sentenceCorrect++;
-                    sentenceScore += parse.arcs[i].score;
+            correctArcs += parse.correctArcs();
+            correctLabels += parse.correctLabels();
 
-                    if (parse.arcs[i].label.equals(example.arcs[i].label)) {
-                        correctLabels++;
-                    }
-                } else {
-                    sentenceScore -= parse.arcs[i].score;
-                }
-            }
-            BaseLogger.singleton().finer(
-                    String.format("%.3f %.3f", sentenceCorrect * 1.0 / (example.size() - 1), sentenceScore));
+            // for (int i = 0; i < example.size() - 1; i++) {
+            // if (parse.arcs[i].head == example.arcs[i].head) {
+            // correctArcs++;
+            // sentenceCorrect++;
+            // sentenceScore += parse.arcs[i].score;
+            //
+            // if (example.arcs[i].label.equals(parse.arcs[i].label)) {
+            // correctLabels++;
+            // }
+            // } else {
+            // sentenceScore -= parse.arcs[i].score;
+            // }
+            // }
+            shiftReduceClassifications += parse.shiftReduceClassifications;
+            correctShiftReduceClassifications += parse.correctShiftReduceClassifications;
+            reduceDirectionClassifications += parse.reduceDirectionClassifications;
+            correctReduceDirectionClassifications += parse.correctReduceDirectionClassifications;
+
+            // BaseLogger.singleton().finer(
+            // String.format("%.3f %.3f", sentenceCorrect * 1.0 / (example.size() - 1), sentenceScore));
         }
         final long time = System.currentTimeMillis() - startTime;
-        System.out.format("%s accuracy: %.3f unlabeled %.3f labeled (%d ms, %.2f words/sec)\n", label, correctArcs
+        System.out.format("%s accuracy - unlabeled: %.3f  labeled %.3f  (%d ms, %.2f words/sec)\n", label, correctArcs
                 * 1.0 / total, correctLabels * 1.0 / total, time, total * 1000.0 / time);
+        System.out.format("Shift/Reduce: %d  Correct: %.3f\n", shiftReduceClassifications,
+                correctShiftReduceClassifications * 1.0 / shiftReduceClassifications);
+        System.out.format("Reduce Direction: %d  Correct: %.3f\n", reduceDirectionClassifications,
+                correctReduceDirectionClassifications * 1.0 / reduceDirectionClassifications);
     }
 
     public static void main(final String[] args) {
