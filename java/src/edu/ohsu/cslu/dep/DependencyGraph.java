@@ -9,16 +9,22 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+
 /**
  * Represents a sentence with dependency arcs
  */
 public class DependencyGraph implements Cloneable {
 
-    final static Arc ROOT = new Arc("ROOT", "_", "_", 0, 0, "_");
+    final static Arc ROOT = new Arc("ROOT", "ROOT", "ROOT", 0, 0, "ROOT");
+    final static String NULL = "<null>";
 
     final Arc[] arcs;
 
     private DerivationAction[] derivation = null;
+
+    int shiftReduceClassifications = 0, correctShiftReduceClassifications = 0, reduceDirectionClassifications = 0,
+            correctReduceDirectionClassifications = 0;
 
     public DependencyGraph(final int sentenceLength) {
         arcs = new Arc[sentenceLength + 1];
@@ -149,14 +155,70 @@ public class DependencyGraph implements Cloneable {
         return derivation;
     }
 
+    public NaryTree<String> tokenTree() {
+        final NaryTree<String>[] nodes = new NaryTree[arcs.length];
+        nodes[0] = new NaryTree<String>(ROOT.token);
+        for (int i = 1; i < nodes.length; i++) {
+            nodes[i] = new NaryTree<String>(arcs[i - 1].token);
+        }
+
+        for (int i = 1; i < nodes.length; i++) {
+            final NaryTree<String> child = nodes[i];
+            final NaryTree<String> parent = nodes[arcs[i - 1].head];
+            parent.addChild(child);
+        }
+
+        // Return root node
+        return nodes[0];
+    }
+
+    public NaryTree<DependencyNode> tree() {
+        @SuppressWarnings("unchecked")
+        final NaryTree<DependencyNode>[] nodes = new NaryTree[arcs.length];
+        nodes[0] = new NaryTree<DependencyNode>(new DependencyNode(ROOT.token, 0f));
+        for (int i = 1; i < nodes.length; i++) {
+            nodes[i] = new NaryTree<DependencyNode>(new DependencyNode(arcs[i - 1]));
+        }
+
+        for (int i = 1; i < nodes.length; i++) {
+            final NaryTree<DependencyNode> child = nodes[i];
+            final NaryTree<DependencyNode> parent = nodes[arcs[i - 1].head];
+            parent.addChild(child);
+        }
+
+        // Return root node
+        return nodes[0];
+    }
+
     public int size() {
         return arcs.length;
     }
 
+    public int correctArcs() {
+        int correctArcs = 0;
+        for (int i = 0; i < arcs.length; i++) {
+            if (arcs[i].predictedHead == arcs[i].head) {
+                correctArcs++;
+            }
+        }
+        return correctArcs;
+    }
+
+    public int correctLabels() {
+        int correctLabels = 0;
+        for (int i = 0; i < arcs.length; i++) {
+            if (arcs[i].predictedLabel != null && arcs[i].predictedLabel.equals(arcs[i].label)) {
+                correctLabels++;
+            }
+        }
+        return correctLabels;
+    }
+
     public DependencyGraph clear() {
         for (int i = 0; i < arcs.length; i++) {
-            arcs[i].head = -1;
-            arcs[i].label = null;
+            arcs[i].predictedHead = -1;
+            arcs[i].predictedLabel = null;
+            arcs[i].predictedPos = null;
         }
         return this;
     }
@@ -171,36 +233,45 @@ public class DependencyGraph implements Cloneable {
     }
 
     /**
-     * Outputs in CoNLL format, with or without heads (Note: if the head is populated and scored, the score is included,
-     * which breaks CoNLL format)
+     * Output in CoNLL format
      */
-    @Override
-    public String toString() {
+    public String toConllString() {
         final StringBuilder sb = new StringBuilder();
-        if (arcs[0].head >= 0) {
-            // Output with heads
-            for (int i = 0; i < arcs.length; i++) {
-                final Arc a = arcs[i];
-                if (a != ROOT) {
-                    if (a.score != 0) {
-                        sb.append(String.format("%d\t%s\t_\t%s\t%s\t_\t%d\t%s\t_\t_\t%.5f\n", i + 1, a.token,
-                                a.coarsePos, a.pos, a.head, a.label, a.score));
-                    } else {
-                        sb.append(String.format("%d\t%s\t_\t%s\t%s\t_\t%d\t%s\t_\t_\n", i + 1, a.token, a.coarsePos,
-                                a.pos, a.head, a.label));
-                    }
-                }
+
+        for (int i = 0; i < arcs.length; i++) {
+            final Arc a = arcs[i];
+            if (a != ROOT) {
+                sb.append(String.format("%d\t%s\t_\t%s\t%s\t_\t%d\t%s\t_\t_\n", i + 1, a.token, a.coarsePos, a.pos,
+                        a.head, a.label));
             }
-        } else {
-            // Output without heads
-            for (int i = 0; i < arcs.length; i++) {
-                final Arc a = arcs[i];
-                if (a != ROOT) {
-                    sb.append(String.format("%d\t%s\t_\t%s\t%s\t_\t%d\n", i + 1, a.token, a.coarsePos, a.coarsePos));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Augment CoNLL format with predicted POS and heads, and (if available) head scores
+     */
+    public String toEnhancedConllString() {
+        final StringBuilder sb = new StringBuilder();
+        // Output with heads
+        for (int i = 0; i < arcs.length; i++) {
+            final Arc a = arcs[i];
+            if (a != ROOT) {
+                if (a.score != 0) {
+                    sb.append(String.format("%d\t%s\t_\t%s\t%s\t_\t%d\t%s\t_\t_\t%s\t%d\t%.5f\n", i + 1, a.token,
+                            a.coarsePos, a.pos, a.head, a.label, a.score, a.predictedPos, a.predictedHead));
+                } else {
+                    sb.append(String.format("%d\t%s\t_\t%s\t%s\t_\t%d\t%s\t_\t_\t%s\5%d\n", i + 1, a.token,
+                            a.coarsePos, a.pos, a.head, a.label, a.predictedPos, a.predictedHead));
                 }
             }
         }
         return sb.toString();
+    }
+
+    @Override
+    public String toString() {
+        return tokenTree().toString();
     }
 
     public static enum DerivationAction {
@@ -225,6 +296,10 @@ public class DependencyGraph implements Cloneable {
         public final String pos;
         public int head;
         public String label;
+        public String predictedPos = "_";
+        public int predictedHead = 0;
+        public String predictedLabel;
+
         private int incomingBackwardArcs;
         public float score;
 
@@ -254,7 +329,8 @@ public class DependencyGraph implements Cloneable {
 
         @Override
         public String toString() {
-            return String.format("%s (%s) : %d : %d (%d,%.5f)", token, pos, index, head, incomingBackwardArcs, score);
+            return String.format("%-10s\t%-4s\t%d\t%d\t%-6s\t%d\t%-6s  (%d,%.5f)", token, pos, index, head, label,
+                    predictedHead, predictedLabel, incomingBackwardArcs, score);
         }
     }
 }
