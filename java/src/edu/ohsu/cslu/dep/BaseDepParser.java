@@ -25,7 +25,7 @@ public abstract class BaseDepParser extends BaseCommandlineTool {
             final AveragedPerceptron labelClassifier, final SymbolSet<String> tokens, final SymbolSet<String> pos,
             final SymbolSet<String> labels) {
 
-        final DependencyGraph parse = input.clone().clear();
+        final DependencyGraph parse = input.clear();
 
         final LinkedList<Arc> stack = new LinkedList<Arc>();
 
@@ -38,38 +38,70 @@ public abstract class BaseDepParser extends BaseCommandlineTool {
             ParserAction action = null;
             if (stack.size() < 2) {
                 action = ParserAction.SHIFT;
+                // Technically these are 'correct', but not very helpful
+                parse.shiftReduceClassifications++;
+                parse.correctShiftReduceClassifications++;
             } else {
                 action = ParserAction.forInt(shiftReduceClassifier.classify(featureVector));
+                parse.shiftReduceClassifications++;
             }
+
+            final Arc top = stack.isEmpty() ? null : stack.get(0);
+            final Arc second = stack.size() < 2 ? null : stack.get(1);
 
             switch (action) {
             case SHIFT:
+                if (stack.size() >= 2 && input.arcs[top.index].head != second.index
+                        && input.arcs[second.index].head != top.index) {
+                    parse.correctShiftReduceClassifications++;
+                }
+
                 stack.addFirst(parse.arcs[i++]);
+
                 break;
 
             case REDUCE:
+                parse.reduceDirectionClassifications++;
+
                 final ScoredClassification sc = reduceDirectionClassifier.scoredClassify(featureVector);
+                final ReduceDirection reduceDirection = ReduceDirection.forInt(sc.classification);
 
-                switch (ReduceDirection.forInt(sc.classification)) {
-                case LEFT:
-                    final Arc right = stack.removeFirst();
-                    right.head = stack.peek().index;
-                    right.score = sc.score;
+                final boolean goldReduceLeft = top.index >= 1 && input.arcs[top.index - 1].head == second.index;
+                final boolean goldReduceRight = input.arcs[second.index - 1].head == top.index;
+
+                // if (!goldReduceLeft && !goldReduceRight && input.arcs.length < 15 && step == 9) {
+                // final int k = 0;
+                // }
+                if (goldReduceLeft || goldReduceRight) {
+                    parse.correctShiftReduceClassifications++;
+
+                    if ((reduceDirection == ReduceDirection.LEFT && goldReduceLeft)
+                            || (reduceDirection == ReduceDirection.RIGHT && goldReduceRight)) {
+                        parse.correctReduceDirectionClassifications++;
+                    }
+                }
+
+                switch (reduceDirection) {
+                case LEFT: {
+                    stack.removeFirst();
+                    top.predictedHead = second.index;
+                    top.score = sc.score;
                     if (labelClassifier != null) {
-                        right.label = labels.getSymbol(labelClassifier.classify(featureVector));
+                        top.label = labels.getSymbol(labelClassifier.classify(featureVector));
                     }
                     break;
-
-                case RIGHT:
-                    final Arc tmp = stack.removeFirst();
-                    final Arc left = stack.removeFirst();
-                    left.head = tmp.index;
-                    left.score = sc.score;
+                }
+                case RIGHT: {
+                    stack.removeFirst();
+                    stack.removeFirst();
+                    second.predictedHead = top.index;
+                    second.score = sc.score;
                     if (labelClassifier != null) {
-                        left.label = labels.getSymbol(labelClassifier.classify(featureVector));
+                        second.label = labels.getSymbol(labelClassifier.classify(featureVector));
                     }
-                    stack.addFirst(tmp);
+                    stack.addFirst(top);
                     break;
+                }
                 }
             }
         }
