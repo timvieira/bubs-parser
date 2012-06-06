@@ -40,25 +40,26 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
 
     private static final long serialVersionUID = 1L;
 
-    public final static String NULL = "<null>";
-
-    final static int DISTANCE_1 = 0;
+    final static int DISTANCE_NULL = 0;
+    final static int DISTANCE_1 = DISTANCE_NULL + 1;
     final static int DISTANCE_2 = DISTANCE_1 + 1;
     final static int DISTANCE_3 = DISTANCE_2 + 1;
     final static int DISTANCE_45 = DISTANCE_3 + 1;
     final static int DISTANCE_6 = DISTANCE_45 + 1;
-    final static int DISTANCE_BINS = 5;
+    final static int DISTANCE_BINS = 6;
 
     final TemplateElements[][] templates;
     final int[] featureOffsets;
 
     final SymbolSet<String> tokens;
     final SymbolSet<String> pos;
-    final int nullPosTag, nullToken;
-    final int tokenSetSize, posSetSize;
+    final SymbolSet<String> labels;
+    final int nullPosTag, nullToken, nullLabel;
+    final int tokenSetSize, posSetSize, labelSetSize;
     final int featureVectorLength;
 
-    public NivreParserFeatureExtractor(final SymbolSet<String> tokens, final SymbolSet<String> pos) {
+    public NivreParserFeatureExtractor(final SymbolSet<String> tokens, final SymbolSet<String> pos,
+            final SymbolSet<String> labels) {
         // Features:
         //
         // Previous word (on the stack), current word (top-of-stack), next word (not-yet-shifted),
@@ -78,7 +79,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         // Distance between the top two words on the stack (the two under consideration for reduce operations)
         // Binned: 1, 2, 3, 4-5, 6+ words
         //
-        this("sw2,sw1,iw1,st2,st1,it1,it1_it2,iw1_it2,it1_iw2,d", tokens, pos);
+        this("sw2,sw1,iw1,st2,st1,it1,it1_it2,iw1_it2,it1_iw2,d", tokens, pos, labels);
     }
 
     /**
@@ -95,14 +96,19 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
      * @param pos
      */
     public NivreParserFeatureExtractor(final String featureTemplates, final SymbolSet<String> tokens,
-            final SymbolSet<String> pos) {
+            final SymbolSet<String> pos, final SymbolSet<String> labels) {
 
         this.tokens = tokens;
         this.tokenSetSize = tokens.size();
-        this.nullToken = tokens.getIndex(NULL);
+        this.nullToken = tokens.getIndex(DependencyGraph.NULL);
+
         this.pos = pos;
         this.posSetSize = pos.size();
-        this.nullPosTag = pos.getIndex(NULL);
+        this.nullPosTag = pos.getIndex(DependencyGraph.NULL);
+
+        this.labels = labels;
+        this.labelSetSize = labels.size();
+        this.nullLabel = labels.getIndex(DependencyGraph.NULL);
 
         final String[] templateStrings = featureTemplates.split(",");
         this.templates = new TemplateElements[templateStrings.length][];
@@ -152,6 +158,13 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
                 size *= tokenSetSize;
                 break;
 
+            case ldep1:
+            case ldep2:
+            case rdep1:
+            case rdep2:
+                size *= labelSetSize;
+                break;
+
             case d:
                 size *= DISTANCE_BINS;
                 break;
@@ -198,6 +211,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
                         feature *= tokenSetSize;
                         feature += token(source.stack, template[j].index);
                         break;
+
                     case iw1:
                     case iw2:
                     case iw3:
@@ -206,7 +220,33 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
                         feature += token(source.arcs, tokenIndex + template[j].index);
                         break;
 
+                    case ldep1:
+                    case ldep2:
+                        feature *= labelSetSize;
+
+                        if (source.stack.size() <= template[j].index) {
+                            feature += nullLabel;
+                            break;
+                        }
+
+                        feature += leftDependentLabel(source.arcs, source.stack.get(template[j].index).index);
+                        break;
+
+                    case rdep1:
+                    case rdep2:
+                        feature *= labelSetSize;
+
+                        if (source.stack.size() <= template[j].index) {
+                            feature += nullLabel;
+                            break;
+                        }
+
+                        feature += rightDependentLabel(source.arcs, source.stack.get(template[j].index).index);
+                        break;
+
                     case d:
+                        feature *= DISTANCE_BINS;
+
                         if (source.stack.size() < 2) {
                             throw new InvalidFeatureException();
                         }
@@ -303,6 +343,40 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
      * @param i
      * @return
      */
+    private int leftDependentLabel(final Arc[] arcs, final int i) {
+        if (i < 0 || i >= arcs.length) {
+            return nullPosTag;
+        }
+        for (int j = 0; j < arcs.length; j++) {
+            if (arcs[j].predictedHead == i) {
+                return labels.getIndex(arcs[j].predictedLabel);
+            }
+        }
+        return nullLabel;
+    }
+
+    /**
+     * @param arcs
+     * @param i
+     * @return
+     */
+    private int rightDependentLabel(final Arc[] arcs, final int i) {
+        if (i < 0 || i >= arcs.length) {
+            return nullPosTag;
+        }
+        for (int j = arcs.length - 1; j >= 0; j--) {
+            if (arcs[j].predictedHead == i) {
+                return labels.getIndex(arcs[j].predictedLabel);
+            }
+        }
+        return nullLabel;
+    }
+
+    /**
+     * @param arcs
+     * @param i
+     * @return
+     */
     private int unk(final Arc[] arcs, final int i) {
         if (i < 0 || i >= arcs.length) {
             return nullToken;
@@ -330,6 +404,10 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         it2(1),
         it3(2),
         it4(3),
+        ldep1(0),
+        ldep2(1),
+        rdep1(0),
+        rdep2(1),
         d(-1);
 
         final int index;
