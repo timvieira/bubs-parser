@@ -37,19 +37,21 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class TestNivreParserFeatureExtractor {
 
-    private final static String NULL_SYMBOL = "<null>";
-
     private SymbolSet<String> lexicon;
     private int lexiconSize;
+
     private SymbolSet<String> pos;
     private int posSetSize;
+
+    private SymbolSet<String> labels;
+    private int labelSetSize;
 
     private Arc[] arcs;
 
     @Before
     public void setUp() {
         lexicon = new SymbolSet<String>();
-        lexicon.addSymbol(NULL_SYMBOL);
+        lexicon.addSymbol(DependencyGraph.NULL);
         lexicon.addSymbol("the");
         lexicon.addSymbol("dog");
         lexicon.addSymbol("barked");
@@ -57,17 +59,24 @@ public class TestNivreParserFeatureExtractor {
         lexiconSize = lexicon.size();
 
         pos = new SymbolSet<String>();
-        pos.addSymbol(NULL_SYMBOL);
+        pos.addSymbol(DependencyGraph.NULL);
         pos.addSymbol("DT");
         pos.addSymbol("NN");
         pos.addSymbol("VBD");
         pos.addSymbol(DependencyGraph.ROOT.pos);
         posSetSize = pos.size();
 
+        labels = new SymbolSet<String>();
+        labels.addSymbol(DependencyGraph.NULL);
+        labels.addSymbol("NMOD");
+        labels.addSymbol("SBJ");
+        labels.addSymbol("ROOT");
+        labelSetSize = labels.size();
+
         arcs = new Arc[4];
-        arcs[0] = new Arc("the", "DT", "DT", 1, 2, "_");
-        arcs[1] = new Arc("dog", "NN", "NN", 2, 3, "_");
-        arcs[2] = new Arc("barked", "VB", "VBD", 3, 0, "_");
+        arcs[0] = new Arc("the", "DT", "DT", 1, 2, "NMOD");
+        arcs[1] = new Arc("dog", "NN", "NN", 2, 3, "SBJ");
+        arcs[2] = new Arc("barked", "VB", "VBD", 3, 0, "ROOT");
         arcs[3] = DependencyGraph.ROOT;
     }
 
@@ -77,7 +86,7 @@ public class TestNivreParserFeatureExtractor {
     @Test
     public void testWordFeatures() {
 
-        NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("iw1,sw1,sw2_sw1", lexicon, pos);
+        NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("iw1,sw1,sw2_sw1", lexicon, pos, labels);
         assertEquals(lexiconSize * 2 + lexiconSize * lexiconSize, fe.featureVectorLength);
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         stack.push(arcs[0]);
@@ -86,7 +95,7 @@ public class TestNivreParserFeatureExtractor {
         SparseBitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs), 1);
         assertTrue(features.contains(lexicon.getIndex("dog")));
         assertTrue(features.contains(lexiconSize + lexicon.getIndex("the")));
-        assertTrue(features.contains(lexiconSize * 2 + lexicon.getIndex(NULL_SYMBOL) * lexiconSize
+        assertTrue(features.contains(lexiconSize * 2 + lexicon.getIndex(DependencyGraph.NULL) * lexiconSize
                 + lexicon.getIndex("the")));
 
         // A version when the stack contains 2 words
@@ -105,7 +114,7 @@ public class TestNivreParserFeatureExtractor {
                 + lexicon.getIndex("barked")));
 
         // And using lookahead into the buffer
-        fe = new NivreParserFeatureExtractor("iw1,sw1,sw1_iw1", lexicon, pos);
+        fe = new NivreParserFeatureExtractor("iw1,sw1,sw1_iw1", lexicon, pos, labels);
         features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs), 3);
         assertTrue(features.contains(lexicon.getIndex(DependencyGraph.ROOT.token)));
         assertTrue(features.contains(lexiconSize + lexicon.getIndex("barked")));
@@ -118,7 +127,7 @@ public class TestNivreParserFeatureExtractor {
      */
     @Test
     public void testPosFeatures() {
-        NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("it1,st1,st2_sw1", lexicon, pos);
+        NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("it1,st1,st2_sw1", lexicon, pos, labels);
         assertEquals(posSetSize * 2 + posSetSize * lexiconSize, fe.featureVectorLength);
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         stack.push(arcs[0]);
@@ -127,8 +136,8 @@ public class TestNivreParserFeatureExtractor {
         SparseBitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs), 1);
         assertTrue(features.contains(pos.getIndex("NN")));
         assertTrue(features.contains(posSetSize + pos.getIndex("DT")));
-        assertTrue(features
-                .contains(posSetSize * 2 + pos.getIndex(NULL_SYMBOL) * lexiconSize + lexicon.getIndex("the")));
+        assertTrue(features.contains(posSetSize * 2 + pos.getIndex(DependencyGraph.NULL) * lexiconSize
+                + lexicon.getIndex("the")));
 
         // A version when the stack contains 2 words
         stack.push(arcs[1]);
@@ -145,7 +154,7 @@ public class TestNivreParserFeatureExtractor {
         assertTrue(features.contains(posSetSize * 2 + pos.getIndex("NN") * lexiconSize + lexicon.getIndex("barked")));
 
         // And using lookahead into the buffer
-        fe = new NivreParserFeatureExtractor("it1,st1,st1_it1", lexicon, pos);
+        fe = new NivreParserFeatureExtractor("it1,st1,st1_it1", lexicon, pos, labels);
         features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs), 3);
         assertTrue(features.contains(pos.getIndex(DependencyGraph.ROOT.pos)));
         assertTrue(features.contains(posSetSize + pos.getIndex("VBD")));
@@ -153,20 +162,43 @@ public class TestNivreParserFeatureExtractor {
                 + pos.getIndex(DependencyGraph.ROOT.pos)));
     }
 
+    @Test
+    public void testDependentFeatures() {
+        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("st1,st2,ldep2,rdep1", lexicon, pos,
+                labels);
+        assertEquals(lexiconSize * 2 + labelSetSize * 2, fe.featureVectorLength);
+        final LinkedList<Arc> stack = new LinkedList<Arc>();
+
+        stack.push(arcs[1]);
+        stack.push(arcs[2]);
+
+        // Fake predictions that wouldn't be made yet in this simple sentence, just to test the feature-extractor
+        arcs[0].predictedHead = 2;
+        arcs[0].predictedLabel = "PMOD";
+
+        arcs[1].predictedHead = 3;
+        arcs[1].predictedLabel = "SBJ";
+
+        final SparseBitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs), 3);
+        assertTrue(features.contains(posSetSize * 2 + labels.getIndex("PMOD")));
+        assertTrue(features.contains(posSetSize * 2 + labelSetSize + labels.getIndex("SBJ")));
+    }
+
     /**
      * A simple example using distance tag features
      */
     @Test
     public void testDistanceFeatures() {
-        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("st2_st1,d", lexicon, pos);
+        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("st2_st1,d", lexicon, pos, labels);
         assertEquals(posSetSize * posSetSize + NivreParserFeatureExtractor.DISTANCE_BINS, fe.featureVectorLength);
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         stack.push(arcs[0]);
+        stack.push(arcs[2]);
 
-        // Features when the stack contains only 1 word and the stack and input buffer aren't sequential (1 word has
+        // Features when the stack contains 2 words that are not sequential (1 word has
         // already been reduced between the two)
         final SparseBitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs), 2);
-        assertTrue(features.contains(pos.getIndex(NULL_SYMBOL) * posSetSize + pos.getIndex("DT")));
+        assertTrue(features.contains(pos.getIndex("DT") * posSetSize + pos.getIndex("VBD")));
         assertTrue(features.contains(posSetSize * posSetSize + NivreParserFeatureExtractor.DISTANCE_2));
     }
 }
