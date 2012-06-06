@@ -152,7 +152,7 @@ public class AveragedPerceptron extends Perceptron {
         float bestScore = Float.NEGATIVE_INFINITY, totalScore = 0;
         for (int i = 0; i < avgWeights.length; i++) {
             // The derived probability of a classification is the logistic of the averaged score
-            final float score = edu.ohsu.cslu.util.Math.logistic(.05f, avgWeights[i].dotProduct(featureVector)
+            final float score = edu.ohsu.cslu.util.Math.logistic(.05f, featureVector.dotProduct(avgWeights[i])
                     + bias[i]);
             totalScore += score;
             if (score > bestScore) {
@@ -183,7 +183,7 @@ public class AveragedPerceptron extends Perceptron {
         float constrainingScore = Float.NEGATIVE_INFINITY, totalScore = 0;
         for (int i = 0; i < avgWeights.length; i++) {
             // The derived probability of a classification is the logistic of the averaged score
-            final float score = edu.ohsu.cslu.util.Math.logistic(.05f, avgWeights[i].dotProduct(featureVector)
+            final float score = edu.ohsu.cslu.util.Math.logistic(.05f, featureVector.dotProduct(avgWeights[i])
                     + bias[i]);
             totalScore += score;
             if (i == constrainingClass) {
