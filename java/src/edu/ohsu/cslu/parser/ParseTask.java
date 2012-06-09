@@ -72,18 +72,20 @@ public class ParseTask {
     //
     // Statistics
     //
-    public long totalPops = 0;
+    /** The total number of edges populated in the chart (including unary, binary, and lexical rules) */
+    public long totalPopulatedEdges = 0;
     public long totalPushes = 0;
     public long totalConsidered = 0;
 
     public int nLex = 0; // num considered == num in chart
     public int nLexUnary = 0;
     public long nLexUnaryConsidered = 0;
+    /** The number of unary grammar rules (edges) examined while parsing the sentence */
     public long nUnaryConsidered = 0;
+    /** The number of binary grammar rules (edges) examined while parsing the sentence */
     public long nBinaryConsidered = 0;
 
     public float insideScore = 0;
-    public long maxMemoryMB = 0;
 
     /** Total time to parse the sentence. */
     public long parseTimeMs = 0;
@@ -208,9 +210,9 @@ public class ParseTask {
         if (BaseLogger.singleton().isLoggable(Level.FINER)) {
             result.append(String
                     .format(" pops=%d pushes=%d considered=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d chartInit=%d fomInit=%d cellSelectorInit=%d insideBinary=%d unaryAndPruning=%d outsidePass=%d extract=%d",
-                            totalPops, totalPushes, totalConsidered, nLex, nLexUnaryConsidered, nUnaryConsidered,
-                            nBinaryConsidered, chartInitMs, fomInitMs, ccInitMs, insideBinaryNs / 1000000,
-                            unaryAndPruningNs / 1000000, outsidePassMs, extractTimeMs));
+                            totalPopulatedEdges, totalPushes, totalConsidered, nLex, nLexUnaryConsidered,
+                            nUnaryConsidered, nBinaryConsidered, chartInitMs, fomInitMs, ccInitMs,
+                            insideBinaryNs / 1000000, unaryAndPruningNs / 1000000, outsidePassMs, extractTimeMs));
         }
 
         return result.toString();

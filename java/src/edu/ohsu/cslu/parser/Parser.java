@@ -20,6 +20,7 @@ package edu.ohsu.cslu.parser;
 
 import java.util.logging.Level;
 
+import cltool4j.BaseCommandlineTool;
 import cltool4j.BaseLogger;
 import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
@@ -78,9 +79,9 @@ public abstract class Parser<G extends Grammar> {
     public final CellSelector cellSelector;
 
     /**
-     * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from
-     * {@link ParserDriver}, but duplicated here as a final variable, so that the JIT can eliminate
-     * potentially-expensive counting code when we don't need it.
+     * True if we're collecting detailed counts of cell populations, cartesian-product sizes, etc. Set from the
+     * command-line (using the '-v' option of {@link BaseCommandlineTool}, but it is duplicated here as a final
+     * variable, so that the JIT can eliminate potentially-expensive counting code when we don't need it.
      */
     protected final boolean collectDetailedStatistics;
 
