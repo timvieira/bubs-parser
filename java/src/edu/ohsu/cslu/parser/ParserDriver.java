@@ -74,6 +74,7 @@ import edu.ohsu.cslu.parser.beam.BSCPSplitUnary;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
+import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
@@ -201,11 +202,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-geometricInsideNorm", hidden = true, usage = "Use the geometric mean of the Inside score. Only needed for agenda parsers")
     public static boolean geometricInsideNorm = false;
 
-    @Option(name = "-ccModel", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
+    @Option(name = "-ccModel", hidden = true, metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
 
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
+
+    @Option(name = "-dcModel", hidden = true, metaVar = "FILE", usage = "Dependency constraints model file")
+    private File dependencyConstraintsModel = null;
 
     @Option(name = "-help-long", usage = "List all research parsers and options")
     public boolean longHelp = false;
@@ -362,6 +366,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             if (chartConstraintsModel != null) {
                 cellSelectorModel = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel),
                         grammar.binarization() == Binarization.LEFT);
+            } else if (dependencyConstraintsModel != null) {
+                cellSelectorModel = new DepGraphCellSelectorModel(new FileReader(dependencyConstraintsModel));
             }
 
             if (beamModelFileName != null) {

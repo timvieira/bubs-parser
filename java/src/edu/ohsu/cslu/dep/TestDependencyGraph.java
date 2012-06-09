@@ -2,9 +2,12 @@ package edu.ohsu.cslu.dep;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,6 +15,7 @@ import org.junit.Test;
 import cltool4j.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.dep.DependencyGraph.DerivationAction;
+import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel;
 
 public class TestDependencyGraph extends BaseCommandlineTool {
 
@@ -77,8 +81,106 @@ public class TestDependencyGraph extends BaseCommandlineTool {
             conllExample.arcs[i].score = 0.5f;
         }
         final NaryTree<DependencyNode> root = conllExample.tree();
-        final float subtreeScore = root.label().subtreeScore(root.children());
+        final float subtreeScore = root.label().subtreeScore();
         assertEquals(Math.log(1.0 / 4096), subtreeScore, 0.001);
+    }
+
+    @Test
+    public void testStart() {
+        final NaryTree<DependencyNode> root = conllExample.tree();
+        assertEquals(0, root.label().start());
+
+        final NaryTree<DependencyNode> sold = root.children().getFirst();
+        assertEquals(0, sold.label().start());
+
+        final NaryTree<DependencyNode> year = sold.children().get(1);
+        assertEquals(4, year.label().start());
+
+        final NaryTree<DependencyNode> maker = sold.children().getFirst();
+        assertEquals(0, maker.label().start());
+
+        final NaryTree<DependencyNode> in = sold.children().getLast();
+        assertEquals(9, in.label().start());
+    }
+
+    @Test
+    public void testSpan() {
+        final NaryTree<DependencyNode> root = conllExample.tree();
+        assertEquals(12, root.label().span());
+
+        final NaryTree<DependencyNode> sold = root.children().getFirst();
+        assertEquals(12, sold.label().span());
+
+        final NaryTree<DependencyNode> maker = sold.children().getFirst();
+        assertEquals(4, maker.label().span());
+
+        final NaryTree<DependencyNode> in = sold.children().getLast();
+        assertEquals(3, in.label().span());
+    }
+
+    @Test
+    public void testDependencyGraphCellSelector() {
+        for (int i = 0; i < conllExample.arcs.length; i++) {
+            conllExample.arcs[i].score = 0.99f;
+        }
+
+        final DepGraphCellSelectorModel model = new DepGraphCellSelectorModel(new ArrayList<DependencyGraph>(
+                Arrays.asList(conllExample)));
+        final short[] openCells = model.openCells("The luxury auto maker last year sold 1,214 cars in the U.S.");
+
+        // A few cells closed by 'The luxury auto maker'
+        assertClosed(openCells, 1, 5);
+        assertClosed(openCells, 2, 5);
+        assertClosed(openCells, 3, 5);
+        assertClosed(openCells, 1, 12);
+        assertClosed(openCells, 2, 12);
+        assertClosed(openCells, 3, 12);
+
+        // And a few by '1,214 cars'
+        assertClosed(openCells, 8, 10);
+        assertClosed(openCells, 8, 11);
+        assertClosed(openCells, 8, 12);
+        assertClosed(openCells, 6, 8);
+        assertClosed(openCells, 6, 8);
+        assertClosed(openCells, 5, 8);
+        assertClosed(openCells, 4, 8);
+        assertClosed(openCells, 0, 8);
+
+        // And finally, the 'in the U.S.' subtree, 9,11 should be closed by the 'the U.S.' arc, but 9,12 should remain
+        // open
+        assertClosed(openCells, 9, 11);
+        assertOpen(openCells, 9, 12);
+    }
+
+    /**
+     * Fails if the specified start,end pair is found in the open cell array
+     * 
+     * @param openCells
+     * @param start
+     * @param end
+     */
+    private void assertClosed(final short[] openCells, final int start, final int end) {
+        for (int k = 0; k < openCells.length; k += 2) {
+            if (openCells[k] == start && openCells[k + 1] == end) {
+                fail("Did not expect " + start + "," + end);
+            }
+        }
+    }
+
+    /**
+     * Fails if the specified start,end pair is not found in the open cell array
+     * 
+     * @param openCells
+     * @param start
+     * @param end
+     */
+    private void assertOpen(final short[] openCells, final int start, final int end) {
+        for (int k = 0; k < openCells.length; k += 2) {
+            if (openCells[k] == start && openCells[k + 1] == end) {
+                return;
+            }
+        }
+        fail("Expected " + start + "," + end);
     }
 
     @Override
@@ -86,11 +188,11 @@ public class TestDependencyGraph extends BaseCommandlineTool {
 
         int errors = 0, sentences = 0;
         final BufferedReader br = inputAsBufferedReader();
-        for (DependencyGraph deps = DependencyGraph.readConll(br); deps != null; deps = DependencyGraph.readConll(br)) {
+        for (DependencyGraph g = DependencyGraph.readConll(br); g != null; g = DependencyGraph.readConll(br)) {
             try {
-                deps.printDerivation();
+                System.out.println(g.tree());
             } catch (final Exception e) {
-                System.err.println("Error on sentence of " + deps.size() + " words");
+                System.err.println("Error on sentence of " + g.size() + " words");
                 // e.printStackTrace();
                 errors++;
             }

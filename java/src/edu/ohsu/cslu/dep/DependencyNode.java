@@ -30,6 +30,10 @@ import edu.ohsu.cslu.dep.DependencyGraph.Arc;
  */
 public class DependencyNode {
 
+    final short index;
+    private short start = -1;
+    private short span = -1;
+
     public final String token;
 
     /** The score of the parent arc */
@@ -39,14 +43,10 @@ public class DependencyNode {
      * The (log) product of the scores of all nodes participating in the subtree rooted at this node. <em>Excludes</em>
      * the score of this node, since that score is for the arc from this node to its parent.
      */
-    private float subtreeScore = Float.MIN_VALUE;
-
-    public DependencyNode(final String token, final float arcScore) {
-        this.token = token;
-        this.arcScore = arcScore;
-    }
+    float subtreeScore = Float.MIN_VALUE;
 
     public DependencyNode(final Arc arc) {
+        this.index = (short) arc.index;
         this.token = arc.token;
         this.arcScore = arc.score;
     }
@@ -54,19 +54,56 @@ public class DependencyNode {
     /**
      * @return The log product of the scores of all nodes participating in the subtree rooted at this node
      */
-    public float subtreeScore(final LinkedList<NaryTree<DependencyNode>> children) {
-        if (subtreeScore == Float.MIN_VALUE) {
-            if (children == null || children.isEmpty()) {
-                subtreeScore = 0f;
-            } else {
-                subtreeScore = 0f;
-                for (final NaryTree<DependencyNode> child : children) {
-                    final DependencyNode node = child.label();
-                    subtreeScore += node.subtreeScore(child.children()) + Math.log(node.arcScore);
-                }
+    public float subtreeScore() {
+        return subtreeScore;
+    }
+
+    float internalSubtreeScore(final LinkedList<NaryTree<DependencyNode>> children) {
+        if (children == null || children.isEmpty()) {
+            subtreeScore = 0f;
+        } else {
+            subtreeScore = 0f;
+            for (final NaryTree<DependencyNode> child : children) {
+                final DependencyNode node = child.label();
+                subtreeScore += node.internalSubtreeScore(child.children()) + Math.log(node.arcScore);
             }
         }
         return subtreeScore;
+    }
+
+    public short span() {
+        return span;
+    }
+
+    public short start() {
+        return start;
+    }
+
+    short internalSpan(final LinkedList<NaryTree<DependencyNode>> children) {
+        if (span < 0) {
+            span = (short) (token != DependencyGraph.ROOT.token ? 1 : 0);
+
+            if (children != null) {
+                for (final NaryTree<DependencyNode> child : children) {
+                    span += child.label().internalSpan(child.children());
+                }
+            }
+        }
+
+        return span;
+    }
+
+    short internalStart(final LinkedList<NaryTree<DependencyNode>> children) {
+        if (start < 0) {
+            if (children.isEmpty()) {
+                start = (short) (index - 1);
+            } else {
+                final NaryTree<DependencyNode> child = children.getFirst();
+                start = (short) Math.max(0, Math.min(index - 1, child.label().internalStart(child.children())));
+            }
+        }
+
+        return start;
     }
 
     @Override

@@ -35,7 +35,7 @@ public class DependencyGraph implements Cloneable {
      * Reads a CoNLL-format dependency graph structure
      * 
      * @param reader Source of the CoNLL-format data
-     * @return {@link DependencyGraph}
+     * @return {@link DependencyGraph} or null if <code>reader</code> contains no more graphs
      * @throws IOException if the reader fails
      * @throws IllegalArgumentException if the input is malformed
      */
@@ -44,6 +44,11 @@ public class DependencyGraph implements Cloneable {
         for (String line = reader.readLine(); line != null && !line.isEmpty(); line = reader.readLine()) {
             lines.add(line);
         }
+
+        if (lines.isEmpty()) {
+            return null;
+        }
+
         final DependencyGraph g = new DependencyGraph(lines.size());
         for (int i = 0; i < lines.size(); i++) {
             final String line = lines.get(i);
@@ -175,7 +180,7 @@ public class DependencyGraph implements Cloneable {
     public NaryTree<DependencyNode> tree() {
         @SuppressWarnings("unchecked")
         final NaryTree<DependencyNode>[] nodes = new NaryTree[arcs.length];
-        nodes[0] = new NaryTree<DependencyNode>(new DependencyNode(ROOT.token, 0f));
+        nodes[0] = new NaryTree<DependencyNode>(new DependencyNode(ROOT));
         for (int i = 1; i < nodes.length; i++) {
             nodes[i] = new NaryTree<DependencyNode>(new DependencyNode(arcs[i - 1]));
         }
@@ -186,8 +191,23 @@ public class DependencyGraph implements Cloneable {
             parent.addChild(child);
         }
 
+        // Compute span, and score for each subtree
+        nodes[0].label().internalSubtreeScore(nodes[0].children());
+        nodes[0].label().internalSpan(nodes[0].children());
+
+        // Compute start for each subtree
+        for (final NaryTree<DependencyNode> node : nodes[0].inOrderTraversal()) {
+            node.label().internalStart(node.children());
+        }
+
         // Return root node
         return nodes[0];
+    }
+
+    public void setConfidenceScores(final float confidence) {
+        for (int i = 0; i < arcs.length; i++) {
+            arcs[i].score = confidence;
+        }
     }
 
     public int size() {
@@ -232,6 +252,18 @@ public class DependencyGraph implements Cloneable {
         return clone;
     }
 
+    public String tokenizedSentence() {
+        // Reconstruct the tokenized sentence
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < arcs.length - 1; i++) {
+            sb.append(arcs[i].token);
+            if (i < arcs.length - 2) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
     /**
      * Output in CoNLL format
      */
@@ -271,7 +303,7 @@ public class DependencyGraph implements Cloneable {
 
     @Override
     public String toString() {
-        return tokenTree().toString();
+        return toConllString();
     }
 
     public static enum DerivationAction {
