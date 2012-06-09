@@ -48,7 +48,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
     final static int DISTANCE_6 = DISTANCE_45 + 1;
     final static int DISTANCE_BINS = 6;
 
-    final TemplateElements[][] templates;
+    final TemplateElement[][] templates;
     final int[] featureOffsets;
 
     final SymbolSet<String> tokens;
@@ -111,7 +111,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         this.nullLabel = labels.getIndex(DependencyGraph.NULL);
 
         final String[] templateStrings = featureTemplates.split(",");
-        this.templates = new TemplateElements[templateStrings.length][];
+        this.templates = new TemplateElement[templateStrings.length][];
         this.featureOffsets = new int[this.templates.length];
 
         for (int i = 0; i < featureOffsets.length; i++) {
@@ -125,50 +125,69 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
                 + templateSize(templates[templates.length - 1]);
     }
 
-    private TemplateElements[] template(final String templateString) {
+    private TemplateElement[] template(final String templateString) {
         final String[] split = templateString.split("_");
-        final TemplateElements[] template = new TemplateElements[split.length];
+        final TemplateElement[] template = new TemplateElement[split.length];
         for (int i = 0; i < split.length; i++) {
-            template[i] = TemplateElements.valueOf(TemplateElements.class, split[i]);
+            template[i] = TemplateElement.valueOf(TemplateElement.class, split[i]);
         }
         return template;
     }
 
-    private int templateSize(final TemplateElements[] template) {
+    private int templateSize(final TemplateElement[] template) {
         int size = 1;
         for (int i = 0; i < template.length; i++) {
             switch (template[i]) {
-            case st3:
-            case st2:
-            case st1:
-            case it1:
-            case it2:
-            case it3:
-            case it4:
+            case s2t:
+            case s1t:
+            case s0t:
+            case i0t:
+            case i1t:
+            case i2t:
+            case i3t:
+            case s0m3t:
+            case s0m2t:
+            case s0m1t:
+            case s01t:
+            case s02t:
+            case s1m3t:
+            case s1m2t:
+            case s1m1t:
+            case s11t:
+            case s12t:
                 size *= posSetSize;
                 break;
 
-            case sw3:
-            case sw2:
-            case sw1:
-            case iw1:
-            case iw2:
-            case iw3:
-            case iw4:
+            case s2w:
+            case s1w:
+            case s0w:
+            case i0w:
+            case i1w:
+            case i2w:
+            case i3w:
+            case s0m3w:
+            case s0m2w:
+            case s0m1w:
+            case s01w:
+            case s02w:
+            case s1m3w:
+            case s1m2w:
+            case s1m1w:
+            case s11w:
+            case s12w:
                 size *= tokenSetSize;
                 break;
 
-            case ldep1:
-            case ldep2:
-            case rdep1:
-            case rdep2:
+            case s0ldep:
+            case s1ldep:
+            case s0rdep:
+            case s1rdep:
                 size *= labelSetSize;
                 break;
 
             case d:
                 size *= DISTANCE_BINS;
                 break;
-
             }
         }
         return size;
@@ -188,60 +207,90 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         for (int i = 0; i < templates.length; i++) {
             try {
                 int feature = 0;
-                final TemplateElements[] template = templates[i];
+                final TemplateElement[] template = templates[i];
                 for (int j = 0; j < template.length; j++) {
-                    switch (template[j]) {
-                    case st3:
-                    case st2:
-                    case st1:
+                    final TemplateElement t = template[j];
+                    switch (t) {
+                    case s2t:
+                    case s1t:
+                    case s0t:
                         feature *= posSetSize;
-                        feature += tag(source.stack, template[j].index);
+                        feature += tag(source.stack, t.index);
                         break;
-                    case it1:
-                    case it2:
-                    case it3:
-                    case it4:
+
+                    case s0m3t:
+                    case s0m2t:
+                    case s0m1t:
+                    case s01t:
+                    case s02t:
+                    case s1m3t:
+                    case s1m2t:
+                    case s1m1t:
+                    case s11t:
+                    case s12t:
                         feature *= posSetSize;
-                        feature += tag(source.arcs, tokenIndex + template[j].index);
+                        feature += tag(source.arcs, source.stack, t.index, t.offset);
                         break;
 
-                    case sw3:
-                    case sw2:
-                    case sw1:
+                    case i0t:
+                    case i1t:
+                    case i2t:
+                    case i3t:
+                        feature *= posSetSize;
+                        feature += tag(source.arcs, tokenIndex + t.index);
+                        break;
+
+                    case s2w:
+                    case s1w:
+                    case s0w:
                         feature *= tokenSetSize;
-                        feature += token(source.stack, template[j].index);
+                        feature += token(source.stack, t.index);
                         break;
 
-                    case iw1:
-                    case iw2:
-                    case iw3:
-                    case iw4:
+                    case s0m3w:
+                    case s0m2w:
+                    case s0m1w:
+                    case s01w:
+                    case s02w:
+                    case s1m3w:
+                    case s1m2w:
+                    case s1m1w:
+                    case s11w:
+                    case s12w:
                         feature *= tokenSetSize;
-                        feature += token(source.arcs, tokenIndex + template[j].index);
+                        feature += token(source.arcs, source.stack, t.index, t.offset);
                         break;
 
-                    case ldep1:
-                    case ldep2:
+                    case i0w:
+                    case i1w:
+                    case i2w:
+                    case i3w:
+                        feature *= tokenSetSize;
+                        feature += token(source.arcs, tokenIndex + t.index);
+                        break;
+
+                    case s0ldep:
+                    case s1ldep:
                         feature *= labelSetSize;
 
-                        if (source.stack.size() <= template[j].index) {
+                        if (source.stack.size() <= t.index) {
                             feature += nullLabel;
                             break;
                         }
 
-                        feature += leftDependentLabel(source.arcs, source.stack.get(template[j].index).index);
+                        feature += leftDependentLabel(source.arcs, source.stack.get(t.index).index);
                         break;
 
-                    case rdep1:
-                    case rdep2:
+                    case s0rdep:
+                    case s1rdep:
                         feature *= labelSetSize;
 
-                        if (source.stack.size() <= template[j].index) {
+                        if (source.stack.size() <= t.index) {
                             feature += nullLabel;
                             break;
                         }
 
-                        feature += rightDependentLabel(source.arcs, source.stack.get(template[j].index).index);
+                        feature += rightDependentLabel(source.arcs, source.stack.get(t.index).index);
                         break;
 
                     case d:
@@ -316,14 +365,54 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
 
     /**
      * @param arcs
-     * @param i
+     * @param stack
+     * @param stackIndex
+     * @param offset
      * @return
      */
-    private int tag(final List<Arc> stack, final int index) {
+    private int token(final Arc[] arcs, final List<Arc> stack, final int index, final int offset) {
+        if (index < 0 || index >= stack.size()) {
+            return nullToken;
+        }
+
+        final int i = stack.get(index).index + offset - 1;
+        if (i < 0 || i >= arcs.length) {
+            return nullToken;
+        }
+
+        return tokens.getIndex(arcs[i].token);
+    }
+
+    /**
+     * @param stack
+     * @param stackIndex
+     * @return
+     */
+    private int tag(final List<Arc> stack, final int stackIndex) {
+        if (stackIndex < 0 || stackIndex >= stack.size()) {
+            return nullPosTag;
+        }
+        return pos.getIndex(stack.get(stackIndex).pos);
+    }
+
+    /**
+     * @param arcs
+     * @param stack
+     * @param stackIndex
+     * @param offset
+     * @return
+     */
+    private int tag(final Arc[] arcs, final List<Arc> stack, final int index, final int offset) {
         if (index < 0 || index >= stack.size()) {
             return nullPosTag;
         }
-        return pos.getIndex(stack.get(index).pos);
+
+        final int i = stack.get(index).index + offset - 1;
+        if (i < 0 || i >= arcs.length) {
+            return nullPosTag;
+        }
+
+        return pos.getIndex(arcs[i].pos);
     }
 
     /**
@@ -345,7 +434,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
      */
     private int leftDependentLabel(final Arc[] arcs, final int i) {
         if (i < 0 || i >= arcs.length) {
-            return nullPosTag;
+            return nullLabel;
         }
         for (int j = 0; j < arcs.length; j++) {
             if (arcs[j].predictedHead == i) {
@@ -362,7 +451,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
      */
     private int rightDependentLabel(final Arc[] arcs, final int i) {
         if (i < 0 || i >= arcs.length) {
-            return nullPosTag;
+            return nullLabel;
         }
         for (int j = arcs.length - 1; j >= 0; j--) {
             if (arcs[j].predictedHead == i) {
@@ -389,31 +478,60 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         return null;
     }
 
-    private enum TemplateElements {
-        sw3(2),
-        sw2(1),
-        sw1(0),
-        iw1(0),
-        iw2(1),
-        iw3(2),
-        iw4(3),
-        st3(2),
-        st2(1),
-        st1(0),
-        it1(0),
-        it2(1),
-        it3(2),
-        it4(3),
-        ldep1(0),
-        ldep2(1),
-        rdep1(0),
-        rdep2(1),
-        d(-1);
+    private enum TemplateElement {
+        s2w(2, 0),
+        s1w(1, 0),
+        s0w(0, 0),
+        i0w(0, 0),
+        i1w(1, 0),
+        i2w(2, 0),
+        i3w(3, 0),
+        s2t(2, 0),
+        s1t(1, 0),
+        s0t(0, 0),
+        i0t(0, 0),
+        i1t(1, 0),
+        i2t(2, 0),
+        i3t(3, 0),
+        s0ldep(0, 0),
+        s1ldep(1, 0),
+        s0rdep(0, 0),
+        s1rdep(1, 0),
+
+        // Features with absolute offsets from stack words (e.g., the word prior to the right candidate (top-of-stack)
+        // regardless of whether that word has already been reduced)
+        s0m3t(0, -3),
+        s0m2t(0, -2),
+        s0m1t(0, -1),
+        s01t(0, 1),
+        s02t(0, 2),
+
+        s1m3t(1, -3),
+        s1m2t(1, -2),
+        s1m1t(1, -1),
+        s11t(1, 1),
+        s12t(1, 2),
+
+        s0m3w(0, -3),
+        s0m2w(0, -2),
+        s0m1w(0, -1),
+        s01w(0, 1),
+        s02w(0, 2),
+
+        s1m3w(1, -3),
+        s1m2w(1, -2),
+        s1m1w(1, -1),
+        s11w(1, 1),
+        s12w(1, 2),
+
+        d(-1, -1);
 
         final int index;
+        final int offset;
 
-        private TemplateElements(final int index) {
+        private TemplateElement(final int index, final int offset) {
             this.index = index;
+            this.offset = offset;
         }
     }
 
