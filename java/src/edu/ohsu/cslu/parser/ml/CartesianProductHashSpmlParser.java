@@ -75,6 +75,10 @@ public class CartesianProductHashSpmlParser extends
             final int rightStart = chart.minRightChildIndex(rightCellIndex);
             final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
 
+            if (collectDetailedStatistics) {
+                chart.parseTask.nBinaryConsidered += (leftEnd - leftStart + 1) * (rightEnd - rightStart + 1);
+            }
+
             for (int i = leftStart; i <= leftEnd; i++) {
                 final short leftChild = chart.nonTerminalIndices[i];
                 final float leftProbability = chart.insideProbabilities[i];
@@ -114,6 +118,10 @@ public class CartesianProductHashSpmlParser extends
         } else {
             // unaryAndPruning finalizes the cell
             unaryAndPruning(targetCell, start, end);
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.totalPopulatedEdges += targetCell.getNumNTs();
         }
     }
 }

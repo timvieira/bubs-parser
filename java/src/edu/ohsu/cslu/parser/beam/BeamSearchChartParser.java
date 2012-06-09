@@ -142,7 +142,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
                 computeInsideProbabilities(chart.getCell(startAndEnd[0], startAndEnd[1]));
 
                 parseTask.totalPushes += cellPushed;
-                parseTask.totalPops += cellPopped;
+                parseTask.totalPopulatedEdges += cellPopped;
                 parseTask.totalConsidered += cellConsidered;
             }
 
