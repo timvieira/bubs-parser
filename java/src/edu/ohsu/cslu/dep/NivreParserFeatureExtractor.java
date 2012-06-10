@@ -19,7 +19,7 @@
 
 package edu.ohsu.cslu.dep;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 
 import java.util.List;
 
@@ -49,14 +49,14 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
     final static int DISTANCE_BINS = 6;
 
     final TemplateElement[][] templates;
-    final int[] featureOffsets;
+    final long[] featureOffsets;
 
     final SymbolSet<String> tokens;
     final SymbolSet<String> pos;
     final SymbolSet<String> labels;
     final int nullPosTag, nullToken, nullLabel;
     final int tokenSetSize, posSetSize, labelSetSize;
-    final int featureVectorLength;
+    final long featureVectorLength;
 
     public NivreParserFeatureExtractor(final SymbolSet<String> tokens, final SymbolSet<String> pos,
             final SymbolSet<String> labels) {
@@ -112,7 +112,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
 
         final String[] templateStrings = featureTemplates.split(",");
         this.templates = new TemplateElement[templateStrings.length][];
-        this.featureOffsets = new int[this.templates.length];
+        this.featureOffsets = new long[this.templates.length];
 
         for (int i = 0; i < featureOffsets.length; i++) {
             templates[i] = template(templateStrings[i]);
@@ -134,8 +134,8 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         return template;
     }
 
-    private int templateSize(final TemplateElement[] template) {
-        int size = 1;
+    private long templateSize(final TemplateElement[] template) {
+        long size = 1;
         for (int i = 0; i < template.length; i++) {
             switch (template[i]) {
             case s2t:
@@ -201,12 +201,12 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
     @Override
     public SparseBitVector forwardFeatureVector(final NivreParserContext source, final int tokenIndex) {
 
-        final IntArrayList featureIndices = new IntArrayList();
+        final LongArrayList featureIndices = new LongArrayList();
 
         // TODO Handle UNKs
         for (int i = 0; i < templates.length; i++) {
             try {
-                int feature = 0;
+                long feature = 0;
                 final TemplateElement[] template = templates[i];
                 for (int j = 0; j < template.length; j++) {
                     final TemplateElement t = template[j];
@@ -336,7 +336,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
             }
         }
 
-        return new SparseBitVector(featureVectorLength, featureIndices.toIntArray());
+        return new SparseBitVector(featureVectorLength, featureIndices.toLongArray());
     }
 
     /**
