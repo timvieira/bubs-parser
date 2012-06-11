@@ -240,6 +240,10 @@ public class DependencyGraph implements Cloneable {
             arcs[i].predictedLabel = null;
             arcs[i].predictedPos = null;
         }
+        shiftReduceClassifications = 0;
+        correctShiftReduceClassifications = 0;
+        reduceDirectionClassifications = 0;
+        correctReduceDirectionClassifications = 0;
         return this;
     }
 

@@ -87,7 +87,7 @@ public abstract class BaseDepParser extends BaseCommandlineTool {
                     top.predictedHead = second.index;
                     top.score = sc.score;
                     if (labelClassifier != null) {
-                        top.label = labels.getSymbol(labelClassifier.classify(featureVector));
+                        top.predictedLabel = labels.getSymbol(labelClassifier.classify(featureVector));
                     }
                     break;
                 }
@@ -97,7 +97,7 @@ public abstract class BaseDepParser extends BaseCommandlineTool {
                     second.predictedHead = top.index;
                     second.score = sc.score;
                     if (labelClassifier != null) {
-                        second.label = labels.getSymbol(labelClassifier.classify(featureVector));
+                        second.predictedLabel = labels.getSymbol(labelClassifier.classify(featureVector));
                     }
                     stack.addFirst(top);
                     break;
