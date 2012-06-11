@@ -195,6 +195,25 @@
         </jar>
     </target>
 
+    <!-- Dependency parsing tools -->
+    <target name="train-dep-parser" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.dep.TrainDepParser" />
+            <param name="tool-name" value="train-dep-parser" />
+            <param name="heap-size" value="512m" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+    <target name="nivre-dep-parser" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.dep.NivreDepParser" />
+            <param name="tool-name" value="nivre-dep-parser" />
+            <param name="heap-size" value="512m" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
     <!-- 
     ========================================================================
        Package all training tools and utilities
