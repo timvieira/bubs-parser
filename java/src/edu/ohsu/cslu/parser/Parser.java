@@ -91,7 +91,7 @@ public abstract class Parser<G extends Grammar> {
         this.fomModel = opts.fomModel != null ? opts.fomModel.createFOM() : null;
         this.cellSelector = opts.cellSelectorModel.createCellSelector();
 
-        this.collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINEST);
+        this.collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINER);
     }
 
     public abstract float getInside(int start, int end, int nt);

@@ -294,6 +294,10 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                     chartCellMidpoints[parentOffset] = chartCellEnd;
                 }
             }
+
+            if (collectDetailedStatistics) {
+                chart.parseTask.nUnaryConsidered += (grammar.cscUnaryColumnOffsets[child + 1] - grammar.cscUnaryColumnOffsets[child]);
+            }
         }
     }
 
@@ -466,6 +470,10 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                                 queueEdges.midpoints[parent] = tmpCell.midpoints[parent] = end;
                             }
                         }
+                    }
+
+                    if (collectDetailedStatistics) {
+                        chart.parseTask.nUnaryConsidered += (grammar.cscUnaryColumnOffsets[child + 1] - grammar.cscUnaryColumnOffsets[child]);
                     }
                 }
             }

@@ -210,8 +210,8 @@ public class ParseTask {
         if (BaseLogger.singleton().isLoggable(Level.FINER)) {
             result.append(String
                     .format(" pops=%d pushes=%d considered=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d chartInit=%d fomInit=%d cellSelectorInit=%d insideBinary=%d unaryAndPruning=%d outsidePass=%d extract=%d",
-                            totalPopulatedEdges, totalPushes, totalConsidered, nLex, nLexUnaryConsidered,
-                            nUnaryConsidered, nBinaryConsidered, chartInitMs, fomInitMs, ccInitMs,
+                            totalPopulatedEdges, totalPushes, nBinaryConsidered + nUnaryConsidered, nLex,
+                            nLexUnaryConsidered, nUnaryConsidered, nBinaryConsidered, chartInitMs, fomInitMs, ccInitMs,
                             insideBinaryNs / 1000000, unaryAndPruningNs / 1000000, outsidePassMs, extractTimeMs));
         }
 

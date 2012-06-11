@@ -383,15 +383,13 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             // }
             // System.out.println("beginOpen=" + bOpen + " endOpen=" + eOpen);
 
-            final String ccStats = toString(true).trim();
             if (ParserDriver.chartConstraintsPrint) {
                 BaseLogger.singleton().info("CC_SENT: " + sentence);
-                BaseLogger.singleton().info(ccStats);
+                BaseLogger.singleton().info(perCellString());
                 // System.out.println("listSize=" + cellList.size());
                 cellList.clear(); // do not parse sentence
             } else {
-                BaseLogger.singleton().fine(ccStats.split("\n")[0]);
-                BaseLogger.singleton().finer(ccStats.split("\n")[1]);
+                BaseLogger.singleton().finer(toString());
             }
         }
 
@@ -457,12 +455,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
         @Override
         public String toString() {
-            return toString(false);
-        }
-
-        public String toString(final boolean perCell) {
             int total = 0, nClosed = 0, nFact = 0, nUnaryClosed = 0;
-            String s = "";
             final int n = beginScores.length;
             for (int span = 1; span <= n; span++) {
                 for (short beg = 0; beg < n - span + 1; beg++) {
@@ -470,15 +463,12 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                     total += 1;
                     if (span == 1) {
                         if (!isUnaryOpen(beg, end)) {
-                            s += beg + "," + end + "=3 ";
                             nUnaryClosed += 1;
                         }
                     } else {
                         if (!isCellOpen(beg, end)) {
-                            s += beg + "," + end + "=4 ";
                             nClosed += 1;
                         } else if (isCellOnlyFactored(beg, end)) {
-                            s += beg + "," + end + "=2 ";
                             nFact += 1;
                         }
                     }
@@ -486,12 +476,42 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             }
 
             final int nOpen = total - nClosed - nFact - nUnaryClosed;
-            String stats = "CC_STATS: total=" + total + " nOpen=" + nOpen + " nFact=" + nFact + " nClosed=" + nClosed
-                    + " nUnaryClosed=" + nUnaryClosed;
-            if (perCell) {
-                stats += "\nCC_CELLS: " + s;
-            }
+            final String stats = "CC_STATS: total=" + total + " nOpen=" + nOpen + " nFact=" + nFact + " nClosed="
+                    + nClosed + " nUnaryClosed=" + nUnaryClosed;
             return stats;
+        }
+
+        public String perCellString() {
+            int total = 0, nClosed = 0, nFact = 0, nUnaryClosed = 0;
+            final StringBuilder sb = new StringBuilder(4096);
+            final int n = beginScores.length;
+            for (int span = 1; span <= n; span++) {
+                for (short beg = 0; beg < n - span + 1; beg++) {
+                    final short end = (short) (beg + span);
+                    total += 1;
+                    sb.append(Integer.toString(beg));
+                    sb.append(',');
+                    sb.append(Integer.toString(end));
+                    if (span == 1) {
+                        if (!isUnaryOpen(beg, end)) {
+                            sb.append("=3 ");
+                            nUnaryClosed += 1;
+                        }
+                    } else {
+                        if (!isCellOpen(beg, end)) {
+                            sb.append("=4 ");
+                            nClosed += 1;
+                        } else if (isCellOnlyFactored(beg, end)) {
+                            sb.append("=2 ");
+                            nFact += 1;
+                        }
+                    }
+                }
+            }
+
+            final int nOpen = total - nClosed - nFact - nUnaryClosed;
+            return "CC_STATS: total=" + total + " nOpen=" + nOpen + " nFact=" + nFact + " nClosed=" + nClosed
+                    + " nUnaryClosed=" + nUnaryClosed + "\nCC_CELLS: " + sb.toString();
         }
 
         @Override
