@@ -25,7 +25,7 @@ import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
-import edu.ohsu.cslu.parser.chart.InsideOutsideChart;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.tests.JUnit;
 
@@ -33,7 +33,7 @@ import edu.ohsu.cslu.tests.JUnit;
 public class TestInsideOutsideCphSpmlParser {
 
     private InsideOutsideCscSparseMatrixGrammar grammar;
-    private SparseMatrixParser<InsideOutsideCscSparseMatrixGrammar, InsideOutsideChart> parser;
+    private SparseMatrixParser<InsideOutsideCscSparseMatrixGrammar, PackedArrayChart> parser;
 
     /** WSJ section 24 sentences 1-20 */
     protected static ArrayList<String[]> sentences = new ArrayList<String[]>();
