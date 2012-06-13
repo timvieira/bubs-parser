@@ -35,6 +35,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.lela.ConstrainedCellSelector;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.ecp.ChartParserTestCase;
@@ -68,7 +69,8 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
         parser = createParser(simpleGrammar2, parserOptions(), configProperties());
 
         final String constrainingTree = "(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))";
-        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, simpleGrammar2, null);
+        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, simpleGrammar2,
+                DecodeMethod.ViterbiMax);
         assertEquals(constrainingTree, parser.findBestParse(task).toString());
     }
 
@@ -84,7 +86,8 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
         parser = createParser(simpleGrammar2, parserOptions(), configProperties());
 
         final String constrainingTree = "(ROOT (S (NP (DT The) (NP (NN fish) (NP (NN market)))) (VP (VB stands) (RB last))))";
-        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, simpleGrammar2, null);
+        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, simpleGrammar2,
+                DecodeMethod.ViterbiMax);
         assertEquals(constrainingTree, parser.findBestParse(task).toString());
         // assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
         // .findBestParse(task).toString());
@@ -94,14 +97,14 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
     public void testSentence1() throws Exception {
         final String constrainingTree = "(ROOT (S (S (NP (ADJP (NP (DT The) (NN economy) (POS 's))) (NN temperature)) (VP (MD will) (VP (VB be) (VP (VP (VP (VBN taken) (PP (IN from) (NP (NP (JJ several) (NN vantage)) (NNS points)))) (NP (DT this) (NN week))) (, ,) (PP (IN with) (NP (NP (NNS readings)) (PP (IN on) (NP (NN trade) (, ,) (NN output) (, ,) (NN housing) (, ,) (CC and) (NN inflation))))))))) (. .)))";
 
-        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, f2_21_grammar, null);
+        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, f2_21_grammar, DecodeMethod.ViterbiMax);
         assertEquals(constrainingTree, parser.findBestParse(task).unfactor(GrammarFormatType.CSLU).toString());
     }
 
     @Test
     public void testWithImpossibleLexicalRule() throws Exception {
         final String constrainingTree = "(ROOT (S (NP (NN PaineWebber)) (ADVP (RB also)) (VP (VBD was) (ADJP (JJ able) (S (VP (TO to) (VP (VB gear) (PRT (RP up)) (ADVP (RB quickly)))))) (NP (NP (NNS thanks)) (PP (TO to) (NP (DT the) (CD 1987) (NN crash))))) (. .)))";
-        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, f2_21_grammar, null);
+        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, f2_21_grammar, DecodeMethod.ViterbiMax);
         assertEquals(constrainingTree, parser.findBestParse(task).unfactor(GrammarFormatType.CSLU).toString());
     }
 
@@ -114,7 +117,7 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
     @Test
     public void testWithUnarySelfChain() throws Exception {
         final String constrainingTree = "(ROOT (S (CC But) (PRN (SBAR (IN as) (S (NP (NNP Drexel) (NN analyst) (NNP Linda) (NNP Dunn)) (VP (S (VP (VBZ notes))))))) (, ,) (NP (PRP$ its) (NNS properties)) (VP (MD will) (VP (VB be) (VP (VBN developed) (PP (IN over) (NP (QP (CD 15) (TO to) (CD 20)) (NNS years)))))) (. .)))";
-        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, f2_21_grammar, null);
+        final ParseTask task = new ParseTask(constrainingTree, InputFormat.Tree, f2_21_grammar, DecodeMethod.ViterbiMax);
         assertEquals(
                 "(ROOT (S (CC But) (PRN (SBAR (IN as) (S (NP (NNP Drexel) (NN analyst) (NNP Linda) (NNP Dunn)) (VP (VBZ notes))))) (, ,) (NP (PRP$ its) (NNS properties)) (VP (MD will) (VP (VB be) (VP (VBN developed) (PP (IN over) (NP (QP (CD 15) (TO to) (CD 20)) (NNS years)))))) (. .)))",
                 parser.findBestParse(task).unfactor(GrammarFormatType.CSLU).toString());

@@ -10,12 +10,12 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
-import edu.ohsu.cslu.parser.chart.InsideOutsideChart;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.util.Math;
 
 public class InsideOutsideCphSpmlParser extends
-        SparseMatrixLoopParser<InsideOutsideCscSparseMatrixGrammar, InsideOutsideChart> {
+        SparseMatrixLoopParser<InsideOutsideCscSparseMatrixGrammar, PackedArrayChart> {
 
     public InsideOutsideCphSpmlParser(final ParserDriver opts, final InsideOutsideCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
