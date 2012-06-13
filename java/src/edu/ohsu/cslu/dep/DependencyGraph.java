@@ -204,6 +204,10 @@ public class DependencyGraph implements Cloneable {
         return nodes[0];
     }
 
+    public void setConfidenceScore(final int index, final float confidence) {
+        arcs[index].score = confidence;
+    }
+
     public void setConfidenceScores(final float confidence) {
         for (int i = 0; i < arcs.length; i++) {
             arcs[i].score = confidence;

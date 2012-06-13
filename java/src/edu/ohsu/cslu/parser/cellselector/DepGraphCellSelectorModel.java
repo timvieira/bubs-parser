@@ -19,12 +19,16 @@
 
 package edu.ohsu.cslu.parser.cellselector;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -46,6 +50,11 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
      */
     public final static String OPT_DEFAULT_ARC_CONFIDENCE = "depArcConfidence";
 
+    /**
+     * Fraction of dependency arcs to sample randomly
+     */
+    public final static String OPT_ARC_FRACTION = "depArcFraction";
+
     private HashMap<String, DependencyGraph> map = new HashMap<String, DependencyGraph>();
 
     /**
@@ -55,9 +64,15 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
      */
     private float subtreeScoreThreshold;
 
+    /**
+     * The fraction of arcs to randomly skip
+     */
+    private float arcSkipSampleFraction;
+
     private DepGraphCellSelectorModel() {
         subtreeScoreThreshold = (float) Math.log(GlobalConfigProperties.singleton().getFloatProperty("depTreeScore",
                 0.9f));
+        arcSkipSampleFraction = 1f - GlobalConfigProperties.singleton().getFloatProperty(OPT_ARC_FRACTION, 1f);
     }
 
     public DepGraphCellSelectorModel(final List<DependencyGraph> goldGraphs) {
@@ -75,6 +90,20 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
         final BufferedReader br = new BufferedReader(goldGraphs);
         for (DependencyGraph g = DependencyGraph.readConll(br); g != null; g = DependencyGraph.readConll(br)) {
             g.setConfidenceScores(confidence);
+
+            // If we're randomly skipping some arcs, set their scores to 0
+            if (arcSkipSampleFraction > 0) {
+                final int skipCount = Math.round(g.size() * arcSkipSampleFraction);
+                final IntSet arcsToSkip = new IntOpenHashSet();
+                final Random r = new Random();
+                while (arcsToSkip.size() < skipCount) {
+                    arcsToSkip.add(r.nextInt(g.size()));
+                }
+                for (final int i : arcsToSkip) {
+                    g.setConfidenceScore(i, 0);
+                }
+            }
+
             map.put(g.tokenizedSentence(), g);
         }
     }
