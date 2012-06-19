@@ -57,6 +57,13 @@ public abstract class Chart {
     }
 
     /**
+     * The number of cells in the bottom (lexical) row of this chart
+     */
+    public final int cells() {
+        return size * (size + 1) / 2;
+    }
+
+    /**
      * Returns the specified cell.
      * 
      * @param start
@@ -107,6 +114,42 @@ public abstract class Chart {
 
     public boolean hasCompleteParse(final int startSymbol) {
         return getRootCell().getInside(startSymbol) > Float.NEGATIVE_INFINITY;
+    }
+
+    /**
+     * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
+     * that of {@link #cellOffset(int, int)}
+     * 
+     * @param start
+     * @param end
+     * @param size
+     * @return the index of the specified cell in the parallel chart arrays
+     */
+    public static int cellIndex(final int start, final int end, final int size) {
+
+        if (start < 0 || start > size) {
+            throw new IllegalArgumentException("Illegal start: " + start);
+        }
+
+        if (end <= start || end > size) {
+            throw new IllegalArgumentException("Illegal end: " + end);
+        }
+
+        // final int row = end - start - 1;
+        // return size * row - ((row - 1) * row / 2) + start;
+        return size * start - ((start - 1) * start / 2) + end - start - 1;
+    }
+
+    /**
+     * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
+     * that of {@link #cellOffset(int, int)}
+     * 
+     * @param start
+     * @param end
+     * @return the index of the specified cell in the parallel chart arrays
+     */
+    public final int cellIndex(final int start, final int end) {
+        return cellIndex(start, end, size);
     }
 
     public BinaryTree<String> extractBestParse(final int startSymbol) {

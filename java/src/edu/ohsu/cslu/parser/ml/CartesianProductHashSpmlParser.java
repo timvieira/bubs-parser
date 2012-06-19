@@ -65,6 +65,10 @@ public class CartesianProductHashSpmlParser extends
 
         // Iterate over all possible midpoints
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
+            if (end - start > cellSelector.getMaxSpan(start, end)) {
+                continue;
+            }
+
             final int leftCellIndex = chart.cellIndex(start, midpoint);
             final int rightCellIndex = chart.cellIndex(midpoint, end);
 

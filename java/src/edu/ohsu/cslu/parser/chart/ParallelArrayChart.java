@@ -136,42 +136,6 @@ public abstract class ParallelArrayChart extends Chart {
     public abstract ParallelArrayChartCell getCell(final int start, final int end);
 
     /**
-     * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
-     * that of {@link #cellOffset(int, int)}
-     * 
-     * @param start
-     * @param end
-     * @param size
-     * @return the index of the specified cell in the parallel chart arrays
-     */
-    public static int cellIndex(final int start, final int end, final int size) {
-
-        if (start < 0 || start > size) {
-            throw new IllegalArgumentException("Illegal start: " + start);
-        }
-
-        if (end <= start || end > size) {
-            throw new IllegalArgumentException("Illegal end: " + end);
-        }
-
-        // final int row = end - start - 1;
-        // return size * row - ((row - 1) * row / 2) + start;
-        return size * start - ((start - 1) * start / 2) + end - start - 1;
-    }
-
-    /**
-     * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
-     * that of {@link #cellOffset(int, int)}
-     * 
-     * @param start
-     * @param end
-     * @return the index of the specified cell in the parallel chart arrays
-     */
-    public final int cellIndex(final int start, final int end) {
-        return cellIndex(start, end, size);
-    }
-
-    /**
      * Returns the offset of the specified cell in the parallel chart arrays (note that this computation must agree with
      * that of {@link #cellIndex(int, int)}
      * 
