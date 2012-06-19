@@ -58,8 +58,8 @@ public class AveragedPerceptron extends Perceptron {
         this(0.25f, new ZeroOneLoss(), "0", null, null);
     }
 
-    public AveragedPerceptron(final int classes, final long features) {
-        super(0.25f, new ZeroOneLoss(), classes, features);
+    public AveragedPerceptron(final LossFunction lossFunction, final int classes, final long features) {
+        super(0.25f, lossFunction, classes, features);
         this.avgWeights = new FloatVector[classes];
 
         if (features <= MAX_DENSE_STORAGE_SIZE) {
@@ -80,6 +80,10 @@ public class AveragedPerceptron extends Perceptron {
             }
             this.lastAveraged = new LargeSparseIntVector(features);
         }
+    }
+
+    public AveragedPerceptron(final int classes, final long features) {
+        this(new ZeroOneLoss(), classes, features);
     }
 
     public AveragedPerceptron(final float learningRate, final LossFunction lossFunction, final String binsStr,
