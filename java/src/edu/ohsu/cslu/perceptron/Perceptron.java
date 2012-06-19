@@ -212,6 +212,11 @@ public class Perceptron extends Classifier {
         return lossFunction.computeLoss(goldClass, guessClass);
     }
 
+    /**
+     * Abstracts the concept of a 'loss' function. For balanced classification problems, {@link ZeroOneLoss} usually
+     * works nicely, but for problems in which a misclassification in one direction or the other is more costly, other
+     * loss functions may be more appropriate.
+     */
     public static abstract class LossFunction implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -220,8 +225,7 @@ public class Perceptron extends Classifier {
     }
 
     /**
-     * Allow loss functions other than Zero-One loss such that some errors can be considered better or worse than
-     * others.
+     * An equally-balanced loss function
      */
     public static class ZeroOneLoss extends LossFunction {
 
@@ -233,6 +237,28 @@ public class Perceptron extends Classifier {
                 return 0f;
             }
             return 1f;
+        }
+    }
+
+    /**
+     * An imbalanced loss function
+     */
+    public static class BiasedLoss extends LossFunction {
+
+        private static final long serialVersionUID = 1L;
+
+        private final float loss[];
+
+        public BiasedLoss(final float[] loss) {
+            this.loss = loss;
+        }
+
+        @Override
+        public float computeLoss(final int goldClass, final int guessClass) {
+            if (goldClass == guessClass) {
+                return 0f;
+            }
+            return loss[goldClass];
         }
     }
 
