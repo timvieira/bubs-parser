@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel.DepGraphCellSelector;
 
 /**
  * Iterates through open cells in a chart. Some implementations (e.g. {@link LeftRightBottomTopTraversal}) use a simple
@@ -165,6 +166,22 @@ public abstract class CellSelector implements Iterator<short[]> {
 
     public int getMidEnd(final short start, final short end) {
         return end - 1;
+    }
+
+    /**
+     * Returns the maximum span in which the specified cell can participate. Certain {@link CellSelector}
+     * implementations (e.g. {@link DepGraphCellSelector}) identify subsequence spans and constrain the final chart to
+     * be consistent with those bracketings. E.g., if an NP-chunker has identified noun phrases, we must build a
+     * complete NP covering the identified span, but we need not consider larger spans that include part (and not all)
+     * of that NP. {@link CellConstraints#isCellOpen(short, short)} implements the former constraint, and this method
+     * implements the latter.
+     * 
+     * @param start
+     * @param end
+     * @return The maximum span in which the specified cell can participate.
+     */
+    public short getMaxSpan(final short start, final short end) {
+        return Short.MAX_VALUE;
     }
 
     /**

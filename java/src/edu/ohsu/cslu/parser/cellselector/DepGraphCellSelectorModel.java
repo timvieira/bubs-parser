@@ -32,9 +32,12 @@ import java.util.Random;
 
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
+import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.dep.DependencyGraph;
 import edu.ohsu.cslu.dep.DependencyNode;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 
@@ -112,82 +115,90 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
         return new DepGraphCellSelector();
     }
 
-    public short[] openCells(final String sentence) {
-
-        final DependencyGraph graph = map.get(sentence);
-        final int sentenceLength = graph.size() - 1;
-        final int currentOpenCells = (sentenceLength) * (sentenceLength + 1) / 2;
-        final boolean[] openCellFlags = new boolean[currentOpenCells];
-        Arrays.fill(openCellFlags, true);
-
-        final NaryTree<DependencyNode> tree = graph.tree();
-        for (final NaryTree<DependencyNode> subtree : tree.preOrderTraversal()) {
-
-            if (subtree.label().span() > 1 && subtree.label().subtreeScore() > subtreeScoreThreshold) {
-
-                // Mark cells which would cross brackets with this cell as closed
-                final short subtreeSpan = subtree.label().span();
-
-                // Traverse rightward up the closed diagonals
-                final int sStart = subtree.label().start() + 1;
-                final int eStart = sStart + subtreeSpan;
-
-                for (int s = sStart; s < sStart + subtreeSpan - 1; s++) {
-                    for (int e = eStart; e <= sentenceLength; e++) {
-                        openCellFlags[ParallelArrayChart.cellIndex(s, e, sentenceLength)] = false;
-                    }
-                }
-
-                // Traverse rightward up the closed diagonals
-                final int subtreeEnd = subtree.label().start() + subtreeSpan;
-
-                final int eEnd = subtreeEnd - 1;
-                final int sEnd = eEnd - subtreeSpan;
-
-                for (int e = eEnd; e > subtreeEnd - subtreeSpan; e--) {
-                    for (int s = sEnd; s >= 0; s--) {
-                        openCellFlags[ParallelArrayChart.cellIndex(s, e, sentenceLength)] = false;
-                    }
-                }
-
-                // TODO Mark cells underneath this cell with a maximum span. Later cells must consider this cell as
-                // a potential child, but need not consider its children.
-            }
-        }
-        int openCells = 0;
-        for (int i = 0; i < openCellFlags.length; i++) {
-            if (openCellFlags[i]) {
-                openCells++;
-            }
-        }
-        final short[] openCellIndices = new short[openCells * 2];
-        for (int span = 1, i = 0; span <= sentenceLength; span++) {
-            for (short start = 0; start < sentenceLength - span + 1; start++) {
-                if (openCellFlags[PackedArrayChart.cellIndex(start, start + span, sentenceLength)]) {
-                    openCellIndices[i++] = start;
-                    openCellIndices[i++] = (short) (start + span);
-                }
-            }
-        }
-        return openCellIndices;
-    }
-
     public class DepGraphCellSelector extends CellConstraints {
 
-        private boolean[] openCellsArray;
+        private PackedBitVector openCellsVector;
         private int sentenceLength;
 
         @Override
         public void initSentence(final ChartParser<?, ?> p) {
             super.initSentence(p);
+            sentenceLength = p.chart.size();
             cellIndices = openCells(p.chart.parseTask.sentence);
             openCells = cellIndices.length / 2;
-            sentenceLength = p.chart.size();
+        }
+
+        public short[] openCells(final String sentence) {
+
+            final DependencyGraph graph = map.get(sentence);
+            sentenceLength = graph.size() - 1;
+            final int currentOpenCells = (sentenceLength) * (sentenceLength + 1) / 2;
+            final boolean[] openCellFlags = new boolean[currentOpenCells];
+            Arrays.fill(openCellFlags, true);
+
+            final NaryTree<DependencyNode> tree = graph.tree();
+            for (final NaryTree<DependencyNode> subtree : tree.preOrderTraversal()) {
+
+                if (subtree.label().span() > 1 && subtree.label().subtreeScore() > subtreeScoreThreshold) {
+
+                    // Mark cells which would cross brackets with this cell as closed
+                    final short subtreeSpan = subtree.label().span();
+
+                    // Traverse rightward up the closed diagonals
+                    final int sStart = subtree.label().start() + 1;
+                    final int eStart = sStart + subtreeSpan;
+
+                    for (int s = sStart; s < sStart + subtreeSpan - 1; s++) {
+                        for (int e = eStart; e <= sentenceLength; e++) {
+                            openCellFlags[ParallelArrayChart.cellIndex(s, e, sentenceLength)] = false;
+                        }
+                    }
+
+                    // Traverse rightward up the closed diagonals
+                    final int subtreeStart = subtree.label().start();
+                    final int subtreeEnd = subtreeStart + subtreeSpan;
+
+                    final int eEnd = subtreeEnd - 1;
+                    final int sEnd = eEnd - subtreeSpan;
+
+                    for (int e = eEnd; e > subtreeEnd - subtreeSpan; e--) {
+                        for (int s = sEnd; s >= 0; s--) {
+                            openCellFlags[ParallelArrayChart.cellIndex(s, e, sentenceLength)] = false;
+                        }
+                    }
+
+                    // TODO Mark cells underneath this cell with a maximum span. Later cells must consider this cell as
+                    // a potential child, but need not consider its children.
+                    maxSpan = new DenseIntVector((sentenceLength + 1) * sentenceLength / 2, Short.MAX_VALUE);
+                    for (int start = subtreeStart; start < subtreeEnd; start++) {
+                        for (int end = start + 1; end < subtreeEnd; end++) {
+                            maxSpan.set(Chart.cellIndex(start, end, sentenceLength), subtreeSpan);
+                        }
+                    }
+                }
+            }
+
+            int openCells = 0;
+            for (int i = 0; i < openCellFlags.length; i++) {
+                if (openCellFlags[i]) {
+                    openCells++;
+                }
+            }
+            final short[] openCellIndices = new short[openCells * 2];
+            for (int span = 1, i = 0; span <= sentenceLength; span++) {
+                for (short start = 0; start < sentenceLength - span + 1; start++) {
+                    if (openCellFlags[PackedArrayChart.cellIndex(start, start + span, sentenceLength)]) {
+                        openCellIndices[i++] = start;
+                        openCellIndices[i++] = (short) (start + span);
+                    }
+                }
+            }
+            return openCellIndices;
         }
 
         @Override
         public boolean isCellOpen(final short start, final short end) {
-            return openCellsArray[ParallelArrayChart.cellIndex(start, end, sentenceLength)];
+            return openCellsVector.getBoolean(ParallelArrayChart.cellIndex(start, end, sentenceLength));
         }
 
         @Override

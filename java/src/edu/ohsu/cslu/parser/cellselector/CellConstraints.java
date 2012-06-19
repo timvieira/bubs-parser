@@ -18,9 +18,13 @@
  */
 package edu.ohsu.cslu.parser.cellselector;
 
+import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
+
 public abstract class CellConstraints extends CellSelector {
 
     protected abstract boolean isGrammarLeftFactored();
+
+    protected DenseIntVector maxSpan = null;
 
     /**
      * Returns true if the specified cell is 'open'.
@@ -67,5 +71,10 @@ public abstract class CellConstraints extends CellSelector {
         if ((end - start) < 2 || !isCellOnlyFactored(start, end) || !isGrammarLeftFactored())
             return end - 1;
         return start + 1; // only allow one midpoint
+    }
+
+    @Override
+    public short getMaxSpan(final short start, final short end) {
+        return maxSpan == null ? Short.MAX_VALUE : (short) maxSpan.getInt(parser.chart.cellIndex(start, end));
     }
 }
