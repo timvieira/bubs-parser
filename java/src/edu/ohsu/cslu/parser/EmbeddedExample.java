@@ -32,7 +32,7 @@ public class EmbeddedExample {
 
         // Instantiate a Grammar class and load in the grammar from disk
         final LeftCscSparseMatrixGrammar grammar = new LeftCscSparseMatrixGrammar(uncompressFile(args[0]));
-        opts.grammar = grammar;
+        opts.setGrammar(grammar);
 
         // Create FOMModel and CellSelectorModel instances and load models from disk
         opts.fomModel = new BoundaryInOut(FOMType.BoundaryPOS, grammar, uncompressFile(args[1]));

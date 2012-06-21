@@ -691,6 +691,15 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         }
     }
 
+    /**
+     * Sets the grammar. Used when embedding BUBS into an independent system (see {@link EmbeddedExample}).
+     * 
+     * @param g Grammar
+     */
+    public void setGrammar(final Grammar g) {
+        this.grammar = g;
+    }
+
     static public ParserDriver defaultTestOptions() {
         final ParserDriver opts = new ParserDriver();
         BaseLogger.singleton().setLevel(Level.FINER);
