@@ -115,8 +115,11 @@ public class PackedArrayChart extends ParallelArrayChart {
      */
     public final int[] leftChildSegmentStartIndices;
 
+    /**
+     * Stores outside probabilities for each nonterminal, when doing inside-outside inference. Parallel array to
+     * {@link ParallelArrayChart#insideProbabilities}, etc.
+     */
     public final float[] outsideProbabilities;
-    public final float[] decodingScores;
 
     // Default lambda to 0 (max-recall) if unset
     private final double lambda = GlobalConfigProperties.singleton().getFloatProperty(Parser.PROPERTY_MAXC_LAMBDA, 0f);
@@ -186,7 +189,6 @@ public class PackedArrayChart extends ParallelArrayChart {
         };
 
         this.outsideProbabilities = new float[chartArraySize];
-        this.decodingScores = new float[chartArraySize];
 
         switch (parseTask.decodeMethod) {
 
@@ -289,8 +291,6 @@ public class PackedArrayChart extends ParallelArrayChart {
         this.maxQRightChildren = null;
         this.maxQMidpoints = null;
         this.maxcMidpoints = null;
-
-        this.decodingScores = null;
     }
 
     @Override
