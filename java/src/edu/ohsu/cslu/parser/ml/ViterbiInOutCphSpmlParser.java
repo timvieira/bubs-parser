@@ -1,3 +1,22 @@
+/*
+ * Copyright 2010-2012 Aaron Dunlop and Nathan Bodenstab
+ * 
+ * This file is part of the BUBS Parser.
+ * 
+ * The BUBS Parser is free software: you can redistribute it and/or 
+ * modify  it under the terms of the GNU Affero General Public License 
+ * as published by the Free Software Foundation, either version 3 of 
+ * the License, or (at your option) any later version.
+ * 
+ * The BUBS Parser is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
+ */
+
 package edu.ohsu.cslu.parser.ml;
 
 import java.util.Arrays;
@@ -7,24 +26,23 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
-import edu.ohsu.cslu.util.Math;
 
 /**
- * Populates the parse chart with inside-outside probabilities, summing probability mass for each nonterminal from all
- * applicable grammar rules.
+ * Populates the parse chart with inside-outside probabilities, choosing the 1-best probability for each nonterminal
+ * (i.e., the Viterbi inside scores, followed by Viterbi outside scores as well).
  * 
- * @see {@link ViterbiInOutCphSpmlParser}
+ * @see {@link InsideOutsideCphSpmlParser}
  * 
  * @author Aaron Dunlop
  */
-public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
+public class ViterbiInOutCphSpmlParser extends BaseIoCphSpmlParser {
 
-    public InsideOutsideCphSpmlParser(final ParserDriver opts, final InsideOutsideCscSparseMatrixGrammar grammar) {
+    public ViterbiInOutCphSpmlParser(final ParserDriver opts, final InsideOutsideCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
     }
 
     /**
-     * Identical to {@link CartesianProductHashSpmlParser}, but computes sum instead of viterbi max.
+     * Identical to {@link CartesianProductHashSpmlParser}.
      */
     @Override
     protected void computeInsideProbabilities(final ChartCell cell) {
@@ -71,8 +89,10 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
 
                         final float jointProbability = grammar.cscBinaryProbabilities[k] + childProbability;
                         final int parent = grammar.cscBinaryRowIndices[k];
-                        targetCellProbabilities[parent] = Math
-                                .logSum(targetCellProbabilities[parent], jointProbability);
+
+                        if (jointProbability > targetCellProbabilities[parent]) {
+                            targetCellProbabilities[parent] = jointProbability;
+                        }
                     }
                 }
             }
@@ -122,8 +142,10 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
                     // Outside probability = sum(production probability x parent outside x sibling inside)
                     final float outsideProbability = cscBinaryProbabilities[k] + jointProbability;
                     final int target = cscBinaryRowIndices[k];
-                    final float outsideSum = Math.logSum(outsideProbability, tmpOutsideProbabilities[target]);
-                    tmpOutsideProbabilities[target] = outsideSum;
+
+                    if (outsideProbability > tmpOutsideProbabilities[target]) {
+                        tmpOutsideProbabilities[target] = outsideProbability;
+                    }
                 }
             }
         }

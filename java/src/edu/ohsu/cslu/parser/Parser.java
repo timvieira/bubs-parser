@@ -230,6 +230,7 @@ public abstract class Parser<G extends Grammar> {
         CartesianProductHashMl("cph"),
         CartesianProductLeftChildHashMl("cplch"),
         InsideOutsideCartesianProductHash("iocph"),
+        ViterbiInOutCph("vitio"),
         ConstrainedCartesianProductHashMl("const");
 
         private ResearchParserType(final String... aliases) {

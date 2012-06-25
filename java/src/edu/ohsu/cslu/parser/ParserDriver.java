@@ -105,6 +105,7 @@ import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
+import edu.ohsu.cslu.parser.ml.ViterbiInOutCphSpmlParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
@@ -490,6 +491,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         case GrammarLoopMl:
             return new CsrSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
         case InsideOutsideCartesianProductHash:
+        case ViterbiInOutCph:
             return new InsideOutsideCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
 
         case ConstrainedCartesianProductHashMl:
@@ -594,6 +596,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
         case InsideOutsideCartesianProductHash:
             return new InsideOutsideCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
+        case ViterbiInOutCph:
+            return new ViterbiInOutCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
 
         case ConstrainedCartesianProductHashMl:
             cellSelectorModel = ConstrainedCellSelector.MODEL;
