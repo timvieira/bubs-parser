@@ -16,6 +16,7 @@ import cltool4j.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.dep.DependencyGraph.DerivationAction;
 import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel;
+import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel.DepGraphCellSelector;
 
 public class TestDependencyGraph extends BaseCommandlineTool {
 
@@ -126,7 +127,8 @@ public class TestDependencyGraph extends BaseCommandlineTool {
 
         final DepGraphCellSelectorModel model = new DepGraphCellSelectorModel(new ArrayList<DependencyGraph>(
                 Arrays.asList(conllExample)));
-        final short[] openCells = model.openCells("The luxury auto maker last year sold 1,214 cars in the U.S.");
+        final DepGraphCellSelector cellSelector = ((DepGraphCellSelector) model.createCellSelector());
+        final short[] openCells = cellSelector.openCells("The luxury auto maker last year sold 1,214 cars in the U.S.");
 
         // A few cells closed by 'The luxury auto maker'
         assertClosed(openCells, 1, 5);
@@ -135,6 +137,8 @@ public class TestDependencyGraph extends BaseCommandlineTool {
         assertClosed(openCells, 1, 12);
         assertClosed(openCells, 2, 12);
         assertClosed(openCells, 3, 12);
+        // TODO We should actually instantiate a chart and test this
+        // assertEquals(4, cellSelector.getMaxSpan((short) 1, (short) 3));
 
         // And a few by '1,214 cars'
         assertClosed(openCells, 8, 10);

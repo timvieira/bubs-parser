@@ -9,7 +9,7 @@ import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
@@ -112,7 +112,7 @@ public class TrainDepParser extends BaseDepParser {
                     final NivreParserContext context = new NivreParserContext(stack, arcs);
 
                     for (int step = 0, i = 0; step < derivation.length; step++) {
-                        final SparseBitVector featureVector = fe.forwardFeatureVector(context, i);
+                        final BitVector featureVector = fe.forwardFeatureVector(context, i);
 
                         switch (derivation[step]) {
 
@@ -188,7 +188,7 @@ public class TrainDepParser extends BaseDepParser {
         final long startTime = System.currentTimeMillis();
 
         int correctArcs = 0, correctLabels = 0, total = 0;
-        int shiftReduceClassifications = 0, correctShiftReduceClassifications = 0, reduceDirectionClassifications = 0, correctReduceDirectionClassifications = 0;
+        final int shiftReduceClassifications = 0, correctShiftReduceClassifications = 0, reduceDirectionClassifications = 0, correctReduceDirectionClassifications = 0;
 
         for (final DependencyGraph example : examples) {
             total += example.size() - 1;
@@ -212,10 +212,6 @@ public class TrainDepParser extends BaseDepParser {
             // sentenceScore -= parse.arcs[i].score;
             // }
             // }
-            shiftReduceClassifications += parse.shiftReduceClassifications;
-            correctShiftReduceClassifications += parse.correctShiftReduceClassifications;
-            reduceDirectionClassifications += parse.reduceDirectionClassifications;
-            correctReduceDirectionClassifications += parse.correctReduceDirectionClassifications;
 
             // BaseLogger.singleton().finer(
             // String.format("%.3f %.3f", sentenceCorrect * 1.0 / (example.size() - 1), sentenceScore));

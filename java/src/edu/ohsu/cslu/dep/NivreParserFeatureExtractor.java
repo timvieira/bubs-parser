@@ -23,6 +23,8 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 
 import java.util.List;
 
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
+import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
@@ -33,6 +35,10 @@ import edu.ohsu.cslu.perceptron.FeatureExtractor;
 /**
  * Extracts features for move-classification in Nivre-style dependency parsing from the current state of such a parser
  * (stack, arcs, etc.)
+ * 
+ * 
+ * TODO Other feature ideas: Indicator for has-left-dependent, has-right-dependent. (Binned) remaining words on buffer,
+ * OOVs
  * 
  * @author Aaron Dunlop
  */
@@ -199,7 +205,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
     }
 
     @Override
-    public SparseBitVector forwardFeatureVector(final NivreParserContext source, final int tokenIndex) {
+    public BitVector forwardFeatureVector(final NivreParserContext source, final int tokenIndex) {
 
         final LongArrayList featureIndices = new LongArrayList();
 
@@ -336,7 +342,8 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
             }
         }
 
-        return new SparseBitVector(featureVectorLength, featureIndices.toLongArray());
+        return featureVectorLength > Integer.MAX_VALUE ? new LargeSparseBitVector(featureVectorLength,
+                featureIndices.toLongArray()) : new SparseBitVector(featureVectorLength, featureIndices.toLongArray());
     }
 
     /**
@@ -493,6 +500,8 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         i1t(1, 0),
         i2t(2, 0),
         i3t(3, 0),
+
+        // Left and right dependencies (when available)
         s0ldep(0, 0),
         s1ldep(1, 0),
         s0rdep(0, 0),
