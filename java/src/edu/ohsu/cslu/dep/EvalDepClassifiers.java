@@ -3,6 +3,7 @@ package edu.ohsu.cslu.dep;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
@@ -10,6 +11,7 @@ import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
+import edu.ohsu.cslu.dep.DependencyGraph.DerivationAction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
@@ -41,6 +43,9 @@ public class EvalDepClassifiers extends BaseDepParser {
 
     @Option(name = "-msl", metaVar = "loss", usage = "Missed shift loss (vs. 1 for missed-reduce)")
     private float missedShiftLoss = 1f;
+
+    @Option(name = "-cas", metaVar = "file", usage = "Output constrained arc scores to file")
+    private File constrainedArcScores;
 
     @Option(name = "-as", metaVar = "file", usage = "Output arc scores to file")
     private File arcScores;
@@ -164,10 +169,10 @@ public class EvalDepClassifiers extends BaseDepParser {
             }
 
             FileWriter arcScoreWriter;
-            if (arcScores != null && iteration == trainingIterations - 1) {
-                arcScoreWriter = new FileWriter(arcScores);
+            if (constrainedArcScores != null && iteration == trainingIterations - 1) {
+                arcScoreWriter = new FileWriter(constrainedArcScores);
                 arcScoreWriter
-                        .write("sr_score,sr_margin,sr_correct,lr_score,lr_margin,lr_correct,l_index,span,buf,sent_len,label_score,label_margin,label_correct\n");
+                        .write("sr_gold,sr_score,sr_class,lr_gold,lr_score,lr_class,l_index,span,buf,sent_len,label_gold,label_score,label_margin,label_class\n");
             } else {
                 arcScoreWriter = null;
             }
@@ -209,10 +214,8 @@ public class EvalDepClassifiers extends BaseDepParser {
 
                         case REDUCE_LEFT: {
                             shiftReduceClassifications++;
-                            int srCorrect = 0;
                             if (srClassification.classification == ParserAction.REDUCE.ordinal()) {
                                 correctShiftReduceClassifications++;
-                                srCorrect = 1;
                             } else {
                                 missedReduces++;
                             }
@@ -220,10 +223,8 @@ public class EvalDepClassifiers extends BaseDepParser {
                             reduceDirectionClassifications++;
                             final ScoredClassification lrClassification = reduceDirectionClassifier
                                     .scoredClassify(featureVector);
-                            int lrCorrect = 0;
                             if (lrClassification.classification == ReduceDirection.LEFT.ordinal()) {
                                 correctReduceDirectionClassifications++;
-                                lrCorrect = 1;
                             }
 
                             final Arc top = stack.removeFirst();
@@ -231,32 +232,21 @@ public class EvalDepClassifiers extends BaseDepParser {
 
                             final ScoredClassification labelClassification = labelClassifier != null ? labelClassifier
                                     .scoredClassify(featureVector) : null;
-                            int labelCorrect = 0;
                             if (labelClassification != null) {
                                 top.predictedLabel = labels.getSymbol(labelClassification.classification);
-                                if (top.predictedLabel.equals(top.label)) {
-                                    labelCorrect = 1;
-                                }
                             }
 
                             if (arcScoreWriter != null) {
-                                arcScoreWriter.write(String.format(
-                                        "%.3f,%.3f,%d,%.3f,%.3f,%d,%d,%d,%d,%d,%.3f,%.3f,%d\n", srClassification.score,
-                                        srClassification.margin, srCorrect, lrClassification.score,
-                                        lrClassification.margin, lrCorrect, top.predictedHead, top.index
-                                                - top.predictedHead, context.arcs.length - i, context.arcs.length - 1,
-                                        labelClassification != null ? labelClassification.score : 0,
-                                        labelClassification != null ? labelClassification.margin : 0, labelCorrect));
+                                write(arcScoreWriter, derivation[step], context, i, srClassification, lrClassification,
+                                        top, labelClassification);
                             }
 
                             break;
                         }
                         case REDUCE_RIGHT: {
                             shiftReduceClassifications++;
-                            int srCorrect = 0;
                             if (shiftReduceClassifier.classify(featureVector) == ParserAction.REDUCE.ordinal()) {
                                 correctShiftReduceClassifications++;
-                                srCorrect = 1;
                             } else {
                                 missedReduces++;
                             }
@@ -264,10 +254,8 @@ public class EvalDepClassifiers extends BaseDepParser {
                             reduceDirectionClassifications++;
                             final ScoredClassification lrClassification = reduceDirectionClassifier
                                     .scoredClassify(featureVector);
-                            int lrCorrect = 0;
                             if (reduceDirectionClassifier.classify(featureVector) == ReduceDirection.RIGHT.ordinal()) {
                                 correctReduceDirectionClassifications++;
-                                lrCorrect = 1;
                             }
 
                             final Arc top = stack.removeFirst();
@@ -277,22 +265,13 @@ public class EvalDepClassifiers extends BaseDepParser {
 
                             final ScoredClassification labelClassification = labelClassifier != null ? labelClassifier
                                     .scoredClassify(featureVector) : null;
-                            int labelCorrect = 0;
                             if (labelClassifier != null) {
                                 top.predictedLabel = labels.getSymbol(labelClassifier.classify(featureVector));
-                                if (top.predictedLabel.equals(top.label)) {
-                                    labelCorrect = 1;
-                                }
                             }
 
                             if (arcScoreWriter != null) {
-                                arcScoreWriter.write(String.format(
-                                        "%.3f,%.3f,%d,%.3f,%.3f,%d,%d,%d,%d,%d,%.3f,%.3f,%d\n", srClassification.score,
-                                        srClassification.margin, srCorrect, lrClassification.score,
-                                        lrClassification.margin, lrCorrect, second.index, top.index - second.index,
-                                        context.arcs.length - i, context.arcs.length - 1,
-                                        labelClassification != null ? labelClassification.score : 0,
-                                        labelClassification != null ? labelClassification.margin : 0, labelCorrect));
+                                write(arcScoreWriter, derivation[step], context, i, srClassification, lrClassification,
+                                        top, labelClassification);
                             }
                             break;
                         }
@@ -315,6 +294,7 @@ public class EvalDepClassifiers extends BaseDepParser {
             }
             test(devExamples, "Dev-set", fe, shiftReduceClassifier, reduceDirectionClassifier, labelClassifier, tokens,
                     pos, labels);
+
             BaseLogger.singleton().info(
                     String.format("Shift/Reduce: %d/%d (%.2f%%)", correctShiftReduceClassifications,
                             shiftReduceClassifications, 1.0 * correctShiftReduceClassifications
@@ -328,6 +308,36 @@ public class EvalDepClassifiers extends BaseDepParser {
                             reduceDirectionClassifications, 1.0 * correctReduceDirectionClassifications
                                     / reduceDirectionClassifications));
         }
+
+        if (arcScores != null) {
+            testClassifierScoring(devExamples, fe, shiftReduceClassifier, reduceDirectionClassifier, labelClassifier,
+                    tokens, pos, labels);
+        }
+    }
+
+    private void write(final FileWriter arcScoreWriter, final DependencyGraph.DerivationAction derivationStep,
+            final NivreParserContext context, final int i, final ScoredClassification srClassification,
+            final ScoredClassification lrClassification, final Arc top, final ScoredClassification labelClassification)
+            throws IOException {
+
+        arcScoreWriter.write(String.format(
+                "%d,%.3f,%d,%d,%.3f,%d,%d,%d,%d,%d,%s,%.3f,%.3f,%s\n",
+                // Shift-reduce
+                derivationStep == DerivationAction.SHIFT ? 0 : 1,
+                derivationStep == DerivationAction.SHIFT ? -srClassification.score : srClassification.score,
+                srClassification.classification,
+
+                // Left-right
+                derivationStep.ordinal() - 1, derivationStep == DerivationAction.REDUCE_LEFT ? -lrClassification.score
+                        : lrClassification.score, lrClassification.classification,
+
+                // State
+                top.predictedHead, top.index - top.predictedHead, context.arcs.length - i, context.arcs.length - 1,
+
+                // Label
+                labelClassification != null ? top.label : "-", labelClassification != null ? labelClassification.score
+                        : 0, labelClassification != null ? labelClassification.margin : 0,
+                labelClassification != null ? top.predictedLabel : "-"));
     }
 
     private void outputParserState(final String prefix, final NivreParserContext state, final int i) {
@@ -366,7 +376,7 @@ public class EvalDepClassifiers extends BaseDepParser {
 
         for (final DependencyGraph example : examples) {
             total += example.size() - 1;
-            final int sentenceCorrect = 0;
+            // final int sentenceCorrect = 0;
             // float sentenceScore = 0f;
             final DependencyGraph parse = parse(example, featureExtractor, shiftReduceClassifier,
                     reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
@@ -393,6 +403,122 @@ public class EvalDepClassifiers extends BaseDepParser {
         final long time = System.currentTimeMillis() - startTime;
         System.out.format("%s accuracy - unlabeled: %.3f  labeled %.3f  (%d ms, %.2f words/sec)\n", label, correctArcs
                 * 1.0 / total, correctLabels * 1.0 / total, time, total * 1000.0 / time);
+    }
+
+    private void testClassifierScoring(final LinkedList<DependencyGraph> examples,
+            final NivreParserFeatureExtractor featureExtractor, final AveragedPerceptron shiftReduceClassifier,
+            final AveragedPerceptron reduceDirectionClassifier, final AveragedPerceptron labelClassifier,
+            final SymbolSet<String> tokens, final SymbolSet<String> pos, final SymbolSet<String> labels)
+            throws IOException {
+
+        final FileWriter arcScoreWriter = new FileWriter(arcScores);
+        arcScoreWriter
+                .write("sr_score,lr_gold,lr_score,lr_class,l_index,span,buf,sent_len,label_gold,label_score,label_margin,label_class\n");
+
+        for (final DependencyGraph example : examples) {
+            example.clear();
+
+            final LinkedList<Arc> stack = new LinkedList<Arc>();
+
+            final int totalSteps = example.size() * 2 - 1;
+            for (int step = 0, i = 0; step < totalSteps; step++) {
+                final BitVector featureVector = featureExtractor.forwardFeatureVector(new NivreParserContext(stack,
+                        example.arcs), i);
+
+                ParserAction action = null;
+                ScoredClassification srClassification = null;
+                if (stack.size() < 2) {
+                    action = ParserAction.SHIFT;
+                } else {
+                    srClassification = shiftReduceClassifier.scoredClassify(featureVector);
+                    action = ParserAction.forInt(srClassification.classification);
+                }
+
+                switch (action) {
+                case SHIFT:
+                    stack.addFirst(example.arcs[i++]);
+
+                    break;
+
+                case REDUCE:
+                    final ScoredClassification lrClassification = reduceDirectionClassifier
+                            .scoredClassify(featureVector);
+                    final ReduceDirection reduceDirection = ReduceDirection.forInt(lrClassification.classification);
+
+                    switch (reduceDirection) {
+                    case LEFT: {
+                        final Arc top = stack.get(0);
+                        final Arc second = stack.get(1);
+
+                        stack.removeFirst();
+                        top.predictedHead = second.index;
+                        top.score = lrClassification.score;
+                        ScoredClassification labelClassification = null;
+                        if (labelClassifier != null) {
+                            labelClassification = labelClassifier.scoredClassify(featureVector);
+                            top.predictedLabel = labels.getSymbol(labelClassification.classification);
+                        }
+
+                        write(arcScoreWriter, example.arcs, i, srClassification, lrClassification, top, second,
+                                labelClassification);
+
+                        break;
+                    }
+                    case RIGHT: {
+                        final Arc top = stack.get(0);
+                        final Arc second = stack.get(1);
+
+                        stack.removeFirst();
+                        stack.removeFirst();
+                        second.predictedHead = top.index;
+                        second.score = lrClassification.score;
+                        ScoredClassification labelClassification = null;
+                        if (labelClassifier != null) {
+                            labelClassification = labelClassifier.scoredClassify(featureVector);
+                            second.predictedLabel = labels.getSymbol(labelClassification.classification);
+                        }
+                        stack.addFirst(top);
+
+                        write(arcScoreWriter, example.arcs, i, srClassification, lrClassification, top, second,
+                                labelClassification);
+                        break;
+                    }
+                    }
+                }
+            }
+        }
+        arcScoreWriter.close();
+    }
+
+    private void write(final FileWriter arcScoreWriter, final Arc[] arcs, final int i,
+            final ScoredClassification srClassification, final ScoredClassification lrClassification, final Arc top,
+            final Arc second, final ScoredClassification labelClassification) throws IOException {
+
+        int lrGold;
+        if (second.head == top.index) {
+            lrGold = 0;
+        } else if (top.head == second.index) {
+            lrGold = 1;
+        } else {
+            lrGold = -1;
+        }
+
+        arcScoreWriter.write(String.format(
+                "%.3f,%d,%.3f,%d,%d,%d,%d,%d,%s,%.3f,%.3f,%s\n",
+                // Shift-reduce
+                srClassification.score,
+
+                // Left-right
+                lrGold, lrClassification.classification == 0 ? -lrClassification.score : lrClassification.score,
+                lrClassification.classification,
+
+                // State
+                top.predictedHead, top.index - top.predictedHead, arcs.length - i, arcs.length - 1,
+
+                // Label
+                labelClassification != null ? top.label : "-", labelClassification != null ? labelClassification.score
+                        : 0, labelClassification != null ? labelClassification.margin : 0,
+                labelClassification != null ? top.predictedLabel : "-"));
     }
 
     public static void main(final String[] args) {
