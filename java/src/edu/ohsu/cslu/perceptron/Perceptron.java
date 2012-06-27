@@ -104,6 +104,7 @@ public class Perceptron extends Classifier {
     // TODO: instead of supplying initialWeights, we should init with an instance
     // of a Perceptron model
     protected void initModel(final float[] initialWeights) {
+        // TODO Handle large feature-spaces here
         rawWeights = new FloatVector[numClasses()];
         for (int i = 0; i < numClasses(); i++) {
             rawWeights[i] = new DenseFloatVector(initialWeights.clone());
@@ -157,7 +158,7 @@ public class Perceptron extends Classifier {
 
         final float loss = lossFunction.computeLoss(goldClass, rawGuessClass);
         if (loss != 0) {
-            update(goldClass, loss * learningRate, featureVector, trainExampleNumber);
+            update(goldClass, rawGuessClass, loss * learningRate, featureVector, trainExampleNumber);
         }
     }
 
@@ -169,14 +170,13 @@ public class Perceptron extends Classifier {
      * @param example The number of examples seen in the training corpus (i.e., the index of the example which caused
      *            this update, 1-indexed).
      */
-    protected void update(final int goldClass, final float alpha, final BitVector featureVector, final int example) {
-        for (int i = 0; i < numClasses(); i++) {
-            if (i == goldClass) {
-                rawWeights[i].inPlaceAdd(featureVector, alpha);
-            } else {
-                rawWeights[i].inPlaceAdd(featureVector, -1 * alpha);
-            }
-        }
+    protected void update(final int goldClass, final int guessClass, final float alpha, final BitVector featureVector,
+            final int example) {
+        // Upweight gold class weights
+        rawWeights[goldClass].inPlaceAdd(featureVector, alpha);
+
+        // Downweight guess class weights
+        rawWeights[guessClass].inPlaceAdd(featureVector, -alpha);
     }
 
     public FloatVector modelWeights(final int modelIndex) {
