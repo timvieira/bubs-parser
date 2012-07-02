@@ -18,7 +18,6 @@
  */
 package edu.ohsu.cslu.parser;
 
-import java.util.LinkedList;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
@@ -50,6 +49,7 @@ public class ParseTask {
 
     /** Gold tags */
     public final int[] inputTags;
+    public final String[] stringInputTags;
 
     public int[] fomTags = null; // TODO: this should be moved to the FOM class
     public final Grammar grammar;
@@ -121,12 +121,14 @@ public class ParseTask {
             this.sentence = input.trim();
             this.inputTree = null;
             this.inputTags = null;
+            this.stringInputTags = null;
             break;
 
         case Text:
             this.sentence = Tokenizer.treebankTokenize(input.trim());
             this.inputTree = null;
             this.inputTags = null;
+            this.stringInputTags = null;
             break;
 
         case Tree: {
@@ -135,9 +137,11 @@ public class ParseTask {
 
             // extract POS tags from tree
             this.inputTags = new int[sentence.length()];
+            this.stringInputTags = new String[sentence.length()];
             int i = 0;
             for (final NaryTree<String> leaf : inputTree.leafTraversal()) {
-                inputTags[i] = getInputTagIndex(leaf.parent().label());
+                stringInputTags[i] = leaf.parent().label();
+                inputTags[i] = getInputTagIndex(stringInputTags[i]);
                 i++;
             }
         }
@@ -145,19 +149,22 @@ public class ParseTask {
 
         case Tagged: {
             // (DT The) (NN economy) (POS 's) (NN temperature) (MD will)
-            final LinkedList<String> sentTokens = new LinkedList<String>();
-            final String[] stringTokens = input.split("\\s+");
-            this.inputTags = new int[stringTokens.length / 2];
-            int i = 0;
-            for (final String token : stringTokens) {
-                if (i % 2 == 1) {
-                    sentTokens.add(token.substring(0, token.length() - 1)); // remove ")"
-                } else {
-                    inputTags[i / 2] = grammar.nonTermSet.getIndex(token.substring(1)); // remove "("
-                }
-                i++;
+            final StringBuilder sb = new StringBuilder(128);
+            final String[] split = input.split("\\s+");
+            this.inputTags = new int[split.length / 2];
+            this.stringInputTags = new String[split.length / 2];
+
+            for (int i = 0; i < split.length; i += 2) {
+                final String tag = split[i].substring(1); // remove "("
+                final String token = split[i + 1].substring(0, split[i + 1].length() - 1); // remove ")"
+
+                stringInputTags[i / 2] = tag;
+                inputTags[i / 2] = grammar.nonTermSet.getIndex(tag);
+
+                sb.append(token);
+                sb.append(' ');
             }
-            this.sentence = Strings.join(sentTokens, " ");
+            this.sentence = sb.substring(0, sb.length() - 1); // Remove final space
             this.inputTree = null;
             break;
         }
@@ -180,6 +187,7 @@ public class ParseTask {
         this.grammar = grammar;
         this.sentence = null;
         this.inputTags = null;
+        this.stringInputTags = null;
         this.fomTags = null;
         this.recoveryStrategy = null;
         this.decodeMethod = DecodeMethod.ViterbiMax;
