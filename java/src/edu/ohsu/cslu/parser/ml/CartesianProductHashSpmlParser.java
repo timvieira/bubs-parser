@@ -61,7 +61,7 @@ public class CartesianProductHashSpmlParser extends
         final short[] binaryRowIndices = factoredOnly ? grammar.factoredCscBinaryRowIndices
                 : grammar.cscBinaryRowIndices;
 
-        final PackingFunction cpf = grammar.packingFunction();
+        final PackingFunction pf = grammar.packingFunction();
 
         // Iterate over all possible midpoints
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
@@ -79,17 +79,13 @@ public class CartesianProductHashSpmlParser extends
             final int rightStart = chart.minRightChildIndex(rightCellIndex);
             final int rightEnd = chart.maxRightChildIndex(rightCellIndex);
 
-            if (collectDetailedStatistics) {
-                chart.parseTask.nBinaryConsidered += (leftEnd - leftStart + 1) * (rightEnd - rightStart + 1);
-            }
-
             for (int i = leftStart; i <= leftEnd; i++) {
                 final short leftChild = chart.nonTerminalIndices[i];
                 final float leftProbability = chart.insideProbabilities[i];
 
                 // And over children in the right child cell
                 for (int j = rightStart; j <= rightEnd; j++) {
-                    final int column = cpf.pack(leftChild, chart.nonTerminalIndices[j]);
+                    final int column = pf.pack(leftChild, chart.nonTerminalIndices[j]);
                     if (column == Integer.MIN_VALUE) {
                         continue;
                     }
@@ -108,6 +104,10 @@ public class CartesianProductHashSpmlParser extends
                         }
                     }
                 }
+            }
+
+            if (collectDetailedStatistics) {
+                chart.parseTask.nBinaryConsidered += (leftEnd - leftStart + 1) * (rightEnd - rightStart + 1);
             }
         }
 
