@@ -74,7 +74,6 @@ import edu.ohsu.cslu.parser.beam.BSCPSplitUnary;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
-import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
@@ -209,8 +208,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
 
-    @Option(name = "-dcModel", hidden = true, metaVar = "FILE", usage = "Dependency constraints model file")
-    private File dependencyConstraintsModel = null;
+    @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, metaVar = "FILE", usage = "Cell selector model file")
+    private File[] pruningModels = null;
 
     @Option(name = "-help-long", usage = "List all research parsers and options")
     public boolean longHelp = false;
@@ -364,11 +363,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
 
+            // TODO Handle multiple cell-selector models here and in Parser
             if (chartConstraintsModel != null) {
                 cellSelectorModel = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel),
                         grammar.binarization() == Binarization.LEFT);
-            } else if (dependencyConstraintsModel != null) {
-                cellSelectorModel = new DepGraphCellSelectorModel(new FileReader(dependencyConstraintsModel));
+            } else if (pruningModels != null && pruningModels.length > 0) {
+                final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));
+                cellSelectorModel = (CellSelectorModel) ois.readObject();
+                ois.close();
             }
 
             if (beamModelFileName != null) {

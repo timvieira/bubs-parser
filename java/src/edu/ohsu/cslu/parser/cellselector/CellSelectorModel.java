@@ -18,6 +18,8 @@
  */
 package edu.ohsu.cslu.parser.cellselector;
 
+import java.io.Serializable;
+
 /**
  * Represents a model for cell selection and creates cell selector instances using that model (see {@link CellSelector}
  * ). Implementations may constrain chart cell iteration or population by lexical analysis of the sentence or other
@@ -30,9 +32,8 @@ package edu.ohsu.cslu.parser.cellselector;
  * {@link #createCellSelector()}.
  * 
  * @author Aaron Dunlop
- * @since Mar 10, 2011
  */
-public interface CellSelectorModel {
+public interface CellSelectorModel extends Serializable {
 
     /**
      * @return a new {@link CellSelector} instance based on this model
