@@ -36,7 +36,6 @@ import edu.ohsu.cslu.datastructs.vectors.MutableSparseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
-import edu.ohsu.cslu.util.Math;
 
 /**
  * Represents an averaged perceptron (see Collins, 2002). The model should be trained with
@@ -156,19 +155,22 @@ public class AveragedPerceptron extends Perceptron {
         }
         int bestClass = -1;
         float bestScore = Float.NEGATIVE_INFINITY, secondBestScore = Float.NEGATIVE_INFINITY;
+        final float[] scores = new float[avgWeights.length];
         for (int i = 0; i < avgWeights.length; i++) {
-            final float score = featureVector.dotProduct(avgWeights[i]) + bias[i] + 0f;
-            if (score > bestScore) {
+            scores[i] = featureVector.dotProduct(avgWeights[i]) + bias[i] + 0f;
+            if (scores[i] > bestScore) {
                 secondBestScore = bestScore;
-                bestScore = score;
+                bestScore = scores[i];
                 bestClass = i;
             } else if (secondBestScore == Float.NEGATIVE_INFINITY) {
-                secondBestScore = score;
+                secondBestScore = scores[i];
             }
         }
-        // Take the logistic of the best score and the margin to return a pseudo-probability
-        return new ScoredClassification(bestClass, Math.logistic(.05f, bestScore), Math.logistic(.05f, bestScore
-                - secondBestScore));
+        double expSum = 0;
+        for (int i = 0; i < scores.length; i++) {
+            expSum += Math.exp(scores[i] - bestScore);
+        }
+        return new ScoredClassification(bestClass, (float) (1.0f / expSum), bestScore - secondBestScore);
     }
 
     /**
@@ -196,8 +198,7 @@ public class AveragedPerceptron extends Perceptron {
                 constrainingScore = score;
             }
         }
-        // Take the logistic of the best score to return a pseudo-probability (the margin is 0)
-        return new ScoredClassification(constrainingClass, Math.logistic(.05f, constrainingScore), 0);
+        return new ScoredClassification(constrainingClass, constrainingScore, 0);
     }
 
     @Override
