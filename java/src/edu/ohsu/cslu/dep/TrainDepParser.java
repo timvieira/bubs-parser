@@ -7,12 +7,16 @@ import java.io.ObjectOutputStream;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
+import cltool4j.BaseCommandlineTool;
 import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
+import edu.ohsu.cslu.dep.TransitionDepParser.ParserAction;
+import edu.ohsu.cslu.dep.TransitionDepParser.ReduceDirection;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
+import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 
 /**
@@ -24,13 +28,16 @@ import edu.ohsu.cslu.perceptron.AveragedPerceptron;
  * 
  * The model (3 averaged perceptrons, vocabulary and lexicon) will be serialized to the specified model file.
  */
-public class TrainDepParser extends BaseDepParser {
+public class TrainDepParser extends BaseCommandlineTool {
 
     @Option(name = "-i", metaVar = "count", usage = "Training iterations")
     private int trainingIterations = 10;
 
-    @Option(name = "-m", required = true, metaVar = "file", usage = "Output model file")
+    @Option(name = "-m", choiceGroup = "output", metaVar = "file", usage = "Output dependency parser model file")
     private File outputModelFile;
+
+    @Option(name = "-csm", choiceGroup = "output", metaVar = "file", usage = "Output cell-selector model file")
+    private File outputCellSelectorModelFile;
 
     @Option(name = "-d", metaVar = "file", usage = "Development set in CoNLL 2007 format")
     private File devSet;
@@ -98,6 +105,9 @@ public class TrainDepParser extends BaseDepParser {
         // Label arcs, with a third classifier
         final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(labels.size(),
                 fe.featureCount()) : null;
+
+        final TransitionDepParser parser = new TransitionDepParser(fe, shiftReduceClassifier,
+                reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
         //
         // Iterate through the training instances
         //
@@ -160,69 +170,39 @@ public class TrainDepParser extends BaseDepParser {
             System.out.println(iteration + 1);
 
             if (BaseLogger.singleton().isLoggable(Level.FINE)) {
-                test(trainingExamples, "Training-set", fe, shiftReduceClassifier, reduceDirectionClassifier,
-                        labelClassifier, tokens, pos, labels);
+                test(parser, trainingExamples, "Training-set");
             }
             if (devExamples != null) {
-                test(devExamples, "Dev-set", fe, shiftReduceClassifier, reduceDirectionClassifier, labelClassifier,
-                        tokens, pos, labels);
+                test(parser, devExamples, "Dev-set");
             }
         }
 
-        final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputModelFile));
-        oos.writeObject(fe);
-        oos.writeObject(shiftReduceClassifier);
-        oos.writeObject(reduceDirectionClassifier);
-        oos.writeObject(labelClassifier);
-        oos.writeObject(tokens);
-        oos.writeObject(pos);
-        oos.writeObject(labels);
-        oos.close();
+        if (outputModelFile != null) {
+            final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputModelFile));
+            oos.writeObject(parser);
+            oos.close();
+        } else {
+            final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputCellSelectorModelFile));
+            oos.writeObject(new DepGraphCellSelectorModel(parser));
+            oos.close();
+        }
     }
 
-    private void test(final LinkedList<DependencyGraph> examples, final String label,
-            final NivreParserFeatureExtractor featureExtractor, final AveragedPerceptron shiftReduceClassifier,
-            final AveragedPerceptron reduceDirectionClassifier, final AveragedPerceptron labelClassifier,
-            final SymbolSet<String> tokens, final SymbolSet<String> pos, final SymbolSet<String> labels) {
+    private void test(final TransitionDepParser parser, final LinkedList<DependencyGraph> examples, final String label) {
 
         final long startTime = System.currentTimeMillis();
 
         int correctArcs = 0, correctLabels = 0, total = 0;
-        final int shiftReduceClassifications = 0, correctShiftReduceClassifications = 0, reduceDirectionClassifications = 0, correctReduceDirectionClassifications = 0;
 
         for (final DependencyGraph example : examples) {
             total += example.size() - 1;
-            final int sentenceCorrect = 0;
-            // float sentenceScore = 0f;
-            final DependencyGraph parse = parse(example, featureExtractor, shiftReduceClassifier,
-                    reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
+            final DependencyGraph parse = parser.parse(example);
             correctArcs += parse.correctArcs();
             correctLabels += parse.correctLabels();
-
-            // for (int i = 0; i < example.size() - 1; i++) {
-            // if (parse.arcs[i].head == example.arcs[i].head) {
-            // correctArcs++;
-            // sentenceCorrect++;
-            // sentenceScore += parse.arcs[i].score;
-            //
-            // if (example.arcs[i].label.equals(parse.arcs[i].label)) {
-            // correctLabels++;
-            // }
-            // } else {
-            // sentenceScore -= parse.arcs[i].score;
-            // }
-            // }
-
-            // BaseLogger.singleton().finer(
-            // String.format("%.3f %.3f", sentenceCorrect * 1.0 / (example.size() - 1), sentenceScore));
         }
         final long time = System.currentTimeMillis() - startTime;
         System.out.format("%s accuracy - unlabeled: %.3f  labeled %.3f  (%d ms, %.2f words/sec)\n", label, correctArcs
                 * 1.0 / total, correctLabels * 1.0 / total, time, total * 1000.0 / time);
-        System.out.format("Shift/Reduce: %d  Correct: %.3f\n", shiftReduceClassifications,
-                correctShiftReduceClassifications * 1.0 / shiftReduceClassifications);
-        System.out.format("Reduce Direction: %d  Correct: %.3f\n", reduceDirectionClassifications,
-                correctReduceDirectionClassifications * 1.0 / reduceDirectionClassifications);
     }
 
     public static void main(final String[] args) {

@@ -23,9 +23,48 @@ public class DependencyGraph implements Cloneable {
 
     private DerivationAction[] derivation = null;
 
+    /**
+     * Constructs an uninitialized {@link DependencyGraph}
+     * 
+     * @param sentenceLength
+     */
     public DependencyGraph(final int sentenceLength) {
         arcs = new Arc[sentenceLength + 1];
         arcs[sentenceLength] = ROOT;
+    }
+
+    /**
+     * Constructs a {@link DependencyGraph} from a tagged input sequence (e.g.
+     * "(DT The) (NN economy) (POS 's) (NN temperature) (MD will)...")
+     * 
+     * @param taggedSequence
+     */
+    public DependencyGraph(final String taggedSequence) {
+        final String[] split = taggedSequence.split("\\s+");
+        this.arcs = new Arc[split.length / 2 + 1];
+        arcs[arcs.length - 1] = ROOT;
+
+        for (int i = 0; i < split.length; i += 2) {
+            final String tag = split[i].substring(1); // remove "("
+            final String token = split[i + 1].substring(0, split[i + 1].length() - 1); // remove ")"
+
+            arcs[i / 2] = new Arc(token, "_", tag, i / 2 + 1, 0, "_");
+        }
+    }
+
+    /**
+     * Constructs a {@link DependencyGraph} from tokens and tags
+     * 
+     * @param tokens
+     * @param pos
+     */
+    public DependencyGraph(final String[] tokens, final String[] pos) {
+        this.arcs = new Arc[tokens.length + 1];
+        arcs[arcs.length - 1] = ROOT;
+
+        for (int i = 0; i < tokens.length; i++) {
+            arcs[i] = new Arc(tokens[i], "_", pos[i], i + 1, 0, "_");
+        }
     }
 
     /**
@@ -158,6 +197,7 @@ public class DependencyGraph implements Cloneable {
     }
 
     public NaryTree<String> tokenTree() {
+        @SuppressWarnings("unchecked")
         final NaryTree<String>[] nodes = new NaryTree[arcs.length];
         nodes[0] = new NaryTree<String>(ROOT.token);
         for (int i = 1; i < nodes.length; i++) {
@@ -174,7 +214,7 @@ public class DependencyGraph implements Cloneable {
         return nodes[0];
     }
 
-    public NaryTree<DependencyNode> tree() {
+    public NaryTree<DependencyNode> goldTree() {
         @SuppressWarnings("unchecked")
         final NaryTree<DependencyNode>[] nodes = new NaryTree[arcs.length];
         nodes[0] = new NaryTree<DependencyNode>(new DependencyNode(ROOT));
@@ -185,6 +225,33 @@ public class DependencyGraph implements Cloneable {
         for (int i = 1; i < nodes.length; i++) {
             final NaryTree<DependencyNode> child = nodes[i];
             final NaryTree<DependencyNode> parent = nodes[arcs[i - 1].head];
+            parent.addChild(child);
+        }
+
+        // Compute span, and score for each subtree
+        nodes[0].label().internalSubtreeScore(nodes[0].children());
+        nodes[0].label().internalSpan(nodes[0].children());
+
+        // Compute start for each subtree
+        for (final NaryTree<DependencyNode> node : nodes[0].inOrderTraversal()) {
+            node.label().internalStart(node.children());
+        }
+
+        // Return root node
+        return nodes[0];
+    }
+
+    public NaryTree<DependencyNode> tree() {
+        @SuppressWarnings("unchecked")
+        final NaryTree<DependencyNode>[] nodes = new NaryTree[arcs.length];
+        nodes[0] = new NaryTree<DependencyNode>(new DependencyNode(ROOT));
+        for (int i = 1; i < nodes.length; i++) {
+            nodes[i] = new NaryTree<DependencyNode>(new DependencyNode(arcs[i - 1]));
+        }
+
+        for (int i = 1; i < nodes.length; i++) {
+            final NaryTree<DependencyNode> child = nodes[i];
+            final NaryTree<DependencyNode> parent = nodes[arcs[i - 1].predictedHead];
             parent.addChild(child);
         }
 
