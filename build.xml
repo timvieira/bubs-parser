@@ -87,6 +87,7 @@
     <target name="parse" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.ParserDriver" />
+            <param name="additional-root-classes" value="edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel,edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel,edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel" />
             <param name="tool-name" value="parse" />
             <param name="heap-size" value="1500m" />
             <param name="package-gpl-libs" value="true" />
@@ -200,6 +201,15 @@
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.dep.TrainDepParser" />
             <param name="tool-name" value="train-dep-parser" />
+            <param name="heap-size" value="512m" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+    <target name="eval-dep-classifiers" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.dep.EvalDepClassifiers" />
+            <param name="tool-name" value="eval-dep-classifiers" />
             <param name="heap-size" value="512m" />
             <param name="package-gpl-libs" value="true" />
         </antcall>
