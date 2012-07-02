@@ -19,13 +19,12 @@
 
 package edu.ohsu.cslu.parser.ml;
 
-import java.util.Arrays;
-
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 
 /**
  * Populates the parse chart with inside-outside probabilities, choosing the 1-best probability for each nonterminal
@@ -49,19 +48,31 @@ public class ViterbiInOutCphSpmlParser extends BaseIoCphSpmlParser {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final PackingFunction pf = grammar.packingFunction();
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
         final short start = cell.start();
         final short end = cell.end();
         targetCell.allocateTemporaryStorage();
 
-        final float[] targetCellProbabilities = targetCell.tmpCell.insideProbabilities;
+        final TemporaryChartCell tmpCell = targetCell.tmpCell;
 
-        final float[] maxInsideProbabilities = new float[targetCellProbabilities.length];
-        Arrays.fill(maxInsideProbabilities, Float.NEGATIVE_INFINITY);
+        final boolean factoredOnly = cellSelector.hasCellConstraints()
+                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
+
+        final int[] binaryColumnOffsets = factoredOnly ? grammar.factoredCscBinaryColumnOffsets
+                : grammar.cscBinaryColumnOffsets;
+        final float[] binaryProbabilities = factoredOnly ? grammar.factoredCscBinaryProbabilities
+                : grammar.cscBinaryProbabilities;
+        final short[] binaryRowIndices = factoredOnly ? grammar.factoredCscBinaryRowIndices
+                : grammar.cscBinaryRowIndices;
+
+        final PackingFunction pf = grammar.packingFunction();
 
         // Iterate over all possible midpoints
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
+            if (end - start > cellSelector.getMaxSpan(start, end)) {
+                continue;
+            }
+
             final int leftCellIndex = chart.cellIndex(start, midpoint);
             final int rightCellIndex = chart.cellIndex(midpoint, end);
 
@@ -85,16 +96,20 @@ public class ViterbiInOutCphSpmlParser extends BaseIoCphSpmlParser {
 
                     final float childProbability = leftProbability + chart.insideProbabilities[j];
 
-                    for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
+                    for (int k = binaryColumnOffsets[column]; k < binaryColumnOffsets[column + 1]; k++) {
 
-                        final float jointProbability = grammar.cscBinaryProbabilities[k] + childProbability;
-                        final int parent = grammar.cscBinaryRowIndices[k];
+                        final float jointProbability = binaryProbabilities[k] + childProbability;
+                        final short parent = binaryRowIndices[k];
 
-                        if (jointProbability > targetCellProbabilities[parent]) {
-                            targetCellProbabilities[parent] = jointProbability;
+                        if (jointProbability > tmpCell.insideProbabilities[parent]) {
+                            tmpCell.insideProbabilities[parent] = jointProbability;
                         }
                     }
                 }
+            }
+
+            if (collectDetailedStatistics) {
+                chart.parseTask.nBinaryConsidered += (leftEnd - leftStart + 1) * (rightEnd - rightStart + 1);
             }
         }
 
@@ -139,7 +154,7 @@ public class ViterbiInOutCphSpmlParser extends BaseIoCphSpmlParser {
                 // with insideProbability array)?
                 for (int k = cscColumnOffsets[column]; k < cscColumnOffsets[column + 1]; k++) {
 
-                    // Outside probability = sum(production probability x parent outside x sibling inside)
+                    // Viterbi outside probability = max(production probability x parent outside x sibling inside)
                     final float outsideProbability = cscBinaryProbabilities[k] + jointProbability;
                     final int target = cscBinaryRowIndices[k];
 

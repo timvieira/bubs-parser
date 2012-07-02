@@ -76,6 +76,10 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
                     }
                 }
             }
+
+            if (collectDetailedStatistics) {
+                chart.parseTask.nBinaryConsidered += (leftEnd - leftStart + 1) * (rightEnd - rightStart + 1);
+            }
         }
 
         if (collectDetailedStatistics) {
