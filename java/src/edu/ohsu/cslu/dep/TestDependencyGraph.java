@@ -2,12 +2,9 @@ package edu.ohsu.cslu.dep;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -15,9 +12,12 @@ import org.junit.Test;
 import cltool4j.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.dep.DependencyGraph.DerivationAction;
-import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel;
-import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel.DepGraphCellSelector;
 
+/**
+ * Unit tests for {@link DependencyGraph}
+ * 
+ * @author Aaron Dunlop
+ */
 public class TestDependencyGraph extends BaseCommandlineTool {
 
     private DependencyGraph conllExample;
@@ -39,6 +39,19 @@ public class TestDependencyGraph extends BaseCommandlineTool {
         sb.append("12	U.S.	_	NN	NNP	_	10	PMOD	_	_\n");
 
         conllExample = DependencyGraph.readConll(sb.toString());
+    }
+
+    @Test
+    public void testTaggedSequenceConstructor() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("1	The	_	_	DT	_	0	_	_	_\n");
+        sb.append("2	aged	_	_	NN	_	0	_	_	_\n");
+        sb.append("3	bottle	_	_	NN	_	0	_	_	_\n");
+        sb.append("4	flies	_	_	NN	_	0	_	_	_\n");
+        sb.append("5	fast	_	_	NN	_	0	_	_	_\n");
+
+        final DependencyGraph g = new DependencyGraph("(DT The) (NN aged) (NN bottle) (NN flies) (NN fast)");
+        assertEquals(sb.toString(), g.toConllString());
     }
 
     @Test
@@ -81,14 +94,14 @@ public class TestDependencyGraph extends BaseCommandlineTool {
         for (int i = 0; i < conllExample.size(); i++) {
             conllExample.arcs[i].score = 0.5f;
         }
-        final NaryTree<DependencyNode> root = conllExample.tree();
+        final NaryTree<DependencyNode> root = conllExample.goldTree();
         final float subtreeScore = root.label().subtreeScore();
         assertEquals(Math.log(1.0 / 4096), subtreeScore, 0.001);
     }
 
     @Test
     public void testStart() {
-        final NaryTree<DependencyNode> root = conllExample.tree();
+        final NaryTree<DependencyNode> root = conllExample.goldTree();
         assertEquals(0, root.label().start());
 
         final NaryTree<DependencyNode> sold = root.children().getFirst();
@@ -106,7 +119,7 @@ public class TestDependencyGraph extends BaseCommandlineTool {
 
     @Test
     public void testSpan() {
-        final NaryTree<DependencyNode> root = conllExample.tree();
+        final NaryTree<DependencyNode> root = conllExample.goldTree();
         assertEquals(12, root.label().span());
 
         final NaryTree<DependencyNode> sold = root.children().getFirst();
@@ -119,73 +132,73 @@ public class TestDependencyGraph extends BaseCommandlineTool {
         assertEquals(3, in.label().span());
     }
 
-    @Test
-    public void testDependencyGraphCellSelector() {
-        for (int i = 0; i < conllExample.arcs.length; i++) {
-            conllExample.arcs[i].score = 0.99f;
-        }
-
-        final DepGraphCellSelectorModel model = new DepGraphCellSelectorModel(new ArrayList<DependencyGraph>(
-                Arrays.asList(conllExample)));
-        final DepGraphCellSelector cellSelector = ((DepGraphCellSelector) model.createCellSelector());
-        final short[] openCells = cellSelector.openCells("The luxury auto maker last year sold 1,214 cars in the U.S.");
-
-        // A few cells closed by 'The luxury auto maker'
-        assertClosed(openCells, 1, 5);
-        assertClosed(openCells, 2, 5);
-        assertClosed(openCells, 3, 5);
-        assertClosed(openCells, 1, 12);
-        assertClosed(openCells, 2, 12);
-        assertClosed(openCells, 3, 12);
-        // TODO We should actually instantiate a chart and test this
-        // assertEquals(4, cellSelector.getMaxSpan((short) 1, (short) 3));
-
-        // And a few by '1,214 cars'
-        assertClosed(openCells, 8, 10);
-        assertClosed(openCells, 8, 11);
-        assertClosed(openCells, 8, 12);
-        assertClosed(openCells, 6, 8);
-        assertClosed(openCells, 6, 8);
-        assertClosed(openCells, 5, 8);
-        assertClosed(openCells, 4, 8);
-        assertClosed(openCells, 0, 8);
-
-        // And finally, the 'in the U.S.' subtree, 9,11 should be closed by the 'the U.S.' arc, but 9,12 should remain
-        // open
-        assertClosed(openCells, 9, 11);
-        assertOpen(openCells, 9, 12);
-    }
-
-    /**
-     * Fails if the specified start,end pair is found in the open cell array
-     * 
-     * @param openCells
-     * @param start
-     * @param end
-     */
-    private void assertClosed(final short[] openCells, final int start, final int end) {
-        for (int k = 0; k < openCells.length; k += 2) {
-            if (openCells[k] == start && openCells[k + 1] == end) {
-                fail("Did not expect " + start + "," + end);
-            }
-        }
-    }
-
-    /**
-     * Fails if the specified start,end pair is not found in the open cell array
-     * 
-     * @param openCells
-     * @param start
-     * @param end
-     */
-    private void assertOpen(final short[] openCells, final int start, final int end) {
-        for (int k = 0; k < openCells.length; k += 2) {
-            if (openCells[k] == start && openCells[k + 1] == end) {
-                return;
-            }
-        }
-        fail("Expected " + start + "," + end);
-    }
+    // @Test
+    // public void testDependencyGraphCellSelector() {
+    // for (int i = 0; i < conllExample.arcs.length; i++) {
+    // conllExample.arcs[i].score = 0.99f;
+    // }
+    //
+    // final DepGraphCellSelectorModel model = new DepGraphCellSelectorModel(new ArrayList<DependencyGraph>(
+    // Arrays.asList(conllExample)));
+    // final DepGraphCellSelector cellSelector = ((DepGraphCellSelector) model.createCellSelector());
+    // final short[] openCells = cellSelector.openCells("The luxury auto maker last year sold 1,214 cars in the U.S.");
+    //
+    // // A few cells closed by 'The luxury auto maker'
+    // assertClosed(openCells, 1, 5);
+    // assertClosed(openCells, 2, 5);
+    // assertClosed(openCells, 3, 5);
+    // assertClosed(openCells, 1, 12);
+    // assertClosed(openCells, 2, 12);
+    // assertClosed(openCells, 3, 12);
+    // // TODO We should actually instantiate a chart and test this
+    // // assertEquals(4, cellSelector.getMaxSpan((short) 1, (short) 3));
+    //
+    // // And a few by '1,214 cars'
+    // assertClosed(openCells, 8, 10);
+    // assertClosed(openCells, 8, 11);
+    // assertClosed(openCells, 8, 12);
+    // assertClosed(openCells, 6, 8);
+    // assertClosed(openCells, 6, 8);
+    // assertClosed(openCells, 5, 8);
+    // assertClosed(openCells, 4, 8);
+    // assertClosed(openCells, 0, 8);
+    //
+    // // And finally, the 'in the U.S.' subtree, 9,11 should be closed by the 'the U.S.' arc, but 9,12 should remain
+    // // open
+    // assertClosed(openCells, 9, 11);
+    // assertOpen(openCells, 9, 12);
+    // }
+    //
+    // /**
+    // * Fails if the specified start,end pair is found in the open cell array
+    // *
+    // * @param openCells
+    // * @param start
+    // * @param end
+    // */
+    // private void assertClosed(final short[] openCells, final int start, final int end) {
+    // for (int k = 0; k < openCells.length; k += 2) {
+    // if (openCells[k] == start && openCells[k + 1] == end) {
+    // fail("Did not expect " + start + "," + end);
+    // }
+    // }
+    // }
+    //
+    // /**
+    // * Fails if the specified start,end pair is not found in the open cell array
+    // *
+    // * @param openCells
+    // * @param start
+    // * @param end
+    // */
+    // private void assertOpen(final short[] openCells, final int start, final int end) {
+    // for (int k = 0; k < openCells.length; k += 2) {
+    // if (openCells[k] == start && openCells[k + 1] == end) {
+    // return;
+    // }
+    // }
+    // fail("Expected " + start + "," + end);
+    // }
 
     @Override
     protected void run() throws Exception {

@@ -2,28 +2,44 @@ package edu.ohsu.cslu.dep;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
+import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.LinkedList;
 
-import cltool4j.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron.ScoredClassification;
 
-public abstract class BaseDepParser extends BaseCommandlineTool {
+public class TransitionDepParser implements Serializable {
 
-    public DependencyGraph parse(final DependencyGraph input, final NivreParserFeatureExtractor featureExtractor,
-            final AveragedPerceptron shiftReduceClassifier, final AveragedPerceptron reduceDirectionClassifier,
-            final SymbolSet<String> tokens, final SymbolSet<String> pos) {
-        return parse(input, featureExtractor, shiftReduceClassifier, reduceDirectionClassifier, null, tokens, pos, null);
-    }
+    private static final long serialVersionUID = 1L;
 
-    public DependencyGraph parse(final DependencyGraph input, final NivreParserFeatureExtractor featureExtractor,
+    public final NivreParserFeatureExtractor featureExtractor;
+    public final AveragedPerceptron shiftReduceClassifier;
+    public final AveragedPerceptron reduceDirectionClassifier;
+    public final AveragedPerceptron labelClassifier;
+    public final SymbolSet<String> tokens;
+    public final SymbolSet<String> pos;
+    public final SymbolSet<String> labels;
+
+    public TransitionDepParser(final NivreParserFeatureExtractor featureExtractor,
             final AveragedPerceptron shiftReduceClassifier, final AveragedPerceptron reduceDirectionClassifier,
             final AveragedPerceptron labelClassifier, final SymbolSet<String> tokens, final SymbolSet<String> pos,
             final SymbolSet<String> labels) {
+
+        this.featureExtractor = featureExtractor;
+        this.shiftReduceClassifier = shiftReduceClassifier;
+        this.reduceDirectionClassifier = reduceDirectionClassifier;
+        this.labelClassifier = labelClassifier;
+        this.tokens = tokens;
+        this.pos = pos;
+        this.labels = labels;
+    }
+
+    @SuppressWarnings("null")
+    public DependencyGraph parse(final DependencyGraph input) {
 
         final DependencyGraph parse = input.clear();
 
@@ -34,12 +50,14 @@ public abstract class BaseDepParser extends BaseCommandlineTool {
             final BitVector featureVector = featureExtractor.forwardFeatureVector(new NivreParserContext(stack,
                     parse.arcs), i);
 
-            // TODO Consider changing Classifier to return an enum?
             ParserAction action = null;
+            ScoredClassification shiftReduceClassification = null;
+
             if (stack.size() < 2) {
                 action = ParserAction.SHIFT;
             } else {
-                action = ParserAction.forInt(shiftReduceClassifier.classify(featureVector));
+                shiftReduceClassification = shiftReduceClassifier.scoredClassify(featureVector);
+                action = ParserAction.forInt(shiftReduceClassification.classification);
             }
 
             switch (action) {
@@ -49,8 +67,10 @@ public abstract class BaseDepParser extends BaseCommandlineTool {
                 break;
 
             case REDUCE:
-                final ScoredClassification sc = reduceDirectionClassifier.scoredClassify(featureVector);
-                final ReduceDirection reduceDirection = ReduceDirection.forInt(sc.classification);
+                final ScoredClassification reduceDirectionClassification = reduceDirectionClassifier
+                        .scoredClassify(featureVector);
+                final ReduceDirection reduceDirection = ReduceDirection
+                        .forInt(reduceDirectionClassification.classification);
 
                 switch (reduceDirection) {
                 case LEFT: {
@@ -59,7 +79,7 @@ public abstract class BaseDepParser extends BaseCommandlineTool {
 
                     stack.removeFirst();
                     top.predictedHead = second.index;
-                    top.score = sc.score;
+                    top.score = shiftReduceClassification.score * reduceDirectionClassification.score;
                     if (labelClassifier != null) {
                         top.predictedLabel = labels.getSymbol(labelClassifier.classify(featureVector));
                     }
@@ -72,7 +92,7 @@ public abstract class BaseDepParser extends BaseCommandlineTool {
                     stack.removeFirst();
                     stack.removeFirst();
                     second.predictedHead = top.index;
-                    second.score = sc.score;
+                    second.score = shiftReduceClassification.score * reduceDirectionClassification.score;
                     if (labelClassifier != null) {
                         second.predictedLabel = labels.getSymbol(labelClassifier.classify(featureVector));
                     }

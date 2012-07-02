@@ -7,11 +7,14 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
+import cltool4j.BaseCommandlineTool;
 import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
 import edu.ohsu.cslu.dep.DependencyGraph.DerivationAction;
+import edu.ohsu.cslu.dep.TransitionDepParser.ParserAction;
+import edu.ohsu.cslu.dep.TransitionDepParser.ReduceDirection;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
@@ -27,7 +30,7 @@ import edu.ohsu.cslu.perceptron.Perceptron;
  * 
  * The model (3 averaged perceptrons, vocabulary and lexicon) will be serialized to the specified model file.
  */
-public class EvalDepClassifiers extends BaseDepParser {
+public class EvalDepClassifiers extends BaseCommandlineTool {
 
     @Option(name = "-i", metaVar = "count", usage = "Training iterations")
     private int trainingIterations = 10;
@@ -50,6 +53,7 @@ public class EvalDepClassifiers extends BaseDepParser {
     @Option(name = "-as", metaVar = "file", usage = "Output arc scores to file")
     private File arcScores;
 
+    @SuppressWarnings("null")
     @Override
     protected void run() throws Exception {
 
@@ -108,6 +112,9 @@ public class EvalDepClassifiers extends BaseDepParser {
         // Label arcs, with a third classifier
         final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(labels.size(),
                 fe.featureCount()) : null;
+        final TransitionDepParser parser = new TransitionDepParser(fe, shiftReduceClassifier,
+                reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
+
         //
         // Iterate through the training instances
         //
@@ -289,11 +296,9 @@ public class EvalDepClassifiers extends BaseDepParser {
             System.out.println(iteration + 1);
 
             if (BaseLogger.singleton().isLoggable(Level.FINE)) {
-                test(trainingExamples, "Training-set", fe, shiftReduceClassifier, reduceDirectionClassifier,
-                        labelClassifier, tokens, pos, labels);
+                test(parser, trainingExamples, "Training-set");
             }
-            test(devExamples, "Dev-set", fe, shiftReduceClassifier, reduceDirectionClassifier, labelClassifier, tokens,
-                    pos, labels);
+            test(parser, devExamples, "Dev-set");
 
             BaseLogger.singleton().info(
                     String.format("Shift/Reduce: %d/%d (%.2f%%)", correctShiftReduceClassifications,
@@ -310,8 +315,7 @@ public class EvalDepClassifiers extends BaseDepParser {
         }
 
         if (arcScores != null) {
-            testClassifierScoring(devExamples, fe, shiftReduceClassifier, reduceDirectionClassifier, labelClassifier,
-                    tokens, pos, labels);
+            testClassifierScoring(parser, devExamples);
         }
     }
 
@@ -365,10 +369,7 @@ public class EvalDepClassifiers extends BaseDepParser {
         BaseLogger.singleton().finer(sb.toString());
     }
 
-    private void test(final LinkedList<DependencyGraph> examples, final String label,
-            final NivreParserFeatureExtractor featureExtractor, final AveragedPerceptron shiftReduceClassifier,
-            final AveragedPerceptron reduceDirectionClassifier, final AveragedPerceptron labelClassifier,
-            final SymbolSet<String> tokens, final SymbolSet<String> pos, final SymbolSet<String> labels) {
+    private void test(final TransitionDepParser parser, final LinkedList<DependencyGraph> examples, final String label) {
 
         final long startTime = System.currentTimeMillis();
 
@@ -376,39 +377,16 @@ public class EvalDepClassifiers extends BaseDepParser {
 
         for (final DependencyGraph example : examples) {
             total += example.size() - 1;
-            // final int sentenceCorrect = 0;
-            // float sentenceScore = 0f;
-            final DependencyGraph parse = parse(example, featureExtractor, shiftReduceClassifier,
-                    reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
+            final DependencyGraph parse = parser.parse(example);
             correctArcs += parse.correctArcs();
             correctLabels += parse.correctLabels();
-
-            // for (int i = 0; i < example.size() - 1; i++) {
-            // if (parse.arcs[i].head == example.arcs[i].head) {
-            // correctArcs++;
-            // sentenceCorrect++;
-            // sentenceScore += parse.arcs[i].score;
-            //
-            // if (example.arcs[i].label.equals(parse.arcs[i].label)) {
-            // correctLabels++;
-            // }
-            // } else {
-            // sentenceScore -= parse.arcs[i].score;
-            // }
-            // }
-
-            // BaseLogger.singleton().finer(
-            // String.format("%.3f %.3f", sentenceCorrect * 1.0 / (example.size() - 1), sentenceScore));
         }
         final long time = System.currentTimeMillis() - startTime;
         System.out.format("%s accuracy - unlabeled: %.3f  labeled %.3f  (%d ms, %.2f words/sec)\n", label, correctArcs
                 * 1.0 / total, correctLabels * 1.0 / total, time, total * 1000.0 / time);
     }
 
-    private void testClassifierScoring(final LinkedList<DependencyGraph> examples,
-            final NivreParserFeatureExtractor featureExtractor, final AveragedPerceptron shiftReduceClassifier,
-            final AveragedPerceptron reduceDirectionClassifier, final AveragedPerceptron labelClassifier,
-            final SymbolSet<String> tokens, final SymbolSet<String> pos, final SymbolSet<String> labels)
+    private void testClassifierScoring(final TransitionDepParser parser, final LinkedList<DependencyGraph> examples)
             throws IOException {
 
         final FileWriter arcScoreWriter = new FileWriter(arcScores);
@@ -422,15 +400,15 @@ public class EvalDepClassifiers extends BaseDepParser {
 
             final int totalSteps = example.size() * 2 - 1;
             for (int step = 0, i = 0; step < totalSteps; step++) {
-                final BitVector featureVector = featureExtractor.forwardFeatureVector(new NivreParserContext(stack,
-                        example.arcs), i);
+                final BitVector featureVector = parser.featureExtractor.forwardFeatureVector(new NivreParserContext(
+                        stack, example.arcs), i);
 
                 ParserAction action = null;
                 ScoredClassification srClassification = null;
                 if (stack.size() < 2) {
                     action = ParserAction.SHIFT;
                 } else {
-                    srClassification = shiftReduceClassifier.scoredClassify(featureVector);
+                    srClassification = parser.shiftReduceClassifier.scoredClassify(featureVector);
                     action = ParserAction.forInt(srClassification.classification);
                 }
 
@@ -441,7 +419,7 @@ public class EvalDepClassifiers extends BaseDepParser {
                     break;
 
                 case REDUCE:
-                    final ScoredClassification lrClassification = reduceDirectionClassifier
+                    final ScoredClassification lrClassification = parser.reduceDirectionClassifier
                             .scoredClassify(featureVector);
                     final ReduceDirection reduceDirection = ReduceDirection.forInt(lrClassification.classification);
 
@@ -454,9 +432,9 @@ public class EvalDepClassifiers extends BaseDepParser {
                         top.predictedHead = second.index;
                         top.score = lrClassification.score;
                         ScoredClassification labelClassification = null;
-                        if (labelClassifier != null) {
-                            labelClassification = labelClassifier.scoredClassify(featureVector);
-                            top.predictedLabel = labels.getSymbol(labelClassification.classification);
+                        if (parser.labelClassifier != null) {
+                            labelClassification = parser.labelClassifier.scoredClassify(featureVector);
+                            top.predictedLabel = parser.labels.getSymbol(labelClassification.classification);
                         }
 
                         write(arcScoreWriter, example.arcs, i, srClassification, lrClassification, top, second,
@@ -473,9 +451,9 @@ public class EvalDepClassifiers extends BaseDepParser {
                         second.predictedHead = top.index;
                         second.score = lrClassification.score;
                         ScoredClassification labelClassification = null;
-                        if (labelClassifier != null) {
-                            labelClassification = labelClassifier.scoredClassify(featureVector);
-                            second.predictedLabel = labels.getSymbol(labelClassification.classification);
+                        if (parser.labelClassifier != null) {
+                            labelClassification = parser.labelClassifier.scoredClassify(featureVector);
+                            second.predictedLabel = parser.labels.getSymbol(labelClassification.classification);
                         }
                         stack.addFirst(top);
 
