@@ -19,16 +19,10 @@
 
 package edu.ohsu.cslu.parser.cellselector;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Reader;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
 
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -36,7 +30,9 @@ import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.dep.DependencyGraph;
 import edu.ohsu.cslu.dep.DependencyNode;
+import edu.ohsu.cslu.dep.TransitionDepParser;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
@@ -47,68 +43,23 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
  */
 public class DepGraphCellSelectorModel implements CellSelectorModel {
 
-    /**
-     * Configuration property key for the default confidence score assigned to each arc when reading a dependency input
-     * file. Used to perform testing over a wide range of confidence values and simulate real-world confidence variance.
-     */
-    public final static String OPT_DEFAULT_ARC_CONFIDENCE = "depArcConfidence";
+    private static final long serialVersionUID = 1L;
 
     /**
-     * Fraction of dependency arcs to sample randomly
+     * Minimum (simulated) probability at which a subtree will be included in chart pruning
      */
-    public final static String OPT_ARC_FRACTION = "depArcFraction";
+    public final static String OPT_SUBTREE_PROBABILITY = "depSubtreeProb";
 
-    private HashMap<String, DependencyGraph> map = new HashMap<String, DependencyGraph>();
+    private final TransitionDepParser depParser;
 
-    /**
-     * The minimum score at which a dependency subtree will be used to prune the constituent chart. Note: the score of a
-     * subtree is generally a function of the scores of its children. If a subtree rooted at a particular node does not
-     * meet this threshold, children (or grandchildren) of that node may.
-     */
-    private float subtreeScoreThreshold;
-
-    /**
-     * The fraction of arcs to randomly skip
-     */
-    private float arcSkipSampleFraction;
-
-    private DepGraphCellSelectorModel() {
-        subtreeScoreThreshold = (float) Math.log(GlobalConfigProperties.singleton().getFloatProperty("depTreeScore",
-                0.9f));
-        arcSkipSampleFraction = 1f - GlobalConfigProperties.singleton().getFloatProperty(OPT_ARC_FRACTION, 1f);
+    public DepGraphCellSelectorModel(final TransitionDepParser depParser) {
+        this.depParser = depParser;
     }
 
-    public DepGraphCellSelectorModel(final List<DependencyGraph> goldGraphs) {
-        this();
-
-        for (final DependencyGraph g : goldGraphs) {
-            map.put(g.tokenizedSentence(), g);
-        }
-    }
-
-    public DepGraphCellSelectorModel(final Reader goldGraphs) throws IOException {
-        this();
-
-        final float confidence = GlobalConfigProperties.singleton().getFloatProperty(OPT_DEFAULT_ARC_CONFIDENCE, 0.95f);
-        final BufferedReader br = new BufferedReader(goldGraphs);
-        for (DependencyGraph g = DependencyGraph.readConll(br); g != null; g = DependencyGraph.readConll(br)) {
-            g.setConfidenceScores(confidence);
-
-            // If we're randomly skipping some arcs, set their scores to 0
-            if (arcSkipSampleFraction > 0) {
-                final int skipCount = Math.round(g.size() * arcSkipSampleFraction);
-                final IntSet arcsToSkip = new IntOpenHashSet();
-                final Random r = new Random();
-                while (arcsToSkip.size() < skipCount) {
-                    arcsToSkip.add(r.nextInt(g.size()));
-                }
-                for (final int i : arcsToSkip) {
-                    g.setConfidenceScore(i, 0);
-                }
-            }
-
-            map.put(g.tokenizedSentence(), g);
-        }
+    public DepGraphCellSelectorModel(final InputStream modelInputStream) throws IOException, ClassNotFoundException {
+        final ObjectInputStream ois = new ObjectInputStream(modelInputStream);
+        this.depParser = (TransitionDepParser) ois.readObject();
+        ois.close();
     }
 
     public CellSelector createCellSelector() {
@@ -120,18 +71,34 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
         private PackedBitVector openCellsVector;
         private int sentenceLength;
 
+        /**
+         * The minimum score at which a dependency subtree will be used to prune the constituent chart. Note: the score
+         * of a subtree is generally a function of the scores of its children. If a subtree rooted at a particular node
+         * does not meet this threshold, children (or grandchildren) of that node may. Stored in the
+         * {@link CellSelector} instance instead of the model so that it can be changed at runtime even if the model was
+         * serialized.
+         */
+        private final float subtreeScoreThreshold;
+
+        public DepGraphCellSelector() {
+            this.subtreeScoreThreshold = (float) Math.log(GlobalConfigProperties.singleton().getFloatProperty(
+                    OPT_SUBTREE_PROBABILITY, 0.9f));
+        }
+
         @Override
         public void initSentence(final ChartParser<?, ?> p) {
             super.initSentence(p);
             sentenceLength = p.chart.size();
-            cellIndices = openCells(p.chart.parseTask.sentence);
+            cellIndices = openCells(p.chart.parseTask);
             openCells = cellIndices.length / 2;
         }
 
-        public short[] openCells(final String sentence) {
+        public short[] openCells(final ParseTask task) {
 
-            final DependencyGraph graph = map.get(sentence);
+            final DependencyGraph graph = new DependencyGraph(task.sentence.split("\\s+"), task.stringInputTags);
+            depParser.parse(graph);
             sentenceLength = graph.size() - 1;
+
             final int currentOpenCells = (sentenceLength) * (sentenceLength + 1) / 2;
             final boolean[] openCellFlags = new boolean[currentOpenCells];
             Arrays.fill(openCellFlags, true);
@@ -167,7 +134,7 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
                         }
                     }
 
-                    // TODO Mark cells underneath this cell with a maximum span. Later cells must consider this cell as
+                    // Mark cells underneath this cell with a maximum span. Later cells must consider this cell as
                     // a potential child, but need not consider its children.
                     maxSpan = new DenseIntVector((sentenceLength + 1) * sentenceLength / 2, Short.MAX_VALUE);
                     for (int start = subtreeStart; start < subtreeEnd; start++) {
@@ -178,13 +145,13 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
                 }
             }
 
-            int openCells = 0;
+            int openCellCount = 0;
             for (int i = 0; i < openCellFlags.length; i++) {
                 if (openCellFlags[i]) {
-                    openCells++;
+                    openCellCount++;
                 }
             }
-            final short[] openCellIndices = new short[openCells * 2];
+            final short[] openCellIndices = new short[openCellCount * 2];
             for (int span = 1, i = 0; span <= sentenceLength; span++) {
                 for (short start = 0; start < sentenceLength - span + 1; start++) {
                     if (openCellFlags[PackedArrayChart.cellIndex(start, start + span, sentenceLength)]) {
