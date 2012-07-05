@@ -83,7 +83,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             this.threadLocalQueueEdges = new ThreadLocal<TemporaryChartCell>() {
                 @Override
                 protected TemporaryChartCell initialValue() {
-                    return new TemporaryChartCell(grammar);
+                    return new TemporaryChartCell(grammar, false);
                 }
             };
 

@@ -52,17 +52,10 @@ public abstract class BaseIoCphSpmlParser extends
 
         final Iterator<short[]> reverseIterator = cellSelector.reverseIterator();
 
-        // Populate start-symbol unaries in the top cell. Assume that the top cell will be first; this might not be
-        // exactly be the reverse of the original iteration order (e.g., for an agenda parser), but there isn't another
-        // sensible order in which to compute outside probabilities.
-        final float[] tmpOutsideProbabilities = new float[grammar.numNonTerms()];
-        Arrays.fill(tmpOutsideProbabilities, Float.NEGATIVE_INFINITY);
-        tmpOutsideProbabilities[grammar.startSymbol] = 0;
-
         while (reverseIterator.hasNext()) {
             final short[] startAndEnd = reverseIterator.next();
-            computeOutsideProbabilities(startAndEnd[0], startAndEnd[1], tmpOutsideProbabilities);
-            Arrays.fill(tmpOutsideProbabilities, Float.NEGATIVE_INFINITY);
+            final PackedArrayChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
+            computeOutsideProbabilities(cell);
         }
         if (collectDetailedStatistics) {
             parseTask.outsidePassMs = System.currentTimeMillis() - t0;
@@ -219,10 +212,18 @@ public abstract class BaseIoCphSpmlParser extends
      * @param start
      * @param end
      */
-    protected final void computeOutsideProbabilities(final short start, final short end,
-            final float[] tmpOutsideProbabilities) {
+    protected final void computeOutsideProbabilities(final PackedArrayChartCell cell) {
 
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
+
+        final short start = cell.start();
+        final short end = cell.end();
+
+        // Allocate temporary storage and populate start-symbol probability in the top cell
+        cell.allocateTemporaryStorage(true);
+        if (start == 0 && end == chart.size()) {
+            cell.tmpCell.outsideProbabilities[grammar.startSymbol] = 0;
+        }
 
         // Left-side siblings first
 
@@ -237,7 +238,7 @@ public abstract class BaseIoCphSpmlParser extends
             final int siblingStartIndex = chart.minLeftChildIndex(siblingCellIndex);
             final int siblingEndIndex = chart.maxLeftChildIndex(siblingCellIndex);
 
-            computeSiblingOutsideProbabilities(tmpOutsideProbabilities, grammar.rightChildPackingFunction,
+            computeSiblingOutsideProbabilities(cell.tmpCell.outsideProbabilities, grammar.rightChildPackingFunction,
                     grammar.rightChildCscBinaryProbabilities, grammar.rightChildCscBinaryRowIndices,
                     grammar.rightChildCscBinaryColumnOffsets, parentStartIndex, parentEndIndex, siblingStartIndex,
                     siblingEndIndex);
@@ -256,16 +257,16 @@ public abstract class BaseIoCphSpmlParser extends
             final int siblingStartIndex = chart.minRightChildIndex(siblingCellIndex);
             final int siblingEndIndex = chart.maxRightChildIndex(siblingCellIndex);
 
-            computeSiblingOutsideProbabilities(tmpOutsideProbabilities, grammar.leftChildPackingFunction,
+            computeSiblingOutsideProbabilities(cell.tmpCell.outsideProbabilities, grammar.leftChildPackingFunction,
                     grammar.leftChildCscBinaryProbabilities, grammar.leftChildCscBinaryRowIndices,
                     grammar.leftChildCscBinaryColumnOffsets, parentStartIndex, parentEndIndex, siblingStartIndex,
                     siblingEndIndex);
         }
 
         // Unary outside probabilities
-        computeUnaryOutsideProbabilities(tmpOutsideProbabilities);
+        computeUnaryOutsideProbabilities(cell.tmpCell.outsideProbabilities);
 
-        chart.finalizeOutside(tmpOutsideProbabilities, chart.cellIndex(start, end));
+        chart.finalizeOutside(cell.tmpCell.outsideProbabilities, chart.cellIndex(start, end));
 
         if (collectDetailedStatistics) {
             chart.parseTask.outsidePassMs += System.currentTimeMillis() - t0;

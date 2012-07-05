@@ -184,11 +184,12 @@ public class PackedArrayChart extends ParallelArrayChart {
         this.threadLocalTemporaryCells = new ThreadLocal<PackedArrayChart.TemporaryChartCell>() {
             @Override
             protected PackedArrayChart.TemporaryChartCell initialValue() {
-                return new PackedArrayChart.TemporaryChartCell(grammar);
+                return new PackedArrayChart.TemporaryChartCell(grammar, false);
             }
         };
 
         this.outsideProbabilities = new float[chartArraySize];
+        Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
 
         switch (parseTask.decodeMethod) {
 
@@ -798,6 +799,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                         // Preclude unary chains. Not great, but it's one way to prevent infinite unary loops
                         if (parentUnaryR[baseChild] - startSymbolInsideProbability > maxQ[cellIndex][baseParent]
                                 && maxQRightChildren[cellIndex][baseChild] != Production.UNARY_PRODUCTION) {
+
                             maxQ[cellIndex][baseParent] = parentUnaryR[baseChild] - startSymbolInsideProbability;
                             maxQMidpoints[cellIndex][baseParent] = end;
                             maxQLeftChildren[cellIndex][baseParent] = baseChild;
@@ -994,8 +996,6 @@ public class PackedArrayChart extends ParallelArrayChart {
 
         public TemporaryChartCell tmpCell;
 
-        public float[] tmpOutsideProbabilities;
-
         public PackedArrayChartCell(final int start, final int end) {
             super(start, end);
         }
@@ -1021,6 +1021,9 @@ public class PackedArrayChart extends ParallelArrayChart {
 
             for (short nonTerminal = 0; nonTerminal < tmpCell.insideProbabilities.length; nonTerminal++) {
 
+                // if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY
+                // && (tmpCell.outsideProbabilities == null || tmpCell.outsideProbabilities[nonTerminal] !=
+                // Float.NEGATIVE_INFINITY)) {
                 if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
 
                     nonTerminalIndices[nonTerminalOffset] = nonTerminal;
@@ -1046,9 +1049,16 @@ public class PackedArrayChart extends ParallelArrayChart {
 
                     nonTerminalOffset++;
                 }
+
+                // if (tmpCell.outsideProbabilities != null) {
+                // outsideProbabilities[nonTerminalOffset] = tmpCell.outsideProbabilities[nonTerminal];
+                // }
             }
 
             numNonTerminals[cellIndex] = nonTerminalOffset - offset;
+            // if (tmpCell.outsideProbabilities != null) {
+            // finalizeOutside(tmpCell.outsideProbabilities, cellIndex);
+            // }
             this.tmpCell = null;
             finalizeSegmentStartIndices();
         }
@@ -1394,11 +1404,15 @@ public class PackedArrayChart extends ParallelArrayChart {
         }
 
         public void allocateTemporaryStorage() {
+            allocateTemporaryStorage(false);
+        }
+
+        public void allocateTemporaryStorage(final boolean includeOutsideProbabilities) {
             // Allocate storage
             if (tmpCell == null) {
                 // this.tmpCell = threadLocalTemporaryCells.get();
                 // this.tmpCell.clear();
-                this.tmpCell = new TemporaryChartCell(grammar);
+                this.tmpCell = new TemporaryChartCell(grammar, includeOutsideProbabilities);
 
                 // Copy from main chart array to temporary parallel array
                 for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
@@ -1406,20 +1420,9 @@ public class PackedArrayChart extends ParallelArrayChart {
                     tmpCell.packedChildren[nonTerminal] = packedChildren[i];
                     tmpCell.insideProbabilities[nonTerminal] = insideProbabilities[i];
                     tmpCell.midpoints[nonTerminal] = midpoints[i];
-                }
-            }
 
-            if (parseTask.decodeMethod != DecodeMethod.ViterbiMax) {
-                // Allocate outside-probability storage
-                if (tmpOutsideProbabilities == null) {
-                    final int arraySize = sparseMatrixGrammar.numNonTerms();
-                    this.tmpOutsideProbabilities = new float[arraySize];
-                    Arrays.fill(tmpOutsideProbabilities, Float.NEGATIVE_INFINITY);
-
-                    // Copy from main chart array to temporary parallel array
-                    for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
-                        final int nonTerminal = nonTerminalIndices[i];
-                        tmpOutsideProbabilities[nonTerminal] = outsideProbabilities[i];
+                    if (includeOutsideProbabilities) {
+                        tmpCell.outsideProbabilities[nonTerminal] = outsideProbabilities[i];
                     }
                 }
             }
@@ -1520,7 +1523,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                     if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
                         final int childProductions = tmpCell.packedChildren[nonTerminal];
                         final float insideProbability = tmpCell.insideProbabilities[nonTerminal];
-                        final float outsideProbability = tmpOutsideProbabilities[nonTerminal];
+                        final float outsideProbability = tmpCell.outsideProbabilities[nonTerminal];
+                        // final float outsideProbability = tmpCell.outsideProbabilities[nonTerminal];
                         final int midpoint = tmpCell.midpoints[nonTerminal];
 
                         sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint,
@@ -1635,19 +1639,25 @@ public class PackedArrayChart extends ParallelArrayChart {
 
         public final int[] packedChildren;
         public final float[] insideProbabilities;
+        public final float[] outsideProbabilities;
         public final short[] midpoints;
         private final SparseMatrixGrammar sparseMatrixGrammar;
 
-        public TemporaryChartCell(final Grammar grammar) {
+        public TemporaryChartCell(final Grammar grammar, final boolean includeOutsideProbabilities) {
             this.packedChildren = new int[grammar.numNonTerms()];
             this.insideProbabilities = new float[grammar.numNonTerms()];
             this.midpoints = new short[grammar.numNonTerms()];
             this.sparseMatrixGrammar = grammar instanceof SparseMatrixGrammar ? (SparseMatrixGrammar) grammar : null;
+            this.outsideProbabilities = includeOutsideProbabilities ? new float[grammar.numNonTerms()] : null;
+
             clear();
         }
 
         public void clear() {
             Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
+            if (outsideProbabilities != null) {
+                Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
+            }
         }
 
         @Override
