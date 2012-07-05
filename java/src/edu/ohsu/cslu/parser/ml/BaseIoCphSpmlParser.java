@@ -33,6 +33,10 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.util.Math;
 
 /**
+ * Base class for parsers implementing inside-sum or inside-outside inference rather than simple Viterbi decoding. With
+ * a chart containing inside or inside-outside (posterior) probabilities, we have a choice of decoding methods (see
+ * {@link DecodeMethod} and {@link PackedArrayChart}).
+ * 
  * @author Aaron Dunlop
  */
 public abstract class BaseIoCphSpmlParser extends
@@ -71,10 +75,9 @@ public abstract class BaseIoCphSpmlParser extends
         return chart.decode();
     }
 
-    protected abstract void computeSiblingOutsideProbabilities(final float[] tmpOutsideProbabilities,
-            final PackingFunction pf, final float[] cscBinaryProbabilities, final short[] cscBinaryRowIndices,
-            final int[] cscColumnOffsets, final int parentStartIndex, final int parentEndIndex,
-            final int siblingStartIndex, final int siblingEndIndex);
+    protected abstract void computeSiblingOutsideProbabilities(PackedArrayChartCell cell, final PackingFunction pf,
+            final float[] cscBinaryProbabilities, final short[] cscBinaryRowIndices, final int[] cscColumnOffsets,
+            final int parentStartIndex, final int parentEndIndex, final int siblingStartIndex, final int siblingEndIndex);
 
     @Override
     protected final void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end) {
@@ -212,17 +215,17 @@ public abstract class BaseIoCphSpmlParser extends
      * @param start
      * @param end
      */
-    protected final void computeOutsideProbabilities(final PackedArrayChartCell cell) {
+    protected final void computeOutsideProbabilities(final PackedArrayChartCell targetCell) {
 
         final long t0 = collectDetailedStatistics ? System.currentTimeMillis() : 0;
 
-        final short start = cell.start();
-        final short end = cell.end();
+        final short start = targetCell.start();
+        final short end = targetCell.end();
 
         // Allocate temporary storage and populate start-symbol probability in the top cell
-        cell.allocateTemporaryStorage(true);
+        targetCell.allocateTemporaryStorage(true);
         if (start == 0 && end == chart.size()) {
-            cell.tmpCell.outsideProbabilities[grammar.startSymbol] = 0;
+            targetCell.tmpCell.outsideProbabilities[grammar.startSymbol] = 0;
         }
 
         // Left-side siblings first
@@ -231,14 +234,14 @@ public abstract class BaseIoCphSpmlParser extends
         for (int parentStart = 0; parentStart < start; parentStart++) {
             final int parentCellIndex = chart.cellIndex(parentStart, end);
             final int parentStartIndex = chart.offset(parentCellIndex);
-            final int parentEndIndex = parentStartIndex + chart.numNonTerminals()[parentCellIndex] - 1;
+            final int parentEndIndex = parentStartIndex + chart.numNonTerminals[parentCellIndex] - 1;
 
             // Sibling (left) cell
             final int siblingCellIndex = chart.cellIndex(parentStart, start);
             final int siblingStartIndex = chart.minLeftChildIndex(siblingCellIndex);
             final int siblingEndIndex = chart.maxLeftChildIndex(siblingCellIndex);
 
-            computeSiblingOutsideProbabilities(cell.tmpCell.outsideProbabilities, grammar.rightChildPackingFunction,
+            computeSiblingOutsideProbabilities(targetCell, grammar.rightChildPackingFunction,
                     grammar.rightChildCscBinaryProbabilities, grammar.rightChildCscBinaryRowIndices,
                     grammar.rightChildCscBinaryColumnOffsets, parentStartIndex, parentEndIndex, siblingStartIndex,
                     siblingEndIndex);
@@ -250,23 +253,22 @@ public abstract class BaseIoCphSpmlParser extends
         for (int parentEnd = end + 1; parentEnd <= chart.size(); parentEnd++) {
             final int parentCellIndex = chart.cellIndex(start, parentEnd);
             final int parentStartIndex = chart.offset(parentCellIndex);
-            final int parentEndIndex = parentStartIndex + chart.numNonTerminals()[parentCellIndex] - 1;
+            final int parentEndIndex = parentStartIndex + chart.numNonTerminals[parentCellIndex] - 1;
 
             // Sibling (right) cell
             final int siblingCellIndex = chart.cellIndex(end, parentEnd);
             final int siblingStartIndex = chart.minRightChildIndex(siblingCellIndex);
             final int siblingEndIndex = chart.maxRightChildIndex(siblingCellIndex);
 
-            computeSiblingOutsideProbabilities(cell.tmpCell.outsideProbabilities, grammar.leftChildPackingFunction,
+            computeSiblingOutsideProbabilities(targetCell, grammar.leftChildPackingFunction,
                     grammar.leftChildCscBinaryProbabilities, grammar.leftChildCscBinaryRowIndices,
                     grammar.leftChildCscBinaryColumnOffsets, parentStartIndex, parentEndIndex, siblingStartIndex,
                     siblingEndIndex);
         }
 
         // Unary outside probabilities
-        computeUnaryOutsideProbabilities(cell.tmpCell.outsideProbabilities);
-
-        chart.finalizeOutside(cell.tmpCell.outsideProbabilities, chart.cellIndex(start, end));
+        computeUnaryOutsideProbabilities(targetCell.tmpCell.outsideProbabilities);
+        targetCell.finalizeCell();
 
         if (collectDetailedStatistics) {
             chart.parseTask.outsidePassMs += System.currentTimeMillis() - t0;

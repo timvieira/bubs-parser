@@ -129,7 +129,7 @@ public class ViterbiInOutCphSpmlParser extends BaseIoCphSpmlParser {
     }
 
     @Override
-    protected void computeSiblingOutsideProbabilities(final float[] tmpOutsideProbabilities, final PackingFunction pf,
+    protected void computeSiblingOutsideProbabilities(final PackedArrayChartCell cell, final PackingFunction pf,
             final float[] cscBinaryProbabilities, final short[] cscBinaryRowIndices, final int[] cscColumnOffsets,
             final int parentStartIndex, final int parentEndIndex, final int siblingStartIndex, final int siblingEndIndex) {
 
@@ -150,16 +150,14 @@ public class ViterbiInOutCphSpmlParser extends BaseIoCphSpmlParser {
 
                 // foreach grammar rule matching sibling/parent pair (i.e., those which can produce entries in
                 // the target cell).
-                // TODO Constrain this iteration to entries with non-0 inside probability (e.g. with a merge
-                // with insideProbability array)?
                 for (int k = cscColumnOffsets[column]; k < cscColumnOffsets[column + 1]; k++) {
 
                     // Viterbi outside probability = max(production probability x parent outside x sibling inside)
                     final float outsideProbability = cscBinaryProbabilities[k] + jointProbability;
                     final int target = cscBinaryRowIndices[k];
 
-                    if (outsideProbability > tmpOutsideProbabilities[target]) {
-                        tmpOutsideProbabilities[target] = outsideProbability;
+                    if (outsideProbability > cell.tmpCell.outsideProbabilities[target]) {
+                        cell.tmpCell.outsideProbabilities[target] = outsideProbability;
                     }
                 }
             }
