@@ -98,7 +98,7 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
     }
 
     @Override
-    protected void computeSiblingOutsideProbabilities(final float[] tmpOutsideProbabilities, final PackingFunction pf,
+    protected void computeSiblingOutsideProbabilities(final PackedArrayChartCell cell, final PackingFunction pf,
             final float[] cscBinaryProbabilities, final short[] cscBinaryRowIndices, final int[] cscColumnOffsets,
             final int parentStartIndex, final int parentEndIndex, final int siblingStartIndex, final int siblingEndIndex) {
 
@@ -109,25 +109,23 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
 
             // foreach entry in the parent cell
             for (int j = parentStartIndex; j <= parentEndIndex; j++) {
-
                 final int column = pf.pack(chart.nonTerminalIndices[j], siblingEntry);
                 if (column == Integer.MIN_VALUE) {
                     continue;
                 }
 
-                final float jointProbability = siblingInsideProbability + chart.outsideProbabilities[j];
+                // Parent outside x sibling inside
+                final float jointProbability = chart.outsideProbabilities[j] + siblingInsideProbability;
 
                 // foreach grammar rule matching sibling/parent pair (i.e., those which can produce entries in
                 // the target cell).
-                // TODO Constrain this iteration to entries with non-0 inside probability (e.g. with a merge
-                // with insideProbability array)?
                 for (int k = cscColumnOffsets[column]; k < cscColumnOffsets[column + 1]; k++) {
 
                     // Outside probability = sum(production probability x parent outside x sibling inside)
                     final float outsideProbability = cscBinaryProbabilities[k] + jointProbability;
                     final int target = cscBinaryRowIndices[k];
-                    final float outsideSum = Math.logSum(outsideProbability, tmpOutsideProbabilities[target]);
-                    tmpOutsideProbabilities[target] = outsideSum;
+                    final float outsideSum = Math.logSum(outsideProbability, cell.tmpCell.outsideProbabilities[target]);
+                    cell.tmpCell.outsideProbabilities[target] = outsideSum;
                 }
             }
         }

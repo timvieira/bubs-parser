@@ -364,17 +364,6 @@ public class PackedArrayChart extends ParallelArrayChart {
         return insideProbabilities[index];
     }
 
-    public void finalizeOutside(final float[] tmpOutsideProbabilities, final int cellIndex) {
-
-        // Copy from temporary storage all entries which have non-0 inside and outside probabilities
-        final int startIndex = offset(cellIndex);
-        final int endIndex = startIndex + numNonTerminals[cellIndex];
-
-        for (int i = startIndex; i < endIndex; i++) {
-            outsideProbabilities[i] = tmpOutsideProbabilities[nonTerminalIndices[i]];
-        }
-    }
-
     /**
      * Decodes the packed parse forest using the specified decoding method (e.g., {@link DecodeMethod#Goodman},
      * {@link DecodeMethod#MaxRuleProd}, etc.)
@@ -1021,10 +1010,9 @@ public class PackedArrayChart extends ParallelArrayChart {
 
             for (short nonTerminal = 0; nonTerminal < tmpCell.insideProbabilities.length; nonTerminal++) {
 
-                // if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY
-                // && (tmpCell.outsideProbabilities == null || tmpCell.outsideProbabilities[nonTerminal] !=
-                // Float.NEGATIVE_INFINITY)) {
-                if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
+                if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY
+                        && (tmpCell.outsideProbabilities == null || tmpCell.outsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY)) {
+                    // if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
 
                     nonTerminalIndices[nonTerminalOffset] = nonTerminal;
                     insideProbabilities[nonTerminalOffset] = tmpCell.insideProbabilities[nonTerminal];
@@ -1047,18 +1035,15 @@ public class PackedArrayChart extends ParallelArrayChart {
                         maxRightChildIndex[cellIndex] = nonTerminalOffset;
                     }
 
+                    if (tmpCell.outsideProbabilities != null) {
+                        outsideProbabilities[nonTerminalOffset] = tmpCell.outsideProbabilities[nonTerminal];
+                    }
+
                     nonTerminalOffset++;
                 }
-
-                // if (tmpCell.outsideProbabilities != null) {
-                // outsideProbabilities[nonTerminalOffset] = tmpCell.outsideProbabilities[nonTerminal];
-                // }
             }
 
             numNonTerminals[cellIndex] = nonTerminalOffset - offset;
-            // if (tmpCell.outsideProbabilities != null) {
-            // finalizeOutside(tmpCell.outsideProbabilities, cellIndex);
-            // }
             this.tmpCell = null;
             finalizeSegmentStartIndices();
         }
