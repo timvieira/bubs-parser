@@ -103,38 +103,12 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
             protected PackedArrayChart.TemporaryChartCell[] initialValue() {
                 final PackedArrayChart.TemporaryChartCell[] tcs = new PackedArrayChart.TemporaryChartCell[grammarThreads];
                 for (int j = 0; j < grammarThreads; j++) {
-                    tcs[j] = new PackedArrayChart.TemporaryChartCell(grammar);
+                    tcs[j] = new PackedArrayChart.TemporaryChartCell(grammar, false);
                 }
                 return tcs;
             }
         };
     }
-
-    // @Override
-    // protected void visitCell(final short start, final short end) {
-    //
-    // // Wait for the array fill task
-    // if (cpvClearTask != null) {
-    // try {
-    // cpvClearTask.get();
-    // } catch (final InterruptedException e) {
-    // e.printStackTrace();
-    // } catch (final ExecutionException e) {
-    // e.printStackTrace();
-    // }
-    // }
-    //
-    // // TODO Auto-generated method stub
-    // super.visitCell(start, end);
-    //
-    // // Schedule a task to clear the cartesian-product vector storage
-    // cellExecutor.execute(new Runnable() {
-    // @Override
-    // public void run() {
-    // Arrays.fill(threadLocalCpvMidpoints.get(), (short) 0);
-    // }
-    // });
-    // }
 
     /**
      * Takes the cartesian-product of all potential child-cell combinations. Unions those cartesian-products together,
@@ -147,8 +121,7 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
     @Override
     protected CartesianProductVector cartesianProductUnion(final int start, final int end) {
 
-        final PerfectIntPairHashPackingFunction pf = (PerfectIntPairHashPackingFunction) grammar
-                .packingFunction();
+        final PerfectIntPairHashPackingFunction pf = (PerfectIntPairHashPackingFunction) grammar.packingFunction();
         final short[] nonTerminalIndices = chart.nonTerminalIndices;
         final float[] insideProbabilities = chart.insideProbabilities;
 

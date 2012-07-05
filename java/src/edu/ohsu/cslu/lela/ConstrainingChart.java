@@ -555,7 +555,7 @@ public class ConstrainingChart extends PackedArrayChart {
     @Override
     public PackedArrayChartCell getCell(final int start, final int end) {
         final PackedArrayChartCell cell = new PackedArrayChartCell(start, end);
-        cell.tmpCell = new TemporaryChartCell(grammar);
+        cell.tmpCell = new TemporaryChartCell(grammar, false);
         final int cellIndex = cellIndex(start, end);
         for (int i = 0; i < beamWidth; i++) {
             final int entryOffset = offset(cellIndex) + i;
