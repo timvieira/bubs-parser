@@ -305,33 +305,18 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
                         if (source.stack.size() < 2) {
                             throw new InvalidFeatureException();
                         }
-                        // Previous word on the stack
-                        final Arc previousWord = source.stack.get(1);
-                        // Top word on the stack
-                        final Arc currentWord = source.stack.get(0);
-
                         // Distance between top two words on stack
-                        switch (currentWord.index - previousWord.index) {
-                        case 1:
-                            feature += DISTANCE_1;
-                            break;
-                        case 2:
-                            feature += DISTANCE_2;
-                            break;
-                        case 3:
-                            feature += DISTANCE_3;
-                            break;
-                        case 4:
-                        case 5:
-                            feature += DISTANCE_45;
-                            break;
-                        default:
-                            feature += DISTANCE_6;
-                            break;
+                        feature += distance(source.stack.get(1).index, source.stack.get(0).index);
+                        break;
+
+                    case di:
+                        feature *= DISTANCE_BINS;
+
+                        if (source.stack.size() < 2) {
+                            throw new InvalidFeatureException();
                         }
-                        if (j < template.length - 1) {
-                            feature *= DISTANCE_BINS;
-                        }
+                        // Distance between top word on stack and next input word
+                        feature += distance(source.stack.get(0).index, source.arcs[source.next].index);
                         break;
                     }
 
@@ -468,6 +453,22 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         return nullLabel;
     }
 
+    private long distance(final int firstWordIndex, final int secondWordIndex) {
+        switch (secondWordIndex - firstWordIndex) {
+        case 1:
+            return DISTANCE_1;
+        case 2:
+            return DISTANCE_2;
+        case 3:
+            return DISTANCE_3;
+        case 4:
+        case 5:
+            return DISTANCE_45;
+        default:
+            return DISTANCE_6;
+        }
+    }
+
     /**
      * @param arcs
      * @param i
@@ -533,7 +534,8 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         s11w(1, 1),
         s12w(1, 2),
 
-        d(-1, -1);
+        d(-1, -1),
+        di(-1, -1);
 
         final int index;
         final int offset;
