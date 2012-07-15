@@ -11,7 +11,8 @@ import org.junit.Test;
 
 import cltool4j.BaseCommandlineTool;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.dep.DependencyGraph.DerivationAction;
+import edu.ohsu.cslu.dep.DependencyGraph.ArcEagerAction;
+import edu.ohsu.cslu.dep.DependencyGraph.StackProjectiveAction;
 
 /**
  * Unit tests for {@link DependencyGraph}
@@ -21,10 +22,20 @@ import edu.ohsu.cslu.dep.DependencyGraph.DerivationAction;
 public class TestDependencyGraph extends BaseCommandlineTool {
 
     private DependencyGraph conllExample;
+    private DependencyGraph simpleExample;
 
     @Before
     public void setUp() throws IOException {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
+        sb.append("1	The	_	DT	DT	_	3	NMOD	_	_\n");
+        sb.append("2	aged	_	NN	NN	_	3	NMOD	_	_\n");
+        sb.append("3	bottle	_	NN	NN	_	4	NMOD	_	_\n");
+        sb.append("4	flies	_	NN	NN	_	0	SBJ	_	_\n");
+        sb.append("5	fast	_	NN	NN	_	4	SBJ	_	_\n");
+
+        simpleExample = DependencyGraph.readConll(sb.toString());
+
+        sb = new StringBuilder();
         sb.append("1	The	_	DT	DT	_	4	NMOD	_	_\n");
         sb.append("2	luxury	_	NN	NN	_	4	NMOD	_	_\n");
         sb.append("3	auto	_	NN	NN	_	4	NMOD	_	_\n");
@@ -55,32 +66,45 @@ public class TestDependencyGraph extends BaseCommandlineTool {
     }
 
     @Test
-    public void testDerivation() throws IOException {
+    public void testStackProjectiveDerivation() {
 
-        final StringBuilder sb = new StringBuilder();
-        sb.append("1	The	_	DT	DT	_	3	NMOD	_	_\n");
-        sb.append("2	aged	_	NN	NN	_	3	NMOD	_	_\n");
-        sb.append("3	bottle	_	NN	NN	_	4	NMOD	_	_\n");
-        sb.append("4	flies	_	NN	NN	_	0	SBJ	_	_\n");
-        sb.append("5	fast	_	NN	NN	_	4	SBJ	_	_\n");
+        DependencyGraph.StackProjectiveAction[] derivation = simpleExample.stackProjectiveDerivation();
+        assertArrayEquals(new StackProjectiveAction[] { StackProjectiveAction.SHIFT, StackProjectiveAction.SHIFT,
+                StackProjectiveAction.SHIFT, StackProjectiveAction.REDUCE_RIGHT, StackProjectiveAction.REDUCE_RIGHT,
+                StackProjectiveAction.SHIFT, StackProjectiveAction.REDUCE_RIGHT, StackProjectiveAction.SHIFT,
+                StackProjectiveAction.REDUCE_LEFT, StackProjectiveAction.SHIFT, StackProjectiveAction.REDUCE_RIGHT },
+                derivation);
 
-        final DependencyGraph g = DependencyGraph.readConll(sb.toString());
-        DependencyGraph.DerivationAction[] derivation = g.derivation();
-        assertArrayEquals(new DerivationAction[] { DerivationAction.SHIFT, DerivationAction.SHIFT,
-                DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT, DerivationAction.REDUCE_RIGHT,
-                DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT, DerivationAction.SHIFT,
-                DerivationAction.REDUCE_LEFT, DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT }, derivation);
+        derivation = conllExample.stackProjectiveDerivation();
+        assertArrayEquals(new StackProjectiveAction[] { StackProjectiveAction.SHIFT, StackProjectiveAction.SHIFT,
+                StackProjectiveAction.SHIFT, StackProjectiveAction.SHIFT, StackProjectiveAction.REDUCE_RIGHT,
+                StackProjectiveAction.REDUCE_RIGHT, StackProjectiveAction.REDUCE_RIGHT, StackProjectiveAction.SHIFT,
+                StackProjectiveAction.SHIFT, StackProjectiveAction.REDUCE_RIGHT, StackProjectiveAction.SHIFT,
+                StackProjectiveAction.REDUCE_RIGHT, StackProjectiveAction.REDUCE_RIGHT, StackProjectiveAction.SHIFT,
+                StackProjectiveAction.SHIFT, StackProjectiveAction.REDUCE_RIGHT, StackProjectiveAction.REDUCE_LEFT,
+                StackProjectiveAction.SHIFT, StackProjectiveAction.SHIFT, StackProjectiveAction.SHIFT,
+                StackProjectiveAction.REDUCE_RIGHT, StackProjectiveAction.REDUCE_LEFT,
+                StackProjectiveAction.REDUCE_LEFT, StackProjectiveAction.SHIFT, StackProjectiveAction.REDUCE_RIGHT },
+                derivation);
+    }
 
-        derivation = conllExample.derivation();
-        assertArrayEquals(new DerivationAction[] { DerivationAction.SHIFT, DerivationAction.SHIFT,
-                DerivationAction.SHIFT, DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT,
-                DerivationAction.REDUCE_RIGHT, DerivationAction.REDUCE_RIGHT, DerivationAction.SHIFT,
-                DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT, DerivationAction.SHIFT,
-                DerivationAction.REDUCE_RIGHT, DerivationAction.REDUCE_RIGHT, DerivationAction.SHIFT,
-                DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT, DerivationAction.REDUCE_LEFT,
-                DerivationAction.SHIFT, DerivationAction.SHIFT, DerivationAction.SHIFT, DerivationAction.REDUCE_RIGHT,
-                DerivationAction.REDUCE_LEFT, DerivationAction.REDUCE_LEFT, DerivationAction.SHIFT,
-                DerivationAction.REDUCE_RIGHT }, derivation);
+    @Test
+    public void testArcEagerDerivation() {
+
+        DependencyGraph.ArcEagerAction[] derivation = simpleExample.arcEagerDerivation();
+        assertArrayEquals(new ArcEagerAction[] { ArcEagerAction.SHIFT, ArcEagerAction.SHIFT, ArcEagerAction.ARC_LEFT,
+                ArcEagerAction.ARC_LEFT, ArcEagerAction.SHIFT, ArcEagerAction.ARC_LEFT, ArcEagerAction.SHIFT,
+                ArcEagerAction.ARC_RIGHT, ArcEagerAction.REDUCE, ArcEagerAction.ARC_LEFT, ArcEagerAction.SHIFT },
+                derivation);
+
+        derivation = conllExample.arcEagerDerivation();
+        assertArrayEquals(new ArcEagerAction[] { ArcEagerAction.SHIFT, ArcEagerAction.SHIFT, ArcEagerAction.SHIFT,
+                ArcEagerAction.ARC_LEFT, ArcEagerAction.ARC_LEFT, ArcEagerAction.ARC_LEFT, ArcEagerAction.SHIFT,
+                ArcEagerAction.SHIFT, ArcEagerAction.ARC_LEFT, ArcEagerAction.SHIFT, ArcEagerAction.ARC_LEFT,
+                ArcEagerAction.ARC_LEFT, ArcEagerAction.SHIFT, ArcEagerAction.SHIFT, ArcEagerAction.ARC_LEFT,
+                ArcEagerAction.ARC_RIGHT, ArcEagerAction.REDUCE, ArcEagerAction.ARC_RIGHT, ArcEagerAction.SHIFT,
+                ArcEagerAction.ARC_LEFT, ArcEagerAction.ARC_RIGHT, ArcEagerAction.REDUCE, ArcEagerAction.REDUCE,
+                ArcEagerAction.ARC_LEFT, ArcEagerAction.SHIFT }, derivation);
     }
 
     @Test
