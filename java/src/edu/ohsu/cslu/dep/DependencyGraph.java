@@ -21,7 +21,11 @@ public class DependencyGraph implements Cloneable {
 
     final Arc[] arcs;
 
-    private DerivationAction[] derivation = null;
+    /** Private cache */
+    private StackProjectiveAction[] stackProjectiveDerivation = null;
+
+    /** Private cache */
+    private ArcEagerAction[] arcEagerDerivation = null;
 
     /**
      * Constructs an uninitialized {@link DependencyGraph}
@@ -106,6 +110,15 @@ public class DependencyGraph implements Cloneable {
                 g.arcs[head - 1].incomingBackwardArcs++;
             }
         }
+
+        // Count the children of each word
+        for (int i = 0; i < g.arcs.length; i++) {
+            final int headIndex = g.arcs[i].head - 1;
+            if (headIndex >= 0) {
+                g.arcs[headIndex].children++;
+            }
+        }
+
         return g;
     }
 
@@ -114,7 +127,7 @@ public class DependencyGraph implements Cloneable {
     }
 
     public void printDerivation() {
-        final DerivationAction[] d = derivation();
+        final StackProjectiveAction[] d = stackProjectiveDerivation();
 
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         int step = 0;
@@ -122,7 +135,7 @@ public class DependencyGraph implements Cloneable {
         for (int i = 0; i < arcs.length || (stack.size() != 1 || stack.peek() != ROOT);) {
             if (stack.size() < 2) {
                 stack.addFirst(arcs[i++]);
-                d[step++] = DerivationAction.SHIFT;
+                d[step++] = StackProjectiveAction.SHIFT;
                 System.out.println("Shifting " + stack.peek());
             } else {
                 final Arc last = stack.get(0);
@@ -152,20 +165,20 @@ public class DependencyGraph implements Cloneable {
      * @return Ordered shift-reduce derivation of the dependency graph
      * @throws IllegalArgumentException if the graph encodes one or more non-projective dependencies
      */
-    public DerivationAction[] derivation() {
+    public StackProjectiveAction[] stackProjectiveDerivation() {
 
-        if (derivation != null) {
-            return derivation;
+        if (stackProjectiveDerivation != null) {
+            return stackProjectiveDerivation;
         }
 
-        final DerivationAction[] tmpDerivation = new DerivationAction[arcs.length * 2 - 1];
+        final StackProjectiveAction[] tmpDerivation = new StackProjectiveAction[arcs.length * 2 - 1];
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         int step = 0;
 
         for (int i = 0; i < arcs.length || (stack.size() != 1 || stack.peek() != ROOT);) {
             if (stack.size() < 2) {
                 stack.addFirst(arcs[i++]);
-                tmpDerivation[step++] = DerivationAction.SHIFT;
+                tmpDerivation[step++] = StackProjectiveAction.SHIFT;
             } else {
                 final Arc last = stack.get(0);
                 final Arc previous = stack.get(1);
@@ -173,12 +186,12 @@ public class DependencyGraph implements Cloneable {
                 // Can we reduce the top two on the stack?
                 if (last.head == previous.index && last.incomingBackwardArcs == 0) {
                     // Reduce left
-                    tmpDerivation[step++] = DerivationAction.REDUCE_LEFT;
+                    tmpDerivation[step++] = StackProjectiveAction.REDUCE_LEFT;
                     previous.incomingBackwardArcs--;
                     stack.removeFirst();
                 } else if (previous.head == last.index && previous.incomingBackwardArcs == 0) {
                     // Reduce right
-                    tmpDerivation[step++] = DerivationAction.REDUCE_RIGHT;
+                    tmpDerivation[step++] = StackProjectiveAction.REDUCE_RIGHT;
                     final Arc tmp = stack.removeFirst();
                     stack.removeFirst();
                     stack.addFirst(tmp);
@@ -187,13 +200,77 @@ public class DependencyGraph implements Cloneable {
                         throw new IllegalArgumentException("Unable to derive shift-reduce derivation");
                     }
                     stack.addFirst(arcs[i++]);
-                    tmpDerivation[step++] = DerivationAction.SHIFT;
+                    tmpDerivation[step++] = StackProjectiveAction.SHIFT;
                 }
             }
         }
 
-        this.derivation = tmpDerivation;
-        return derivation;
+        this.stackProjectiveDerivation = tmpDerivation;
+        return stackProjectiveDerivation;
+    }
+
+    /**
+     * @return Ordered shift-reduce derivation of the dependency graph
+     * @throws IllegalArgumentException if the graph encodes one or more non-projective dependencies
+     */
+    public ArcEagerAction[] arcEagerDerivation() {
+
+        if (arcEagerDerivation != null) {
+            return arcEagerDerivation;
+        }
+
+        final boolean[] parentFound = new boolean[arcs.length + 1];
+        final int[] childrenFound = new int[arcs.length + 1];
+
+        final ArcEagerAction[] tmpDerivation = new ArcEagerAction[arcs.length * 2 - 1];
+        final LinkedList<Arc> stack = new LinkedList<Arc>();
+        int step = 0;
+
+        for (int next = 0; next < arcs.length || stack.size() != 1 || stack.peek() != ROOT;) {
+
+            if (stack.size() < 1) {
+                // If the stack is empty, we have to shift
+                stack.addFirst(arcs[next++]);
+                tmpDerivation[step++] = ArcEagerAction.SHIFT;
+            } else {
+                final Arc top = stack.get(0);
+                if (next >= arcs.length) {
+                    throw new IllegalArgumentException("Unable to derive arc-eager derivation");
+                }
+                final Arc nextWord = arcs[next];
+
+                // Can we link the next word to the top of the stack?
+                if (top.head == nextWord.index) {
+                    // Arc-left
+                    tmpDerivation[step++] = ArcEagerAction.ARC_LEFT;
+                    stack.removeFirst();
+                    childrenFound[nextWord.index]++;
+                    parentFound[top.index] = true;
+
+                } else if (nextWord.head == top.index) {
+                    // Arc right
+                    tmpDerivation[step++] = ArcEagerAction.ARC_RIGHT;
+                    stack.addFirst(nextWord);
+                    next++;
+                    childrenFound[top.index]++;
+                    parentFound[nextWord.index] = true;
+
+                } else if (!parentFound[top.index] || childrenFound[top.index] < top.children) {
+                    // We haven't yet found the parent or all the children for the top-of-stack word, so we'd better
+                    // leave it in place and shift a new word on.
+                    stack.addFirst(arcs[next++]);
+                    tmpDerivation[step++] = ArcEagerAction.SHIFT;
+
+                } else {
+                    // We can reduce the top of the stack
+                    stack.removeFirst();
+                    tmpDerivation[step++] = ArcEagerAction.REDUCE;
+                }
+            }
+        }
+
+        this.arcEagerDerivation = tmpDerivation;
+        return arcEagerDerivation;
     }
 
     public NaryTree<String> tokenTree() {
@@ -371,20 +448,35 @@ public class DependencyGraph implements Cloneable {
 
     @Override
     public String toString() {
-        return toConllString();
+        return toEnhancedConllString();
     }
 
-    public static enum DerivationAction {
+    public static enum StackProjectiveAction {
         SHIFT, REDUCE_LEFT, REDUCE_RIGHT;
 
-        final static Int2ObjectOpenHashMap<DerivationAction> ordinalValueMap = new Int2ObjectOpenHashMap<DependencyGraph.DerivationAction>();
+        final static Int2ObjectOpenHashMap<StackProjectiveAction> ordinalValueMap = new Int2ObjectOpenHashMap<DependencyGraph.StackProjectiveAction>();
         static {
-            for (final DerivationAction a : EnumSet.allOf(DerivationAction.class)) {
+            for (final StackProjectiveAction a : EnumSet.allOf(StackProjectiveAction.class)) {
                 ordinalValueMap.put(a.ordinal(), a);
             }
         }
 
-        public static DerivationAction forInt(final int ordinalValue) {
+        public static StackProjectiveAction forInt(final int ordinalValue) {
+            return ordinalValueMap.get(ordinalValue);
+        }
+    }
+
+    public static enum ArcEagerAction {
+        SHIFT, ARC_RIGHT, ARC_LEFT, REDUCE;
+
+        final static Int2ObjectOpenHashMap<ArcEagerAction> ordinalValueMap = new Int2ObjectOpenHashMap<ArcEagerAction>();
+        static {
+            for (final ArcEagerAction a : EnumSet.allOf(ArcEagerAction.class)) {
+                ordinalValueMap.put(a.ordinal(), a);
+            }
+        }
+
+        public static ArcEagerAction forInt(final int ordinalValue) {
             return ordinalValueMap.get(ordinalValue);
         }
     }
@@ -400,6 +492,7 @@ public class DependencyGraph implements Cloneable {
         public int predictedHead = 0;
         public String predictedLabel;
 
+        int children;
         private int incomingBackwardArcs;
         public float score;
 
