@@ -35,7 +35,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * @author Aaron Dunlop
  * @since May 24, 2012
  */
-public class TestNivreParserFeatureExtractor {
+public class TestTransitionParserFeatureExtractor {
 
     private SymbolSet<String> lexicon;
     private int lexiconSize;
@@ -86,7 +86,8 @@ public class TestNivreParserFeatureExtractor {
     @Test
     public void testWordFeatures() {
 
-        NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("i0w,s0w,s1w_s0w", lexicon, pos, labels);
+        TransitionParserFeatureExtractor fe = new TransitionParserFeatureExtractor("i0w,s0w,s1w_s0w", lexicon, pos,
+                labels);
         assertEquals(lexiconSize * 2 + lexiconSize * lexiconSize, fe.featureVectorLength);
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         stack.push(arcs[0]);
@@ -114,7 +115,7 @@ public class TestNivreParserFeatureExtractor {
                 + lexicon.getIndex("barked")));
 
         // And using lookahead into the buffer
-        fe = new NivreParserFeatureExtractor("i0w,s0w,s0w_i0w", lexicon, pos, labels);
+        fe = new TransitionParserFeatureExtractor("i0w,s0w,s0w_i0w", lexicon, pos, labels);
         features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
         assertTrue(features.contains(lexicon.getIndex(DependencyGraph.ROOT.token)));
         assertTrue(features.contains(lexiconSize + lexicon.getIndex("barked")));
@@ -127,7 +128,8 @@ public class TestNivreParserFeatureExtractor {
      */
     @Test
     public void testPosFeatures() {
-        NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("i0t,s0t,s1t_s0w", lexicon, pos, labels);
+        TransitionParserFeatureExtractor fe = new TransitionParserFeatureExtractor("i0t,s0t,s1t_s0w", lexicon, pos,
+                labels);
         assertEquals(posSetSize * 2 + posSetSize * lexiconSize, fe.featureVectorLength);
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         stack.push(arcs[0]);
@@ -154,7 +156,7 @@ public class TestNivreParserFeatureExtractor {
         assertTrue(features.contains(posSetSize * 2 + pos.getIndex("NN") * lexiconSize + lexicon.getIndex("barked")));
 
         // And using lookahead into the buffer
-        fe = new NivreParserFeatureExtractor("i0t,s0t,s0t_i0t", lexicon, pos, labels);
+        fe = new TransitionParserFeatureExtractor("i0t,s0t,s0t_i0t", lexicon, pos, labels);
         features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
         assertTrue(features.contains(pos.getIndex(DependencyGraph.ROOT.pos)));
         assertTrue(features.contains(posSetSize + pos.getIndex("VBD")));
@@ -167,7 +169,8 @@ public class TestNivreParserFeatureExtractor {
      */
     @Test
     public void testAbsoluteOffsetFeatures() {
-        NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("s0m2t,s0m1t,s02t", lexicon, pos, labels);
+        TransitionParserFeatureExtractor fe = new TransitionParserFeatureExtractor("s0m2t,s0m1t,s02t", lexicon, pos,
+                labels);
         assertEquals(posSetSize * 3, fe.featureVectorLength);
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         stack.push(arcs[0]);
@@ -179,7 +182,7 @@ public class TestNivreParserFeatureExtractor {
 
         stack.push(arcs[1]);
         stack.push(arcs[2]);
-        fe = new NivreParserFeatureExtractor("s1m1w,s11w", lexicon, pos, labels);
+        fe = new TransitionParserFeatureExtractor("s1m1w,s11w", lexicon, pos, labels);
         assertEquals(lexiconSize * 2, fe.featureVectorLength);
         features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
         assertTrue(features.contains(lexicon.getIndex("the")));
@@ -188,24 +191,29 @@ public class TestNivreParserFeatureExtractor {
 
     @Test
     public void testDependentFeatures() {
-        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("s0t,s1t,s1ldep,s0rdep", lexicon, pos,
-                labels);
-        assertEquals(lexiconSize * 2 + labelSetSize * 2, fe.featureVectorLength);
+        final TransitionParserFeatureExtractor fe = new TransitionParserFeatureExtractor("s0lt,s1lt,s0rt,s1pt",
+                lexicon, pos, labels);
+        assertEquals(posSetSize * 4, fe.featureVectorLength);
         final LinkedList<Arc> stack = new LinkedList<Arc>();
 
+        // 'dog'
         stack.push(arcs[1]);
+        // 'barked'
         stack.push(arcs[2]);
 
         // Fake predictions that wouldn't be made yet in this simple sentence, just to test the feature-extractor
-        arcs[0].predictedHead = 2;
-        arcs[0].predictedLabel = "PMOD";
 
+        // 'The' -> 'dog'
+        arcs[0].predictedHead = 2;
+
+        // 'dog' -> barked
         arcs[1].predictedHead = 3;
-        arcs[1].predictedLabel = "SBJ";
 
         final BitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
-        assertTrue(features.contains(posSetSize * 2 + labels.getIndex("PMOD")));
-        assertTrue(features.contains(posSetSize * 2 + labelSetSize + labels.getIndex("SBJ")));
+        assertTrue(features.contains(pos.getIndex("NN")));
+        assertTrue(features.contains(posSetSize + pos.getIndex("DT")));
+        assertTrue(features.contains(posSetSize * 2 + pos.getIndex("NN")));
+        assertTrue(features.contains(posSetSize * 3 + pos.getIndex("VBD")));
     }
 
     /**
@@ -213,8 +221,9 @@ public class TestNivreParserFeatureExtractor {
      */
     @Test
     public void testDistanceFeatures() {
-        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor("s1t_s0t,d", lexicon, pos, labels);
-        assertEquals(posSetSize * posSetSize + NivreParserFeatureExtractor.DISTANCE_BINS, fe.featureVectorLength);
+        final TransitionParserFeatureExtractor fe = new TransitionParserFeatureExtractor("s1t_s0t,d", lexicon, pos,
+                labels);
+        assertEquals(posSetSize * posSetSize + TransitionParserFeatureExtractor.DISTANCE_BINS, fe.featureVectorLength);
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         stack.push(arcs[0]);
         stack.push(arcs[2]);
@@ -223,6 +232,6 @@ public class TestNivreParserFeatureExtractor {
         // already been reduced between the two)
         final BitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 1), 2);
         assertTrue(features.contains(pos.getIndex("DT") * posSetSize + pos.getIndex("VBD")));
-        assertTrue(features.contains(posSetSize * posSetSize + NivreParserFeatureExtractor.DISTANCE_2));
+        assertTrue(features.contains(posSetSize * posSetSize + TransitionParserFeatureExtractor.DISTANCE_2));
     }
 }
