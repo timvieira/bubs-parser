@@ -33,6 +33,8 @@ import edu.ohsu.cslu.grammar.Tokenizer;
 /**
  * Counts unknown word occurrences in a development / test corpus.
  * 
+ * Usage: CountUnks <training corpus> <test corpus>
+ * 
  * @author Aaron Dunlop
  */
 public class CountUnks extends BaseCommandlineTool {
