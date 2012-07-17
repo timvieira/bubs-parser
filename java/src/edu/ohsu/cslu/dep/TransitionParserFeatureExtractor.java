@@ -42,7 +42,7 @@ import edu.ohsu.cslu.perceptron.FeatureExtractor;
  * 
  * @author Aaron Dunlop
  */
-public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserContext> {
+public class TransitionParserFeatureExtractor extends FeatureExtractor<NivreParserContext> {
 
     private static final long serialVersionUID = 1L;
 
@@ -64,7 +64,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
     final int tokenSetSize, posSetSize, labelSetSize;
     final long featureVectorLength;
 
-    public NivreParserFeatureExtractor(final SymbolSet<String> tokens, final SymbolSet<String> pos,
+    public TransitionParserFeatureExtractor(final SymbolSet<String> tokens, final SymbolSet<String> pos,
             final SymbolSet<String> labels) {
         // Features:
         //
@@ -101,7 +101,7 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
      * @param tokens
      * @param pos
      */
-    public NivreParserFeatureExtractor(final String featureTemplates, final SymbolSet<String> tokens,
+    public TransitionParserFeatureExtractor(final String featureTemplates, final SymbolSet<String> tokens,
             final SymbolSet<String> pos, final SymbolSet<String> labels) {
 
         this.tokens = tokens;
@@ -184,11 +184,19 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
                 size *= tokenSetSize;
                 break;
 
-            case s0ldep:
-            case s1ldep:
-            case s0rdep:
-            case s1rdep:
-                size *= labelSetSize;
+            case s0lt:
+            case s1lt:
+            case s0rt:
+            case s1rt:
+            case i0lt:
+            case i1lt:
+            case i0rt:
+            case i1rt:
+            case s0pt:
+            case s1pt:
+            case i0pt:
+            case i1pt:
+                size *= posSetSize;
                 break;
 
             case d:
@@ -275,29 +283,71 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
                         feature += token(source.arcs, tokenIndex + t.index);
                         break;
 
-                    case s0ldep:
-                    case s1ldep:
-                        feature *= labelSetSize;
+                    case s0lt:
+                    case s1lt:
+                        feature *= posSetSize;
 
                         if (source.stack.size() <= t.index) {
                             feature += nullLabel;
                             break;
                         }
 
-                        feature += leftDependentLabel(source.arcs, source.stack.get(t.index).index);
+                        feature += leftDependentPos(source.arcs, source.stack.get(t.index).index);
                         break;
 
-                    case s0rdep:
-                    case s1rdep:
-                        feature *= labelSetSize;
+                    case i0lt:
+                    case i1lt:
+                        feature *= posSetSize;
+                        feature += leftDependentPos(source.arcs, i + t.index);
+                        break;
+
+                    case s0rt:
+                    case s1rt:
+                        feature *= posSetSize;
 
                         if (source.stack.size() <= t.index) {
                             feature += nullLabel;
                             break;
                         }
 
-                        feature += rightDependentLabel(source.arcs, source.stack.get(t.index).index);
+                        feature += rightDependentPos(source.arcs, source.stack.get(t.index).index);
                         break;
+
+                    case i0rt:
+                    case i1rt:
+                        feature *= posSetSize;
+                        feature += rightDependentPos(source.arcs, i + t.index);
+                        break;
+
+                    case s0pt:
+                    case s1pt: {
+                        feature *= posSetSize;
+
+                        if (source.stack.size() <= t.index) {
+                            feature += nullLabel;
+                            break;
+                        }
+                        final int predictedHead = source.stack.get(t.index).predictedHead;
+                        if (predictedHead <= 0) {
+                            feature += nullLabel;
+                            break;
+                        }
+
+                        feature += pos.getIndex(source.arcs[predictedHead - 1].pos);
+                        break;
+                    }
+
+                    case i0pt:
+                    case i1pt: {
+                        feature *= posSetSize;
+                        final int predictedHead = source.arcs[i + t.index].predictedHead;
+                        if (predictedHead <= 0) {
+                            feature += nullLabel;
+                            break;
+                        }
+                        feature += pos.getIndex(source.arcs[predictedHead - 1].pos);
+                        break;
+                    }
 
                     case d:
                         feature *= DISTANCE_BINS;
@@ -424,13 +474,13 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
      * @param i
      * @return
      */
-    private int leftDependentLabel(final Arc[] arcs, final int i) {
+    private int leftDependentPos(final Arc[] arcs, final int i) {
         if (i < 0 || i >= arcs.length) {
             return nullLabel;
         }
         for (int j = 0; j < arcs.length; j++) {
             if (arcs[j].predictedHead == i) {
-                return labels.getIndex(arcs[j].predictedLabel);
+                return pos.getIndex(arcs[j].pos);
             }
         }
         return nullLabel;
@@ -441,13 +491,13 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
      * @param i
      * @return
      */
-    private int rightDependentLabel(final Arc[] arcs, final int i) {
+    private int rightDependentPos(final Arc[] arcs, final int i) {
         if (i < 0 || i >= arcs.length) {
             return nullLabel;
         }
         for (int j = arcs.length - 1; j >= 0; j--) {
             if (arcs[j].predictedHead == i) {
-                return labels.getIndex(arcs[j].predictedLabel);
+                return pos.getIndex(arcs[j].pos);
             }
         }
         return nullLabel;
@@ -502,11 +552,21 @@ public class NivreParserFeatureExtractor extends FeatureExtractor<NivreParserCon
         i2t(2, 0),
         i3t(3, 0),
 
-        // Left and right dependencies (when available)
-        s0ldep(0, 0),
-        s1ldep(1, 0),
-        s0rdep(0, 0),
-        s1rdep(1, 0),
+        // POS of leftmost and rightmost dependencies (when available)
+        s0lt(0, 0),
+        s0rt(0, 0),
+        s1lt(1, 0),
+        s1rt(1, 0),
+        i0lt(0, 0),
+        i0rt(0, 0),
+        i1lt(1, 0),
+        i1rt(1, 0),
+
+        // POS of parent (when available)
+        s0pt(0, 0),
+        s1pt(1, 0),
+        i0pt(0, 0),
+        i1pt(1, 0),
 
         // Features with absolute offsets from stack words (e.g., the word prior to the right candidate (top-of-stack)
         // regardless of whether that word has already been reduced)

@@ -44,14 +44,14 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
     @Option(name = "-l", usage = "Label arcs (if false, no arc labels will be assigned)")
     private boolean classifyLabels = false;
 
-    @Option(name = "-msl", metaVar = "loss", usage = "Missed shift loss (vs. 1 for missed-reduce)")
-    private float missedShiftLoss = 1f;
-
     @Option(name = "-cas", metaVar = "file", usage = "Output constrained arc scores to file")
     private File constrainedArcScores;
 
     @Option(name = "-as", metaVar = "file", usage = "Output arc scores to file")
     private File arcScores;
+
+    @Option(name = "-alpha", metaVar = "alpha", usage = "Training rate")
+    private float alpha = 0.25f;
 
     @SuppressWarnings("null")
     @Override
@@ -101,17 +101,19 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
             }
         }
 
-        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor(featureTemplates, tokens, pos, labels);
+        final TransitionParserFeatureExtractor fe = new TransitionParserFeatureExtractor(featureTemplates, tokens, pos,
+                labels);
 
         // At each step, we have 3 possible actions (shift, reduce-left, reduce-right), but we divide them into 2
         // classifiers - one to decide between shift and reduce, and one to select reduce direction. For the moment, we
         // use the same feature-set for both.
-        final AveragedPerceptron shiftReduceClassifier = new AveragedPerceptron(new Perceptron.BiasedLoss(new float[] {
-                missedShiftLoss, 1f }), 2, fe.featureCount());
-        final AveragedPerceptron reduceDirectionClassifier = new AveragedPerceptron(2, fe.featureCount());
+        final AveragedPerceptron shiftReduceClassifier = new AveragedPerceptron(alpha, new Perceptron.ZeroOneLoss(), 2,
+                fe.featureCount());
+        final AveragedPerceptron reduceDirectionClassifier = new AveragedPerceptron(alpha,
+                new Perceptron.ZeroOneLoss(), 2, fe.featureCount());
         // Label arcs, with a third classifier
-        final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(labels.size(),
-                fe.featureCount()) : null;
+        final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(alpha,
+                new Perceptron.ZeroOneLoss(), labels.size(), fe.featureCount()) : null;
         final TransitionDepParser parser = new TransitionDepParser(fe, shiftReduceClassifier,
                 reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
 
@@ -302,7 +304,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
 
             BaseLogger.singleton().info(
                     String.format("Shift/Reduce: %d/%d (%.2f%%)", correctShiftReduceClassifications,
-                            shiftReduceClassifications, 1.0 * correctShiftReduceClassifications
+                            shiftReduceClassifications, 100.0 * correctShiftReduceClassifications
                                     / shiftReduceClassifications));
             BaseLogger.singleton()
                     .info(String.format("Missed Shifts: %d/%d", missedShifts, shiftReduceClassifications));
@@ -310,7 +312,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
                     String.format("Missed Reduces: %d/%d", missedReduces, shiftReduceClassifications));
             BaseLogger.singleton().info(
                     String.format("Reduce Direction: %d/%d (%.2f%%)", correctReduceDirectionClassifications,
-                            reduceDirectionClassifications, 1.0 * correctReduceDirectionClassifications
+                            reduceDirectionClassifications, 100.0 * correctReduceDirectionClassifications
                                     / reduceDirectionClassifications));
         }
 

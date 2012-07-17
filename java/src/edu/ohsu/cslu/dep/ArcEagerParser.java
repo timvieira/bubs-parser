@@ -35,14 +35,14 @@ import edu.ohsu.cslu.perceptron.AveragedPerceptron.ScoredClassification;
 public class ArcEagerParser {
     private static final long serialVersionUID = 1L;
 
-    public final NivreParserFeatureExtractor featureExtractor;
+    public final TransitionParserFeatureExtractor featureExtractor;
     public final AveragedPerceptron actionClassifier;
     public final AveragedPerceptron labelClassifier;
     public final SymbolSet<String> tokens;
     public final SymbolSet<String> pos;
     public final SymbolSet<String> labels;
 
-    public ArcEagerParser(final NivreParserFeatureExtractor featureExtractor,
+    public ArcEagerParser(final TransitionParserFeatureExtractor featureExtractor,
             final AveragedPerceptron actionClassifier, final AveragedPerceptron labelClassifier,
             final SymbolSet<String> tokens, final SymbolSet<String> pos, final SymbolSet<String> labels) {
 

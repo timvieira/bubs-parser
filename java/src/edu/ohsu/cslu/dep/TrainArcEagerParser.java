@@ -116,7 +116,8 @@ public class TrainArcEagerParser extends BaseCommandlineTool {
             }
         }
 
-        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor(featureTemplates, tokens, pos, labels);
+        final TransitionParserFeatureExtractor fe = new TransitionParserFeatureExtractor(featureTemplates, tokens, pos,
+                labels);
 
         // At each step, we have 3 possible actions (shift, reduce-left, reduce-right), but we divide them into 2
         // classifiers - one to decide between shift and reduce, and one to select reduce direction. For the moment, we
@@ -226,8 +227,8 @@ public class TrainArcEagerParser extends BaseCommandlineTool {
             correctLabels += parse.correctLabels();
         }
         final long time = System.currentTimeMillis() - startTime;
-        System.out.format("%s accuracy - unlabeled: %.3f  labeled %.3f  (%d ms, %.2f words/sec)\n", label, correctArcs
-                * 1.0 / total, correctLabels * 1.0 / total, time, total * 1000.0 / time);
+        System.out.format("%s accuracy - unlabeled: %.2f%%  labeled %.2f%%  (%d ms, %.2f words/sec)\n", label,
+                correctArcs * 100.0 / total, correctLabels * 100.0 / total, time, total * 1000.0 / time);
     }
 
     public static void main(final String[] args) {
