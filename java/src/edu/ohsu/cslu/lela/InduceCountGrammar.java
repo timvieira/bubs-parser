@@ -39,7 +39,7 @@ import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.Util;
 
 /**
- * Induces a basic PCFB from a treebank
+ * Induces a basic PCFG from a treebank
  * 
  * @author Aaron Dunlop
  */

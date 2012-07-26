@@ -188,8 +188,9 @@ public class PackedArrayChart extends ParallelArrayChart {
             }
         };
 
+        // Initialize outside probabilities to 1. If we're doing posterior inference, we'll populate them appropriately;
+        // otherwise, posterior decoding methods will reduce to inside probabilities only.
         this.outsideProbabilities = new float[chartArraySize];
-        Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
 
         switch (parseTask.decodeMethod) {
 
@@ -371,6 +372,7 @@ public class PackedArrayChart extends ParallelArrayChart {
      * @return The extracted binary tree
      */
     public BinaryTree<String> decode() {
+
         switch (parseTask.decodeMethod) {
 
         case Goodman:
@@ -385,7 +387,7 @@ public class PackedArrayChart extends ParallelArrayChart {
             return decodeMaxRuleProductParse((LeftCscSparseMatrixGrammar) grammar);
 
         case ViterbiMax:
-            // TODO Rename extractBestParse to extractViterbiParse
+            // TODO Rename extractBestParse to extractViterbiParse, switch references to use decode() instead.
             return extractBestParse(grammar.startSymbol);
 
         default:
