@@ -226,6 +226,12 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
                     // Outside probability = sum(production probability x parent outside x sibling inside)
                     final float outsideProbability = cscBinaryProbabilities[k] + jointProbability;
                     final int target = cscBinaryRowIndices[k];
+
+                    // Skip log-sum calculations for entries with 0 inside probability
+                    if (cell.tmpCell.insideProbabilities[target] == Float.NEGATIVE_INFINITY) {
+                        continue;
+                    }
+
                     final float outsideSum = Math.logSum(outsideProbability, cell.tmpCell.outsideProbabilities[target]);
                     cell.tmpCell.outsideProbabilities[target] = outsideSum;
                 }
