@@ -41,7 +41,7 @@ public class ViterbiInOutCphSpmlParser extends BaseIoCphSpmlParser {
     }
 
     /**
-     * Identical to {@link CartesianProductHashSpmlParser}.
+     * Identical to {@link CartesianProductHashSpmlParser}, with the exception of tracking backpointers (children and midpoints), which are not required for non-Viterbi decoding methods.
      */
     @Override
     protected void computeInsideProbabilities(final ChartCell cell) {

@@ -152,8 +152,8 @@ public class TestViterbiInOutCphSpmlParser {
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
         parser = new ViterbiInOutCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
                 PerfectIntPairHashPackingFunction.class));
-        assertEquals("(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))",
-                parser.parseSentence(sentence).parseBracketString(false));
+        assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
+                .parseSentence(sentence).parseBracketString(false));
     }
 
     /**
@@ -178,8 +178,8 @@ public class TestViterbiInOutCphSpmlParser {
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
         parser = new ViterbiInOutCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
                 PerfectIntPairHashPackingFunction.class));
-        assertEquals("(ROOT (S (DT The) (NN fish) (NN market) (VB stands) (RB last)))", parser.parseSentence(sentence)
-                .parseBracketString(false));
+        assertEquals("(ROOT (S (DT The) (NN fish) (NN market) (VP (VB stands) (RB last))))",
+                parser.parseSentence(sentence).parseBracketString(false));
     }
 
     @Test
@@ -239,7 +239,7 @@ public class TestViterbiInOutCphSpmlParser {
         opts.fomModel = new InsideProb();
         parser = new ViterbiInOutCphSpmlParser(opts, grammar);
         assertEquals(
-                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
+                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (PP (JJ due) (PP (IN out) (NP (NN tomorrow)))))) (. .)))",
                 parser.parseSentence(sentences.get(1)[0]).parseBracketString(false));
     }
 
