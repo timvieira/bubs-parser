@@ -82,7 +82,9 @@ public abstract class Chart {
     }
 
     /**
-     * Removes existing chart entries and re-initializes chart state.
+     * Removes existing chart entries and re-initializes chart data structures, facilitating reuse of the chart for
+     * multiple sentences. Subclasses must ensure that the data structure state following {@link #reset(ParseTask)} is
+     * identical to that of a newly constructed chart.
      * 
      * @param task
      */

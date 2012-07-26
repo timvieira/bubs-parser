@@ -1014,7 +1014,6 @@ public class PackedArrayChart extends ParallelArrayChart {
 
                 if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY
                         && (tmpCell.outsideProbabilities == null || tmpCell.outsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY)) {
-                    // if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
 
                     nonTerminalIndices[nonTerminalOffset] = nonTerminal;
                     insideProbabilities[nonTerminalOffset] = tmpCell.insideProbabilities[nonTerminal];
@@ -1394,12 +1393,12 @@ public class PackedArrayChart extends ParallelArrayChart {
             allocateTemporaryStorage(false);
         }
 
-        public void allocateTemporaryStorage(final boolean includeOutsideProbabilities) {
+        public void allocateTemporaryStorage(final boolean allocateOutsideProbabilities) {
             // Allocate storage
             if (tmpCell == null) {
                 // this.tmpCell = threadLocalTemporaryCells.get();
                 // this.tmpCell.clear();
-                this.tmpCell = new TemporaryChartCell(grammar, includeOutsideProbabilities);
+                this.tmpCell = new TemporaryChartCell(grammar, allocateOutsideProbabilities);
 
                 // Copy from main chart array to temporary parallel array
                 for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
@@ -1407,10 +1406,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                     tmpCell.packedChildren[nonTerminal] = packedChildren[i];
                     tmpCell.insideProbabilities[nonTerminal] = insideProbabilities[i];
                     tmpCell.midpoints[nonTerminal] = midpoints[i];
-
-                    if (includeOutsideProbabilities) {
-                        tmpCell.outsideProbabilities[nonTerminal] = outsideProbabilities[i];
-                    }
+                    // Note: At this point, we don't actually have outside probabilities populated, so don't copy them
                 }
             }
         }

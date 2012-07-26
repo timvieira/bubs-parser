@@ -99,8 +99,10 @@ public class ParseTask {
     public long insideBinaryNs = 0;
     /** Total unary and pruning time (accumulated in nanoseconds, but reported in ms) */
     public long unaryAndPruningNs = 0;
-    /** Total outside-pass time */
-    public long outsidePassMs = 0;
+    /** Total outside-pass binary time (accumulated in nanoseconds, but reported in ms) */
+    public long outsideBinaryNs = 0;
+    /** Total outside unary and pruning time (accumulated in nanoseconds, but reported in ms) */
+    public long outsideUnaryNs = 0;
     /** Time to extract the parse tree from the chart, including unfactoring, if necessary. */
     public long extractTimeMs = 0;
 
@@ -217,10 +219,11 @@ public class ParseTask {
 
         if (BaseLogger.singleton().isLoggable(Level.FINER)) {
             result.append(String
-                    .format(" pops=%d pushes=%d considered=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d chartInit=%d fomInit=%d cellSelectorInit=%d insideBinary=%d unaryAndPruning=%d outsidePass=%d extract=%d",
+                    .format(" pops=%d pushes=%d considered=%d nLex=%d nLexUnary=%d nUnary=%d nBinary=%d chartInit=%d fomInit=%d cellSelectorInit=%d insideBinary=%d unaryAndPruning=%d outsideBinary=%d outsideUnary=%d extract=%d",
                             totalPopulatedEdges, totalPushes, nBinaryConsidered + nUnaryConsidered, nLex,
                             nLexUnaryConsidered, nUnaryConsidered, nBinaryConsidered, chartInitMs, fomInitMs, ccInitMs,
-                            insideBinaryNs / 1000000, unaryAndPruningNs / 1000000, outsidePassMs, extractTimeMs));
+                            insideBinaryNs / 1000000, unaryAndPruningNs / 1000000, outsideBinaryNs / 1000000,
+                            outsideUnaryNs / 10000000, extractTimeMs));
         }
 
         return result.toString();
