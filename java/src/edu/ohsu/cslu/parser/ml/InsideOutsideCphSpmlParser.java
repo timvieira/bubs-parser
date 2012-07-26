@@ -5,6 +5,7 @@ import java.util.Arrays;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.util.Math;
@@ -38,9 +39,6 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
         targetCell.allocateTemporaryStorage();
 
         final float[] targetCellProbabilities = targetCell.tmpCell.insideProbabilities;
-
-        final float[] maxInsideProbabilities = new float[targetCellProbabilities.length];
-        Arrays.fill(maxInsideProbabilities, Float.NEGATIVE_INFINITY);
 
         // Iterate over all possible midpoints
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
@@ -94,6 +92,110 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
         } else {
             unaryAndPruning(targetCell, start, end);
             targetCell.finalizeCell();
+        }
+    }
+
+    @Override
+    protected final void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end) {
+
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
+        // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
+        final boolean factoredOnly = cellSelector.hasCellConstraints()
+                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end) && (end - start > 1);
+        final boolean allowUnaries = !cellSelector.hasCellConstraints()
+                || cellSelector.getCellConstraints().isUnaryOpen(start, end);
+        final float minInsideProbability = edu.ohsu.cslu.util.Math.floatMax(spvChartCell.tmpCell.insideProbabilities)
+                - maxLocalDelta;
+
+        // We will push all binary or lexical edges onto a bounded priority queue, and then (if unaries are allowed),
+        // add those edges as well.
+        final int cellBeamWidth = (end - start == 1 ? lexicalRowBeamWidth : java.lang.Math.min(
+                cellSelector.getBeamWidth(start, end), beamWidth));
+        final BoundedPriorityQueue q = threadLocalBoundedPriorityQueue.get();
+        q.clear(cellBeamWidth);
+
+        final float[] maxInsideProbabilities = new float[grammar.numNonTerms()];
+        System.arraycopy(spvChartCell.tmpCell.insideProbabilities, 0, maxInsideProbabilities, 0,
+                maxInsideProbabilities.length);
+
+        // If unaries are allowed in this cell, compute unary probabilities for all possible parents
+        if (!factoredOnly && allowUnaries) {
+            final float[] unaryInsideProbabilities = new float[grammar.numNonTerms()];
+            Arrays.fill(unaryInsideProbabilities, Float.NEGATIVE_INFINITY);
+            final float[] viterbiUnaryInsideProbabilities = new float[grammar.numNonTerms()];
+            Arrays.fill(viterbiUnaryInsideProbabilities, Float.NEGATIVE_INFINITY);
+            final int[] viterbiUnaryPackedChildren = new int[grammar.numNonTerms()];
+
+            for (short child = 0; child < grammar.numNonTerms(); child++) {
+                final float insideProbability = spvChartCell.tmpCell.insideProbabilities[child];
+                if (insideProbability == Float.NEGATIVE_INFINITY) {
+                    continue;
+                }
+
+                // Iterate over possible parents of the child (rows with non-zero entries)
+                for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
+
+                    final float unaryProbability = grammar.cscUnaryProbabilities[i] + insideProbability;
+                    final short parent = grammar.cscUnaryRowIndices[i];
+
+                    unaryInsideProbabilities[parent] = Math.logSum(unaryInsideProbabilities[parent], unaryProbability);
+
+                    if (unaryProbability > viterbiUnaryInsideProbabilities[parent]) {
+                        viterbiUnaryInsideProbabilities[parent] = unaryProbability;
+                        viterbiUnaryPackedChildren[parent] = grammar.packingFunction.packUnary(child);
+                    }
+                }
+            }
+
+            // Retain the greater of the binary and unary inside probabilities and the appropriate backpointer (biasing
+            // toward recovering unaries in the case of a tie)
+            for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
+                if (unaryInsideProbabilities[nt] != Float.NEGATIVE_INFINITY
+                        && unaryInsideProbabilities[nt] >= maxInsideProbabilities[nt]) {
+                    maxInsideProbabilities[nt] = unaryInsideProbabilities[nt];
+                    spvChartCell.tmpCell.packedChildren[nt] = viterbiUnaryPackedChildren[nt];
+                }
+            }
+        }
+
+        // Push all observed edges (binary, unary, or lexical) onto a bounded priority queue
+        if (end - start == 1) { // Lexical Row (span = 1)
+
+            // Limit the queue to the number of non-unary productions allowed
+            q.setMaxSize(lexicalRowBeamWidth - lexicalRowUnaries);
+
+            for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
+                if (maxInsideProbabilities[nt] > minInsideProbability) {
+                    final float fom = fomModel.calcLexicalFOM(start, end, nt, maxInsideProbabilities[nt]);
+                    q.insert(nt, fom);
+                }
+            }
+            // Now that all lexical productions are on the queue, expand it a bit to allow space for unary productions
+            q.setMaxSize(lexicalRowBeamWidth);
+
+        } else { // Span >= 2
+            for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
+                if (maxInsideProbabilities[nt] > minInsideProbability) {
+                    final float fom = fomModel.calcFOM(start, end, nt, maxInsideProbabilities[nt]);
+                    q.insert(nt, fom);
+                }
+            }
+        }
+
+        Arrays.fill(spvChartCell.tmpCell.insideProbabilities, Float.NEGATIVE_INFINITY);
+
+        // Pop n edges off the queue into the temporary cell storage.
+        for (final int edgesPopulated = 0; edgesPopulated < cellBeamWidth && q.size() > 0;) {
+
+            final int headIndex = q.headIndex();
+            final short nt = q.nts[headIndex];
+            spvChartCell.tmpCell.insideProbabilities[nt] = maxInsideProbabilities[nt];
+            q.popHead();
+        }
+
+        if (collectDetailedStatistics) {
+            chart.parseTask.unaryAndPruningNs += System.nanoTime() - t0;
         }
     }
 
