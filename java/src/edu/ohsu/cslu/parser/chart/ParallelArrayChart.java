@@ -127,7 +127,6 @@ public abstract class ParallelArrayChart extends Chart {
         this.cellOffsets = new int[cells];
 
         this.insideProbabilities = new float[chartArraySize];
-        Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         this.packedChildren = new int[chartArraySize];
         this.midpoints = new short[cells];
     }
@@ -180,10 +179,19 @@ public abstract class ParallelArrayChart extends Chart {
         return lexicalRowBeamWidth;
     }
 
-    public void reset(final ParseTask newParseTask, final int newBeamWidth, final int newLexicalRowBeamWidth) {
+    /**
+     * Re-initializes the chart data structures, facilitating reuse of the chart for multiple sentences. Subclasses must
+     * ensure that the data structure state following {@link #reset(ParseTask, int, int)} is identical to that of a
+     * newly constructed chart.
+     * 
+     * @param task
+     * @param newBeamWidth
+     * @param newLexicalRowBeamWidth
+     */
+    public void reset(final ParseTask task, final int newBeamWidth, final int newLexicalRowBeamWidth) {
         this.beamWidth = newBeamWidth;
         this.lexicalRowBeamWidth = newLexicalRowBeamWidth;
-        reset(newParseTask);
+        reset(task);
     }
 
     @Override
