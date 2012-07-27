@@ -49,9 +49,6 @@ public class TrainPosTagger extends BaseCommandlineTool {
     @Option(name = "-i", aliases = { "--iterations" }, metaVar = "count", usage = "Iterations over training corpus")
     private int iterations = 10;
 
-    @Option(name = "-a", aliases = { "--alpha" }, metaVar = "value", usage = "Update step size (alpha)")
-    private float alpha = 0.1f;
-
     @Option(name = "-d", metaVar = "file", usage = "Development set. If specified, test results are output after each training iteration.")
     private File devSet;
 
@@ -256,6 +253,8 @@ public class TrainPosTagger extends BaseCommandlineTool {
      * Extracts features for POS tagging
      */
     public static class PosFeatureExtractor extends FeatureExtractor<TagSequence> {
+
+        private static final long serialVersionUID = 1L;
 
         final SymbolSet<String> lexicon;
         final SymbolSet<String> posSet;
