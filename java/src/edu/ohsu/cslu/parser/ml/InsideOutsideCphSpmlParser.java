@@ -200,40 +200,135 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
     }
 
     @Override
-    protected void computeSiblingOutsideProbabilities(final PackedArrayChartCell cell, final PackingFunction pf,
-            final float[] cscBinaryProbabilities, final short[] cscBinaryRowIndices, final int[] cscColumnOffsets,
-            final int parentStartIndex, final int parentEndIndex, final int siblingStartIndex, final int siblingEndIndex) {
+    protected final void computeOutsideProbabilities(final PackedArrayChartCell cell) {
 
-        // foreach entry in the sibling cell
-        for (int i = siblingStartIndex; i <= siblingEndIndex; i++) {
-            final short siblingEntry = chart.nonTerminalIndices[i];
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
+        final short start = cell.start();
+        final short end = cell.end();
+
+        // Allocate temporary storage and populate start-symbol probability in the top cell
+        cell.allocateTemporaryStorage(true, false);
+        if (start == 0 && end == chart.size()) {
+            cell.tmpCell.outsideProbabilities[grammar.startSymbol] = 0;
+        }
+
+        // Left-side siblings first
+
+        // foreach parent-start in {0..start - 1}
+        for (int parentStart = 0; parentStart < start; parentStart++) {
+            final PackedArrayChartCell parentCell = chart.getCell(parentStart, end);
+            parentCell.allocateTemporaryStorage(true, true);
+            final float[] parentOutsideProbabilities = parentCell.tmpCell.outsideProbabilities;
+
+            // Sibling (left) cell
+            final int siblingCellIndex = chart.cellIndex(parentStart, start);
+            final int siblingStartIndex = chart.minLeftChildIndex(siblingCellIndex);
+            final int siblingEndIndex = chart.maxLeftChildIndex(siblingCellIndex);
+
+            computeLeftSiblingOutsideProbabilities(cell.tmpCell.outsideProbabilities, cell.minRightChildIndex(),
+                    cell.maxRightChildIndex(), siblingStartIndex, siblingEndIndex, parentOutsideProbabilities);
+        }
+
+        // Right-side siblings
+
+        // foreach parent-end in {end + 1..n}
+        for (int parentEnd = end + 1; parentEnd <= chart.size(); parentEnd++) {
+            final PackedArrayChartCell parentCell = chart.getCell(start, parentEnd);
+            parentCell.allocateTemporaryStorage(true, true);
+            final float[] parentOutsideProbabilities = parentCell.tmpCell.outsideProbabilities;
+
+            // Sibling (right) cell
+            final int siblingCellIndex = chart.cellIndex(end, parentEnd);
+            final int siblingStartIndex = chart.minRightChildIndex(siblingCellIndex);
+            final int siblingEndIndex = chart.maxRightChildIndex(siblingCellIndex);
+
+            computeRightSiblingOutsideProbabilities(cell.tmpCell.outsideProbabilities, cell.minLeftChildIndex(),
+                    cell.maxLeftChildIndex(), siblingStartIndex, siblingEndIndex, parentOutsideProbabilities);
+        }
+
+        // Unary outside probabilities
+        if (collectDetailedStatistics) {
+            final long t1 = System.nanoTime();
+            chart.parseTask.outsideBinaryNs += t1 - t0;
+            computeUnaryOutsideProbabilities(cell.tmpCell.outsideProbabilities);
+            chart.parseTask.outsideUnaryNs += System.nanoTime() - t1;
+        } else {
+            computeUnaryOutsideProbabilities(cell.tmpCell.outsideProbabilities);
+        }
+
+        cell.finalizeCell();
+    }
+
+    private void computeLeftSiblingOutsideProbabilities(final float[] outsideProbabilities, final int targetStart,
+            final int targetEnd, final int siblingStart, final int siblingEnd, final float[] parentOutsideProbabilities) {
+
+        final PackingFunction pf = grammar.packingFunction();
+
+        // Iterate over entries in the left sibling cell
+        for (int i = siblingStart; i <= siblingEnd; i++) {
+            final short leftSibling = chart.nonTerminalIndices[i];
             final float siblingInsideProbability = chart.insideProbabilities[i];
 
-            // foreach entry in the parent cell
-            for (int j = parentStartIndex; j <= parentEndIndex; j++) {
-                final int column = pf.pack(chart.nonTerminalIndices[j], siblingEntry);
+            // And over entries in the target cell
+            for (int j = targetStart; j <= targetEnd; j++) {
+                final short entry = chart.nonTerminalIndices[j];
+                final int column = pf.pack(leftSibling, entry);
                 if (column == Integer.MIN_VALUE) {
                     continue;
                 }
 
-                // Parent outside x sibling inside
-                final float jointProbability = chart.outsideProbabilities[j] + siblingInsideProbability;
+                for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
 
-                // foreach grammar rule matching sibling/parent pair (i.e., those which can produce entries in
-                // the target cell).
-                for (int k = cscColumnOffsets[column]; k < cscColumnOffsets[column + 1]; k++) {
-
-                    // Outside probability = sum(production probability x parent outside x sibling inside)
-                    final float outsideProbability = cscBinaryProbabilities[k] + jointProbability;
-                    final int target = cscBinaryRowIndices[k];
-
-                    // Skip log-sum calculations for entries with 0 inside probability
-                    if (cell.tmpCell.insideProbabilities[target] == Float.NEGATIVE_INFINITY) {
+                    final int parent = grammar.cscBinaryRowIndices[k];
+                    // Skip log-sum calculations for parents with 0 outside probability
+                    if (parentOutsideProbabilities[parent] == Float.NEGATIVE_INFINITY) {
                         continue;
                     }
 
-                    final float outsideSum = Math.logSum(outsideProbability, cell.tmpCell.outsideProbabilities[target]);
-                    cell.tmpCell.outsideProbabilities[target] = outsideSum;
+                    // Outside probability = sum(production probability x parent outside x sibling inside)
+                    final float outsideProbability = grammar.cscBinaryProbabilities[k]
+                            + parentOutsideProbabilities[parent] + siblingInsideProbability;
+
+                    final float outsideSum = Math.logSum(outsideProbability, outsideProbabilities[entry]);
+                    outsideProbabilities[entry] = outsideSum;
+                }
+            }
+        }
+    }
+
+    private void computeRightSiblingOutsideProbabilities(final float[] outsideProbabilities, final int targetStart,
+            final int targetEnd, final int siblingStart, final int siblingEnd, final float[] parentOutsideProbabilities) {
+
+        final PackingFunction pf = grammar.packingFunction();
+
+        // Iterate over entries in the left sibling cell
+        for (int i = siblingStart; i <= siblingEnd; i++) {
+            final short rightSibling = chart.nonTerminalIndices[i];
+            final float siblingInsideProbability = chart.insideProbabilities[i];
+
+            // And over entries in the target cell
+            for (int j = targetStart; j <= targetEnd; j++) {
+                final short entry = chart.nonTerminalIndices[j];
+                final int column = pf.pack(entry, rightSibling);
+                if (column == Integer.MIN_VALUE) {
+                    continue;
+                }
+
+                for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
+
+                    final int parent = grammar.cscBinaryRowIndices[k];
+                    // Skip log-sum calculations for parents with 0 outside probability
+                    if (parentOutsideProbabilities[parent] == Float.NEGATIVE_INFINITY) {
+                        continue;
+                    }
+
+                    // Outside probability = sum(production probability x parent outside x sibling inside)
+                    final float outsideProbability = grammar.cscBinaryProbabilities[k]
+                            + parentOutsideProbabilities[parent] + siblingInsideProbability;
+
+                    final float outsideSum = Math.logSum(outsideProbability, outsideProbabilities[entry]);
+                    outsideProbabilities[entry] = outsideSum;
                 }
             }
         }
