@@ -1362,6 +1362,16 @@ public class PackedArrayChart extends ParallelArrayChart {
         }
 
         /**
+         * Returns the index of the first non-terminal in this cell which is valid as a right child. The grammar must be
+         * sorted right, both, left, unary-only, as in {@link Grammar}.
+         * 
+         * @return the index of the first non-terminal in this cell which is valid as a right child.
+         */
+        public final int minRightChildIndex() {
+            return minRightChildIndex[cellIndex];
+        }
+
+        /**
          * Returns the index of the last non-terminal in this cell which is valid as a right child. The grammar must be
          * sorted right, both, left, unary-only, as in {@link Grammar}.
          * 
@@ -1390,10 +1400,11 @@ public class PackedArrayChart extends ParallelArrayChart {
         }
 
         public void allocateTemporaryStorage() {
-            allocateTemporaryStorage(false);
+            allocateTemporaryStorage(false, false);
         }
 
-        public void allocateTemporaryStorage(final boolean allocateOutsideProbabilities) {
+        public void allocateTemporaryStorage(final boolean allocateOutsideProbabilities,
+                final boolean copyOutsideProbabilities) {
             // Allocate storage
             if (tmpCell == null) {
                 // this.tmpCell = threadLocalTemporaryCells.get();
@@ -1406,7 +1417,10 @@ public class PackedArrayChart extends ParallelArrayChart {
                     tmpCell.packedChildren[nonTerminal] = packedChildren[i];
                     tmpCell.insideProbabilities[nonTerminal] = insideProbabilities[i];
                     tmpCell.midpoints[nonTerminal] = midpoints[i];
-                    // Note: At this point, we don't actually have outside probabilities populated, so don't copy them
+
+                    if (copyOutsideProbabilities) {
+                        tmpCell.outsideProbabilities[nonTerminal] = outsideProbabilities[i];
+                    }
                 }
             }
         }
