@@ -69,8 +69,13 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
 
                         final float jointProbability = grammar.cscBinaryProbabilities[k] + childProbability;
                         final int parent = grammar.cscBinaryRowIndices[k];
-                        targetCellProbabilities[parent] = Math
-                                .logSum(targetCellProbabilities[parent], jointProbability);
+                        if (APPROXIMATE_SUM) {
+                            targetCellProbabilities[parent] = Math.approximateLogSum(targetCellProbabilities[parent],
+                                    jointProbability, SUM_DELTA);
+                        } else {
+                            targetCellProbabilities[parent] = Math.logSum(targetCellProbabilities[parent],
+                                    jointProbability, SUM_DELTA);
+                        }
                     }
                 }
             }
@@ -289,9 +294,13 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
                     // Outside probability = sum(production probability x parent outside x sibling inside)
                     final float outsideProbability = grammar.cscBinaryProbabilities[k]
                             + parentOutsideProbabilities[parent] + siblingInsideProbability;
-
-                    final float outsideSum = Math.logSum(outsideProbability, outsideProbabilities[entry]);
-                    outsideProbabilities[entry] = outsideSum;
+                    if (APPROXIMATE_SUM) {
+                        outsideProbabilities[entry] = Math.logSum(outsideProbability, outsideProbabilities[entry],
+                                SUM_DELTA);
+                    } else {
+                        outsideProbabilities[entry] = Math.logSum(outsideProbability, outsideProbabilities[entry],
+                                SUM_DELTA);
+                    }
                 }
             }
         }
@@ -326,9 +335,13 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
                     // Outside probability = sum(production probability x parent outside x sibling inside)
                     final float outsideProbability = grammar.cscBinaryProbabilities[k]
                             + parentOutsideProbabilities[parent] + siblingInsideProbability;
-
-                    final float outsideSum = Math.logSum(outsideProbability, outsideProbabilities[entry]);
-                    outsideProbabilities[entry] = outsideSum;
+                    if (APPROXIMATE_SUM) {
+                        outsideProbabilities[entry] = Math.logSum(outsideProbability, outsideProbabilities[entry],
+                                SUM_DELTA);
+                    } else {
+                        outsideProbabilities[entry] = Math.logSum(outsideProbability, outsideProbabilities[entry],
+                                SUM_DELTA);
+                    }
                 }
             }
         }

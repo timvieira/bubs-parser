@@ -19,8 +19,10 @@
 
 package edu.ohsu.cslu.parser.ml;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.ParseTask;
@@ -38,6 +40,18 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 public abstract class BaseIoCphSpmlParser extends
         SparseMatrixLoopParser<InsideOutsideCscSparseMatrixGrammar, PackedArrayChart> {
 
+    // TODO Move these constant to ParserDriver if it proves useful
+    public final static String PROPERTY_LOG_SUM_DELTA = "logSumDelta";
+    public final static String PROPERTY_APPROXIMATE_LOG_SUM = "approxLogSum";
+    public final static String PROPERTY_INSIDE_ONLY = "insideOnly";
+
+    protected final static boolean INSIDE_ONLY = GlobalConfigProperties.singleton().getBooleanProperty(
+            PROPERTY_INSIDE_ONLY, false);
+    protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
+            PROPERTY_APPROXIMATE_LOG_SUM, false);
+    protected final static float SUM_DELTA = GlobalConfigProperties.singleton().getFloatProperty(
+            PROPERTY_LOG_SUM_DELTA, 20f);
+
     public BaseIoCphSpmlParser(final ParserDriver opts, final InsideOutsideCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
     }
@@ -47,16 +61,23 @@ public abstract class BaseIoCphSpmlParser extends
         initChart(parseTask);
         insidePass();
 
-        // To compute the outside probability of a non-terminal in a cell, we need the outside probability of the cell's
-        // parent, so we process downward from the top of the chart.
+        if (INSIDE_ONLY) {
+            // Skip outside pass, and just populate all outside probabilities with 1
+            Arrays.fill(chart.outsideProbabilities, 0, chart.chartArraySize(), 0f);
 
-        // Outside pass
-        final Iterator<short[]> reverseIterator = cellSelector.reverseIterator();
+        } else {
+            // To compute the outside probability of a non-terminal in a cell, we need the outside probability of the
+            // cell's
+            // parent, so we process downward from the top of the chart.
 
-        while (reverseIterator.hasNext()) {
-            final short[] startAndEnd = reverseIterator.next();
-            final PackedArrayChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
-            computeOutsideProbabilities(cell);
+            // Outside pass
+            final Iterator<short[]> reverseIterator = cellSelector.reverseIterator();
+
+            while (reverseIterator.hasNext()) {
+                final short[] startAndEnd = reverseIterator.next();
+                final PackedArrayChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
+                computeOutsideProbabilities(cell);
+            }
         }
 
         if (collectDetailedStatistics) {
