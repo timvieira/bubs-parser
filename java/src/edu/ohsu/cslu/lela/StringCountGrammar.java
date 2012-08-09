@@ -21,6 +21,7 @@ package edu.ohsu.cslu.lela;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -277,7 +278,7 @@ public final class StringCountGrammar implements CountGrammar {
     }
 
     public final SymbolSet<String> induceLexicon() {
-        return new SymbolSet<String>(lexicalEntryOccurrences.keySet());
+        return new SymbolSet<String>(new ObjectRBTreeSet<String>(lexicalEntryOccurrences.keySet()));
     }
 
     /**
