@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 
 import org.cjunit.FilteredRunner;
+import org.cjunit.PerformanceTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -233,6 +234,19 @@ public class TestInsideOutsideCphSpmlParser {
         assertEquals(
                 "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (PP (JJ due) (IN out) (NP (NN tomorrow))))) (. .)))",
                 parser.parseSentence(sentences.get(1)[0]).parseBracketString(false));
+    }
+
+    @Test
+    @PerformanceTest({ "mbp", "5701" })
+    public void profileMaxRule() throws Exception {
+        final ParserDriver opts = new ParserDriver();
+        opts.decodeMethod = DecodeMethod.MaxRuleProd;
+        opts.fomModel = new InsideProb();
+        parser = new InsideOutsideCphSpmlParser(opts, grammar);
+
+        for (int i = 10; i < 20; i++) {
+            parser.parseSentence(sentences.get(i)[0]);
+        }
     }
 
     // @Test
