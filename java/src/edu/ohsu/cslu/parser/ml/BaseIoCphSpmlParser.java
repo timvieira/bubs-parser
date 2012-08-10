@@ -40,9 +40,12 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 public abstract class BaseIoCphSpmlParser extends
         SparseMatrixLoopParser<InsideOutsideCscSparseMatrixGrammar, PackedArrayChart> {
 
-    // TODO Move these constant to ParserDriver if it proves useful
+    // TODO Move these constant to ParserDriver if they prove useful
+    /** Skip log-sum operations if the log probabilities differ by more than x. Default is 20. */
     public final static String PROPERTY_LOG_SUM_DELTA = "logSumDelta";
+    /** Use a quantized approximation of the exp function when performing log-sum operations. Boolean property. */
     public final static String PROPERTY_APPROXIMATE_LOG_SUM = "approxLogSum";
+    /** Compute the inside score only. Decode assuming all outside probabilities are 1. Boolean property. */
     public final static String PROPERTY_INSIDE_ONLY = "insideOnly";
 
     protected final static boolean INSIDE_ONLY = GlobalConfigProperties.singleton().getBooleanProperty(
@@ -67,8 +70,7 @@ public abstract class BaseIoCphSpmlParser extends
 
         } else {
             // To compute the outside probability of a non-terminal in a cell, we need the outside probability of the
-            // cell's
-            // parent, so we process downward from the top of the chart.
+            // cell's parent, so we process downward from the top of the chart.
 
             // Outside pass
             final Iterator<short[]> reverseIterator = cellSelector.reverseIterator();
