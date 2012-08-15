@@ -50,6 +50,8 @@ import edu.ohsu.cslu.util.Math;
  * --The grammar intersection need only consider rules whose parent is in the set of known parent NTs. We iterate over
  * the rules for all child pairs, but apply only those rules which match constraining parents.
  * 
+ * TODO Try approximate log-sum methods and max-deltas from {@link Math}
+ * 
  * @author Aaron Dunlop
  */
 public class ConstrainedInsideOutsideParser extends
@@ -82,7 +84,6 @@ public class ConstrainedInsideOutsideParser extends
         insidePass();
         outsidePass();
 
-        // chart.decode(opts.decodeMethod);
         return chart.extractBestParse(0, chart.size(), grammar.startSymbol);
     }
 
@@ -520,14 +521,14 @@ public class ConstrainedInsideOutsideParser extends
                     } else if (parent == parent0) {
                         // Parent outside x left child inside x right child inside x production probability.
                         // Equation 1 of Petrov et al., 2006.
-                        final float count = chart.outsideProbabilities[parent0Offset] + childInsideProbability
+                        final float logCount = chart.outsideProbabilities[parent0Offset] + childInsideProbability
                                 + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
-                        countGrammar.incrementBinaryLogCount(parent, column, count);
+                        countGrammar.incrementBinaryLogCount(parent, column, logCount);
 
                     } else if (parent == parent0 + 1) {
-                        final float count = chart.outsideProbabilities[parent1Offset] + childInsideProbability
+                        final float logCount = chart.outsideProbabilities[parent1Offset] + childInsideProbability
                                 + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
-                        countGrammar.incrementBinaryLogCount(parent, column, count);
+                        countGrammar.incrementBinaryLogCount(parent, column, logCount);
 
                     } else {
                         // We've passed both target parents. No need to search more grammar rules
@@ -578,14 +579,14 @@ public class ConstrainedInsideOutsideParser extends
                     } else if (parent == parent0) {
                         // Parent outside x child inside x production probability. From equation 1 of Petrov et al.,
                         // 2006
-                        final float count = chart.outsideProbabilities[parent0Offset] + childInsideProbability
+                        final float logCount = chart.outsideProbabilities[parent0Offset] + childInsideProbability
                                 + grammar.cscUnaryProbabilities[j] - sentenceInsideLogProb;
-                        countGrammar.incrementUnaryLogCount(parent, child, count);
+                        countGrammar.incrementUnaryLogCount(parent, child, logCount);
 
                     } else if (parent == parent0 + 1) {
-                        final float count = chart.outsideProbabilities[parent1Offset] + childInsideProbability
+                        final float logCount = chart.outsideProbabilities[parent1Offset] + childInsideProbability
                                 + grammar.cscUnaryProbabilities[j] - sentenceInsideLogProb;
-                        countGrammar.incrementUnaryLogCount(parent, child, count);
+                        countGrammar.incrementUnaryLogCount(parent, child, logCount);
 
                     } else {
                         // We've passed both target parents. No need to search more grammar rules
@@ -636,14 +637,14 @@ public class ConstrainedInsideOutsideParser extends
             } else if (parent == parent0) {
                 // Parent outside x production probability (child inside = 1 for lexical entries)
                 // From Equation 1 of Petrov et al., 2006
-                final float count = chart.outsideProbabilities[parent0Offset] + lexicalLogProbabilities[i]
+                final float logCount = chart.outsideProbabilities[parent0Offset] + lexicalLogProbabilities[i]
                         - sentenceInsideLogProb;
-                countGrammar.incrementLexicalLogCount(parent, lexicalProduction, count);
+                countGrammar.incrementLexicalLogCount(parent, lexicalProduction, logCount);
 
             } else if (parent == parent0 + 1) {
-                final float count = chart.outsideProbabilities[parent1Offset] + lexicalLogProbabilities[i]
+                final float logCount = chart.outsideProbabilities[parent1Offset] + lexicalLogProbabilities[i]
                         - sentenceInsideLogProb;
-                countGrammar.incrementLexicalLogCount(parent, lexicalProduction, count);
+                countGrammar.incrementLexicalLogCount(parent, lexicalProduction, logCount);
 
             } else {
                 // We've passed both target parents. No need to search more grammar rules
