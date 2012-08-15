@@ -24,7 +24,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
-import java.util.Random;
 
 import org.cjunit.DetailedTest;
 import org.junit.Test;
@@ -36,6 +35,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.RandomNoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
@@ -193,15 +193,15 @@ public class TestTrainGrammar {
                 (System.currentTimeMillis() - t0) / 1000f);
 
         // Split and train with the 1-split grammar
-        final FractionalCountGrammar split1 = g0.split();
-        split1.randomize(new Random(), .01f);
+        final FractionalCountGrammar split1 = g0.split(new RandomNoiseGenerator(0, .01f));
+        // split1.randomize(new Random(), .01f);
         final FractionalCountGrammar g1 = runEm(tg, g0, split1, 1, 25, true, true);
 
         // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
         final FractionalCountGrammar mergedG1 = g1.merge(new short[] { 1 });
         tg.reloadConstrainingCharts(cscGrammar(g1), cscGrammar(mergedG1));
-        final FractionalCountGrammar split2 = mergedG1.split();
-        split2.randomize(new Random(), .01f);
+        final FractionalCountGrammar split2 = mergedG1.split(new RandomNoiseGenerator(0, .01f));
+        // split2.randomize(new Random(), .01f);
         runEm(tg, g0, split2, 2, 25, true, true);
     }
 
@@ -239,24 +239,24 @@ public class TestTrainGrammar {
                 (System.currentTimeMillis() - t0) / 1000f);
 
         // Split and train with the 1-split grammar
-        final FractionalCountGrammar split1 = g0.split();
-        split1.randomize(tg.random, .01f);
+        final FractionalCountGrammar split1 = g0.split(new RandomNoiseGenerator(0, .01f));
+        // split1.randomize(tg.random, .01f);
         final FractionalCountGrammar g1 = runEm(tg, g0, split1, 1, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, g1, previousFScore);
 
         // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
         final FractionalCountGrammar mergedG1 = g1.merge(new short[] { 1 });
         tg.reloadConstrainingCharts(cscGrammar(g1), cscGrammar(mergedG1));
-        final FractionalCountGrammar split2 = mergedG1.split();
-        split2.randomize(tg.random, .01f);
+        final FractionalCountGrammar split2 = mergedG1.split(new RandomNoiseGenerator(0, .01f));
+        // split2.randomize(tg.random, .01f);
         final FractionalCountGrammar g2 = runEm(tg, g0, split2, 2, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, g2, previousFScore);
 
         // Merge TOP_1 back into TOP, split again, and train with the new 3-split grammar
         final FractionalCountGrammar mergedG2 = g2.merge(new short[] { 1 });
         tg.reloadConstrainingCharts(cscGrammar(g2), cscGrammar(mergedG2));
-        final FractionalCountGrammar split3 = mergedG2.split();
-        split3.randomize(tg.random, .01f);
+        final FractionalCountGrammar split3 = mergedG2.split(new RandomNoiseGenerator(0, .01f));
+        // split3.randomize(tg.random, .01f);
         final FractionalCountGrammar g3 = runEm(tg, g0, split3, 3, 50, false, false);
         verifyFscoreIncrease(tg, g3, previousFScore);
     }
@@ -296,24 +296,24 @@ public class TestTrainGrammar {
                 (System.currentTimeMillis() - t0) / 1000f);
 
         // Split and train with the 1-split grammar
-        final FractionalCountGrammar split1 = g0.split();
-        split1.randomize(tg.random, .01f);
+        final FractionalCountGrammar split1 = g0.split(new RandomNoiseGenerator(0, .01f));
+        // split1.randomize(tg.random, .01f);
         final FractionalCountGrammar g1 = runEm(tg, g0, split1, 1, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, g1, previousFScore);
 
         // Re-merge half the non-terminals, split again, and train with the new 2-split grammar
         final FractionalCountGrammar mergedG1 = tg.merge(g1);
         tg.reloadConstrainingCharts(cscGrammar(g1), cscGrammar(mergedG1));
-        final FractionalCountGrammar split2 = mergedG1.split();
-        split2.randomize(tg.random, .01f);
+        final FractionalCountGrammar split2 = mergedG1.split(new RandomNoiseGenerator(0, .01f));
+        // split2.randomize(tg.random, .01f);
         final FractionalCountGrammar g2 = runEm(tg, g0, split2, 2, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, g2, previousFScore);
 
         // Re-merge half the non-terminals , split again, and train with the new 3-split grammar
         final FractionalCountGrammar mergedG2 = tg.merge(g2);
         tg.reloadConstrainingCharts(cscGrammar(g2), cscGrammar(mergedG2));
-        final FractionalCountGrammar split3 = mergedG2.split();
-        split3.randomize(tg.random, .01f);
+        final FractionalCountGrammar split3 = mergedG2.split(new RandomNoiseGenerator(0, .01f));
+        // split3.randomize(tg.random, .01f);
         final FractionalCountGrammar g3 = runEm(tg, g0, split3, 3, 50, false, false);
         verifyFscoreIncrease(tg, g3, previousFScore);
     }
@@ -335,7 +335,7 @@ public class TestTrainGrammar {
             final boolean reportFinalParseScore, final boolean reportEmIterationParseScores) {
 
         final int lexiconSize = currentGrammar.lexicon.size();
-        float previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
+        double previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
 
         final long t0 = System.currentTimeMillis();
         EmIterationResult result = null;

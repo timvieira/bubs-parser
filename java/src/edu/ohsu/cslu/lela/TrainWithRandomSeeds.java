@@ -21,13 +21,14 @@ package edu.ohsu.cslu.lela;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Random;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.NoiseGenerator;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.RandomNoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
 
 public class TrainWithRandomSeeds extends BaseCommandlineTool {
@@ -52,30 +53,30 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
             tg.loadGoldTreesAndConstrainingCharts(br, grammar0);
             br.reset();
 
-            final Random random = new Random(seed);
+            final NoiseGenerator noiseGenerator = new RandomNoiseGenerator(seed, .01f);
 
             System.out.println("=== Seed: " + seed + " ===");
 
             // Split and train with the 1-split grammar
             System.out.println("Split 1");
-            final FractionalCountGrammar split1 = grammar0.split();
-            split1.randomize(random, 0.01f);
+            final FractionalCountGrammar split1 = grammar0.split(noiseGenerator);
+            // split1.randomize(random, 0.01f);
             final FractionalCountGrammar plg1 = runEm(tg, split1);
 
             // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
             final FractionalCountGrammar mergedPlg1 = plg1.merge(new short[] { 1 });
             tg.reloadConstrainingCharts(cscGrammar(plg1), cscGrammar(mergedPlg1));
             System.out.println("Split 2");
-            final FractionalCountGrammar split2 = mergedPlg1.split();
-            split2.randomize(random, 0.01f);
+            final FractionalCountGrammar split2 = mergedPlg1.split(noiseGenerator);
+            // split2.randomize(random, 0.01f);
             final FractionalCountGrammar plg2 = runEm(tg, split2);
 
             // Merge TOP_1 back into TOP, split again, and train with the new 3-split grammar
             final FractionalCountGrammar mergedPlg2 = plg2.merge(new short[] { 1 });
             tg.reloadConstrainingCharts(cscGrammar(plg2), cscGrammar(mergedPlg2));
             System.out.println("Split 3");
-            final FractionalCountGrammar split3 = mergedPlg2.split();
-            split3.randomize(random, 0.01f);
+            final FractionalCountGrammar split3 = mergedPlg2.split(noiseGenerator);
+            // split3.randomize(random, 0.01f);
             runEm(tg, split3);
         }
     }
