@@ -109,30 +109,17 @@ public class ConstrainingChart extends PackedArrayChart {
                     midpoints[cellIndex] = (short) (start + 1);
                     final int child = sparseMatrixGrammar.lexSet.getIndex(node.leftChild().label());
                     packedChildren[i] = sparseMatrixGrammar.packingFunction.packLexical(child);
-                    // if (packedChildren[i] < -2000000) {
-                    // throw new ArrayIndexOutOfBoundsException("Out of range");
-                    // }
-
                     tokenList.add(child);
                 } else {
                     // Unary production
                     final short child = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.leftChild().label());
                     packedChildren[i] = sparseMatrixGrammar.packingFunction.packUnary(child);
-                    // if (packedChildren[i] < -2000000) {
-                    // throw new ArrayIndexOutOfBoundsException("Out of range");
-                    // }
                 }
             } else {
                 // Binary production
                 final short leftChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.leftChild().label());
                 final short rightChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.rightChild().label());
                 packedChildren[i] = sparseMatrixGrammar.packingFunction.pack(leftChild, rightChild);
-                // if (packedChildren[i] < -2000000) {
-                // final String sLeftChild = sparseMatrixGrammar.nonTermSet.getSymbol(leftChild);
-                // final String sRightChild = sparseMatrixGrammar.nonTermSet.getSymbol(rightChild);
-                // sparseMatrixGrammar.packingFunction.pack(leftChild, rightChild);
-                // throw new ArrayIndexOutOfBoundsException("Out of range");
-                // }
                 final short midpoint = (short) (start + node.leftChild().leaves());
                 midpoints[cellIndex] = midpoint;
 
