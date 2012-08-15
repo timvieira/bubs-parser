@@ -28,7 +28,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 
@@ -45,9 +44,12 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.NoiseGenerator;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.RandomNoiseGenerator;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
+import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
 import edu.ohsu.cslu.util.Arrays;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
@@ -93,7 +95,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     Binarization binarization = Binarization.LEFT;
 
     @Option(name = "-mrp", metaVar = "probability", usage = "Minimum rule log probability (rules with lower probability are pruned from the grammar)")
-    private float minimumRuleProbability = -70f;
+    private float minimumRuleProbability = -140f;
 
     @Option(name = "-noise", metaVar = "noise (0-1)", usage = "Random noise to add to rule probabilities during each split")
     private float noise = 0.01f;
@@ -107,8 +109,8 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-ds", aliases = { "--dev-set" }, metaVar = "file", usage = "Dev-set trees. If specified, parse accuracy will be reported after each split-merge cycle")
     private File developmentSet;
 
-    @Option(name = "-pf", aliases = { "--prune-fraction" }, metaVar = "fraction", usage = "Pruning fraction (of non-terminals) for dev-set parsing")
-    private float pruneFraction = 0.4f;
+    @Option(name = "-dpf", aliases = { "--prune-fraction" }, metaVar = "fraction", usage = "Pruning fraction (of non-terminals) for dev-set parsing")
+    private float devsetParsePruneFraction = 0.4f;
 
     /** Maximum size of a training or development corpus in characters. Currently 20 MB */
     private final static int MAX_CORPUS_SIZE = 20 * 1024 * 1024;
@@ -116,16 +118,17 @@ public class TrainGrammar extends BaseCommandlineTool {
     final ArrayList<NaryTree<String>> goldTrees = new ArrayList<NaryTree<String>>();
     final ArrayList<ConstrainingChart> constrainingCharts = new ArrayList<ConstrainingChart>();
 
-    Random random;
+    NoiseGenerator noiseGenerator;
 
     @Override
     protected void setup() {
 
+        // Initialize here instead of above, to avoid printing a large random number when we output command-line usage
         if (randomSeed == 0) {
             randomSeed = System.currentTimeMillis();
         }
 
-        random = new Random(randomSeed);
+        noiseGenerator = new RandomNoiseGenerator(randomSeed, noise);
 
         if (outputGrammarDirectory != null && !outputGrammarDirectory.exists()) {
             outputGrammarDirectory.mkdir();
@@ -164,8 +167,8 @@ public class TrainGrammar extends BaseCommandlineTool {
             // Split
             //
             BaseLogger.singleton().info(String.format("=== Cycle %d ===", cycle));
-            currentGrammar = currentGrammar.split();
-            currentGrammar.randomize(random, noise);
+            currentGrammar = currentGrammar.split(noiseGenerator);
+            // currentGrammar.randomize(random, noise);
             BaseLogger.singleton().config("Split grammar size: " + grammarSummaryString(currentGrammar));
 
             //
@@ -295,13 +298,13 @@ public class TrainGrammar extends BaseCommandlineTool {
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
         final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscGrammar);
 
-        final FractionalCountGrammar countGrammar = new FractionalCountGrammar((SplitVocabulary) cscGrammar.nonTermSet,
+        final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscGrammar.nonTermSet,
                 cscGrammar.lexSet, cscGrammar.packingFunction);
 
         final long t1 = System.currentTimeMillis();
 
         // Iterate over the training corpus, parsing and counting rule occurrences
-        float corpusLikelihood = 0f;
+        double corpusLikelihood = 0f;
         for (final ConstrainingChart constrainingChart : constrainingCharts) {
             parser.findBestParse(constrainingChart);
             corpusLikelihood += parser.chart.getInside(0, parser.chart.size(), 0);
@@ -309,10 +312,10 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
         final long t2 = System.currentTimeMillis();
 
-        // TODO Create a pruned count grammar
+        // Prune rules below the minimum probability threshold
         final FractionalCountGrammar prunedGrammar = countGrammar.clone(minimumRuleLogProbability);
-        return new EmIterationResult(countGrammar, corpusLikelihood, (int) (t2 - t1), (int) (System.currentTimeMillis()
-                - t2 + t1 - t0));
+        return new EmIterationResult(prunedGrammar, corpusLikelihood, (int) (t2 - t1),
+                (int) (System.currentTimeMillis() - t2 + t1 - t0));
     }
 
     /**
@@ -419,10 +422,11 @@ public class TrainGrammar extends BaseCommandlineTool {
         devCorpusReader.reset();
 
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAX_BEAM_WIDTH,
-                Integer.toString(Math.round(pruneFraction * mergedGrammar.nonTermSet.size())));
+                Integer.toString(Math.round(devsetParsePruneFraction * mergedGrammar.nonTermSet.size())));
 
-        final CartesianProductHashSpmlParser parser = new CartesianProductHashSpmlParser(new ParserDriver(),
-                mergedGrammar);
+        final ParserDriver opts = new ParserDriver();
+        opts.fomModel = new InsideProb();
+        final CartesianProductHashSpmlParser parser = new CartesianProductHashSpmlParser(opts, mergedGrammar);
         final BracketEvaluator evaluator = new BracketEvaluator();
 
         for (String line = devCorpusReader.readLine(); line != null; line = devCorpusReader.readLine()) {
@@ -497,11 +501,11 @@ public class TrainGrammar extends BaseCommandlineTool {
     public static class EmIterationResult {
 
         final FractionalCountGrammar countGrammar;
-        final float corpusLikelihood;
+        final double corpusLikelihood;
         final int emTime;
         final int grammarConversionTime;
 
-        public EmIterationResult(final FractionalCountGrammar countGrammar, final float corpusLikelihood,
+        public EmIterationResult(final FractionalCountGrammar countGrammar, final double corpusLikelihood,
                 final int emTime, final int grammarConversionTime) {
             this.countGrammar = countGrammar;
             this.corpusLikelihood = corpusLikelihood;

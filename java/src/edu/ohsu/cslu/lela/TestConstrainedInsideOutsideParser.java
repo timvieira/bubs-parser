@@ -25,7 +25,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.Random;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -42,6 +41,8 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.RandomNoiseGenerator;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.ZeroNoiseGenerator;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.JUnit;
 
@@ -76,7 +77,7 @@ public class TestConstrainedInsideOutsideParser {
                 cscGrammar(grammar0));
 
         // Split the grammar
-        grammar1 = grammar0.split();
+        grammar1 = grammar0.split(new ZeroNoiseGenerator());
         cscGrammar1 = cscGrammar(grammar1);
     }
 
@@ -198,7 +199,7 @@ public class TestConstrainedInsideOutsideParser {
         parseWithGrammar1();
 
         // Split the grammar again
-        final FractionalCountGrammar plGrammar2 = grammar1.split();
+        final FractionalCountGrammar plGrammar2 = grammar1.split(new ZeroNoiseGenerator());
         final ConstrainedInsideOutsideGrammar cscGrammar2 = cscGrammar(plGrammar2);
 
         //
@@ -311,8 +312,8 @@ public class TestConstrainedInsideOutsideParser {
         final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
-        final FractionalCountGrammar g1 = g0.split();
-        g1.randomize(new Random(), randomness);
+        final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, .01f));
+        // g1.randomize(new Random(), randomness);
         final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
 
         // Construct a constraining chart
@@ -350,8 +351,8 @@ public class TestConstrainedInsideOutsideParser {
         final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
-        final FractionalCountGrammar g1 = g0.split();
-        g1.randomize(new Random(), randomness);
+        final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, .01f));
+        // g1.randomize(new Random(), randomness);
         final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
 
         // Parse each tree in the training corpus with the split-1 grammar
@@ -396,13 +397,13 @@ public class TestConstrainedInsideOutsideParser {
         final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
-        final FractionalCountGrammar g1 = g0.split();
-        g1.randomize(new Random(), .01f);
+        final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, .01f));
+        // g1.randomize(new Random(), .01f);
         final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
 
         // Split the grammar again
-        final FractionalCountGrammar g2 = g1.split();
-        g1.randomize(new Random(), .01f);
+        final FractionalCountGrammar g2 = g1.split(new RandomNoiseGenerator(0, .01f));
+        // g1.randomize(new Random(), .01f);
         final ConstrainedInsideOutsideGrammar csc2 = cscGrammar(g2);
 
         // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the split-2

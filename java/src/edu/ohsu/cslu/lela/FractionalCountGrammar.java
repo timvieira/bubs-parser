@@ -87,6 +87,10 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     public void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
             final double increment) {
 
+        if (increment == 0) {
+            return;
+        }
+
         Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {
             leftChildMap = new Short2ObjectOpenHashMap<Short2DoubleOpenHashMap>();
@@ -126,6 +130,10 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
     public void incrementUnaryCount(final short parent, final short child, final double increment) {
 
+        if (increment == 0) {
+            return;
+        }
+
         Short2DoubleOpenHashMap childMap = unaryRuleCounts.get(parent);
         if (childMap == null) {
             childMap = new Short2DoubleOpenHashMap();
@@ -149,6 +157,10 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     }
 
     public void incrementLexicalCount(final short parent, final int child, final double increment) {
+
+        if (increment == 0) {
+            return;
+        }
 
         Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
         if (childMap == null) {
@@ -513,7 +525,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
      * 
      * @return Newly-constructed grammar
      */
-    public FractionalCountGrammar split() {
+    public FractionalCountGrammar split(final NoiseGenerator noiseGenerator) {
         // Produce a new vocabulary, splitting each non-terminal into two substates
 
         final SplitVocabulary splitVocabulary = new SplitVocabulary(vocabulary);
@@ -554,14 +566,18 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
                     final double count = rightChildMap.get(rightChild) / 4;
 
-                    splitGrammar.incrementBinaryCount(splitParent0, splitLeftChild0, splitRightChild0, count);
-                    splitGrammar.incrementBinaryCount(splitParent0, splitLeftChild0, splitRightChild1, count);
-                    splitGrammar.incrementBinaryCount(splitParent0, splitLeftChild1, splitRightChild0, count);
-                    splitGrammar.incrementBinaryCount(splitParent0, splitLeftChild1, splitRightChild1, count);
-                    splitGrammar.incrementBinaryCount(splitParent1, splitLeftChild0, splitRightChild0, count);
-                    splitGrammar.incrementBinaryCount(splitParent1, splitLeftChild0, splitRightChild1, count);
-                    splitGrammar.incrementBinaryCount(splitParent1, splitLeftChild1, splitRightChild0, count);
-                    splitGrammar.incrementBinaryCount(splitParent1, splitLeftChild1, splitRightChild1, count);
+                    double noise = noiseGenerator.noise(count);
+                    splitGrammar.incrementBinaryCount(splitParent0, splitLeftChild0, splitRightChild0, count + noise);
+                    splitGrammar.incrementBinaryCount(splitParent0, splitLeftChild0, splitRightChild1, count - noise);
+                    noise = noiseGenerator.noise(count);
+                    splitGrammar.incrementBinaryCount(splitParent0, splitLeftChild1, splitRightChild0, count + noise);
+                    splitGrammar.incrementBinaryCount(splitParent0, splitLeftChild1, splitRightChild1, count - noise);
+                    noise = noiseGenerator.noise(count);
+                    splitGrammar.incrementBinaryCount(splitParent1, splitLeftChild0, splitRightChild0, count + noise);
+                    splitGrammar.incrementBinaryCount(splitParent1, splitLeftChild0, splitRightChild1, count - noise);
+                    noise = noiseGenerator.noise(count);
+                    splitGrammar.incrementBinaryCount(splitParent1, splitLeftChild1, splitRightChild0, count + noise);
+                    splitGrammar.incrementBinaryCount(splitParent1, splitLeftChild1, splitRightChild1, count - noise);
                 }
             }
         }
@@ -583,8 +599,9 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
                     final double count = childMap.get(child);
 
-                    splitGrammar.incrementUnaryCount(parent, splitChild0, count);
-                    splitGrammar.incrementUnaryCount(parent, splitChild1, count);
+                    final double noise = noiseGenerator.noise(count);
+                    splitGrammar.incrementUnaryCount(parent, splitChild0, count + noise);
+                    splitGrammar.incrementUnaryCount(parent, splitChild1, count - noise);
                 }
 
             } else {
@@ -595,10 +612,12 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
                     final double count = childMap.get(child) / 2;
 
-                    splitGrammar.incrementUnaryCount(splitParent0, splitChild0, count);
-                    splitGrammar.incrementUnaryCount(splitParent0, splitChild1, count);
-                    splitGrammar.incrementUnaryCount(splitParent1, splitChild0, count);
-                    splitGrammar.incrementUnaryCount(splitParent1, splitChild1, count);
+                    double noise = noiseGenerator.noise(count);
+                    splitGrammar.incrementUnaryCount(splitParent0, splitChild0, count + noise);
+                    splitGrammar.incrementUnaryCount(splitParent0, splitChild1, count - noise);
+                    noise = noiseGenerator.noise(count);
+                    splitGrammar.incrementUnaryCount(splitParent1, splitChild0, count + noise);
+                    splitGrammar.incrementUnaryCount(splitParent1, splitChild1, count - noise);
                 }
             }
         }
@@ -1190,5 +1209,46 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             }
         }
         bw.flush();
+    }
+
+    public static interface NoiseGenerator {
+
+        /**
+         * Returns generated 'noise' (generally random, depending on the implementation), scaled by the supplied count.
+         * 
+         * @param count
+         * @return Noise, scaled by the supplied count
+         */
+        public double noise(final double count);
+    }
+
+    public static class ZeroNoiseGenerator implements NoiseGenerator {
+
+        @Override
+        public double noise(final double count) {
+            return 0;
+        }
+    }
+
+    public static class RandomNoiseGenerator implements NoiseGenerator {
+
+        private final Random random;
+        private final float amount;
+
+        /**
+         * @param random Random noise generator
+         * @param amount Amount of randomness (0-1) to add to the rule probabilities in the new grammar (e.g., if
+         *            <code>amount</code> is 0.01, each pair differs by 1%). With 0 noise, the probabilities of each
+         *            rule will be split equally. Some noise is generally required to break ties in the new grammar.
+         */
+        public RandomNoiseGenerator(final long seed, final float amount) {
+            this.random = new Random(seed);
+            this.amount = amount;
+        }
+
+        @Override
+        public double noise(final double count) {
+            return count * (random.nextDouble() - .5) * amount;
+        }
     }
 }

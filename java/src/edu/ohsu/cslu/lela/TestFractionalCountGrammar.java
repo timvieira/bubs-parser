@@ -33,6 +33,7 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.ZeroNoiseGenerator;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -131,7 +132,7 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
     @Theory
     public void testSplit(final FractionalCountGrammar grammar) {
 
-        final FractionalCountGrammar split1 = grammar.split();
+        final FractionalCountGrammar split1 = grammar.split(new ZeroNoiseGenerator());
 
         // s, s_1, a_0, a_1, b_0, b_1
         // assertArrayEquals(new short[] { 0, 1, 0, 1, 0, 1 }, split1.vocabulary.subcategoryIndices);
@@ -162,7 +163,7 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
         assertEquals(grammar.vocabulary.getIndex("b") * 2 + 1, split1.vocabulary.getIndex("b_1"));
 
         // Now test re-splitting the newly-split grammar again.
-        final FractionalCountGrammar split2 = split1.split();
+        final FractionalCountGrammar split2 = split1.split(new ZeroNoiseGenerator());
 
         // a -> a b 1/3 should now be split into 64, with probability 1/48
         assertLogFractionEquals(Math.log(1f / 3 / 16), split2.binaryLogProbability("a_1", "a_0", "b_0"), .01f);
@@ -180,7 +181,7 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
     @Theory
     public void testMergeStartSymbol(final FractionalCountGrammar grammar) {
 
-        final FractionalCountGrammar split1 = grammar.split();
+        final FractionalCountGrammar split1 = grammar.split(new ZeroNoiseGenerator());
         final FractionalCountGrammar merged = split1.merge(new short[] { 1 });
 
         assertEquals(split1.vocabulary.size() - 1, merged.vocabulary.size());
@@ -194,7 +195,7 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
     public void testMerge(final FractionalCountGrammar grammar) {
 
         // Split the grammar 2X
-        final FractionalCountGrammar split2 = grammar.split().split();
+        final FractionalCountGrammar split2 = grammar.split(new ZeroNoiseGenerator()).split(new ZeroNoiseGenerator());
         // Now re-merge a_3 into a_2 and b_1 into b_0
         final short[] indices = new short[] { (short) split2.vocabulary.getIndex("a_3"),
                 (short) split2.vocabulary.getIndex("b_1") };
