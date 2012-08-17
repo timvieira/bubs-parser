@@ -297,9 +297,9 @@ public class TestInsideOutsideCphSpmlParser {
         sb.append("(ROOT (S (NP (DT The) (NN law)) (VP (VBZ does) (VP (VB allow) (NP (DT the) (NNP RTC)) (VP (TO to) (VP (VB borrow) (PP (IN from) (NP (NP (NP (DT the) (NNP Treasury)) (PP (IN up) (NP (QP (TO to) ($ $) (CD 5) (CD billion))))) (PP (IN at) (NP (DT any) (NN time))))))))) (. .)))\n");
         sb.append("(ROOT (S (ADVP (RB Moreover)) (, ,) (S (NP (PRP it)) (VP (VBZ says) (NP (DT the) (NNP RTC) (POS 's)))) (NP (JJ total) (NNS obligations)) (VP (MD may) (RB not) (VP (VB exceed) (NP (NP (QP ($ $) (CD 50) (CD billion))) (SBAR (, ,) (CC but) (SBAR (WHNP (WDT that)) (S (VP (VBP figure) (VP (VBZ is) (VP (VBN derived) (PP (IN after) (NP (NP (NP (NP (NP (NP (NP (VBG including) (NNS notes)) (CC and) (NP (JJ other) (NN debt) (, ,))) (CC and) (NN subtracting)) (PP (IN from) (NP (PRP it)))) (DT the) (NN market) (NN value)) (PP (IN of) (NP (DT the) (NNS assets)))) (DT the) (NNP RTC) (VBZ holds)))))))))))) (. .)))\n");
         sb.append("(ROOT (S (CC But) (NP (NNP Congress)) (VP (VBD did) (RB n't) (VP (VBP anticipate) (VP (CC or) (VB intend) (NP (NP (JJR more) (JJ public) (NN debt)) (PRN (, ,) (SINV (VP (VBP say) (NP (NP (NNS opponents)) (PP (IN of) (NP (NP (DT the) (NP (NNP RTC) (POS 's)) (NP (JJ working-capital) (NN plan) (, ,)) (CC and) (NP (NNP Rep.) (NNP Charles) (NNP Schumer))) (PRN (-LRB- -LRB-) (NP (NNP D.)) (, ,)))))) (NP (NNP N.Y)) (. .)) (-RRB- -RRB-))) (VP (VBD said) (S (NP (DT the) (NNP RTC) (NNP Oversight) (NNP Board)) (VP (VBZ has) (VP (VBN been) (VP (VB remiss) (SBAR (IN in) (S (ADVP (RB not)) (VP (VBG keeping) (S (NP (NNP Congress)) (VP (VBN informed)))))))))))))) (. .)))\n");
-        sb.append("(ROOT (S (`` ``) (NP (DT That) (NN secrecy)) (VP (VBZ leads) (VP (TO to) (VP (NP (NP (DT a) (NN proposal)) (PP (IN like) (NP (NP (DT the) (NN one)) (PP (IN from) (NP (NP (NNPS Ways) (CC and) (NNPS Means)) (, ,) (SBAR (WHNP (WDT which)) (S (VP (VBZ seems) (PP (TO to) (NP (PRP me)))))) (NN sort)))))) (PP (IN of) (NP (JJ draconian) (, ,) ('' '') (NP (PRP he)))) (VP (VBD said))))) (. .)))\n");
+        sb.append("(ROOT (S (`` ``) (NP (DT That) (NN secrecy)) (VP (VBZ leads) (VP (TO to) (VP (NP (NP (DT a) (NN proposal)) (PP (IN like) (NP (NP (NP (DT the) (NN one)) (PP (IN from) (NP (NNPS Ways) (CC and) (NNPS Means)))) (, ,) (SBAR (WHNP (WDT which)) (S (VP (VBZ seems) (PP (TO to) (NP (PRP me)))))) (NN sort)))) (PP (IN of) (NP (JJ draconian) (, ,) ('' '') (NP (PRP he)))) (VP (VBD said))))) (. .)))\n");
         sb.append("(ROOT (S (`` ``) (NP (DT The) (NNP RTC)) (VP (VBZ is) (VP (VBG going) (VP (TO to) (VP (VBP have) (VP (TO to) (VP (VB pay) (NP (NP (DT a) (NN price)) (PP (IN of) (NP (NP (JJ prior) (NN consultation)) (PP (IN on) (NP (DT the) (NNP Hill) (SBAR (IN if) (S (NP (PRP they)) (VP (VB want) (NP (DT that) (NN kind)) (PP (IN of) (NP (NN flexibility)))) (. .)))))))))))))) ('' '')))\n");
-        sb.append("(ROOT (S (NP (NP (DT The) (NNPS Ways)) (CC and) (NP (NNP Means) (NNP Committee))) (VP (MD will) (VP (VB hold) (NP (NP (DT a) (NN hearing)) (PP (IN on) (NP (NP (DT the) (NN bill)) (PP (IN next) (NP (NNP Tuesday)))))))) (. .)))\n");
+        sb.append("(ROOT (S (NP (DT The) (NNPS Ways) (CC and) (NP (NNP Means) (NNP Committee))) (VP (MD will) (VP (VB hold) (NP (NP (DT a) (NN hearing)) (PP (IN on) (NP (NP (DT the) (NN bill)) (PP (IN next) (NP (NNP Tuesday)))))))) (. .)))\n");
 
         final String[] expected = sb.toString().split("\n");
 
@@ -311,7 +311,6 @@ public class TestInsideOutsideCphSpmlParser {
                     parser.parseSentence(input[i]).parseBracketString(false));
         }
     }
-
     // @Test
     // @Ignore
     // public void testAll() throws IOException {
