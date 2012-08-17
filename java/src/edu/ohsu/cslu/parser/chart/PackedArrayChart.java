@@ -24,6 +24,7 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
@@ -151,7 +152,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     final short[][] maxQLeftChildren;
     final short[][] maxQRightChildren;
 
-    private Vocabulary maxcVocabulary = sparseMatrixGrammar.nonTermSet;
+    private Vocabulary maxcVocabulary = sparseMatrixGrammar.nonTermSet.baseVocabulary();
 
     protected final ThreadLocal<PackedArrayChart.TemporaryChartCell> threadLocalTemporaryCells;
 
@@ -390,7 +391,7 @@ public class PackedArrayChart extends ParallelArrayChart {
             return extractMaxcParse(0, size);
 
         case MaxRuleProd:
-            return decodeMaxRuleProductParse((LeftCscSparseMatrixGrammar) grammar);
+            return decodeMaxRuleProductParse((InsideOutsideCscSparseMatrixGrammar) grammar);
 
         case ViterbiMax:
             // TODO Rename extractBestParse to extractViterbiParse, switch references to use decode() instead.
@@ -685,9 +686,8 @@ public class PackedArrayChart extends ParallelArrayChart {
      * Computes max-rule-product parse, as described in Figure 3 of Petrov and Klein, 1997, 'Improved Inference for
      * Unlexicalized Parsing'.
      */
-    private BinaryTree<String> decodeMaxRuleProductParse(final LeftCscSparseMatrixGrammar cscGrammar) {
+    private BinaryTree<String> decodeMaxRuleProductParse(final InsideOutsideCscSparseMatrixGrammar cscGrammar) {
 
-        final PackingFunction pf = cscGrammar.packingFunction;
         maxcVocabulary = cscGrammar.nonTermSet.baseVocabulary();
 
         // Start symbol inside-probability (P_in(root,0,n) in Petrov's notation)
@@ -735,6 +735,9 @@ public class PackedArrayChart extends ParallelArrayChart {
                     }
                 }
 
+                final int parentStart = offset(cellIndex);
+                final int parentEnd = parentStart + numNonTerminals[cellIndex];
+
                 // Iterate over all possible midpoints
                 for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
 
@@ -749,36 +752,49 @@ public class PackedArrayChart extends ParallelArrayChart {
                     final int leftStart = minLeftChildIndex(leftCellIndex);
                     final int leftEnd = maxLeftChildIndex(leftCellIndex);
 
-                    final int rightStart = minRightChildIndex(rightCellIndex);
-                    final int rightEnd = maxRightChildIndex(rightCellIndex);
+                    final PackedArrayChartCell rightChildCell = getCell(midpoint, end);
+                    rightChildCell.allocateTemporaryStorage();
+                    final float[] rightChildInsideProbabilities = rightChildCell.tmpCell.insideProbabilities;
 
-                    // Iterate over children in the left child cell
-                    for (int i = leftStart; i <= leftEnd; i++) {
-                        final short leftChild = nonTerminalIndices[i];
-                        final short baseLeftChild = cscGrammar.nonTermSet.getBaseIndex(leftChild);
-                        final float leftProbability = insideProbabilities[i];
+                    // Iterate over parents
+                    for (int i = parentStart; i < parentEnd; i++) {
+                        final short parent = nonTerminalIndices[i];
+                        final short baseParent = cscGrammar.nonTermSet.getBaseIndex(parent);
+                        final float parentOutside = outsideProbabilities[i];
 
-                        // And over children in the right child cell
-                        for (int j = rightStart; j <= rightEnd; j++) {
-                            final short rightChild = nonTerminalIndices[j];
-                            final int column = pf.pack(leftChild, rightChild);
+                        // And over children in the left child cell
+                        for (int j = leftStart; j <= leftEnd; j++) {
+                            final short leftChild = nonTerminalIndices[j];
+                            final short baseLeftChild = cscGrammar.nonTermSet.getBaseIndex(leftChild);
+
+                            // If we've already found a q for this parent greater than the left-child maxQ, we can
+                            // short-circuit without computing r
+                            if (maxQ[leftCellIndex][baseLeftChild] < maxQ[cellIndex][baseParent]) {
+                                continue;
+                            }
+
+                            final int column = cscGrammar.rightChildPackingFunction.pack(parent, leftChild);
                             if (column == Integer.MIN_VALUE) {
                                 continue;
                             }
-                            final short baseRightChild = cscGrammar.nonTermSet.getBaseIndex(rightChild);
 
-                            final float childProbability = leftProbability + insideProbabilities[j];
+                            final float leftChildInside = insideProbabilities[j];
 
-                            for (int k = cscGrammar.cscBinaryColumnOffsets[column]; k < cscGrammar.cscBinaryColumnOffsets[column + 1]; k++) {
+                            // Iterate over grammar rules
+                            for (int k = cscGrammar.rightChildCscBinaryColumnOffsets[column]; k < cscGrammar.rightChildCscBinaryColumnOffsets[column + 1]; k++) {
+                                final short rightChild = cscGrammar.rightChildCscBinaryRowIndices[k];
 
-                                final short parent = cscGrammar.cscBinaryRowIndices[k];
-                                final int parentIndex = entryIndex(offset(cellIndex), numNonTerminals[cellIndex],
-                                        parent);
-                                if (parentIndex < 0) {
+                                final float rightChildInside = rightChildInsideProbabilities[rightChild];
+                                if (rightChildInside == Float.NEGATIVE_INFINITY) {
                                     continue;
                                 }
-                                final float parentOutside = outsideProbabilities[parentIndex];
-                                final short baseParent = cscGrammar.nonTermSet.getBaseIndex(parent);
+
+                                final short baseRightChild = cscGrammar.nonTermSet.getBaseIndex(rightChild);
+
+                                // Again, we can short-circuit based on the combined child maxQ
+                                if (maxQ[leftCellIndex][baseLeftChild] + maxQ[rightCellIndex][baseRightChild] < maxQ[cellIndex][baseParent]) {
+                                    continue;
+                                }
 
                                 // Allocate space in current-midpoint r array if needed
                                 allocateChildArray(currentMidpointR, baseParent, baseLeftChild);
@@ -787,13 +803,13 @@ public class PackedArrayChart extends ParallelArrayChart {
                                     currentMidpointR[baseParent][baseLeftChild][baseRightChild] = edu.ohsu.cslu.util.Math
                                             .approximateLogSum(
                                                     currentMidpointR[baseParent][baseLeftChild][baseRightChild],
-                                                    cscGrammar.cscBinaryProbabilities[k] + childProbability
-                                                            + parentOutside, SUM_DELTA);
+                                                    cscGrammar.rightChildCscBinaryProbabilities[k] + leftChildInside
+                                                            + rightChildInside + parentOutside, SUM_DELTA);
                                 } else {
                                     currentMidpointR[baseParent][baseLeftChild][baseRightChild] = edu.ohsu.cslu.util.Math
                                             .logSum(currentMidpointR[baseParent][baseLeftChild][baseRightChild],
-                                                    cscGrammar.cscBinaryProbabilities[k] + childProbability
-                                                            + parentOutside, SUM_DELTA);
+                                                    cscGrammar.rightChildCscBinaryProbabilities[k] + leftChildInside
+                                                            + rightChildInside + parentOutside, SUM_DELTA);
                                 }
                             }
                         }
