@@ -648,7 +648,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
      * Adds random pseudo-count noise to each rule. The number of pseudo-counts is proportional to the observed parent
      * count.
      */
-    public void randomize(final Random random, final float amount) {
+    public void randomize(final NoiseGenerator noiseGenerator, final float amount) {
 
         // Short-circuit if we won't add any pseudo-counts
         if (amount == 0) {
@@ -668,8 +668,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
                     final Short2DoubleOpenHashMap binaryRightChildMap = binaryLeftChildMap.get(leftChild);
 
                     for (final short rightChild : binaryRightChildMap.keySet()) {
-                        incrementBinaryCount(parent, leftChild, rightChild, parentCount * 2 * random.nextDouble()
-                                * amount);
+                        incrementBinaryCount(parent, leftChild, rightChild, noiseGenerator.noise() * 100 * amount);
                     }
                 }
             }
@@ -677,14 +676,14 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             // Unary rules
             if (unaryChildMap != null) {
                 for (final short child : unaryChildMap.keySet()) {
-                    incrementUnaryCount(parent, child, parentCount * 2 * random.nextDouble() * amount);
+                    incrementUnaryCount(parent, child, noiseGenerator.noise() * 100 * amount);
                 }
             }
 
             // Lexical rules
             if (lexicalChildMap != null) {
                 for (final int child : lexicalChildMap.keySet()) {
-                    incrementLexicalCount(parent, child, parentCount * 2 * random.nextDouble() * amount);
+                    incrementLexicalCount(parent, child, noiseGenerator.noise() * 100 * amount);
                 }
             }
         }
@@ -1220,12 +1219,24 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
          * @return Noise, scaled by the supplied count
          */
         public double noise(final double count);
+        
+        /**
+         * Returns generated 'noise' (generally random, depending on the implementation).
+         * 
+         * @return Noise
+         */
+        public double noise();
     }
 
     public static class ZeroNoiseGenerator implements NoiseGenerator {
 
         @Override
         public double noise(final double count) {
+            return 0;
+        }
+
+        @Override
+        public double noise() {
             return 0;
         }
     }
@@ -1249,6 +1260,11 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         @Override
         public double noise(final double count) {
             return count * (random.nextDouble() - .5) * amount;
+        }
+
+        @Override
+        public double noise() {
+            return random.nextDouble();
         }
     }
 }
