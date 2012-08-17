@@ -100,7 +100,7 @@
         </antcall>
     </target>
 
-    
+
     <target name="train-grammar" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.TrainGrammar" />
@@ -110,7 +110,7 @@
         </antcall>
     </target>
 
-    
+
     <target name="induce-count-grammar" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.InduceCountGrammar" />
@@ -140,7 +140,7 @@
         </antcall>
     </target>
 
-            
+
     <target name="unfactor" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.tools.Unfactor" />
@@ -159,7 +159,7 @@
         </antcall>
     </target>
 
-        
+
     <target name="tree-tools" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.TreeTools" />
@@ -182,7 +182,7 @@
             <param name="root-class" value="edu.ohsu.cslu.parser.fom.TrainFOM" />
             <param name="tool-name" value="train-fom" />
             <param name="package-gpl-libs" value="true" />
-        	<param name="default-options" value="java/tools/parser-defaults.properties" />
+            <param name="default-options" value="java/tools/parser-defaults.properties" />
         </antcall>
     </target>
 
@@ -201,7 +201,7 @@
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.dep.TrainDepParser" />
             <param name="tool-name" value="train-dep-parser" />
-            <param name="heap-size" value="512m" />
+            <param name="heap-size" value="1500m" />
             <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
@@ -210,7 +210,7 @@
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.dep.EvalDepClassifiers" />
             <param name="tool-name" value="eval-dep-classifiers" />
-            <param name="heap-size" value="512m" />
+            <param name="heap-size" value="1500m" />
             <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
