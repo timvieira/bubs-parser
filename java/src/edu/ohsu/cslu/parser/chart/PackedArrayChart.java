@@ -713,6 +713,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                         if (grammar.isPos(parent)) {
                             final short baseParent = cscGrammar.nonTermSet.getBaseIndex(parent);
                             maxQMidpoints[cellIndex][baseParent] = end;
+
                             // Left child is implied by marking the production as lexical. Unaries will be handled
                             // below.
                             if (APPROXIMATE_SUM) {
@@ -741,11 +742,6 @@ public class PackedArrayChart extends ParallelArrayChart {
                 // Iterate over all possible midpoints
                 for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
 
-                    // Since Petrov's 'r' is a sum over unsplit categories, we compute a temporary r array for each
-                    // midpoint and then maximize over midpoints
-                    // currentMidpointR is indexed by base parent, base left child, base right child
-                    final float[][][] currentMidpointR = new float[maxcVocabulary.size()][][];
-
                     final int leftCellIndex = cellIndex(start, midpoint);
                     final int rightCellIndex = cellIndex(midpoint, end);
 
@@ -762,14 +758,22 @@ public class PackedArrayChart extends ParallelArrayChart {
                         final short baseParent = cscGrammar.nonTermSet.getBaseIndex(parent);
                         final float parentOutside = outsideProbabilities[i];
 
+                        // Petrov's 'r' is a sum over unsplit categories; we compute a temporary r array for each
+                        // parent, indexed by base left child and base right child
+                        final float[][] r = new float[maxcVocabulary.size()][];
+                        float maxR = Float.NEGATIVE_INFINITY;
+                        short maxRMidpoint = -1, maxRLeftChild = Short.MIN_VALUE, maxRRightChild = Short.MIN_VALUE;
+
                         // And over children in the left child cell
                         for (int j = leftStart; j <= leftEnd; j++) {
                             final short leftChild = nonTerminalIndices[j];
                             final short baseLeftChild = cscGrammar.nonTermSet.getBaseIndex(leftChild);
 
                             // If we've already found a q for this parent greater than the left-child maxQ, we can
-                            // short-circuit without computing r
-                            if (maxQ[leftCellIndex][baseLeftChild] < maxQ[cellIndex][baseParent]) {
+                            // short-circuit without computing r for this left child
+                            final float leftChildMaxQ = maxQ[leftCellIndex][baseLeftChild];
+                            if (leftChildMaxQ < maxQ[cellIndex][baseParent]
+                                    || leftChildMaxQ + startSymbolInsideProbability < maxR) {
                                 continue;
                             }
 
@@ -792,32 +796,45 @@ public class PackedArrayChart extends ParallelArrayChart {
                                 final short baseRightChild = cscGrammar.nonTermSet.getBaseIndex(rightChild);
 
                                 // Again, we can short-circuit based on the combined child maxQ
-                                if (maxQ[leftCellIndex][baseLeftChild] + maxQ[rightCellIndex][baseRightChild] < maxQ[cellIndex][baseParent]) {
+                                final float childMaxQ = leftChildMaxQ + maxQ[rightCellIndex][baseRightChild];
+                                if (childMaxQ < maxQ[cellIndex][baseParent]
+                                        || childMaxQ + startSymbolInsideProbability < maxR) {
                                     continue;
                                 }
 
                                 // Allocate space in current-midpoint r array if needed
-                                allocateChildArray(currentMidpointR, baseParent, baseLeftChild);
+                                if (r[baseLeftChild] == null) {
+                                    r[baseLeftChild] = new float[maxcVocabulary.size()];
+                                    Arrays.fill(r[baseLeftChild], Float.NEGATIVE_INFINITY);
+                                }
 
                                 if (APPROXIMATE_SUM) {
-                                    currentMidpointR[baseParent][baseLeftChild][baseRightChild] = edu.ohsu.cslu.util.Math
-                                            .approximateLogSum(
-                                                    currentMidpointR[baseParent][baseLeftChild][baseRightChild],
-                                                    cscGrammar.rightChildCscBinaryProbabilities[k] + leftChildInside
-                                                            + rightChildInside + parentOutside, SUM_DELTA);
+                                    r[baseLeftChild][baseRightChild] = edu.ohsu.cslu.util.Math.approximateLogSum(
+                                            r[baseLeftChild][baseRightChild],
+                                            cscGrammar.rightChildCscBinaryProbabilities[k] + leftChildInside
+                                                    + rightChildInside + parentOutside, SUM_DELTA);
                                 } else {
-                                    currentMidpointR[baseParent][baseLeftChild][baseRightChild] = edu.ohsu.cslu.util.Math
-                                            .logSum(currentMidpointR[baseParent][baseLeftChild][baseRightChild],
-                                                    cscGrammar.rightChildCscBinaryProbabilities[k] + leftChildInside
-                                                            + rightChildInside + parentOutside, SUM_DELTA);
+                                    r[baseLeftChild][baseRightChild] = edu.ohsu.cslu.util.Math.logSum(
+                                            r[baseLeftChild][baseRightChild],
+                                            cscGrammar.rightChildCscBinaryProbabilities[k] + leftChildInside
+                                                    + rightChildInside + parentOutside, SUM_DELTA);
+                                }
+
+                                if (r[baseLeftChild][baseRightChild] > maxR) {
+                                    maxR = r[baseLeftChild][baseRightChild];
+                                    maxRLeftChild = baseLeftChild;
+                                    maxRRightChild = baseRightChild;
+                                    maxRMidpoint = midpoint;
                                 }
                             }
                         }
+                        if (maxR - startSymbolInsideProbability > maxQ[cellIndex][baseParent]) {
+                            maxQ[cellIndex][baseParent] = maxR - startSymbolInsideProbability;
+                            maxQLeftChildren[cellIndex][baseParent] = maxRLeftChild;
+                            maxQRightChildren[cellIndex][baseParent] = maxRRightChild;
+                            maxQMidpoints[cellIndex][baseParent] = maxRMidpoint;
+                        }
                     }
-
-                    // Merge current-midpoint r array into the maxQ array
-                    mergeRIntoMaxQ(midpoint, currentMidpointR, maxQ[cellIndex], maxQMidpoints[cellIndex],
-                            maxQLeftChildren[cellIndex], maxQRightChildren[cellIndex], startSymbolInsideProbability);
                 }
 
                 // Compute unary scores - iterate over populated children (matrix columns). Indexed by base parent and
@@ -887,47 +904,6 @@ public class PackedArrayChart extends ParallelArrayChart {
         }
 
         return unaryR;
-    }
-
-    private void mergeRIntoMaxQ(final short midpoint, final float[][][] currentMidpointR, final float[] cellMaxQ,
-            final short[] cellMaxQMidpoints, final short[] cellMaxQLeftChildren, final short[] cellMaxQRightChildren,
-            final float startSymbolInsideProbability) {
-
-        for (short baseParent = 0; baseParent < currentMidpointR.length; baseParent++) {
-
-            final float[][] leftChildR = currentMidpointR[baseParent];
-            if (leftChildR == null) {
-                continue;
-            }
-
-            for (short baseLeftChild = 0; baseLeftChild < leftChildR.length; baseLeftChild++) {
-
-                final float[] rightChildR = leftChildR[baseLeftChild];
-                if (rightChildR == null) {
-                    continue;
-                }
-
-                for (short baseRightChild = 0; baseRightChild < rightChildR.length; baseRightChild++) {
-                    if (rightChildR[baseRightChild] - startSymbolInsideProbability > cellMaxQ[baseParent]) {
-                        cellMaxQ[baseParent] = rightChildR[baseRightChild] - startSymbolInsideProbability;
-                        cellMaxQMidpoints[baseParent] = midpoint;
-                        cellMaxQLeftChildren[baseParent] = baseLeftChild;
-                        cellMaxQRightChildren[baseParent] = baseRightChild;
-                    }
-                }
-            }
-        }
-    }
-
-    private void allocateChildArray(final float[][][] currentMidpointR, final short baseParent,
-            final short baseLeftChild) {
-        if (currentMidpointR[baseParent] == null) {
-            currentMidpointR[baseParent] = new float[maxcVocabulary.size()][];
-        }
-        if (currentMidpointR[baseParent][baseLeftChild] == null) {
-            currentMidpointR[baseParent][baseLeftChild] = new float[maxcVocabulary.size()];
-            Arrays.fill(currentMidpointR[baseParent][baseLeftChild], Float.NEGATIVE_INFINITY);
-        }
     }
 
     private BinaryTree<String> extractMaxQParse(final int start, final int end, final int parent,
