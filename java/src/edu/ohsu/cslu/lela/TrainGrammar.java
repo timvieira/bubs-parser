@@ -168,7 +168,6 @@ public class TrainGrammar extends BaseCommandlineTool {
             //
             BaseLogger.singleton().info(String.format("=== Cycle %d ===", cycle));
             currentGrammar = currentGrammar.split(noiseGenerator);
-            // currentGrammar.randomize(random, noise);
             BaseLogger.singleton().config("Split grammar size: " + grammarSummaryString(currentGrammar));
 
             //
@@ -178,6 +177,7 @@ public class TrainGrammar extends BaseCommandlineTool {
                 final EmIterationResult result = emIteration(currentGrammar, minimumRuleProbability);
                 logEmIteration(result, i);
                 currentGrammar = result.countGrammar;
+                currentGrammar.randomize(noiseGenerator, noise);
             }
             BaseLogger.singleton().config("Learned grammar size: " + grammarSummaryString(currentGrammar));
 
