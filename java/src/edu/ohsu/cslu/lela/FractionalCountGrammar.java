@@ -623,7 +623,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         }
 
         // Split lexical productions in half. Each split production has the same probability as the original production
-        // TODO Is this correct? Or should we add noise here as well?
         for (final short parent : lexicalRuleCounts.keySet()) {
             final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
             final short splitParent0 = (short) (parent << 1);
@@ -633,10 +632,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             for (final int child : childMap.keySet()) {
 
                 final double count = childMap.get(child);
-
                 splitGrammar.incrementLexicalCount(splitParent0, child, count);
-                splitGrammar.incrementLexicalCount(splitParent0, child, count);
-                splitGrammar.incrementLexicalCount(splitParent1, child, count);
                 splitGrammar.incrementLexicalCount(splitParent1, child, count);
             }
         }
@@ -1219,7 +1215,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
          * @return Noise, scaled by the supplied count
          */
         public double noise(final double count);
-        
+
         /**
          * Returns generated 'noise' (generally random, depending on the implementation).
          * 
