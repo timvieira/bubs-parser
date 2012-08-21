@@ -38,8 +38,7 @@ import edu.ohsu.cslu.util.Math;
  * 
  * Implementation notes:
  * 
- * --The target chart need only contain S entries per cell, where S is the largest number of splits of a single element
- * of the unsplit vocabulary V_0.
+ * --The target chart need only contain 2 entries per position in a cell.
  * 
  * --Given known midpoints (child cells) from the constraining chart, we need only consider a single midpoint for each
  * cell.
@@ -47,8 +46,8 @@ import edu.ohsu.cslu.util.Math;
  * --We do need to maintain space for a few unary productions; the first entry in each chart cell is for the top node in
  * the unary chain; any others (if populated) are unary children.
  * 
- * --The grammar intersection need only consider rules whose parent is in the set of known parent NTs. We iterate over
- * the rules for all child pairs, but apply only those rules which match constraining parents.
+ * --The grammar intersection need only consider rules for splits of the constraining parent. We iterate over the rules
+ * for all child pairs, but apply only those rules which match constraining parents.
  * 
  * TODO Try approximate log-sum methods and max-deltas from {@link Math}
  * 
@@ -121,8 +120,6 @@ public class ConstrainedInsideOutsideParser extends
         final int parent1Offset = parent0Offset + 1;
 
         // Beginning of cell + offset for populated unary parents
-        // final int firstPosOffset = chart.offset(cellIndex) + unaryChainLength *
-        // splitVocabulary.maxSplits;
         final int constrainingEntryIndex = constrainingChart.offset(cellIndex) + unaryChainLength;
         chart.midpoints[cellIndex] = end;
 
