@@ -112,6 +112,9 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-dpf", aliases = { "--prune-fraction" }, metaVar = "fraction", usage = "Pruning fraction (of non-terminals) for dev-set parsing")
     private float devsetParsePruneFraction = 0.4f;
 
+    @Option(name = "-ebs", usage = "Run one EM iteration before splitting Markov-0 grammar")
+    private boolean emBeforeSplit;
+
     /** Maximum size of a training or development corpus in characters. Currently 20 MB */
     private final static int MAX_CORPUS_SIZE = 20 * 1024 * 1024;
 
@@ -156,9 +159,15 @@ public class TrainGrammar extends BaseCommandlineTool {
         BaseLogger.singleton().config("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
         FractionalCountGrammar currentGrammar = markov0Grammar;
         trainingCorpusReader.reset();
-
         loadGoldTreesAndConstrainingCharts(trainingCorpusReader, currentGrammar);
         trainingCorpusReader.close();
+
+        if (emBeforeSplit) {
+            // currentGrammar.randomize(noiseGenerator, noise);
+            final EmIterationResult result = emIteration(currentGrammar, minimumRuleProbability);
+            currentGrammar = result.countGrammar;
+            BaseLogger.singleton().config("Post-EM grammar size: " + grammarSummaryString(currentGrammar));
+        }
 
         // Run split-merge training cycles
         for (int cycle = 1; cycle <= splitMergeCycles; cycle++) {
@@ -177,7 +186,7 @@ public class TrainGrammar extends BaseCommandlineTool {
                 final EmIterationResult result = emIteration(currentGrammar, minimumRuleProbability);
                 logEmIteration(result, i);
                 currentGrammar = result.countGrammar;
-                currentGrammar.randomize(noiseGenerator, noise);
+                // currentGrammar.randomize(noiseGenerator, noise);
             }
             BaseLogger.singleton().config("Learned grammar size: " + grammarSummaryString(currentGrammar));
 
@@ -296,7 +305,7 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscGrammar);
+        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, cscGrammar);
 
         final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscGrammar.nonTermSet,
                 cscGrammar.lexSet, cscGrammar.packingFunction);
@@ -396,7 +405,7 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscGrammar);
+        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, cscGrammar);
 
         // Compute log(p_1), log(p_2) for each split pair based on relative frequency counts of each
         final float[] logSplitFraction = countGrammar.logSplitFraction();

@@ -53,12 +53,12 @@ import edu.ohsu.cslu.util.Math;
  * 
  * @author Aaron Dunlop
  */
-public class ConstrainedInsideOutsideParser extends
+public class Constrained2SplitInsideOutsideParser extends
         SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, ConstrainedChart> implements ConstrainedChartParser {
 
     ConstrainingChart constrainingChart;
 
-    public ConstrainedInsideOutsideParser(final ParserDriver opts, final ConstrainedInsideOutsideGrammar grammar) {
+    public Constrained2SplitInsideOutsideParser(final ParserDriver opts, final ConstrainedInsideOutsideGrammar grammar) {
         super(opts, grammar);
     }
 
