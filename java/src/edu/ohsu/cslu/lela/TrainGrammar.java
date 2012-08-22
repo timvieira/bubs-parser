@@ -95,7 +95,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     Binarization binarization = Binarization.LEFT;
 
     @Option(name = "-mrp", metaVar = "probability", usage = "Minimum rule log probability (rules with lower probability are pruned from the grammar)")
-    private float minimumRuleProbability = -140f;
+    private float minimumRuleLogProbability = -140f;
 
     @Option(name = "-noise", metaVar = "noise (0-1)", usage = "Random noise to add to rule probabilities during each split")
     private float noise = 0.01f;
@@ -154,6 +154,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         BaseLogger.singleton().info("Inducing M0 grammar...");
         final StringCountGrammar scg = new StringCountGrammar(trainingCorpusReader, binarization, grammarFormatType);
         final FractionalCountGrammar markov0Grammar = scg.toFractionalCountGrammar();
+        final ConstrainedInsideOutsideGrammar markov0CscGrammar = cscGrammar(markov0Grammar);
         final Int2IntOpenHashMap corpusWordCounts = scg.wordCounts(markov0Grammar.lexicon);
 
         BaseLogger.singleton().config("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
@@ -164,9 +165,32 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         if (emBeforeSplit) {
             // currentGrammar.randomize(noiseGenerator, noise);
-            final EmIterationResult result = emIteration(currentGrammar, minimumRuleProbability);
-            currentGrammar = result.countGrammar;
-            BaseLogger.singleton().config("Post-EM grammar size: " + grammarSummaryString(currentGrammar));
+            final ConstrainedInsideOutsideGrammar cscM0Grammar = cscGrammar(currentGrammar);
+
+            final ParserDriver opts = new ParserDriver();
+            opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
+            final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscM0Grammar);
+            final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscM0Grammar.nonTermSet,
+                    cscM0Grammar.lexSet, cscM0Grammar.packingFunction);
+
+            // Iterate over the training corpus, parsing and counting rule occurrences
+            int i = 0;
+            for (final ConstrainingChart constrainingChart : constrainingCharts) {
+                parser.findBestParse(constrainingChart);
+                parser.countRuleOccurrences(countGrammar);
+                i++;
+            }
+
+            // Prune rules below the minimum probability threshold
+            currentGrammar = countGrammar.clone(Float.NEGATIVE_INFINITY);
+            assert (currentGrammar.binaryRules() == countGrammar.binaryRules());
+            assert (currentGrammar.unaryRules() == countGrammar.unaryRules());
+            assert (currentGrammar.lexicalRules() == countGrammar.lexicalRules());
+
+            // reloadConstrainingCharts(cscM0Grammar, cscGrammar(currentGrammar));
+
+            BaseLogger.singleton()
+                    .config("Pre-split grammar after 1 EM cycle: " + grammarSummaryString(currentGrammar));
         }
 
         // Run split-merge training cycles
@@ -183,7 +207,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             // Train the split grammar with EM
             //
             for (int i = 1; i <= emIterationsPerCycle; i++) {
-                final EmIterationResult result = emIteration(currentGrammar, minimumRuleProbability);
+                final EmIterationResult result = emIteration(currentGrammar, minimumRuleLogProbability);
                 logEmIteration(result, i);
                 currentGrammar = result.countGrammar;
                 // currentGrammar.randomize(noiseGenerator, noise);
@@ -295,10 +319,10 @@ public class TrainGrammar extends BaseCommandlineTool {
      * Execute a single EM iteration
      * 
      * @param currentGrammar
-     * @param minimumRuleLogProbability
+     * @param minimumRuleLogProb
      * @return EM result, including the newly trained {@link ProductionListGrammar}
      */
-    EmIterationResult emIteration(final FractionalCountGrammar currentGrammar, final float minimumRuleLogProbability) {
+    EmIterationResult emIteration(final FractionalCountGrammar currentGrammar, final float minimumRuleLogProb) {
 
         final long t0 = System.currentTimeMillis();
         final ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(currentGrammar);
@@ -322,7 +346,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         final long t2 = System.currentTimeMillis();
 
         // Prune rules below the minimum probability threshold
-        final FractionalCountGrammar prunedGrammar = countGrammar.clone(minimumRuleLogProbability);
+        final FractionalCountGrammar prunedGrammar = countGrammar.clone(minimumRuleLogProb);
         return new EmIterationResult(prunedGrammar, corpusLikelihood, (int) (t2 - t1),
                 (int) (System.currentTimeMillis() - t2 + t1 - t0));
     }

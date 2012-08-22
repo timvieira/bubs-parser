@@ -73,7 +73,7 @@ public class ConstrainingChart extends PackedArrayChart {
         Arrays.fill(siblingCellIndices, (short) -1);
 
         this.maxUnaryChainLength = goldTree.maxUnaryChainLength() + 1;
-        this.beamWidth = this.lexicalRowBeamWidth = maxUnaryChainLength;
+        this.beamWidth = this.lexicalRowBeamWidth = 1;
         this.unaryChainLength = new byte[size * (size + 1) / 2];
         final IntArrayList tokenList = new IntArrayList();
 
@@ -158,10 +158,9 @@ public class ConstrainingChart extends PackedArrayChart {
             final SparseMatrixGrammar sparseMatrixGrammar) {
 
         super(constrainingChart.size(), chartArraySize, sparseMatrixGrammar);
-        calculateCellOffsets();
-
-        this.beamWidth = constrainingChart.beamWidth;
+        this.beamWidth = 1;
         this.unaryChainLength = new byte[constrainingChart.unaryChainLength.length];
+        calculateCellOffsets();
     }
 
     /**
@@ -199,7 +198,7 @@ public class ConstrainingChart extends PackedArrayChart {
         }
 
         this.unaryChainLength = constrainedChart.unaryChainLength;
-        this.beamWidth = this.lexicalRowBeamWidth = constrainedChart.maxUnaryChainLength;
+        this.beamWidth = this.lexicalRowBeamWidth = 1;
         this.maxUnaryChainLength = constrainedChart.maxUnaryChainLength;
         this.openCells = constrainedChart.openCells;
         this.parentCellIndices = constrainedChart.parentCellIndices;
@@ -340,7 +339,7 @@ public class ConstrainingChart extends PackedArrayChart {
         }
 
         this.unaryChainLength = constrainedChart.unaryChainLength;
-        this.beamWidth = this.lexicalRowBeamWidth = constrainedChart.maxUnaryChainLength;
+        this.beamWidth = this.lexicalRowBeamWidth = 1;
         this.maxUnaryChainLength = constrainedChart.maxUnaryChainLength;
         this.openCells = constrainedChart.openCells;
         this.parentCellIndices = constrainedChart.parentCellIndices;
@@ -401,12 +400,33 @@ public class ConstrainingChart extends PackedArrayChart {
         }
     }
 
+    /**
+     * Returns the offset of the specified cell in the parallel chart arrays (note that this computation must agree with
+     * that of {@link #cellIndex(int, int)}
+     * 
+     * @param start
+     * @param end
+     * @return the offset of the specified cell in the parallel chart arrays
+     */
+    @Override
+    protected final int cellOffset(final int start, final int end) {
+
+        if (start < 0 || start > size) {
+            throw new IllegalArgumentException("Illegal start: " + start);
+        }
+
+        if (end <= start || end > size) {
+            throw new IllegalArgumentException("Illegal end: " + end);
+        }
+
+        return cellIndex(start, end) * beamWidth * maxUnaryChainLength;
+    }
+
     private void calculateCellOffsets() {
         // Calculate all cell offsets
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end <= size; end++) {
-                final int cellIndex = cellIndex(start, end);
-                cellOffsets[cellIndex] = cellOffset(start, end);
+        for (short start = 0; start < size; start++) {
+            for (short end = (short) (start + 1); end <= size; end++) {
+                cellOffsets[cellIndex(start, end)] = cellOffset(start, end);
             }
         }
     }
@@ -415,7 +435,7 @@ public class ConstrainingChart extends PackedArrayChart {
     public float getInside(final int start, final int end, final int nonTerminal) {
 
         final int offset = cellOffsets[cellIndex(start, end)];
-        for (int i = offset; i < offset + beamWidth; i++) {
+        for (int i = offset; i < offset + (beamWidth * maxUnaryChainLength); i++) {
             if (nonTerminalIndices[i] == nonTerminal) {
                 return 0;
             }
@@ -544,7 +564,7 @@ public class ConstrainingChart extends PackedArrayChart {
         final PackedArrayChartCell cell = new PackedArrayChartCell(start, end);
         cell.tmpCell = new TemporaryChartCell(grammar, false);
         final int cellIndex = cellIndex(start, end);
-        for (int i = 0; i < beamWidth; i++) {
+        for (int i = 0; i < beamWidth * maxUnaryChainLength; i++) {
             final int entryOffset = offset(cellIndex) + i;
             final short nt = nonTerminalIndices[entryOffset];
             if (nt >= 0) {
