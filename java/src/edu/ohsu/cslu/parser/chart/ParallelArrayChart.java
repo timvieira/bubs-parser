@@ -142,7 +142,7 @@ public abstract class ParallelArrayChart extends Chart {
      * @param end
      * @return the offset of the specified cell in the parallel chart arrays
      */
-    protected final int cellOffset(final int start, final int end) {
+    protected int cellOffset(final int start, final int end) {
 
         if (start < 0 || start > size) {
             throw new IllegalArgumentException("Illegal start: " + start);
