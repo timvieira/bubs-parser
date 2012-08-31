@@ -286,9 +286,20 @@ public final class StringCountGrammar implements CountGrammar {
      * sorted by binary parent count.
      */
     public FractionalCountGrammar toFractionalCountGrammar() {
+        return toFractionalCountGrammar(0, 0);
+    }
+
+    /**
+     * Constructs a {@link FractionalCountGrammar} based on this {@link StringCountGrammar}, inducing a vocabulary
+     * sorted by binary parent count.
+     * 
+     * @param rareWordThreshold
+     */
+    public FractionalCountGrammar toFractionalCountGrammar(final int uncommonWordThreshold, final int rareWordThreshold) {
         final SplitVocabulary vocabulary = induceVocabulary(binaryParentCountComparator());
         final SymbolSet<String> lexicon = induceLexicon();
-        final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null);
+        final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null, wordCounts(lexicon),
+                uncommonWordThreshold, rareWordThreshold);
 
         for (final String parent : binaryRuleCounts.keySet()) {
             final HashMap<String, Object2FloatMap<String>> leftChildMap = binaryRuleCounts.get(parent);

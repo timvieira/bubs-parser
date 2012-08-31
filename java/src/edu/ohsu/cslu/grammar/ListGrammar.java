@@ -784,7 +784,8 @@ public class ListGrammar extends Grammar {
 
     public Grammar toUnsplitGrammar() {
         final Vocabulary baseVocabulary = nonTermSet.baseVocabulary();
-        final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(baseVocabulary, lexSet, null);
+        final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(baseVocabulary, lexSet, null, null, 0,
+                0);
 
         for (final Production p : binaryProductions) {
             final short unsplitParent = nonTermSet.getBaseIndex((short) p.parent);
