@@ -20,6 +20,7 @@ package edu.ohsu.cslu.lela;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
@@ -39,7 +40,6 @@ import java.util.regex.Pattern;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Language;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
@@ -61,16 +61,41 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     /** Parent -> child -> count */
     private final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> unaryRuleCounts = new Short2ObjectOpenHashMap<Short2DoubleOpenHashMap>();
 
-    /** Parent -> child -> count */
+    /** Parent -> child -> count. Tallies all lexical rule observations */
     private final Short2ObjectOpenHashMap<Int2DoubleOpenHashMap> lexicalRuleCounts = new Short2ObjectOpenHashMap<Int2DoubleOpenHashMap>();
+
+    /** Parent -> count. Tallies aggregate counts for parents observed in conjunction with rare words. */
+    private final Short2DoubleOpenHashMap rareWordParentCounts = new Short2DoubleOpenHashMap();
 
     /** Parent -> count */
     private final Short2DoubleOpenHashMap parentCounts = new Short2DoubleOpenHashMap();
 
     private final PackingFunction packingFunction;
 
+    /**
+     * Count threshold below which a word will be considered 'uncommon'. Lexical rules for uncommon words will be
+     * smoothed with accumulated rare-word counts.
+     */
+    private final int uncommonWordThreshold;
+
+    /**
+     * Count threshold below which a word will be considered 'rare'. Tag -> rare word counts will be accumulated, for
+     * smoothing with rare word and UNK-class counts.
+     */
+    private final int rareWordThreshold;
+
+    /** Word-counts from the training corpus */
+    private final Int2IntOpenHashMap corpusWordCounts;
+
+    /**
+     * Total occurrences of words considered 'rare' (per {@link #rareWordThreshold}) in the training corpus. This count
+     * is treated as a constant, but it should be the same as the sum of all entries in {@link #rareWordParentCounts}
+     */
+    private final int totalRareWords;
+
     public FractionalCountGrammar(final Vocabulary vocabulary, final SymbolSet<String> lexicon,
-            final PackingFunction packingFunction) {
+            final PackingFunction packingFunction, final Int2IntOpenHashMap corpusWordCounts,
+            final int uncommonWordThreshold, final int rareWordThreshold) {
 
         this.vocabulary = vocabulary;
         this.lexicon = lexicon;
@@ -78,10 +103,23 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
         this.packingFunction = packingFunction;
         this.parentCounts.defaultReturnValue(0);
-    }
+        this.corpusWordCounts = corpusWordCounts;
+        this.uncommonWordThreshold = uncommonWordThreshold;
+        this.rareWordThreshold = rareWordThreshold;
 
-    public FractionalCountGrammar(final InsideOutsideCscSparseMatrixGrammar cscGrammar) {
-        this(cscGrammar.nonTermSet, cscGrammar.lexSet, cscGrammar.packingFunction);
+        if (corpusWordCounts != null) {
+            int tmp = 0;
+
+            for (final int i : corpusWordCounts.keySet()) {
+                final int count = corpusWordCounts.get(i);
+                if (count <= rareWordThreshold) {
+                    tmp += count;
+                }
+            }
+            this.totalRareWords = tmp;
+        } else {
+            totalRareWords = 0;
+        }
     }
 
     public void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
@@ -105,7 +143,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         }
 
         rightChildMap.put(rightChild, rightChildMap.get(rightChild) + increment);
-        parentCounts.put(parent, parentCounts.get(parent) + increment);
+        parentCounts.add(parent, increment);
     }
 
     public void incrementBinaryCount(final short parent, final int childPair, final double increment) {
@@ -142,7 +180,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         }
 
         childMap.put(child, childMap.get(child) + increment);
-        parentCounts.put(parent, parentCounts.get(parent) + increment);
+        parentCounts.add(parent, increment);
     }
 
     public void incrementUnaryLogCount(final short parent, final short child, final float logIncrement) {
@@ -170,7 +208,11 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         }
 
         childMap.put(child, childMap.get(child) + increment);
-        parentCounts.put(parent, parentCounts.get(parent) + increment);
+        parentCounts.add(parent, increment);
+
+        if (corpusWordCounts != null && corpusWordCounts.get(child) < rareWordThreshold) {
+            rareWordParentCounts.add(parent, increment);
+        }
     }
 
     protected void incrementLexicalLogCount(final short parent, final int child, final float logIncrement) {
@@ -197,34 +239,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
         return prunedGrammar.normalizeProbabilities();
     }
-
-    // /**
-    // * Returns a {@link ProductionListGrammar} populated using the counts from this grammar and UNK-class lexical
-    // rules.
-    // *
-    // * @param minimumRuleLogProbability Minimum threshold rule probability. Rules with lower probability will be
-    // pruned.
-    // * @param unkClassMap Maps word entries from the lexicon to their UNK-class entries.
-    // * @param openClassPreterminalThreshold Minimum number of terminal children a preterminal must have to be
-    // considered
-    // * open-class. UNK-class rules will be created for open-class preterminals.
-    // * @param corpusWordCounts Word-counts from the training corpus
-    // * @param rareWordThreshold Rules for rare words (those occurring less often than this threshold) will be smoothed
-    // * with their UNK-class probabilities.
-    // * @return {@link ProductionListGrammar} populated using the counts from this grammar and UNK-class lexical rules
-    // */
-    // public ProductionListGrammar toProductionListGrammar(final float minimumRuleLogProbability,
-    // final Int2IntOpenHashMap unkClassMap, final int openClassPreterminalThreshold,
-    // final Int2IntOpenHashMap corpusWordCounts, final int rareWordThreshold) {
-    //
-    // // Construct a pruned (but not normalized) grammar from the accumulated fractional rule counts
-    // final ProductionListGrammar prunedGrammar = new ProductionListGrammar(vocabulary, lexicon,
-    // binaryProductions(minimumRuleLogProbability), unaryProductions(minimumRuleLogProbability),
-    // lexicalProductions(minimumRuleLogProbability, unkClassMap, openClassPreterminalThreshold,
-    // corpusWordCounts, rareWordThreshold));
-    //
-    // return prunedGrammar.normalizeProbabilities();
-    // }
 
     public ArrayList<Production> binaryProductions(final float minimumRuleLogProbability) {
 
@@ -330,20 +344,83 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     }
 
     /**
+     * Adds counts for unobserved tag/word combinations, for words considered 'uncommon' (those occurring less than
+     * {@link #uncommonWordThreshold} times in the training corpus).
+     * 
+     * @param unkClassMap Maps word entries from the lexicon to their UNK-class entries.
+     * @param openClassPreterminalThreshold Minimum number of terminal children a preterminal must have to be considered
+     *            open-class. UNK-class rules will be created for open-class preterminals.
+     * @return A copy of this grammar including UNK-class pseudo-counts based on observed counts of rare words.
+     */
+    public FractionalCountGrammar smoothUncommonWordCounts(final float s_1) {
+
+        final FractionalCountGrammar smoothedGrammar = clone();
+
+        // Maps word -> set of observed base tags
+        final Int2ObjectOpenHashMap<ShortOpenHashSet> wordToBaseTagMap = new Int2ObjectOpenHashMap<ShortOpenHashSet>();
+        for (short parent = 0; parent < vocabulary.size(); parent++) {
+
+            final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
+            if (childMap == null) {
+                continue;
+            }
+            final short baseParent = vocabulary.getBaseIndex(parent);
+
+            for (int word = 0; word < lexicon.size(); word++) {
+                if (childMap.containsKey(word)) {
+                    ShortOpenHashSet set = wordToBaseTagMap.get(word);
+                    if (set == null) {
+                        set = new ShortOpenHashSet();
+                        wordToBaseTagMap.put(word, set);
+                    }
+                    set.add(baseParent);
+                }
+            }
+        }
+
+        // Iterate over observed words
+        for (int word = 0; word < lexicon.size(); word++) {
+
+            if (corpusWordCounts.get(word) > uncommonWordThreshold) {
+                // Don't smooth common words for the moment
+
+            } else {
+                //
+                // Smooth uncommon words using parameter s_1
+                //
+
+                // Iterate over parent tags
+                for (short parent = 0; parent < vocabulary.size(); parent++) {
+                    final short baseParent = vocabulary.getBaseIndex(parent);
+
+                    // Skip if the word was never observed with base (unsplit) parent
+                    final ShortOpenHashSet observedBaseParents = wordToBaseTagMap.get(word);
+                    // The lexicon contains UNK-classes, but wordToBaseTagMap doesn't, so we have to check for null too
+                    if (observedBaseParents == null || !observedBaseParents.contains(baseParent)) {
+                        continue;
+                    }
+
+                    // Add pseudo-counts to the word/tag pair : s_1 * c(T,r) / c(r)
+                    smoothedGrammar.incrementLexicalCount(parent, word, s_1 * rareWordParentCounts.get(parent)
+                            / totalRareWords);
+                }
+            }
+        }
+
+        return smoothedGrammar;
+    }
+
+    /**
      * Returns a copy of this grammar including UNK-class pseudo-counts based on observed counts of rare words. Counts
      * for rare words are smoothed using their UNK-class counts.
      * 
      * @param unkClassMap Maps word entries from the lexicon to their UNK-class entries.
      * @param openClassPreterminalThreshold Minimum number of terminal children a preterminal must have to be considered
      *            open-class. UNK-class rules will be created for open-class preterminals.
-     * @param corpusWordCounts Word-counts from the training corpus
-     * @param rareWordThreshold Rules for rare words (those occurring less often than this threshold) will be smoothed
-     *            with their UNK-class probabilities.
      * @return A copy of this grammar including UNK-class pseudo-counts based on observed counts of rare words.
      */
     public FractionalCountGrammar addUnkCounts(final Int2IntOpenHashMap unkClassMap,
-            final int openClassPreterminalThreshold, final Int2IntOpenHashMap corpusWordCounts,
-            final int rareWordThreshold) {
+            final int openClassPreterminalThreshold) {
 
         final FractionalCountGrammar grammarWithUnks = clone();
 
@@ -540,7 +617,8 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             splitVocabulary.addSymbol(substates[1]);
         }
 
-        final FractionalCountGrammar splitGrammar = new FractionalCountGrammar(splitVocabulary, lexicon, null);
+        final FractionalCountGrammar splitGrammar = new FractionalCountGrammar(splitVocabulary, lexicon, null,
+                corpusWordCounts, uncommonWordThreshold, rareWordThreshold);
 
         //
         // Iterate through each rule, creating split rules in the new grammar
@@ -747,7 +825,8 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         //
         // Create a new grammar, populated with all binary, unary, and lexical rule counts from this grammar
         //
-        final FractionalCountGrammar mergedGrammar = new FractionalCountGrammar(mergedVocabulary, lexicon, null);
+        final FractionalCountGrammar mergedGrammar = new FractionalCountGrammar(mergedVocabulary, lexicon, null,
+                corpusWordCounts, uncommonWordThreshold, rareWordThreshold);
 
         for (final short parent : binaryRuleCounts.keySet()) {
             final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
@@ -804,7 +883,8 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         //
         // Create a new grammar, populated with all binary, unary, and lexical rule counts from this grammar
         //
-        final FractionalCountGrammar mergedGrammar = new FractionalCountGrammar(vocabulary, lexicon, null);
+        final FractionalCountGrammar mergedGrammar = new FractionalCountGrammar(vocabulary, lexicon, null,
+                corpusWordCounts, uncommonWordThreshold, rareWordThreshold);
 
         for (final short parent : binaryRuleCounts.keySet()) {
             final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
@@ -937,7 +1017,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     void verifyVsUnsplitGrammar(final ProductionListGrammar unsplitPlg) {
 
         final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(unsplitPlg.vocabulary,
-                unsplitPlg.lexicon, null);
+                unsplitPlg.lexicon, null, corpusWordCounts, uncommonWordThreshold, rareWordThreshold);
 
         for (final short parent : binaryRuleCounts.keySet()) {
             final short unsplitParent = vocabulary.getBaseIndex(parent);
@@ -1022,7 +1102,8 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     }
 
     public FractionalCountGrammar clone(final float minimumRuleLogProbability) {
-        final FractionalCountGrammar clone = new FractionalCountGrammar(vocabulary, lexicon, packingFunction);
+        final FractionalCountGrammar clone = new FractionalCountGrammar(vocabulary, lexicon, packingFunction,
+                corpusWordCounts, uncommonWordThreshold, rareWordThreshold);
 
         for (short parent = 0; parent < vocabulary.size(); parent++) {
             final double threshold = minimumRuleLogProbability > Float.NEGATIVE_INFINITY ? parentCounts.get(parent)

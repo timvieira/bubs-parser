@@ -149,11 +149,10 @@ public class InduceCountGrammar extends BaseCommandlineTool {
         }
 
         final FractionalCountGrammar fcg = scg.toFractionalCountGrammar();
-        final Int2IntOpenHashMap corpusWordCounts = scg.wordCounts(fcg.lexicon);
 
         // Add UNK productions
         final FractionalCountGrammar grammarWithUnks = fcg.addUnkCounts(unkClassMap(fcg.lexicon),
-                openClassPreterminalThreshold, corpusWordCounts, rareWordThreshold);
+                openClassPreterminalThreshold);
 
         grammarWithUnks.write(new PrintWriter(System.out), false, language, grammarFormatType, rareWordThreshold);
     }

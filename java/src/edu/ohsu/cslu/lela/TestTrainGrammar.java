@@ -181,10 +181,12 @@ public class TestTrainGrammar {
 
         trainingCorpusReader.mark(20 * 1024 * 1024);
 
-        final FractionalCountGrammar g0 = new StringCountGrammar(trainingCorpusReader, Binarization.LEFT,
-                GrammarFormatType.Berkeley).toFractionalCountGrammar();
+        final StringCountGrammar scg = new StringCountGrammar(trainingCorpusReader, Binarization.LEFT,
+                GrammarFormatType.Berkeley);
+        final FractionalCountGrammar g0 = scg.toFractionalCountGrammar();
         trainingCorpusReader.reset();
 
+        tg.corpusWordCounts = scg.wordCounts(g0.lexicon);
         tg.loadGoldTreesAndConstrainingCharts(trainingCorpusReader, g0);
 
         // Parse the training 'corpus' with induced grammar and report F-score
@@ -226,11 +228,12 @@ public class TestTrainGrammar {
                 20 * 1024 * 1024);
         br.mark(20 * 1024 * 1024);
 
-        final FractionalCountGrammar g0 = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley)
-                .toFractionalCountGrammar();
+        final StringCountGrammar scg = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley);
+        final FractionalCountGrammar g0 = scg.toFractionalCountGrammar();
         br.reset();
 
         tg.loadGoldTreesAndConstrainingCharts(br, g0);
+        tg.corpusWordCounts = scg.wordCounts(g0.lexicon);
 
         // Parse the training 'corpus' with induced grammar and report F-score
         final long t0 = System.currentTimeMillis();
@@ -283,11 +286,12 @@ public class TestTrainGrammar {
                 20 * 1024 * 1024);
         br.mark(20 * 1024 * 1024);
 
-        final FractionalCountGrammar g0 = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley)
-                .toFractionalCountGrammar();
+        final StringCountGrammar scg = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley);
+        final FractionalCountGrammar g0 = scg.toFractionalCountGrammar();
         br.reset();
 
         tg.loadGoldTreesAndConstrainingCharts(br, g0);
+        tg.corpusWordCounts = scg.wordCounts(g0.lexicon);
 
         // Parse the training 'corpus' with induced grammar and report F-score
         final long t0 = System.currentTimeMillis();

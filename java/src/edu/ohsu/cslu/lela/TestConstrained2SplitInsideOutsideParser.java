@@ -501,7 +501,8 @@ public class TestConstrained2SplitInsideOutsideParser {
         // Parse with an equal-split grammar, count (fractional) rule occurrences, and convert those counts
         // into a grammar
         parseWithGrammar1();
-        final FractionalCountGrammar countGrammar = new FractionalCountGrammar(parser1.grammar);
+        final FractionalCountGrammar countGrammar = new FractionalCountGrammar(parser1.grammar.nonTermSet,
+                parser1.grammar.lexSet, parser1.grammar.packingFunction, null, 0, 0);
         parser1.countRuleOccurrences(countGrammar);
         final ProductionListGrammar plg = countGrammar.toProductionListGrammar(Float.NEGATIVE_INFINITY);
 

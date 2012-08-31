@@ -64,26 +64,35 @@ import edu.ohsu.cslu.util.Strings;
  */
 public class TrainGrammar extends BaseCommandlineTool {
 
-    @Option(name = "-c", aliases = { "--sm-cycles" }, metaVar = "cycles", usage = "Split-merge cycles")
-    private int splitMergeCycles = 6;
-
-    @Option(name = "-i", aliases = { "--em-iterations" }, metaVar = "count", usage = "EM iterations per split-merge cycle")
-    private int emIterationsPerCycle = 50;
-
-    @Option(name = "-ami", aliases = { "--after-merge" }, metaVar = "count", usage = "EM iterations after merge")
-    private int emIterationsAfterMerge = 20;
-
     @Option(name = "-gd", aliases = { "--grammar-directory" }, required = true, metaVar = "directory", usage = "Output grammar directory. Each merged grammar will be output in .gz format")
     private File outputGrammarDirectory;
 
     @Option(name = "-gp", aliases = { "--grammar-prefix" }, metaVar = "prefix", usage = "Output grammar file prefix (e.g. 'eng.' produces 'eng.sm1.gr.gz', 'eng.sm2.gr.gz', etc.")
     private String outputGrammarPrefix = "";
 
+    @Option(name = "-uncommon", metaVar = "threshold", usage = "Smooth production probabilities for uncommon words")
+    private int uncommonWordThreshold = 20;
+
+    @Option(name = "-rare", metaVar = "threshold", usage = "Count tag -> word probabilities for really rare words, for smoothing into uncommon words and UNK-classes")
+    private int rareWordThreshold = 20;
+
+    @Option(name = "-s1", metaVar = "lambda", usage = "Rare word smoothing parameter")
+    private float s_1 = .1f;
+
+    @Option(name = "-c", aliases = { "--sm-cycles" }, metaVar = "cycles", usage = "Split-merge cycles")
+    private int splitMergeCycles = 6;
+
+    @Option(name = "-i", aliases = { "--em-iterations" }, metaVar = "count", usage = "EM iterations per split-merge cycle")
+    private int emIterationsPerCycle = 50;
+
+    @Option(name = "-mf", aliases = { "--merge-fraction" }, metaVar = "fraction", usage = "Fraction of new splits to re-merge in each split-merge cycle")
+    float mergeFraction = 0.5f;
+
+    @Option(name = "-ami", aliases = { "--after-merge" }, metaVar = "count", usage = "EM iterations after merge")
+    private int emIterationsAfterMerge = 20;
+
     @Option(name = "-gf", aliases = { "--grammar-format" }, metaVar = "format", usage = "Grammar Format; required if binarization is specified")
     GrammarFormatType grammarFormatType = GrammarFormatType.Berkeley;
-
-    @Option(name = "-unk", aliases = { "-rw" }, metaVar = "threshold", usage = "Smooth production probabilities with unknown-word probabilities for rare words")
-    private int rareWordThreshold = 20;
 
     @Option(name = "-ot", aliases = { "--open-class-threshold" }, metaVar = "threshold", usage = "Learn unknown-word probabilities for tags producing at least n words")
     private int openClassPreterminalThreshold = 50;
@@ -103,9 +112,6 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-rs", aliases = { "--random-seed" }, metaVar = "seed", usage = "Random seed (default = System.currentTimeMillis())")
     private long randomSeed;
 
-    @Option(name = "-mf", aliases = { "--merge-fraction" }, metaVar = "fraction", usage = "Fraction of new splits to re-merge in each split-merge cycle")
-    float mergeFraction = 0.5f;
-
     @Option(name = "-ds", aliases = { "--dev-set" }, metaVar = "file", usage = "Dev-set trees. If specified, parse accuracy will be reported after each split-merge cycle")
     private File developmentSet;
 
@@ -120,6 +126,9 @@ public class TrainGrammar extends BaseCommandlineTool {
 
     final ArrayList<NaryTree<String>> goldTrees = new ArrayList<NaryTree<String>>();
     final ArrayList<ConstrainingChart> constrainingCharts = new ArrayList<ConstrainingChart>();
+    
+    /** Total counts of all words observed in the training corpus. Used for lexicon smoothing */
+    Int2IntOpenHashMap corpusWordCounts;
 
     NoiseGenerator noiseGenerator;
 
@@ -153,9 +162,10 @@ public class TrainGrammar extends BaseCommandlineTool {
         // Induce M0 grammar from training corpus
         BaseLogger.singleton().info("Inducing M0 grammar...");
         final StringCountGrammar scg = new StringCountGrammar(trainingCorpusReader, binarization, grammarFormatType);
-        final FractionalCountGrammar markov0Grammar = scg.toFractionalCountGrammar();
+        final FractionalCountGrammar markov0Grammar = scg.toFractionalCountGrammar(uncommonWordThreshold,
+                rareWordThreshold);
         final ConstrainedInsideOutsideGrammar markov0CscGrammar = cscGrammar(markov0Grammar);
-        final Int2IntOpenHashMap corpusWordCounts = scg.wordCounts(markov0Grammar.lexicon);
+        corpusWordCounts = scg.wordCounts(markov0Grammar.lexicon);
 
         BaseLogger.singleton().config("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
         FractionalCountGrammar currentGrammar = markov0Grammar;
@@ -171,7 +181,8 @@ public class TrainGrammar extends BaseCommandlineTool {
             opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
             final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscM0Grammar);
             final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscM0Grammar.nonTermSet,
-                    cscM0Grammar.lexSet, cscM0Grammar.packingFunction);
+                    cscM0Grammar.lexSet, cscM0Grammar.packingFunction, corpusWordCounts, uncommonWordThreshold,
+                    rareWordThreshold);
 
             // Iterate over the training corpus, parsing and counting rule occurrences
             int i = 0;
@@ -240,8 +251,7 @@ public class TrainGrammar extends BaseCommandlineTool {
 
             // Add UNK productions
             final FractionalCountGrammar grammarWithUnks = currentGrammar.addUnkCounts(
-                    unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold, corpusWordCounts,
-                    rareWordThreshold);
+                    unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold);
 
             //
             // TODO Smooth
@@ -332,7 +342,8 @@ public class TrainGrammar extends BaseCommandlineTool {
         final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, cscGrammar);
 
         final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscGrammar.nonTermSet,
-                cscGrammar.lexSet, cscGrammar.packingFunction);
+                cscGrammar.lexSet, cscGrammar.packingFunction, corpusWordCounts, uncommonWordThreshold,
+                rareWordThreshold);
 
         final long t1 = System.currentTimeMillis();
 
@@ -345,8 +356,11 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
         final long t2 = System.currentTimeMillis();
 
+        // Smooth uncommon-word counts
+        final FractionalCountGrammar smoothedGrammar = countGrammar.smoothUncommonWordCounts(s_1);
+
         // Prune rules below the minimum probability threshold
-        final FractionalCountGrammar prunedGrammar = countGrammar.clone(minimumRuleLogProb);
+        final FractionalCountGrammar prunedGrammar = smoothedGrammar.clone(minimumRuleLogProb);
         return new EmIterationResult(prunedGrammar, corpusLikelihood, (int) (t2 - t1),
                 (int) (System.currentTimeMillis() - t2 + t1 - t0));
     }
