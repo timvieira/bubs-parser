@@ -21,6 +21,7 @@ package edu.ohsu.cslu.lela;
 import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 import edu.ohsu.cslu.grammar.GrammarFormatType;
@@ -51,18 +52,20 @@ public class SplitVocabulary extends Vocabulary {
      */
     final ShortOpenHashSet mergedIndices;
 
+    /** Split indices for each member of the vocabulary. e.g., 0 for ROOT_0, 5 for NP_5. */
+    final byte[] splitIndices;
+
+    /** The number of splits of each base (Markov-0) non-terminal. e.g. 1 (usually) for ',', many for NP */
+    final byte[] ntSplitCounts;
+
     public SplitVocabulary(final Vocabulary parentVocabulary) {
         super(GrammarFormatType.Berkeley);
         this.parentVocabulary = parentVocabulary;
         this.parent2IndexMap = null;
         this.mergedIndices = null;
-    }
 
-    public SplitVocabulary(final String[] symbols) {
-        super(symbols, GrammarFormatType.Berkeley);
-        this.parentVocabulary = null;
-        this.parent2IndexMap = null;
-        this.mergedIndices = null;
+        this.splitIndices = null;
+        this.ntSplitCounts = null;
     }
 
     public SplitVocabulary(final Collection<String> symbols, final Vocabulary parentVocabulary,
@@ -71,25 +74,36 @@ public class SplitVocabulary extends Vocabulary {
         this.parentVocabulary = parentVocabulary;
         this.parent2IndexMap = parent2IndexMap;
         this.mergedIndices = mergedIndices;
-    }
 
-    public SplitVocabulary(final Collection<String> symbols) {
-        this(symbols, null, null, null);
+        this.splitIndices = null;
+        this.ntSplitCounts = null;
     }
 
     /**
-     * Returns the index (in this vocabulary) of the first non-terminal matching the specified index in the parent
-     * vocabulary. If this vocabulary was created by splitting a parent vocabulary, the first matching split is
-     * returned. If it was created by merging, then the target of the merge is returned.
+     * Creates an unsplit (Markov-0) vocabulary
      * 
-     * TODO Currently unused. Delete?
-     * 
-     * @param parentVocabularyIndex
-     * @return The index (in this vocabulary) of the first non-terminal matching the specified index in the parent
-     *         vocabulary
+     * @param symbols
      */
-    public short firstSplitNonterminalIndex(final short parentVocabularyIndex) {
-        return (short) (parent2IndexMap != null ? (parent2IndexMap.get(parentVocabularyIndex) << 1)
-                : (parentVocabularyIndex << 1));
+    public SplitVocabulary(final Collection<String> symbols) {
+        super(symbols, GrammarFormatType.Berkeley);
+
+        this.parentVocabulary = null;
+        this.parent2IndexMap = null;
+        this.mergedIndices = null;
+
+        this.splitIndices = new byte[size()];
+        Arrays.fill(splitIndices, (byte) 0);
+        this.ntSplitCounts = new byte[size()];
+        Arrays.fill(splitIndices, (byte) 1);
+    }
+
+    /** For unit testing */
+    public SplitVocabulary(final String[] symbols) {
+        super(symbols, GrammarFormatType.Berkeley);
+        this.parentVocabulary = null;
+        this.parent2IndexMap = null;
+        this.mergedIndices = null;
+        this.splitIndices = null;
+        this.ntSplitCounts = null;
     }
 }

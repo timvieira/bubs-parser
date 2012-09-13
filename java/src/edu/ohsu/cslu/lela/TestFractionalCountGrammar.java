@@ -112,18 +112,17 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
     public void testFractionalCounts() {
         final FractionalCountGrammar fcg = grammar();
 
-        final ProductionListGrammar plg = fcg.toProductionListGrammar(Float.NEGATIVE_INFINITY);
-        JUnit.assertLogFractionEquals(0, plg.unaryLogProbability("top", "a"), 0.01f);
+        JUnit.assertLogFractionEquals(0, fcg.unaryLogProbability("top", "a"), 0.01f);
 
-        JUnit.assertLogFractionEquals(Math.log(5f / 12), plg.binaryLogProbability("a", "a", "b"), 0.01f);
-        JUnit.assertLogFractionEquals(Math.log(3f / 12), plg.binaryLogProbability("a", "a", "a"), 0.01f);
-        JUnit.assertLogFractionEquals(Math.log(3f / 12), plg.lexicalLogProbability("a", "c"), 0.01f);
-        JUnit.assertLogFractionEquals(Math.log(1f / 12), plg.lexicalLogProbability("a", "d"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(5f / 12), fcg.binaryLogProbability("a", "a", "b"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(3f / 12), fcg.binaryLogProbability("a", "a", "a"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(3f / 12), fcg.lexicalLogProbability("a", "c"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(1f / 12), fcg.lexicalLogProbability("a", "d"), 0.01f);
 
-        JUnit.assertLogFractionEquals(Math.log(7f / 16), plg.binaryLogProbability("b", "b", "a"), 0.01f);
-        JUnit.assertLogFractionEquals(Math.log(3f / 16), plg.unaryLogProbability("b", "b"), 0.01f);
-        JUnit.assertLogFractionEquals(Math.log(5f / 16), plg.lexicalLogProbability("b", "c"), 0.01f);
-        JUnit.assertLogFractionEquals(Math.log(1f / 16), plg.lexicalLogProbability("b", "d"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(7f / 16), fcg.binaryLogProbability("b", "b", "a"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(3f / 16), fcg.unaryLogProbability("b", "b"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(5f / 16), fcg.lexicalLogProbability("b", "c"), 0.01f);
+        JUnit.assertLogFractionEquals(Math.log(1f / 16), fcg.lexicalLogProbability("b", "d"), 0.01f);
     }
 
     /**
