@@ -504,29 +504,28 @@ public class TestConstrained2SplitInsideOutsideParser {
         final FractionalCountGrammar countGrammar = new FractionalCountGrammar(parser1.grammar.nonTermSet,
                 parser1.grammar.lexSet, parser1.grammar.packingFunction, null, 0, 0);
         parser1.countRuleOccurrences(countGrammar);
-        final ProductionListGrammar plg = countGrammar.toProductionListGrammar(Float.NEGATIVE_INFINITY);
 
         // Verify that we find the same probabilities in the original split grammar
-        assertLogFractionEquals(Math.log(1f / 2), plg.unaryLogProbability("top", "a_0"), .01f);
-        assertLogFractionEquals(Math.log(1f / 2), plg.unaryLogProbability("top", "a_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 2), countGrammar.unaryLogProbability("top", "a_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 2), countGrammar.unaryLogProbability("top", "a_1"), .01f);
 
-        assertLogFractionEquals(Math.log(2f / 3), plg.lexicalLogProbability("c_0", "e"), 0.01f);
-        assertLogFractionEquals(Math.log(1f / 3), plg.lexicalLogProbability("c_1", "f"), 0.01f);
+        assertLogFractionEquals(Math.log(2f / 3), countGrammar.lexicalLogProbability("c_0", "e"), 0.01f);
+        assertLogFractionEquals(Math.log(1f / 3), countGrammar.lexicalLogProbability("c_1", "f"), 0.01f);
 
-        assertLogFractionEquals(Float.NEGATIVE_INFINITY, plg.lexicalLogProbability("d_0", "e"), 0.01f);
-        assertLogFractionEquals(Math.log(1f), plg.lexicalLogProbability("d_1", "f"), 0.01f);
+        assertLogFractionEquals(Float.NEGATIVE_INFINITY, countGrammar.lexicalLogProbability("d_0", "e"), 0.01f);
+        assertLogFractionEquals(Math.log(1f), countGrammar.lexicalLogProbability("d_1", "f"), 0.01f);
 
-        assertLogFractionEquals(Math.log(1f / 3 / 4), plg.binaryLogProbability("a_0", "c_0", "c_0"), .01f);
-        assertLogFractionEquals(Math.log(1f / 3 / 4), plg.binaryLogProbability("a_0", "c_1", "c_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 3 / 4), countGrammar.binaryLogProbability("a_0", "c_0", "c_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 3 / 4), countGrammar.binaryLogProbability("a_0", "c_1", "c_1"), .01f);
 
-        assertLogFractionEquals(Math.log(1f / 3 / 4), plg.binaryLogProbability("a_1", "a_0", "b_0"), .01f);
-        assertLogFractionEquals(Math.log(1f / 3 / 4), plg.binaryLogProbability("a_1", "a_1", "b_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 3 / 4), countGrammar.binaryLogProbability("a_1", "a_0", "b_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 3 / 4), countGrammar.binaryLogProbability("a_1", "a_1", "b_1"), .01f);
 
-        assertLogFractionEquals(Math.log(1f / 2 / 4), plg.binaryLogProbability("b_0", "b_0", "c_1"), .01f);
-        assertLogFractionEquals(Math.log(1f / 2 / 4), plg.binaryLogProbability("b_1", "b_1", "c_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 2 / 4), countGrammar.binaryLogProbability("b_0", "b_0", "c_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 2 / 4), countGrammar.binaryLogProbability("b_1", "b_1", "c_0"), .01f);
 
-        assertLogFractionEquals(Math.log(1f / 2 / 2), plg.unaryLogProbability("b_0", "d_1"), .01f);
-        assertLogFractionEquals(Math.log(1f / 2 / 2), plg.unaryLogProbability("b_1", "d_0"), .01f);
+        assertLogFractionEquals(Math.log(1f / 2 / 2), countGrammar.unaryLogProbability("b_0", "d_1"), .01f);
+        assertLogFractionEquals(Math.log(1f / 2 / 2), countGrammar.unaryLogProbability("b_1", "d_0"), .01f);
     }
 
     private BinaryTree<String> toPreSplitTree(final BinaryTree<String> splitTree) {

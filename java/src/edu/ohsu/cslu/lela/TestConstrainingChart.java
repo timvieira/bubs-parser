@@ -95,9 +95,10 @@ public class TestConstrainingChart extends ChartTestCase {
     public void testLongUnaryChain() throws IOException {
         // Try from a problematic tree from the Penn Treebank
         // Induce a grammar from the tree and construct a SparseMatrixGrammar
-        final ProductionListGrammar plg = new ProductionListGrammar(new StringCountGrammar(new StringReader(
-                AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN), Binarization.RIGHT, GrammarFormatType.Berkeley));
-        final ConstrainedInsideOutsideGrammar cscg = new ConstrainedInsideOutsideGrammar(plg,
+        final FractionalCountGrammar countGrammar = new StringCountGrammar(new StringReader(
+                AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN), Binarization.RIGHT, GrammarFormatType.Berkeley)
+                .toFractionalCountGrammar();
+        final ConstrainedInsideOutsideGrammar cscg = new ConstrainedInsideOutsideGrammar(countGrammar,
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         final ConstrainingChart cc = new ConstrainingChart(NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN,
@@ -164,7 +165,7 @@ public class TestConstrainingChart extends ChartTestCase {
                 GrammarFormatType.Berkeley, SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
         // Convert the ConstrainedChart into a ConstrainingChart
-        final ConstrainingChart newConstrainingChart = new ConstrainingChart(constrainedChart, mergedCsc);
+        final ConstrainingChart newConstrainingChart = new ConstrainingChart(constrainedChart, mergedCsc, false);
 
         // Verify that the extracted parse matches
         assertEquals("(top (a_1 (a_0 (a_0 (c_0 e) (c_0 e)) (d_1 f)) (b_0 (b_0 (d_1 f)) (c_0 f))))",

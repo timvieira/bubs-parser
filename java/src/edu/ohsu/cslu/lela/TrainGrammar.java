@@ -341,7 +341,7 @@ public class TrainGrammar extends BaseCommandlineTool {
      * 
      * @param currentGrammar
      * @param minimumRuleLogProb
-     * @return EM result, including the newly trained {@link ProductionListGrammar}
+     * @return EM result, including the newly trained {@link FractionalCountGrammar}
      */
     EmIterationResult emIteration(final FractionalCountGrammar currentGrammar, final float minimumRuleLogProb) {
 
