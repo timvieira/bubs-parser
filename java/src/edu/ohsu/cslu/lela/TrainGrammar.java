@@ -121,12 +121,15 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-ebs", usage = "Run one EM iteration before splitting Markov-0 grammar")
     private boolean emBeforeSplit;
 
+    @Option(name = "-muc", aliases = { "--merge-unary-chains" }, usage = "Collapse unary chain probabilities into single productions")
+    private boolean mergeUnaryChains;
+
     /** Maximum size of a training or development corpus in characters. Currently 20 MB */
     private final static int MAX_CORPUS_SIZE = 20 * 1024 * 1024;
 
     final ArrayList<NaryTree<String>> goldTrees = new ArrayList<NaryTree<String>>();
     final ArrayList<ConstrainingChart> constrainingCharts = new ArrayList<ConstrainingChart>();
-    
+
     /** Total counts of all words observed in the training corpus. Used for lexicon smoothing */
     Int2IntOpenHashMap corpusWordCounts;
 
@@ -157,15 +160,19 @@ public class TrainGrammar extends BaseCommandlineTool {
     void train(final BufferedReader trainingCorpusReader, final BufferedReader devCorpusReader) throws IOException {
 
         trainingCorpusReader.mark(MAX_CORPUS_SIZE);
-        devCorpusReader.mark(MAX_CORPUS_SIZE);
+        if (devCorpusReader != null) {
+            devCorpusReader.mark(MAX_CORPUS_SIZE);
+        }
 
         // Induce M0 grammar from training corpus
         BaseLogger.singleton().info("Inducing M0 grammar...");
         final StringCountGrammar scg = new StringCountGrammar(trainingCorpusReader, binarization, grammarFormatType);
         final FractionalCountGrammar markov0Grammar = scg.toFractionalCountGrammar(uncommonWordThreshold,
                 rareWordThreshold);
-        final ConstrainedInsideOutsideGrammar markov0CscGrammar = cscGrammar(markov0Grammar);
         corpusWordCounts = scg.wordCounts(markov0Grammar.lexicon);
+
+        // writeGrammarToFile("m0.gr.gz",
+        // markov0Grammar.addUnkCounts(unkClassMap(markov0Grammar.lexicon), openClassPreterminalThreshold));
 
         BaseLogger.singleton().config("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
         FractionalCountGrammar currentGrammar = markov0Grammar;
@@ -174,7 +181,6 @@ public class TrainGrammar extends BaseCommandlineTool {
         trainingCorpusReader.close();
 
         if (emBeforeSplit) {
-            // currentGrammar.randomize(noiseGenerator, noise);
             final ConstrainedInsideOutsideGrammar cscM0Grammar = cscGrammar(currentGrammar);
 
             final ParserDriver opts = new ParserDriver();
@@ -185,18 +191,12 @@ public class TrainGrammar extends BaseCommandlineTool {
                     rareWordThreshold);
 
             // Iterate over the training corpus, parsing and counting rule occurrences
-            int i = 0;
-            for (final ConstrainingChart constrainingChart : constrainingCharts) {
-                parser.findBestParse(constrainingChart);
+            for (int i = 0; i < constrainingCharts.size(); i++) {
+                parser.findBestParse(constrainingCharts.get(i));
                 parser.countRuleOccurrences(countGrammar);
-                i++;
             }
 
-            // Prune rules below the minimum probability threshold
-            currentGrammar = countGrammar.clone(Float.NEGATIVE_INFINITY);
-            assert (currentGrammar.binaryRules() == countGrammar.binaryRules());
-            assert (currentGrammar.unaryRules() == countGrammar.unaryRules());
-            assert (currentGrammar.lexicalRules() == countGrammar.lexicalRules());
+            currentGrammar = countGrammar;
 
             // reloadConstrainingCharts(cscM0Grammar, cscGrammar(currentGrammar));
 
@@ -237,21 +237,26 @@ public class TrainGrammar extends BaseCommandlineTool {
             currentGrammar = merge(currentGrammar, premergeCscGrammar);
 
             //
-            // TODO Run some more EM iterations on merged grammar - we'll have to 'partially-merge' the grammar,
+            // Run some more EM iterations on merged grammar - we'll have to 'partially-merge' the grammar,
             // combining rule probabilities, but delay merging the vocabulary until after this EM cycle, so we can still
             // map to the existing ConstrainingChart properly.
             //
             // BaseLogger.singleton().info("Post-merge EM");
             // for (int i = 1; i <= emIterationsAfterMerge; i++) {
-            // final EmIterationResult result = emIteration(plGrammar, minimumRuleProbability);
+            // final EmIterationResult result = emIteration(currentGrammar, minimumRuleLogProbability);
             // logEmIteration(result, i);
-            // plGrammar = result.plGrammar;
-            // finalCountGrammar = result.fcGrammar;
+            // currentGrammar = result.countGrammar;
             // }
+            // // Finalize merging the vocabulary
 
             // Add UNK productions
             final FractionalCountGrammar grammarWithUnks = currentGrammar.addUnkCounts(
                     unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold);
+
+            // Collapse unary chains
+            if (mergeUnaryChains) {
+                grammarWithUnks.mergeUnaryChains();
+            }
 
             //
             // TODO Smooth
