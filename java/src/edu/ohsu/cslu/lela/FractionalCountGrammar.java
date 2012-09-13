@@ -411,8 +411,17 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     }
 
     /**
-     * Returns a copy of this grammar including UNK-class pseudo-counts based on observed counts of rare words. Counts
-     * for rare words are smoothed using their UNK-class counts.
+     * Returns a copy of this grammar including smoothed counts for all lexical productions of open-class preterminals
+     * and UNK-class pseudo-counts based on observed counts of rare words.
+     * 
+     * Adds counts for:
+     * <ul>
+     * <li>Common words (c(w) > {@link #uncommonWordThreshold}): s_0 * c(T_x|r)</li>
+     * <li>Uncommon words ({@link #rareWordThreshold} < c(w) <= {@link #uncommonWordThreshold}): s_1 * c(T_x|r)</li>
+     * <li>Rare words (c(w) <= {@link #rareWordThreshold}): s_2 * c(T_x|r)</li>
+     * </ul>
+     * 
+     * c(T_x|r) = occurrences of tag T_x in conjunction with a rare word (from {@link #rareWordParentCounts}).
      * 
      * @param unkClassMap Maps word entries from the lexicon to their UNK-class entries.
      * @param openClassPreterminalThreshold Minimum number of terminal children a preterminal must have to be considered
@@ -420,7 +429,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
      * @return A copy of this grammar including UNK-class pseudo-counts based on observed counts of rare words.
      */
     public FractionalCountGrammar addUnkCounts(final Int2IntOpenHashMap unkClassMap,
-            final int openClassPreterminalThreshold) {
+            final int openClassPreterminalThreshold, final float s_0, final float s_1, final float s_2) {
 
         final FractionalCountGrammar grammarWithUnks = clone();
 
@@ -433,28 +442,20 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
                 continue;
             }
 
-            final double tagCount = parentCounts.get(parent);
+            // c(T_x|r) - occurrences of the parent in conjunction with a rare word
+            final double cTxr = rareWordParentCounts.get(parent);
 
             for (int word = 0; word < lexicon.size(); word++) {
 
-                if (corpusWordCounts.get(word) < rareWordThreshold) {
+                final int cw = corpusWordCounts.get(word);
+                if (cw > uncommonWordThreshold) {
+                    grammarWithUnks.incrementLexicalCount(parent, word, s_0 * cTxr);
 
-                    // Note rare-word-threshold is abbreviated 'r' in the following formulae
-                    // c(w) / r
-                    final double lambda = ((double) corpusWordCounts.get(word)) / rareWordThreshold;
+                } else if (cw > rareWordThreshold) {
+                    grammarWithUnks.incrementLexicalCount(parent, word, s_1 * cTxr);
 
-                    // Add UNK pseudo-counts
-                    // TODO Should we weight this somehow? Probably not needed, but might help
-                    grammarWithUnks.incrementLexicalCount(parent, unkClassMap.get(word), childMap.get(word));
-
-                    // And rare-word pseudo-counts
-                    //
-                    // Total probability is (lambda * c(w|t) / c(t)) + (1- lambda) * (c(UNK-class|t) / c(t))
-                    // We're adding the second term here
-                    final double unkClassCount = corpusWordCounts.get(unkClassMap.get(word));
-                    grammarWithUnks.incrementLexicalCount(parent, word, (1 - lambda) * unkClassCount / tagCount);
-                    // } else {
-                    // grammarWithUnks.incrementLexicalCount(parent, word, childMap.get(word));
+                } else {
+                    grammarWithUnks.incrementLexicalCount(parent, word, s_2 * cTxr);
                 }
             }
         }

@@ -71,13 +71,19 @@ public class TrainGrammar extends BaseCommandlineTool {
     private String outputGrammarPrefix = "";
 
     @Option(name = "-uncommon", metaVar = "threshold", usage = "Smooth production probabilities for uncommon words")
-    private int uncommonWordThreshold = 20;
+    private int uncommonWordThreshold = 100;
 
     @Option(name = "-rare", metaVar = "threshold", usage = "Count tag -> word probabilities for really rare words, for smoothing into uncommon words and UNK-classes")
     private int rareWordThreshold = 20;
 
-    @Option(name = "-s1", metaVar = "lambda", usage = "Rare word smoothing parameter")
+    @Option(name = "-s0", metaVar = "s0", usage = "Common word smoothing parameter")
+    private float s_0 = .0001f;
+
+    @Option(name = "-s1", metaVar = "s1", usage = "Uncommon word smoothing parameter")
     private float s_1 = .1f;
+
+    @Option(name = "-s2", metaVar = "s2", usage = "Rare word smoothing parameter")
+    private float s_2 = .1f;
 
     @Option(name = "-c", aliases = { "--sm-cycles" }, metaVar = "cycles", usage = "Split-merge cycles")
     private int splitMergeCycles = 6;
@@ -116,7 +122,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     private File developmentSet;
 
     @Option(name = "-dpf", aliases = { "--prune-fraction" }, metaVar = "fraction", usage = "Pruning fraction (of non-terminals) for dev-set parsing")
-    private float devsetParsePruneFraction = 0.4f;
+    private float devsetParsePruneFraction = 0.6f;
 
     @Option(name = "-ebs", usage = "Run one EM iteration before splitting Markov-0 grammar")
     private boolean emBeforeSplit;
@@ -251,7 +257,7 @@ public class TrainGrammar extends BaseCommandlineTool {
 
             // Add UNK productions
             final FractionalCountGrammar grammarWithUnks = currentGrammar.addUnkCounts(
-                    unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold);
+                    unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold, s_0, s_1, s_2);
 
             // Collapse unary chains
             if (mergeUnaryChains) {
