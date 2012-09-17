@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
-import java.util.regex.Pattern;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
@@ -48,8 +47,6 @@ import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.tests.JUnit;
 
 public class FractionalCountGrammar implements CountGrammar, Cloneable {
-
-    private final static Pattern SUBSTATE_PATTERN = Pattern.compile("^.*_[0-9]+$");
 
     public final Vocabulary vocabulary;
     public final SymbolSet<String> lexicon;
@@ -602,17 +599,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     public FractionalCountGrammar split(final NoiseGenerator noiseGenerator) {
 
         // Create a new vocabulary, splitting each non-terminal into two substates
-        final SplitVocabulary splitVocabulary = new SplitVocabulary(vocabulary);
-
-        // Add a dummy non-terminal for the start symbol. The start symbol is always index 0, and using index 1 makes
-        // computing other splits simpler. We'll always re-merge the dummy symbol.
-        splitVocabulary.addSymbol(startSymbol);
-        splitVocabulary.addSymbol(startSymbol + "_1");
-        for (int i = 1; i < vocabulary.size(); i++) {
-            final String[] substates = substates(vocabulary.getSymbol(i));
-            splitVocabulary.addSymbol(substates[0]);
-            splitVocabulary.addSymbol(substates[1]);
-        }
+        final SplitVocabulary splitVocabulary = ((SplitVocabulary) vocabulary).split();
 
         final FractionalCountGrammar splitGrammar = new FractionalCountGrammar(splitVocabulary, lexicon, null,
                 corpusWordCounts, uncommonWordThreshold, rareWordThreshold);
@@ -759,16 +746,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         }
     }
 
-    private String[] substates(final String state) {
-        if (SUBSTATE_PATTERN.matcher(state).matches()) {
-            final String[] rootAndIndex = state.split("_");
-            final int substateIndex = Integer.parseInt(rootAndIndex[1]);
-            return new String[] { rootAndIndex[0] + '_' + (substateIndex * 2),
-                    rootAndIndex[0] + '_' + (substateIndex * 2 + 1) };
-        }
-        return new String[] { state + "_0", state + "_1" };
-    }
-
     /**
      * Re-merges splits specified by non-terminal indices, producing a new {@link FractionalCountGrammar} with its own
      * vocabulary and lexicon.
@@ -783,7 +760,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         // Create merged vocabulary and map from old vocabulary indices to new
         final Short2ShortOpenHashMap parentToMergedIndexMap = new Short2ShortOpenHashMap();
 
-        // Set of merged indices which were merged 'into'
+        // The set of post-merge indices which were merged 'into'
         final ShortOpenHashSet mergedIndices = new ShortOpenHashSet();
 
         short j = 0;
@@ -792,7 +769,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         mergedSymbols.add(startSymbol);
 
         String previousRoot = "";
-        int nextSubstate = 0;
+        byte nextSubstate = 0;
 
         for (short i = 1; i < vocabulary.size(); i++) {
             if (j < indices.length && indices[j] == i) {

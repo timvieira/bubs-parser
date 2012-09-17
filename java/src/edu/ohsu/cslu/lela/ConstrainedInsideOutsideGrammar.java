@@ -38,4 +38,8 @@ public class ConstrainedInsideOutsideGrammar extends InsideOutsideCscSparseMatri
                 .unaryProductions(Float.NEGATIVE_INFINITY), countGrammar.lexicalProductions(Float.NEGATIVE_INFINITY),
                 countGrammar.vocabulary, countGrammar.lexicon, grammarFormat, functionClass, true);
     }
+
+    public SplitVocabulary vocabulary() {
+        return (SplitVocabulary) nonTermSet;
+    }
 }
