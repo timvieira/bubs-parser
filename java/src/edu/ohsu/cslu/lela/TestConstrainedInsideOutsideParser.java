@@ -47,13 +47,13 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Unit tests for {@link Constrained2SplitInsideOutsideParser}.
+ * Unit tests for {@link ConstrainedInsideOutsideParser}.
  * 
  * @author Aaron Dunlop
  * @since Jan 15, 2011
  */
 @RunWith(Theories.class)
-public class TestConstrained2SplitInsideOutsideParser {
+public class TestConstrainedInsideOutsideParser {
 
     @DataPoints
     public final static float[] RANDOMNESS = new float[] { 0f, .01f, .5f };
@@ -62,7 +62,7 @@ public class TestConstrained2SplitInsideOutsideParser {
     private FractionalCountGrammar grammar1;
     private ConstrainingChart chart0;
     private ConstrainedInsideOutsideGrammar cscGrammar1;
-    private Constrained2SplitInsideOutsideParser parser1;
+    private ConstrainedSplitInsideOutsideParser parser1;
 
     @Before
     public void setUp() throws IOException {
@@ -90,7 +90,7 @@ public class TestConstrained2SplitInsideOutsideParser {
         // Parse with the split-1 grammar
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        parser1 = new Constrained2SplitInsideOutsideParser(opts, cscGrammar1);
+        parser1 = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar1);
         return parser1.findBestParse(chart0);
     }
 
@@ -212,7 +212,7 @@ public class TestConstrained2SplitInsideOutsideParser {
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
 
-        final Constrained2SplitInsideOutsideParser parser2 = new Constrained2SplitInsideOutsideParser(opts, cscGrammar2);
+        final ConstrainedInsideOutsideParser parser2 = new ConstrainedInsideOutsideParser(opts, cscGrammar2);
         final BinaryTree<String> parseTree2 = parser2.findBestParse(constrainingChart1);
 
         // Verify expected inside probabilities in a few cells
@@ -324,7 +324,7 @@ public class TestConstrained2SplitInsideOutsideParser {
         // Parse with the split-1 grammar
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, csc1);
+        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, csc1);
 
         // TODO Eliminate multiple conversions
         final BinaryTree<String> parseTree1 = parser.findBestParse(constrainingChart);
@@ -366,7 +366,7 @@ public class TestConstrained2SplitInsideOutsideParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, splitGrammar);
+        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, splitGrammar);
 
         @SuppressWarnings("unused")
         int count = 0;
@@ -412,8 +412,8 @@ public class TestConstrained2SplitInsideOutsideParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser p1 = new Constrained2SplitInsideOutsideParser(opts, csc1);
-        final Constrained2SplitInsideOutsideParser p2 = new Constrained2SplitInsideOutsideParser(opts, csc2);
+        final ConstrainedInsideOutsideParser p1 = new ConstrainedInsideOutsideParser(opts, csc1);
+        final ConstrainedInsideOutsideParser p2 = new ConstrainedInsideOutsideParser(opts, csc2);
 
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
         for (String line = br.readLine(); line != null; line = br.readLine()) {

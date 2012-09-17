@@ -345,7 +345,7 @@ public class ConstrainedChart extends ConstrainingChart {
         return sb.toString();
     }
 
-    protected String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
+    private String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
         final StringBuilder sb = new StringBuilder(128);
         for (int i = 0; i < beamWidth; i++) {
             if (nonTerminalIndices[offset + i] >= 0) {
@@ -356,7 +356,7 @@ public class ConstrainedChart extends ConstrainingChart {
         return sb.toString();
     }
 
-    protected String formatCellEntry(final int nonterminal, final int childProductions, final boolean unary,
+    private String formatCellEntry(final int nonterminal, final int childProductions, final boolean unary,
             final float insideProbability, final float outsideProbability, final boolean formatFractions) {
 
         final int leftChild = sparseMatrixGrammar.packingFunction().unpackLeftChild(childProductions);

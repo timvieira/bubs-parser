@@ -18,17 +18,22 @@ public class Vocabulary extends SymbolSet<String> {
     protected Short2ShortOpenHashMap baseNonTerminalIndices = new Short2ShortOpenHashMap();
 
     /** Base Markov-order-0 vocabulary */
-    private final Vocabulary baseVocabulary;
+    protected final Vocabulary baseVocabulary;
 
     private final GrammarFormatType grammarFormat;
 
     private final ShortOpenHashSet factoredIndices = new ShortOpenHashSet();
 
-    private short startSymbol;
+    protected short startSymbol;
 
     private Vocabulary(final GrammarFormatType grammarFormat, final boolean baseVocabulary) {
         this.grammarFormat = grammarFormat;
         this.baseVocabulary = baseVocabulary ? null : new Vocabulary(grammarFormat, true);
+    }
+
+    protected Vocabulary(final GrammarFormatType grammarFormat, final Vocabulary baseVocabulary) {
+        this.grammarFormat = grammarFormat;
+        this.baseVocabulary = baseVocabulary;
     }
 
     public Vocabulary(final GrammarFormatType grammarFormat) {
