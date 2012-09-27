@@ -50,18 +50,18 @@ public class ConstrainedChart extends ConstrainingChart {
      * 
      * At most, a cell can contain:
      * 
-     * 2 entries for the substates of the constraining non-terminal
+     * n entries for the substates of the constraining non-terminal
      * 
      * k unary children of each of those states, where k is the maximum length of a unary chain in the constraining
      * chart.
      * 
-     * So the maximum number of entries in a cell is 2 * (1 + maxUnaryChainLength)
+     * So the maximum number of entries in a cell is n * (1 + maxUnaryChainLength)
      * 
      * @param constrainingChart
      * @param sparseMatrixGrammar
      */
     protected ConstrainedChart(final ConstrainingChart constrainingChart, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(constrainingChart, sparseMatrixGrammar, 2);
+        this(constrainingChart, sparseMatrixGrammar, ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits);
     }
 
     /**
@@ -165,14 +165,15 @@ public class ConstrainedChart extends ConstrainingChart {
         final int cellOffset = cellOffset(start, end);
         int entry0Offset = cellOffset;
         int entryOffset = maxInsideProbabilityEntry(entry0Offset);
+        final int maxSplits = ((SplitVocabulary) grammar.nonTermSet).maxSplits;
 
         final BinaryTree<String> tree = new BinaryTree<String>(
                 grammar.nonTermSet.getSymbol(nonTerminalIndices[entryOffset]));
         BinaryTree<String> subtree = tree;
 
         // Add unary productions and binary parent
-        while (entry0Offset < cellOffset + (unaryChainLength[cellIndex] - 1) * beamWidth) {
-            entry0Offset += beamWidth;
+        while (entry0Offset < cellOffset + (unaryChainLength[cellIndex] - 1) * maxSplits) {
+            entry0Offset += maxSplits;
             entryOffset = maxInsideProbabilityEntry(entry0Offset);
             subtree = subtree.addChild(grammar.nonTermSet.getSymbol(nonTerminalIndices[entryOffset]));
         }
@@ -347,8 +348,9 @@ public class ConstrainedChart extends ConstrainingChart {
 
     private String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
         final StringBuilder sb = new StringBuilder(128);
-        for (int i = 0; i < beamWidth; i++) {
-            if (nonTerminalIndices[offset + i] >= 0) {
+
+        for (int i = 0; i < ((SplitVocabulary) grammar.nonTermSet).maxSplits; i++) {
+            if (insideProbabilities[offset + i] != Float.NEGATIVE_INFINITY) {
                 sb.append(formatCellEntry(nonTerminalIndices[offset + i], packedChildren[offset + i], unary,
                         insideProbabilities[offset + i], outsideProbabilities[offset + i], formatFractions));
             }

@@ -133,6 +133,8 @@ public class SplitVocabulary extends Vocabulary {
     }
 
     private byte init() {
+
+        Arrays.fill(firstSplitIndices, (short) -1);
         byte tmpMaxSplits = 0;
 
         for (short nt = 0; nt < splitIndices.length; nt++) {
@@ -140,21 +142,24 @@ public class SplitVocabulary extends Vocabulary {
             final String[] split = getSymbol(nt).split("_");
             final byte splitIndex = split.length > 1 ? Byte.parseByte(split[1]) : 0;
             splitIndices[nt] = splitIndex;
-            if (splitIndex > ntSplitCounts[nt]) {
-                ntSplitCounts[nt] = splitIndex;
-            }
             final short baseNt = getBaseIndex(nt);
             if (splitIndex > baseNtSplitCounts[baseNt]) {
-                baseNtSplitCounts[baseNt] = splitIndex;
+                baseNtSplitCounts[baseNt] = (byte) (splitIndex + 1);
             }
             if (splitIndex > tmpMaxSplits) {
                 tmpMaxSplits = splitIndex;
             }
-            if (firstSplitIndices[baseNt] == 0) {
+            if (firstSplitIndices[baseNt] == -1) {
                 firstSplitIndices[baseNt] = nt;
             }
         }
-        return tmpMaxSplits;
+
+        for (short nt = 0; nt < splitIndices.length; nt++) {
+            final short baseNt = getBaseIndex(nt);
+            ntSplitCounts[nt] = baseNtSplitCounts[baseNt];
+        }
+
+        return (byte) (tmpMaxSplits + 1);
     }
 
     /**

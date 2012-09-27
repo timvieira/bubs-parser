@@ -47,7 +47,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Unit tests for {@link ConstrainedInsideOutsideParser}.
+ * Unit tests for {@link ConstrainedSplitInsideOutsideParser}.
  * 
  * @author Aaron Dunlop
  * @since Jan 15, 2011
@@ -195,25 +195,18 @@ public class TestConstrainedInsideOutsideParser {
     @Test
     public void test2SplitConstrainedParse() {
 
-        // Parse with the split-1 grammar, creating a new constraining chart.
-        parseWithGrammar1();
-
-        // Split the grammar again
+        // Split the 1-split grammar again
         final FractionalCountGrammar plGrammar2 = grammar1.split(new ZeroNoiseGenerator());
         final ConstrainedInsideOutsideGrammar cscGrammar2 = cscGrammar(plGrammar2);
 
         //
-        // Parse with the split-2 grammar, constrained by the split-1 chart
+        // Parse with the split-2 grammar, constrained by the unsplit chart
         //
-
-        // Construct a Constraining chart based on the 1-best output of the 1-split parse
-        final ConstrainingChart constrainingChart1 = new ConstrainingChart(parser1.chart);
-
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
 
-        final ConstrainedInsideOutsideParser parser2 = new ConstrainedInsideOutsideParser(opts, cscGrammar2);
-        final BinaryTree<String> parseTree2 = parser2.findBestParse(constrainingChart1);
+        final ConstrainedSplitInsideOutsideParser parser2 = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar2);
+        final BinaryTree<String> parseTree2 = parser2.findBestParse(chart0);
 
         // Verify expected inside probabilities in a few cells
         final ConstrainedChart chart2 = parser2.chart;
@@ -221,6 +214,8 @@ public class TestConstrainedInsideOutsideParser {
         final short top = (short) vocabulary.getIndex("top");
         final short a_0 = (short) vocabulary.getIndex("a_0");
         final short a_1 = (short) vocabulary.getIndex("a_1");
+        final short a_2 = (short) vocabulary.getIndex("a_2");
+        final short a_3 = (short) vocabulary.getIndex("a_3");
         final short b_0 = (short) vocabulary.getIndex("b_0");
         final short b_1 = (short) vocabulary.getIndex("b_1");
         final short c_0 = (short) vocabulary.getIndex("c_0");
@@ -241,16 +236,16 @@ public class TestConstrainedInsideOutsideParser {
         assertLogFractionEquals(Math.log(1f / 3), chart2.getInside(4, 5, c_0), .001f);
         assertLogFractionEquals(Math.log(1f / 3), chart2.getInside(4, 5, c_1), .001f);
 
-        assertLogFractionEquals(Math.log(1f / 27), chart2.getInside(0, 2, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 27), chart2.getInside(0, 2, a_1), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 2, b_0), .001f);
-        assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(0, 2, b_1), .001f);
+        assertLogFractionEquals(Math.log(4f / 27), chart2.getInside(0, 2, a_0), .001f);
+        assertLogFractionEquals(Math.log(4f / 27), chart2.getInside(0, 2, a_1), .001f);
+        assertLogFractionEquals(Math.log(4f / 27), chart2.getInside(0, 2, a_2), .001f);
+        assertLogFractionEquals(Math.log(4f / 27), chart2.getInside(0, 2, a_3), .001f);
 
-        assertLogFractionEquals(Math.log(1f / 324), chart2.getInside(0, 3, a_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 324), chart2.getInside(0, 3, a_1), .001f);
+        assertLogFractionEquals(Math.log(4f / 81), chart2.getInside(0, 3, a_0), .001f);
+        assertLogFractionEquals(Math.log(4f / 81), chart2.getInside(0, 3, a_1), .001f);
 
-        assertLogFractionEquals(Math.log(1f / 96), chart2.getInside(3, 5, b_0), .001f);
-        assertLogFractionEquals(Math.log(1f / 96), chart2.getInside(3, 5, b_1), .001f);
+        assertLogFractionEquals(Math.log(1f / 12), chart2.getInside(3, 5, b_0), .001f);
+        assertLogFractionEquals(Math.log(1f / 12), chart2.getInside(3, 5, b_1), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(3, 5, a_0), .001f);
         assertEquals(Float.NEGATIVE_INFINITY, chart2.getInside(3, 5, a_1), .001f);
 
@@ -264,38 +259,38 @@ public class TestConstrainedInsideOutsideParser {
         assertLogFractionEquals(outside05, chart2.getOutside(0, 5, a_0), .001f);
         assertLogFractionEquals(outside05, chart2.getOutside(0, 5, a_1), .001f);
 
-        // 0,5,a_0 outside X 3,5,b_0 inside X P(a_0 -> a_0 b_0) X 4
-        final double outside03 = outside05 + Math.log(1.0 / 1152);
+        // 0,5,a_0 outside (1/4) X 4 X 3,5,b_0 inside (1/12) X 4 X P(a_0 -> a_0 b_0) (1/48)
+        final double outside03 = outside05 + Math.log(1.0 / 36);
         assertLogFractionEquals(outside03, chart2.getOutside(0, 3, a_0), .001f);
         assertLogFractionEquals(outside03, chart2.getOutside(0, 3, a_1), .001f);
 
-        // 0,3,a_0 outside X 2,3,b_0 inside X P(a_0 -> a_0 b_0) X 4
-        final double outside02 = outside03 + Math.log(1.0 / 12);
+        // 0,3,a_0 outside (1/144) X 4 X 2,3,d_0 inside (1) X 4 X P(a_0 -> a_0 b_0) (1/48)
+        final double outside02 = outside03 + Math.log(1.0 / 3);
         assertLogFractionEquals(outside02, chart2.getOutside(0, 2, a_0), .001f);
         assertLogFractionEquals(outside02, chart2.getOutside(0, 2, a_1), .001f);
 
-        // 0,2,a_0 outside X 1,2,a_0 inside X P(a_0 -> a_0 a_0) X 4
-        final double outside01 = outside02 + Math.log(1.0 / 18);
+        // 0,2,a_0 outside (1/432) X 4 X 1,2,c_0 inside (2/3) X 4 X P(a_0 -> c_0 c_0) (1/48)
+        final double outside01 = outside02 + Math.log(2.0 / 9);
         assertLogFractionEquals(outside01, chart2.getOutside(0, 1, c_0), .001f);
         assertLogFractionEquals(outside01, chart2.getOutside(0, 1, c_1), .001f);
 
-        // 0,3,a_0 outside X 0,2,a_0 inside X P(a_0 -> a_0 b_0) X 4
-        final double outside23 = outside03 + Math.log(1.0 / 324);
+        // 0,3,a_0 outside (1/144) X 4 X 0,2,a_0 inside (4/27) X 4 X P(a_0 -> a_0 b_0) (1/48)
+        final double outside23 = outside03 + Math.log(4.0 / 81);
         assertLogFractionEquals(outside23, chart2.getOutside(2, 3, d_0), .001f);
         assertLogFractionEquals(outside23, chart2.getOutside(2, 3, d_1), .001f);
 
-        // 0,5,a_0 outside X 0,3,a_0 inside X P(a_0 -> a_0 b_0) X 4
-        final double outside35 = outside05 + Math.log(1.0 / 3888);
+        // 0,5,a_0 outside (1/4) X 4 X 0,3,a_0 inside (4/81) X 4 X P(a_0 -> a_0 b_0) (1/48)
+        final double outside35 = outside05 + Math.log(4.0 / 243);
         assertLogFractionEquals(outside35, chart2.getOutside(3, 5, b_0), .001f);
         assertLogFractionEquals(outside35, chart2.getOutside(3, 5, b_1), .001f);
 
-        // Top-level probability for splits of b in 3,4
-        // 3,5,b_0 outside * 4,5,a_0 inside X P(b_0 -> b_0 a_0) X 4
-        final double outside34 = outside35 + Math.log(1.0 / 24);
+        // Splits of b in 3,4
+        // 3,5,b_0 outside (1/243) X 4 X 4,5,c_0 inside (1/3) X 4 X P(b_0 -> b_0 c_0) (1/32)
+        final double outside34 = outside35 + Math.log(1.0 / 6);
         assertLogFractionEquals(outside34, chart2.getOutside(3, 4, b_0, 2), .001f);
         assertLogFractionEquals(outside34, chart2.getOutside(3, 4, b_1, 2), .001f);
-        assertLogFractionEquals(outside34 + Math.log(1.0 / 4), chart2.getOutside(3, 4, d_0, 1), .001f);
-        assertLogFractionEquals(outside34 + Math.log(1.0 / 4), chart2.getOutside(3, 4, d_1, 1), .001f);
+        assertLogFractionEquals(outside34 + Math.log(1.0 / 2), chart2.getOutside(3, 4, d_0, 1), .001f);
+        assertLogFractionEquals(outside34 + Math.log(1.0 / 2), chart2.getOutside(3, 4, d_1, 1), .001f);
 
         // And ensure that the extracted and unfactored parse matches the input gold tree
         final NaryTree<String> unfactoredTree = BinaryTree.read(parseTree2.toString(), String.class).unfactor(
@@ -312,8 +307,7 @@ public class TestConstrainedInsideOutsideParser {
         final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
-        final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, .01f));
-        // g1.randomize(new Random(), randomness);
+        final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, randomness));
         final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
 
         // Construct a constraining chart
@@ -324,9 +318,8 @@ public class TestConstrainedInsideOutsideParser {
         // Parse with the split-1 grammar
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, csc1);
+        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, csc1);
 
-        // TODO Eliminate multiple conversions
         final BinaryTree<String> parseTree1 = parser.findBestParse(constrainingChart);
         final NaryTree<String> unfactoredTree = parseTree1.unfactor(GrammarFormatType.Berkeley);
         assertEquals(goldTree.toString(), unfactoredTree.toString());
@@ -366,7 +359,7 @@ public class TestConstrainedInsideOutsideParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, splitGrammar);
+        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, splitGrammar);
 
         @SuppressWarnings("unused")
         int count = 0;
@@ -398,12 +391,10 @@ public class TestConstrainedInsideOutsideParser {
 
         // Split the grammar
         final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, .01f));
-        // g1.randomize(new Random(), .01f);
         final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
 
         // Split the grammar again
         final FractionalCountGrammar g2 = g1.split(new RandomNoiseGenerator(0, .01f));
-        // g1.randomize(new Random(), .01f);
         final ConstrainedInsideOutsideGrammar csc2 = cscGrammar(g2);
 
         // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the split-2
@@ -412,8 +403,8 @@ public class TestConstrainedInsideOutsideParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedInsideOutsideParser p1 = new ConstrainedInsideOutsideParser(opts, csc1);
-        final ConstrainedInsideOutsideParser p2 = new ConstrainedInsideOutsideParser(opts, csc2);
+        final ConstrainedSplitInsideOutsideParser p1 = new ConstrainedSplitInsideOutsideParser(opts, csc1);
+        final ConstrainedSplitInsideOutsideParser p2 = new ConstrainedSplitInsideOutsideParser(opts, csc2);
 
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
         for (String line = br.readLine(); line != null; line = br.readLine()) {
@@ -422,9 +413,7 @@ public class TestConstrainedInsideOutsideParser {
 
             final ConstrainingChart constrainingChart0 = new ConstrainingChart(tree0, csc0);
             final BinaryTree<String> tree1 = p1.findBestParse(constrainingChart0);
-
-            final ConstrainingChart constrainingChart1 = new ConstrainingChart(tree1, csc1);
-            final BinaryTree<String> tree2 = p2.findBestParse(constrainingChart1);
+            final BinaryTree<String> tree2 = p2.findBestParse(constrainingChart0);
 
             final BinaryTree<String> preSplitTree = toPreSplitTree(tree2);
 
@@ -466,9 +455,9 @@ public class TestConstrainedInsideOutsideParser {
     //
     // final ParserDriver opts = new ParserDriver();
     // opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-    // final ConstrainedInsideOutsideParser p1 = new ConstrainedInsideOutsideParser(opts, csc1);
-    // final ConstrainedInsideOutsideParser p2 = new ConstrainedInsideOutsideParser(opts, csc2);
-    // final ConstrainedInsideOutsideParser p3 = new ConstrainedInsideOutsideParser(opts, csc3);
+    // final ConstrainedSplitInsideOutsideParser p1 = new ConstrainedSplitInsideOutsideParser(opts, csc1);
+    // final ConstrainedSplitInsideOutsideParser p2 = new ConstrainedSplitInsideOutsideParser(opts, csc2);
+    // final ConstrainedSplitInsideOutsideParser p3 = new ConstrainedSplitInsideOutsideParser(opts, csc3);
     //
     // final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
     // for (String line = br.readLine(); line != null; line = br.readLine()) {
