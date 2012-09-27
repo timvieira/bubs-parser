@@ -272,9 +272,6 @@ public class TrainGrammar extends BaseCommandlineTool {
             // TODO Prune, output lexicon
             writeGrammarToFile(String.format("sm%d.gr.gz", cycle), grammarWithUnks);
 
-            // Populate constraining charts for the next SM cycle from a Viterbi 1-best parse with the pre-merge grammar
-            reloadConstrainingCharts(premergeCscGrammar, cscGrammar(currentGrammar));
-
             // Output dev-set parse accuracy
             if (developmentSet != null) {
                 parseDevSet(devCorpusReader, cscGrammar(grammarWithUnks));
@@ -314,29 +311,6 @@ public class TrainGrammar extends BaseCommandlineTool {
     }
 
     /**
-     * Parses with a split grammar and replaces the current {@link ConstrainingChart}s with 1-best parses, populated
-     * with a merged version of the same grammar.
-     * 
-     * @param finalSplitGrammar
-     * @param mergedGrammar
-     */
-    final void reloadConstrainingCharts(final ConstrainedInsideOutsideGrammar finalSplitGrammar,
-            final ConstrainedInsideOutsideGrammar mergedGrammar) {
-
-        final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedViterbiParser parser = new ConstrainedViterbiParser(opts, finalSplitGrammar);
-
-        BaseLogger.singleton().info("Reloading constraining charts...");
-
-        // Iterate over the training corpus, parsing and replacing current ConstrainingCharts
-        for (int i = 0; i < constrainingCharts.size(); i++) {
-            final ConstrainedChart c = parser.parse(constrainingCharts.get(i));
-            constrainingCharts.set(i, new ConstrainingChart(c, mergedGrammar, true));
-        }
-    }
-
-    /**
      * Execute a single EM iteration
      * 
      * @param currentGrammar
@@ -350,7 +324,7 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, cscGrammar);
+        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar);
 
         final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscGrammar.nonTermSet,
                 cscGrammar.lexSet, cscGrammar.packingFunction, corpusWordCounts, uncommonWordThreshold,
@@ -454,7 +428,7 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, cscGrammar);
+        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar);
 
         // Compute log(p_1), log(p_2) for each split pair based on relative frequency counts of each
         final float[] logSplitFraction = countGrammar.logSplitFraction();

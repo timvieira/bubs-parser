@@ -150,8 +150,9 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         incrementBinaryCount(parent, leftChild, rightChild, increment);
     }
 
-    public void incrementBinaryLogCount(final short parent, final int childPair, final float logIncrement) {
-        incrementBinaryCount(parent, childPair, Math.exp(logIncrement));
+    public void incrementBinaryLogCount(final short parent, final short leftChild, final short rightChild,
+            final float logIncrement) {
+        incrementBinaryCount(parent, leftChild, rightChild, Math.exp(logIncrement));
     }
 
     /**
