@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -336,6 +337,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         // Iterate over the training corpus, parsing and counting rule occurrences
         double corpusLikelihood = 0f;
         for (int i = 0; i < constrainingCharts.size(); i++) {
+            // TODO Remove detailed timing instrumentation
             final long t00 = System.nanoTime();
             parser.findBestParse(constrainingCharts.get(i));
             final long t01 = System.nanoTime();
@@ -516,7 +518,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         if (outputGrammarDirectory != null) {
             final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File(
                     outputGrammarDirectory, filename))));
-            w.write(grammar.toString(false, language, grammarFormatType, rareWordThreshold));
+            grammar.write(new PrintWriter(w), false, language, grammarFormatType, rareWordThreshold);
             w.close();
         }
     }
