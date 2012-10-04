@@ -136,6 +136,8 @@ public class TrainGrammar extends BaseCommandlineTool {
     final ArrayList<NaryTree<String>> goldTrees = new ArrayList<NaryTree<String>>();
     final ArrayList<ConstrainingChart> constrainingCharts = new ArrayList<ConstrainingChart>();
 
+    long parseTime = 0, countTime = 0;
+
     /** Total counts of all words observed in the training corpus. Used for lexicon smoothing */
     Int2IntOpenHashMap corpusWordCounts;
 
@@ -331,13 +333,17 @@ public class TrainGrammar extends BaseCommandlineTool {
                 rareWordThreshold);
 
         final long t1 = System.currentTimeMillis();
-
         // Iterate over the training corpus, parsing and counting rule occurrences
         double corpusLikelihood = 0f;
-        for (final ConstrainingChart constrainingChart : constrainingCharts) {
-            parser.findBestParse(constrainingChart);
+        for (int i = 0; i < constrainingCharts.size(); i++) {
+            final long t00 = System.nanoTime();
+            parser.findBestParse(constrainingCharts.get(i));
+            final long t01 = System.nanoTime();
+            parseTime += (t01 - t00);
             corpusLikelihood += parser.chart.getInside(0, parser.chart.size(), 0);
             parser.countRuleOccurrences(countGrammar);
+            countTime += (System.nanoTime() - t01);
+
         }
         final long t2 = System.currentTimeMillis();
 
