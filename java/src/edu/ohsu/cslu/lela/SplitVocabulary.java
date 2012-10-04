@@ -229,4 +229,18 @@ public class SplitVocabulary extends Vocabulary {
         }
         return new String[] { state + "_0", state + "_1" };
     }
+
+    @Override
+    public String toString() {
+        if (baseVocabulary == null) {
+            return super.toString();
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        for (short nt = 0; nt < size(); nt++) {
+            sb.append(String.format("%d : %s (%s : %d)\n", nt, getSymbol(nt),
+                    baseVocabulary.getSymbol(getBaseIndex(nt)), getBaseIndex(nt)));
+        }
+        return sb.toString();
+    }
 }

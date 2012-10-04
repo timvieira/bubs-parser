@@ -119,7 +119,7 @@ public class ConstrainedChart extends ConstrainingChart {
                 constrainingChart.unaryChainLength.length);
 
         final int fillLength = splitChartArraySize(constrainingChart.size(), constrainingChart.maxUnaryChainLength(),
-                beamWidth);
+                ((SplitVocabulary) grammar.nonTermSet).maxSplits);
         Arrays.fill(nonTerminalIndices, 0, fillLength, Short.MIN_VALUE);
         Arrays.fill(packedChildren, 0, fillLength, 0);
         Arrays.fill(insideProbabilities, 0, fillLength, Float.NEGATIVE_INFINITY);

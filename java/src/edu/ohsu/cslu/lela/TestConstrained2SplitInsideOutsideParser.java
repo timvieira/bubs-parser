@@ -47,13 +47,13 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Unit tests for {@link ConstrainedSplitInsideOutsideParser}.
+ * Unit tests for {@link Constrained2SplitInsideOutsideParser}.
  * 
  * @author Aaron Dunlop
  * @since Jan 15, 2011
  */
 @RunWith(Theories.class)
-public class TestConstrainedInsideOutsideParser {
+public class TestConstrained2SplitInsideOutsideParser {
 
     @DataPoints
     public final static float[] RANDOMNESS = new float[] { 0f, .01f, .5f };

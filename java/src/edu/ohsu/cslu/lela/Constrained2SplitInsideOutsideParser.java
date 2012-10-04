@@ -501,7 +501,9 @@ public class Constrained2SplitInsideOutsideParser extends
 
             // And over children in the right child cell
             for (int j = rightCellOffset; j <= rightCellOffset + 1; j++) {
-                final int column = cpf.pack(leftChild, chart.nonTerminalIndices[j]);
+
+                final short rightChild = chart.nonTerminalIndices[j];
+                final int column = cpf.pack(leftChild, rightChild);
                 if (column == Integer.MIN_VALUE) {
                     continue;
                 }
@@ -520,12 +522,12 @@ public class Constrained2SplitInsideOutsideParser extends
                         // Equation 1 of Petrov et al., 2006.
                         final float logCount = chart.outsideProbabilities[parent0Offset] + childInsideProbability
                                 + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
-                        countGrammar.incrementBinaryLogCount(parent, column, logCount);
+                        countGrammar.incrementBinaryLogCount(parent, leftChild, rightChild, logCount);
 
                     } else if (parent == parent0 + 1) {
                         final float logCount = chart.outsideProbabilities[parent1Offset] + childInsideProbability
                                 + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
-                        countGrammar.incrementBinaryLogCount(parent, column, logCount);
+                        countGrammar.incrementBinaryLogCount(parent, leftChild, rightChild, logCount);
 
                     } else {
                         // We've passed both target parents. No need to search more grammar rules

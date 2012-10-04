@@ -21,13 +21,12 @@ package edu.ohsu.cslu.lela;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.List;
 
 import org.cjunit.DetailedTest;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import cltool4j.GlobalConfigProperties;
@@ -270,6 +269,53 @@ public class TestTrainGrammar {
      * @throws IOException
      */
     @Test
+    @Ignore
+    // This method is mostly for profiling
+    @DetailedTest
+    public void test3SplitWsj24WithMergingWithoutParse() throws IOException {
+
+        final TrainGrammar tg = new TrainGrammar();
+        tg.binarization = Binarization.LEFT;
+        tg.grammarFormatType = GrammarFormatType.Berkeley;
+        tg.mergeFraction = 0.5f;
+        tg.setup();
+
+        final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"),
+                20 * 1024 * 1024);
+        br.mark(20 * 1024 * 1024);
+
+        final StringCountGrammar scg = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley);
+        final FractionalCountGrammar g0 = scg.toFractionalCountGrammar();
+        br.reset();
+
+        tg.loadGoldTreesAndConstrainingCharts(br, g0);
+        tg.corpusWordCounts = scg.wordCounts(g0.lexicon);
+
+        // Split and train with the 1-split grammar
+        final RandomNoiseGenerator noiseGenerator = new RandomNoiseGenerator(0, .01f);
+        final FractionalCountGrammar split1 = g0.split(noiseGenerator);
+        final FractionalCountGrammar g1 = runEm(tg, g0, split1, 1, 50, false, false);
+
+        // Re-merge half the non-terminals, split again, and train with the new 2-split grammar
+        final FractionalCountGrammar mergedG1 = tg.merge(g1);
+        final FractionalCountGrammar split2 = mergedG1.split(noiseGenerator);
+        final FractionalCountGrammar g2 = runEm(tg, g0, split2, 2, 50, false, false);
+
+        // Re-merge half the non-terminals , split again, and train with the new 3-split grammar
+        final FractionalCountGrammar mergedG2 = tg.merge(g2);
+        final FractionalCountGrammar split3 = mergedG2.split(noiseGenerator);
+        runEm(tg, g0, split3, 3, 50, false, false);
+    }
+
+    /**
+     * Learns a 3-split grammar from a small corpus (WSJ section 24). Verifies that corpus likelihood increases with
+     * successive EM iteration. Reports F-score after each split/EM run and verifies that those increase as well.
+     * Parsing accuracy isn't guaranteed to increase, but in this test, we're evaluating on the training set, so if
+     * parse accuracy declines, something's probably terribly wrong.
+     * 
+     * @throws IOException
+     */
+    @Test
     @DetailedTest
     public void test3SplitWsj24WithMerging() throws IOException {
 
@@ -339,8 +385,9 @@ public class TestTrainGrammar {
 
         for (int i = 0; i < iterations; i++) {
 
-            result = tg.emIteration(currentGrammar, -70f);
+            result = tg.emIteration(currentGrammar, Float.NEGATIVE_INFINITY);
             currentGrammar = result.countGrammar;
+            currentGrammar.totalParentCounts();
             final ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(currentGrammar);
 
             // Ensure we have rules matching each lexical entry
@@ -353,21 +400,12 @@ public class TestTrainGrammar {
                         cscGrammar.getLexicalProductionsWithChild(j).size() > 0);
             }
 
-            // TODO
-            // if (i > 2) {
-            // // Allow a small delta on corpus likelihood comparison to avoid floating-point errors
-            // assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f on iteration %d",
-            // previousCorpusLikelihood, result.corpusLikelihood, i + 1), result.corpusLikelihood
-            // - previousCorpusLikelihood >= -.001f);
-            // }
-
-            try {
-                final FileWriter fw = new FileWriter("/Users/dunlopa/tmp/tmp.gr");
-                currentGrammar.write(new PrintWriter(fw), false, edu.ohsu.cslu.grammar.Language.English,
-                        GrammarFormatType.Berkeley, 20);
-                fw.close();
-            } catch (final Exception e) {
-                e.printStackTrace();
+            if (i > 2) {
+                // Allow a small delta on corpus likelihood comparison to avoid floating-point errors and declines due
+                // to rule pruning
+                assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f on iteration %d",
+                        previousCorpusLikelihood, result.corpusLikelihood, i + 1), result.corpusLikelihood
+                        - previousCorpusLikelihood >= -.01f);
             }
 
             if (reportEmIterationParseScores) {
@@ -384,6 +422,8 @@ public class TestTrainGrammar {
 
         final long t1 = System.currentTimeMillis();
         System.out.format("Training Time: %.1f seconds\n", (t1 - t0) / 1000f);
+        System.out.format("Constrained parse time: %d ms  Count time: %d ms\n", tg.parseTime / 1000000,
+                tg.countTime / 1000000);
 
         if (reportFinalParseScore) {
             // Parse the training corpus with the new CSC grammar and report F-score
