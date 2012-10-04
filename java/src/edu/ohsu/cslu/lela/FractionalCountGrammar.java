@@ -122,10 +122,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     public void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
             final double increment) {
 
-        if (increment == 0) {
-            return;
-        }
-
         Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {
             leftChildMap = new Short2ObjectOpenHashMap<Short2DoubleOpenHashMap>();
@@ -154,7 +150,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             final float logIncrement) {
 
         assert (logIncrement <= .001f);
-        final double increment = Math.exp(Math.min(logIncrement, 0));
+        final double increment = Math.exp(logIncrement);
         incrementBinaryCount(parent, leftChild, rightChild, increment);
     }
 
@@ -168,10 +164,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     }
 
     public void incrementUnaryCount(final short parent, final short child, final double increment) {
-
-        if (increment == 0) {
-            return;
-        }
 
         Short2DoubleOpenHashMap childMap = unaryRuleCounts.get(parent);
         if (childMap == null) {
@@ -187,7 +179,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     public void incrementUnaryLogCount(final short parent, final short child, final float logIncrement) {
 
         assert (logIncrement <= .001f);
-        final double increment = Math.exp(Math.min(logIncrement, 0));
+        final double increment = Math.exp(logIncrement);
         incrementUnaryCount(parent, child, increment);
     }
 
@@ -199,10 +191,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     }
 
     public void incrementLexicalCount(final short parent, final int child, final double increment) {
-
-        if (increment == 0) {
-            return;
-        }
 
         Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
         if (childMap == null) {
@@ -222,7 +210,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     protected void incrementLexicalLogCount(final short parent, final int child, final float logIncrement) {
 
         assert (logIncrement <= .001f);
-        final double increment = Math.exp(Math.min(logIncrement, 0));
+        final double increment = Math.exp(logIncrement);
         incrementLexicalCount(parent, child, increment);
     }
 
