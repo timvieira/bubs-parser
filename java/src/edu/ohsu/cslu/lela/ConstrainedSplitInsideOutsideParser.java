@@ -18,6 +18,7 @@
  */
 package edu.ohsu.cslu.lela;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
@@ -91,21 +92,25 @@ public class ConstrainedSplitInsideOutsideParser extends
     protected void insidePass() {
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
-            if (startAndEnd[1] - startAndEnd[0] == 1) {
+            final short start = startAndEnd[0];
+            final short end = startAndEnd[1];
+            final int cellIndex = chart.cellIndex(start, end);
+            final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
+
+            if (end - start == 1) {
                 // Add lexical productions to the chart from the constraining chart
-                addLexicalProductions(startAndEnd[0], startAndEnd[1]);
+                addLexicalProductions(start, end, cellIndex, unaryChainLength);
             }
-            computeInsideProbabilities(startAndEnd[0], startAndEnd[1]);
+            computeInsideProbabilities(start, end, cellIndex, unaryChainLength);
         }
     }
 
     /**
      * Adds lexical productions from the constraining chart to the current chart
      */
-    protected void addLexicalProductions(final short start, final short end) {
+    protected void addLexicalProductions(final short start, final short end, final int cellIndex,
+            final int unaryChainLength) {
 
-        final int cellIndex = chart.cellIndex(start, start + 1);
-        final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
         final int firstParentOffset = chart.offset(cellIndex) + ((unaryChainLength - 1) * vocabulary.maxSplits);
 
         // Beginning of cell + offset for populated unary parents
@@ -125,7 +130,7 @@ public class ConstrainedSplitInsideOutsideParser extends
         boolean foundParent = false;
 
         // Iterate through grammar lexicon rules matching this word.
-        for (int i = 0; i < lexicalLogProbabilities.length; i++) {
+        for (int i = 0; i < lexicalParents.length; i++) {
             final short parent = lexicalParents[i];
 
             if (parent < firstParent) {
@@ -134,18 +139,17 @@ public class ConstrainedSplitInsideOutsideParser extends
             } else if (parent > lastParent) {
                 // We've passed all target parents. No need to search more grammar rules
                 break;
-
-            } else {
-                // For debugging with assertions turned on
-                assert (vocabulary.getBaseIndex(parent) == constrainingParent);
-                foundParent = true;
-
-                final int parentOffset = firstParentOffset + vocabulary.splitIndices[parent];
-                chart.nonTerminalIndices[parentOffset] = parent;
-                chart.insideProbabilities[parentOffset] = lexicalLogProbabilities[i];
-                chart.packedChildren[parentOffset] = chart.sparseMatrixGrammar.packingFunction
-                        .packLexical(lexicalProduction);
             }
+
+            // For debugging with assertions turned on
+            assert (vocabulary.getBaseIndex(parent) == constrainingParent);
+            foundParent = true;
+
+            final int parentOffset = firstParentOffset + parent - firstParent;
+            chart.nonTerminalIndices[parentOffset] = parent;
+            chart.insideProbabilities[parentOffset] = lexicalLogProbabilities[i];
+            chart.packedChildren[parentOffset] = chart.sparseMatrixGrammar.packingFunction
+                    .packLexical(lexicalProduction);
         }
         assert foundParent;
     }
@@ -153,12 +157,10 @@ public class ConstrainedSplitInsideOutsideParser extends
     /**
      * Computes constrained inside sum probabilities
      */
-    protected void computeInsideProbabilities(final short start, final short end) {
+    protected void computeInsideProbabilities(final short start, final short end, final int cellIndex,
+            final int unaryChainLength) {
 
         final PackingFunction cpf = grammar.packingFunction();
-
-        final int cellIndex = chart.cellIndex(start, end);
-        final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
 
         // Binary productions
         if (end - start > 1) {
@@ -191,8 +193,8 @@ public class ConstrainedSplitInsideOutsideParser extends
 
             for (int i = 0; i < leftChildSplits; i++) {
 
-                final float leftProbability = chart.insideProbabilities[leftCellOffset + i];
-                if (leftProbability == Float.NEGATIVE_INFINITY) {
+                final float leftChildInsideProbability = chart.insideProbabilities[leftCellOffset + i];
+                if (leftChildInsideProbability == Float.NEGATIVE_INFINITY) {
                     continue;
                 }
 
@@ -201,8 +203,8 @@ public class ConstrainedSplitInsideOutsideParser extends
                 // And over children in the right child cell
                 for (int j = 0; j < rightChildSplits; j++) {
 
-                    final float rightProbability = chart.insideProbabilities[rightCellOffset + j];
-                    if (rightProbability == Float.NEGATIVE_INFINITY) {
+                    final float rightChildInsideProbability = chart.insideProbabilities[rightCellOffset + j];
+                    if (rightChildInsideProbability == Float.NEGATIVE_INFINITY) {
                         continue;
                     }
 
@@ -211,7 +213,7 @@ public class ConstrainedSplitInsideOutsideParser extends
                         continue;
                     }
 
-                    final float childInsideProbability = leftProbability + rightProbability;
+                    final float childInsideProbability = leftChildInsideProbability + rightChildInsideProbability;
 
                     for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
                         final short parent = grammar.cscBinaryRowIndices[k];
@@ -222,19 +224,17 @@ public class ConstrainedSplitInsideOutsideParser extends
                         } else if (parent > lastParent) {
                             // We've passed all target parents. No need to search more grammar rules
                             break;
-
-                        } else {
-                            // For debugging with assertions turned on
-                            assert (vocabulary.getBaseIndex(parent) == constrainingParent);
-                            foundParent = true;
-
-                            final int parentOffset = firstParentOffset + vocabulary.splitIndices[parent];
-                            // TODO We probably don't need to store the non-terminal index anymore
-                            chart.nonTerminalIndices[parentOffset] = parent;
-                            chart.insideProbabilities[parentOffset] = Math.logSum(
-                                    chart.insideProbabilities[parentOffset], grammar.cscBinaryProbabilities[k]
-                                            + childInsideProbability);
                         }
+
+                        // For debugging with assertions turned on
+                        assert (vocabulary.getBaseIndex(parent) == constrainingParent);
+                        foundParent = true;
+
+                        final int parentOffset = firstParentOffset + parent - firstParent;
+                        // TODO We probably don't need to store the non-terminal index anymore
+                        chart.nonTerminalIndices[parentOffset] = parent;
+                        chart.insideProbabilities[parentOffset] = Math.logSum(chart.insideProbabilities[parentOffset],
+                                grammar.cscBinaryProbabilities[k] + childInsideProbability);
                     }
                 }
             }
@@ -283,18 +283,16 @@ public class ConstrainedSplitInsideOutsideParser extends
                     } else if (parent > lastParent) {
                         // We've passed all target parents. No need to search more grammar rules
                         break;
-
-                    } else {
-                        // For debugging with assertions turned on
-                        assert (vocabulary.getBaseIndex(parent) == constrainingChart.nonTerminalIndices[constrainingParentOffset]);
-                        foundParent = true;
-
-                        final int parentOffset = firstParentOffset + vocabulary.splitIndices[parent];
-                        chart.nonTerminalIndices[parentOffset] = parent;
-                        chart.insideProbabilities[parentOffset] = Math.logSum(chart.insideProbabilities[parentOffset],
-                                grammar.cscUnaryProbabilities[j] + childInsideProbability);
-
                     }
+
+                    // For debugging with assertions turned on
+                    assert (vocabulary.getBaseIndex(parent) == constrainingChart.nonTerminalIndices[constrainingParentOffset]);
+                    foundParent = true;
+
+                    final int parentOffset = firstParentOffset + parent - firstParent;
+                    chart.nonTerminalIndices[parentOffset] = parent;
+                    chart.insideProbabilities[parentOffset] = Math.logSum(chart.insideProbabilities[parentOffset],
+                            grammar.cscUnaryProbabilities[j] + childInsideProbability);
                 }
             }
             assert foundParent;
@@ -313,16 +311,18 @@ public class ConstrainedSplitInsideOutsideParser extends
 
         while (reverseIterator.hasNext()) {
             final short[] startAndEnd = reverseIterator.next();
-            computeOutsideProbabilities(startAndEnd[0], startAndEnd[1]);
+            final int cellIndex = chart.cellIndex(startAndEnd[0], startAndEnd[1]);
+            final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
+
+            computeOutsideProbabilities(startAndEnd[0], startAndEnd[1], cellIndex, unaryChainLength);
         }
     }
 
-    private void computeOutsideProbabilities(final short start, final short end) {
-
-        final int cellIndex = chart.cellIndex(start, end);
+    private void computeOutsideProbabilities(final short start, final short end, final int cellIndex,
+            final int unaryChainLength) {
 
         // Compute unary probabilities first
-        computeUnaryOutsideProbabilities(cellIndex);
+        computeUnaryOutsideProbabilities(cellIndex, unaryChainLength);
 
         // Compute outside probabilities of the top entries in each child cell. Unary probabilities in those child cells
         // will be populated later, when we reach the children. Since this calculation only covers binary probabilities,
@@ -330,7 +330,6 @@ public class ConstrainedSplitInsideOutsideParser extends
         if (end - start > 1) {
 
             final PackingFunction cpf = grammar.packingFunction();
-            final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
 
             final short midpoint = chart.midpoints[cellIndex];
             final int leftChildCellIndex = chart.cellIndex(start, midpoint);
@@ -367,6 +366,7 @@ public class ConstrainedSplitInsideOutsideParser extends
                     continue;
                 }
 
+                float leftChildOutsideProbability = Float.NEGATIVE_INFINITY;
                 final short leftChild = chart.nonTerminalIndices[leftChildOffset];
 
                 // And over children in the right child cell
@@ -382,6 +382,7 @@ public class ConstrainedSplitInsideOutsideParser extends
                     if (column == Integer.MIN_VALUE) {
                         continue;
                     }
+                    float rightChildOutsideProbability = chart.outsideProbabilities[rightChildOffset];
 
                     for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
                         final short parent = grammar.cscBinaryRowIndices[k];
@@ -392,46 +393,46 @@ public class ConstrainedSplitInsideOutsideParser extends
                         } else if (parent > lastParent) {
                             // We've passed all target parents. No need to search more grammar rules
                             break;
-
-                        } else {
-                            // For debugging with assertions turned on
-                            assert (vocabulary.getBaseIndex(parent) == constrainingParent);
-                            foundParent = true;
-
-                            final int parentOffset = firstParentOffset + vocabulary.splitIndices[parent];
-                            final float parentOutsideProbability = chart.outsideProbabilities[parentOffset];
-                            final float grammarProbability = grammar.cscBinaryProbabilities[k];
-                            // Left child: Parent outside * right sibling inside * P(parent -> children)
-                            chart.outsideProbabilities[leftChildOffset] = Math.logSum(
-                                    chart.outsideProbabilities[leftChildOffset], parentOutsideProbability
-                                            + rightChildInsideProbability + grammarProbability);
-                            // Right child: Parent outside * left sibling inside * P(parent -> children)
-                            chart.outsideProbabilities[rightChildOffset] = Math.logSum(
-                                    chart.outsideProbabilities[rightChildOffset], parentOutsideProbability
-                                            + leftChildInsideProbability + grammarProbability);
                         }
+
+                        // For debugging with assertions turned on
+                        assert (vocabulary.getBaseIndex(parent) == constrainingParent);
+                        foundParent = true;
+
+                        final int parentOffset = firstParentOffset + parent - firstParent;
+                        final float parentOutsideProbability = chart.outsideProbabilities[parentOffset];
+                        final float grammarProbability = grammar.cscBinaryProbabilities[k];
+                        // Left child: Parent outside * right sibling inside * P(parent -> children)
+                        leftChildOutsideProbability = Math.logSum(leftChildOutsideProbability, parentOutsideProbability
+                                + rightChildInsideProbability + grammarProbability);
+                        // Right child: Parent outside * left sibling inside * P(parent -> children)
+                        rightChildOutsideProbability = Math.logSum(rightChildOutsideProbability,
+                                parentOutsideProbability + leftChildInsideProbability + grammarProbability);
                     }
+
+                    chart.outsideProbabilities[rightChildOffset] = rightChildOutsideProbability;
                 }
+
+                chart.outsideProbabilities[leftChildOffset] = leftChildOutsideProbability;
             }
             assert foundParent;
         }
     }
 
-    private void computeUnaryOutsideProbabilities(final int cellIndex) {
+    private void computeUnaryOutsideProbabilities(final int cellIndex, final int unaryChainLength) {
 
         final int offset = chart.offset(cellIndex);
-        final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
 
         // foreach unary chain depth (starting from 2nd-to-last in the chain; the last entry is the binary child)
         for (int unaryDepth = 1; unaryDepth < unaryChainLength; unaryDepth++) {
 
-            final int child0Offset = offset + unaryDepth * vocabulary.maxSplits;
-            final int parent0Offset = child0Offset - vocabulary.maxSplits;
+            final int firstChildOffset = offset + unaryDepth * vocabulary.maxSplits;
+            final int firstParentOffset = firstChildOffset - vocabulary.maxSplits;
 
-            final int constrainingParentIndex = constrainingChart.offset(cellIndex) + unaryDepth - 1;
-            final short constrainingChild = constrainingChart.nonTerminalIndices[constrainingParentIndex + 1];
+            final int constrainingParentOffset = constrainingChart.offset(cellIndex) + unaryDepth - 1;
+            final short constrainingChild = constrainingChart.nonTerminalIndices[constrainingParentOffset + 1];
 
-            final short firstParent = vocabulary.firstSplitIndices[constrainingChart.nonTerminalIndices[constrainingParentIndex]];
+            final short firstParent = vocabulary.firstSplitIndices[constrainingChart.nonTerminalIndices[constrainingParentOffset]];
             final short lastParent = (short) (firstParent + vocabulary.ntSplitCounts[firstParent] - 1);
 
             // For debugging with assertions turned on
@@ -444,7 +445,7 @@ public class ConstrainedSplitInsideOutsideParser extends
             for (int i = 0; i < childSplits; i++) {
 
                 final short child = (short) (child0 + i);
-                final int childOffset = child0Offset + i;
+                final int childOffset = firstChildOffset + i;
 
                 // Iterate over possible parents of the child (rows with non-zero entries)
                 for (int j = grammar.cscUnaryColumnOffsets[child]; j < grammar.cscUnaryColumnOffsets[child + 1]; j++) {
@@ -456,16 +457,15 @@ public class ConstrainedSplitInsideOutsideParser extends
                     } else if (parent > lastParent) {
                         // We've passed all target parents. No need to search more grammar rules
                         break;
-
-                    } else {
-                        // For debugging with assertions turned on
-                        assert (vocabulary.getBaseIndex(child) == constrainingChild);
-                        foundChild = true;
-
-                        final int parentOffset = parent0Offset + vocabulary.splitIndices[parent];
-                        chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
-                                grammar.cscUnaryProbabilities[j] + chart.outsideProbabilities[parentOffset]);
                     }
+
+                    // For debugging with assertions turned on
+                    assert (vocabulary.getBaseIndex(child) == constrainingChild);
+                    foundChild = true;
+
+                    final int parentOffset = firstParentOffset + parent - firstParent;
+                    chart.outsideProbabilities[childOffset] = Math.logSum(chart.outsideProbabilities[childOffset],
+                            grammar.cscUnaryProbabilities[j] + chart.outsideProbabilities[parentOffset]);
                 }
             }
 
@@ -484,11 +484,18 @@ public class ConstrainedSplitInsideOutsideParser extends
         final float sentenceInsideLogProb = chart.getInside(0, chart.size(), 0);
         while (cellSelector.hasNext()) {
             final short[] startAndEnd = cellSelector.next();
-            countUnaryRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1], sentenceInsideLogProb);
-            if (startAndEnd[1] - startAndEnd[0] == 1) {
-                countLexicalRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1], sentenceInsideLogProb);
+            final short start = startAndEnd[0];
+            final short end = startAndEnd[1];
+
+            final int cellIndex = chart.cellIndex(start, end);
+            final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
+
+            countUnaryRuleOccurrences(countGrammar, start, end, cellIndex, unaryChainLength, sentenceInsideLogProb);
+            if (end - start == 1) {
+                countLexicalRuleOccurrences(countGrammar, start, end, cellIndex, unaryChainLength,
+                        sentenceInsideLogProb);
             } else {
-                countBinaryRuleOccurrences(countGrammar, startAndEnd[0], startAndEnd[1], sentenceInsideLogProb);
+                countBinaryRuleOccurrences(countGrammar, start, end, cellIndex, unaryChainLength, sentenceInsideLogProb);
             }
         }
 
@@ -497,11 +504,10 @@ public class ConstrainedSplitInsideOutsideParser extends
 
     // TODO Could these counts be computed during the outside pass?
     private void countBinaryRuleOccurrences(final FractionalCountGrammar countGrammar, final short start,
-            final short end, final float sentenceInsideLogProb) {
+            final short end, final int cellIndex, final int unaryChainLength, final float sentenceInsideLogProb) {
 
         final PackingFunction cpf = grammar.packingFunction();
 
-        final int cellIndex = chart.cellIndex(start, end);
         final short midpoint = chart.midpoints[cellIndex];
         final int leftChildCellIndex = chart.cellIndex(start, midpoint);
         final int rightChildCellIndex = chart.cellIndex(midpoint, end);
@@ -512,8 +518,6 @@ public class ConstrainedSplitInsideOutsideParser extends
                 .offset(leftChildCellIndex)];
         final short constrainingRightChild = constrainingChart.nonTerminalIndices[constrainingChart
                 .offset(rightChildCellIndex)];
-
-        final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
 
         final int firstParentOffset = chart.offset(cellIndex) + ((unaryChainLength - 1) * vocabulary.maxSplits);
         final short firstParent = vocabulary.firstSplitIndices[constrainingParent];
@@ -555,25 +559,21 @@ public class ConstrainedSplitInsideOutsideParser extends
                     } else if (parent > lastParent) {
                         // We've passed all target parents. No need to search more grammar rules
                         break;
-
-                    } else {
-                        // Parent outside x left child inside x right child inside x production probability.
-                        // Equation 1 of Petrov et al., 2006.
-                        final int parentOffset = firstParentOffset + vocabulary.splitIndices[parent];
-                        final float logCount = chart.outsideProbabilities[parentOffset] + childInsideProbability
-                                + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
-                        countGrammar.incrementBinaryLogCount(parent, leftChild, rightChild, logCount);
                     }
+
+                    // Parent outside x left child inside x right child inside x production probability.
+                    // Equation 1 of Petrov et al., 2006.
+                    final int parentOffset = firstParentOffset + parent - firstParent;
+                    final float logCount = chart.outsideProbabilities[parentOffset] + childInsideProbability
+                            + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
+                    countGrammar.incrementBinaryLogCount(parent, leftChild, rightChild, logCount);
                 }
             }
         }
     }
 
     private void countUnaryRuleOccurrences(final FractionalCountGrammar countGrammar, final short start,
-            final short end, final float sentenceInsideLogProb) {
-
-        final int cellIndex = chart.cellIndex(start, end);
-        final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
+            final short end, final int cellIndex, final int unaryChainLength, final float sentenceInsideLogProb) {
 
         // foreach unary chain height (starting from 2nd from bottom in chain; the bottom entry is the binary or lexical
         // parent)
@@ -614,26 +614,22 @@ public class ConstrainedSplitInsideOutsideParser extends
                     } else if (parent > lastParent) {
                         // We've passed all target parents. No need to search more grammar rules
                         break;
-
-                    } else {
-                        // Parent outside x child inside x production probability.
-                        // Equation 1 of Petrov et al., 2006.
-                        final int parentOffset = firstParentOffset + vocabulary.splitIndices[parent];
-                        final float logCount = chart.outsideProbabilities[parentOffset] + childInsideProbability
-                                + grammar.cscUnaryProbabilities[j] - sentenceInsideLogProb;
-                        countGrammar.incrementUnaryLogCount(parent, child, logCount);
                     }
+
+                    // Parent outside x child inside x production probability.
+                    // Equation 1 of Petrov et al., 2006.
+                    final int parentOffset = firstParentOffset + parent - firstParent;
+                    final float logCount = chart.outsideProbabilities[parentOffset] + childInsideProbability
+                            + grammar.cscUnaryProbabilities[j] - sentenceInsideLogProb;
+                    countGrammar.incrementUnaryLogCount(parent, child, logCount);
                 }
             }
         }
     }
 
     private void countLexicalRuleOccurrences(final FractionalCountGrammar countGrammar, final short start,
-            final short end, final float sentenceInsideLogProb) {
+            final short end, final int cellIndex, final int unaryChainLength, final float sentenceInsideLogProb) {
 
-        final int cellIndex = chart.cellIndex(start, start + 1);
-
-        final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
         final int firstParentOffset = chart.offset(cellIndex) + ((unaryChainLength - 1) * vocabulary.maxSplits);
 
         // Beginning of cell + offset for populated unary parents
@@ -648,7 +644,7 @@ public class ConstrainedSplitInsideOutsideParser extends
         final short[] lexicalParents = grammar.lexicalParents(lexicalProduction);
 
         // Iterate through grammar lexicon rules matching this word.
-        for (int i = 0; i < lexicalLogProbabilities.length; i++) {
+        for (int i = 0; i < lexicalParents.length; i++) {
             final short parent = lexicalParents[i];
 
             if (parent < firstParent) {
@@ -659,7 +655,7 @@ public class ConstrainedSplitInsideOutsideParser extends
                 break;
 
             } else {
-                final int parentOffset = firstParentOffset + vocabulary.splitIndices[parent];
+                final int parentOffset = firstParentOffset + parent - firstParent;
                 // Parent outside * child inside (1) * p(parent -> child) / p(ROOT, 0, n)
                 final float logCount = chart.outsideProbabilities[parentOffset] + lexicalLogProbabilities[i]
                         - sentenceInsideLogProb;
