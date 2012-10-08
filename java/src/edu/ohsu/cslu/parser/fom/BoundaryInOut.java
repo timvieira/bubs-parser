@@ -451,21 +451,28 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             final int fbSize = sentLen + 2;
             final int posSize = grammar.maxPOSIndex() + 1;
 
-            if (outsideLeft == null || outsideLeft.length < fbSize) {
-                outsideLeft = new float[fbSize + 10][grammar.numNonTerms()];
-                outsideRight = new float[fbSize + 10][grammar.numNonTerms()];
-                backPointer = new short[fbSize + 10][posSize];
-            }
-
             if (scores == null) {
                 scores = new float[posSize];
                 prevScores = new float[posSize];
             }
 
-            for (int i = 0; i < fbSize; i++) {
+            if (outsideLeft == null || outsideLeft.length < fbSize) {
+                outsideLeft = new float[fbSize + 10][grammar.numNonTerms()];
+                outsideRight = new float[fbSize + 10][grammar.numNonTerms()];
+                backPointer = new short[fbSize + 10][posSize];
+            } else {
+                for (int i = 0; i < fbSize; i++) {
+                    Arrays.fill(backPointer[i], (short) 0);
+                }
+            }
+
+            // We'll initialize the first left-pass array and the last right-pass later
+            Arrays.fill(outsideLeft[fbSize - 1], Float.NEGATIVE_INFINITY);
+            Arrays.fill(outsideRight[0], Float.NEGATIVE_INFINITY);
+
+            for (int i = 1; i < fbSize - 1; i++) {
                 Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
                 Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
-                Arrays.fill(backPointer[i], (short) 0);
             }
 
             short[] prevPOSList = NULL_LIST;
