@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTask;
@@ -50,6 +51,11 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
     // Model params learned from training data
     private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][], posTransitionLogProb[][];
+    /**
+     * Labels parts-of-speech for which all boundary probabilities or transition probabilities are 0, allowing us to
+     * short-circuit loops during sentence initialization.
+     */
+    private final PackedBitVector leftBoundaryZeros, rightBoundaryZeros, posTransitionZeros;
 
     final short nullSymbol;
     final short[] NULL_LIST;
@@ -83,6 +89,10 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             Arrays.fill(rightBoundaryLogProb[i], Float.NEGATIVE_INFINITY);
             Arrays.fill(posTransitionLogProb[i], Float.NEGATIVE_INFINITY);
         }
+
+        this.leftBoundaryZeros = new PackedBitVector(leftBoundaryLogProb.length);
+        this.rightBoundaryZeros = new PackedBitVector(rightBoundaryLogProb.length);
+        this.posTransitionZeros = new PackedBitVector(posTransitionLogProb.length);
 
         if (modelStream != null) {
             readModel(modelStream);
@@ -163,6 +173,25 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                     System.err.println("WARNING: ignoring line in model file '" + line + "'");
                 }
             }
+        }
+
+        // Populate bit vectors marking all-0 probability vectors.
+        for (int nt = 0; nt < leftBoundaryLogProb.length; nt++) {
+            boolean leftAll0 = true, rightAll0 = true, posTransitionAll0 = true;
+            for (int i = 0; i < leftBoundaryLogProb[nt].length; i++) {
+                if (leftBoundaryLogProb[nt][i] != Float.NEGATIVE_INFINITY) {
+                    leftAll0 = false;
+                }
+                if (rightBoundaryLogProb[nt][i] != Float.NEGATIVE_INFINITY) {
+                    rightAll0 = false;
+                }
+                if (posTransitionLogProb[nt].length > i && posTransitionLogProb[nt][i] != Float.NEGATIVE_INFINITY) {
+                    posTransitionAll0 = false;
+                }
+            }
+            leftBoundaryZeros.set(nt, leftAll0);
+            rightBoundaryZeros.set(nt, rightAll0);
+            posTransitionZeros.set(nt, posTransitionAll0);
         }
     }
 
@@ -396,6 +425,8 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             }
 
             if (outsideLeft == null || outsideLeft.length < fbSize) {
+                // When we allocate 2-d arrays, make them big enough to handle a slightly longer sentence than the
+                // current one
                 outsideLeft = new float[fbSize + 10][grammar.numNonTerms()];
                 outsideRight = new float[fbSize + 10][grammar.numNonTerms()];
                 backPointer = new short[fbSize + 10][posSize];
@@ -406,20 +437,21 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 }
             }
 
-            // We'll initialize the first left-pass array and the last right-pass later
-            Arrays.fill(outsideLeft[fbSize - 1], Float.NEGATIVE_INFINITY);
+            // Initialize boundary arrays, including populating start-of-sentence and end-of-sentence probabilities into
+            // the leftmost forward-pass and rightmost backward pass arrays
+            System.arraycopy(leftBoundaryLogProb[nullSymbol], 0, outsideLeft[0], 0, grammar.numNonTerms());
             Arrays.fill(outsideRight[0], Float.NEGATIVE_INFINITY);
-
             for (int i = 1; i < fbSize - 1; i++) {
                 Arrays.fill(outsideLeft[i], Float.NEGATIVE_INFINITY);
                 Arrays.fill(outsideRight[i], Float.NEGATIVE_INFINITY);
             }
+            Arrays.fill(outsideLeft[fbSize - 1], Float.NEGATIVE_INFINITY);
+            System.arraycopy(rightBoundaryLogProb[nullSymbol], 0, outsideRight[fbSize - 1], 0, grammar.numNonTerms());
 
             short[] prevPOSList = NULL_LIST;
 
             // Forward pass
             prevScores[nullSymbol] = 0f;
-            System.arraycopy(leftBoundaryLogProb[nullSymbol], 0, outsideLeft[0], 0, grammar.numNonTerms());
 
             for (int fwdIndex = 1; fwdIndex < fbSize; fwdIndex++) {
 
@@ -435,6 +467,10 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
                 for (int i = 0; i < posList.length; i++) {
                     final short curPOS = posList[i];
+                    if (posTransitionZeros.getBoolean(curPOS)) {
+                        continue;
+                    }
+
                     final float posEmissionLogProb = fwdPOSProbs[i];
                     final float[] curPosTransitionLogProb = posTransitionLogProb[curPOS];
                     float bestScore = Float.NEGATIVE_INFINITY;
@@ -455,10 +491,12 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 // FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
                 final float[] currentOutsideLeft = outsideLeft[fwdIndex];
                 for (final short pos : posList) {
+                    if (leftBoundaryZeros.getBoolean(pos)) {
+                        continue;
+                    }
                     final float posScore = scores[pos];
                     final float[] posLeftBoundaryLogProb = leftBoundaryLogProb[pos];
 
-                    // for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
                     for (final short nonTerm : grammarPhraseSet) {
                         final float score = posScore + posLeftBoundaryLogProb[nonTerm];
                         if (score > currentOutsideLeft[nonTerm]) {
@@ -474,15 +512,13 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             }
 
             // Backward pass
-            System.arraycopy(rightBoundaryLogProb[nullSymbol], 0, outsideRight[fbSize - 1], 0, grammar.numNonTerms());
-
             prevPOSList = NULL_LIST;
             prevScores[nullSymbol] = 0f;
 
             for (int bkwIndex = fbSize - 2; bkwIndex >= 0; bkwIndex--) {
 
-                // TODO If we were to reverse the array iteration order, we could eliminate this call by computing
-                // 'bestScore' like we do above. But that might mess up cache enough to be a net loss
+                // If we were to reverse the array iteration order, we could eliminate this call by computing
+                // 'bestScore' like we do above. But that would mess up cache enough to be a net loss
                 Arrays.fill(scores, Float.NEGATIVE_INFINITY);
 
                 final int bkwChartIndex = bkwIndex - 1;
@@ -492,9 +528,11 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                         .lexicalLogProbabilities(task.tokens[bkwChartIndex]);
 
                 for (final short prevPOS : prevPOSList) {
+                    if (posTransitionZeros.getBoolean(prevPOS)) {
+                        continue;
+                    }
                     final float prevScore = prevScores[prevPOS];
                     final float[] prevPosTransitionLogProb = posTransitionLogProb[prevPOS];
-
                     for (int i = 0; i < posList.length; i++) {
                         final short curPOS = posList[i];
                         final float score = prevScore + prevPosTransitionLogProb[curPOS] + bkwPOSProbs[i];
@@ -508,10 +546,13 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 // FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
                 final float[] currentOutsideRight = outsideRight[bkwIndex];
                 for (final short pos : posList) {
+                    if (rightBoundaryZeros.getBoolean(pos)) {
+                        continue;
+                    }
                     final float posScore = scores[pos];
                     final float[] posRightBoundaryLogProb = rightBoundaryLogProb[pos];
+                    
                     for (final short nonTerm : grammarPhraseSet) {
-                        // for (int nonTerm = 0; nonTerm < grammar.numNonTerms(); nonTerm++) {
                         final float score = posScore + posRightBoundaryLogProb[nonTerm];
                         if (score > currentOutsideRight[nonTerm]) {
                             currentOutsideRight[nonTerm] = score;
@@ -537,7 +578,6 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 for (int i = sentLen - 1; i >= 0; i--) {
                     bestPOS = backPointer[i + 2][bestPOS];
                     task.fomTags[i] = bestPOS;
-                    // System.out.println(i + "=" + grammar.mapNonterminal(bestPOS));
                 }
             }
         }
