@@ -18,7 +18,6 @@
  */
 package edu.ohsu.cslu.lela;
 
-import java.util.Arrays;
 import java.util.Iterator;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
@@ -51,12 +50,12 @@ import edu.ohsu.cslu.util.Math;
  * @author Aaron Dunlop
  */
 public class ConstrainedSplitInsideOutsideParser extends
-        SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, ConstrainedChart> implements ConstrainedChartParser {
+        SparseMatrixLoopParser<ConstrainedCscSparseMatrixGrammar, ConstrainedChart> implements ConstrainedChartParser {
 
     ConstrainingChart constrainingChart;
     final SplitVocabulary vocabulary;
 
-    public ConstrainedSplitInsideOutsideParser(final ParserDriver opts, final ConstrainedInsideOutsideGrammar grammar) {
+    public ConstrainedSplitInsideOutsideParser(final ParserDriver opts, final ConstrainedCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
         this.vocabulary = grammar.vocabulary();
     }

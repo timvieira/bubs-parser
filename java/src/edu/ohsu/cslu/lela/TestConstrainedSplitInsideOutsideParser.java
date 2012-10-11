@@ -60,7 +60,7 @@ public class TestConstrainedSplitInsideOutsideParser {
     private FractionalCountGrammar grammar0;
     private FractionalCountGrammar grammar1;
     private ConstrainingChart chart0;
-    private ConstrainedInsideOutsideGrammar cscGrammar1;
+    private ConstrainedCscSparseMatrixGrammar cscGrammar1;
     private ConstrainedSplitInsideOutsideParser parser1;
 
     @Before
@@ -196,7 +196,7 @@ public class TestConstrainedSplitInsideOutsideParser {
 
         // Split the 1-split grammar again
         final FractionalCountGrammar plGrammar2 = grammar1.split(new ZeroNoiseGenerator());
-        final ConstrainedInsideOutsideGrammar cscGrammar2 = cscGrammar(plGrammar2);
+        final ConstrainedCscSparseMatrixGrammar cscGrammar2 = cscGrammar(plGrammar2);
 
         //
         // Parse with the split-2 grammar, constrained by the unsplit chart
@@ -303,11 +303,11 @@ public class TestConstrainedSplitInsideOutsideParser {
         // Induce a grammar from the corpus and construct a basic constraining chart
         final FractionalCountGrammar g0 = induceFractionalCountGrammar(new StringReader(
                 AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN));
-        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
+        final ConstrainedCscSparseMatrixGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
         final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, randomness));
-        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
+        final ConstrainedCscSparseMatrixGrammar csc1 = cscGrammar(g1);
 
         // Construct a constraining chart
         final NaryTree<String> goldTree = NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
@@ -329,8 +329,8 @@ public class TestConstrainedSplitInsideOutsideParser {
         return sg.toFractionalCountGrammar();
     }
 
-    private ConstrainedInsideOutsideGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
-        return new ConstrainedInsideOutsideGrammar(countGrammar, GrammarFormatType.Berkeley,
+    private ConstrainedCscSparseMatrixGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
+        return new ConstrainedCscSparseMatrixGrammar(countGrammar, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 
@@ -340,19 +340,19 @@ public class TestConstrainedSplitInsideOutsideParser {
 
         // Induce a grammar from the corpus
         final FractionalCountGrammar g0 = induceFractionalCountGrammar(JUnit.unitTestDataAsReader(corpus));
-        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
+        final ConstrainedCscSparseMatrixGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
         final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, .01f));
         // g1.randomize(new Random(), randomness);
-        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
+        final ConstrainedCscSparseMatrixGrammar csc1 = cscGrammar(g1);
 
         // Parse each tree in the training corpus with the split-1 grammar
         parseAndCheck(JUnit.unitTestDataAsReader(corpus), csc0, csc1);
     }
 
-    private void parseAndCheck(final Reader corpus, final ConstrainedInsideOutsideGrammar unsplitGrammar,
-            final ConstrainedInsideOutsideGrammar splitGrammar) throws IOException {
+    private void parseAndCheck(final Reader corpus, final ConstrainedCscSparseMatrixGrammar unsplitGrammar,
+            final ConstrainedCscSparseMatrixGrammar splitGrammar) throws IOException {
 
         final BufferedReader br = new BufferedReader(corpus);
 
