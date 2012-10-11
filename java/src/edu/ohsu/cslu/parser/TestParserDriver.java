@@ -36,6 +36,7 @@ import cltool4j.ToolTestCase;
 public class TestParserDriver extends ToolTestCase {
 
     private final static String M0_GRAMMAR = "unit-test-data/grammars/eng.R0.gr.gz";
+    private final static String M2_GRAMMAR = "unit-test-data/grammars/eng.R2.gr.gz";
 
     /**
      * Tests finding and labeling heads using Charniak's ruleset. Parses with a Markov-0 grammar and outputs head rules
@@ -116,6 +117,23 @@ public class TestParserDriver extends ToolTestCase {
 
         final String output = executeTool(new ParserDriver(), "-rp apall -g " + M0_GRAMMAR
                 + " -if token -v 2 -O overParseTune=2", input.toString());
+        assertEquals(expectedOutput.toString(), treeOutput(output));
+    }
+
+    @Test
+    public void testConstrainedParser() throws Exception {
+        final StringBuilder input = new StringBuilder(1024);
+        input.append("(ROOT (S (NP (NP (JJ Influential) (NNS members)) (PP (IN of) (NP (DT the) (NNP House) (NNP Ways) (CC and) (NNP Means) (NNP Committee)))) (VP (VBD introduced) (NP (NP (NN legislation)) (SBAR (WHNP (WDT that)) (S (VP (MD would) (VP (VB restrict) (SBAR (WHADVP (WRB how)) (S (NP (DT the) (JJ new) (NN savings-and-loan) (NN bailout) (NN agency)) (VP (MD can) (VP (VB raise) (NP (NN capital)))))) (, ,) (S (VP (VBG creating) (NP (NP (DT another) (JJ potential) (NN obstacle)) (PP (TO to) (NP (NP (NP (DT the) (NN government) (POS 's)) (NN sale)) (PP (IN of) (NP (JJ sick) (NNS thrifts)))))))))))))) (. .)))\n");
+        input.append("(ROOT (S (NP (NP (DT The) (NN bill)) (, ,) (SBAR (WHNP (WP$ whose) (NNS backers)) (S (VP (VBP include) (NP (NP (NNP Chairman) (NNP Dan) (NNP Rostenkowski)) (PRN (-LRB- -LRB-) (NP (NNP D.)) (, ,) (NP (NNP Ill.)) (-RRB- -RRB-)))))) (, ,)) (VP (MD would) (VP (VB prevent) (NP (DT the) (NNP Resolution) (NNP Trust) (NNP Corp.)) (PP (IN from) (S (VP (VBG raising) (NP (JJ temporary) (VBG working) (NN capital))))) (PP (IN by) (S (VP (VBG having) (NP (NP (DT an) (JJ RTC-owned) (NN bank) (CC or) (NN thrift) (NN issue) (NN debt)) (SBAR (WHNP (WDT that)) (S (VP (MD would) (RB n't) (VP (VB be) (VP (VBN counted) (PP (IN on) (NP (DT the) (JJ federal) (NN budget)))))))))))))) (. .)))\n");
+
+        final StringBuilder expectedOutput = new StringBuilder(1024);
+        expectedOutput
+                .append("(ROOT (S (NP (NP (JJ Influential) (NNS members)) (PP (IN of) (NP (DT the) (NNP House) (NNP Ways) (CC and) (NNP Means) (NNP Committee)))) (VP (VBD introduced) (NP (NP (NN legislation)) (SBAR (WHNP (WDT that)) (S (VP (MD would) (VP (VB restrict) (SBAR (WHADVP (WRB how)) (S (NP (DT the) (JJ new) (NN savings-and-loan) (NN bailout) (NN agency)) (VP (MD can) (VP (VB raise) (NP (NN capital)))))) (, ,) (S (VP (VBG creating) (NP (NP (DT another) (JJ potential) (NN obstacle)) (PP (TO to) (NP (NP (NP (DT the) (NN government) (POS 's)) (NN sale)) (PP (IN of) (NP (JJ sick) (NNS thrifts)))))))))))))) (. .)))\n");
+        expectedOutput
+                .append("(ROOT (S (NP (NP (DT The) (NN bill)) (, ,) (SBAR (WHNP (WP$ whose) (NNS backers)) (S (VP (VBP include) (NP (NP (NNP Chairman) (NNP Dan) (NNP Rostenkowski)) (PRN (-LRB- -LRB-) (NP (NNP D.)) (, ,) (NP (NNP Ill.)) (-RRB- -RRB-)))))) (, ,)) (VP (MD would) (VP (VB prevent) (NP (DT the) (NNP Resolution) (NNP Trust) (NNP Corp.)) (PP (IN from) (S (VP (VBG raising) (NP (JJ temporary) (VBG working) (NN capital))))) (PP (IN by) (S (VP (VBG having) (NP (NP (DT an) (JJ RTC-owned) (NN bank) (CC or) (NN thrift) (NN issue) (NN debt)) (SBAR (WHNP (WDT that)) (S (VP (MD would) (RB n't) (VP (VB be) (VP (VBN counted) (PP (IN on) (NP (DT the) (JJ federal) (NN budget)))))))))))))) (. .)))\n");
+
+        final String output = executeTool(new ParserDriver(), "-rp const -g " + M2_GRAMMAR + " -v 2 -O maxBeamWidth=0",
+                input.toString());
         assertEquals(expectedOutput.toString(), treeOutput(output));
     }
 

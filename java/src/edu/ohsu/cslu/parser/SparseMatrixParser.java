@@ -99,8 +99,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         final ConfigProperties props = GlobalConfigProperties.singleton();
 
         // Pruning Parameters
-        if ((props.containsKey(PROPERTY_MAX_BEAM_WIDTH) && props.getIntProperty(PROPERTY_MAX_BEAM_WIDTH) > 0)
-                || implicitPruning()) {
+        if (props.containsKey(PROPERTY_MAX_BEAM_WIDTH) && props.getIntProperty(PROPERTY_MAX_BEAM_WIDTH) > 0) {
             this.beamWidth = props.getIntProperty(Parser.PROPERTY_MAX_BEAM_WIDTH);
             this.lexicalRowBeamWidth = props.getIntProperty(PROPERTY_LEXICAL_ROW_BEAM_WIDTH, beamWidth);
             this.lexicalRowUnaries = props.getIntProperty(PROPERTY_LEXICAL_ROW_UNARIES, lexicalRowBeamWidth / 3);
