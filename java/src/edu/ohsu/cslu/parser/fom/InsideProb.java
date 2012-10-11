@@ -26,13 +26,15 @@ package edu.ohsu.cslu.parser.fom;
 
 public final class InsideProb extends FigureOfMeritModel {
 
+    public final static FigureOfMerit INSTANCE = new InsideProb().new InsideProbSelector();
+
     public InsideProb() {
         super(FOMType.Inside);
     }
 
     @Override
     public FigureOfMerit createFOM() {
-        return new InsideProbSelector();
+        return INSTANCE;
     }
 
     public class InsideProbSelector extends FigureOfMerit {

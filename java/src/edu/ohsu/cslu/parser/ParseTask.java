@@ -29,6 +29,8 @@ import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
+import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 import edu.ohsu.cslu.util.Strings;
@@ -51,10 +53,9 @@ public class ParseTask {
     public final int[] inputTags;
     public final String[] stringInputTags;
 
-    public int[] fomTags = null; // TODO: this should be moved to the FOM class
     public final Grammar grammar;
-
     public final DecodeMethod decodeMethod;
+    public final FigureOfMerit figureOfMerit;
 
     //
     // Parse results
@@ -112,9 +113,10 @@ public class ParseTask {
     long startTime;
 
     public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar,
-            final RecoveryStrategy recoveryStrategy, final DecodeMethod decodeMethod) {
+            final FigureOfMerit figureOfMerit, final RecoveryStrategy recoveryStrategy, final DecodeMethod decodeMethod) {
 
         this.grammar = grammar;
+        this.figureOfMerit = figureOfMerit;
         this.decodeMethod = decodeMethod;
 
         switch (inputFormat) {
@@ -181,7 +183,7 @@ public class ParseTask {
 
     public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar,
             final DecodeMethod decodeMethod) {
-        this(input, inputFormat, grammar, null, decodeMethod);
+        this(input, inputFormat, grammar, InsideProb.INSTANCE, null, decodeMethod);
     }
 
     public ParseTask(final int[] tokens, final Grammar grammar) {
@@ -190,9 +192,9 @@ public class ParseTask {
         this.sentence = null;
         this.inputTags = null;
         this.stringInputTags = null;
-        this.fomTags = null;
         this.recoveryStrategy = null;
         this.decodeMethod = DecodeMethod.ViterbiMax;
+        this.figureOfMerit = InsideProb.INSTANCE;
     }
 
     protected int getInputTagIndex(final String posStr) {

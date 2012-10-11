@@ -29,6 +29,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
 import edu.ohsu.cslu.parser.fom.NGramOutside.NGramSelector;
 
 /**
@@ -63,6 +64,12 @@ public abstract class FigureOfMeritModel {
     public abstract FigureOfMerit createFOM();
 
     public abstract class FigureOfMerit implements Serializable {
+
+        /**
+         * 1-best POS tags as generated during FOM initialization (e.g., using a generative forward-backward pass as in
+         * {@link BoundaryInOutSelector})
+         */
+        public short[] fomTags = null;
 
         private static final long serialVersionUID = 1L;
         protected NGramSelector ngramOutsideSelector = null;

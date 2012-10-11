@@ -316,7 +316,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             short maxNt = -1;
             if (end - start == 1) { // Lexical Row (span = 1)
                 for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-                    final float fom = fomModel.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    final float fom = figureOfMerit.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
                     if (fom > maxFom) {
                         maxFom = fom;
                         maxNt = nt;
@@ -324,7 +324,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                 }
             } else {
                 for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-                    final float fom = fomModel.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    final float fom = figureOfMerit.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
                     if (fom > maxFom) {
                         maxFom = fom;
                         maxNt = nt;
@@ -393,7 +393,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 // Skip edges that don't meet the maximum delta
                 if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
-                    final float fom = fomModel.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    final float fom = figureOfMerit.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
                     // Skip storing edges that didn't make it into the bounded queue
                     if (q.insert(nt, fom)) {
                         queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
@@ -409,7 +409,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 // Skip edges that don't meet the maximum delta
                 if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
-                    final float fom = fomModel.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    final float fom = figureOfMerit.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
                     // Skip storing edges that didn't make it into the bounded queue
                     if (q.insert(nt, fom)) {
                         queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
@@ -472,7 +472,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
                         if (jointProbability > minInsideProbability) {
                             final short parent = grammar.cscUnaryRowIndices[i];
-                            final float parentFom = fomModel.calcFOM(start, end, parent, jointProbability);
+                            final float parentFom = figureOfMerit.calcFOM(start, end, parent, jointProbability);
 
                             if (parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
                                 // The FOM was high enough that the edge was added to the queue; update temporary

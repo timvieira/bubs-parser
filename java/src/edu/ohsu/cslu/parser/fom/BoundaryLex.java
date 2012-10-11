@@ -311,7 +311,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
 
         if (smoothingCount > 0) {
             leftBoundaryCount.smoothAddConst(smoothingCount, wordClasses.size());
-            rightBoundaryCount.smoothAddConst(smoothingCount, grammar.phraseSet.size());
+            rightBoundaryCount.smoothAddConst(smoothingCount, grammar.phraseSet.length);
         }
 
         // Write model to file

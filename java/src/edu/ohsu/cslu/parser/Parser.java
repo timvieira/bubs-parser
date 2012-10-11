@@ -75,7 +75,7 @@ public abstract class Parser<G extends Grammar> {
     public ParserDriver opts;
 
     // TODO Make this reference final (once we work around the hack in CellChart)
-    public FigureOfMerit fomModel;
+    public FigureOfMerit figureOfMerit;
     public final CellSelector cellSelector;
 
     /**
@@ -88,7 +88,7 @@ public abstract class Parser<G extends Grammar> {
     public Parser(final ParserDriver opts, final G grammar) {
         this.grammar = grammar;
         this.opts = opts;
-        this.fomModel = opts.fomModel != null ? opts.fomModel.createFOM() : null;
+        this.figureOfMerit = opts.fomModel != null ? opts.fomModel.createFOM() : null;
         this.cellSelector = opts.cellSelectorModel.createCellSelector();
 
         this.collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINER);
@@ -146,7 +146,8 @@ public abstract class Parser<G extends Grammar> {
 
         // TODO: make parseTask local and pass it around to required methods. Will probably need to add
         // instance methods of CellSelector, FOM, and Chart to it. Should make parse thread-safe.
-        final ParseTask task = new ParseTask(input, opts.inputFormat, grammar, recoveryStrategy, opts.decodeMethod);
+        final ParseTask task = new ParseTask(input, opts.inputFormat, grammar, figureOfMerit, recoveryStrategy,
+                opts.decodeMethod);
 
         if (task.sentenceLength() > opts.maxLength) {
             BaseLogger.singleton().info(

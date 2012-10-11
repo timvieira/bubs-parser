@@ -79,7 +79,7 @@ public class PriorFOM extends FigureOfMeritModel {
             }
         }
 
-        final int numNT = grammar.numNonTerms() + grammar.posSet.size();
+        final int numNT = grammar.numNonTerms() + grammar.posSet.length;
 
         // smooth counts
         if (smoothingCount > 0) {

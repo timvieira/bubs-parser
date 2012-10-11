@@ -71,13 +71,13 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
             initSentence(parseTask);
         }
 
-        if (fomModel != null) {
+        if (figureOfMerit != null) {
             if (collectDetailedStatistics) {
                 final long t1 = System.currentTimeMillis();
-                fomModel.initSentence(parseTask, chart);
+                figureOfMerit.initSentence(parseTask, chart);
                 parseTask.fomInitMs = System.currentTimeMillis() - t1;
             } else {
-                fomModel.initSentence(parseTask, chart);
+                figureOfMerit.initSentence(parseTask, chart);
             }
         }
 

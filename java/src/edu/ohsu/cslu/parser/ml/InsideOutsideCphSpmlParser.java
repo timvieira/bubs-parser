@@ -172,7 +172,7 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
 
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 if (maxInsideProbabilities[nt] > minInsideProbability) {
-                    final float fom = fomModel.calcLexicalFOM(start, end, nt, maxInsideProbabilities[nt]);
+                    final float fom = figureOfMerit.calcLexicalFOM(start, end, nt, maxInsideProbabilities[nt]);
                     q.insert(nt, fom);
                 }
             }
@@ -182,7 +182,7 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
         } else { // Span >= 2
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
                 if (maxInsideProbabilities[nt] > minInsideProbability) {
-                    final float fom = fomModel.calcFOM(start, end, nt, maxInsideProbabilities[nt]);
+                    final float fom = figureOfMerit.calcFOM(start, end, nt, maxInsideProbabilities[nt]);
                     q.insert(nt, fom);
                 }
             }
