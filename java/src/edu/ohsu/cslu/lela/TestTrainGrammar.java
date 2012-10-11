@@ -217,6 +217,7 @@ public class TestTrainGrammar {
      */
     @Test
     @DetailedTest
+    @Ignore
     public void test3SplitWsj24WithoutMerging() throws IOException {
 
         final TrainGrammar tg = new TrainGrammar();
@@ -269,7 +270,6 @@ public class TestTrainGrammar {
      * @throws IOException
      */
     @Test
-    @Ignore
     // This method is mostly for profiling
     @DetailedTest
     public void test3SplitWsj24WithMergingWithoutParse() throws IOException {
@@ -317,6 +317,7 @@ public class TestTrainGrammar {
      */
     @Test
     @DetailedTest
+    @Ignore
     public void test3SplitWsj24WithMerging() throws IOException {
 
         final TrainGrammar tg = new TrainGrammar();

@@ -135,7 +135,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             leftChildMap.put(leftChild, rightChildMap);
         }
 
-        rightChildMap.put(rightChild, rightChildMap.get(rightChild) + increment);
+        rightChildMap.add(rightChild, increment);
         parentCounts.add(parent, increment);
     }
 
@@ -172,7 +172,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             unaryRuleCounts.put(parent, childMap);
         }
 
-        childMap.put(child, childMap.get(child) + increment);
+        childMap.add(child, increment);
         parentCounts.add(parent, increment);
     }
 
@@ -199,7 +199,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             lexicalRuleCounts.put(parent, childMap);
         }
 
-        childMap.put(child, childMap.get(child) + increment);
+        childMap.add(child, increment);
         parentCounts.add(parent, increment);
 
         if (corpusWordCounts != null && corpusWordCounts.get(child) < rareWordThreshold) {

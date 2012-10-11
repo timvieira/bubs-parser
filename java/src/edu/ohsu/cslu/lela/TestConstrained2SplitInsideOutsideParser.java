@@ -62,7 +62,7 @@ public class TestConstrained2SplitInsideOutsideParser {
     private FractionalCountGrammar grammar1;
     private ConstrainingChart chart0;
     private ConstrainedInsideOutsideGrammar cscGrammar1;
-    private ConstrainedSplitInsideOutsideParser parser1;
+    private Constrained2SplitInsideOutsideParser parser1;
 
     @Before
     public void setUp() throws IOException {
@@ -90,7 +90,7 @@ public class TestConstrained2SplitInsideOutsideParser {
         // Parse with the split-1 grammar
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        parser1 = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar1);
+        parser1 = new Constrained2SplitInsideOutsideParser(opts, cscGrammar1);
         return parser1.findBestParse(chart0);
     }
 
@@ -108,7 +108,7 @@ public class TestConstrained2SplitInsideOutsideParser {
     public void test1SplitConstrainedParse() {
 
         final BinaryTree<String> parseTree1 = parseWithGrammar1();
-        final ConstrainedChart chart1 = parser1.chart;
+        final Constrained2SplitChart chart1 = parser1.chart;
 
         final SymbolSet<String> vocabulary = grammar1.vocabulary;
         final short top = (short) vocabulary.getIndex("top");
@@ -205,11 +205,11 @@ public class TestConstrained2SplitInsideOutsideParser {
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
 
-        final ConstrainedSplitInsideOutsideParser parser2 = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar2);
+        final Constrained2SplitInsideOutsideParser parser2 = new Constrained2SplitInsideOutsideParser(opts, cscGrammar2);
         final BinaryTree<String> parseTree2 = parser2.findBestParse(chart0);
 
         // Verify expected inside probabilities in a few cells
-        final ConstrainedChart chart2 = parser2.chart;
+        final Constrained2SplitChart chart2 = parser2.chart;
         final SymbolSet<String> vocabulary = plGrammar2.vocabulary;
         final short top = (short) vocabulary.getIndex("top");
         final short a_0 = (short) vocabulary.getIndex("a_0");
@@ -318,7 +318,7 @@ public class TestConstrained2SplitInsideOutsideParser {
         // Parse with the split-1 grammar
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, csc1);
+        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, csc1);
 
         final BinaryTree<String> parseTree1 = parser.findBestParse(constrainingChart);
         final NaryTree<String> unfactoredTree = parseTree1.unfactor(GrammarFormatType.Berkeley);
@@ -359,7 +359,7 @@ public class TestConstrained2SplitInsideOutsideParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, splitGrammar);
+        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, splitGrammar);
 
         @SuppressWarnings("unused")
         int count = 0;
@@ -403,8 +403,8 @@ public class TestConstrained2SplitInsideOutsideParser {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedSplitInsideOutsideParser p1 = new ConstrainedSplitInsideOutsideParser(opts, csc1);
-        final ConstrainedSplitInsideOutsideParser p2 = new ConstrainedSplitInsideOutsideParser(opts, csc2);
+        final Constrained2SplitInsideOutsideParser p1 = new Constrained2SplitInsideOutsideParser(opts, csc1);
+        final Constrained2SplitInsideOutsideParser p2 = new Constrained2SplitInsideOutsideParser(opts, csc2);
 
         final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
         for (String line = br.readLine(); line != null; line = br.readLine()) {

@@ -190,11 +190,12 @@ public class TrainGrammar extends BaseCommandlineTool {
         trainingCorpusReader.close();
 
         if (emBeforeSplit) {
-            final ConstrainedInsideOutsideGrammar cscM0Grammar = cscGrammar(currentGrammar);
+            final ConstrainedCscSparseMatrixGrammar cscM0Grammar = cscGrammar(currentGrammar);
 
             final ParserDriver opts = new ParserDriver();
             opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-            final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscM0Grammar);
+            final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts,
+                    cscM0Grammar);
             final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscM0Grammar.nonTermSet,
                     cscM0Grammar.lexSet, cscM0Grammar.packingFunction, corpusWordCounts, uncommonWordThreshold,
                     rareWordThreshold);
@@ -215,6 +216,8 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         // Run split-merge training cycles
         for (int cycle = 1; cycle <= splitMergeCycles; cycle++) {
+
+            final long t0 = System.currentTimeMillis();
 
             //
             // Split
@@ -242,7 +245,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             //
             // Estimate likelihood loss of re-merging and merge least costly splits
             //
-            final ConstrainedInsideOutsideGrammar premergeCscGrammar = cscGrammar(currentGrammar);
+            final ConstrainedCscSparseMatrixGrammar premergeCscGrammar = cscGrammar(currentGrammar);
             currentGrammar = merge(currentGrammar, premergeCscGrammar);
 
             //
@@ -279,11 +282,14 @@ public class TrainGrammar extends BaseCommandlineTool {
             if (developmentSet != null) {
                 parseDevSet(devCorpusReader, cscGrammar(grammarWithUnks));
             }
+
+            BaseLogger.singleton().info(
+                    String.format("Completed cycle %d in %.2f s", cycle, (System.currentTimeMillis() - t0) / 1000f));
         }
     }
 
-    private ConstrainedInsideOutsideGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
-        return new ConstrainedInsideOutsideGrammar(countGrammar, GrammarFormatType.Berkeley,
+    private ConstrainedCscSparseMatrixGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
+        return new ConstrainedCscSparseMatrixGrammar(countGrammar, GrammarFormatType.Berkeley,
                 PerfectIntPairHashPackingFunction.class);
     }
 
@@ -323,7 +329,7 @@ public class TrainGrammar extends BaseCommandlineTool {
     EmIterationResult emIteration(final FractionalCountGrammar currentGrammar, final float minimumRuleLogProb) {
 
         final long t0 = System.currentTimeMillis();
-        final ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(currentGrammar);
+        final ConstrainedCscSparseMatrixGrammar cscGrammar = cscGrammar(currentGrammar);
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
@@ -372,11 +378,11 @@ public class TrainGrammar extends BaseCommandlineTool {
      * Returns a copy of the supplied count grammar with the less-beneficial non-terminals merged
      * 
      * @param countGrammar
-     * @param cscGrammar {@link ConstrainedInsideOutsideGrammar} version of <code>countGrammar</code>
+     * @param cscGrammar {@link ConstrainedCscSparseMatrixGrammar} version of <code>countGrammar</code>
      * @return Copy of the supplied count grammar with the less-beneficial non-terminals merged
      */
     private FractionalCountGrammar merge(final FractionalCountGrammar countGrammar,
-            final ConstrainedInsideOutsideGrammar cscGrammar) {
+            final ConstrainedCscSparseMatrixGrammar cscGrammar) {
 
         // Special-case - just merge TOP_0
         if (mergeFraction == 0) {
@@ -431,7 +437,7 @@ public class TrainGrammar extends BaseCommandlineTool {
      * @return Array of estimated likelihood losses for each nonterminal if merged into its sibling (only odd-numbered
      *         entries are populated)
      */
-    private float[] estimateMergeCost(final ConstrainedInsideOutsideGrammar cscGrammar,
+    private float[] estimateMergeCost(final ConstrainedCscSparseMatrixGrammar cscGrammar,
             final FractionalCountGrammar countGrammar) {
 
         final ParserDriver opts = new ParserDriver();
@@ -456,7 +462,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         return mergeCost;
     }
 
-    private void parseDevSet(final BufferedReader devCorpusReader, final ConstrainedInsideOutsideGrammar mergedGrammar)
+    private void parseDevSet(final BufferedReader devCorpusReader, final ConstrainedCscSparseMatrixGrammar mergedGrammar)
             throws IOException {
         BaseLogger.singleton().info("Parsing development set...");
         devCorpusReader.reset();
