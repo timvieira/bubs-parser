@@ -40,8 +40,8 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
  * Implementation notes:
  * 
  * This parser cannot recover unary self-chains (e.g. NP -> NP -> ...), because {@link PackedArrayChart} can only store
- * a single instance of a non-terminal in a cell. Such self-chains are fairly rare in the corpora of interest, and
- * should be pruned through a pre-processing step.
+ * a single instance of a non-terminal in a cell. Such self-chains are fairly rare in the corpora of interest and will
+ * <em>not</em> be returned from a constrained parse. If desired, they can be pruned through a pre-processing step.
  * 
  * This implementation is quite simple and does not optimize efficiency, but constrained parsing should be quite fast
  * even so, and we can revisit efficiency if needed.
