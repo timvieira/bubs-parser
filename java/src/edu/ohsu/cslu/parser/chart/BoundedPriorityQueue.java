@@ -123,7 +123,7 @@ public final class BoundedPriorityQueue {
     /**
      * Returns the array index of the tail (minimum-probability) entry.
      * 
-     * @return the array index of the head (minimum-probability) entry.
+     * @return the array index of the tail (minimum-probability) entry.
      */
     public int tailIndex() {
         return tail;
