@@ -63,11 +63,12 @@ import edu.ohsu.cslu.util.Strings;
  * Implementations may store the binary rule matrix in a variety of formats (e.g. CSR ( {@link CsrSparseMatrixGrammar})
  * or CSC ({@link LeftCscSparseMatrixGrammar})).
  * 
- * The unary rules are always stored in CSR format, with rows denoting rule parents and columns rule children. We
+ * The unary rules are always stored in CSC format, with rows denoting rule parents and columns rule children. We
  * anticipate relatively few unary rules (the Berkeley grammar has only ~100k), and iteration order doesn't matter
- * greatly. CSC format would allow us to iterate through only the populated children, but CSR format makes
- * parallelization much simpler (e.g., we can execute one thread per row (parent); since we're only updating the parent
- * probability, we do not need to synchronize with other threads).
+ * greatly.
+ * 
+ * Note: CSR format would make parallelization of unary processing much simpler (e.g., we can execute one thread per row
+ * (parent); since we're only updating the parent probability, we do not need to synchronize with other threads).
  * 
  * @author Aaron Dunlop
  * @since Dec 31, 2009
@@ -77,9 +78,15 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     private final static long serialVersionUID = 4L;
 
-    public final int numLexProds;
-
-    protected final short[][] lexicalParents; // [lexIndex][valid parent ntIndex]
+    /**
+     * Parallel array of lexical rules (with {@link #lexicalLogProbabilities}. The first array dimension is indexed by
+     * lexical index; the second contains valid parent non-terminal indices (the indices are not significant)
+     */
+    protected final short[][] lexicalParents;
+    /**
+     * Parallel array of lexical rules (with {@link #lexicalParents}. The first array dimension is indexed by lexical
+     * index; the second contains production probabilities (the indices are not significant)
+     */
     protected final float[][] lexicalLogProbabilities;
 
     public final static String nullSymbolStr = "<null>";
@@ -94,13 +101,21 @@ public abstract class SparseMatrixGrammar extends Grammar {
     private Binarization binarization;
     public String language;
 
-    // == Aaron's Grammar variables ==
-    public final short leftChildrenStart; // The first NT valid as a left child.
-    public final short leftChildrenEnd; // The last non-POS NT valid as a left child.
-    public final short rightChildrenStart; // The first non-POS NT valid as a right child.
-    public final short rightChildrenEnd; // The last non-POS NT valid as a right child.
-    public final short posStart; // The first POS.
-    public final short posEnd; // The last POS.
+    /** The first non-terminal valid as a left child. */
+    public final short leftChildrenStart;
+    /** The last non-POS non-terminal valid as a left child. */
+    public final short leftChildrenEnd;
+    /** The first non-POS non-terminal valid as a right child. */
+    public final short rightChildrenStart;
+    /** The last non-POS non-terminal valid as a right child. */
+    public final short rightChildrenEnd;
+    /** The first POS */
+    public final short posStart;
+    /** The last POS */
+    public final short posEnd;
+
+    /** The number of lexical productions */
+    private final int numLexProds;
 
     /** Maps a pair of (short) nonterminal indices into a single 32-bit integer */
     public final PackingFunction packingFunction;
@@ -117,8 +132,14 @@ public abstract class SparseMatrixGrammar extends Grammar {
      */
     public final short[] cscUnaryRowIndices;
 
-    /** Unary rule probabilities One entry for each unary rule; the same size as {@link #cscUnaryRowIndices}. */
+    /** Unary rule probabilities. One entry for each unary rule; the same size as {@link #cscUnaryRowIndices}. */
     public final float[] cscUnaryProbabilities;
+
+    /**
+     * Maximum unary production probability for each row (child) of the CSC storage. Allows us to short-circuit some
+     * loops during pruned unary processing. One entry for each unary child.
+     */
+    public final float[] cscMaxUnaryProbabilities;
 
     /**
      * Indices of the first and last non-terminals which can combine as the right sibling with each non-terminal
@@ -128,9 +149,10 @@ public abstract class SparseMatrixGrammar extends Grammar {
     public final short[] maxRightSiblingIndices;
 
     /**
-     * A temporary String -> String map, used to conserve memory while reading and sorting the grammar. We don't need to
-     * internalize Strings indefinitely, so we map them ourselves and allow the map to be GC'd after we're done
-     * constructing the grammar.
+     * A temporary String -> String map, used to conserve memory while reading and sorting the grammar. Usage is similar
+     * to {@link String#intern()}, but we don't need to internalize Strings indefinitely (and don't want them to be
+     * stored in the VM's perm-gen), so we map them ourselves and allow the map to be GC'd after we're done constructing
+     * the grammar.
      */
     private StringPool tmpStringPool;
 
@@ -283,8 +305,9 @@ public abstract class SparseMatrixGrammar extends Grammar {
         cscUnaryColumnOffsets = new int[numNonTerms() + 1];
         cscUnaryRowIndices = new short[unaryProductions.size()];
         cscUnaryProbabilities = new float[unaryProductions.size()];
-
-        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities);
+        cscMaxUnaryProbabilities = new float[numNonTerms()];
+        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities,
+                cscMaxUnaryProbabilities);
     }
 
     public SparseMatrixGrammar(final Reader grammarFile) throws IOException {
@@ -298,7 +321,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
+            final Class<? extends PackingFunction> functionClass) {
         this.nonTermSet = (Vocabulary) vocabulary;
         this.startSymbol = nonTermSet.startSymbol();
         this.nullSymbol = -1;
@@ -337,15 +360,13 @@ public abstract class SparseMatrixGrammar extends Grammar {
         cscUnaryColumnOffsets = new int[numNonTerms() + 1];
         cscUnaryRowIndices = new short[unaryProductions.size()];
         cscUnaryProbabilities = new float[unaryProductions.size()];
+        cscMaxUnaryProbabilities = new float[numNonTerms()];
 
-        if (initCscMatrices) {
-            storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices,
-                    cscUnaryProbabilities);
-        }
+        storeUnaryRulesAsCscMatrix(unaryProductions, cscUnaryColumnOffsets, cscUnaryRowIndices, cscUnaryProbabilities,
+                cscMaxUnaryProbabilities);
         minRightSiblingIndices = new short[numNonTerms()];
         maxRightSiblingIndices = new short[numNonTerms()];
         storeRightSiblingIndices(binaryProductions);
-
     }
 
     /**
@@ -358,7 +379,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     protected SparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
         this(((SparseMatrixGrammar) g).getBinaryProductions(), ((SparseMatrixGrammar) g).getUnaryProductions(),
                 ((SparseMatrixGrammar) g).getLexicalProductions(), ((SparseMatrixGrammar) g).nonTermSet,
-                ((SparseMatrixGrammar) g).lexSet, ((SparseMatrixGrammar) g).grammarFormat, functionClass, true);
+                ((SparseMatrixGrammar) g).lexSet, ((SparseMatrixGrammar) g).grammarFormat, functionClass);
         final SparseMatrixGrammar smg = ((SparseMatrixGrammar) g);
 
         this.startSymbolStr = smg.startSymbolStr;
@@ -446,6 +467,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 }
             }
         }
+
+        br.close();
 
         return gf;
     }
@@ -1102,7 +1125,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * @param cscProbabilities
      */
     protected void storeUnaryRulesAsCscMatrix(final Collection<Production> productions, final int[] cscColumnOffsets,
-            final short[] cscRowIndices, final float[] cscProbabilities) {
+            final short[] cscRowIndices, final float[] cscProbabilities, final float[] maxCscProbabilities) {
 
         // Bin all rules by child, mapping parent -> probability
         final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> maps = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>(
@@ -1119,6 +1142,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
             map.put((short) p.parent, p.prob);
         }
 
+        Arrays.fill(maxCscProbabilities, Float.NEGATIVE_INFINITY);
+
         // Store rules in CSC matrix
         int j = 0;
         final short[] keys = maps.keySet().toShortArray();
@@ -1134,10 +1159,13 @@ public abstract class SparseMatrixGrammar extends Grammar {
             final Short2FloatOpenHashMap map = maps.get(child);
             final short[] parents = map.keySet().toShortArray();
             Arrays.sort(parents);
-
             for (int k = 0; k < parents.length; k++) {
                 cscRowIndices[j] = parents[k];
-                cscProbabilities[j++] = map.get(parents[k]);
+                final float prob = map.get(parents[k]);
+                cscProbabilities[j++] = prob;
+                if (prob > maxCscProbabilities[child]) {
+                    maxCscProbabilities[child] = prob;
+                }
             }
         }
         cscColumnOffsets[cscColumnOffsets.length - 1] = j;

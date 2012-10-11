@@ -132,7 +132,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
             final Class<? extends PackingFunction> functionClass, final boolean initCsrMatrices) {
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                functionClass, initCsrMatrices);
+                functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.csrBinaryRowOffsets = new int[numNonTerms() + 1];
