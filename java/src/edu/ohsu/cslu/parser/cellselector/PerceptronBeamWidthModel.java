@@ -45,6 +45,8 @@ import edu.ohsu.cslu.perceptron.Classifier;
  */
 public class PerceptronBeamWidthModel implements CellSelectorModel {
 
+    private static final long serialVersionUID = 1L;
+
     protected Classifier beamWidthModel;
     private boolean inferFactoredCells = false, classifyBaseCells = false;
     protected List<Feature> featureList;
@@ -75,6 +77,7 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             } else {
                 throw new IllegalArgumentException("ERROR: Unknown beamconf model type on line: " + line);
             }
+            modelStream.close();
         } catch (final IOException e) {
             e.printStackTrace();
         }
