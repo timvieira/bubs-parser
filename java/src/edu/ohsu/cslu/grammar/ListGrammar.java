@@ -111,9 +111,6 @@ public class ListGrammar extends Grammar {
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
         nonTermSet = new Vocabulary(grammarFormat);
-        posSet = new SymbolSet<Short>();
-        phraseSet = new SymbolSet<Short>();
-
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
@@ -233,14 +230,9 @@ public class ListGrammar extends Grammar {
 
         // this.tokenizer = new Tokenizer(lexSet);
 
-        // reduce range of POS indices so we can store the features more efficiently
-        for (short i = 0; i < numNonTerms(); i++) {
-            if (pos.contains(nonTermSet.getSymbol(i))) {
-                posSet.addSymbol(i);
-            } else {
-                phraseSet.addSymbol(i);
-            }
-        }
+        // Create POS-only and phrase-level-only arrays so we can store features more compactly
+        initPosAndPhraseSets(pos);
+
         unaryProductionsByChild = storeProductionByChild(unaryProductions, nonTermSet.size() - 1);
         lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);
     }

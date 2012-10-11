@@ -581,29 +581,13 @@ public abstract class Chart {
         return feats;
     }
 
-    /* @formatter:on */
-
-    public static void printFeatMap(final Grammar gram) {
-        System.out.println("FEAT NULLPOS " + gram.posSet.getIndex(gram.nullSymbol()));
-        System.out.println("FEAT NULLWORD " + gram.nullWord);
-        for (final Short posIndex : gram.posSet) {
-            System.out.println("FEAT POS " + gram.mapNonterminal(posIndex) + " " + gram.posSet.getIndex(posIndex));
-        }
-        for (final String nt : gram.nonTermSet) {
-            System.out.println("FEAT NT " + nt + " " + gram.nonTermSet.getIndex(nt));
-        }
-        for (final String lex : gram.lexSet) {
-            System.out.println("FEAT LEX " + lex + " " + gram.lexSet.getIndex(lex));
-        }
-    }
-
     public SparseBitVector getEdgeFeatures(final SimpleChartEdge edge) {
         return getEdgeFeatures(edge.start, edge.mid, edge.end, edge.A, edge.B, edge.C);
     }
 
     // TODO: VERY Inefficient!!! Need to move to an integer-based lookup and not use strings.
     // how to make this compact??? could go over training set and find all instances, then map them
-    // to a list of indicies. Could hash. ...
+    // to a list of indices. Could hash. ...
     public SparseBitVector getEdgeFeatures(final short start, final short mid, final short end, final short A,
             final short B, final short C) {
         // int numFeats = 104729;
@@ -651,7 +635,7 @@ public abstract class Chart {
         int numFeats = 0;
         final IntList featIndices = new IntArrayList(10);
 
-        final int numTags = grammar.posSet.size();
+        final int numTags = grammar.posSet.length;
         final int numWords = grammar.lexSet.size();
 
         for (final Feature f : features) {
@@ -776,7 +760,7 @@ public abstract class Chart {
         int numFeats = 0;
         final IntList featIndices = new IntArrayList(10);
 
-        final int numTags = grammar.posSet.size();
+        final int numTags = grammar.posSet.length;
         final int numWords = grammar.lexSet.size();
 
         for (final String featStr : featureNames) {
@@ -889,11 +873,21 @@ public abstract class Chart {
     }
 
     // map from sparse POS index to compact ordering by using grammar.posSet
-    private int getPOSFeat(final int tokIndex) {
-        if (tokIndex < 0 || tokIndex >= parseTask.sentenceLength()) {
-            return grammar.posSet.getIndex(grammar.nullSymbol());
+    /**
+     * Returns the POS-index (in {@link Grammar#posSet}) of the 1-best tag for the specified token
+     * 
+     * @param tokenIndex
+     * @return POS-index (in {@link Grammar#posSet}) of the 1-best tag for the specified token
+     */
+    private int getPOSFeat(final int tokenIndex) {
+        // TODO Replace posSet with a simple array mapping NT index -> POS index (in a smaller range). This method then
+        // becomes a double (indirect) array access. Since we hit this several times for each cell, it might even be
+        // worth it to precompute and cache these values in a single array.
+        if (tokenIndex < 0 || tokenIndex >= parseTask.sentenceLength()) {
+            return grammar.posIndexMap[grammar.nullSymbol()];
         }
-        return grammar.posSet.getIndex((short) parseTask.fomTags[tokIndex]);
+        // parseTask.
+        return grammar.posIndexMap[parseTask.figureOfMerit.fomTags[tokenIndex]];
     }
 
     private int getWordFeat(final int tokIndex) {

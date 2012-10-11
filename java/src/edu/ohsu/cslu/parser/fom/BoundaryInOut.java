@@ -60,7 +60,6 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     final short nullSymbol;
     final short[] NULL_LIST;
     final float[] NULL_PROBABILITIES;
-    final short[] grammarPhraseSet;
 
     public BoundaryInOut(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
             throws IOException {
@@ -97,19 +96,13 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         if (modelStream != null) {
             readModel(modelStream);
         }
-
-        this.grammarPhraseSet = new short[grammar.phraseSet.size()];
-        int i = 0;
-        for (final int nt : grammar.phraseSet) {
-            this.grammarPhraseSet[i++] = (short) nt;
-        }
     }
 
     @Override
     public FigureOfMerit createFOM() {
         switch (type) {
         case BoundaryPOS:
-            return new BoundaryInOutSelector();
+            return new BoundaryInOutSelector(grammar);
         case InsideWithFwdBkwd:
             return new InsideWithFwdBkwd();
         default:
@@ -274,13 +267,12 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         }
 
         final int numNT = grammar.numNonTerms();
-        final int numPOS = grammar.posSet.size();
 
         // smooth counts
         if (smoothingCount > 0) {
-            leftBoundaryCount.smoothAddConst(smoothingCount, numPOS);
+            leftBoundaryCount.smoothAddConst(smoothingCount, grammar.posSet.length);
             rightBoundaryCount.smoothAddConst(smoothingCount, numNT);
-            posTransitionCount.smoothAddConst(smoothingCount, numPOS);
+            posTransitionCount.smoothAddConst(smoothingCount, grammar.posSet.length);
         }
 
         // Write model to file
@@ -357,11 +349,13 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         private short[][] backPointer;
         private float[] scores;
         private float[] prevScores;
+        private final short[] grammarPhraseSet;
 
         // private int bestPOSTag[];
         ParseTask parseTask;
 
-        public BoundaryInOutSelector() {
+        public BoundaryInOutSelector(final Grammar grammar) {
+            this.grammarPhraseSet = grammar.phraseSet;
         }
 
         @Override
@@ -551,7 +545,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                     }
                     final float posScore = scores[pos];
                     final float[] posRightBoundaryLogProb = rightBoundaryLogProb[pos];
-                    
+
                     for (final short nonTerm : grammarPhraseSet) {
                         final float score = posScore + posRightBoundaryLogProb[nonTerm];
                         if (score > currentOutsideRight[nonTerm]) {
@@ -571,13 +565,13 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             // from the input will already be in place. Otherwise, fill in the tags array
             // with the 1-best result from this forward-backwards run.
             if (ParserDriver.parseFromInputTags == false) {
-                task.fomTags = new int[sentLen];
+                this.fomTags = new short[sentLen];
                 // track backpointers to extract best POS sequence
                 // start at the end of the sentence with the nullSymbol and trace backwards
-                int bestPOS = nullSymbol;
+                short bestPOS = nullSymbol;
                 for (int i = sentLen - 1; i >= 0; i--) {
                     bestPOS = backPointer[i + 2][bestPOS];
-                    task.fomTags[i] = bestPOS;
+                    this.fomTags[i] = bestPOS;
                 }
             }
         }
@@ -594,6 +588,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         private static final long serialVersionUID = 1L;
 
         public InsideWithFwdBkwd() {
+            super(grammar);
         }
 
         @Override

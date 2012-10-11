@@ -18,8 +18,11 @@
  */
 package edu.ohsu.cslu.grammar;
 
+import it.unimi.dsi.fastutil.shorts.ShortArrayList;
+
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.HashSet;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 
@@ -77,11 +80,24 @@ public abstract class Grammar implements Serializable {
     public int horizontalMarkov;
     public int verticalMarkov;
 
-    // Maps from 0-based indices to entries in nonTermSet. Used to reduce absolute
-    // index value for feature extraction. Used in FOM initialization and in
-    // extracting chart cell features for beam width prediction.
-    public SymbolSet<Short> posSet;
-    public SymbolSet<Short> phraseSet; // phraseSet + posSet == nonTermSet
+    /**
+     * A compact representation of non-terminal indices for all POS tags. This array excludes phrase-level
+     * non-terminals, allowing creation of smaller arrays when only parts-of-speech are needed. Used in FOM
+     * initialization and in extracting chart cell features for beam width prediction. {@link #phraseSet} +
+     * {@link #posSet} = {@link #nonTermSet}.
+     */
+    public short[] posSet;
+    /** Maps from non-terminal indices to indices in {@link #posSet}. */
+    public short[] posIndexMap;
+
+    /**
+     * A compact representation of non-terminal indices for all phrase-level tags. This array excludes POS
+     * non-terminals, allowing creation of smaller arrays when only phrase-level tags are needed. Used in FOM
+     * initialization and in extracting chart cell features for beam width prediction. {@link #phraseSet} +
+     * {@link #posSet} = {@link #nonTermSet}.
+     */
+    public short[] phraseSet;
+
     public short nullSymbol = -1;
     public int nullWord = -1;
 
@@ -288,5 +304,27 @@ public abstract class Grammar implements Serializable {
      */
     public short nullSymbol() {
         return (short) nonTermSet.getIndex(nullSymbolStr);
+    }
+
+    /**
+     * Initializes {@link Grammar#posSet}, {@link Grammar#posIndexMap}, and {@link Grammar#phraseSet}
+     * 
+     * @param pos Set of all parts-of-speech
+     */
+    protected void initPosAndPhraseSets(final HashSet<String> pos) {
+        final ShortArrayList tmpPosList = new ShortArrayList();
+        final ShortArrayList tmpPhraseList = new ShortArrayList();
+        this.posIndexMap = new short[numNonTerms()];
+
+        for (short i = 0; i < numNonTerms(); i++) {
+            if (pos.contains(nonTermSet.getSymbol(i))) {
+                tmpPosList.add(i);
+                posIndexMap[i] = (short) (tmpPosList.size() - 1);
+            } else {
+                tmpPhraseList.add(i);
+            }
+        }
+        this.posSet = tmpPosList.toShortArray();
+        this.phraseSet = tmpPhraseList.toShortArray();
     }
 }

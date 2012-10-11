@@ -182,8 +182,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
         nonTermSet = new Vocabulary(grammarFormat);
-        posSet = new SymbolSet<Short>();
-        phraseSet = new SymbolSet<Short>();
 
         this.nullWord = lexSet.addSymbol(nullSymbolStr);
 
@@ -286,14 +284,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         this.numPosSymbols = posEnd - posStart + 1;
 
-        // reduce range of POS indices so we can store the features more efficiently
-        for (short i = 0; i < numNonTerms(); i++) {
-            if (pos.contains(nonTermSet.getSymbol(i))) {
-                posSet.addSymbol(i);
-            } else {
-                phraseSet.addSymbol(i);
-            }
-        }
+        // Create POS-only and phrase-level-only arrays so we can store features more compactly
+        initPosAndPhraseSets(pos);
 
         this.packingFunction = createPackingFunction(functionClass, tmpBinaryProductions);
 

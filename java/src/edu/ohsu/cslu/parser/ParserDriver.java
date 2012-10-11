@@ -78,7 +78,6 @@ import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.chart.CellChart;
-import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHash;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop;
@@ -217,9 +216,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-debug", hidden = true, usage = "Exit on error with trace")
     public boolean debug = false;
 
-    @Option(name = "-printFeatMap", hidden = true, usage = "Write lex/pos/nt feature strings and indicies for beam-width prediction and disc FOM to stdout.  Note this mapping must be identical for training and testing.")
-    public boolean printFeatMap = false;
-
     // corpus stats
     private long parseStartTime;
     private volatile int sentencesParsed = 0, wordsParsed = 0, failedParses = 0, reparsedSentences = 0,
@@ -311,11 +307,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         } else {
             this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType, packingFunctionType);
-
-            if (printFeatMap) {
-                Chart.printFeatMap(grammar);
-                System.exit(1);
-            }
 
             if (fomTypeOrModel.equals("Inside")) {
                 fomModel = new InsideProb();

@@ -49,7 +49,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
         initParser(parseTask);
         addLexicalProductions(parseTask.tokens);
-        fomModel.initSentence(parseTask, chart);
+        figureOfMerit.initSentence(parseTask, chart);
         cellConstraints.initSentence(chart, parseTask.sentence);
         addUnaryExtensionsToLexProds();
 

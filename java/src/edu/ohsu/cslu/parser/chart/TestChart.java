@@ -33,6 +33,7 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 import edu.ohsu.cslu.parser.ecp.ExhaustiveChartParserTestCase;
+import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParserTestCase;
 
 /**
@@ -53,7 +54,7 @@ public class TestChart {
         final SparseMatrixGrammar simpleGrammar2 = GrammarTestCase.createGrammar(LeftCscSparseMatrixGrammar.class,
                 ExhaustiveChartParserTestCase.simpleGrammar2());
         final Chart chart = new PackedArrayChart(new ParseTask("The fish market stands last", Parser.InputFormat.Text,
-                simpleGrammar2, RecoveryStrategy.RightBiased, null), simpleGrammar2);
+                simpleGrammar2, InsideProb.INSTANCE, RecoveryStrategy.RightBiased, null), simpleGrammar2);
         SparseMatrixVectorParserTestCase.populateSimpleGrammar2Rows1_3(chart, simpleGrammar2);
 
         final NaryTree<String> tree = chart.extractRecoveryParse(RecoveryStrategy.RightBiased);
