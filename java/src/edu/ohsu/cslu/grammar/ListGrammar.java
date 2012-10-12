@@ -185,8 +185,8 @@ public class ListGrammar extends Grammar {
             // int evalNTIndex = evalNonTermSet.addSymbol(evalNT);
         }
 
-        this.startSymbol = nonTermSet.addSymbol(startSymbolStr);
-        nonTermSet.setStartSymbol((short) startSymbol);
+        this.startSymbol = (short) nonTermSet.addSymbol(startSymbolStr);
+        nonTermSet.setStartSymbol(startSymbol);
         this.nullSymbol = (short) nonTermSet.addSymbol(nullSymbolStr);
         this.nullWord = lexSet.addSymbol(nullSymbolStr);
 

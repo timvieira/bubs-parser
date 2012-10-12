@@ -71,11 +71,12 @@ public abstract class Grammar implements Serializable {
     // == Grammar Basics ==
     public SymbolSet<String> lexSet = new SymbolSet<String>();
     public Tokenizer tokenizer = new Tokenizer(lexSet);
+    // TODO This field should really be final, but it's initialized in subclass constructors
     public Vocabulary nonTermSet;
 
     public GrammarFormatType grammarFormat;
 
-    public int startSymbol;
+    public short startSymbol;
     public String startSymbolStr;
     public int horizontalMarkov;
     public int verticalMarkov;
