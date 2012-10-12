@@ -571,7 +571,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 short bestPOS = nullSymbol;
                 for (int i = sentLen - 1; i >= 0; i--) {
                     bestPOS = backPointer[i + 2][bestPOS];
-                    this.fomTags[i] = bestPOS;
+                    this.fomTags[i] = grammar.posIndexMap[bestPOS];
                 }
             }
         }
