@@ -880,14 +880,11 @@ public abstract class Chart {
      * @return POS-index (in {@link Grammar#posSet}) of the 1-best tag for the specified token
      */
     private int getPOSFeat(final int tokenIndex) {
-        // TODO Replace posSet with a simple array mapping NT index -> POS index (in a smaller range). This method then
-        // becomes a double (indirect) array access. Since we hit this several times for each cell, it might even be
-        // worth it to precompute and cache these values in a single array.
         if (tokenIndex < 0 || tokenIndex >= parseTask.sentenceLength()) {
             return grammar.posIndexMap[grammar.nullSymbol()];
         }
         // parseTask.
-        return grammar.posIndexMap[parseTask.figureOfMerit.fomTags[tokenIndex]];
+        return parseTask.figureOfMerit.fomTags[tokenIndex];
     }
 
     private int getWordFeat(final int tokIndex) {
