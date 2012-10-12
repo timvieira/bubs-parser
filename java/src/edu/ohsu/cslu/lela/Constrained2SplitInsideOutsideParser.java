@@ -32,16 +32,15 @@ import edu.ohsu.cslu.util.Math;
 
 /**
  * Matrix-loop parser which constrains the chart population according to the contents of a chart populated using the
- * parent grammar (i.e., when training a split grammar, the constraining chart is populated with 1-best parses using the
- * previous grammar)
+ * parent grammar, limited to 2 splits per non-terminal. The constraining chart is populated with 1-best parses using
+ * the previous grammar.
  * 
  * 
  * Implementation notes:
  * 
  * --The target chart need only contain 2 entries per position in a cell.
  * 
- * --Given known midpoints (child cells) from the constraining chart, we need only consider a single midpoint for each
- * cell.
+ * --Given known child cells from the constraining chart, we need only consider a single midpoint for each cell.
  * 
  * --We do need to maintain space for a few unary productions; the first entry in each chart cell is for the top node in
  * the unary chain; any others (if populated) are unary children.
@@ -54,7 +53,8 @@ import edu.ohsu.cslu.util.Math;
  * @author Aaron Dunlop
  */
 public class Constrained2SplitInsideOutsideParser extends
-        SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, ConstrainedChart> implements ConstrainedChartParser {
+        SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, Constrained2SplitChart> implements
+        ConstrainedChartParser {
 
     ConstrainingChart constrainingChart;
 
@@ -73,7 +73,7 @@ public class Constrained2SplitInsideOutsideParser extends
                 && chart.cellOffsets.length >= c.cellOffsets.length) {
             chart.clear(c);
         } else {
-            chart = new ConstrainedChart(c, grammar);
+            chart = new Constrained2SplitChart(c, grammar);
         }
 
         chart.parseTask = new ParseTask(c.tokens, grammar);
@@ -501,7 +501,9 @@ public class Constrained2SplitInsideOutsideParser extends
 
             // And over children in the right child cell
             for (int j = rightCellOffset; j <= rightCellOffset + 1; j++) {
-                final int column = cpf.pack(leftChild, chart.nonTerminalIndices[j]);
+
+                final short rightChild = chart.nonTerminalIndices[j];
+                final int column = cpf.pack(leftChild, rightChild);
                 if (column == Integer.MIN_VALUE) {
                     continue;
                 }
@@ -520,12 +522,12 @@ public class Constrained2SplitInsideOutsideParser extends
                         // Equation 1 of Petrov et al., 2006.
                         final float logCount = chart.outsideProbabilities[parent0Offset] + childInsideProbability
                                 + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
-                        countGrammar.incrementBinaryLogCount(parent, column, logCount);
+                        countGrammar.incrementBinaryLogCount(parent, leftChild, rightChild, logCount);
 
                     } else if (parent == parent0 + 1) {
                         final float logCount = chart.outsideProbabilities[parent1Offset] + childInsideProbability
                                 + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
-                        countGrammar.incrementBinaryLogCount(parent, column, logCount);
+                        countGrammar.incrementBinaryLogCount(parent, leftChild, rightChild, logCount);
 
                     } else {
                         // We've passed both target parents. No need to search more grammar rules

@@ -29,11 +29,11 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 
 /**
  * Represents a parse chart constrained by a parent chart for inside-outside parameter estimation constrained by gold
- * trees.
+ * trees and limited to 2 substates of each populated non-terminal.
  * 
  * @author Aaron Dunlop
  */
-public class ConstrainedChart extends ConstrainingChart {
+public class Constrained2SplitChart extends ConstrainingChart {
 
     /**
      * Outside probabilities (parallel to {@link ParallelArrayChart#insideProbabilities},
@@ -50,18 +50,19 @@ public class ConstrainedChart extends ConstrainingChart {
      * 
      * At most, a cell can contain:
      * 
-     * n entries for the substates of the constraining non-terminal
+     * 2 entries for the substates of the constraining non-terminal
      * 
      * k unary children of each of those states, where k is the maximum length of a unary chain in the constraining
      * chart.
      * 
-     * So the maximum number of entries in a cell is n * (1 + maxUnaryChainLength)
+     * So the maximum number of entries in a cell is 2 * (1 + maxUnaryChainLength)
      * 
      * @param constrainingChart
      * @param sparseMatrixGrammar
      */
-    protected ConstrainedChart(final ConstrainingChart constrainingChart, final SparseMatrixGrammar sparseMatrixGrammar) {
-        this(constrainingChart, sparseMatrixGrammar, ((SplitVocabulary) sparseMatrixGrammar.nonTermSet).maxSplits);
+    protected Constrained2SplitChart(final ConstrainingChart constrainingChart,
+            final SparseMatrixGrammar sparseMatrixGrammar) {
+        this(constrainingChart, sparseMatrixGrammar, 2);
     }
 
     /**
@@ -80,7 +81,7 @@ public class ConstrainedChart extends ConstrainingChart {
      * @param sparseMatrixGrammar
      * @param splits
      */
-    protected ConstrainedChart(final ConstrainingChart constrainingChart,
+    protected Constrained2SplitChart(final ConstrainingChart constrainingChart,
             final SparseMatrixGrammar sparseMatrixGrammar, final int splits) {
 
         super(constrainingChart, splitChartArraySize(constrainingChart.size(), constrainingChart.maxUnaryChainLength(),
@@ -119,7 +120,7 @@ public class ConstrainedChart extends ConstrainingChart {
                 constrainingChart.unaryChainLength.length);
 
         final int fillLength = splitChartArraySize(constrainingChart.size(), constrainingChart.maxUnaryChainLength(),
-                ((SplitVocabulary) grammar.nonTermSet).maxSplits);
+                beamWidth);
         Arrays.fill(nonTerminalIndices, 0, fillLength, Short.MIN_VALUE);
         Arrays.fill(packedChildren, 0, fillLength, 0);
         Arrays.fill(insideProbabilities, 0, fillLength, Float.NEGATIVE_INFINITY);
@@ -165,15 +166,14 @@ public class ConstrainedChart extends ConstrainingChart {
         final int cellOffset = cellOffset(start, end);
         int entry0Offset = cellOffset;
         int entryOffset = maxInsideProbabilityEntry(entry0Offset);
-        final int maxSplits = ((SplitVocabulary) grammar.nonTermSet).maxSplits;
 
         final BinaryTree<String> tree = new BinaryTree<String>(
                 grammar.nonTermSet.getSymbol(nonTerminalIndices[entryOffset]));
         BinaryTree<String> subtree = tree;
 
         // Add unary productions and binary parent
-        while (entry0Offset < cellOffset + (unaryChainLength[cellIndex] - 1) * maxSplits) {
-            entry0Offset += maxSplits;
+        while (entry0Offset < cellOffset + (unaryChainLength[cellIndex] - 1) * beamWidth) {
+            entry0Offset += beamWidth;
             entryOffset = maxInsideProbabilityEntry(entry0Offset);
             subtree = subtree.addChild(grammar.nonTermSet.getSymbol(nonTerminalIndices[entryOffset]));
         }
@@ -346,11 +346,10 @@ public class ConstrainedChart extends ConstrainingChart {
         return sb.toString();
     }
 
-    private String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
+    protected String formatEntries(final int offset, final boolean unary, final boolean formatFractions) {
         final StringBuilder sb = new StringBuilder(128);
-
-        for (int i = 0; i < ((SplitVocabulary) grammar.nonTermSet).maxSplits; i++) {
-            if (insideProbabilities[offset + i] != Float.NEGATIVE_INFINITY) {
+        for (int i = 0; i < beamWidth; i++) {
+            if (nonTerminalIndices[offset + i] >= 0) {
                 sb.append(formatCellEntry(nonTerminalIndices[offset + i], packedChildren[offset + i], unary,
                         insideProbabilities[offset + i], outsideProbabilities[offset + i], formatFractions));
             }
@@ -358,7 +357,7 @@ public class ConstrainedChart extends ConstrainingChart {
         return sb.toString();
     }
 
-    private String formatCellEntry(final int nonterminal, final int childProductions, final boolean unary,
+    protected String formatCellEntry(final int nonterminal, final int childProductions, final boolean unary,
             final float insideProbability, final float outsideProbability, final boolean formatFractions) {
 
         final int leftChild = sparseMatrixGrammar.packingFunction().unpackLeftChild(childProductions);

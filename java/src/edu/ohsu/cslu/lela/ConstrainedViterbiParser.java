@@ -29,8 +29,9 @@ import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
  * parent grammar (i.e., when training a split grammar, the constraining chart is populated with 1-best parses using the
  * previous grammar)
  * 
- * Analogous to {@link Constrained2SplitInsideOutsideParser}, but performs Viterbi 1-best inference instead of summing over
- * matching children and rules. Used to populate a {@link ConstrainingChart} to constrain the next split-merge cycle.
+ * Analogous to {@link Constrained2SplitInsideOutsideParser}, but performs Viterbi 1-best inference instead of summing
+ * over matching children and rules. Used to populate a {@link ConstrainingChart} to constrain the next split-merge
+ * cycle.
  * 
  * If we perform this parse in the real semiring, we occasionally choose a combination of node labels for which no rule
  * productions exist. This choice may produce a more accurate set of node labels (as described by Goodman), but for
@@ -45,11 +46,11 @@ public class ConstrainedViterbiParser extends Constrained2SplitInsideOutsidePars
         super(opts, grammar);
     }
 
-    public ConstrainedChart parse(final ConstrainingChart c) {
+    public Constrained2SplitChart parse(final ConstrainingChart c) {
         this.constrainingChart = c;
 
         // Initialize the chart
-        chart = new ConstrainedChart(c, grammar);
+        chart = new Constrained2SplitChart(c, grammar);
         chart.parseTask = new ParseTask(c.tokens, grammar);
         cellSelector.initSentence(this);
 

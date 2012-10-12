@@ -404,7 +404,8 @@ public class ConstrainedInsideOutsideParser extends
         final short leftChild = chart.nonTerminalIndices[leftCellOffset];
         final float leftProbability = chart.insideProbabilities[leftCellOffset];
 
-        final int column = cpf.pack(leftChild, chart.nonTerminalIndices[rightCellOffset]);
+        final short rightChild = chart.nonTerminalIndices[rightCellOffset];
+        final int column = cpf.pack(leftChild, rightChild);
         final float childInsideProbability = leftProbability + chart.insideProbabilities[rightCellOffset];
 
         for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
@@ -419,7 +420,7 @@ public class ConstrainedInsideOutsideParser extends
                 // Equation 1 of Petrov et al., 2006.
                 final float logCount = chart.outsideProbabilities[parent0Offset] + childInsideProbability
                         + grammar.cscBinaryProbabilities[k] - sentenceInsideLogProb;
-                countGrammar.incrementBinaryLogCount(parent, column, logCount);
+                countGrammar.incrementBinaryLogCount(parent, leftChild, rightChild, logCount);
 
             } else {
                 // We've passed the target parent. No need to search more grammar rules
