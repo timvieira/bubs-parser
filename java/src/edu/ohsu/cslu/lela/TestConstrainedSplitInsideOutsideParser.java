@@ -36,7 +36,6 @@ import org.junit.runner.RunWith;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
-import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
@@ -47,13 +46,13 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Unit tests for {@link Constrained2SplitInsideOutsideParser}.
+ * Unit tests for {@link ConstrainedSplitInsideOutsideParser}.
  * 
  * @author Aaron Dunlop
  * @since Jan 15, 2011
  */
 @RunWith(Theories.class)
-public class TestConstrained2SplitInsideOutsideParser {
+public class TestConstrainedSplitInsideOutsideParser {
 
     @DataPoints
     public final static float[] RANDOMNESS = new float[] { 0f, .01f, .5f };
@@ -61,8 +60,8 @@ public class TestConstrained2SplitInsideOutsideParser {
     private FractionalCountGrammar grammar0;
     private FractionalCountGrammar grammar1;
     private ConstrainingChart chart0;
-    private ConstrainedInsideOutsideGrammar cscGrammar1;
-    private Constrained2SplitInsideOutsideParser parser1;
+    private ConstrainedCscSparseMatrixGrammar cscGrammar1;
+    private ConstrainedSplitInsideOutsideParser parser1;
 
     @Before
     public void setUp() throws IOException {
@@ -90,7 +89,7 @@ public class TestConstrained2SplitInsideOutsideParser {
         // Parse with the split-1 grammar
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        parser1 = new Constrained2SplitInsideOutsideParser(opts, cscGrammar1);
+        parser1 = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar1);
         return parser1.findBestParse(chart0);
     }
 
@@ -108,7 +107,7 @@ public class TestConstrained2SplitInsideOutsideParser {
     public void test1SplitConstrainedParse() {
 
         final BinaryTree<String> parseTree1 = parseWithGrammar1();
-        final Constrained2SplitChart chart1 = parser1.chart;
+        final ConstrainedChart chart1 = parser1.chart;
 
         final SymbolSet<String> vocabulary = grammar1.vocabulary;
         final short top = (short) vocabulary.getIndex("top");
@@ -197,7 +196,7 @@ public class TestConstrained2SplitInsideOutsideParser {
 
         // Split the 1-split grammar again
         final FractionalCountGrammar plGrammar2 = grammar1.split(new ZeroNoiseGenerator());
-        final ConstrainedInsideOutsideGrammar cscGrammar2 = cscGrammar(plGrammar2);
+        final ConstrainedCscSparseMatrixGrammar cscGrammar2 = cscGrammar(plGrammar2);
 
         //
         // Parse with the split-2 grammar, constrained by the unsplit chart
@@ -205,11 +204,11 @@ public class TestConstrained2SplitInsideOutsideParser {
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
 
-        final Constrained2SplitInsideOutsideParser parser2 = new Constrained2SplitInsideOutsideParser(opts, cscGrammar2);
+        final ConstrainedSplitInsideOutsideParser parser2 = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar2);
         final BinaryTree<String> parseTree2 = parser2.findBestParse(chart0);
 
         // Verify expected inside probabilities in a few cells
-        final Constrained2SplitChart chart2 = parser2.chart;
+        final ConstrainedChart chart2 = parser2.chart;
         final SymbolSet<String> vocabulary = plGrammar2.vocabulary;
         final short top = (short) vocabulary.getIndex("top");
         final short a_0 = (short) vocabulary.getIndex("a_0");
@@ -304,11 +303,11 @@ public class TestConstrained2SplitInsideOutsideParser {
         // Induce a grammar from the corpus and construct a basic constraining chart
         final FractionalCountGrammar g0 = induceFractionalCountGrammar(new StringReader(
                 AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN));
-        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
+        final ConstrainedCscSparseMatrixGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
         final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, randomness));
-        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
+        final ConstrainedCscSparseMatrixGrammar csc1 = cscGrammar(g1);
 
         // Construct a constraining chart
         final NaryTree<String> goldTree = NaryTree.read(AllLelaTests.TREE_WITH_LONG_UNARY_CHAIN, String.class);
@@ -318,7 +317,7 @@ public class TestConstrained2SplitInsideOutsideParser {
         // Parse with the split-1 grammar
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, csc1);
+        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, csc1);
 
         final BinaryTree<String> parseTree1 = parser.findBestParse(constrainingChart);
         final NaryTree<String> unfactoredTree = parseTree1.unfactor(GrammarFormatType.Berkeley);
@@ -330,8 +329,8 @@ public class TestConstrained2SplitInsideOutsideParser {
         return sg.toFractionalCountGrammar();
     }
 
-    private ConstrainedInsideOutsideGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
-        return new ConstrainedInsideOutsideGrammar(countGrammar, GrammarFormatType.Berkeley,
+    private ConstrainedCscSparseMatrixGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
+        return new ConstrainedCscSparseMatrixGrammar(countGrammar, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
     }
 
@@ -341,25 +340,25 @@ public class TestConstrained2SplitInsideOutsideParser {
 
         // Induce a grammar from the corpus
         final FractionalCountGrammar g0 = induceFractionalCountGrammar(JUnit.unitTestDataAsReader(corpus));
-        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
+        final ConstrainedCscSparseMatrixGrammar csc0 = cscGrammar(g0);
 
         // Split the grammar
         final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, .01f));
         // g1.randomize(new Random(), randomness);
-        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
+        final ConstrainedCscSparseMatrixGrammar csc1 = cscGrammar(g1);
 
         // Parse each tree in the training corpus with the split-1 grammar
         parseAndCheck(JUnit.unitTestDataAsReader(corpus), csc0, csc1);
     }
 
-    private void parseAndCheck(final Reader corpus, final ConstrainedInsideOutsideGrammar unsplitGrammar,
-            final ConstrainedInsideOutsideGrammar splitGrammar) throws IOException {
+    private void parseAndCheck(final Reader corpus, final ConstrainedCscSparseMatrixGrammar unsplitGrammar,
+            final ConstrainedCscSparseMatrixGrammar splitGrammar) throws IOException {
 
         final BufferedReader br = new BufferedReader(corpus);
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, splitGrammar);
+        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, splitGrammar);
 
         @SuppressWarnings("unused")
         int count = 0;
@@ -378,47 +377,6 @@ public class TestConstrained2SplitInsideOutsideParser {
             // Ensure that the resulting parse matches the gold tree
             assertEquals(goldTree.toString(), unfactoredTree.toString());
             count++;
-        }
-    }
-
-    @Test
-    public void testWsjSubset2Splits() throws Exception {
-        final String corpus = "parsing/wsj.24.trees.1-20";
-
-        // Induce a grammar from the corpus
-        final FractionalCountGrammar g0 = induceFractionalCountGrammar(JUnit.unitTestDataAsReader(corpus));
-        final ConstrainedInsideOutsideGrammar csc0 = cscGrammar(g0);
-
-        // Split the grammar
-        final FractionalCountGrammar g1 = g0.split(new RandomNoiseGenerator(0, .01f));
-        final ConstrainedInsideOutsideGrammar csc1 = cscGrammar(g1);
-
-        // Split the grammar again
-        final FractionalCountGrammar g2 = g1.split(new RandomNoiseGenerator(0, .01f));
-        final ConstrainedInsideOutsideGrammar csc2 = cscGrammar(g2);
-
-        // Parse each tree first with the split-1 grammar (constrained by unsplit trees), and then with the split-2
-        // grammar (constrained by the split-1 parses). Convert each split-2 tree back to its split-1 form and ensure it
-        // matches the split-1 parse
-
-        final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser p1 = new Constrained2SplitInsideOutsideParser(opts, csc1);
-        final Constrained2SplitInsideOutsideParser p2 = new Constrained2SplitInsideOutsideParser(opts, csc2);
-
-        final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader(corpus));
-        for (String line = br.readLine(); line != null; line = br.readLine()) {
-            final NaryTree<String> goldTree = NaryTree.read(line, String.class);
-            final BinaryTree<String> tree0 = goldTree.binarize(GrammarFormatType.Berkeley, Binarization.RIGHT);
-
-            final ConstrainingChart constrainingChart0 = new ConstrainingChart(tree0, csc0);
-            final BinaryTree<String> tree1 = p1.findBestParse(constrainingChart0);
-            final BinaryTree<String> tree2 = p2.findBestParse(constrainingChart0);
-
-            final BinaryTree<String> preSplitTree = toPreSplitTree(tree2);
-
-            // Ensure that the resulting parse matches the constraining 1-split parse
-            assertEquals(tree1.toString(), preSplitTree.toString());
         }
     }
 
@@ -515,23 +473,5 @@ public class TestConstrained2SplitInsideOutsideParser {
 
         assertLogFractionEquals(Math.log(1f / 2 / 2), countGrammar.unaryLogProbability("b_0", "d_1"), .01f);
         assertLogFractionEquals(Math.log(1f / 2 / 2), countGrammar.unaryLogProbability("b_1", "d_0"), .01f);
-    }
-
-    private BinaryTree<String> toPreSplitTree(final BinaryTree<String> splitTree) {
-        final BinaryTree<String> preSplitTree = splitTree.transform(new Tree.LabelTransformer<String>() {
-
-            @Override
-            public String transform(final String label) {
-                final String[] split = label.split("_");
-
-                // Special-case for un-split labels, including lexical items and the start symbol
-                if (split.length == 1) {
-                    return label;
-                }
-                final int subcategory = Integer.parseInt(split[1]);
-                return split[0] + '_' + (subcategory / 2);
-            }
-        });
-        return preSplitTree;
     }
 }

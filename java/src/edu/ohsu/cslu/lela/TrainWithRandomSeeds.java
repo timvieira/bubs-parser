@@ -65,7 +65,6 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
 
             // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
             final FractionalCountGrammar mergedPlg1 = plg1.merge(new short[] { 1 });
-            tg.reloadConstrainingCharts(cscGrammar(plg1), cscGrammar(mergedPlg1));
             System.out.println("Split 2");
             final FractionalCountGrammar split2 = mergedPlg1.split(noiseGenerator);
             // split2.randomize(random, 0.01f);
@@ -73,7 +72,6 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
 
             // Merge TOP_1 back into TOP, split again, and train with the new 3-split grammar
             final FractionalCountGrammar mergedPlg2 = plg2.merge(new short[] { 1 });
-            tg.reloadConstrainingCharts(cscGrammar(plg2), cscGrammar(mergedPlg2));
             System.out.println("Split 3");
             final FractionalCountGrammar split3 = mergedPlg2.split(noiseGenerator);
             // split3.randomize(random, 0.01f);

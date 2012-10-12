@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
-import java.util.regex.Pattern;
 
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
@@ -48,8 +47,6 @@ import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.tests.JUnit;
 
 public class FractionalCountGrammar implements CountGrammar, Cloneable {
-
-    private final static Pattern SUBSTATE_PATTERN = Pattern.compile("^.*_[0-9]+$");
 
     public final Vocabulary vocabulary;
     public final SymbolSet<String> lexicon;
@@ -125,10 +122,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     public void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
             final double increment) {
 
-        if (increment == 0) {
-            return;
-        }
-
         Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
         if (leftChildMap == null) {
             leftChildMap = new Short2ObjectOpenHashMap<Short2DoubleOpenHashMap>();
@@ -142,7 +135,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             leftChildMap.put(leftChild, rightChildMap);
         }
 
-        rightChildMap.put(rightChild, rightChildMap.get(rightChild) + increment);
+        rightChildMap.add(rightChild, increment);
         parentCounts.add(parent, increment);
     }
 
@@ -153,8 +146,12 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         incrementBinaryCount(parent, leftChild, rightChild, increment);
     }
 
-    public void incrementBinaryLogCount(final short parent, final int childPair, final float logIncrement) {
-        incrementBinaryCount(parent, childPair, Math.exp(logIncrement));
+    public void incrementBinaryLogCount(final short parent, final short leftChild, final short rightChild,
+            final float logIncrement) {
+
+        assert (logIncrement <= .001f);
+        final double increment = Math.exp(logIncrement);
+        incrementBinaryCount(parent, leftChild, rightChild, increment);
     }
 
     /**
@@ -168,10 +165,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
     public void incrementUnaryCount(final short parent, final short child, final double increment) {
 
-        if (increment == 0) {
-            return;
-        }
-
         Short2DoubleOpenHashMap childMap = unaryRuleCounts.get(parent);
         if (childMap == null) {
             childMap = new Short2DoubleOpenHashMap();
@@ -179,12 +172,15 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             unaryRuleCounts.put(parent, childMap);
         }
 
-        childMap.put(child, childMap.get(child) + increment);
+        childMap.add(child, increment);
         parentCounts.add(parent, increment);
     }
 
     public void incrementUnaryLogCount(final short parent, final short child, final float logIncrement) {
-        incrementUnaryCount(parent, child, Math.exp(logIncrement));
+
+        assert (logIncrement <= .001f);
+        final double increment = Math.exp(logIncrement);
+        incrementUnaryCount(parent, child, increment);
     }
 
     /**
@@ -196,10 +192,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
     public void incrementLexicalCount(final short parent, final int child, final double increment) {
 
-        if (increment == 0) {
-            return;
-        }
-
         Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
         if (childMap == null) {
             childMap = new Int2DoubleOpenHashMap();
@@ -207,7 +199,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
             lexicalRuleCounts.put(parent, childMap);
         }
 
-        childMap.put(child, childMap.get(child) + increment);
+        childMap.add(child, increment);
         parentCounts.add(parent, increment);
 
         if (corpusWordCounts != null && corpusWordCounts.get(child) < rareWordThreshold) {
@@ -216,7 +208,10 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     }
 
     protected void incrementLexicalLogCount(final short parent, final int child, final float logIncrement) {
-        incrementLexicalCount(parent, child, Math.exp(logIncrement));
+
+        assert (logIncrement <= .001f);
+        final double increment = Math.exp(logIncrement);
+        incrementLexicalCount(parent, child, increment);
     }
 
     /**
@@ -602,17 +597,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     public FractionalCountGrammar split(final NoiseGenerator noiseGenerator) {
 
         // Create a new vocabulary, splitting each non-terminal into two substates
-        final SplitVocabulary splitVocabulary = new SplitVocabulary(vocabulary);
-
-        // Add a dummy non-terminal for the start symbol. The start symbol is always index 0, and using index 1 makes
-        // computing other splits simpler. We'll always re-merge the dummy symbol.
-        splitVocabulary.addSymbol(startSymbol);
-        splitVocabulary.addSymbol(startSymbol + "_1");
-        for (int i = 1; i < vocabulary.size(); i++) {
-            final String[] substates = substates(vocabulary.getSymbol(i));
-            splitVocabulary.addSymbol(substates[0]);
-            splitVocabulary.addSymbol(substates[1]);
-        }
+        final SplitVocabulary splitVocabulary = ((SplitVocabulary) vocabulary).split();
 
         final FractionalCountGrammar splitGrammar = new FractionalCountGrammar(splitVocabulary, lexicon, null,
                 corpusWordCounts, uncommonWordThreshold, rareWordThreshold);
@@ -759,16 +744,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         }
     }
 
-    private String[] substates(final String state) {
-        if (SUBSTATE_PATTERN.matcher(state).matches()) {
-            final String[] rootAndIndex = state.split("_");
-            final int substateIndex = Integer.parseInt(rootAndIndex[1]);
-            return new String[] { rootAndIndex[0] + '_' + (substateIndex * 2),
-                    rootAndIndex[0] + '_' + (substateIndex * 2 + 1) };
-        }
-        return new String[] { state + "_0", state + "_1" };
-    }
-
     /**
      * Re-merges splits specified by non-terminal indices, producing a new {@link FractionalCountGrammar} with its own
      * vocabulary and lexicon.
@@ -783,7 +758,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         // Create merged vocabulary and map from old vocabulary indices to new
         final Short2ShortOpenHashMap parentToMergedIndexMap = new Short2ShortOpenHashMap();
 
-        // Set of merged indices which were merged 'into'
+        // The set of post-merge indices which were merged 'into'
         final ShortOpenHashSet mergedIndices = new ShortOpenHashSet();
 
         short j = 0;
@@ -792,7 +767,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         mergedSymbols.add(startSymbol);
 
         String previousRoot = "";
-        int nextSubstate = 0;
+        byte nextSubstate = 0;
 
         for (short i = 1; i < vocabulary.size(); i++) {
             if (j < indices.length && indices[j] == i) {
@@ -1039,6 +1014,140 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
     public final double observations(final String parent) {
         throw new UnsupportedOperationException();
+    }
+
+    // /**
+    // * Merges the grammar back into a Markov-0 (unsplit) grammar, and ensures that the merged probabilities are the
+    // same
+    // * as the supplied unsplit grammar (usually the original Markov-0 grammar induced from the training corpus). Used
+    // * for unit testing.
+    // *
+    // * @param unsplitPlg
+    // */
+    // void verifyVsUnsplitGrammar(final FractionalCountGrammar unsplitPlg) {
+    //
+    // final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(unsplitPlg.vocabulary,
+    // unsplitPlg.lexicon, null);
+    //
+    // for (final short parent : binaryRuleCounts.keySet()) {
+    // final short unsplitParent = vocabulary.getBaseIndex(parent);
+    // final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
+    //
+    // for (final short leftChild : leftChildMap.keySet()) {
+    // final short unsplitLeftChild = vocabulary.getBaseIndex(leftChild);
+    // final Short2DoubleOpenHashMap rightChildMap = leftChildMap.get(leftChild);
+    //
+    // for (final short rightChild : rightChildMap.keySet()) {
+    // final short unsplitRightChild = vocabulary.getBaseIndex(rightChild);
+    // unsplitGrammar.incrementBinaryCount(unsplitParent, unsplitLeftChild, unsplitRightChild,
+    // rightChildMap.get(rightChild));
+    // }
+    // }
+    // }
+    //
+    // for (final short parent : unaryRuleCounts.keySet()) {
+    // final short unsplitParent = vocabulary.getBaseIndex(parent);
+    // final Short2DoubleOpenHashMap childMap = unaryRuleCounts.get(parent);
+    //
+    // for (final short child : childMap.keySet()) {
+    // final short unsplitChild = vocabulary.getBaseIndex(child);
+    // unsplitGrammar.incrementUnaryCount(unsplitParent, unsplitChild, childMap.get(child));
+    // }
+    // }
+    //
+    // for (final short parent : lexicalRuleCounts.keySet()) {
+    // final short unsplitParent = vocabulary.getBaseIndex(parent);
+    // final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
+    //
+    // for (final int child : childMap.keySet()) {
+    // unsplitGrammar.incrementLexicalCount(unsplitParent, child, childMap.get(child));
+    // }
+    // }
+    //
+    // final FractionalCountGrammar newUnsplitPlg = unsplitGrammar.toProductionListGrammar(Float.NEGATIVE_INFINITY);
+    // newUnsplitPlg.verifyVsExpectedGrammar(unsplitPlg);
+    // }
+    //
+    // public void verifyVsExpectedGrammar(final ProductionListGrammar unsplitPlg) {
+    // final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> unsplitBinaryProbabilities = new
+    // Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
+    // final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> unaryProbabilities = new
+    // Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
+    // final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> lexicalProbabilities = new
+    // Short2ObjectOpenHashMap<Int2FloatOpenHashMap>();
+    //
+    // for (final Production p : binaryProductions) {
+    //
+    // Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = unsplitBinaryProbabilities
+    // .get((short) p.parent);
+    // if (leftChildMap == null) {
+    // leftChildMap = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
+    // unsplitBinaryProbabilities.put((short) p.parent, leftChildMap);
+    // }
+    //
+    // Short2FloatOpenHashMap rightChildMap = leftChildMap.get((short) p.leftChild);
+    // if (rightChildMap == null) {
+    // rightChildMap = new Short2FloatOpenHashMap();
+    // rightChildMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
+    // leftChildMap.put((short) p.leftChild, rightChildMap);
+    // }
+    //
+    // rightChildMap.put((short) p.rightChild,
+    // edu.ohsu.cslu.util.Math.logSum(rightChildMap.get((short) p.rightChild), p.prob));
+    // }
+    //
+    // for (final Production p : unaryProductions) {
+    //
+    // Short2FloatOpenHashMap childMap = unaryProbabilities.get((short) p.parent);
+    // if (childMap == null) {
+    // childMap = new Short2FloatOpenHashMap();
+    // childMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
+    // unaryProbabilities.put((short) p.parent, childMap);
+    // }
+    //
+    // childMap.put((short) p.leftChild, edu.ohsu.cslu.util.Math.logSum(childMap.get((short) p.leftChild), p.prob));
+    // }
+    //
+    // for (final Production p : lexicalProductions) {
+    //
+    // Int2FloatOpenHashMap childMap = lexicalProbabilities.get((short) p.parent);
+    // if (childMap == null) {
+    // childMap = new Int2FloatOpenHashMap();
+    // childMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
+    // lexicalProbabilities.put((short) p.parent, childMap);
+    // }
+    //
+    // childMap.put((short) p.leftChild, edu.ohsu.cslu.util.Math.logSum(childMap.get((short) p.leftChild), p.prob));
+    // }
+    //
+    // //
+    // // Verify that the summed probabilities from the current grammar match those from the unsplit grammar
+    // //
+    // for (final Production p : unsplitPlg.binaryProductions) {
+    // assertEquals(
+    // "Verification failed on " + p.toString(),
+    // p.prob,
+    // unsplitBinaryProbabilities.get((short) p.parent).get((short) p.leftChild).get((short) p.rightChild),
+    // 0.001f);
+    // }
+    //
+    // for (final Production p : unsplitPlg.unaryProductions) {
+    // assertEquals("Verification failed on " + p.toString(), p.prob, unaryProbabilities.get((short) p.parent)
+    // .get((short) p.leftChild), 0.001f);
+    // }
+    //
+    // for (final Production p : unsplitPlg.lexicalProductions) {
+    // assertEquals("Verification failed on " + p.toString(), p.prob, lexicalProbabilities.get((short) p.parent)
+    // .get(p.leftChild), 0.001f);
+    // }
+    // }
+
+    public double totalParentCounts() {
+        double totalParentCounts = 0;
+        for (final double count : parentCounts.values()) {
+            totalParentCounts += count;
+        }
+        return totalParentCounts;
     }
 
     @Override

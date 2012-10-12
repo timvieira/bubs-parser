@@ -440,7 +440,8 @@ public class ConstrainingChart extends PackedArrayChart {
                     continue;
                 }
 
-                sb.append("ConstrainingChartCell[" + start + "][" + end + "](" + midpoints[cellIndex] + ")\n");
+                sb.append("ConstrainingChartCell " + cellIndex + " [" + start + "][" + end + "]("
+                        + midpoints[cellIndex] + ")\n");
 
                 // Format unary parents first, followed by the two bottom entries
                 final int bottomEntryOffset = offset + (unaryChainLength(cellIndex) - 1);

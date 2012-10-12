@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -136,6 +137,8 @@ public class TrainGrammar extends BaseCommandlineTool {
     final ArrayList<NaryTree<String>> goldTrees = new ArrayList<NaryTree<String>>();
     final ArrayList<ConstrainingChart> constrainingCharts = new ArrayList<ConstrainingChart>();
 
+    long parseTime = 0, countTime = 0;
+
     /** Total counts of all words observed in the training corpus. Used for lexicon smoothing */
     Int2IntOpenHashMap corpusWordCounts;
 
@@ -187,11 +190,12 @@ public class TrainGrammar extends BaseCommandlineTool {
         trainingCorpusReader.close();
 
         if (emBeforeSplit) {
-            final ConstrainedInsideOutsideGrammar cscM0Grammar = cscGrammar(currentGrammar);
+            final ConstrainedCscSparseMatrixGrammar cscM0Grammar = cscGrammar(currentGrammar);
 
             final ParserDriver opts = new ParserDriver();
             opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-            final ConstrainedInsideOutsideParser parser = new ConstrainedInsideOutsideParser(opts, cscM0Grammar);
+            final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts,
+                    cscM0Grammar);
             final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscM0Grammar.nonTermSet,
                     cscM0Grammar.lexSet, cscM0Grammar.packingFunction, corpusWordCounts, uncommonWordThreshold,
                     rareWordThreshold);
@@ -212,6 +216,8 @@ public class TrainGrammar extends BaseCommandlineTool {
 
         // Run split-merge training cycles
         for (int cycle = 1; cycle <= splitMergeCycles; cycle++) {
+
+            final long t0 = System.currentTimeMillis();
 
             //
             // Split
@@ -239,7 +245,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             //
             // Estimate likelihood loss of re-merging and merge least costly splits
             //
-            final ConstrainedInsideOutsideGrammar premergeCscGrammar = cscGrammar(currentGrammar);
+            final ConstrainedCscSparseMatrixGrammar premergeCscGrammar = cscGrammar(currentGrammar);
             currentGrammar = merge(currentGrammar, premergeCscGrammar);
 
             //
@@ -272,18 +278,18 @@ public class TrainGrammar extends BaseCommandlineTool {
             // TODO Prune, output lexicon
             writeGrammarToFile(String.format("sm%d.gr.gz", cycle), grammarWithUnks);
 
-            // Populate constraining charts for the next SM cycle from a Viterbi 1-best parse with the pre-merge grammar
-            reloadConstrainingCharts(premergeCscGrammar, cscGrammar(currentGrammar));
-
             // Output dev-set parse accuracy
             if (developmentSet != null) {
                 parseDevSet(devCorpusReader, cscGrammar(grammarWithUnks));
             }
+
+            BaseLogger.singleton().info(
+                    String.format("Completed cycle %d in %.2f s", cycle, (System.currentTimeMillis() - t0) / 1000f));
         }
     }
 
-    private ConstrainedInsideOutsideGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
-        return new ConstrainedInsideOutsideGrammar(countGrammar, GrammarFormatType.Berkeley,
+    private ConstrainedCscSparseMatrixGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
+        return new ConstrainedCscSparseMatrixGrammar(countGrammar, GrammarFormatType.Berkeley,
                 PerfectIntPairHashPackingFunction.class);
     }
 
@@ -314,29 +320,6 @@ public class TrainGrammar extends BaseCommandlineTool {
     }
 
     /**
-     * Parses with a split grammar and replaces the current {@link ConstrainingChart}s with 1-best parses, populated
-     * with a merged version of the same grammar.
-     * 
-     * @param finalSplitGrammar
-     * @param mergedGrammar
-     */
-    final void reloadConstrainingCharts(final ConstrainedInsideOutsideGrammar finalSplitGrammar,
-            final ConstrainedInsideOutsideGrammar mergedGrammar) {
-
-        final ParserDriver opts = new ParserDriver();
-        opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final ConstrainedViterbiParser parser = new ConstrainedViterbiParser(opts, finalSplitGrammar);
-
-        BaseLogger.singleton().info("Reloading constraining charts...");
-
-        // Iterate over the training corpus, parsing and replacing current ConstrainingCharts
-        for (int i = 0; i < constrainingCharts.size(); i++) {
-            final ConstrainedChart c = parser.parse(constrainingCharts.get(i));
-            constrainingCharts.set(i, new ConstrainingChart(c, mergedGrammar, true));
-        }
-    }
-
-    /**
      * Execute a single EM iteration
      * 
      * @param currentGrammar
@@ -346,24 +329,29 @@ public class TrainGrammar extends BaseCommandlineTool {
     EmIterationResult emIteration(final FractionalCountGrammar currentGrammar, final float minimumRuleLogProb) {
 
         final long t0 = System.currentTimeMillis();
-        final ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(currentGrammar);
+        final ConstrainedCscSparseMatrixGrammar cscGrammar = cscGrammar(currentGrammar);
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, cscGrammar);
+        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar);
 
         final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscGrammar.nonTermSet,
                 cscGrammar.lexSet, cscGrammar.packingFunction, corpusWordCounts, uncommonWordThreshold,
                 rareWordThreshold);
 
         final long t1 = System.currentTimeMillis();
-
         // Iterate over the training corpus, parsing and counting rule occurrences
         double corpusLikelihood = 0f;
-        for (final ConstrainingChart constrainingChart : constrainingCharts) {
-            parser.findBestParse(constrainingChart);
+        for (int i = 0; i < constrainingCharts.size(); i++) {
+            // TODO Remove detailed timing instrumentation
+            final long t00 = System.nanoTime();
+            parser.findBestParse(constrainingCharts.get(i));
+            final long t01 = System.nanoTime();
+            parseTime += (t01 - t00);
             corpusLikelihood += parser.chart.getInside(0, parser.chart.size(), 0);
             parser.countRuleOccurrences(countGrammar);
+            countTime += (System.nanoTime() - t01);
+
         }
         final long t2 = System.currentTimeMillis();
 
@@ -390,11 +378,11 @@ public class TrainGrammar extends BaseCommandlineTool {
      * Returns a copy of the supplied count grammar with the less-beneficial non-terminals merged
      * 
      * @param countGrammar
-     * @param cscGrammar {@link ConstrainedInsideOutsideGrammar} version of <code>countGrammar</code>
+     * @param cscGrammar {@link ConstrainedCscSparseMatrixGrammar} version of <code>countGrammar</code>
      * @return Copy of the supplied count grammar with the less-beneficial non-terminals merged
      */
     private FractionalCountGrammar merge(final FractionalCountGrammar countGrammar,
-            final ConstrainedInsideOutsideGrammar cscGrammar) {
+            final ConstrainedCscSparseMatrixGrammar cscGrammar) {
 
         // Special-case - just merge TOP_0
         if (mergeFraction == 0) {
@@ -449,12 +437,12 @@ public class TrainGrammar extends BaseCommandlineTool {
      * @return Array of estimated likelihood losses for each nonterminal if merged into its sibling (only odd-numbered
      *         entries are populated)
      */
-    private float[] estimateMergeCost(final ConstrainedInsideOutsideGrammar cscGrammar,
+    private float[] estimateMergeCost(final ConstrainedCscSparseMatrixGrammar cscGrammar,
             final FractionalCountGrammar countGrammar) {
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = ConstrainedCellSelector.MODEL;
-        final Constrained2SplitInsideOutsideParser parser = new Constrained2SplitInsideOutsideParser(opts, cscGrammar);
+        final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar);
 
         // Compute log(p_1), log(p_2) for each split pair based on relative frequency counts of each
         final float[] logSplitFraction = countGrammar.logSplitFraction();
@@ -474,7 +462,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         return mergeCost;
     }
 
-    private void parseDevSet(final BufferedReader devCorpusReader, final ConstrainedInsideOutsideGrammar mergedGrammar)
+    private void parseDevSet(final BufferedReader devCorpusReader, final ConstrainedCscSparseMatrixGrammar mergedGrammar)
             throws IOException {
         BaseLogger.singleton().info("Parsing development set...");
         devCorpusReader.reset();
@@ -536,7 +524,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         if (outputGrammarDirectory != null) {
             final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File(
                     outputGrammarDirectory, filename))));
-            w.write(grammar.toString(false, language, grammarFormatType, rareWordThreshold));
+            grammar.write(new PrintWriter(w), false, language, grammarFormatType, rareWordThreshold);
             w.close();
         }
     }

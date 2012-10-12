@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, 2011 Aaron Dunlop and Nathan Bodenstab
+ * Copyright 2010-2012 Aaron Dunlop and Nathan Bodenstab
  * 
  * This file is part of the BUBS Parser.
  * 
@@ -16,22 +16,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
+
 package edu.ohsu.cslu.lela;
 
 import edu.ohsu.cslu.grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 
 /**
- * Grammar class for split-merge grammar learning. References a parent grammar, based on the parent (pre-split)
- * vocabulary.
- * 
  * @author Aaron Dunlop
+ * @since Oct 7, 2012
  */
-public class ConstrainedInsideOutsideGrammar extends InsideOutsideCscSparseMatrixGrammar {
+public class ConstrainedCscSparseMatrixGrammar extends LeftCscSparseMatrixGrammar {
 
     private static final long serialVersionUID = 1L;
 
-    public ConstrainedInsideOutsideGrammar(final FractionalCountGrammar countGrammar,
+    public ConstrainedCscSparseMatrixGrammar(final FractionalCountGrammar countGrammar,
             final GrammarFormatType grammarFormat, final Class<? extends PackingFunction> functionClass) {
 
         super(countGrammar.binaryProductions(Float.NEGATIVE_INFINITY), countGrammar
