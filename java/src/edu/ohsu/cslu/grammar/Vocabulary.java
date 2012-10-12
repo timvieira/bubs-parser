@@ -24,7 +24,7 @@ public class Vocabulary extends SymbolSet<String> {
 
     private final ShortOpenHashSet factoredIndices = new ShortOpenHashSet();
 
-    protected short startSymbol;
+    private short startSymbol;
 
     private Vocabulary(final GrammarFormatType grammarFormat, final boolean baseVocabulary) {
         this.grammarFormat = grammarFormat;

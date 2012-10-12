@@ -181,8 +181,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.tmpStringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
-        nonTermSet = new Vocabulary(grammarFormat);
-
         this.nullWord = lexSet.addSymbol(nullSymbolStr);
 
         final HashSet<String> nonTerminals = new HashSet<String>();
@@ -240,6 +238,10 @@ public abstract class SparseMatrixGrammar extends Grammar {
         // Add the NTs to `nonTermSet' in sorted order
         // TODO Sorting with the PosFirstComparator might speed up FOM initialization a bit, but breaks OpenCL parsers.
         // Make it an option.
+        this.nonTermSet = new Vocabulary(grammarFormat);
+        this.startSymbol = (short) nonTermSet.addSymbol(startSymbolStr);
+        nonTermSet.setStartSymbol(startSymbol);
+
         final StringNonTerminalComparator comparator = new PosEmbeddedComparator();
         final TreeSet<StringNonTerminal> sortedNonTerminals = new TreeSet<StringNonTerminal>(comparator);
         for (final String nt : nonTerminals) {
@@ -249,8 +251,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
             nonTermSet.addSymbol(nt.label);
         }
 
-        this.startSymbol = nonTermSet.addSymbol(startSymbolStr);
-        nonTermSet.setStartSymbol((short) startSymbol);
         this.nullSymbol = (short) nonTermSet.addSymbol(nullSymbolStr);
 
         // And unary and binary rules

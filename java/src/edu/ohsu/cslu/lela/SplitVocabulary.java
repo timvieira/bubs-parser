@@ -90,7 +90,7 @@ public class SplitVocabulary extends Vocabulary {
 
         // Add a dummy non-terminal for the start symbol. The start symbol is always index 0, and using index 1 makes
         // computing other splits simpler. We'll always re-merge the dummy symbol.
-        final String sStartSymbol = parentVocabulary.getSymbol(startSymbol);
+        final String sStartSymbol = parentVocabulary.getSymbol(startSymbol());
         addSymbol(sStartSymbol);
         addSymbol(sStartSymbol + "_1");
         for (int i = 1; i < parentVocabulary.size(); i++) {
