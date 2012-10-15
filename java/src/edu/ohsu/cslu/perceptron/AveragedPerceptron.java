@@ -36,6 +36,7 @@ import edu.ohsu.cslu.datastructs.vectors.MutableSparseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.util.Strings;
 
 /**
  * Represents an averaged perceptron (see Collins, 2002). The model should be trained with
@@ -361,40 +362,28 @@ public class AveragedPerceptron extends Perceptron {
         // final BufferedReader br = new BufferedReader(inputReader);
 
         // read in file until we get to the model specs
-        String line = inputReader.readLine();
-        while (line != null && !line.trim().equals("# === Perceptron Model ===")) {
-            line = inputReader.readLine();
+        String headerLine = inputReader.readLine();
+        while (headerLine != null && !headerLine.trim().equals("# === Perceptron Model ===")) {
+            headerLine = inputReader.readLine();
         }
-        if (line == null) {
+        if (headerLine == null) {
             throw new RuntimeException("Unexpected EOF found in AveragedPerceptron model.  Exiting.");
         }
 
-        // for (String line = inputReader.readLine(); line != null &&
-        // !line.trim().equals("# === Perceptron Model ===");
-        // line = inputReader.readLine()) {
-        String[] tokens = inputReader.readLine().split("\\s");
-        final int numFeatures = Integer.parseInt(tokens[0].split("=")[1]);
-        // this.numClasses = Integer.parseInt(tokens[1].split("=")[1]);
-        final String binsString = tokens[2].split("=")[1];
-        // final String biasString = tokens[3].split("=")[1];
-        // this.initBins(binsString);
+        final String modelHeaderLine = inputReader.readLine();
+        final String[] tokens = Strings.splitOnSpace(modelHeaderLine);
+        // final int numFeatures = Integer.parseInt(tokens[0].split("=")[1]);
+        final String binsString = tokens[2].substring(tokens[2].indexOf('=') + 1);
         this.binsStr = binsString;
         this.bins = Util.strToIntArray(binsStr);
         this.avgWeights = new FloatVector[numClasses()];
-        this.featureTemplate = inputReader.readLine().replace("featTemplate: ", "");
+
+        final String featureTemplateLine = inputReader.readLine();
+        this.featureTemplate = featureTemplateLine.replace("featTemplate: ", "");
 
         for (int classIndex = 0; classIndex < numClasses(); classIndex++) {
-            inputReader.readLine(); // vector type=float length=X
-            tokens = inputReader.readLine().split("\\s"); // get float values for model[i]
-            final float[] weights = new float[numFeatures];
-            for (int i = 0; i < tokens.length; i++) {
-                weights[i] = Float.parseFloat(tokens[i]);
-            }
-            this.avgWeights[classIndex] = new DenseFloatVector(weights);
-
-            // if (classIndex != numClasses() - 1) {
+            this.avgWeights[classIndex] = (FloatVector) Vector.Factory.read(inputReader);
             inputReader.readLine(); // blank line
-            // }
         }
     }
 
