@@ -799,30 +799,39 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         final FractionalCountGrammar mergedGrammar = new FractionalCountGrammar(mergedVocabulary, lexicon, null,
                 corpusWordCounts, uncommonWordThreshold, rareWordThreshold);
 
+        // Binary
         for (final short parent : binaryRuleCounts.keySet()) {
+            final short mergedParent = parentToMergedIndexMap.get(parent);
             final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
+
             for (final short leftChild : leftChildMap.keySet()) {
+                final short mergedLeftChild = parentToMergedIndexMap.get(leftChild);
                 final Short2DoubleOpenHashMap rightChildMap = leftChildMap.get(leftChild);
+
                 for (final short rightChild : rightChildMap.keySet()) {
-                    mergedGrammar.incrementBinaryCount(parentToMergedIndexMap.get(parent),
-                            parentToMergedIndexMap.get(leftChild), parentToMergedIndexMap.get(rightChild),
-                            rightChildMap.get(rightChild));
+                    mergedGrammar.incrementBinaryCount(mergedParent, mergedLeftChild,
+                            parentToMergedIndexMap.get(rightChild), rightChildMap.get(rightChild));
                 }
             }
         }
 
+        // Unary
         for (final short parent : unaryRuleCounts.keySet()) {
+            final short mergedParent = parentToMergedIndexMap.get(parent);
             final Short2DoubleOpenHashMap childMap = unaryRuleCounts.get(parent);
+
             for (final short child : childMap.keySet()) {
-                mergedGrammar.incrementUnaryCount(parentToMergedIndexMap.get(parent),
-                        parentToMergedIndexMap.get(child), childMap.get(child));
+                mergedGrammar.incrementUnaryCount(mergedParent, parentToMergedIndexMap.get(child), childMap.get(child));
             }
         }
 
+        // Lexical
         for (final short parent : lexicalRuleCounts.keySet()) {
             final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
+            final short mergedParent = parentToMergedIndexMap.get(parent);
+
             for (final int child : childMap.keySet()) {
-                mergedGrammar.incrementLexicalCount(parentToMergedIndexMap.get(parent), child, childMap.get(child));
+                mergedGrammar.incrementLexicalCount(mergedParent, child, childMap.get(child));
             }
         }
 
@@ -886,10 +895,10 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     }
 
     /**
-     * Computes relative counts of each split pair. E.g., if NP_0 has been split into NP_0 and NP_1, and NP_0 occurs 12
-     * times and NP_1 8, the array entries for NP_0 and NP_1 will contain (log) 12/20 and 8/20 respectively.
+     * Computes fractional counts of each split pair. E.g., if NP_0 has been split into NP_0 and NP_1, and NP_0 occurs
+     * 12 times and NP_1 8, the array entries for NP_0 and NP_1 will contain (log) 12/20 and 8/20 respectively.
      * 
-     * @return relative counts of each split pair.
+     * @return fractional counts of each non-terminal.
      */
     public float[] logSplitFraction() {
         final float[] logSplitCounts = new float[vocabulary.size()];

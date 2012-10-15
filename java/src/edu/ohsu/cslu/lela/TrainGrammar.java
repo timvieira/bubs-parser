@@ -246,12 +246,17 @@ public class TrainGrammar extends BaseCommandlineTool {
             // Estimate likelihood loss of re-merging and merge least costly splits
             //
             final ConstrainedCscSparseMatrixGrammar premergeCscGrammar = cscGrammar(currentGrammar);
+            final FractionalCountGrammar premergeGrammar = currentGrammar;
             currentGrammar = merge(currentGrammar, premergeCscGrammar);
+            BaseLogger.singleton().config("Merged grammar size:  " + grammarSummaryString(currentGrammar));
+
+            // At verbose logging levels, write the merged grammar before EM and UNK productions
+            if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+                writeGrammarToFile(String.format("merge%d.gr.gz", cycle), currentGrammar);
+            }
 
             //
-            // Run some more EM iterations on merged grammar - we'll have to 'partially-merge' the grammar,
-            // combining rule probabilities, but delay merging the vocabulary until after this EM cycle, so we can still
-            // map to the existing ConstrainingChart properly.
+            // TODO Run some more EM iterations on merged grammar
             //
             // BaseLogger.singleton().info("Post-merge EM");
             // for (int i = 1; i <= emIterationsAfterMerge; i++) {
@@ -280,6 +285,8 @@ public class TrainGrammar extends BaseCommandlineTool {
 
             // Output dev-set parse accuracy
             if (developmentSet != null) {
+                parseDevSet(devCorpusReader, cscGrammar(premergeGrammar.addUnkCounts(
+                        unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold, s_0, s_1, s_2)));
                 parseDevSet(devCorpusReader, cscGrammar(grammarWithUnks));
             }
 
@@ -387,7 +394,8 @@ public class TrainGrammar extends BaseCommandlineTool {
         // Special-case - just merge TOP_0
         if (mergeFraction == 0) {
             final FractionalCountGrammar mergedGrammar = countGrammar.merge(new short[] { 1 });
-            BaseLogger.singleton().fine("Merged 1 nonterminal. Grammar size:  " + grammarSummaryString(mergedGrammar));
+            BaseLogger.singleton()
+                    .config("Merged 1 nonterminal. Grammar size:  " + grammarSummaryString(mergedGrammar));
             return mergedGrammar;
         }
 
@@ -403,13 +411,10 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
         // Sort the parallel array by cost (from least costly to most)
         Arrays.sort(tmpCost, tmpIndices);
-        Arrays.reverse(tmpCost);
-        Arrays.reverse(tmpIndices);
 
         // Copy the least-costly indices into a new array
         final short[] mergeIndices = new short[Math.round(mergeCost.length * mergeFraction)];
         System.arraycopy(tmpIndices, 0, mergeIndices, 0, mergeIndices.length);
-        java.util.Arrays.sort(mergeIndices);
 
         if (BaseLogger.singleton().isLoggable(Level.FINER)) {
             final StringBuilder sb = new StringBuilder();
@@ -419,8 +424,8 @@ public class TrainGrammar extends BaseCommandlineTool {
                     sb.append("--------\n");
                 }
             }
-            BaseLogger.singleton().finer("Merge Costs:");
-            BaseLogger.singleton().finer(sb.toString());
+            BaseLogger.singleton().fine("Merge Costs:");
+            BaseLogger.singleton().fine(sb.toString());
         }
         // Perform the merge
         final FractionalCountGrammar mergedGrammar = countGrammar.merge(mergeIndices);
@@ -434,8 +439,8 @@ public class TrainGrammar extends BaseCommandlineTool {
      * Estimate the likelihood loss for each nonterminal if it is re-merged with its split sibling.
      * 
      * @param cscGrammar
-     * @return Array of estimated likelihood losses for each nonterminal if merged into its sibling (only odd-numbered
-     *         entries are populated)
+     * @return Array of estimated likelihood losses for each split nonterminal if merged with its sibling (an array 1/2
+     *         the size of the non-terminal set)
      */
     private float[] estimateMergeCost(final ConstrainedCscSparseMatrixGrammar cscGrammar,
             final FractionalCountGrammar countGrammar) {
@@ -458,12 +463,13 @@ public class TrainGrammar extends BaseCommandlineTool {
             parser.countMergeCost(mergeCost, logSplitFraction);
             sentenceCount++;
         }
-
         return mergeCost;
     }
 
     private void parseDevSet(final BufferedReader devCorpusReader, final ConstrainedCscSparseMatrixGrammar mergedGrammar)
             throws IOException {
+
+        final long t0 = System.currentTimeMillis();
         BaseLogger.singleton().info("Parsing development set...");
         devCorpusReader.reset();
 
@@ -488,6 +494,8 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
 
         final EvalbResult evalbResult = evaluator.accumulatedResult();
+        BaseLogger.singleton()
+                .config(String.format("Parsed development set in %d ms", System.currentTimeMillis() - t0));
         BaseLogger.singleton().info(String.format("Dev-set F-score: %.2f", evalbResult.f1() * 100));
     }
 
@@ -498,13 +506,13 @@ public class TrainGrammar extends BaseCommandlineTool {
      * @param i
      */
     private void logEmIteration(final EmIterationResult result, final int i) {
-        if (BaseLogger.singleton().isLoggable(Level.FINE)) {
-            BaseLogger.singleton().fine(
+        if (BaseLogger.singleton().isLoggable(Level.CONFIG)) {
+            BaseLogger.singleton().config(
                     String.format("Iteration: %2d  Likelihood: %.2f  EM Time: %5dms  Grammar Time: %4dms  "
                             + grammarSummaryString(result.countGrammar), i, result.corpusLikelihood, result.emTime,
                             result.grammarConversionTime));
         } else {
-            BaseLogger.singleton().config(
+            BaseLogger.singleton().info(
                     String.format("Iteration: %2d  Likelihood: %.2f  EM Time: %5dms  Grammar Time: %dms", i,
                             result.corpusLikelihood, result.emTime, result.grammarConversionTime));
         }

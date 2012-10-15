@@ -669,7 +669,6 @@ public class ConstrainedSplitInsideOutsideParser extends
      * cycle. E.g., on cycle 2, we will consider merging NP_0 and NP_1, but we will not consider merging NP_0 and NP_2.
      * 
      * @param countGrammar The grammar to populate with rule counts
-     * @return countGrammar
      */
     void countMergeCost(final float[] mergeCost, final float[] logSplitFraction) {
 
@@ -691,23 +690,22 @@ public class ConstrainedSplitInsideOutsideParser extends
                         * vocabulary.maxSplits;
 
                 for (short i = 0; i < vocabulary.baseNtSplitCounts[constrainingParent]; i += 2) {
-                    final short parent0 = (short) (firstParent + i);
+                    final short parent1 = (short) (firstParent + i);
 
-                    final float insideSum = Math.logSum(chart.insideProbabilities[firstParentOffset + i],
-                            chart.insideProbabilities[firstParentOffset + i + 1]);
+                    final float P_in1 = chart.insideProbabilities[firstParentOffset + i];
+                    final float P_out1 = chart.outsideProbabilities[firstParentOffset + i];
+                    final float P_in2 = chart.insideProbabilities[firstParentOffset + i + 1];
+                    final float P_out2 = chart.outsideProbabilities[firstParentOffset + i + 1];
 
-                    // Total inside probability of merged parent : p_1 * P_in(1) + p_2 * P_in(2) (see Petrov 2006,
-                    // section 2.3)
-                    final float mergedInsideSum = Math.logSum(logSplitFraction[parent0]
-                            + chart.insideProbabilities[firstParentOffset + i], logSplitFraction[parent0 + 1]
-                            + chart.insideProbabilities[firstParentOffset + i + 1]);
-                    // final float outsideSum = Math.logSum(
-                    // chart.outsideProbabilities[firstChildOffset + i],
-                    // chart.outsideProbabilities[firstChildOffset + i + 1]);
-                    // mergeCost[parent0 >> 1] += ((mergedInsideSum + outsideSum) - (insideSum + outsideSum));
+                    final float mergedInside = Math.logSum(logSplitFraction[parent1] + P_in1,
+                            logSplitFraction[parent1 + 1] + P_in2);
+                    final float mergedOutside = Math.logSum(P_out1, P_out2);
+                    final float mergedPosterior = mergedInside + mergedOutside;
 
-                    // The outside sum cancels out
-                    mergeCost[parent0 >> 1] += (mergedInsideSum - insideSum);
+                    final float unmergedPosterior = Math.logSum(P_in1 + P_out1, P_in2 + P_out2);
+
+                    final float loss = -(mergedPosterior - unmergedPosterior);
+                    mergeCost[parent1 >> 1] += loss;
                 }
             }
         }
