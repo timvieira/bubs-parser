@@ -186,9 +186,11 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 for (i = 0; i < beamWidthModel.numClasses(); i++) {
                     classCounts.append(" class" + i + "=" + beamClassCounts[i]);
                 }
-                BaseLogger.singleton().finer(
-                        "INFO: beamconf: " + classCounts + " open=" + (openCells - numOnlyFactored) + " openFactored="
-                                + numOnlyFactored + " closed=" + (totalCells - openCells));
+                if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+                    BaseLogger.singleton().finer(
+                            "INFO: beamconf: " + classCounts + " open=" + (openCells - numOnlyFactored)
+                                    + " openFactored=" + numOnlyFactored + " closed=" + (totalCells - openCells));
+                }
             }
             if (ParserDriver.chartConstraintsPrint) {
                 BaseLogger.singleton().info("CC_SENT: " + parser.chart.parseTask.sentence);

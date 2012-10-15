@@ -37,6 +37,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.TreeTools;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.util.Strings;
 
 /**
  * Implements Caraballo and Charniak's (1998) boundary in-out figure-of-merit with ambiguous POS tags by running the
@@ -120,7 +121,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         final LinkedList<String> denom = new LinkedList<String>();
         while ((line = inStream.readLine()) != null) {
             // line format: label num1 num2 ... | den1 den2 ... prob
-            final String[] tokens = line.split("\\s+");
+            final String[] tokens = Strings.splitOnSpace(line);
             if (tokens.length > 0 && !tokens[0].equals("#")) {
                 numerator.clear();
                 denom.clear();

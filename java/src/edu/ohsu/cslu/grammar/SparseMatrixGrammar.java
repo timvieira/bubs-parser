@@ -45,7 +45,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
@@ -424,9 +423,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
             throw new IllegalArgumentException("Unexpected first line of grammar file: " + firstLine);
         }
 
-        final Pattern p = Pattern.compile("\\s");
         for (String line = br.readLine(); !line.equals(LEXICON_DELIMITER); line = br.readLine()) {
-            final String[] tokens = p.split(line);
+            final String[] tokens = Strings.splitOnSpace(line);
 
             if ((tokens.length > 0 && tokens[0].equals("#")) || line.trim().equals("")) {
                 // '#' indicates a comment. Skip line.
@@ -446,7 +444,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         // Read Lexicon after finding DELIMITER
         for (String line = br.readLine(); line != null || lexicalRules.size() == 0; line = br.readLine()) {
             if (line != null) {
-                final String[] tokens = p.split(line);
+                final String[] tokens = Strings.splitOnSpace(line);
                 // if ((tokens.length > 0 && tokens[0].equals("#")) || line.trim().equals("")) {
                 // NB: There are lexical productions that start with '#', namely '# -> #'
                 if (line.trim().equals("")) {
