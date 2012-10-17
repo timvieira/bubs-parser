@@ -5,6 +5,8 @@ import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 
 import java.util.Collection;
 
+import edu.ohsu.cslu.lela.SplitVocabulary;
+
 /**
  * TODO Should we use 'base' or 'unsplit' to denote markov-0 categories?
  * 
@@ -26,22 +28,25 @@ public class Vocabulary extends SymbolSet<String> {
 
     private short startSymbol;
 
-    private Vocabulary(final GrammarFormatType grammarFormat, final boolean baseVocabulary) {
-        this.grammarFormat = grammarFormat;
-        this.baseVocabulary = baseVocabulary ? null : new Vocabulary(grammarFormat, true);
-    }
-
     protected Vocabulary(final GrammarFormatType grammarFormat, final Vocabulary baseVocabulary) {
         this.grammarFormat = grammarFormat;
         this.baseVocabulary = baseVocabulary;
     }
 
     public Vocabulary(final GrammarFormatType grammarFormat) {
-        this(grammarFormat, false);
+        this(grammarFormat, null);
     }
 
-    public Vocabulary(final Collection<String> symbols, final GrammarFormatType grammarFormat) {
-        this(grammarFormat);
+    /**
+     * Used by {@link SplitVocabulary}. Initializes a base vocabulary
+     * 
+     * @param symbols
+     * @param grammarFormat
+     */
+    protected Vocabulary(final Collection<String> symbols, final GrammarFormatType grammarFormat) {
+        // Initialize a base vocabulary
+        this.grammarFormat = grammarFormat;
+        this.baseVocabulary = new Vocabulary(grammarFormat);
         for (final String symbol : symbols) {
             addSymbol(symbol);
         }
