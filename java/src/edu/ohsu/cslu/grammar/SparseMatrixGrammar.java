@@ -609,7 +609,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      */
     @Override
     public final int numNonTerms() {
-        return nonTermSet.numSymbols();
+        return nonTermSet.size();
     }
 
     /**
@@ -731,16 +731,6 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return null;
     }
 
-    // TODO: do we really need a String interface for getBinaryProduction *and* binaryLogProb?
-    // It's only reference is from CellChart#addParseTreeToChart(ParseTree)
-    public Production getBinaryProduction(final String A, final String B, final String C) {
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
-            return getBinaryProduction((short) nonTermSet.getIndex(A), (short) nonTermSet.getIndex(B),
-                    (short) nonTermSet.getIndex(C));
-        }
-        return null;
-    }
-
     /**
      * Returns the log probability of a binary rule.
      * 
@@ -751,7 +741,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      */
     @Override
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
-        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
+        if (nonTermSet.containsKey(parent) && nonTermSet.containsKey(leftChild) && nonTermSet.containsKey(rightChild)) {
             return binaryLogProbability((short) nonTermSet.getIndex(parent), (short) nonTermSet.getIndex(leftChild),
                     (short) nonTermSet.getIndex(rightChild));
         }
@@ -778,7 +768,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     public Production getUnaryProduction(final String A, final String B) {
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B)) {
+        if (nonTermSet.containsKey(A) && nonTermSet.containsKey(B)) {
             return getUnaryProduction((short) nonTermSet.getIndex(A), (short) nonTermSet.getIndex(B));
         }
         return null;
@@ -793,7 +783,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      */
     @Override
     public float unaryLogProbability(final String parent, final String child) {
-        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(child)) {
+        if (nonTermSet.containsKey(parent) && nonTermSet.containsKey(child)) {
             return unaryLogProbability((short) nonTermSet.getIndex(parent), (short) nonTermSet.getIndex(child));
         }
         return Float.NEGATIVE_INFINITY;
@@ -824,7 +814,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
     }
 
     public Production getLexicalProduction(final String A, final String lex) {
-        if (nonTermSet.hasSymbol(A) && lexSet.hasSymbol(lex)) {
+        if (nonTermSet.containsKey(A) && lexSet.containsKey(lex)) {
             return getLexicalProduction((short) nonTermSet.getIndex(A), lexSet.getIndex(lex));
         }
         return null;
@@ -853,7 +843,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      */
     @Override
     public float lexicalLogProbability(final String parent, final String child) {
-        if (nonTermSet.hasSymbol(parent) && lexSet.hasSymbol(child)) {
+        if (nonTermSet.containsKey(parent) && lexSet.containsKey(child)) {
             return lexicalLogProbability((short) nonTermSet.getIndex(parent), lexSet.getIndex(child));
         }
         return UNSEEN_LEX_PROB;
@@ -1729,8 +1719,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         private HashtableSegment createPerfectHash(final int[] k2s) {
 
             // If there are no k2 entries for this k1, return a single-entry hash segment, with a shift and
-            // mask
-            // that will always resolve to the single (empty) entry
+            // mask that will always resolve to the single (empty) entry
             if (k2s.length == 0) {
                 return new HashtableSegment(new short[] { Short.MIN_VALUE }, 1, new int[] { 0 }, 1, 32, 0x0,
                         new short[][] { { Short.MIN_VALUE } });

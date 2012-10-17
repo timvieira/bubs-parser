@@ -245,7 +245,7 @@ public abstract class Grammar implements Serializable {
      * @return true if the lexicon contains the specified word
      */
     public final boolean hasWord(final String word) {
-        return lexSet.hasSymbol(word);
+        return lexSet.containsKey(word);
     }
 
     /**

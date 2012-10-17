@@ -64,7 +64,7 @@ public class CountUnks extends BaseCommandlineTool {
 
             for (final String token : tokens(line)) {
                 totalWords++;
-                if (!lexicon.contains(token)) {
+                if (!lexicon.containsKey(token)) {
                     final String unkClass = Tokenizer.berkeleyGetSignature(token, sentenceInitial, lexicon);
                     unkCounts.put(unkClass, unkCounts.getInt(unkClass) + 1);
                     totalUnks++;
