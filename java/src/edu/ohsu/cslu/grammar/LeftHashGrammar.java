@@ -81,7 +81,7 @@ public class LeftHashGrammar extends ListGrammar {
 
     @Override
     public Production getBinaryProduction(final String A, final String B, final String C) {
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
+        if (nonTermSet.containsKey(A) && nonTermSet.containsKey(B) && nonTermSet.containsKey(C)) {
             final int parent = nonTermSet.getIndex(A);
             final int leftChild = nonTermSet.getIndex(B);
             final int rightChild = nonTermSet.getIndex(C);

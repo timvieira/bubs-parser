@@ -233,7 +233,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 // -- #(*[i:*], POS[i-1]) -- number of times POS occurs just to the left of any span
 
                 if (node.isNonTerminal() == true) {
-                    if (grammar.nonTermSet.contains(node.contents) == false) {
+                    if (grammar.nonTermSet.containsKey(node.contents) == false) {
                         throw new IOException("Nonterminal '" + node.contents
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
@@ -252,7 +252,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
             // iterate through POS tags using .rightNeighbor
             for (ParseTree posNode = tree.leftMostPOS(); posNode != null; posNode = posNode.rightNeighbor) {
-                if (grammar.nonTermSet.contains(posNode.contents) == false) {
+                if (grammar.nonTermSet.containsKey(posNode.contents) == false) {
                     throw new IOException("Nonterminal '" + posNode.contents
                             + "' in input tree not found in grammar.  Exiting.");
                 }

@@ -473,7 +473,7 @@ public class ListGrammar extends Grammar {
      */
     @Override
     public final int numNonTerms() {
-        return nonTermSet.numSymbols();
+        return nonTermSet.size();
     }
 
     /**
@@ -622,7 +622,7 @@ public class ListGrammar extends Grammar {
     // TODO: do we really need a String interface for getBinaryProduction *and* binaryLogProb?
     // It's only reference is from CellChart#addParseTreeToChart(ParseTree)
     public Production getBinaryProduction(final String A, final String B, final String C) {
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
+        if (nonTermSet.containsKey(A) && nonTermSet.containsKey(B) && nonTermSet.containsKey(C)) {
             return getBinaryProduction(nonTermSet.getIndex(A), nonTermSet.getIndex(B), nonTermSet.getIndex(C));
         }
         return null;
@@ -651,7 +651,7 @@ public class ListGrammar extends Grammar {
      */
     @Override
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
-        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
+        if (nonTermSet.containsKey(parent) && nonTermSet.containsKey(leftChild) && nonTermSet.containsKey(rightChild)) {
             return binaryLogProbability((short) nonTermSet.getIndex(parent), (short) nonTermSet.getIndex(leftChild),
                     (short) nonTermSet.getIndex(rightChild));
         }
@@ -675,7 +675,7 @@ public class ListGrammar extends Grammar {
     }
 
     public Production getUnaryProduction(final String A, final String B) {
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B)) {
+        if (nonTermSet.containsKey(A) && nonTermSet.containsKey(B)) {
             return getUnaryProduction(nonTermSet.getIndex(A), nonTermSet.getIndex(B));
         }
         return null;
@@ -702,7 +702,7 @@ public class ListGrammar extends Grammar {
      */
     @Override
     public float unaryLogProbability(final String parent, final String child) {
-        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(child)) {
+        if (nonTermSet.containsKey(parent) && nonTermSet.containsKey(child)) {
             return unaryLogProbability((short) nonTermSet.getIndex(parent), (short) nonTermSet.getIndex(child));
         }
         return Float.NEGATIVE_INFINITY;
@@ -726,7 +726,7 @@ public class ListGrammar extends Grammar {
     }
 
     public Production getLexicalProduction(final String A, final String lex) {
-        if (nonTermSet.hasSymbol(A) && lexSet.hasSymbol(lex)) {
+        if (nonTermSet.containsKey(A) && lexSet.containsKey(lex)) {
             return getLexicalProduction((short) nonTermSet.getIndex(A), lexSet.getIndex(lex));
         }
         return null;
@@ -755,7 +755,7 @@ public class ListGrammar extends Grammar {
      */
     @Override
     public float lexicalLogProbability(final String parent, final String child) {
-        if (nonTermSet.hasSymbol(parent) && lexSet.hasSymbol(child)) {
+        if (nonTermSet.containsKey(parent) && lexSet.containsKey(child)) {
             return lexicalLogProbability((short) nonTermSet.getIndex(parent), lexSet.getIndex(child));
         }
         return UNSEEN_LEX_PROB;
