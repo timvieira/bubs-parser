@@ -168,6 +168,15 @@
         </antcall>
     </target>
 
+    
+    <target name="treegrep" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.TreeGrep" />
+            <param name="tool-name" value="treegrep" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+    
 
     <target name="train-perceptron" depends="compile">
         <antcall target="package-tool">
