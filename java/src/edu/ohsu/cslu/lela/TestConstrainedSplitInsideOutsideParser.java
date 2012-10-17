@@ -449,7 +449,7 @@ public class TestConstrainedSplitInsideOutsideParser {
         // into a grammar
         parseWithGrammar1();
         final FractionalCountGrammar countGrammar = new FractionalCountGrammar(parser1.grammar.nonTermSet,
-                parser1.grammar.lexSet, parser1.grammar.packingFunction, null, 0, 0);
+                parser1.grammar.lexSet, parser1.grammar.packingFunction, null, null, 0, 0);
         parser1.countRuleOccurrences(countGrammar);
 
         // Verify that we find the same probabilities in the original split grammar

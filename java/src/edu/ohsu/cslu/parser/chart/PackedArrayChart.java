@@ -492,7 +492,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     private float startSymbolInsideProbability() {
         final int topCellIndex = cellIndex(0, size);
         final int startSymbolIndex = entryIndex(offset(topCellIndex), numNonTerminals[topCellIndex],
-                (short) sparseMatrixGrammar.startSymbol);
+                sparseMatrixGrammar.startSymbol);
         if (startSymbolIndex < 0) {
             throw new IllegalArgumentException("Parse failure");
         }
@@ -747,7 +747,6 @@ public class PackedArrayChart extends ParallelArrayChart {
                     final float[][][] r = new float[maxcVocabulary.size()][][];
 
                     final int leftCellIndex = cellIndex(start, midpoint);
-                    final int rightCellIndex = cellIndex(midpoint, end);
 
                     final int leftStart = minLeftChildIndex(leftCellIndex);
                     final int leftEnd = maxLeftChildIndex(leftCellIndex);
@@ -1425,6 +1424,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                 final boolean copyOutsideProbabilities) {
             // Allocate storage
             if (tmpCell == null) {
+                // TODO Use the thread-local version. This will require deciding at thread-local init time whether to
+                // allocate outside probability array
                 // this.tmpCell = threadLocalTemporaryCells.get();
                 // this.tmpCell.clear();
                 this.tmpCell = new TemporaryChartCell(grammar, allocateOutsideProbabilities);

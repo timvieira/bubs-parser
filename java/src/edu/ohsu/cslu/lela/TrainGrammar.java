@@ -141,6 +141,11 @@ public class TrainGrammar extends BaseCommandlineTool {
 
     /** Total counts of all words observed in the training corpus. Used for lexicon smoothing */
     Int2IntOpenHashMap corpusWordCounts;
+    /**
+     * Total counts of all words observed in sentence-initial position in the training corpus. Used for lexicon
+     * smoothing
+     */
+    Int2IntOpenHashMap sentenceInitialWordCounts;
 
     NoiseGenerator noiseGenerator;
 
@@ -179,6 +184,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         final FractionalCountGrammar markov0Grammar = scg.toFractionalCountGrammar(uncommonWordThreshold,
                 rareWordThreshold);
         corpusWordCounts = scg.wordCounts(markov0Grammar.lexicon);
+        sentenceInitialWordCounts = scg.sentenceInitialWordCounts(markov0Grammar.lexicon);
 
         // writeGrammarToFile("m0.gr.gz",
         // markov0Grammar.addUnkCounts(unkClassMap(markov0Grammar.lexicon), openClassPreterminalThreshold));
@@ -197,8 +203,8 @@ public class TrainGrammar extends BaseCommandlineTool {
             final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts,
                     cscM0Grammar);
             final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscM0Grammar.nonTermSet,
-                    cscM0Grammar.lexSet, cscM0Grammar.packingFunction, corpusWordCounts, uncommonWordThreshold,
-                    rareWordThreshold);
+                    cscM0Grammar.lexSet, cscM0Grammar.packingFunction, corpusWordCounts, sentenceInitialWordCounts,
+                    uncommonWordThreshold, rareWordThreshold);
 
             // Iterate over the training corpus, parsing and counting rule occurrences
             for (int i = 0; i < constrainingCharts.size(); i++) {
@@ -233,7 +239,6 @@ public class TrainGrammar extends BaseCommandlineTool {
                 final EmIterationResult result = emIteration(currentGrammar, minimumRuleLogProbability);
                 logEmIteration(result, i);
                 currentGrammar = result.countGrammar;
-                // currentGrammar.randomize(noiseGenerator, noise);
             }
             BaseLogger.singleton().config("Learned grammar size: " + grammarSummaryString(currentGrammar));
 
@@ -266,8 +271,12 @@ public class TrainGrammar extends BaseCommandlineTool {
             // }
             // // Finalize merging the vocabulary
 
+            // Smooth uncommon-word counts
+            final FractionalCountGrammar smoothedGrammar = currentGrammar.smooth(openClassPreterminalThreshold, s_0,
+                    s_1, s_2);
+
             // Add UNK productions
-            final FractionalCountGrammar grammarWithUnks = currentGrammar.addUnkCounts(
+            final FractionalCountGrammar grammarWithUnks = smoothedGrammar.addUnkCounts(
                     unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold, s_0, s_1, s_2);
 
             // Collapse unary chains
@@ -343,8 +352,8 @@ public class TrainGrammar extends BaseCommandlineTool {
         final ConstrainedSplitInsideOutsideParser parser = new ConstrainedSplitInsideOutsideParser(opts, cscGrammar);
 
         final FractionalCountGrammar countGrammar = new FractionalCountGrammar(cscGrammar.nonTermSet,
-                cscGrammar.lexSet, cscGrammar.packingFunction, corpusWordCounts, uncommonWordThreshold,
-                rareWordThreshold);
+                cscGrammar.lexSet, cscGrammar.packingFunction, corpusWordCounts, sentenceInitialWordCounts,
+                uncommonWordThreshold, rareWordThreshold);
 
         final long t1 = System.currentTimeMillis();
         // Iterate over the training corpus, parsing and counting rule occurrences
@@ -362,11 +371,8 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
         final long t2 = System.currentTimeMillis();
 
-        // Smooth uncommon-word counts
-        final FractionalCountGrammar smoothedGrammar = countGrammar.smoothUncommonWordCounts(s_1);
-
         // Prune rules below the minimum probability threshold
-        final FractionalCountGrammar prunedGrammar = smoothedGrammar.clone(minimumRuleLogProb);
+        final FractionalCountGrammar prunedGrammar = countGrammar.clone(minimumRuleLogProb);
         return new EmIterationResult(prunedGrammar, corpusLikelihood, (int) (t2 - t1),
                 (int) (System.currentTimeMillis() - t2 + t1 - t0));
     }
