@@ -65,6 +65,7 @@ public final class StringCountGrammar implements CountGrammar {
     private final HashMap<String, HashMap<String, Object2FloatMap<String>>> binaryRuleCounts = new HashMap<String, HashMap<String, Object2FloatMap<String>>>();
     private final HashMap<String, Object2FloatMap<String>> unaryRuleCounts = new HashMap<String, Object2FloatMap<String>>();
     private final HashMap<String, Object2FloatMap<String>> lexicalRuleCounts = new HashMap<String, Object2FloatMap<String>>();
+    private final Object2FloatMap<String> sentenceInitialWordCounts = new Object2FloatOpenHashMap<String>();
 
     private float totalBinaryRuleCounts;
     private float totalUnaryRuleCounts;
@@ -124,6 +125,8 @@ public final class StringCountGrammar implements CountGrammar {
         if (startSymbol == null) {
             setStartSymbol(tree.label());
         }
+
+        incrementSentenceInitialCount(tree.leftmostLeaf().label(), increment);
 
         for (final BinaryTree<String> node : tree.inOrderTraversal()) {
             // Skip leaf nodes - only internal nodes are parents
@@ -224,6 +227,10 @@ public final class StringCountGrammar implements CountGrammar {
         totalLexicalRuleCounts += increment;
     }
 
+    void incrementSentenceInitialCount(final String child, final float increment) {
+        sentenceInitialWordCounts.put(child, sentenceInitialWordCounts.getFloat(child) + increment);
+    }
+
     @Override
     public final double binaryRuleObservations(final String parent, final String leftChild, final String rightChild) {
 
@@ -297,9 +304,10 @@ public final class StringCountGrammar implements CountGrammar {
      */
     public FractionalCountGrammar toFractionalCountGrammar(final int uncommonWordThreshold, final int rareWordThreshold) {
         final SplitVocabulary vocabulary = induceVocabulary(binaryParentCountComparator());
+
         final SymbolSet<String> lexicon = induceLexicon();
         final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null, wordCounts(lexicon),
-                uncommonWordThreshold, rareWordThreshold);
+                sentenceInitialWordCounts(lexicon), uncommonWordThreshold, rareWordThreshold);
 
         for (final String parent : binaryRuleCounts.keySet()) {
             final HashMap<String, Object2FloatMap<String>> leftChildMap = binaryRuleCounts.get(parent);
@@ -447,8 +455,20 @@ public final class StringCountGrammar implements CountGrammar {
 
             for (final String word : childMap.keySet()) {
                 final int index = lexicon.getIndex(word);
-                wordCounts.put(index, wordCounts.get(index) + Math.round(childMap.getFloat(word)));
+                wordCounts.add(index, Math.round(childMap.getFloat(word)));
             }
+        }
+        return wordCounts;
+    }
+
+    public Int2IntOpenHashMap sentenceInitialWordCounts(final SymbolSet<String> lexicon) {
+
+        final Int2IntOpenHashMap wordCounts = new Int2IntOpenHashMap();
+        wordCounts.defaultReturnValue(0);
+
+        for (final String word : sentenceInitialWordCounts.keySet()) {
+            final int index = lexicon.getIndex(word);
+            wordCounts.add(index, Math.round(sentenceInitialWordCounts.getFloat(word)));
         }
         return wordCounts;
     }

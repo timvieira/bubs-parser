@@ -431,11 +431,11 @@ public abstract class SparseMatrixGrammar extends Grammar {
             } else if (tokens.length == 4) {
                 // Unary production: expecting: A -> B prob
                 // TODO: Should we make sure there aren't any duplicates?
-                pcfgRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
+                pcfgRules.add(new StringProduction(tokens[0], tokens[2], Float.parseFloat(tokens[3])));
             } else if (tokens.length == 5) {
                 // Binary production: expecting: A -> B C prob
                 pcfgRules.add(new BinaryStringProduction(tmpStringPool.intern(tokens[0]), tmpStringPool
-                        .intern(tokens[2]), tmpStringPool.intern(tokens[3]), Float.valueOf(tokens[4])));
+                        .intern(tokens[2]), tmpStringPool.intern(tokens[3]), Float.parseFloat(tokens[4])));
             } else {
                 throw new IllegalArgumentException("Unexpected line in grammar PCFG\n\t" + line);
             }
@@ -451,7 +451,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
                     // skip blank lines
                 } else if (tokens.length == 4) {
                     // expecting: A -> B prob
-                    lexicalRules.add(new StringProduction(tokens[0], tokens[2], Float.valueOf(tokens[3])));
+                    lexicalRules.add(new StringProduction(tokens[0], tokens[2], Float.parseFloat(tokens[3])));
                 } else {
                     throw new IllegalArgumentException("Unexpected line in grammar lexicon\n\t" + line);
                 }
@@ -874,8 +874,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     public Grammar toUnsplitGrammar() {
         final Vocabulary baseVocabulary = nonTermSet.baseVocabulary();
-        final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(baseVocabulary, lexSet, null, null, 0,
-                0);
+        final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(baseVocabulary, lexSet, null, null,
+                null, 0, 0);
 
         for (final Production p : getBinaryProductions()) {
             final short unsplitParent = nonTermSet.getBaseIndex((short) p.parent);

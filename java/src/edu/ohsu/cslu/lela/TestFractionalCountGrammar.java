@@ -62,7 +62,7 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
         final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "e", "f" });
 
         // Build up the same grammar as that induced from the tree in AllElviTests
-        final FractionalCountGrammar g = new FractionalCountGrammar(vocabulary, lexicon, null, null, 0, 0);
+        final FractionalCountGrammar g = new FractionalCountGrammar(vocabulary, lexicon, null, null, null, 0, 0);
         g.incrementUnaryCount("top", "a", 1);
         g.incrementBinaryCount("a", "a", "b", 1);
         g.incrementBinaryCount("a", "a", "d", 1);
@@ -81,7 +81,7 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
     private FractionalCountGrammar grammar() {
         final SplitVocabulary vocabulary = new SplitVocabulary(new String[] { "top", "a", "b" });
         final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "c", "d" });
-        final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null, null, 0, 0);
+        final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null, null, null, 0, 0);
 
         // top -> a 1
         fcg.incrementUnaryCount("top", "a", 1);
