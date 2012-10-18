@@ -232,6 +232,11 @@ public class TrainGrammar extends BaseCommandlineTool {
             currentGrammar = currentGrammar.split(noiseGenerator);
             BaseLogger.singleton().config("Split grammar size: " + grammarSummaryString(currentGrammar));
 
+            // At verbose logging levels, write the split grammar before EM
+            if (BaseLogger.singleton().isLoggable(Level.FINE)) {
+                writeGrammarToFile(String.format("split%d.gr.gz", cycle), currentGrammar);
+            }
+
             //
             // Train the split grammar with EM
             //
@@ -243,7 +248,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             BaseLogger.singleton().config("Learned grammar size: " + grammarSummaryString(currentGrammar));
 
             // At verbose log levels, write pre-merge grammar to file
-            if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+            if (BaseLogger.singleton().isLoggable(Level.FINE)) {
                 writeGrammarToFile(String.format("em%d.gr.gz", cycle), currentGrammar);
             }
 
@@ -251,12 +256,11 @@ public class TrainGrammar extends BaseCommandlineTool {
             // Estimate likelihood loss of re-merging and merge least costly splits
             //
             final ConstrainedCscSparseMatrixGrammar premergeCscGrammar = cscGrammar(currentGrammar);
-            final FractionalCountGrammar premergeGrammar = currentGrammar;
             currentGrammar = merge(currentGrammar, premergeCscGrammar);
             BaseLogger.singleton().config("Merged grammar size:  " + grammarSummaryString(currentGrammar));
 
-            // At verbose logging levels, write the merged grammar before EM and UNK productions
-            if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+            // At verbose logging levels, write the merged grammar before post-merge EM and UNK productions
+            if (BaseLogger.singleton().isLoggable(Level.FINE)) {
                 writeGrammarToFile(String.format("merge%d.gr.gz", cycle), currentGrammar);
             }
 
@@ -271,12 +275,8 @@ public class TrainGrammar extends BaseCommandlineTool {
             // }
             // // Finalize merging the vocabulary
 
-            // Smooth uncommon-word counts
-            final FractionalCountGrammar smoothedGrammar = currentGrammar.smooth(openClassPreterminalThreshold, s_0,
-                    s_1, s_2);
-
             // Add UNK productions
-            final FractionalCountGrammar grammarWithUnks = smoothedGrammar.addUnkCounts(
+            final FractionalCountGrammar grammarWithUnks = currentGrammar.addUnkCounts(
                     unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold, s_0, s_1, s_2);
 
             // Collapse unary chains
@@ -294,8 +294,6 @@ public class TrainGrammar extends BaseCommandlineTool {
 
             // Output dev-set parse accuracy
             if (developmentSet != null) {
-                parseDevSet(devCorpusReader, cscGrammar(premergeGrammar.addUnkCounts(
-                        unkClassMap(currentGrammar.lexicon), openClassPreterminalThreshold, s_0, s_1, s_2)));
                 parseDevSet(devCorpusReader, cscGrammar(grammarWithUnks));
             }
 
@@ -371,9 +369,15 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
         final long t2 = System.currentTimeMillis();
 
+        // TODO Combine these two steps, or operate directly on the grammar, to avoid some unnecessary grammar cloning
         // Prune rules below the minimum probability threshold
         final FractionalCountGrammar prunedGrammar = countGrammar.clone(minimumRuleLogProb);
-        return new EmIterationResult(prunedGrammar, corpusLikelihood, (int) (t2 - t1),
+
+        // Smooth uncommon-word counts
+        final FractionalCountGrammar smoothedGrammar = prunedGrammar.smooth(openClassPreterminalThreshold, s_0, s_1,
+                s_2);
+
+        return new EmIterationResult(smoothedGrammar, corpusLikelihood, (int) (t2 - t1),
                 (int) (System.currentTimeMillis() - t2 + t1 - t0));
     }
 
@@ -422,7 +426,7 @@ public class TrainGrammar extends BaseCommandlineTool {
         final short[] mergeIndices = new short[Math.round(mergeCost.length * mergeFraction)];
         System.arraycopy(tmpIndices, 0, mergeIndices, 0, mergeIndices.length);
 
-        if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+        if (BaseLogger.singleton().isLoggable(Level.FINE)) {
             final StringBuilder sb = new StringBuilder();
             for (int i = 0; i < tmpCost.length; i++) {
                 sb.append(countGrammar.vocabulary.getSymbol(tmpIndices[i]) + " " + tmpCost[i] + '\n');
