@@ -118,7 +118,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
             for (final int i : corpusWordCounts.keySet()) {
                 final int count = corpusWordCounts.get(i);
-                if (count <= rareWordThreshold) {
+                if (count < rareWordThreshold) {
                     tmp += count;
                 }
             }
@@ -337,9 +337,11 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
      * Adds counts for unobserved tag/word combinations, for words considered 'uncommon' (those occurring less than
      * {@link #uncommonWordThreshold} times in the training corpus).
      * 
-     * @param unkClassMap Maps word entries from the lexicon to their UNK-class entries.
      * @param openClassPreterminalThreshold Minimum number of terminal children a preterminal must have to be considered
      *            open-class. UNK-class rules will be created for open-class preterminals.
+     * @param s_0
+     * @param s_1
+     * @param s_2
      * @return A copy of this grammar including UNK-class pseudo-counts based on observed counts of rare words.
      */
     public FractionalCountGrammar smooth(final int openClassPreterminalThreshold, final float s_0, final float s_1,
@@ -356,23 +358,20 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
                 continue;
             }
 
-            // c(T_x,r) - occurrences of the parent in conjunction with a rare word
+            // c(T_x,r) - occurrences of the parent tag in conjunction with a rare word
             final double cTxr = rareWordParentCounts.get(parent);
-            // p(T_x|r) - probability of the parent in conjunction given a rare word
-            final double pTxr = cTxr / totalRareWords;
-
-            // final String sParent = vocabulary.getSymbol(parent);
+            // p(r|T_x) - probability of a rare word given the parent tag
+            final double pRTx = cTxr / parentCounts.get(parent);
 
             // Iterate over all observed children of the parent
             for (final int word : childMap.keySet()) {
 
                 final int cw = corpusWordCounts.get(word);
-                // final String sWord = lexicon.getSymbol(word);
 
-                if (cw > uncommonWordThreshold) {
-                    smoothedGrammar.incrementLexicalCount(parent, word, s_0 * pTxr);
+                if (cw >= uncommonWordThreshold) {
+                    smoothedGrammar.incrementLexicalCount(parent, word, s_0 * pRTx);
                 } else {
-                    smoothedGrammar.incrementLexicalCount(parent, word, s_1 * pTxr);
+                    smoothedGrammar.incrementLexicalCount(parent, word, s_1 * pRTx);
                 }
             }
         }
@@ -396,6 +395,9 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
      * @param unkClassMap Maps word entries from the lexicon to their UNK-class entries.
      * @param openClassPreterminalThreshold Minimum number of terminal children a preterminal must have to be considered
      *            open-class. UNK-class rules will be created for open-class preterminals.
+     * @param s_0
+     * @param s_1
+     * @param s_2
      * @return A copy of this grammar including UNK-class pseudo-counts based on observed counts of rare words.
      */
     public FractionalCountGrammar addUnkCounts(final Int2IntOpenHashMap unkClassMap,
@@ -412,25 +414,25 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
                 continue;
             }
 
-            // c(T_x|r) - occurrences of the parent in conjunction with a rare word
+            // c(T_x|r) - occurrences of the parent tag in conjunction with a rare word
             final double cTxr = rareWordParentCounts.get(parent);
-            // p(T_x|r) - probability of the parent in conjunction given a rare word
-            final double pTxr = cTxr / totalRareWords;
+            // p(r|T_x) - probability of a rare word given the parent tag
+            final double pRTx = cTxr / parentCounts.get(parent);
 
-            for (int word = 0; word < lexicon.size(); word++) {
+            for (final int word : childMap.keySet()) {
 
                 final int cw = corpusWordCounts.get(word);
-                if (cw > 0 && cw < rareWordThreshold) {
+                if (cw < rareWordThreshold) {
                     // Sentence-initial counts
                     final int sentenceInitialCounts = sentenceInitialCorpusWordCounts.get(word);
                     final String sentenceInitialUnkClass = Tokenizer.berkeleyGetSignature(lexicon.getSymbol(word),
                             true, lexicon);
-                    grammarWithUnks.incrementLexicalCount(parent, lexicon.getIndex(sentenceInitialUnkClass), s_2 * pTxr
+                    grammarWithUnks.incrementLexicalCount(parent, lexicon.getIndex(sentenceInitialUnkClass), s_2 * pRTx
                             * sentenceInitialCounts / cw);
 
                     // Other counts
                     final String unkClass = Tokenizer.berkeleyGetSignature(lexicon.getSymbol(word), false, lexicon);
-                    grammarWithUnks.incrementLexicalCount(parent, lexicon.getIndex(unkClass), s_0 * pTxr
+                    grammarWithUnks.incrementLexicalCount(parent, lexicon.getIndex(unkClass), s_2 * pRTx
                             * (1 - sentenceInitialCounts / cw));
                 }
             }
