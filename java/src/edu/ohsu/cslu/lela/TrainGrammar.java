@@ -265,15 +265,14 @@ public class TrainGrammar extends BaseCommandlineTool {
             }
 
             //
-            // TODO Run some more EM iterations on merged grammar
+            // Run some more EM iterations on merged grammar
             //
-            // BaseLogger.singleton().info("Post-merge EM");
-            // for (int i = 1; i <= emIterationsAfterMerge; i++) {
-            // final EmIterationResult result = emIteration(currentGrammar, minimumRuleLogProbability);
-            // logEmIteration(result, i);
-            // currentGrammar = result.countGrammar;
-            // }
-            // // Finalize merging the vocabulary
+            BaseLogger.singleton().info("Post-merge EM");
+            for (int i = 1; i <= emIterationsAfterMerge; i++) {
+                final EmIterationResult result = emIteration(currentGrammar, minimumRuleLogProbability);
+                logEmIteration(result, i);
+                currentGrammar = result.countGrammar;
+            }
 
             // Add UNK productions
             final FractionalCountGrammar grammarWithUnks = currentGrammar.addUnkCounts(
