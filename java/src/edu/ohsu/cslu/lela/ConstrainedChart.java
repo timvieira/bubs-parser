@@ -324,12 +324,16 @@ public class ConstrainedChart extends ConstrainingChart {
             for (int start = 0; start <= size - span; start++) {
                 final int end = start + span;
                 final int cellIndex = cellIndex(start, end);
-                final int offset0 = offset(cellIndex);
+                if (unaryChainLength[cellIndex] == 0) {
+                    continue;
+                }
+
+                final int cellOffset = offset(cellIndex);
                 final StringBuilder sb2 = new StringBuilder(128);
 
                 // Format unary parents first, followed by the bottom entry(ies)
-                final int bottomEntryOffset = offset0 + (unaryChainLength(cellIndex) - 1) * beamWidth;
-                for (int offset = offset0; offset < bottomEntryOffset; offset += beamWidth) {
+                final int bottomEntryOffset = cellOffset + (unaryChainLength[cellIndex] - 1) * beamWidth;
+                for (int offset = cellOffset; offset < bottomEntryOffset; offset += beamWidth) {
                     sb2.append(formatEntries(offset, true, formatFractions));
                 }
                 sb2.append(formatEntries(bottomEntryOffset, false, formatFractions));
