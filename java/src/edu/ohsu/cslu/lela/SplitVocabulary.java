@@ -103,6 +103,7 @@ public class SplitVocabulary extends Vocabulary {
         this.splitIndices = new byte[size()];
         this.ntSplitCounts = new byte[size()];
         this.baseNtSplitCounts = new byte[baseVocabulary.size()];
+        Arrays.fill(baseNtSplitCounts, (byte) 1);
 
         this.maxSplits = init();
     }
@@ -128,6 +129,7 @@ public class SplitVocabulary extends Vocabulary {
         this.splitIndices = new byte[size()];
         this.ntSplitCounts = new byte[size()];
         this.baseNtSplitCounts = new byte[baseVocabulary.size()];
+        Arrays.fill(baseNtSplitCounts, (byte) 1);
 
         this.maxSplits = init();
     }
