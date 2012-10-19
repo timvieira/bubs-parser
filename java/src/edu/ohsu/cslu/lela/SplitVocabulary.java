@@ -140,15 +140,18 @@ public class SplitVocabulary extends Vocabulary {
 
         for (short nt = 0; nt < splitIndices.length; nt++) {
 
-            final String[] split = getSymbol(nt).split("_");
-            final byte splitIndex = split.length > 1 ? Byte.parseByte(split[1]) : 0;
-            splitIndices[nt] = splitIndex;
+            final String[] tmp = getSymbol(nt).split("_");
+
+            // Latent annotation of the split (e.g., 0 for X_0 , 1 for X_1)
+            final byte latentAnnotation = tmp.length > 1 ? Byte.parseByte(tmp[1]) : 0;
+            splitIndices[nt] = latentAnnotation;
+
             final short baseNt = getBaseIndex(nt);
-            if (splitIndex > baseNtSplitCounts[baseNt]) {
-                baseNtSplitCounts[baseNt] = (byte) (splitIndex + 1);
+            if (latentAnnotation >= baseNtSplitCounts[baseNt]) {
+                baseNtSplitCounts[baseNt] = (byte) (latentAnnotation + 1);
             }
-            if (splitIndex > tmpMaxSplits) {
-                tmpMaxSplits = splitIndex;
+            if (latentAnnotation > tmpMaxSplits) {
+                tmpMaxSplits = latentAnnotation;
             }
             if (firstSplitIndices[baseNt] == -1) {
                 firstSplitIndices[baseNt] = nt;
