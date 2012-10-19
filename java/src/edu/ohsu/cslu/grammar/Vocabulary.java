@@ -61,6 +61,7 @@ public class Vocabulary extends SymbolSet<String> {
 
     @Override
     public int addSymbol(final String symbol) {
+        // TODO Check before re-adding and profile
         final short index = (short) super.addSymbol(symbol);
         short baseIndex = 0;
         if (baseVocabulary != null) {
