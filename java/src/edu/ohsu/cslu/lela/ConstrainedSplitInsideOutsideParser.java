@@ -668,7 +668,8 @@ public class ConstrainedSplitInsideOutsideParser extends
      * (equation 2 and following). Note: This heuristic will only allow merging the splits from the current split-merge
      * cycle. E.g., on cycle 2, we will consider merging NP_0 and NP_1, but we will not consider merging NP_0 and NP_2.
      * 
-     * @param countGrammar The grammar to populate with rule counts
+     * @param mergeCost
+     * @param logSplitFraction
      */
     void countMergeCost(final float[] mergeCost, final float[] logSplitFraction) {
 
@@ -679,7 +680,7 @@ public class ConstrainedSplitInsideOutsideParser extends
             final int cellIndex = chart.cellIndex(startAndEnd[0], startAndEnd[1]);
             final int unaryChainLength = constrainingChart.unaryChainLength(cellIndex);
 
-            // foreach unary chain depth (starting from bottom in chain)
+            // foreach unsplit parent (starting from bottom in the unary chain)
             for (int unaryHeight = 0; unaryHeight < unaryChainLength; unaryHeight++) {
 
                 final int constrainingParentIndex = constrainingChart.offset(cellIndex)
@@ -689,26 +690,67 @@ public class ConstrainedSplitInsideOutsideParser extends
                 final int firstParentOffset = chart.offset(cellIndex) + (unaryChainLength - unaryHeight - 1)
                         * vocabulary.maxSplits;
 
-                for (short i = 0; i < vocabulary.baseNtSplitCounts[constrainingParent]; i += 2) {
-                    final short parent1 = (short) (firstParent + i);
+                // Compute posterior probability of each split non-terminal
+                final float[] posteriors = new float[vocabulary.baseNtSplitCounts[constrainingParent]];
+                for (int i = 0; i < posteriors.length; i++) {
+                    posteriors[i] = chart.insideProbabilities[firstParentOffset + i]
+                            + chart.outsideProbabilities[firstParentOffset + i];
+                }
+
+                // And the posterior probability of the unsplit non-terminal - the sum of all split posteriors (P(w,T);
+                // eq. 2 in Petrov 2006)
+                final float PwT = Math.logSumExp(posteriors);
+
+                // foreach split pair
+                for (short i = 0; i < posteriors.length; i += 2) {
+                    final short parent = (short) (firstParent + i);
+
+                    // Compute the posterior probability of the unsplit non-terminal, with the current pair merged -
+                    // P^n(w,T)
 
                     final float P_in1 = chart.insideProbabilities[firstParentOffset + i];
                     final float P_out1 = chart.outsideProbabilities[firstParentOffset + i];
                     final float P_in2 = chart.insideProbabilities[firstParentOffset + i + 1];
                     final float P_out2 = chart.outsideProbabilities[firstParentOffset + i + 1];
 
-                    final float mergedInside = Math.logSum(logSplitFraction[parent1] + P_in1,
-                            logSplitFraction[parent1 + 1] + P_in2);
+                    // If either of the parent posterior probabilities is 0, we can merge the parents without any loss
+                    // at this location
+                    if (P_in1 == Float.NEGATIVE_INFINITY || P_out1 == Float.NEGATIVE_INFINITY
+                            || P_in2 == Float.NEGATIVE_INFINITY || P_out2 == Float.NEGATIVE_INFINITY) {
+                        continue;
+                    }
+
+                    final float mergedInside = Math.logSum(logSplitFraction[parent] + P_in1,
+                            logSplitFraction[parent + 1] + P_in2);
                     final float mergedOutside = Math.logSum(P_out1, P_out2);
-                    final float mergedPosterior = mergedInside + mergedOutside;
 
-                    final float unmergedPosterior = Math.logSum(P_in1 + P_out1, P_in2 + P_out2);
+                    final float PnwT = Math.logSumExp(posteriorsWithPairMerged(posteriors, i / 2, mergedInside
+                            + mergedOutside));
 
-                    final float loss = -(mergedPosterior - unmergedPosterior);
-                    mergeCost[parent1 >> 1] += loss;
+                    // Loss = P^n(w,T) / P(w,T)
+                    final float loss = -(PnwT - PwT);
+                    mergeCost[parent >> 1] += loss;
                 }
             }
         }
+    }
+
+    private float[] posteriorsWithPairMerged(final float[] posteriors, final int merged, final float mergedPosterior) {
+        final float[] array = new float[posteriors.length - 1];
+
+        // Copy all splits before the merge
+        if (merged > 0) {
+            System.arraycopy(posteriors, 0, array, 0, merged);
+        }
+
+        // The pair we merged
+        array[merged] = mergedPosterior;
+
+        // And splits after the merge
+        if (merged < posteriors.length - 2) {
+            System.arraycopy(posteriors, merged + 2, array, merged + 1, posteriors.length - merged - 2);
+        }
+        return array;
     }
 
     @Override
