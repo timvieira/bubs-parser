@@ -24,6 +24,7 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.Reader;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
@@ -53,40 +54,16 @@ import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.lela.ConstrainedCellSelector;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
-import edu.ohsu.cslu.parser.agenda.APDecodeFOM;
-import edu.ohsu.cslu.parser.agenda.APGhostEdges;
-import edu.ohsu.cslu.parser.agenda.APWithMemory;
-import edu.ohsu.cslu.parser.agenda.AgendaParser;
-import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
-import edu.ohsu.cslu.parser.beam.BSCPBeamConfTrain;
-import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
-import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
-import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
-import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
-import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
-import edu.ohsu.cslu.parser.beam.BSCPSplitUnary;
-import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
-import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
-import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
-import edu.ohsu.cslu.parser.ecp.ECPCellCrossHash;
-import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop;
-import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop2;
-import edu.ohsu.cslu.parser.ecp.ECPCellCrossList;
-import edu.ohsu.cslu.parser.ecp.ECPCellCrossMatrix;
-import edu.ohsu.cslu.parser.ecp.ECPGrammarLoop;
-import edu.ohsu.cslu.parser.ecp.ECPGrammarLoopBerkFilter;
-import edu.ohsu.cslu.parser.ecp.ECPInsideOutside;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.BoundaryLex;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
@@ -94,22 +71,6 @@ import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.parser.fom.NGramOutside;
 import edu.ohsu.cslu.parser.fom.PriorFOM;
-import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
-import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
-import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
-import edu.ohsu.cslu.parser.ml.CartesianProductLeftChildHashSpmlParser;
-import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
-import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
-import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
-import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
-import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
-import edu.ohsu.cslu.parser.ml.ViterbiInOutCphSpmlParser;
-import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
-import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
-import edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser;
-import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
-import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
-import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
@@ -497,107 +458,24 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     @Override
     public Parser<?> createLocal() {
-        final Parser<?> parser = createParser();
-        parserInstances.add(parser);
-        return parser;
-    }
+        try {
+            // Apply specialized cell-selector model when appropriate (e.g., constrained parsing)
+            final CellSelectorModel csm = researchParserType.cellSelectorModel();
+            if (csm != null) {
+                cellSelectorModel = csm;
+            }
 
-    public Parser<?> createParser() {
-        switch (researchParserType) {
-        case ECPCellCrossList:
-            return new ECPCellCrossList(this, (LeftListGrammar) grammar);
-        case ECPCellCrossHash:
-            return new ECPCellCrossHash(this, (LeftHashGrammar) grammar);
-        case ECPCellCrossHashGrammarLoop:
-            return new ECPCellCrossHashGrammarLoop(this, (LeftHashGrammar) grammar);
-        case ECPCellCrossHashGrammarLoop2:
-            return new ECPCellCrossHashGrammarLoop2(this, (LeftHashGrammar) grammar);
-        case ECPCellCrossMatrix:
-            return new ECPCellCrossMatrix(this, (ChildMatrixGrammar) grammar);
-        case ECPGrammarLoop:
-            return new ECPGrammarLoop(this, (ListGrammar) grammar);
-        case ECPGrammarLoopBerkeleyFilter:
-            return new ECPGrammarLoopBerkFilter(this, (ListGrammar) grammar);
-        case ECPInsideOutside:
-            return new ECPInsideOutside(this, (LeftListGrammar) grammar);
-            // return new ECPInsideOutside2(parserOptions, (LeftHashGrammar) grammar);
+            // Construct an instance of the appropriate parser class
+            @SuppressWarnings("unchecked")
+            final Constructor<Parser<?>> c = (Constructor<Parser<?>>) Class.forName(researchParserType.classname())
+                    .getConstructor(ParserDriver.class, grammar.getClass());
 
-        case AgendaParser:
-            return new AgendaParser(this, (LeftRightListsGrammar) grammar);
-        case APWithMemory:
-            return new APWithMemory(this, (LeftRightListsGrammar) grammar);
-        case APGhostEdges:
-            return new APGhostEdges(this, (LeftRightListsGrammar) grammar);
-        case APDecodeFOM:
-            return new APDecodeFOM(this, (LeftRightListsGrammar) grammar);
+            final Parser<?> parser = c.newInstance(this, grammar);
+            parserInstances.add(parser);
+            return parser;
 
-        case BeamSearchChartParser:
-            return new BeamSearchChartParser<LeftHashGrammar, CellChart>(this, (LeftHashGrammar) grammar);
-        case BSCPSplitUnary:
-            return new BSCPSplitUnary(this, (LeftHashGrammar) grammar);
-        case BSCPPruneViterbi:
-            return new BSCPPruneViterbi(this, (LeftHashGrammar) grammar);
-        case BSCPOnlineBeam:
-            return new BSCPWeakThresh(this, (LeftHashGrammar) grammar);
-        case BSCPBoundedHeap:
-            return new BSCPBoundedHeap(this, (LeftHashGrammar) grammar);
-        case BSCPExpDecay:
-            return new BSCPExpDecay(this, (LeftHashGrammar) grammar);
-        case BSCPPerceptronCell:
-            return new BSCPSkipBaseCells(this, (LeftHashGrammar) grammar);
-        case BSCPFomDecode:
-            return new BSCPFomDecode(this, (LeftHashGrammar) grammar);
-            // case BSCPBeamConf:
-            // return new BSCPBeamConf(this, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
-        case BSCPBeamConfTrain:
-            return new BSCPBeamConfTrain(this, (LeftHashGrammar) grammar, "");
-
-        case CoarseCellAgenda:
-            return new CoarseCellAgendaParser(this, (LeftHashGrammar) grammar);
-            // case CoarseCellAgendaCSLUT:
-            // final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(
-            // parserOptions.cellSelectorType, parserOptions.cellModelStream,
-            // parserOptions.cslutScoresStream);
-            // return new CoarseCellAgendaParserWithCSLUT(this, (LeftHashGrammar) grammar, cslutScores);
-
-        case CsrSpmv:
-            return new CsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-        case GrammarParallelCsrSpmv:
-            return new GrammarParallelCsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-        case CscSpmv:
-            return new CscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case GrammarParallelCscSpmv:
-            return new GrammarParallelCscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case DenseVectorOpenClSpmv:
-            return new DenseVectorOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-        case PackedOpenClSpmv:
-            return new PackedOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-
-        case LeftChildMl:
-            return new LeftChildLoopSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case RightChildMl:
-            return new RightChildLoopSpmlParser(this, (RightCscSparseMatrixGrammar) grammar);
-        case GrammarLoopMl:
-            return new GrammarLoopSpmlParser(this, (CsrSparseMatrixGrammar) grammar);
-        case CartesianProductBinarySearchMl:
-            return new CartesianProductBinarySearchSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case CartesianProductBinarySearchLeftChildMl:
-            return new CartesianProductBinarySearchLeftChildSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case CartesianProductHashMl:
-            return new CartesianProductHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case CartesianProductLeftChildHashMl:
-            return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-        case InsideOutsideCartesianProductHash:
-            return new InsideOutsideCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
-        case ViterbiInOutCph:
-            return new ViterbiInOutCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
-
-        case ConstrainedCartesianProductHashMl:
-            cellSelectorModel = ConstrainedCellSelector.MODEL;
-            return new ConstrainedCphSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-
-        default:
-            throw new IllegalArgumentException("Unsupported parser type");
+        } catch (final Exception e) {
+            throw new IllegalArgumentException("Unsupported parser type: " + e.getMessage());
         }
     }
 
