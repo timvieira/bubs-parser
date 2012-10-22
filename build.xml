@@ -15,6 +15,7 @@
     <property name="dir.bsd.lib" location="java/bsd-lib" />
     <property name="dir.lgpl.lib" location="java/lgpl-lib" />
     <property name="dir.gpl.lib" location="java/gpl-lib" />
+    <property name="dir.cslu.lib" location="java/cslu-lib" />
 
     <import file="genjar-targets.xml" />
 
@@ -22,6 +23,7 @@
         <fileset dir="${dir.bsd.lib}" includes="*.jar" />
         <fileset dir="${dir.lgpl.lib}" includes="*.jar" />
         <fileset dir="${dir.gpl.lib}" includes="*.jar" />
+        <fileset dir="${dir.cslu.lib}" includes="*.jar" />
     </path>
 
     <!--
@@ -65,25 +67,7 @@
     ========================================================================
     -->
 
-    <target name="summarize-grammar" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
-            <param name="tool-name" value="summarize-grammar" />
-            <param name="heap-size" value="1024m" />
-            <!-- TODO We currently have to include all the GPL libraries (including OpenCL4J) because all parsers are referenced statically -->
-            <param name="package-gpl-libs" value="true" />
-        </antcall>
-    </target>
-
-    <target name="serialize-model" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
-            <param name="tool-name" value="serialize-model" />
-            <param name="heap-size" value="1200m" />
-            <param name="package-gpl-libs" value="true" />
-        </antcall>
-    </target>
-
+    <!-- The main parser target. Builds BUBS with all libraries (including GPL and LGPL jars).  -->
     <target name="parse" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.ParserDriver" />
@@ -100,7 +84,43 @@
         </antcall>
     </target>
 
+    
+    <!-- Stripped-down parser target. Builds BUBS without any external GPL or LGPL libraries. Excludes support for GPU parsing (since the OpenCL4J library is LPGL). -->
+    <target name="parse-bsdlibs" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.parser.ParserDriver" />
+            <param name="additional-root-classes" value="edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel,edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel,edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel" />
+            <param name="tool-name" value="parse-bsdlibs" />
+            <param name="heap-size" value="1500m" />
+            <param name="license-file" value="java/tools/license.txt" />
+            <param name="readme-file" value="java/tools/README.txt" />
+            <param name="default-options" value="java/tools/parser-defaults.properties" />
+            <param name="srcjar" value="true" />
+        </antcall>
+    </target>
 
+
+    <target name="summarize-grammar" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
+            <param name="tool-name" value="summarize-grammar" />
+            <param name="heap-size" value="1024m" />
+            <!-- TODO We currently have to include all the GPL libraries (including OpenCL4J) because all parsers are referenced statically -->
+<!--            <param name="package-gpl-libs" value="true" />-->
+        </antcall>
+    </target>
+
+    
+    <target name="serialize-model" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
+            <param name="tool-name" value="serialize-model" />
+            <param name="heap-size" value="1200m" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+    
     <target name="train-grammar" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.TrainGrammar" />
@@ -186,6 +206,7 @@
         </antcall>
     </target>
 
+
     <target name="train-fom" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.fom.TrainFOM" />
@@ -194,6 +215,7 @@
             <param name="default-options" value="java/tools/parser-defaults.properties" />
         </antcall>
     </target>
+
 
     <target name="bubs-all" depends="compile">
         <jar file="${dir.dist}/bubs-all.jar">
@@ -205,6 +227,7 @@
         </jar>
     </target>
 
+
     <!-- Dependency parsing tools -->
     <target name="train-dep-parser" depends="compile">
         <antcall target="package-tool">
@@ -215,6 +238,7 @@
         </antcall>
     </target>
 
+    
     <target name="eval-dep-classifiers" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.dep.EvalDepClassifiers" />
@@ -224,6 +248,7 @@
         </antcall>
     </target>
 
+    
     <target name="nivre-dep-parser" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.dep.NivreDepParser" />

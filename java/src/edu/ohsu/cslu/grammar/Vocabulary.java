@@ -16,11 +16,14 @@ public class Vocabulary extends SymbolSet<String> {
 
     private static final long serialVersionUID = 1L;
 
-    /** Indices of unsplit categories in the base Markov-order-0 grammar, indexed by non-terminal indices */
-    protected Short2ShortOpenHashMap baseNonTerminalIndices = new Short2ShortOpenHashMap();
-
     /** Base Markov-order-0 vocabulary */
-    protected final Vocabulary baseVocabulary;
+    protected Vocabulary baseVocabulary;
+
+    /**
+     * Indices of unsplit categories in the base Markov-order-0 grammar, indexed by non-terminal indices. Only populated
+     * when {@link #baseVocabulary} is populated.
+     */
+    protected Short2ShortOpenHashMap baseNonTerminalIndices = new Short2ShortOpenHashMap();
 
     private final GrammarFormatType grammarFormat;
 
@@ -67,8 +70,6 @@ public class Vocabulary extends SymbolSet<String> {
         if (baseVocabulary != null) {
             baseIndex = (short) baseVocabulary.addSymbol(grammarFormat.getBaseNT(symbol, false));
             baseNonTerminalIndices.put(index, baseIndex);
-        } else {
-            baseNonTerminalIndices.put(index, index);
         }
 
         // Added by Aaron for (reasonably) fast access to factored non-terminals
@@ -99,10 +100,13 @@ public class Vocabulary extends SymbolSet<String> {
     }
 
     public final Vocabulary baseVocabulary() {
+        if (baseVocabulary == null) {
+            baseVocabulary = new Vocabulary(grammarFormat);
+            for (short nt = 0; nt < list.size(); nt++) {
+                final short baseNt = (short) baseVocabulary.addSymbol(grammarFormat.getBaseNT(list.get(nt), false));
+                baseNonTerminalIndices.put(nt, baseNt);
+            }
+        }
         return baseVocabulary;
     }
-
-    // public final boolean isBaseFactored(final int baseNonTerminal) {
-    // return baseFactoredIndices.contains(baseNonTerminal);
-    // }
 }

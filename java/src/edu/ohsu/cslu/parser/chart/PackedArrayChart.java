@@ -35,7 +35,7 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.ml.BaseIoCphSpmlParser;
-import edu.ohsu.cslu.tests.JUnit;
+import edu.ohsu.cslu.util.Strings;
 
 /**
  * Stores a chart in a 4-way parallel array of:
@@ -1563,20 +1563,20 @@ public class PackedArrayChart extends ParallelArrayChart {
                     // Unary Production
                     return String.format("%s -> %s (%s, %d) outside=%s\n",
                             sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
-                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild), JUnit.fraction(insideProbability),
-                            midpoint, JUnit.fraction(outsideProbability));
+                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild), Strings.fraction(insideProbability),
+                            midpoint, Strings.fraction(outsideProbability));
                 } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                     // Lexical Production
                     return String.format("%s -> %s (%s, %d) outside=%s\n",
                             sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
-                            sparseMatrixGrammar.mapLexicalEntry(leftChild), JUnit.fraction(insideProbability),
-                            midpoint, JUnit.fraction(outsideProbability));
+                            sparseMatrixGrammar.mapLexicalEntry(leftChild), Strings.fraction(insideProbability),
+                            midpoint, Strings.fraction(outsideProbability));
                 } else {
                     return String.format("%s -> %s %s (%s, %d) outside=%s\n",
                             sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
                             sparseMatrixGrammar.nonTermSet.getSymbol(leftChild),
-                            sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), JUnit.fraction(insideProbability),
-                            midpoint, JUnit.fraction(outsideProbability));
+                            sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), Strings.fraction(insideProbability),
+                            midpoint, Strings.fraction(outsideProbability));
                 }
             }
 
@@ -1623,16 +1623,16 @@ public class PackedArrayChart extends ParallelArrayChart {
                 if (rightChild == Production.UNARY_PRODUCTION) {
                     // Unary Production
                     return String.format("%s -> %s (%s, %d)\n", maxcVocabulary.getSymbol(nonterminal),
-                            maxcVocabulary.getSymbol(leftChild), JUnit.fraction(score), midpoint);
+                            maxcVocabulary.getSymbol(leftChild), Strings.fraction(score), midpoint);
                 } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                     // Lexical Production
                     return String.format("%s -> %s (%s, %d)\n", maxcVocabulary.getSymbol(nonterminal),
-                            sparseMatrixGrammar.mapLexicalEntry(parseTask.tokens[midpoint - 1]), JUnit.fraction(score),
-                            midpoint);
+                            sparseMatrixGrammar.mapLexicalEntry(parseTask.tokens[midpoint - 1]),
+                            Strings.fraction(score), midpoint);
                 } else {
                     return String.format("%s -> %s %s (%s, %d)\n", maxcVocabulary.getSymbol(nonterminal),
                             maxcVocabulary.getSymbol(leftChild), maxcVocabulary.getSymbol(rightChild),
-                            JUnit.fraction(score), midpoint);
+                            Strings.fraction(score), midpoint);
                 }
             }
 

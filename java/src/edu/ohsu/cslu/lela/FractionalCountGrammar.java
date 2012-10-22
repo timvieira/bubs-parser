@@ -44,7 +44,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.grammar.Vocabulary;
-import edu.ohsu.cslu.tests.JUnit;
+import edu.ohsu.cslu.util.Strings;
 
 public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
@@ -1258,7 +1258,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         for (final Production p : binaryProductions(Float.NEGATIVE_INFINITY)) {
             if (fraction) {
                 bw.write(String.format("%s -> %s %s %s\n", vocabulary.getSymbol(p.parent),
-                        vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), JUnit.fraction(p.prob)));
+                        vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), Strings.fraction(p.prob)));
             } else {
                 bw.write(String.format("%s -> %s %s %.6f\n", vocabulary.getSymbol(p.parent),
                         vocabulary.getSymbol(p.leftChild), vocabulary.getSymbol(p.rightChild), p.prob));
@@ -1268,7 +1268,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         for (final Production p : unaryProductions(Float.NEGATIVE_INFINITY)) {
             if (fraction) {
                 bw.write(String.format("%s -> %s %s\n", vocabulary.getSymbol(p.parent),
-                        vocabulary.getSymbol(p.leftChild), JUnit.fraction(p.prob)));
+                        vocabulary.getSymbol(p.leftChild), Strings.fraction(p.prob)));
             } else {
                 bw.write(String.format("%s -> %s %.6f\n", vocabulary.getSymbol(p.parent),
                         vocabulary.getSymbol(p.leftChild), p.prob));
@@ -1279,7 +1279,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         for (final Production p : lexicalProductions(Float.NEGATIVE_INFINITY)) {
             if (fraction) {
                 bw.write(String.format("%s -> %s %s\n", vocabulary.getSymbol(p.parent), lexicon.getSymbol(p.leftChild),
-                        JUnit.fraction(p.prob)));
+                        Strings.fraction(p.prob)));
             } else {
                 bw.write(String.format("%s -> %s %.6f\n", vocabulary.getSymbol(p.parent),
                         lexicon.getSymbol(p.leftChild), p.prob));
