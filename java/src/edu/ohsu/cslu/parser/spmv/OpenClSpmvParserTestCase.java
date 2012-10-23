@@ -31,7 +31,6 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
@@ -269,8 +268,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
     @Test
     public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
 
-        final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(),
-                PerfectIntPairHashPackingFunction.class);
+        final SparseMatrixGrammar g = (SparseMatrixGrammar) createGrammar(simpleGrammar2(), LeftShiftFunction.class);
 
         // Create the parser
         final P p = createParser(g, parserOptions(), configProperties());
@@ -297,7 +295,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Cross-product union for cell 0,4
         SparseMatrixVectorParser.CartesianProductVector crossProductVector = p.cartesianProductUnion(0, 4);
-        assertEquals(2, crossProductVector.size());
+        assertEquals(14, crossProductVector.size());
 
         // Midpoint 1
         assertEquals(-2.890f, crossProductVector.probability(pack(g, g.mapNonterminal("DT"), g.mapNonterminal("NP"))),
@@ -311,7 +309,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Cross-product union for cell 0,5
         crossProductVector = p.cartesianProductUnion(0, 5);
-        assertEquals(1, crossProductVector.size());
+        assertEquals(12, crossProductVector.size());
 
         // Midpoint 3
         assertEquals(-5.37528f,
@@ -368,7 +366,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Cross-product union for cell 0,4
         SparseMatrixVectorParser.CartesianProductVector cartesianProductVector = p.cartesianProductUnion(0, 4);
-        assertEquals(17, cartesianProductVector.size());
+        assertEquals(14, cartesianProductVector.size());
 
         // Midpoint 1
         assertEquals(-2.890f,
@@ -407,7 +405,7 @@ public abstract class OpenClSpmvParserTestCase<P extends OpenClSpmvParser<? exte
 
         // Cross-product union for cell 0,5
         cartesianProductVector = p.cartesianProductUnion(0, 5);
-        assertEquals(19, cartesianProductVector.size());
+        assertEquals(12, cartesianProductVector.size());
 
         // Midpoint 3
         assertEquals(-5.37528f,

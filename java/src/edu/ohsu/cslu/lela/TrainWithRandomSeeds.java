@@ -26,7 +26,6 @@ import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.lela.FractionalCountGrammar.NoiseGenerator;
 import edu.ohsu.cslu.lela.FractionalCountGrammar.RandomNoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
@@ -88,11 +87,6 @@ public class TrainWithRandomSeeds extends BaseCommandlineTool {
             currentGrammar = result.countGrammar;
         }
         return currentGrammar;
-    }
-
-    private ConstrainedInsideOutsideGrammar cscGrammar(final FractionalCountGrammar countGrammar) {
-        return new ConstrainedInsideOutsideGrammar(countGrammar, GrammarFormatType.Berkeley,
-                PerfectIntPairHashPackingFunction.class);
     }
 
     public static void main(final String[] args) {

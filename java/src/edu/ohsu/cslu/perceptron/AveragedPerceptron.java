@@ -40,7 +40,7 @@ import edu.ohsu.cslu.util.Strings;
 
 /**
  * Represents an averaged perceptron (see Collins, 2002). The model should be trained with
- * {@link #train(int, SparseBitVector)}, and applied with {@link #classify(Vector)}.
+ * {@link #train(int, BitVector)}, and applied with {@link #classify(Vector)}.
  * 
  * NOTE: clients are responsible to include their own bias feature in the training and testing instances, meaning that
  * there is a single feature which is always on (value=1) for all instances.

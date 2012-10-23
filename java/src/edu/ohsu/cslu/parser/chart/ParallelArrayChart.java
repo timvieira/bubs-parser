@@ -70,7 +70,7 @@ public abstract class ParallelArrayChart extends Chart {
     /**
      * Constructs a chart
      * 
-     * @param tokens Indices of sentence tokens
+     * @param parseTask Parser state
      * @param sparseMatrixGrammar Grammar
      * @param beamWidth The maximum number of entries allowed in a chart cell
      */
@@ -104,7 +104,7 @@ public abstract class ParallelArrayChart extends Chart {
     /**
      * Constructs a chart for exhaustive parsing (beamWidth = |V|)
      * 
-     * @param tokens
+     * @param parseTask parser state
      * @param sparseMatrixGrammar
      */
     protected ParallelArrayChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar) {

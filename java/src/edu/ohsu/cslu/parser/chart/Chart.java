@@ -120,7 +120,7 @@ public abstract class Chart {
 
     /**
      * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
-     * that of {@link #cellOffset(int, int)}
+     * that of {@link ParallelArrayChart#cellOffset(int, int)}
      * 
      * @param start
      * @param end
@@ -144,7 +144,7 @@ public abstract class Chart {
 
     /**
      * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
-     * that of {@link #cellOffset(int, int)}
+     * that of {@link ParallelArrayChart#cellOffset(int, int)}
      * 
      * @param start
      * @param end
@@ -193,7 +193,6 @@ public abstract class Chart {
      * rare, but can be caused by too-aggressive pruning or a too-sparse grammar.
      * 
      * @param recoveryStrategy Recovery strategy
-     * @throws Exception
      */
     public NaryTree<String> extractRecoveryParse(final RecoveryStrategy recoveryStrategy) {
 

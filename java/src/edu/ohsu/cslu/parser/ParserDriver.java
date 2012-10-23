@@ -354,7 +354,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * 
      * TODO Use the generic grammar types on the parser class to eliminate this massive switch?
      * 
-     * @param genericGrammar
+     * @param grammarFile
      * @param researchParserType
      * @return a Grammar instance
      * @throws Exception

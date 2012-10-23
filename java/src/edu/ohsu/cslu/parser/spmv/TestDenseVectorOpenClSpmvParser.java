@@ -19,7 +19,6 @@
 package edu.ohsu.cslu.parser.spmv;
 
 import org.cjunit.PerformanceTest;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
@@ -38,10 +37,5 @@ public class TestDenseVectorOpenClSpmvParser extends
     @PerformanceTest({ "mbp", "159794" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
-    }
-
-    @Override
-    @Ignore
-    public void testFilteredCartesianProductVectorSimpleGrammar2() throws Exception {
     }
 }

@@ -1325,7 +1325,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         private final float amount;
 
         /**
-         * @param random Random noise generator
+         * @param seed Random seed
          * @param amount Amount of randomness (0-1) to add to the rule probabilities in the new grammar (e.g., if
          *            <code>amount</code> is 0.01, each pair differs by 1%). With 0 noise, the probabilities of each
          *            rule will be split equally. Some noise is generally required to break ties in the new grammar.

@@ -236,7 +236,7 @@ public class Tokenizer implements Serializable {
      * e.g.: UNK-LC-NUM-DASH-y -> UNK-LC-NUM -> UNK-LC
      * 
      * @param word
-     * @param sentIndex
+     * @param lexSet
      * @return A string token representing the unknown word
      */
     public static String wordToUnkStringVer1(final String word, final SymbolSet<String> lexSet) {

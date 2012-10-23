@@ -25,7 +25,6 @@ import java.io.Reader;
 import java.io.Serializable;
 
 import cltool4j.GlobalConfigProperties;
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -38,9 +37,9 @@ import edu.ohsu.cslu.parser.fom.NGramOutside.NGramSelector;
  * lexical analysis of the sentence or other outside information.
  * 
  * Implementations of this model class should be thread-safe; i.e., after reading in or initializing the model, it must
- * be safe to call {@link #createFOM(Grammar)} simultaneously from multiple threads. Note that the {@link FigureOfMerit}
+ * be safe to call {@link #createFOM()} simultaneously from multiple threads. Note that the {@link FigureOfMerit}
  * instances returned are not expected to be thread-safe. To parse multiple sentences simultaneously, the user should
- * obtain a {@link FigureOfMerit} instance for each thread, using {@link #createFOM(Grammar)}.
+ * obtain a {@link FigureOfMerit} instance for each thread, using {@link #createFOM()}.
  */
 public abstract class FigureOfMeritModel {
 
