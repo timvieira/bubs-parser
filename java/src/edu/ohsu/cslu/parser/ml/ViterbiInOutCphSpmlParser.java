@@ -30,7 +30,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
  * Populates the parse chart with inside-outside probabilities, choosing the 1-best probability for each nonterminal
  * (i.e., the Viterbi inside scores, followed by Viterbi outside scores as well).
  * 
- * @see {@link InsideOutsideCphSpmlParser}
+ * @see InsideOutsideCphSpmlParser
  * 
  * @author Aaron Dunlop
  */

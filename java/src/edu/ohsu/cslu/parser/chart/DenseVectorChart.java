@@ -60,7 +60,7 @@ public class DenseVectorChart extends ParallelArrayChart {
     /**
      * Constructs a chart
      * 
-     * @param tokens Sentence tokens, mapped to integer indices
+     * @param parseTask Input state
      * @param sparseMatrixGrammar Grammar
      */
     public DenseVectorChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar) {

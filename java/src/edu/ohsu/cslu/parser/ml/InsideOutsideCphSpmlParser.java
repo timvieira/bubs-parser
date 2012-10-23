@@ -14,7 +14,7 @@ import edu.ohsu.cslu.util.Math;
  * Populates the parse chart with inside-outside probabilities, summing probability mass for each nonterminal from all
  * applicable grammar rules.
  * 
- * @see {@link ViterbiInOutCphSpmlParser}
+ * @see ViterbiInOutCphSpmlParser
  * 
  * @author Aaron Dunlop
  */

@@ -658,8 +658,8 @@ public class Constrained2SplitInsideOutsideParser extends
      * 
      * TODO Binary, Unary, and Lexical methods can probably all be collapsed
      * 
-     * @param countGrammar The grammar to populate with rule counts
-     * @return countGrammar
+     * @param mergeCost The estimated cost of merging each non-terminal pair (1/2 the size of the vocabulary)
+     * @param logSplitFraction The (log) fraction of counts accumulated for each split pair
      */
     void countMergeCost(final float[] mergeCost, final float[] logSplitFraction) {
         cellSelector.reset();

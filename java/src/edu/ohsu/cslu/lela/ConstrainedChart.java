@@ -259,7 +259,7 @@ public class ConstrainedChart extends ConstrainingChart {
      * @param end
      * @param nonTerminal
      * @param unaryHeight 0 <= unaryDepth < maxUnaryChainHeight
-     * @return
+     * @return Inside (log) probability
      */
     float getInside(final int start, final int end, final int nonTerminal, final int unaryHeight) {
         final int index = cellOffset(start, end) + ((maxUnaryChainLength - unaryHeight) << 1);
@@ -293,7 +293,7 @@ public class ConstrainedChart extends ConstrainingChart {
      * @param end
      * @param nonTerminal
      * @param unaryHeight 0 <= unaryDepth < maxUnaryChainHeight
-     * @return
+     * @return Outside (log) probability
      */
     float getOutside(final int start, final int end, final int nonTerminal, final int unaryHeight) {
         final int index = cellOffset(start, end) + ((maxUnaryChainLength - unaryHeight) << 1);

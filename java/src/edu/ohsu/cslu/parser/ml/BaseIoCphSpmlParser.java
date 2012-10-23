@@ -33,7 +33,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 /**
  * Base class for parsers implementing inside-sum or inside-outside inference rather than simple Viterbi decoding. With
  * a chart containing inside or inside-outside (posterior) probabilities, we have a choice of decoding methods (see
- * {@link DecodeMethod} and {@link PackedArrayChart}).
+ * {@link edu.ohsu.cslu.parser.Parser.DecodeMethod} and {@link PackedArrayChart}).
  * 
  * @author Aaron Dunlop
  */

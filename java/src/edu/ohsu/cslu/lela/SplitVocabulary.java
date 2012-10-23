@@ -218,7 +218,7 @@ public class SplitVocabulary extends Vocabulary {
     /**
      * Creates a new vocabulary, splitting each non-terminal into two substates
      * 
-     * @return
+     * @return Split vocabulary
      */
     public SplitVocabulary split() {
         return new SplitVocabulary(this);

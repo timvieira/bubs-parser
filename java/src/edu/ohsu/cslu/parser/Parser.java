@@ -149,7 +149,7 @@ public abstract class Parser<G extends Grammar> {
      * with '((', '(TOP', or '(ROOT'.
      * 
      * @param input
-     * @return
+     * @return Parse output and state
      */
     public ParseTask parseSentence(final String input) {
         return parseSentence(input, null);
@@ -162,7 +162,7 @@ public abstract class Parser<G extends Grammar> {
      * 
      * @param input
      * @param recoveryStrategy Recovery strategy in case of parse failure
-     * @return
+     * @return Parse output and state
      */
     public ParseTask parseSentence(String input, final RecoveryStrategy recoveryStrategy) {
 
