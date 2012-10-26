@@ -29,6 +29,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 
@@ -52,7 +53,6 @@ import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
-import edu.ohsu.cslu.util.Arrays;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 import edu.ohsu.cslu.util.Strings;
@@ -409,26 +409,33 @@ public class TrainGrammar extends BaseCommandlineTool {
         }
 
         // Estimate the merge cost
-        final float[] mergeCost = estimateMergeCost(cscGrammar, countGrammar);
+        final float[] estimatedMergeCost = estimateMergeCost(cscGrammar, countGrammar);
+        final int[][] ruleCountDelta = countGrammar.estimateMergeRuleCountDelta();
 
-        // Populate a temporary array of the nonterminal indices represented in the cost array (odd indices only)
-        final float[] tmpCost = new float[mergeCost.length];
-        System.arraycopy(mergeCost, 0, tmpCost, 0, mergeCost.length);
-        final short[] tmpIndices = new short[mergeCost.length];
-        for (int i = 0; i < tmpIndices.length; i++) {
-            tmpIndices[i] = (short) (i * 2 + 1);
+        // Create a merge-cost wrapper for each non-terminal under consideration for merging (odd indices only)
+        final ArrayList<MergeCost> mergeCosts = new ArrayList<MergeCost>();
+        for (short i = 0; i < estimatedMergeCost.length; i++) {
+            final short nt = (short) (i * 2 + 1);
+            mergeCosts.add(new MergeCost(estimatedMergeCost[i], nt, ruleCountDelta[i]));
         }
-        // Sort the parallel array by cost (from least costly to most)
-        Arrays.sort(tmpCost, tmpIndices);
+
+        // Sort the list by cost (from least costly to most)
+        Collections.sort(mergeCosts);
 
         // Copy the least-costly indices into a new array
-        final short[] mergeIndices = new short[Math.round(mergeCost.length * mergeFraction)];
-        System.arraycopy(tmpIndices, 0, mergeIndices, 0, mergeIndices.length);
+        final short[] mergeIndices = new short[Math.round(mergeCosts.size() * mergeFraction)];
+        for (int i = 0; i < mergeIndices.length; i++) {
+            mergeIndices[i] = mergeCosts.get(i).nonTerminal;
+        }
 
+        // Output the costs and potential rule-count savings for each mergeable non-terminal
         if (BaseLogger.singleton().isLoggable(Level.FINE)) {
             final StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < tmpCost.length; i++) {
-                sb.append(countGrammar.vocabulary.getSymbol(tmpIndices[i]) + " " + tmpCost[i] + '\n');
+            for (int i = 0; i < mergeCosts.size(); i++) {
+                final MergeCost mergeCost = mergeCosts.get(i);
+                sb.append(String.format("%9s  %.5f  %d  %d  %d\n",
+                        countGrammar.vocabulary.getSymbol(mergeCost.nonTerminal), mergeCost.cost,
+                        mergeCost.binaryRuleCountDelta, mergeCost.unaryRuleCountDelta, mergeCost.lexicalRuleCountDelta));
                 if (i == mergeIndices.length) {
                     sb.append("--------\n");
                 }
@@ -436,6 +443,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             BaseLogger.singleton().fine("Merge Costs:");
             BaseLogger.singleton().fine(sb.toString());
         }
+
         // Perform the merge
         final FractionalCountGrammar mergedGrammar = countGrammar.merge(mergeIndices);
         BaseLogger.singleton().config(
@@ -580,5 +588,28 @@ public class TrainGrammar extends BaseCommandlineTool {
         public String toString() {
             return String.format("%.2f", corpusLikelihood);
         }
+    }
+
+    private static class MergeCost implements Comparable<MergeCost> {
+
+        private final float cost;
+        private final short nonTerminal;
+        private final int binaryRuleCountDelta;
+        private final int unaryRuleCountDelta;
+        private final int lexicalRuleCountDelta;
+
+        public MergeCost(final float cost, final short nonTerminal, final int[] ruleCountDelta) {
+            this.cost = cost;
+            this.nonTerminal = nonTerminal;
+            this.binaryRuleCountDelta = ruleCountDelta[0];
+            this.unaryRuleCountDelta = ruleCountDelta[1];
+            this.lexicalRuleCountDelta = ruleCountDelta[2];
+        }
+
+        @Override
+        public int compareTo(final MergeCost o) {
+            return Float.compare(cost, o.cost);
+        }
+
     }
 }
