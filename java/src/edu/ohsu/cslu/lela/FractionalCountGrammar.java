@@ -90,12 +90,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
      */
     private final Int2IntOpenHashMap sentenceInitialCorpusWordCounts;
 
-    /**
-     * Total occurrences of words considered 'rare' (per {@link #rareWordThreshold}) in the training corpus. This count
-     * is treated as a constant, but it should be the same as the sum of all entries in {@link #rareWordParentCounts}
-     */
-    private final int totalRareWords;
-
     public FractionalCountGrammar(final Vocabulary vocabulary, final SymbolSet<String> lexicon,
             final PackingFunction packingFunction, final Int2IntOpenHashMap corpusWordCounts,
             final Int2IntOpenHashMap sentenceInitialCorpusWordCounts, final int uncommonWordThreshold,
@@ -112,20 +106,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
         this.uncommonWordThreshold = uncommonWordThreshold;
         this.rareWordThreshold = rareWordThreshold;
-
-        if (corpusWordCounts != null) {
-            int tmp = 0;
-
-            for (final int i : corpusWordCounts.keySet()) {
-                final int count = corpusWordCounts.get(i);
-                if (count < rareWordThreshold) {
-                    tmp += count;
-                }
-            }
-            this.totalRareWords = tmp;
-        } else {
-            totalRareWords = 0;
-        }
     }
 
     public void incrementBinaryCount(final short parent, final short leftChild, final short rightChild,
@@ -346,6 +326,8 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
      */
     public FractionalCountGrammar smooth(final int openClassPreterminalThreshold, final float s_0, final float s_1,
             final float s_2) {
+
+        // TODO Clone parentCounts, so we don't modify it (and use the ever-changing version) while smoothing
 
         final FractionalCountGrammar smoothedGrammar = clone();
 
@@ -845,6 +827,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
      *            assumes that the indices will be of each non-terminal B.
      * @return Merged grammar
      */
+    @Deprecated
     public FractionalCountGrammar mergeCounts(final short[] indices) {
 
         // Post-merge indices, indexed by pre-merge values
@@ -909,80 +892,228 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
         return logSplitCounts;
     }
 
-    // /**
-    // * Add UNK rules to the lexicon, stealing from other lexical probabilities to allot some probability mass for UNK
-    // * rules.
-    // *
-    // * Note that even rare words (those that occur <= lexicalUnkThreshold times) will still be included in their
-    // * lexicalized form.
-    // *
-    // * @param countGrammar {@link FractionalCountGrammar} with posterior counts from training corpus. Note :
-    // fractional
-    // * counts will be added for UNK rules, modifying this grammar.
-    // */
-    // public void addUnkProbabilities(final Collection<NaryTree<String>> goldTrees, final int lexicalUnkThreshold) {
-    //
-    // //
-    // // Count words - overall and separately when they occur as the first word in a sentence
-    // //
-    // final Object2IntOpenHashMap<String> lexicalEntryCounts = new Object2IntOpenHashMap<String>();
-    // lexicalEntryCounts.defaultReturnValue(0);
-    //
-    // for (final NaryTree<String> tree : goldTrees) {
-    //
-    // for (final NaryTree<String> leaf : tree.leafTraversal()) {
-    // final String word = leaf.label();
-    // lexicalEntryCounts.put(word, lexicalEntryCounts.getInt(word) + 1);
-    // }
-    // }
-    //
-    // // Create a map from lexical entries to parents and probabilities (word -> parent -> probability)
-    // final Int2ObjectOpenHashMap<Short2DoubleOpenHashMap> lexicalParentProbabilities = new
-    // Int2ObjectOpenHashMap<Short2DoubleOpenHashMap>();
-    // for (final short parent : lexicalRuleCounts.keySet()) {
-    // final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
-    // for (final int child : childMap.keySet()) {
-    // Short2DoubleOpenHashMap parentMap = lexicalParentProbabilities.get(child);
-    // if (parentMap == null) {
-    // parentMap = new Short2DoubleOpenHashMap();
-    // parentMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
-    // lexicalParentProbabilities.put(child, parentMap);
-    // }
-    // parentMap.put(parent, childMap.get(child) / parentCounts.get(parent));
-    // }
-    // }
-    //
-    // //
-    // // Iterate through the training corpus again, adding UNK counts for rare words
-    // //
-    // for (final NaryTree<String> tree : goldTrees) {
-    //
-    // // Handle first word separately
-    // final Tree<String> leftmostLeaf = tree.leftmostLeaf();
-    // final String firstWord = leftmostLeaf.label();
-    // if (lexicalEntryCounts.getInt(firstWord) <= lexicalUnkThreshold) {
-    // final int initialUnkIndex = lexicon.addSymbol(Tokenizer.berkeleyGetSignature(firstWord, true, lexicon));
-    // final Short2DoubleOpenHashMap parentMap = lexicalParentProbabilities.get(lexicon.getIndex(firstWord));
-    // for (final short parent : parentMap.keySet()) {
-    // incrementLexicalCount(parent, initialUnkIndex, parentMap.get(parent));
-    // }
-    // }
-    //
-    // for (final NaryTree<String> leaf : tree.leafTraversal()) {
-    //
-    // final String word = leaf.label();
-    // final int count = lexicalEntryCounts.getInt(word);
-    //
-    // if (count <= lexicalUnkThreshold) {
-    // final int unkIndex = lexicon.addSymbol(Tokenizer.berkeleyGetSignature(word, false, lexicon));
-    // final Short2DoubleOpenHashMap parentMap = lexicalParentProbabilities.get(lexicon.getIndex(word));
-    // for (final short parent : parentMap.keySet()) {
-    // incrementLexicalCount(parent, unkIndex, parentMap.get(parent));
-    // }
-    // }
-    // }
-    // }
-    // }
+    /**
+     * Returns the reduction in rule-count if each pair of non-terminals is merged. These counts are exact for each
+     * possible merge (e.g., NP_1 into NP_0), but do not account for the interactions between multiple simultaneous
+     * non-terminal merges. I.e., these counts will always be an overestimate of the rule-count savings when multiple
+     * NTs are merged en-masse.
+     * 
+     * The returned array is indexed by non-terminal index / 2, and contains separate counts for binary, unary, and
+     * lexical rules.
+     * 
+     * @return Array of rule-count savings, indexed by non-terminal index / 2, and in the second dimension by 0, 1, 2
+     *         (binary, unary, and lexical)
+     */
+    public int[][] estimateMergeRuleCountDelta() {
+        final int[][] ruleCountDelta = new int[vocabulary.size()][3];
+
+        //
+        // Binary productions
+        //
+
+        // These maps indicate presence or absence of binary rules by parent, left child and right child.
+        // Parent -> left child -> right children */
+        final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> parentBinaryRules = parentBinaryRules();
+        // Left child -> parent -> right children */
+        final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> leftChildBinaryRules = leftChildBinaryRules();
+        // Right child -> parent -> left children */
+        final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> rightChildBinaryRules = rightChildBinaryRules();
+
+        for (final Production p : binaryProductions(Float.NEGATIVE_INFINITY)) {
+
+            // First, consider merging the parent (skip even parents, since they will be merged into)
+            if (p.parent % 2 != 0
+                    && contains(parentBinaryRules, (short) (p.parent - 1), (short) p.leftChild, (short) p.rightChild)) {
+                ruleCountDelta[p.parent / 2][0]++;
+            }
+
+            // Now, the left child
+            if (p.leftChild % 2 != 0
+                    && contains(leftChildBinaryRules, (short) p.parent, (short) (p.leftChild - 1), (short) p.rightChild)) {
+                ruleCountDelta[p.leftChild / 2][0]++;
+            }
+
+            // And finally, the right child
+            if (p.rightChild % 2 != 0
+                    && contains(rightChildBinaryRules, (short) p.parent, (short) p.leftChild,
+                            (short) (p.rightChild - 1))) {
+                ruleCountDelta[p.rightChild / 2][0]++;
+            }
+        }
+
+        //
+        // Unary productions
+        //
+        for (final Production p : unaryProductions(Float.NEGATIVE_INFINITY)) {
+            // Consider merging the parent
+            if (p.parent % 2 != 0 && unaryRuleCounts.containsKey((short) (p.parent - 1))
+                    && unaryRuleCounts.get((short) (p.parent - 1)).containsKey((short) p.leftChild)) {
+                ruleCountDelta[p.parent / 2][1]++;
+            }
+
+            // And the child
+            if (p.leftChild % 2 != 0 && unaryRuleCounts.containsKey((short) p.parent)
+                    && unaryRuleCounts.get((short) p.parent).containsKey((short) (p.leftChild - 1))) {
+                ruleCountDelta[p.leftChild / 2][1]++;
+            }
+        }
+
+        //
+        // Lexical productions
+        //
+        for (final Production p : lexicalProductions(Float.NEGATIVE_INFINITY)) {
+            if (p.parent % 2 != 0 && lexicalRuleCounts.containsKey((short) (p.parent - 1))
+                    && lexicalRuleCounts.get((short) (p.parent - 1)).containsKey(p.leftChild)) {
+                ruleCountDelta[p.parent / 2][2]++;
+            }
+        }
+
+        return ruleCountDelta;
+    }
+
+    /**
+     * @return a data structure indicating presence or absence of binary rules by parent (parent -> left child -> right
+     *         children).
+     */
+    private Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> parentBinaryRules() {
+
+        final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> parentBinaryRules = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>>();
+
+        for (short parent = 0; parent < vocabulary.size(); parent++) {
+
+            if (!binaryRuleCounts.containsKey(parent)) {
+                continue;
+            }
+
+            if (!parentBinaryRules.containsKey(parent)) {
+                parentBinaryRules.put(parent, new Short2ObjectOpenHashMap<ShortOpenHashSet>());
+            }
+
+            final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
+
+            for (short leftChild = 0; leftChild < vocabulary.size(); leftChild++) {
+                if (!leftChildMap.containsKey(leftChild)) {
+                    continue;
+                }
+
+                if (!parentBinaryRules.get(parent).containsKey(leftChild)) {
+                    parentBinaryRules.get(parent).put(leftChild, new ShortOpenHashSet());
+                }
+
+                final Short2DoubleOpenHashMap rightChildMap = leftChildMap.get(leftChild);
+
+                for (short rightChild = 0; rightChild < vocabulary.size(); rightChild++) {
+                    if (rightChildMap.containsKey(rightChild)) {
+                        parentBinaryRules.get(parent).get(leftChild).add(rightChild);
+                    }
+                }
+            }
+        }
+
+        return parentBinaryRules;
+    }
+
+    /**
+     * @return a data structure indicating presence or absence of binary rules by left child (left child -> parent ->
+     *         right children).
+     */
+    private Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> leftChildBinaryRules() {
+
+        final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> leftChildBinaryRules = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>>();
+
+        for (short parent = 0; parent < vocabulary.size(); parent++) {
+
+            if (!binaryRuleCounts.containsKey(parent)) {
+                continue;
+            }
+
+            final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
+
+            for (short leftChild = 0; leftChild < vocabulary.size(); leftChild++) {
+                if (!leftChildMap.containsKey(leftChild)) {
+                    continue;
+                }
+
+                final Short2DoubleOpenHashMap rightChildMap = leftChildMap.get(leftChild);
+
+                if (!leftChildBinaryRules.containsKey(leftChild)) {
+                    leftChildBinaryRules.put(leftChild, new Short2ObjectOpenHashMap<ShortOpenHashSet>());
+                }
+
+                if (!leftChildBinaryRules.get(leftChild).containsKey(parent)) {
+                    leftChildBinaryRules.get(leftChild).put(parent, new ShortOpenHashSet());
+                }
+
+                for (short rightChild = 0; rightChild < vocabulary.size(); rightChild++) {
+                    if (rightChildMap.containsKey(rightChild)) {
+                        leftChildBinaryRules.get(leftChild).get(parent).add(rightChild);
+                    }
+                }
+            }
+        }
+
+        return leftChildBinaryRules;
+    }
+
+    /**
+     * @return a data structure indicating presence or absence of binary rules by right child (right child -> parent ->
+     *         left children).
+     */
+    private Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> rightChildBinaryRules() {
+
+        final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> rightChildBinaryRules = new Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>>();
+
+        for (short parent = 0; parent < vocabulary.size(); parent++) {
+
+            if (!binaryRuleCounts.containsKey(parent)) {
+                continue;
+            }
+
+            final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
+
+            for (short leftChild = 0; leftChild < vocabulary.size(); leftChild++) {
+                if (!leftChildMap.containsKey(leftChild)) {
+                    continue;
+                }
+
+                final Short2DoubleOpenHashMap rightChildMap = leftChildMap.get(leftChild);
+
+                for (short rightChild = 0; rightChild < vocabulary.size(); rightChild++) {
+                    if (!rightChildMap.containsKey(rightChild)) {
+                        continue;
+                    }
+
+                    if (!rightChildBinaryRules.containsKey(rightChild)) {
+                        rightChildBinaryRules.put(rightChild, new Short2ObjectOpenHashMap<ShortOpenHashSet>());
+                    }
+
+                    if (!rightChildBinaryRules.get(rightChild).containsKey(parent)) {
+                        rightChildBinaryRules.get(rightChild).put(parent, new ShortOpenHashSet());
+                    }
+
+                    rightChildBinaryRules.get(rightChild).get(parent).add(leftChild);
+                }
+            }
+        }
+
+        return rightChildBinaryRules;
+    }
+
+    private boolean contains(final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<ShortOpenHashSet>> map,
+            final short x, final short y, final short z) {
+
+        final Short2ObjectOpenHashMap<ShortOpenHashSet> map2 = map.get(x);
+        if (map2 == null) {
+            return false;
+        }
+
+        final ShortOpenHashSet set = map2.get(y);
+        if (set == null) {
+            return false;
+        }
+
+        return set.contains(z);
+    }
 
     public final int totalRules() {
         return binaryRules() + unaryRules() + lexicalRules();
@@ -1021,132 +1152,6 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
     public final double observations(final String parent) {
         throw new UnsupportedOperationException();
     }
-
-    // /**
-    // * Merges the grammar back into a Markov-0 (unsplit) grammar, and ensures that the merged probabilities are the
-    // same
-    // * as the supplied unsplit grammar (usually the original Markov-0 grammar induced from the training corpus). Used
-    // * for unit testing.
-    // *
-    // * @param unsplitPlg
-    // */
-    // void verifyVsUnsplitGrammar(final FractionalCountGrammar unsplitPlg) {
-    //
-    // final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(unsplitPlg.vocabulary,
-    // unsplitPlg.lexicon, null);
-    //
-    // for (final short parent : binaryRuleCounts.keySet()) {
-    // final short unsplitParent = vocabulary.getBaseIndex(parent);
-    // final Short2ObjectOpenHashMap<Short2DoubleOpenHashMap> leftChildMap = binaryRuleCounts.get(parent);
-    //
-    // for (final short leftChild : leftChildMap.keySet()) {
-    // final short unsplitLeftChild = vocabulary.getBaseIndex(leftChild);
-    // final Short2DoubleOpenHashMap rightChildMap = leftChildMap.get(leftChild);
-    //
-    // for (final short rightChild : rightChildMap.keySet()) {
-    // final short unsplitRightChild = vocabulary.getBaseIndex(rightChild);
-    // unsplitGrammar.incrementBinaryCount(unsplitParent, unsplitLeftChild, unsplitRightChild,
-    // rightChildMap.get(rightChild));
-    // }
-    // }
-    // }
-    //
-    // for (final short parent : unaryRuleCounts.keySet()) {
-    // final short unsplitParent = vocabulary.getBaseIndex(parent);
-    // final Short2DoubleOpenHashMap childMap = unaryRuleCounts.get(parent);
-    //
-    // for (final short child : childMap.keySet()) {
-    // final short unsplitChild = vocabulary.getBaseIndex(child);
-    // unsplitGrammar.incrementUnaryCount(unsplitParent, unsplitChild, childMap.get(child));
-    // }
-    // }
-    //
-    // for (final short parent : lexicalRuleCounts.keySet()) {
-    // final short unsplitParent = vocabulary.getBaseIndex(parent);
-    // final Int2DoubleOpenHashMap childMap = lexicalRuleCounts.get(parent);
-    //
-    // for (final int child : childMap.keySet()) {
-    // unsplitGrammar.incrementLexicalCount(unsplitParent, child, childMap.get(child));
-    // }
-    // }
-    //
-    // final FractionalCountGrammar newUnsplitPlg = unsplitGrammar.toProductionListGrammar(Float.NEGATIVE_INFINITY);
-    // newUnsplitPlg.verifyVsExpectedGrammar(unsplitPlg);
-    // }
-    //
-    // public void verifyVsExpectedGrammar(final ProductionListGrammar unsplitPlg) {
-    // final Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>> unsplitBinaryProbabilities = new
-    // Short2ObjectOpenHashMap<Short2ObjectOpenHashMap<Short2FloatOpenHashMap>>();
-    // final Short2ObjectOpenHashMap<Short2FloatOpenHashMap> unaryProbabilities = new
-    // Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
-    // final Short2ObjectOpenHashMap<Int2FloatOpenHashMap> lexicalProbabilities = new
-    // Short2ObjectOpenHashMap<Int2FloatOpenHashMap>();
-    //
-    // for (final Production p : binaryProductions) {
-    //
-    // Short2ObjectOpenHashMap<Short2FloatOpenHashMap> leftChildMap = unsplitBinaryProbabilities
-    // .get((short) p.parent);
-    // if (leftChildMap == null) {
-    // leftChildMap = new Short2ObjectOpenHashMap<Short2FloatOpenHashMap>();
-    // unsplitBinaryProbabilities.put((short) p.parent, leftChildMap);
-    // }
-    //
-    // Short2FloatOpenHashMap rightChildMap = leftChildMap.get((short) p.leftChild);
-    // if (rightChildMap == null) {
-    // rightChildMap = new Short2FloatOpenHashMap();
-    // rightChildMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
-    // leftChildMap.put((short) p.leftChild, rightChildMap);
-    // }
-    //
-    // rightChildMap.put((short) p.rightChild,
-    // edu.ohsu.cslu.util.Math.logSum(rightChildMap.get((short) p.rightChild), p.prob));
-    // }
-    //
-    // for (final Production p : unaryProductions) {
-    //
-    // Short2FloatOpenHashMap childMap = unaryProbabilities.get((short) p.parent);
-    // if (childMap == null) {
-    // childMap = new Short2FloatOpenHashMap();
-    // childMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
-    // unaryProbabilities.put((short) p.parent, childMap);
-    // }
-    //
-    // childMap.put((short) p.leftChild, edu.ohsu.cslu.util.Math.logSum(childMap.get((short) p.leftChild), p.prob));
-    // }
-    //
-    // for (final Production p : lexicalProductions) {
-    //
-    // Int2FloatOpenHashMap childMap = lexicalProbabilities.get((short) p.parent);
-    // if (childMap == null) {
-    // childMap = new Int2FloatOpenHashMap();
-    // childMap.defaultReturnValue(Float.NEGATIVE_INFINITY);
-    // lexicalProbabilities.put((short) p.parent, childMap);
-    // }
-    //
-    // childMap.put((short) p.leftChild, edu.ohsu.cslu.util.Math.logSum(childMap.get((short) p.leftChild), p.prob));
-    // }
-    //
-    // //
-    // // Verify that the summed probabilities from the current grammar match those from the unsplit grammar
-    // //
-    // for (final Production p : unsplitPlg.binaryProductions) {
-    // assertEquals(
-    // "Verification failed on " + p.toString(),
-    // p.prob,
-    // unsplitBinaryProbabilities.get((short) p.parent).get((short) p.leftChild).get((short) p.rightChild),
-    // 0.001f);
-    // }
-    //
-    // for (final Production p : unsplitPlg.unaryProductions) {
-    // assertEquals("Verification failed on " + p.toString(), p.prob, unaryProbabilities.get((short) p.parent)
-    // .get((short) p.leftChild), 0.001f);
-    // }
-    //
-    // for (final Production p : unsplitPlg.lexicalProductions) {
-    // assertEquals("Verification failed on " + p.toString(), p.prob, lexicalProbabilities.get((short) p.parent)
-    // .get(p.leftChild), 0.001f);
-    // }
-    // }
 
     public double totalParentCounts() {
         double totalParentCounts = 0;
