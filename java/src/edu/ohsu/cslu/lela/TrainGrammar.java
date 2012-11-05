@@ -77,14 +77,16 @@ public class TrainGrammar extends BaseCommandlineTool {
     @Option(name = "-rare", metaVar = "threshold", usage = "Count tag -> word probabilities for really rare words, for smoothing into uncommon words and UNK-classes")
     private int rareWordThreshold = 20;
 
+    // Note: Final grammar accuracy doesn't appear too sensitive to any of these smoothing parameters
+
     @Option(name = "-s0", metaVar = "s0", usage = "Common word smoothing parameter")
-    private float s_0 = .0001f;
+    private float s_0 = 1f;
 
     @Option(name = "-s1", metaVar = "s1", usage = "Uncommon word smoothing parameter")
-    private float s_1 = .1f;
+    private float s_1 = 2f;
 
-    @Option(name = "-s2", metaVar = "s2", usage = "Rare word smoothing parameter")
-    private float s_2 = .1f;
+    @Option(name = "-s2", metaVar = "s2", usage = "Unseen word smoothing parameter")
+    private float s_2 = 1f;
 
     @Option(name = "-c", aliases = { "--sm-cycles" }, metaVar = "cycles", usage = "Split-merge cycles")
     private int splitMergeCycles = 6;
@@ -433,7 +435,7 @@ public class TrainGrammar extends BaseCommandlineTool {
             final StringBuilder sb = new StringBuilder();
             for (int i = 0; i < mergeCosts.size(); i++) {
                 final MergeCost mergeCost = mergeCosts.get(i);
-                sb.append(String.format("%9s  %.5f  %d  %d  %d\n",
+                sb.append(String.format("%11s  %12.6f  %6d  %6d  %6d\n",
                         countGrammar.vocabulary.getSymbol(mergeCost.nonTerminal), mergeCost.cost,
                         mergeCost.binaryRuleCountDelta, mergeCost.unaryRuleCountDelta, mergeCost.lexicalRuleCountDelta));
                 if (i == mergeIndices.length) {
