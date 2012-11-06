@@ -194,27 +194,6 @@ public class SplitVocabulary extends Vocabulary {
         Arrays.fill(splitIndices, (byte) 1);
     }
 
-    /** For unit testing */
-    public SplitVocabulary(final String[] symbols) {
-        super(symbols, GrammarFormatType.Berkeley);
-
-        this.maxSplits = 1;
-
-        this.firstSplitIndices = new short[size()];
-        for (short i = 0; i < firstSplitIndices.length; i++) {
-            firstSplitIndices[i] = i;
-        }
-
-        this.baseNtSplitCounts = new byte[size()];
-        Arrays.fill(baseNtSplitCounts, (byte) 1);
-
-        this.parentVocabulary = null;
-        this.parent2IndexMap = null;
-        this.mergedIndices = null;
-        this.splitIndices = null;
-        this.ntSplitCounts = null;
-    }
-
     /**
      * Creates a new vocabulary, splitting each non-terminal into two substates
      * 
