@@ -77,26 +77,73 @@ public class SplitVocabulary extends Vocabulary {
     final byte maxSplits;
 
     /**
-     * Used when splitting the vocabulary
+     * Creates an unsplit (Markov-0) vocabulary
      * 
-     * @param parentVocabulary
+     * @param symbols
      */
-    private SplitVocabulary(final Vocabulary parentVocabulary) {
-        super(GrammarFormatType.Berkeley, parentVocabulary.baseVocabulary() != null ? parentVocabulary.baseVocabulary()
-                : parentVocabulary);
-        this.parentVocabulary = parentVocabulary;
+    public SplitVocabulary(final Collection<String> symbols) {
+        super(symbols, GrammarFormatType.Berkeley);
+
+        this.parentVocabulary = null;
         this.parent2IndexMap = null;
         this.mergedIndices = null;
 
-        // Add a dummy non-terminal for the start symbol. The start symbol is always index 0, and using index 1 makes
-        // computing other splits simpler. We'll always re-merge the dummy symbol.
-        final String sStartSymbol = parentVocabulary.getSymbol(startSymbol());
-        addSymbol(sStartSymbol);
-        addSymbol(sStartSymbol + "_1");
-        for (int i = 1; i < parentVocabulary.size(); i++) {
-            final String[] substates = substates(parentVocabulary.getSymbol(i));
-            addSymbol(substates[0]);
-            addSymbol(substates[1]);
+        this.maxSplits = 1;
+
+        this.firstSplitIndices = new short[size()];
+        for (short i = 0; i < firstSplitIndices.length; i++) {
+            firstSplitIndices[i] = i;
+        }
+
+        this.baseNtSplitCounts = new byte[size()];
+        Arrays.fill(baseNtSplitCounts, (byte) 1);
+
+        this.splitIndices = new byte[size()];
+        Arrays.fill(splitIndices, (byte) 0);
+        this.ntSplitCounts = new byte[size()];
+        Arrays.fill(splitIndices, (byte) 1);
+    }
+
+    /**
+     * Construct a new {@link SplitVocabulary} from an existing latent-variable {@link Vocabulary}.
+     * 
+     * @param vocabulary
+     */
+    public SplitVocabulary(final Vocabulary vocabulary) {
+        this(vocabulary, false);
+    }
+
+    /**
+     * Construct a new {@link SplitVocabulary} from a regular {@link Vocabulary}, optionally splitting each symbol in 2.
+     * 
+     * @param vocabulary
+     * @param split If true, treat the supplied vocabulary as a parent vocabulary and split it vocabulary in 2. If
+     *            false, the supplied vocabulary is assumed to be <em>already</em> split (i.e., a latent-variable
+     *            vocabulary).
+     */
+    private SplitVocabulary(final Vocabulary vocabulary, final boolean split) {
+        super(GrammarFormatType.Berkeley, vocabulary.baseVocabulary() != null ? vocabulary.baseVocabulary()
+                : vocabulary);
+        this.parentVocabulary = vocabulary;
+        this.parent2IndexMap = null;
+        this.mergedIndices = null;
+
+        if (split) {
+            // Add a dummy non-terminal for the start symbol. The start symbol is always index 0, and using index 1
+            // makes
+            // computing other splits simpler. We'll always re-merge the dummy symbol.
+            final String sStartSymbol = vocabulary.getSymbol(startSymbol());
+            addSymbol(sStartSymbol);
+            addSymbol(sStartSymbol + "_1");
+            for (int i = 1; i < vocabulary.size(); i++) {
+                final String[] substates = substates(vocabulary.getSymbol(i));
+                addSymbol(substates[0]);
+                addSymbol(substates[1]);
+            }
+        } else {
+            for (int i = 0; i < vocabulary.size(); i++) {
+                addSymbol(vocabulary.getSymbol(i));
+            }
         }
 
         this.firstSplitIndices = new short[baseVocabulary.size()];
@@ -115,7 +162,7 @@ public class SplitVocabulary extends Vocabulary {
      * @param parent2IndexMap Map from pre-merge index -> post-merge index
      * @param mergedIndices The set of post-merge indices which were merged 'into'
      */
-    public SplitVocabulary(final Collection<String> symbols, final Vocabulary parentVocabulary,
+    SplitVocabulary(final Collection<String> symbols, final Vocabulary parentVocabulary,
             final Short2ShortOpenHashMap parent2IndexMap, final ShortOpenHashSet mergedIndices) {
 
         super(symbols, GrammarFormatType.Berkeley);
@@ -167,61 +214,12 @@ public class SplitVocabulary extends Vocabulary {
     }
 
     /**
-     * Creates an unsplit (Markov-0) vocabulary
-     * 
-     * @param symbols
-     */
-    public SplitVocabulary(final Collection<String> symbols) {
-        super(symbols, GrammarFormatType.Berkeley);
-
-        this.parentVocabulary = null;
-        this.parent2IndexMap = null;
-        this.mergedIndices = null;
-
-        this.maxSplits = 1;
-
-        this.firstSplitIndices = new short[size()];
-        for (short i = 0; i < firstSplitIndices.length; i++) {
-            firstSplitIndices[i] = i;
-        }
-
-        this.baseNtSplitCounts = new byte[size()];
-        Arrays.fill(baseNtSplitCounts, (byte) 1);
-
-        this.splitIndices = new byte[size()];
-        Arrays.fill(splitIndices, (byte) 0);
-        this.ntSplitCounts = new byte[size()];
-        Arrays.fill(splitIndices, (byte) 1);
-    }
-
-    /** For unit testing */
-    public SplitVocabulary(final String[] symbols) {
-        super(symbols, GrammarFormatType.Berkeley);
-
-        this.maxSplits = 1;
-
-        this.firstSplitIndices = new short[size()];
-        for (short i = 0; i < firstSplitIndices.length; i++) {
-            firstSplitIndices[i] = i;
-        }
-
-        this.baseNtSplitCounts = new byte[size()];
-        Arrays.fill(baseNtSplitCounts, (byte) 1);
-
-        this.parentVocabulary = null;
-        this.parent2IndexMap = null;
-        this.mergedIndices = null;
-        this.splitIndices = null;
-        this.ntSplitCounts = null;
-    }
-
-    /**
      * Creates a new vocabulary, splitting each non-terminal into two substates
      * 
      * @return Split vocabulary
      */
     public SplitVocabulary split() {
-        return new SplitVocabulary(this);
+        return new SplitVocabulary(this, true);
     }
 
     private String[] substates(final String state) {
