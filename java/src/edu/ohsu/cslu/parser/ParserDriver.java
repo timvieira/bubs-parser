@@ -51,6 +51,7 @@ import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.ListGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
@@ -208,6 +209,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * Among other potential uses, this allows {@link #cleanup()} to report accurate timing information.
      */
     public final static String OPT_CONFIGURED_THREAD_COUNT = "actualThreads";
+
+    /**
+     * Configuration property key for the comparator class used to order non-terminals. Implementations are in
+     * {@link SparseMatrixGrammar}. The default is "PosEmbeddedComparator". Other valid values are "PosFirstComparator",
+     * "LexicographicComparator".
+     */
+    public final static String OPT_NT_COMPARATOR_CLASS = "ntComparatorClass";
 
     public static void main(final String[] args) {
         commandLineArgStr = Util.join(args, " ");
