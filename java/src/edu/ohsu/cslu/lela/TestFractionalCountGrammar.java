@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -58,7 +59,8 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
     }
 
     static FractionalCountGrammar SAMPLE_GRAMMAR() {
-        final SplitVocabulary vocabulary = new SplitVocabulary(new String[] { "top", "a", "b", "c", "d" });
+        final SplitVocabulary vocabulary = new SplitVocabulary(
+                Arrays.asList(new String[] { "top", "a", "b", "c", "d" }));
         final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "e", "f" });
 
         // Build up the same grammar as that induced from the tree in AllElviTests
@@ -79,7 +81,7 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
     }
 
     private FractionalCountGrammar grammar() {
-        final SplitVocabulary vocabulary = new SplitVocabulary(new String[] { "top", "a", "b" });
+        final SplitVocabulary vocabulary = new SplitVocabulary(Arrays.asList(new String[] { "top", "a", "b" }));
         final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "c", "d" });
         final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null, null, null, 0, 0);
 

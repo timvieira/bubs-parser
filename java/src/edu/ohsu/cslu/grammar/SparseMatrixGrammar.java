@@ -47,8 +47,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import cltool4j.BaseLogger;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.util.Math;
 import edu.ohsu.cslu.util.StringPool;
@@ -235,13 +237,23 @@ public abstract class SparseMatrixGrammar extends Grammar {
         nonPosSet.removeAll(pos);
 
         // Add the NTs to `nonTermSet' in sorted order
-        // TODO Sorting with the PosFirstComparator might speed up FOM initialization a bit, but breaks OpenCL parsers.
-        // Make it an option.
         this.nonTermSet = new Vocabulary(grammarFormat);
         this.startSymbol = (short) nonTermSet.addSymbol(startSymbolStr);
         nonTermSet.setStartSymbol(startSymbol);
 
-        final StringNonTerminalComparator comparator = new PosEmbeddedComparator();
+        // Note: sorting with the PosFirstComparator might speed up FOM initialization a bit, but it breaks OpenCL
+        // parsers, so we default to POS-embedded. For constrained parsing, use the Lexicographic comparator.
+        final String comparatorClass = "edu.ohsu.cslu.grammar.SparseMatrixGrammar$"
+                + GlobalConfigProperties.singleton().getProperty(ParserDriver.OPT_NT_COMPARATOR_CLASS,
+                        "PosEmbeddedComparator");
+        StringNonTerminalComparator comparator;
+        try {
+            comparator = (StringNonTerminalComparator) Class.forName(comparatorClass).getConstructor(new Class[0])
+                    .newInstance(new Object[0]);
+        } catch (final Exception e) {
+            throw new IllegalArgumentException("Cannot instantiate non-terminal comparator " + comparatorClass + " : "
+                    + e.getMessage());
+        }
         final TreeSet<StringNonTerminal> sortedNonTerminals = new TreeSet<StringNonTerminal>(comparator);
         for (final String nt : nonTerminals) {
             sortedNonTerminals.add(create(nt, pos, nonPosSet, rightChildrenSet));
@@ -497,6 +509,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 lexicalParents[child][j] = (short) nonTermSet.getIndex(p.parent);
                 lexicalLogProbabilities[child][j++] = p.probability;
             }
+            edu.ohsu.cslu.util.Arrays.sort(lexicalParents[child], lexicalLogProbabilities[child]);
         }
     }
 
@@ -523,6 +536,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 lexicalParents[child][j] = (short) p.parent;
                 lexicalLogProbabilities[child][j++] = p.prob;
             }
+            edu.ohsu.cslu.util.Arrays.sort(lexicalParents[child], lexicalLogProbabilities[child]);
         }
     }
 
@@ -862,6 +876,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return Float.NEGATIVE_INFINITY;
     }
 
+    /**
+     * Returns a {@link Grammar} instance (of the same class as <b>this</b>), with all non-terminal splits collapsed.
+     * Note that the current {@link Grammar} subclass must implement a constructor
+     * 
+     * @return A {@link Grammar} instance (of the same class as <b>this</b>), with all non-terminal splits collapsed.
+     */
     public Grammar toUnsplitGrammar() {
         final Vocabulary baseVocabulary = nonTermSet.baseVocabulary();
         final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(baseVocabulary, lexSet, null, null,
@@ -905,7 +925,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
                                 grammarFormat });
 
             } catch (final Exception e2) {
-                throw new RuntimeException(e2);
+                throw new UnsupportedOperationException(getClass() + " does not support this operation");
             }
         }
     }
@@ -1008,7 +1028,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
-    private abstract static class StringNonTerminalComparator implements Comparator<StringNonTerminal> {
+    protected abstract static class StringNonTerminalComparator implements Comparator<StringNonTerminal> {
 
         HashMap<NonTerminalClass, Integer> map = new HashMap<NonTerminalClass, Integer>();
 
@@ -1037,12 +1057,25 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class PosEmbeddedComparator extends StringNonTerminalComparator {
 
         public PosEmbeddedComparator() {
             map.put(NonTerminalClass.EITHER_CHILD, 0);
             map.put(NonTerminalClass.POS, 1);
             map.put(NonTerminalClass.FACTORED_SIDE_CHILDREN_ONLY, 2);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class LexicographicComparator extends StringNonTerminalComparator {
+
+        public LexicographicComparator() {
+        }
+
+        @Override
+        public int compare(final StringNonTerminal o1, final StringNonTerminal o2) {
+            return o1.label.compareTo(o2.label);
         }
     }
 
