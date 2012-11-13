@@ -34,7 +34,11 @@ package edu.ohsu.cslu.util;
  */
 public class Math {
 
-    private final static float LOG_SUM_DEFAULT_DELTA = 20f;
+    /**
+     * Maximum |a - b| at which to compute log-sum (logSum and logSumExp methods). This is approximately the minimum
+     * precision available in a 32-bit float.
+     */
+    private final static float LOG_SUM_DEFAULT_DELTA = 16f;
 
     /**
      * Returns the maximum of the arguments supplied
