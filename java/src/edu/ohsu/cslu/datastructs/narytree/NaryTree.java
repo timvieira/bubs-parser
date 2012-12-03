@@ -1178,7 +1178,14 @@ public class NaryTree<E> implements Tree<E>, Serializable {
         public T parse(String label) throws Exception;
     }
 
+    /**
+     * Grammar binarization directions (i.e., when binarizing a n-ary rule, the side on which factored categories are
+     * placed)
+     */
     public static enum Binarization {
-        LEFT, RIGHT
+        /** Factored categories on the left */
+        LEFT,
+        /** Factored categories on the right */
+        RIGHT;
     }
 }
