@@ -26,7 +26,6 @@ import java.util.logging.Level;
 import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -97,22 +96,17 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
         return new PerceptronBeamWidth();
     }
 
-    public class PerceptronBeamWidth extends CellConstraints {
+    public class PerceptronBeamWidth extends CellSelector {
 
-        // TODO Switch to using single-dimensional array, indexed by cellIndex. Should be somewhat more cache-efficient
         private int beamWidthValues[][];
         private boolean onlyFactored[][];
 
         @Override
         public void initSentence(final ChartParser<?, ?> p) {
             super.initSentence(p);
-            computeBeamWidthValues();
-        }
 
-        private void computeBeamWidthValues() {
             int guessBeamWidth, guessClass;
             final int n = parser.chart.parseTask.sentenceLength();
-            // TODO Reuse existing arrays when possible
             beamWidthValues = new int[n][n + 1];
             onlyFactored = new boolean[n][n + 1];
             openCells = 0;
@@ -122,12 +116,10 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
             final int[] beamClassCounts = BaseLogger.singleton().isLoggable(Level.FINER) ? new int[beamWidthModel
                     .numClasses()] : null;
 
-            // traverse in a top-down order so we can remember when we first see a non-empty cell
-            // only works for right factored (berkeley) grammars right now.
-            // for (int end = 1; end < n + 1; end++) {
+            // Traverse in a top-down order so we can remember when we first see a non-empty cell.
+            // This only works for right factored (berkeley) grammars right now.
             for (int start = 0; start < n; start++) {
                 boolean foundOpenCell = false;
-                // for (int start = 0; start < end; start++) {
                 for (int end = n; end > start; end--) {
                     totalCells++;
                     if (end - start == 1 && classifyBaseCells == false) {
@@ -137,8 +129,6 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                         // cellStats += String.format("%d,%d=%d ", start, end, maxBeamWidth);
                     } else {
                         final SparseBitVector feats = parser.chart.getCellFeatures(start, end, featureList);
-                        // final SparseBitVector feats = parser.chart.getCellFeatures(start, end, beamWidthModel
-                        // .getFeatureTemplate().split("\\s+"));
                         guessClass = beamWidthModel.classify(feats);
                         if (beamClassCounts != null) {
                             beamClassCounts[guessClass]++;
@@ -258,11 +248,6 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
                 }
             }
             return cellStats.toString();
-        }
-
-        @Override
-        protected boolean isGrammarLeftFactored() {
-            return parser.grammar.binarization() == Binarization.LEFT;
         }
     }
 }

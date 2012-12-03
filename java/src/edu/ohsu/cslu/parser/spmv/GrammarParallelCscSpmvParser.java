@@ -232,7 +232,7 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
             final PackedArrayChart.TemporaryChartCell tmpCell = temporaryCells[i];
 
             if (cellSelector.hasCellConstraints()
-                    && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end())) {
+                    && cellSelector.isCellOnlyFactored(chartCell.start(), chartCell.end())) {
                 futures[i] = threadPool.submit(new Runnable() {
 
                     @Override
