@@ -51,8 +51,7 @@ public class BSCPOnlineBeam extends BeamSearchChartParser<LeftHashGrammar, CellC
 
         final int midStart = cellSelector.getMidStart(start, end);
         final int midEnd = cellSelector.getMidEnd(start, end);
-        final boolean onlyFactored = cellSelector.hasCellConstraints()
-                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
+        final boolean onlyFactored = cellSelector.hasCellConstraints() && cellSelector.isCellOnlyFactored(start, end);
 
         bestFOM = Float.NEGATIVE_INFINITY;
         onlineBeam = Float.NEGATIVE_INFINITY;

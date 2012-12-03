@@ -73,6 +73,8 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 public class OHSUCellConstraintsModel implements CellSelectorModel {
 
+    private static final long serialVersionUID = 1L;
+
     // private Vector<Vector<Float>> allBeginScores = new Vector<Vector<Float>>();
     // private Vector<Vector<Float>> allEndScores = new Vector<Vector<Float>>();
     // private Vector<Vector<Float>> allUnaryScores = new Vector<Vector<Float>>();
@@ -86,8 +88,6 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
     private HashMap<String, Integer> sentToIndex = new HashMap<String, Integer>();
 
     // boolean[] beginClosed, endClosed, unaryClosed;
-    protected boolean grammarLeftFactored;
-
     private float globalBegin = Float.POSITIVE_INFINITY;
     private float globalEnd = Float.POSITIVE_INFINITY;
     private float globalUnary = Float.POSITIVE_INFINITY;
@@ -96,8 +96,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
     protected LinkedList<ChartCell> cellList;
     protected Iterator<ChartCell> cellListIterator;
 
-    public OHSUCellConstraintsModel(final BufferedReader modelStream, final boolean grammarLeftFactored) {
-        this.grammarLeftFactored = grammarLeftFactored;
+    public OHSUCellConstraintsModel(final BufferedReader modelStream) {
         try {
             final ConfigProperties props = GlobalConfigProperties.singleton();
             parseConstraintArgs(props.getProperty("chartConstraintsTune"));
@@ -306,7 +305,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         return new OHSUCellConstraints();
     }
 
-    public class OHSUCellConstraints extends CellConstraints {
+    public class OHSUCellConstraints extends CellSelector {
 
         float[] beginScores, endScores, unaryScores;
         float beginThresh, endThresh, unaryThresh;
@@ -344,7 +343,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             }
             if (!Float.isNaN(logTune)) {
                 final int fixedOpen = (int) (logTune * Math.log(sentLen) / Math.log(2));
-                if (grammarLeftFactored) {
+                if (isGrammarLeftFactored()) {
                     final float logThresh = computeFixedOpenConstraints(endScores, fixedOpen);
                     endThresh = Math.min(endThresh, logThresh);
                 } else {
@@ -353,7 +352,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 }
             }
             if (!Float.isNaN(linearTune)) {
-                if (grammarLeftFactored) {
+                if (isGrammarLeftFactored()) {
                     final float logThresh = computeFixedOpenConstraints(endScores, (int) linearTune);
                     endThresh = Math.min(endThresh, logThresh);
                 } else {
@@ -401,7 +400,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
             if (end - start == 1)
                 return true;
-            if (grammarLeftFactored) {
+            if (isGrammarLeftFactored()) {
                 if (endScores[end - 1] > endThresh)
                     return false;
                 return true;
@@ -419,7 +418,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
             if (!isCellOpen(start, end))
                 return false;
-            if (grammarLeftFactored) {
+            if (isGrammarLeftFactored()) {
                 if (beginScores[start] > beginThresh)
                     return true;
                 return false;
@@ -528,11 +527,6 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         @Override
         public void reset() {
             cellListIterator = cellList.iterator();
-        }
-
-        @Override
-        protected boolean isGrammarLeftFactored() {
-            return grammarLeftFactored;
         }
     }
 }

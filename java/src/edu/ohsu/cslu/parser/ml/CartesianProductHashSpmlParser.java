@@ -51,8 +51,7 @@ public class CartesianProductHashSpmlParser extends
         targetCell.allocateTemporaryStorage();
         final TemporaryChartCell tmpCell = targetCell.tmpCell;
 
-        final boolean factoredOnly = cellSelector.hasCellConstraints()
-                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
+        final boolean factoredOnly = cellSelector.hasCellConstraints() && cellSelector.isCellOnlyFactored(start, end);
 
         final int[] binaryColumnOffsets = factoredOnly ? grammar.factoredCscBinaryColumnOffsets
                 : grammar.cscBinaryColumnOffsets;

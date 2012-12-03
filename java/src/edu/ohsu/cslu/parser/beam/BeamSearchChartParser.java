@@ -33,7 +33,6 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.cellselector.CellConstraints;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel.PerceptronBeamWidth;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
@@ -186,7 +185,6 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         ChartEdge edge;
         initCell(start, end);
         final boolean hasCellConstraints = cellSelector.hasCellConstraints();
-        final CellConstraints cc = cellSelector.getCellConstraints();
 
         // lexical and unary productions can't compete in the same agenda until their FOM
         // scores are changed to be comparable
@@ -213,7 +211,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
             for (final Production lexProd : lexProdSet) {
                 // cell.updateInside(lexProd, cell, null, lexProd.prob);
                 cell.updateInside(lexProd, lexProd.prob);
-                if (hasCellConstraints == false || cc.isUnaryOpen(start, end)) {
+                if (hasCellConstraints == false || cellSelector.isUnaryOpen(start, end)) {
                     for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
                         addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
                     }
@@ -222,7 +220,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         } else {
             final int midStart = cellSelector.getMidStart(start, end);
             final int midEnd = cellSelector.getMidEnd(start, end);
-            final boolean onlyFactored = hasCellConstraints && cc.isCellOnlyFactored(start, end);
+            final boolean onlyFactored = hasCellConstraints && cellSelector.isCellOnlyFactored(start, end);
 
             for (int mid = midStart; mid <= midEnd; mid++) { // mid point
                 final HashSetChartCell leftCell = chart.getCell(start, mid);
@@ -257,7 +255,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
             if (hasPerceptronBeamWidth) {
                 beamWidth = Math.min(cellSelector.getBeamWidth(start, end), beamWidth);
-            } else if (cellSelector.getCellConstraints().isCellOnlyFactored(start, end)) {
+            } else if (cellSelector.isCellOnlyFactored(start, end)) {
                 beamWidth = factoredBeamWidth;
             }
         }

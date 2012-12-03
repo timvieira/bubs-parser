@@ -177,7 +177,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
         }
 
         // We don't need to process unaries in cells only open to factored non-terminals
-        if (cellSelector.hasCellConstraints() && cellSelector.getCellConstraints().isCellOnlyFactored(start, end)) {
+        if (cellSelector.hasCellConstraints() && cellSelector.isCellOnlyFactored(start, end)) {
             spvChartCell.finalizeCell();
 
         } else {

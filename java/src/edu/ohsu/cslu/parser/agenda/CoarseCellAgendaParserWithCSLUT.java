@@ -80,7 +80,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
         final int midStart = cellSelector.getMidStart(start, end);
         final int midEnd = cellSelector.getMidEnd(start, end);
         final boolean onlyFactored = cellConstraints.hasCellConstraints()
-                && cellConstraints.getCellConstraints().isCellOnlyFactored(start, end);
+                && cellConstraints.isCellOnlyFactored(start, end);
 
         for (int mid = midStart; mid <= midEnd; mid++) { // mid point
             final HashSetChartCell leftCell = chart.getCell(start, mid);
@@ -113,7 +113,7 @@ public class CoarseCellAgendaParserWithCSLUT extends CoarseCellAgendaParser {
 
         // System.out.println(" setSpanMax: " + leftCell + " && " + rightCell);
 
-        if (cellConstraints.hasCellConstraints() && cellConstraints.getCellConstraints().isCellOpen(start, end)) {
+        if (cellConstraints.hasCellConstraints() && cellConstraints.isCellOpen(start, end)) {
             Collection<Production> possibleProds;
             for (final int leftNT : leftCell.getLeftChildNTs()) {
                 for (final int rightNT : rightCell.getRightChildNTs()) {

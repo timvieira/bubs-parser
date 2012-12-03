@@ -106,10 +106,9 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
         // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
-        final boolean factoredOnly = cellSelector.hasCellConstraints()
-                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end) && (end - start > 1);
-        final boolean allowUnaries = !cellSelector.hasCellConstraints()
-                || cellSelector.getCellConstraints().isUnaryOpen(start, end);
+        final boolean factoredOnly = cellSelector.hasCellConstraints() && cellSelector.isCellOnlyFactored(start, end)
+                && (end - start > 1);
+        final boolean allowUnaries = !cellSelector.hasCellConstraints() || cellSelector.isUnaryOpen(start, end);
         final float minInsideProbability = edu.ohsu.cslu.util.Math.floatMax(spvChartCell.tmpCell.insideProbabilities)
                 - maxLocalDelta;
 

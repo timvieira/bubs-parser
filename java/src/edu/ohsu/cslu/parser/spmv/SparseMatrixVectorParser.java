@@ -132,8 +132,7 @@ public abstract class SparseMatrixVectorParser<G extends SparseMatrixGrammar, C 
         // This only goes through unary rules one time, so it can't create unary chains unless such
         // chains are encoded in the grammar. Iterating a few times would probably
         // work, although it's a big-time hack.
-        final boolean factoredOnly = cellSelector.hasCellConstraints()
-                && cellSelector.getCellConstraints().isCellOnlyFactored(start, end);
+        final boolean factoredOnly = cellSelector.hasCellConstraints() && cellSelector.isCellOnlyFactored(start, end);
         if (!factoredOnly) {
             unarySpmv(spvChartCell);
         }
