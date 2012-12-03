@@ -39,7 +39,6 @@ import cltool4j.Threadable;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
@@ -62,6 +61,7 @@ import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
+import edu.ohsu.cslu.parser.cellselector.LimitedSpanTraversalModel;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
@@ -90,9 +90,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     // Global vars to create parser
     public CellSelectorModel cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
-    public FigureOfMeritModel fomModel = null;// new InsideProb();
+
+    public FigureOfMeritModel fomModel = null;
     Grammar grammar, coarseGrammar;
-    static String commandLineArgStr = "";
 
     // == Parser options ==
     @Option(name = "-p", metaVar = "PARSER", usage = "Parser implementation (cyk|beam|agenda|matrix)")
@@ -150,8 +150,17 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-pf", hidden = true, metaVar = "function", usage = "Packing function (only used for SpMV parsers)")
     private PackingFunctionType packingFunctionType = PackingFunctionType.PerfectHash;
 
-    @Option(name = "-beamModel", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
+    @Option(name = "-beamModel", optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
+
+    @Option(name = "-ccModel", hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
+    private String chartConstraintsModel = null;
+
+    @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "Cell selector model file")
+    private File[] pruningModels = null;
+
+    @Option(name = "-maxSubtreeSpan", hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "span", usage = "Maximum subtree span for limited-depth parsing")
+    private int maxSubtreeSpan;
 
     @Option(name = "-head-rules", hidden = true, metaVar = "ruleset or file", usage = "Enables head-finding using a Charniak-style head-finding ruleset. Specify ruleset as 'charniak' or a rule file. Ignored if -binary is specified.")
     private String headRules = null;
@@ -163,14 +172,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-geometricInsideNorm", hidden = true, usage = "Use the geometric mean of the Inside score. Only needed for agenda parsers")
     public static boolean geometricInsideNorm = false;
 
-    @Option(name = "-ccModel", hidden = true, metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
-    private String chartConstraintsModel = null;
-
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
-
-    @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, metaVar = "FILE", usage = "Cell selector model file")
-    private File[] pruningModels = null;
 
     @Option(name = "-help-long", usage = "List all research parsers and options")
     public boolean longHelp = false;
@@ -217,8 +220,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      */
     public final static String OPT_NT_COMPARATOR_CLASS = "ntComparatorClass";
 
+    /**
+     * Configuration property key enabling complete categories above the span limit (when limiting span-length with
+     * -maxSubtreeSpan). By default, only incomplete (factored) categories are allowed when L < span < n.
+     */
+    public final static String OPT_ALLOW_COMPLETE_ABOVE_SPAN_LIMIT = "allowCompleteAboveSpanLimit";
+
     public static void main(final String[] args) {
-        commandLineArgStr = Util.join(args, " ");
         run(args);
     }
 
@@ -251,7 +259,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         BaseLogger.singleton().info(
                 "INFO: parser=" + researchParserType + " fom=" + fomTypeOrModel + " decode=" + decodeMethod);
-        BaseLogger.singleton().info("INFO: " + commandLineArgStr);
+        BaseLogger.singleton().info("INFO: " + commandLineArguments());
 
         if (headRules != null) {
             if (headRules.equalsIgnoreCase("charniak")) {
@@ -325,16 +333,15 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
             // TODO Handle multiple cell-selector models here and in Parser
             if (chartConstraintsModel != null) {
-                cellSelectorModel = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel),
-                        grammar.binarization() == Binarization.LEFT);
+                cellSelectorModel = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel));
             } else if (pruningModels != null && pruningModels.length > 0) {
                 final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));
                 cellSelectorModel = (CellSelectorModel) ois.readObject();
                 ois.close();
-            }
-
-            if (beamModelFileName != null) {
+            } else if (beamModelFileName != null) {
                 cellSelectorModel = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
+            } else if (maxSubtreeSpan != 0) {
+                cellSelectorModel = new LimitedSpanTraversalModel(maxSubtreeSpan);
             }
 
             if (ngramOutsideModelFileName != null) {
