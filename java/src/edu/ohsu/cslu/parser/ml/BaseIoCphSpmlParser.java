@@ -53,7 +53,7 @@ public abstract class BaseIoCphSpmlParser extends
     protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
             PROPERTY_APPROXIMATE_LOG_SUM, false);
     protected final static float SUM_DELTA = GlobalConfigProperties.singleton().getFloatProperty(
-            PROPERTY_LOG_SUM_DELTA, 20f);
+            PROPERTY_LOG_SUM_DELTA, 16f);
 
     public BaseIoCphSpmlParser(final ParserDriver opts, final InsideOutsideCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
