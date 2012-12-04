@@ -209,8 +209,8 @@ public class ParseTask {
     public String statsString() {
         final StringBuilder result = new StringBuilder(128);
         if (BaseLogger.singleton().isLoggable(Level.FINE)) {
-            result.append(String.format("\nINFO: sentLen=%d time=%d inside=%.5f reparses=%d %s", sentenceLength(),
-                    parseTimeMs, insideProbability, reparseStages, chartStats));
+            result.append(String.format("\nINFO: sentLen=%d time=%d inside=%.5f reparses=%d%s", sentenceLength(),
+                    parseTimeMs, insideProbability, reparseStages, chartStats.length() > 0 ? " " + chartStats : ""));
             if (evalb != null) {
                 result.append(String.format(
                         " f1=%.2f prec=%.2f recall=%.2f matched=%d goldBrackets=%d parseBrackets=%d", evalb.f1() * 100,
