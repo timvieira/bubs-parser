@@ -61,6 +61,7 @@ import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
+import edu.ohsu.cslu.parser.cellselector.LimitedSpanOHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.LimitedSpanTraversalModel;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
@@ -155,6 +156,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     @Option(name = "-ccModel", hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
+
+    @Option(name = "-lsccModel", hidden = true, // optionalChoiceGroup = "cellselectors",
+    metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
+    private String limitedSpanChartConstraintsModel = null;
 
     @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "Cell selector model file")
     private File[] pruningModels = null;
@@ -334,12 +339,19 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             // TODO Handle multiple cell-selector models here and in Parser
             if (chartConstraintsModel != null) {
                 cellSelectorModel = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel));
+
+            } else if (limitedSpanChartConstraintsModel != null) {
+                cellSelectorModel = new LimitedSpanOHSUCellConstraintsModel(
+                        fileAsBufferedReader(limitedSpanChartConstraintsModel), maxSubtreeSpan);
+
             } else if (pruningModels != null && pruningModels.length > 0) {
                 final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));
                 cellSelectorModel = (CellSelectorModel) ois.readObject();
                 ois.close();
+
             } else if (beamModelFileName != null) {
                 cellSelectorModel = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
+
             } else if (maxSubtreeSpan != 0) {
                 cellSelectorModel = new LimitedSpanTraversalModel(maxSubtreeSpan);
             }
