@@ -312,6 +312,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
         @Override
         public void initSentence(final ChartParser<?, ?> p) {
+            super.initSentence(p);
             // might have to hash the sentence number for the grid
             initSentence(p.chart, p.chart.parseTask.sentence);
         }
@@ -398,16 +399,17 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 return true;
             }
 
-            if (end - start == 1)
-                return true;
-            if (isGrammarLeftFactored()) {
-                if (endScores[end - 1] > endThresh)
-                    return false;
+            if (end - start == 1) {
+                // No constraints on lexical cells
                 return true;
             }
-            if (beginScores[start] > beginThresh)
-                return false;
-            return true;
+
+            if (isGrammarLeftFactored()) {
+                return beginScores[start] <= beginThresh;
+            }
+
+            // Right-factored grammar
+            return endScores[end - 1] <= endThresh;
         }
 
         @Override
@@ -416,16 +418,16 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 return false;
             }
 
-            if (!isCellOpen(start, end))
-                return false;
-            if (isGrammarLeftFactored()) {
-                if (beginScores[start] > beginThresh)
-                    return true;
+            if (!isCellOpen(start, end)) {
                 return false;
             }
-            if (endScores[end - 1] > endThresh)
-                return true;
-            return false;
+
+            if (isGrammarLeftFactored()) {
+                return endScores[end - 1] > endThresh;
+            }
+
+            // Right-factored grammar
+            return beginScores[start] > beginThresh;
         }
 
         @Override
