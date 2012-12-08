@@ -194,6 +194,7 @@ public abstract class Parser<G extends Grammar> {
 
     static public enum ResearchParserType {
         ECPCellCrossList("ecpccl"),
+        ECPCellCrossListTreeConstrained("goldcyk"),
         ECPCellCrossHash("ecpcch"),
         ECPCellCrossHashGrammarLoop("ecpcchgl"),
         ECPCellCrossHashGrammarLoop2("ecpcchgl2"),

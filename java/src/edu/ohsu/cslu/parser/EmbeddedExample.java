@@ -10,7 +10,6 @@ import java.util.zip.GZIPInputStream;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
-import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 
 /**
@@ -35,7 +34,7 @@ public class EmbeddedExample {
         opts.setGrammar(grammar);
 
         // Create FOMModel and CellSelectorModel instances and load models from disk
-        opts.fomModel = new BoundaryInOut(FOMType.BoundaryPOS, grammar, uncompressFile(args[1]));
+        opts.fomModel = new BoundaryInOut(uncompressFile(args[1]), grammar);
         opts.cellSelectorModel = new PerceptronBeamWidthModel(uncompressFile(args[2]));
 
         // Create a Parser instance

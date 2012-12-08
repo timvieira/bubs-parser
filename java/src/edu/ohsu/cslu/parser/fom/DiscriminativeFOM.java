@@ -23,21 +23,20 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.util.Collection;
+import java.io.IOException;
+import java.util.HashMap;
 
-import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
-import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
+import edu.ohsu.cslu.parser.beam.BeamSearchChartParserDiscFOM;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.chart.Chart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.Chart.SimpleChartEdge;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.Perceptron;
@@ -48,10 +47,35 @@ import edu.ohsu.cslu.perceptron.Perceptron;
  */
 public class DiscriminativeFOM extends FigureOfMeritModel {
 
-    AveragedPerceptron model;
+    // Question: Do we want to just change the FOM ranking function, or actually modify
+    // the inside prob (i.e., decode w/ extra info than given by the grammar)?
+    // Reranking does the later to get better accuracy. But the first has potential as
+    // well if we can decrease the beam-width.
 
-    public DiscriminativeFOM(final FOMType type) {
-        super(type);
+    // What is our loss function? We can evaluate by taking the gold tree and the hyp
+    // tree and rewarding/penalizing based on mis-matches, but this doesn't account for
+    // the actual rank of constituents during parsing. We could also integrate directly
+    // into the beam search and reward/penalize if
+
+    Perceptron model;
+    public static int NUM_FEATS = 1047297;
+    float insideWeight = 1;
+    final static boolean useAveragePerceptron = true;
+
+    public DiscriminativeFOM(final Perceptron model) {
+        super(FOMType.Discriminative);
+        this.model = model;
+    }
+
+    public DiscriminativeFOM(final BufferedReader inModelStream) {
+        super(FOMType.Discriminative);
+        try {
+            final HashMap<String, String> keyValue = Util.readKeyValuePairs(inModelStream.readLine().trim());
+            insideWeight = Float.parseFloat(keyValue.get("insideWeight"));
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+        model = new AveragedPerceptron(inModelStream);
     }
 
     @Override
@@ -59,27 +83,25 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         return new DiscriminativeFOMSelector();
     }
 
-    public void readModel(final BufferedReader inStream) {
-        model = new AveragedPerceptron(inStream);
-        // featureNames = model.featureString.split("\\s+");
-        // System.out.println("feats=" + model.featureString);
-    }
-
     // had BufferedReader inStream
-    public static void train(final String inputFileName, final BufferedWriter outStream, final String grammarFile,
-            final String featureTemplate, final int numIterations, final float learningRate) throws Exception {
+    public static void train(final String trainFileName, final String devFileName, final BufferedWriter outStream,
+            final String grammarFile, final String featureTemplate, final int numIterations, final float learningRate)
+            throws Exception {
+
+        Perceptron perceptronModel;
+        if (useAveragePerceptron) {
+            perceptronModel = new AveragedPerceptron(learningRate, new Perceptron.ZeroOneLoss(), "0", featureTemplate,
+                    new float[NUM_FEATS]);
+        } else {
+            perceptronModel = new Perceptron(learningRate, new Perceptron.ZeroOneLoss(), "0", featureTemplate,
+                    new float[NUM_FEATS]);
+        }
+
+        final DiscriminativeFOM fomModel = new DiscriminativeFOM(perceptronModel);
 
         final ParserDriver opts = new ParserDriver();
         opts.cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
-        opts.fomModel = new InsideProb();
-
-        // final InsideOutsideCphSpmlParser parser = getTrainParser(grammarFile);
-        // final InsideOutsideCscSparseMatrixGrammar grammar = (InsideOutsideCscSparseMatrixGrammar) ParserDriver
-        // .readGrammar(grammarFile, ResearchParserType.InsideOutsideCartesianProductHash,
-        // PackingFunctionType.PerfectHash);
-        // opts.decodeMethod = DecodeMethod.Goodman;
-        // opts.parseFromInputTags = true;
-        // final InsideOutsideCphSpmlParser parser = new InsideOutsideCphSpmlParser(opts, grammar);
+        opts.fomModel = fomModel;
 
         // final LeftCscSparseMatrixGrammar grammar = (LeftCscSparseMatrixGrammar) ParserDriver.readGrammar(grammarFile,
         // ResearchParserType.CartesianProductHashMl, PackingFunctionType.PerfectHash);
@@ -87,8 +109,8 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
 
         final LeftHashGrammar grammar = (LeftHashGrammar) ParserDriver.readGrammar(grammarFile,
                 ResearchParserType.ECPCellCrossHash, null);
-        final BeamSearchChartParser<LeftHashGrammar, CellChart> parser = new BeamSearchChartParser<LeftHashGrammar, CellChart>(
-                opts, grammar);
+        final BeamSearchChartParserDiscFOM<LeftHashGrammar, CellChart> parser = new BeamSearchChartParserDiscFOM<LeftHashGrammar, CellChart>(
+                opts, grammar, (DiscriminativeFOM) opts.fomModel);
 
         // final List<Feature> featList = Chart.featureTemplateStrToEnum(featureTemplate.split("\\s+"));
 
@@ -97,66 +119,112 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         // final int numFeatures = parser.chart.getCellFeatures(0, 1, featList).vectorLength();
         // final int numFeatures = parser.chart.getCellFeatures(0, 1, featureTemplate.split("\\s+")).vectorLength();
 
-        final AveragedPerceptron model = new AveragedPerceptron(learningRate, new Perceptron.ZeroOneLoss(), "0",
-                featureTemplate, null);
-
         String line;
+        int nSent = 0;
         for (int i = 0; i < numIterations; i++) {
-            int numGold = 0, numHyp = 0, numCorrect = 0;
-            final BufferedReader inStream = new BufferedReader(new FileReader(inputFileName));
+            int numGold = 0, numGoldRankOne = 0, sumGoldRank = 0;
+            final BufferedReader inStream = new BufferedReader(new FileReader(trainFileName));
             while ((line = inStream.readLine()) != null) {
-                final ParseTask parseTask = parser.parseSentence(line);
-                final BinaryTree<String> binaryGoldTree = parseTask.inputTree.binarize(grammar.grammarFormat,
-                        grammar.binarization());
-                final Collection<SimpleChartEdge> goldEdges = Util.getEdgesFromTree(binaryGoldTree, grammar);
-                System.out.println("parse=" + parseTask.binaryParse);
-                if (parseTask.parseFailed())
-                    continue;
-                final Collection<SimpleChartEdge> hypEdges = Util.getEdgesFromTree(parseTask.binaryParse, grammar);
+                nSent += 1;
+                parser.parseSentence(line);
+                numGold += parser.numGold;
+                numGoldRankOne += parser.numGoldRankOne;
+                sumGoldRank += parser.sumGoldRank;
 
-                for (final SimpleChartEdge goldEdge : goldEdges) {
-                    numGold++;
-                    if (!hypEdges.contains(goldEdge)) {
-                        final SparseBitVector features = parser.chart.getEdgeFeatures(goldEdge);
-                        model.train(1, features);
-                    }
+                if (nSent > 0 && nSent % 100 == 0) {
+                    fomModel.writeModel(new BufferedWriter(new FileWriter("discfom.itr" + i + ".sent" + nSent)));
                 }
-                for (final SimpleChartEdge hypEdge : hypEdges) {
-                    numHyp++;
-                    if (!goldEdges.contains(hypEdge)) {
-                        final SparseBitVector features = parser.chart.getEdgeFeatures(hypEdge);
-                        model.train(-1, features);
-                    } else {
-                        numCorrect++;
-                    }
-                }
+
+                // final BinaryTree<String> binaryGoldTree = parseTask.inputTree.binarize(grammar.grammarFormat,
+                // grammar.binarization());
+                // System.out.println(" gold=" + binaryGoldTree.toString() + "\n" + "parse=" + parseTask.binaryParse
+                // + "\n" + parser.getStats());
+
             }
             inStream.close();
-            System.err.println(String.format("itr=%d\tnRef=%d\tnHyp=%d\tnCorrect=%d\tacc=%f", i, numGold, numHyp,
-                    numCorrect, (float) (numCorrect) / (numGold)));
-            model.writeModel(new BufferedWriter(new FileWriter("tmp.model." + i)));
+            System.err.println(String
+                    .format("itr=%d\tnGold=%d\tnRank1=%d\tacc=%f\tsumRank=%d\tinsideWt=%f", i, numGold, numGoldRankOne,
+                            numGoldRankOne / (float) numGold * 100, sumGoldRank, fomModel.insideWeight));
+            fomModel.writeModel(new BufferedWriter(new FileWriter("discfom.itr" + i)));
         }
-        model.writeModel(outStream);
+        // model.writeModel(outStream);
+        // TODO: only write model values and features that have non-zero value!
+        // final BufferedWriter featFile = new BufferedWriter(new FileWriter("discfom.feats"));
+        // for (final String key : Chart.featHash) {
+        // featFile.write(key + "\t" + Chart.featHash.getIndex(key) + "\n");
+        // }
+        // featFile.close();
     }
 
-    protected ChartEdge getOracleEdge(final short start, final short end) {
-        // TODO: what to do when gold constituent isn't in beam? Huang takes the constituent with the best F1.
-        // Could also just penalize all and not reward any, or reward the gold even if it isn't there.
-        return null;
+    // protected void printDevAcc(BeamSearchChartParserDiscFOM<LeftHashGrammar, CellChart> parser, String devFileName) {
+    // int numGold = 0, numGoldRankOne = 0, sumGoldRank = 0;
+    // final BufferedReader inStream = new BufferedReader(new FileReader(trainFileName));
+    // while ((line = inStream.readLine()) != null) {
+    // parser.parseSentence(line);
+    // numGold += parser.numGold;
+    // numGoldRankOne += parser.numGoldRankOne;
+    // sumGoldRank += parser.sumGoldRank;
+    // }
+    // inStream.close();
+    // System.err.println(String
+    // .format("itr=%d\tnGold=%d\tnRank1=%d\tacc=%f\tsumRank=%d\tinsideWt=%f", i, numGold, numGoldRankOne,
+    // numGoldRankOne / (float) numGold * 100, sumGoldRank, fomModel.insideWeight));
+    // }
+
+    protected void writeModel(final BufferedWriter outStream) {
+        try {
+            outStream.write("# model=FOM type=" + this.type + " insideWeight=" + insideWeight + " gram=? featMap=?\n");
+            model.writeModel(outStream);
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void trainBinaryInstance(final float alpha, final SparseBitVector features, final float inside) {
+        System.err.println("Discriminative FOM no longer working.  See code.");
+        System.exit(1);
+        // model.trainBinary(alpha, features);
+        if (useAveragePerceptron) {
+            // TODO: fix
+            // insideWeight = (inside * alpha + insideWeight * model.trainExampleNumber) / (model.trainExampleNumber +
+            // 1);
+        } else {
+            insideWeight += inside * alpha;
+        }
+        // System.out.println(alpha + "\t" + insideWeight + "\t" + inside);
+        // String featStr = "";
+        // for (final int x : features.values()) {
+        // featStr += x + ":1 ";
+        // }
+        // final int classification = alpha == 1 ? 1 : 0;
+        // System.out.format("FEAT %d 0:%f %s\n", classification, inside, featStr);
     }
 
     public class DiscriminativeFOMSelector extends FigureOfMerit {
 
         private static final long serialVersionUID = 1L;
-        private Grammar grammar;
         private Chart chart;
 
-        @Override
-        public float calcFOM(final int start, final int end, final short nt, final float insideProbability) {
-            // final SparseBitVector features = this.chart.getCellFeatures(start, end, featureNames);
-            // final float fom = model.predict(features).getFloat(grammar.phraseSet.getIndex((int) nt));
-            // return fom;
+        public float calcFOM(final SimpleChartEdge e, final float insideProb) {
+            return calcFOM(e.start, e.mid, e.end, e.A, e.B, e.C, insideProb);
+        }
+
+        public float calcFOM(final short start, final short mid, final short end, final short A, final short B,
+                final short C, final float insideProb) {
+            final SparseBitVector feats = chart.getEdgeFeatures(start, mid, end, A, B, C, false);
+            // TODO: fix
+            // return model.scoreBinary(feats) + insideProb * insideWeight;
             return 0f;
+        }
+
+        @Override
+        public float calcFOM(final int start, final int end, final short parent, final float insideProb) {
+            BaseLogger.singleton().severe("ERROR: calcFOM(...) with full edges should be used");
+            for (final StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+                System.out.println(ste);
+            }
+            System.exit(1);
+            return 0;
         }
 
         @Override
@@ -168,7 +236,6 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         @Override
         public void initSentence(final ParseTask parseTask, final Chart c) {
             this.chart = c;
-            this.grammar = parseTask.grammar;
         }
 
     }

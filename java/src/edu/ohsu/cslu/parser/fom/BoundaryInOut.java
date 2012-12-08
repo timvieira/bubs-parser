@@ -38,8 +38,10 @@ import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
 
 /**
- * Implements Caraballo and Charniak's (1998) boundary in-out figure-of-merit with ambiguous POS tags by running the
- * forward/backward algorithm.
+ * Implements Caraballo and Charniak's (1998) boundary figure-of-merit with the addition of parsing from lexical items
+ * instead of POS tags. Because we still use POS -> NT transition probabilities in the model, we first compute all
+ * forward/backward scores over the ambiguous POS lattice and use the POS -> NT transition that is maximized for each
+ * (wordPosition,NT)
  * 
  * @author Nathan Bodenstab
  */
@@ -56,10 +58,8 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     final float[] NULL_PROBABILITIES;
     final short[] grammarPhraseSet;
 
-    public BoundaryInOut(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
-            throws IOException {
-
-        super(type);
+    public BoundaryInOut(final BufferedReader modelStream, final Grammar grammar) throws IOException {
+        super(FOMType.BoundaryPOS);
 
         this.grammar = grammar;
         if (grammar instanceof CoarseGrammar) {
@@ -183,6 +183,17 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         // To train a BoundaryInOut FOM model we need a grammar and
         // binarized gold input trees with NTs from same grammar
         final Grammar grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
+
+        // String posSetStr = "", ntSetStr = "";
+        // for (final short x : grammar.posSet) {
+        // posSetStr += grammar.mapNonterminal(x) + " ";
+        // }
+        // for (final short x : grammar.phraseSet) {
+        // ntSetStr += grammar.mapNonterminal(x) + " ";
+        // }
+        // System.out.println("POSSET: " + posSetStr);
+        // System.out.println("NTSET: " + ntSetStr);
+        // System.exit(1);
 
         // TODO: note that we have to have the same training grammar as decoding grammar here
         // so the input needs to be binarized. If we are parsing with the Berkeley latent-variable
@@ -415,7 +426,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             return insideProbability;
         }
 
-        // TODO Appears to be unused. Remove?
+        // Used for debugging.
         public String calcFOMToString(final int start, final int end, final short parent, final float inside) {
             Grammar fineGrammar = grammar;
             short coarseParent = parent;

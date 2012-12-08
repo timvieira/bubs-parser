@@ -35,7 +35,6 @@ import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
-import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -64,16 +63,16 @@ public class ProfileBoundaryInOut {
             parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
                     JUnit.unitTestDataAsReader("grammars/eng.R2.P1.gr.gz"));
         }
-        final BoundaryInOut parentBioModel = new BoundaryInOut(FOMType.BoundaryPOS, parentAnnotatedGrammar,
-                new BufferedReader(JUnit.unitTestDataAsReader("fom/eng.R2.P1.fom.gz")));
+        final BoundaryInOut parentBioModel = new BoundaryInOut(new BufferedReader(
+                JUnit.unitTestDataAsReader("fom/eng.R2.P1.fom.gz")), parentAnnotatedGrammar);
 
         parentAnnotatedBio = (BoundaryInOutSelector) parentBioModel.createFOM();
 
         if (berkeleyGrammar == null) {
             berkeleyGrammar = new LeftCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("../models/eng.sm6.gr.gz"));
         }
-        final BoundaryInOut berkeleyBioModel = new BoundaryInOut(FOMType.BoundaryPOS, berkeleyGrammar,
-                new BufferedReader(JUnit.unitTestDataAsReader("../models/eng.sm6.fom.gz")));
+        final BoundaryInOut berkeleyBioModel = new BoundaryInOut(new BufferedReader(
+                JUnit.unitTestDataAsReader("../models/eng.sm6.fom.gz")), berkeleyGrammar);
         berkeleyBio = (BoundaryInOutSelector) berkeleyBioModel.createFOM();
     }
 
