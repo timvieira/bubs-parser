@@ -21,11 +21,15 @@ package edu.ohsu.cslu.perceptron;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.BaseLogger;
@@ -34,55 +38,60 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.ListGrammar;
 import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
 
 /**
  * Trains a perceptron model from a corpus. Features and objective tags are derived using a {@link FeatureExtractor}.
  * 
- * @author Nathan Bodenstab
+ * @author Aaron Dunlop
+ * @since Oct 9, 2010
  */
 public class TrainPerceptron extends BaseCommandlineTool {
 
     @Option(name = "-g", metaVar = "file", usage = "Grammar file")
-    private File grammarFile;
-    private Grammar grammar;
+    private static File grammarFile;
+    private static Grammar grammar;
 
     @Option(name = "-i", aliases = { "--iterations" }, metaVar = "count", usage = "Iterations over training corpus")
-    private int iterations = 5;
+    private static int iterations = 5;
 
     @Option(name = "-o", aliases = { "--order" }, metaVar = "order", usage = "Markov Order")
-    private int markovOrder = 2;
+    private static int markovOrder = 2;
 
     @Option(name = "-a", aliases = { "--alpha" }, metaVar = "value", usage = "Update step size (alpha)")
-    private float alpha = 0.1f;
+    private static float alpha = 0.1f;
 
     @Option(name = "-d", metaVar = "file", usage = "Development set. If specified, test results are output after each training iteration.")
-    private File devSet;
+    private static File devSet;
+
+    @Option(name = "-s", metaVar = "file", usage = "Output model file (Java Serialized Object)")
+    private static File outputModelFile;
 
     @Option(name = "-overLoss", hidden = true)
-    private float overPenalty = 1;
+    private static float overPenalty = 1;
 
     @Option(name = "-underLoss")
-    private float underPenalty = 1;
+    private static float underPenalty = 1;
 
     @Option(name = "-feats", usage = "Feature template file OR feature template string: lt rt lt_lt-1 rw_rt loc ...")
-    public String featTemplate = null;
+    public static String featTemplate = null;
 
     @Option(name = "-bins", usage = "Value to Class mapping bins. ex: '0,5,10,30' ")
-    private String binsStr;
+    private static String binsStr;
 
     @Option(name = "-multiBin", usage = "Use old multi-bin classification instead of multiple binary classifiers")
-    private boolean multiBin = false;
+    private static boolean multiBin = false;
 
-    // TODO: This class should take a "feature template" as input and learn a model based on that
-    // example: t t-1 t-2 t+1 t+2 w w-1 w+1 t_w t_t-1 t-1_t-2 ... t=tag w=word _=joint
-
-    public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
-    public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
+    public static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
+    public static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
 
     @Override
     public void setup() throws Exception {
         // grammar = ParserDriver.readGrammar(grammarFile.toString(), Parser.ResearchParserType.ECPCellCrossList, null);
-        grammar = ListGrammar.read(grammarFile.getName());
+        if (grammarFile == null) {
+            throw new Exception("ERROR: -g FILE required");
+        }
+        grammar = ListGrammar.read(grammarFile.getAbsolutePath());
     }
 
     @Override
@@ -92,16 +101,101 @@ public class TrainPerceptron extends BaseCommandlineTool {
         m.natesTraining();
     }
 
+    public void aaronsTraining() throws IOException {
+
+        final ArrayList<SparseBitVector[]> trainingCorpusFeatures = new ArrayList<SparseBitVector[]>();
+        final ArrayList<boolean[]> trainingCorpusGoldTags = new ArrayList<boolean[]>();
+
+        // TODO Generalize to use other feature extractors
+        final BeginConstituentFeatureExtractor fe = new BeginConstituentFeatureExtractor(grammar, markovOrder);
+
+        // Read in the training corpus and map each token
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
+            final Sentence s = fe.new Sentence(line);
+            final SparseBitVector[] featureVectors = s.featureVectors();
+            trainingCorpusFeatures.add(featureVectors);
+            trainingCorpusGoldTags.add(s.goldTags());
+        }
+        br.close();
+
+        // final AveragedPerceptron model = new AveragedPerceptron();
+
+        // Iterate over training corpus
+        for (int i = 1; i <= iterations; i++) {
+            for (int j = 0; j < trainingCorpusFeatures.size(); j++) {
+                final SparseBitVector[] featureVectors = trainingCorpusFeatures.get(j);
+                // final boolean[] goldTags = trainingCorpusGoldTags.get(j);
+
+                // TODO Do forward-backward estimation here
+                for (int k = 0; k < featureVectors.length; k++) {
+                    // example++;
+                    final SparseBitVector featureVector = featureVectors[k];
+                    if (BaseLogger.singleton().isLoggable(Level.FINEST)) {
+                        BaseLogger.singleton().finest(featureVectorToString(featureVector));
+                    }
+
+                    // TODO: fix this to work with ints instead of bools
+                    // model.train(goldTags[k], featureVector);
+
+                    if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+                        BaseLogger.singleton().finer(toString());
+                    }
+                }
+            }
+
+            if (devSet != null) {
+                // Test the development set
+                int total = 0;
+                final int correct = 0;
+                InputStream is = new FileInputStream(devSet);
+                if (devSet.getName().endsWith(".gz")) {
+                    is = new GZIPInputStream(is);
+                }
+                br = new BufferedReader(new InputStreamReader(is));
+                for (String line = br.readLine(); line != null; line = br.readLine()) {
+
+                    final Sentence s = fe.new Sentence(line);
+                    final int[] predictedTags = new int[s.length()];
+
+                    for (int k = 0; k < predictedTags.length; k++) {
+                        // TODO: fix this to work with ints instead of bools
+
+                        // predictedTags[k] = model.classify(fe.featureVector(s, k, predictedTags));
+                        // if (predictedTags[k] == s.goldTags()[k]) {
+                        // correct++;
+                        // }
+                        total++;
+                    }
+                }
+                System.out.format("Iteration=%d DevsetAccuracy=%.2f\n", i, correct * 100f / total);
+                br.close();
+            }
+        }
+
+        // Write out the model file
+        if (outputModelFile != null) {
+
+        }
+    }
+
+    public static String featureTemplateToString(final String fileOrString) throws IOException {
+        if (!fileOrString.contains(" ") && new File(fileOrString).exists()) {
+            final BufferedReader featFileReader = new BufferedReader(new FileReader(fileOrString));
+            return featFileReader.readLine(); // assume it just has one line
+        }
+        // it was already parsed out, just return it
+        return fileOrString;
+    }
+
     public void natesTraining() throws Exception {
 
         if (featTemplate == null) {
             BaseLogger.singleton().info(
                     "ERROR: Training a model from pre-computed features requires -feats to be non-empty");
             System.exit(1);
-        } else if (!featTemplate.contains(" ") && new File(featTemplate).exists()) {
-            final BufferedReader featFileReader = new BufferedReader(new FileReader(featTemplate));
-            featTemplate = featFileReader.readLine(); // assume it just has one line
         }
+        featTemplate = featureTemplateToString(featTemplate);
 
         if (binsStr == null) {
             BaseLogger.singleton().info(

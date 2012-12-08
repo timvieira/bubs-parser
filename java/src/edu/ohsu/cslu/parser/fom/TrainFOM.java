@@ -68,8 +68,14 @@ public class TrainFOM extends BaseCommandlineTool {
     @Option(name = "-l", aliases = { "--learningRate" }, usage = "Learning rate for Logistic Regression model")
     private float learningRate = 1.0f;
 
-    @Option(name = "-input", usage = "Input treebank file")
-    private String inputFileName;
+    @Option(name = "-train", usage = "Training treebank file")
+    private String trainFileName;
+
+    @Option(name = "-dev", usage = "Development treebank file")
+    private String devFileName;
+
+    @Option(name = "-debug")
+    public static boolean debug = false;
 
     public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
     public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
@@ -80,6 +86,10 @@ public class TrainFOM extends BaseCommandlineTool {
 
     @Override
     public void run() throws Exception {
+        if (grammarFile == null) {
+            throw new Exception("ERROR: -g GRAMMAR required.");
+        }
+
         if (fomType == FOMType.BoundaryPOS) {
             BoundaryInOut.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
         } else if (fomType == FOMType.BoundaryLex) {
@@ -87,7 +97,14 @@ public class TrainFOM extends BaseCommandlineTool {
             model.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, pruneCount, lexCountFile,
                     unkThresh, lexMapFile);
         } else if (fomType == FOMType.Discriminative) {
-            DiscriminativeFOM.train(inputFileName, outputStream, grammarFile, featTemplate, iterations, learningRate);
+            if (featTemplate == null) {
+                throw new Exception("ERROR: -feats required for Discriminative FOM");
+            }
+            if (trainFileName == null) {
+                throw new Exception("ERROR: -train required for Discriminative FOM");
+            }
+            DiscriminativeFOM.train(trainFileName, devFileName, outputStream, grammarFile, featTemplate, iterations,
+                    learningRate);
             if (extractFeatures) {
                 // DiscriminativeFOMLR.extractFeatures(inputStream, outputStream, grammarFile, featTemplate);
             } else {

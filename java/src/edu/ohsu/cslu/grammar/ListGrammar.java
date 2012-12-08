@@ -134,15 +134,16 @@ public class ListGrammar extends Grammar {
         for (final StringProduction grammarRule : pcfgRules) {
 
             nonTerminals.add(grammarRule.parent);
-            nonTerminals.add(grammarRule.leftChild);
-            nonPosSet.add(grammarRule.leftChild);
+            // nonTerminals.add(grammarRule.leftChild);
+            // nonPosSet.add(grammarRule.leftChild);
+            nonPosSet.add(grammarRule.parent);
 
             if (grammarRule instanceof BinaryStringProduction) {
                 final BinaryStringProduction bsr = (BinaryStringProduction) grammarRule;
 
-                nonTerminals.add(bsr.rightChild);
+                // nonTerminals.add(bsr.rightChild);
 
-                nonPosSet.add(bsr.rightChild);
+                // nonPosSet.add(bsr.rightChild);
                 leftChildrenSet.add(bsr.leftChild);
                 rightChildrenSet.add(bsr.rightChild);
             }
@@ -164,9 +165,9 @@ public class ListGrammar extends Grammar {
         nonPosSet.add(startSymbolStr);
 
         // Make the POS set disjoint from the other sets.
-        rightChildrenSet.removeAll(pos);
-        leftChildrenSet.removeAll(pos);
-        nonPosSet.removeAll(pos);
+        // rightChildrenSet.removeAll(pos);
+        // leftChildrenSet.removeAll(pos);
+        // nonPosSet.removeAll(pos);
 
         // Add the NTs to `nonTermSet' in sorted order
         // TODO Sorting with the PosFirstComparator might speed up FOM initialization a bit, but breaks OpenCL parsers.
@@ -237,7 +238,10 @@ public class ListGrammar extends Grammar {
         for (short i = 0; i < numNonTerms(); i++) {
             if (pos.contains(nonTermSet.getSymbol(i))) {
                 posSet.addSymbol(i);
-            } else {
+            }
+            // NB: some treebank entries are mislabeled w/ POS tags in the tree an non-terms as POS tags
+            // This messes things up if we enforce disjoint sets.
+            if (nonPosSet.contains(nonTermSet.getSymbol(i))) {
                 phraseSet.addSymbol(i);
             }
         }

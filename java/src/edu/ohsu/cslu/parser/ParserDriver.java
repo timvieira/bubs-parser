@@ -21,6 +21,7 @@ package edu.ohsu.cslu.parser;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.Reader;
@@ -38,7 +39,6 @@ import cltool4j.Threadable;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
-import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
@@ -64,7 +64,7 @@ import edu.ohsu.cslu.parser.agenda.APGhostEdges;
 import edu.ohsu.cslu.parser.agenda.APWithMemory;
 import edu.ohsu.cslu.parser.agenda.AgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
-import edu.ohsu.cslu.parser.beam.BSCPBeamConfTrain;
+import edu.ohsu.cslu.parser.beam.BSCPBeamPredictTrain;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
 import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
@@ -73,6 +73,7 @@ import edu.ohsu.cslu.parser.beam.BSCPSkipBaseCells;
 import edu.ohsu.cslu.parser.beam.BSCPSplitUnary;
 import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
 import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
+import edu.ohsu.cslu.parser.cellselector.CellConstraintsComboModel;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
@@ -84,12 +85,14 @@ import edu.ohsu.cslu.parser.ecp.ECPCellCrossHash;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop2;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossList;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossListTreeConstrained;
 import edu.ohsu.cslu.parser.ecp.ECPCellCrossMatrix;
 import edu.ohsu.cslu.parser.ecp.ECPGrammarLoop;
 import edu.ohsu.cslu.parser.ecp.ECPGrammarLoopBerkFilter;
 import edu.ohsu.cslu.parser.ecp.ECPInsideOutside;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.BoundaryLex;
+import edu.ohsu.cslu.parser.fom.DiscriminativeFOM;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.fom.InsideProb;
@@ -113,6 +116,7 @@ import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
+import edu.ohsu.cslu.perceptron.TrainPerceptron;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 
@@ -183,6 +187,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-inputTreeBeamRank", hidden = true, usage = "Print rank of input tree constituents during beam-search parsing.")
     public static boolean inputTreeBeamRank = false;
 
+    @Option(name = "-inputTreeBeamFeat", hidden = true, metaVar = "FEAT_FILE", usage = "Print features for training a Beam-Width Prediction model.")
+    private String beamFeatFile = null;
+
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
     private String fomTypeOrModel = "Inside";
 
@@ -210,7 +217,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, metaVar = "FILE", usage = "Cell selector model file")
     private File[] pruningModels = null;
-
+    
     @Option(name = "-help-long", usage = "List all research parsers and options")
     public boolean longHelp = false;
 
@@ -280,7 +287,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         if (researchParserType == null) {
             researchParserType = parserType.researchParserType;
         }
-        if (inputTreeBeamRank) {
+        if (inputTreeBeamRank || beamFeatFile != null) {
             researchParserType = ResearchParserType.BSCPBeamConfTrain;
         }
 
@@ -328,53 +335,57 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 final HashMap<String, String> keyValue = Util.readKeyValuePairs(tmp.readLine().trim());
                 tmp.close();
 
-                if (!keyValue.containsKey("model")) {
+                if (!keyValue.containsKey("type")) {
                     throw new IllegalArgumentException(
-                            "FOM model file has unexpected format.  Looking for 'model=' in first line.");
+                            "FOM model file has unexpected format.  Looking for 'type=' in first line.");
                 }
-                if (keyValue.get("model").equals("DiscriminativeFOM")) {
-                    // Discriminative FOM
-                    // fomModel = new DiscriminativeFOMLR(FOMType.Discriminative, grammar,
-                    // fileAsBufferedReader(fomTypeOrModel));
-                } else if (keyValue.get("model").equals("FOM") && keyValue.containsKey("type")) {
-                    if (keyValue.get("type").equals("BoundaryInOut")) {
-                        // BoundaryInOut FOM
-                        Grammar fomGrammar = grammar;
-                        if (this.coarseGrammarFile != null) {
-                            coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
-                            BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
-                            fomGrammar = coarseGrammar;
-                        }
-                        fomModel = new BoundaryInOut(FOMType.BoundaryPOS, fomGrammar,
-                                fileAsBufferedReader(fomTypeOrModel));
-                    } else if (keyValue.get("type").equals("BoundaryLex")) {
-                        fomModel = new BoundaryLex(FOMType.BoundaryLex, grammar, fileAsBufferedReader(fomTypeOrModel));
-                    } else if (keyValue.get("type").equals("Prior")) {
-                        fomModel = new PriorFOM(FOMType.Prior, grammar, fileAsBufferedReader(fomTypeOrModel));
-                    } else {
-                        throw new IllegalArgumentException("FOM model type '" + keyValue.get("type") + "' in file "
-                                + fomTypeOrModel + "' not expected.");
+                final String fomType = keyValue.get("type");
+                // NB: can we instead ask if model == String(FOMType.Discriminative) ?
+                if (fomType.equals("Discriminative")) {
+                    fomModel = new DiscriminativeFOM(fileAsBufferedReader(fomTypeOrModel));
+                } else if (fomType.equals("BoundaryInOut")) {
+                    Grammar fomGrammar = grammar;
+                    if (this.coarseGrammarFile != null) {
+                        coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
+                        BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
+                        fomGrammar = coarseGrammar;
                     }
+                    fomModel = new BoundaryInOut(fileAsBufferedReader(fomTypeOrModel), fomGrammar);
+                } else if (fomType.equals("BoundaryLex")) {
+                    fomModel = new BoundaryLex(FOMType.BoundaryLex, grammar, fileAsBufferedReader(fomTypeOrModel));
+                } else if (fomType.equals("Prior")) {
+                    fomModel = new PriorFOM(FOMType.Prior, grammar, fileAsBufferedReader(fomTypeOrModel));
                 } else {
-                    throw new IllegalArgumentException("Model value '" + keyValue.get("model") + "' in file "
-                            + fomTypeOrModel + "' not expected.");
+                    throw new IllegalArgumentException("FOM model type '" + fomType + "' in file " + fomTypeOrModel
+                            + "' not expected.");
                 }
+
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
 
-            // TODO Handle multiple cell-selector models here and in Parser
+            OHSUCellConstraintsModel cellConstraints = null;
             if (chartConstraintsModel != null) {
-                cellSelectorModel = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel),
-                        grammar.binarization() == Binarization.LEFT);
-            } else if (pruningModels != null && pruningModels.length > 0) {
+                cellConstraints = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel),
+                        grammar.binarization());
+                cellSelectorModel = cellConstraints;
+            }
+
+            PerceptronBeamWidthModel beamConstraints = null;
+            if (beamModelFileName != null) {
+                beamConstraints = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
+                           } else if (pruningModels != null && pruningModels.length > 0) {
                 final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));
                 cellSelectorModel = (CellSelectorModel) ois.readObject();
                 ois.close();
+ cellSelectorModel = beamConstraints;
             }
 
-            if (beamModelFileName != null) {
-                cellSelectorModel = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
+            if (cellConstraints != null && beamConstraints != null) {
+                final CellConstraintsComboModel constraintsCombo = new CellConstraintsComboModel();
+                constraintsCombo.addModel(cellConstraints);
+                constraintsCombo.addModel(beamConstraints);
+                cellSelectorModel = constraintsCombo;
             }
 
             if (ngramOutsideModelFileName != null) {
@@ -413,6 +424,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         switch (researchParserType) {
         case ECPInsideOutside:
         case ECPCellCrossList:
+        case ECPCellCrossListTreeConstrained:
             return new LeftListGrammar(grammarFile);
 
         case ECPCellCrossHashGrammarLoop:
@@ -493,7 +505,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         case GrammarLoopMl:
             return new CsrSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
         case InsideOutsideCartesianProductHash:
-        case ViterbiInOutCph:
             return new InsideOutsideCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
 
         case ConstrainedCartesianProductHashMl:
@@ -515,6 +526,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         switch (researchParserType) {
         case ECPCellCrossList:
             return new ECPCellCrossList(this, (LeftListGrammar) grammar);
+        case ECPCellCrossListTreeConstrained:
+            return new ECPCellCrossListTreeConstrained(this, (LeftListGrammar) grammar);
         case ECPCellCrossHash:
             return new ECPCellCrossHash(this, (LeftHashGrammar) grammar);
         case ECPCellCrossHashGrammarLoop:
@@ -559,7 +572,15 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             // case BSCPBeamConf:
             // return new BSCPBeamConf(this, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
         case BSCPBeamConfTrain:
-            return new BSCPBeamConfTrain(this, (LeftHashGrammar) grammar, "");
+            String feats = "";
+            if (beamFeatFile != null) {
+                try {
+                    feats = TrainPerceptron.featureTemplateToString(beamFeatFile);
+                } catch (final IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return new BSCPBeamPredictTrain(this, (LeftHashGrammar) grammar, feats);
 
         case CoarseCellAgenda:
             return new CoarseCellAgendaParser(this, (LeftHashGrammar) grammar);
@@ -598,8 +619,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
         case InsideOutsideCartesianProductHash:
             return new InsideOutsideCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
-        case ViterbiInOutCph:
-            return new ViterbiInOutCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
 
         case ConstrainedCartesianProductHashMl:
             cellSelectorModel = ConstrainedCellSelector.MODEL;
@@ -683,8 +702,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         if (inputFormat == InputFormat.Tree) {
             final EvalbResult evalbResult = evaluator.accumulatedResult();
-            sb.append(String.format(" f1=%.2f prec=%.2f recall=%.2f", evalbResult.f1() * 100,
-                    evalbResult.precision() * 100, evalbResult.recall() * 100));
+            sb.append(String.format(" f1=%.2f prec=%.2f recall=%.2f tagAcc=%.2f", evalbResult.f1() * 100,
+                    evalbResult.precision() * 100, evalbResult.recall() * 100, evalbResult.taggingAccuracy() * 100));
         }
 
         BaseLogger.singleton().info(sb.toString());
@@ -705,7 +724,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     public void setGrammar(final Grammar g) {
         this.grammar = g;
     }
-
+    
     static public ParserDriver defaultTestOptions() {
         final ParserDriver opts = new ParserDriver();
         BaseLogger.singleton().setLevel(Level.FINER);
