@@ -111,9 +111,6 @@ public class ListGrammar extends Grammar {
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
         nonTermSet = new Vocabulary(grammarFormat);
-        posSet = new SymbolSet<Short>();
-        phraseSet = new SymbolSet<Short>();
-
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
 
@@ -189,8 +186,8 @@ public class ListGrammar extends Grammar {
             // int evalNTIndex = evalNonTermSet.addSymbol(evalNT);
         }
 
-        this.startSymbol = nonTermSet.addSymbol(startSymbolStr);
-        nonTermSet.setStartSymbol((short) startSymbol);
+        this.startSymbol = (short) nonTermSet.addSymbol(startSymbolStr);
+        nonTermSet.setStartSymbol(startSymbol);
         this.nullSymbol = (short) nonTermSet.addSymbol(nullSymbolStr);
         this.nullWord = lexSet.addSymbol(nullSymbolStr);
 
@@ -234,6 +231,9 @@ public class ListGrammar extends Grammar {
 
         // this.tokenizer = new Tokenizer(lexSet);
 
+        // Create POS-only and phrase-level-only arrays so we can store features more compactly
+        initPosAndPhraseSets(pos);
+        
         // reduce range of POS indices so we can store the features more efficiently
         for (short i = 0; i < numNonTerms(); i++) {
             if (pos.contains(nonTermSet.getSymbol(i))) {
@@ -485,7 +485,7 @@ public class ListGrammar extends Grammar {
      */
     @Override
     public final int numNonTerms() {
-        return nonTermSet.numSymbols();
+        return nonTermSet.size();
     }
 
     /**
@@ -634,7 +634,7 @@ public class ListGrammar extends Grammar {
     // TODO: do we really need a String interface for getBinaryProduction *and* binaryLogProb?
     // It's only reference is from CellChart#addParseTreeToChart(ParseTree)
     public Production getBinaryProduction(final String A, final String B, final String C) {
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B) && nonTermSet.hasSymbol(C)) {
+        if (nonTermSet.containsKey(A) && nonTermSet.containsKey(B) && nonTermSet.containsKey(C)) {
             return getBinaryProduction(nonTermSet.getIndex(A), nonTermSet.getIndex(B), nonTermSet.getIndex(C));
         }
         return null;
@@ -663,7 +663,7 @@ public class ListGrammar extends Grammar {
      */
     @Override
     public float binaryLogProbability(final String parent, final String leftChild, final String rightChild) {
-        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(leftChild) && nonTermSet.hasSymbol(rightChild)) {
+        if (nonTermSet.containsKey(parent) && nonTermSet.containsKey(leftChild) && nonTermSet.containsKey(rightChild)) {
             return binaryLogProbability((short) nonTermSet.getIndex(parent), (short) nonTermSet.getIndex(leftChild),
                     (short) nonTermSet.getIndex(rightChild));
         }
@@ -687,7 +687,7 @@ public class ListGrammar extends Grammar {
     }
 
     public Production getUnaryProduction(final String A, final String B) {
-        if (nonTermSet.hasSymbol(A) && nonTermSet.hasSymbol(B)) {
+        if (nonTermSet.containsKey(A) && nonTermSet.containsKey(B)) {
             return getUnaryProduction(nonTermSet.getIndex(A), nonTermSet.getIndex(B));
         }
         return null;
@@ -714,7 +714,7 @@ public class ListGrammar extends Grammar {
      */
     @Override
     public float unaryLogProbability(final String parent, final String child) {
-        if (nonTermSet.hasSymbol(parent) && nonTermSet.hasSymbol(child)) {
+        if (nonTermSet.containsKey(parent) && nonTermSet.containsKey(child)) {
             return unaryLogProbability((short) nonTermSet.getIndex(parent), (short) nonTermSet.getIndex(child));
         }
         return Float.NEGATIVE_INFINITY;
@@ -738,7 +738,7 @@ public class ListGrammar extends Grammar {
     }
 
     public Production getLexicalProduction(final String A, final String lex) {
-        if (nonTermSet.hasSymbol(A) && lexSet.hasSymbol(lex)) {
+        if (nonTermSet.containsKey(A) && lexSet.containsKey(lex)) {
             return getLexicalProduction((short) nonTermSet.getIndex(A), lexSet.getIndex(lex));
         }
         return null;
@@ -767,7 +767,7 @@ public class ListGrammar extends Grammar {
      */
     @Override
     public float lexicalLogProbability(final String parent, final String child) {
-        if (nonTermSet.hasSymbol(parent) && lexSet.hasSymbol(child)) {
+        if (nonTermSet.containsKey(parent) && lexSet.containsKey(child)) {
             return lexicalLogProbability((short) nonTermSet.getIndex(parent), lexSet.getIndex(child));
         }
         return UNSEEN_LEX_PROB;
@@ -788,7 +788,8 @@ public class ListGrammar extends Grammar {
 
     public Grammar toUnsplitGrammar() {
         final Vocabulary baseVocabulary = nonTermSet.baseVocabulary();
-        final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(baseVocabulary, lexSet, null);
+        final FractionalCountGrammar unsplitGrammar = new FractionalCountGrammar(baseVocabulary, lexSet, null, null,
+                null, 0, 0);
 
         for (final Production p : binaryProductions) {
             final short unsplitParent = nonTermSet.getBaseIndex((short) p.parent);

@@ -74,6 +74,8 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
 public class OHSUCellConstraintsModel implements CellSelectorModel {
 
+    private static final long serialVersionUID = 1L;
+
     // private Vector<Vector<Float>> allBeginScores = new Vector<Vector<Float>>();
     // private Vector<Vector<Float>> allEndScores = new Vector<Vector<Float>>();
     // private Vector<Vector<Float>> allUnaryScores = new Vector<Vector<Float>>();
@@ -307,13 +309,14 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         return new OHSUCellConstraints();
     }
 
-    public class OHSUCellConstraints extends CellConstraints {
+    public class OHSUCellConstraints extends CellSelector {
 
         float[] beginScores, endScores, unaryScores;
         float beginThresh, endThresh, unaryThresh;
 
         @Override
         public void initSentence(final ChartParser<?, ?> p) {
+            super.initSentence(p);
             // might have to hash the sentence number for the grid
             initSentence(p.chart, p.chart.parseTask.sentence);
         }
@@ -400,16 +403,21 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 return true;
             }
 
-            if (end - start == 1)
+            if (end - start == 1) {
+                // No constraints on lexical cells
                 return true;
             if (grammarRightBinarized) {
                 if (endScores[end - 1] > endThresh)
                     return false;
                 return true;
             }
-            if (beginScores[start] > beginThresh)
-                return false;
-            return true;
+
+            if (isGrammarLeftFactored()) {
+                return beginScores[start] <= beginThresh;
+            }
+
+            // Right-factored grammar
+            return endScores[end - 1] <= endThresh;
         }
 
         @Override
@@ -418,16 +426,20 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 return false;
             }
 
-            if (!isCellOpen(start, end))
+            if (!isCellOpen(start, end)) {
                 return false;
             if (grammarRightBinarized) {
                 if (beginScores[start] > beginThresh)
                     return true;
                 return false;
             }
-            if (endScores[end - 1] > endThresh)
-                return true;
-            return false;
+
+            if (isGrammarLeftFactored()) {
+                return endScores[end - 1] > endThresh;
+            }
+
+            // Right-factored grammar
+            return beginScores[start] > beginThresh;
         }
 
         @Override
@@ -531,10 +543,10 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             cellListIterator = cellList.iterator();
         }
 
-        @Override
-        protected boolean isGrammarLeftFactored() {
+        //@Override
+        //protected boolean isGrammarLeftFactored() {
             // NB: this class has the grammar binarization backwards
-            return grammarRightBinarized;
-        }
+        //    return grammarRightBinarized;
+        //}
     }
 }

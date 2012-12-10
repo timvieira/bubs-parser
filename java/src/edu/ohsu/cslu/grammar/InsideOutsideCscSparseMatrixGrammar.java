@@ -19,8 +19,8 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
 
     /**
      * A copy of the CSC grammar, mapped by left child -> parent,right child Note that this confuses the arguments to
-     * pack/unpack method of the {@link PackingFunction}, swapping the parent and the left child. So
-     * {@link PackingFunction#pack(short, short)} should be called with (parent, right child).
+     * pack/unpack method of the {@link SparseMatrixGrammar.PackingFunction}, swapping the parent and the left child. So
+     * {@link SparseMatrixGrammar.PackingFunction#pack(short, short)} should be called with (parent, right child).
      */
     public final int[] leftChildCscBinaryPopulatedColumns;
     public final int[] leftChildCscBinaryPopulatedColumnOffsets;
@@ -31,8 +31,9 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
 
     /**
      * A copy of the CSC grammar, mapped by right child -> parent,left child. Note that this confuses the arguments to
-     * pack/unpack method of the {@link PackingFunction}, shifting the positions of parent, left child, and right child.
-     * So {@link PackingFunction#pack(short, short)} should be called with (parent, left child).
+     * pack/unpack method of the {@link SparseMatrixGrammar.PackingFunction}, shifting the positions of parent, left
+     * child, and right child. So {@link SparseMatrixGrammar.PackingFunction#pack(short, short)} should be called with
+     * (parent, left child).
      */
     public final int[] rightChildCscBinaryPopulatedColumns;
     public final int[] rightChildCscBinaryPopulatedColumnOffsets;

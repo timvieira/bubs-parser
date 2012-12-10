@@ -73,7 +73,7 @@ public class ConstrainingChart extends PackedArrayChart {
         Arrays.fill(siblingCellIndices, (short) -1);
 
         this.maxUnaryChainLength = goldTree.maxUnaryChainLength() + 1;
-        this.beamWidth = this.lexicalRowBeamWidth = maxUnaryChainLength;
+        this.beamWidth = this.lexicalRowBeamWidth = 1;
         this.unaryChainLength = new byte[size * (size + 1) / 2];
         final IntArrayList tokenList = new IntArrayList();
 
@@ -109,30 +109,17 @@ public class ConstrainingChart extends PackedArrayChart {
                     midpoints[cellIndex] = (short) (start + 1);
                     final int child = sparseMatrixGrammar.lexSet.getIndex(node.leftChild().label());
                     packedChildren[i] = sparseMatrixGrammar.packingFunction.packLexical(child);
-                    // if (packedChildren[i] < -2000000) {
-                    // throw new ArrayIndexOutOfBoundsException("Out of range");
-                    // }
-
                     tokenList.add(child);
                 } else {
                     // Unary production
                     final short child = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.leftChild().label());
                     packedChildren[i] = sparseMatrixGrammar.packingFunction.packUnary(child);
-                    // if (packedChildren[i] < -2000000) {
-                    // throw new ArrayIndexOutOfBoundsException("Out of range");
-                    // }
                 }
             } else {
                 // Binary production
                 final short leftChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.leftChild().label());
                 final short rightChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.rightChild().label());
                 packedChildren[i] = sparseMatrixGrammar.packingFunction.pack(leftChild, rightChild);
-                // if (packedChildren[i] < -2000000) {
-                // final String sLeftChild = sparseMatrixGrammar.nonTermSet.getSymbol(leftChild);
-                // final String sRightChild = sparseMatrixGrammar.nonTermSet.getSymbol(rightChild);
-                // sparseMatrixGrammar.packingFunction.pack(leftChild, rightChild);
-                // throw new ArrayIndexOutOfBoundsException("Out of range");
-                // }
                 final short midpoint = (short) (start + node.leftChild().leaves());
                 midpoints[cellIndex] = midpoint;
 
@@ -171,10 +158,9 @@ public class ConstrainingChart extends PackedArrayChart {
             final SparseMatrixGrammar sparseMatrixGrammar) {
 
         super(constrainingChart.size(), chartArraySize, sparseMatrixGrammar);
-        calculateCellOffsets();
-
-        this.beamWidth = constrainingChart.beamWidth;
+        this.beamWidth = 1;
         this.unaryChainLength = new byte[constrainingChart.unaryChainLength.length];
+        calculateCellOffsets();
     }
 
     /**
@@ -185,7 +171,7 @@ public class ConstrainingChart extends PackedArrayChart {
      * @param constrainedChart
      */
     protected ConstrainingChart(final ConstrainedChart constrainedChart) {
-        this(constrainedChart, (SparseMatrixGrammar) constrainedChart.grammar);
+        this(constrainedChart, (SparseMatrixGrammar) constrainedChart.grammar, false);
     }
 
     /**
@@ -212,7 +198,7 @@ public class ConstrainingChart extends PackedArrayChart {
         }
 
         this.unaryChainLength = constrainedChart.unaryChainLength;
-        this.beamWidth = this.lexicalRowBeamWidth = constrainedChart.maxUnaryChainLength;
+        this.beamWidth = this.lexicalRowBeamWidth = 1;
         this.maxUnaryChainLength = constrainedChart.maxUnaryChainLength;
         this.openCells = constrainedChart.openCells;
         this.parentCellIndices = constrainedChart.parentCellIndices;
@@ -333,93 +319,32 @@ public class ConstrainingChart extends PackedArrayChart {
     }
 
     /**
-     * Construct a {@link ConstrainingChart} and populate it from a {@link ConstrainedChart} (e.g., a chart populated by
-     * a constrained parse). Populates the new chart with the Viterbi 1-best parse from the {@link ConstrainedChart}.
+     * Returns the offset of the specified cell in the parallel chart arrays (note that this computation must agree with
+     * that of {@link #cellIndex(int, int)}
      * 
-     * @param constrainedChart
-     * @param parent2IndexMap
+     * @param start
+     * @param end
+     * @return the offset of the specified cell in the parallel chart arrays
      */
-    protected ConstrainingChart(final ConstrainedChart constrainedChart, final SparseMatrixGrammar grammar) {
+    @Override
+    protected final int cellOffset(final int start, final int end) {
 
-        super(constrainedChart.size(), constrainedChart.chartArraySize / 2, grammar);
-
-        Short2ShortMap parent2IndexMap = ((SplitVocabulary) grammar.nonTermSet).parent2IndexMap;
-        if (parent2IndexMap == null) {
-            // Construct an identity map to simplify chart population code below
-            parent2IndexMap = new Short2ShortOpenHashMap();
-            for (short i = 0; i < grammar.nonTermSet.size(); i++) {
-                parent2IndexMap.put(i, i);
-            }
+        if (start < 0 || start > size) {
+            throw new IllegalArgumentException("Illegal start: " + start);
         }
 
-        this.unaryChainLength = constrainedChart.unaryChainLength;
-        this.beamWidth = this.lexicalRowBeamWidth = constrainedChart.maxUnaryChainLength;
-        this.maxUnaryChainLength = constrainedChart.maxUnaryChainLength;
-        this.openCells = constrainedChart.openCells;
-        this.parentCellIndices = constrainedChart.parentCellIndices;
-        this.siblingCellIndices = constrainedChart.siblingCellIndices;
-        System.arraycopy(constrainedChart.midpoints, 0, this.midpoints, 0, constrainedChart.midpoints.length);
-
-        calculateCellOffsets();
-
-        final PackingFunction packingFunction = sparseMatrixGrammar.packingFunction;
-
-        for (final short[] startAndEnd : openCells) {
-            final int cellIndex = cellIndex(startAndEnd[0], startAndEnd[1]);
-            final int constrainedChartBaseOffset = constrainedChart.offset(cellIndex);
-            final int baseOffset = offset(cellIndex);
-
-            for (int unaryChainHeight = unaryChainLength[cellIndex] - 1; unaryChainHeight >= 0; unaryChainHeight--) {
-                final int constrainedChartOffset = constrainedChartBaseOffset + (unaryChainHeight << 1);
-                final int offset = baseOffset + unaryChainHeight;
-
-                final float entry0Probability = constrainedChart.insideProbabilities[constrainedChartOffset]
-                        + constrainedChart.outsideProbabilities[constrainedChartOffset];
-                final float entry1Probability = constrainedChart.insideProbabilities[constrainedChartOffset + 1]
-                        + constrainedChart.outsideProbabilities[constrainedChartOffset + 1];
-
-                if (entry1Probability == Float.NEGATIVE_INFINITY || entry0Probability >= entry1Probability) {
-                    nonTerminalIndices[offset] = parent2IndexMap
-                            .get(constrainedChart.nonTerminalIndices[constrainedChartOffset]);
-                    insideProbabilities[offset] = entry0Probability;
-                } else if (entry1Probability > Float.NEGATIVE_INFINITY) {
-                    nonTerminalIndices[offset] = parent2IndexMap
-                            .get(constrainedChart.nonTerminalIndices[constrainedChartOffset + 1]);
-                    insideProbabilities[offset] = entry1Probability;
-                } else {
-                    continue;
-                }
-
-                if (unaryChainHeight == unaryChainLength[cellIndex] - 1) {
-                    // Bottom Entry
-                    if (startAndEnd[1] - startAndEnd[0] == 1) {
-                        // Lexical parent
-                        final int lexicalEntryOffset = constrainedChart.nonTerminalIndices[constrainedChartOffset] >= 0 ? constrainedChartOffset
-                                : constrainedChartOffset + 1;
-                        final int lexicalEntry = constrainedChart.sparseMatrixGrammar.packingFunction
-                                .unpackLeftChild(constrainedChart.packedChildren[lexicalEntryOffset]);
-                        packedChildren[offset] = packingFunction.packLexical(lexicalEntry);
-                    } else {
-                        // Binary parent
-                        final short midpoint = midpoints[cellIndex];
-                        final short leftChild = nonTerminalIndices[cellOffset(startAndEnd[0], midpoint)];
-                        final short rightChild = nonTerminalIndices[cellOffset(midpoint, startAndEnd[1])];
-                        packedChildren[offset] = packingFunction.pack(leftChild, rightChild);
-                    }
-                } else {
-                    // Unary parent
-                    packedChildren[offset] = packingFunction.packUnary(nonTerminalIndices[offset + 1]);
-                }
-            }
+        if (end <= start || end > size) {
+            throw new IllegalArgumentException("Illegal end: " + end);
         }
+
+        return cellIndex(start, end) * beamWidth * maxUnaryChainLength;
     }
 
     private void calculateCellOffsets() {
         // Calculate all cell offsets
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end <= size; end++) {
-                final int cellIndex = cellIndex(start, end);
-                cellOffsets[cellIndex] = cellOffset(start, end);
+        for (short start = 0; start < size; start++) {
+            for (short end = (short) (start + 1); end <= size; end++) {
+                cellOffsets[cellIndex(start, end)] = cellOffset(start, end);
             }
         }
     }
@@ -428,7 +353,7 @@ public class ConstrainingChart extends PackedArrayChart {
     public float getInside(final int start, final int end, final int nonTerminal) {
 
         final int offset = cellOffsets[cellIndex(start, end)];
-        for (int i = offset; i < offset + beamWidth; i++) {
+        for (int i = offset; i < offset + (beamWidth * maxUnaryChainLength); i++) {
             if (nonTerminalIndices[i] == nonTerminal) {
                 return 0;
             }
@@ -515,7 +440,8 @@ public class ConstrainingChart extends PackedArrayChart {
                     continue;
                 }
 
-                sb.append("ConstrainingChartCell[" + start + "][" + end + "](" + midpoints[cellIndex] + ")\n");
+                sb.append("ConstrainingChartCell " + cellIndex + " [" + start + "][" + end + "]("
+                        + midpoints[cellIndex] + ")\n");
 
                 // Format unary parents first, followed by the two bottom entries
                 final int bottomEntryOffset = offset + (unaryChainLength(cellIndex) - 1);
@@ -555,9 +481,9 @@ public class ConstrainingChart extends PackedArrayChart {
     @Override
     public PackedArrayChartCell getCell(final int start, final int end) {
         final PackedArrayChartCell cell = new PackedArrayChartCell(start, end);
-        cell.tmpCell = new TemporaryChartCell(grammar);
+        cell.tmpCell = new TemporaryChartCell(grammar, false);
         final int cellIndex = cellIndex(start, end);
-        for (int i = 0; i < beamWidth; i++) {
+        for (int i = 0; i < beamWidth * maxUnaryChainLength; i++) {
             final int entryOffset = offset(cellIndex) + i;
             final short nt = nonTerminalIndices[entryOffset];
             if (nt >= 0) {

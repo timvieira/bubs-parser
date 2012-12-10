@@ -277,7 +277,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
 
             for (final ParseTree node : tree.preOrderTraversal()) {
                 if (node.isNonTerminal() == true) {
-                    if (grammar.nonTermSet.contains(node.contents) == false) {
+                    if (grammar.nonTermSet.containsKey(node.contents) == false) {
                         throw new IOException("Nonterminal '" + node.contents
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
@@ -311,7 +311,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
 
         if (smoothingCount > 0) {
             leftBoundaryCount.smoothAddConst(smoothingCount, wordClasses.size());
-            rightBoundaryCount.smoothAddConst(smoothingCount, grammar.phraseSet.size());
+            rightBoundaryCount.smoothAddConst(smoothingCount, grammar.phraseSet.length);
         }
 
         // Write model to file

@@ -46,20 +46,18 @@ public class CscSpmvParser extends PackedArraySpmvParser<LeftCscSparseMatrixGram
         targetCell.allocateTemporaryStorage();
         final TemporaryChartCell tmpCell = targetCell.tmpCell;
 
-        if (cellSelector.hasCellConstraints()
-                && cellSelector.getCellConstraints().isCellOnlyFactored(chartCell.start(), chartCell.end())) {
+        if (cellSelector.hasCellConstraints() && cellSelector.isCellOnlyFactored(chartCell.start(), chartCell.end())) {
             // Multiply by the factored grammar rule matrix
             binarySpmvMultiply(cartesianProductVector, grammar.factoredCscBinaryPopulatedColumns,
                     grammar.factoredCscBinaryPopulatedColumnOffsets, grammar.factoredCscBinaryRowIndices,
-                    grammar.factoredCscBinaryProbabilities, tmpCell.packedChildren,
-                    tmpCell.insideProbabilities, tmpCell.midpoints, 0,
-                    grammar.cscBinaryPopulatedColumns.length);
+                    grammar.factoredCscBinaryProbabilities, tmpCell.packedChildren, tmpCell.insideProbabilities,
+                    tmpCell.midpoints, 0, grammar.cscBinaryPopulatedColumns.length);
         } else {
             // Multiply by the main grammar rule matrix
             binarySpmvMultiply(cartesianProductVector, grammar.cscBinaryPopulatedColumns,
                     grammar.cscBinaryPopulatedColumnOffsets, grammar.cscBinaryRowIndices,
-                    grammar.cscBinaryProbabilities, tmpCell.packedChildren,
-                    tmpCell.insideProbabilities, tmpCell.midpoints, 0, grammar.cscBinaryPopulatedColumns.length);
+                    grammar.cscBinaryProbabilities, tmpCell.packedChildren, tmpCell.insideProbabilities,
+                    tmpCell.midpoints, 0, grammar.cscBinaryPopulatedColumns.length);
         }
     }
 

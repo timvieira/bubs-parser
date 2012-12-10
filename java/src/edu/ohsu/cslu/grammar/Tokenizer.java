@@ -83,7 +83,7 @@ public class Tokenizer implements Serializable {
     }
 
     public boolean hasWord(final String word) {
-        return lexSet.hasSymbol(word);
+        return lexSet.containsKey(word);
     }
 
     public int lexSize() {
@@ -187,7 +187,7 @@ public class Tokenizer implements Serializable {
     }
 
     public String wordToLexSetEntry(final String word, final boolean sentenceInitial) {
-        if (lexSet.hasSymbol(word)) {
+        if (lexSet.containsKey(word)) {
             return word;
         }
 
@@ -200,11 +200,11 @@ public class Tokenizer implements Serializable {
 
     public String unkToUnkEntry(String unkStr) {
         // remove last feature from unk string until we find a matching entry in the lexicon
-        while (!lexSet.hasSymbol(unkStr) && unkStr.contains("-")) {
+        while (!lexSet.containsKey(unkStr) && unkStr.contains("-")) {
             unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
         }
 
-        if (lexSet.hasSymbol(unkStr) == false) {
+        if (lexSet.containsKey(unkStr) == false) {
             throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
         }
 
@@ -236,7 +236,7 @@ public class Tokenizer implements Serializable {
      * e.g.: UNK-LC-NUM-DASH-y -> UNK-LC-NUM -> UNK-LC
      * 
      * @param word
-     * @param sentIndex
+     * @param lexSet
      * @return A string token representing the unknown word
      */
     public static String wordToUnkStringVer1(final String word, final SymbolSet<String> lexSet) {
@@ -251,7 +251,7 @@ public class Tokenizer implements Serializable {
             unkStr += "-INITC";
         }
 
-        if (lexSet.hasSymbol(word.toLowerCase())) {
+        if (lexSet.containsKey(word.toLowerCase())) {
             unkStr += "-KNOWNLC";
         }
 
@@ -346,7 +346,7 @@ public class Tokenizer implements Serializable {
             if (sentenceInitial && numCaps == 1) {
                 sb.append("-INITC");
                 // Condition assures word != lowered
-                if (lexSet != null && lexSet.hasSymbol(lowered)) {
+                if (lexSet != null && lexSet.containsKey(lowered)) {
                     sb.append("-KNOWNLC");
                 }
             } else {

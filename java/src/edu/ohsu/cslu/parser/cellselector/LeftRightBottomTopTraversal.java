@@ -31,6 +31,8 @@ public class LeftRightBottomTopTraversal extends CellSelector {
 
     public static CellSelectorModel MODEL = new CellSelectorModel() {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public CellSelector createCellSelector() {
             return new LeftRightBottomTopTraversal();

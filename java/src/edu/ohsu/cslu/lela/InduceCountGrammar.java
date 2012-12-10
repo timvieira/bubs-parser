@@ -39,7 +39,7 @@ import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.Util;
 
 /**
- * Induces a basic PCFB from a treebank
+ * Induces a basic PCFG from a treebank
  * 
  * @author Aaron Dunlop
  */
@@ -149,11 +149,10 @@ public class InduceCountGrammar extends BaseCommandlineTool {
         }
 
         final FractionalCountGrammar fcg = scg.toFractionalCountGrammar();
-        final Int2IntOpenHashMap corpusWordCounts = scg.wordCounts(fcg.lexicon);
 
         // Add UNK productions
         final FractionalCountGrammar grammarWithUnks = fcg.addUnkCounts(unkClassMap(fcg.lexicon),
-                openClassPreterminalThreshold, corpusWordCounts, rareWordThreshold);
+                openClassPreterminalThreshold, 0f, .1f, .5f);
 
         grammarWithUnks.write(new PrintWriter(System.out), false, language, grammarFormatType, rareWordThreshold);
     }

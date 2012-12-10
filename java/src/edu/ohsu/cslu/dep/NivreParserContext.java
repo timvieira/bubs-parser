@@ -32,10 +32,12 @@ public class NivreParserContext {
 
     final LinkedList<Arc> stack;
     final Arc[] arcs;
+    final int next;
 
-    public NivreParserContext(final LinkedList<Arc> stack, final Arc[] arcs) {
+    public NivreParserContext(final LinkedList<Arc> stack, final Arc[] arcs, final int next) {
         this.stack = stack;
         this.arcs = arcs;
+        this.next = next;
     }
 
 }

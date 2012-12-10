@@ -159,7 +159,7 @@ public class TreeTools extends BaseCommandlineTool {
     private void convertLeavesToUNK(final ParseTree tree, final SymbolSet<String> knownWords) {
         int wordIndex = 0;
         for (final ParseTree node : tree.getLeafNodes()) {
-            if (!knownWords.contains(node.contents)) {
+            if (!knownWords.containsKey(node.contents)) {
                 node.contents = Tokenizer.berkeleyGetSignature(node.contents, wordIndex == 0, knownWords);
             }
             wordIndex += 1;

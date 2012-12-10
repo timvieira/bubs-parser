@@ -24,9 +24,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
-import java.util.Random;
 
 import org.cjunit.DetailedTest;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import cltool4j.GlobalConfigProperties;
@@ -36,6 +36,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.RandomNoiseGenerator;
 import edu.ohsu.cslu.lela.TrainGrammar.EmIterationResult;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
@@ -181,10 +182,12 @@ public class TestTrainGrammar {
 
         trainingCorpusReader.mark(20 * 1024 * 1024);
 
-        final FractionalCountGrammar g0 = new StringCountGrammar(trainingCorpusReader, Binarization.LEFT,
-                GrammarFormatType.Berkeley).toFractionalCountGrammar();
+        final StringCountGrammar scg = new StringCountGrammar(trainingCorpusReader, Binarization.LEFT,
+                GrammarFormatType.Berkeley);
+        final FractionalCountGrammar g0 = scg.toFractionalCountGrammar();
         trainingCorpusReader.reset();
 
+        tg.corpusWordCounts = scg.wordCounts(g0.lexicon);
         tg.loadGoldTreesAndConstrainingCharts(trainingCorpusReader, g0);
 
         // Parse the training 'corpus' with induced grammar and report F-score
@@ -193,15 +196,14 @@ public class TestTrainGrammar {
                 (System.currentTimeMillis() - t0) / 1000f);
 
         // Split and train with the 1-split grammar
-        final FractionalCountGrammar split1 = g0.split();
-        split1.randomize(new Random(), .01f);
+        final FractionalCountGrammar split1 = g0.split(new RandomNoiseGenerator(0, .01f));
+        // split1.randomize(new Random(), .01f);
         final FractionalCountGrammar g1 = runEm(tg, g0, split1, 1, 25, true, true);
 
         // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
         final FractionalCountGrammar mergedG1 = g1.merge(new short[] { 1 });
-        tg.reloadConstrainingCharts(cscGrammar(g1), cscGrammar(mergedG1));
-        final FractionalCountGrammar split2 = mergedG1.split();
-        split2.randomize(new Random(), .01f);
+        final FractionalCountGrammar split2 = mergedG1.split(new RandomNoiseGenerator(0, .01f));
+        // split2.randomize(new Random(), .01f);
         runEm(tg, g0, split2, 2, 25, true, true);
     }
 
@@ -215,6 +217,7 @@ public class TestTrainGrammar {
      */
     @Test
     @DetailedTest
+    @Ignore
     public void test3SplitWsj24WithoutMerging() throws IOException {
 
         final TrainGrammar tg = new TrainGrammar();
@@ -226,11 +229,12 @@ public class TestTrainGrammar {
                 20 * 1024 * 1024);
         br.mark(20 * 1024 * 1024);
 
-        final FractionalCountGrammar g0 = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley)
-                .toFractionalCountGrammar();
+        final StringCountGrammar scg = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley);
+        final FractionalCountGrammar g0 = scg.toFractionalCountGrammar();
         br.reset();
 
         tg.loadGoldTreesAndConstrainingCharts(br, g0);
+        tg.corpusWordCounts = scg.wordCounts(g0.lexicon);
 
         // Parse the training 'corpus' with induced grammar and report F-score
         final long t0 = System.currentTimeMillis();
@@ -238,25 +242,21 @@ public class TestTrainGrammar {
         System.out.format("Initial F-score: %.3f  Parse Time: %.1f seconds\n", previousFScore * 100,
                 (System.currentTimeMillis() - t0) / 1000f);
 
+        final RandomNoiseGenerator noiseGenerator = new RandomNoiseGenerator(0, .01f);
         // Split and train with the 1-split grammar
-        final FractionalCountGrammar split1 = g0.split();
-        split1.randomize(tg.random, .01f);
+        final FractionalCountGrammar split1 = g0.split(noiseGenerator);
         final FractionalCountGrammar g1 = runEm(tg, g0, split1, 1, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, g1, previousFScore);
 
         // Merge TOP_1 back into TOP, split again, and train with the new 2-split grammar
         final FractionalCountGrammar mergedG1 = g1.merge(new short[] { 1 });
-        tg.reloadConstrainingCharts(cscGrammar(g1), cscGrammar(mergedG1));
-        final FractionalCountGrammar split2 = mergedG1.split();
-        split2.randomize(tg.random, .01f);
+        final FractionalCountGrammar split2 = mergedG1.split(noiseGenerator);
         final FractionalCountGrammar g2 = runEm(tg, g0, split2, 2, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, g2, previousFScore);
 
         // Merge TOP_1 back into TOP, split again, and train with the new 3-split grammar
         final FractionalCountGrammar mergedG2 = g2.merge(new short[] { 1 });
-        tg.reloadConstrainingCharts(cscGrammar(g2), cscGrammar(mergedG2));
-        final FractionalCountGrammar split3 = mergedG2.split();
-        split3.randomize(tg.random, .01f);
+        final FractionalCountGrammar split3 = mergedG2.split(noiseGenerator);
         final FractionalCountGrammar g3 = runEm(tg, g0, split3, 3, 50, false, false);
         verifyFscoreIncrease(tg, g3, previousFScore);
     }
@@ -270,7 +270,54 @@ public class TestTrainGrammar {
      * @throws IOException
      */
     @Test
+    // This method is mostly for profiling
     @DetailedTest
+    public void test3SplitWsj24WithMergingWithoutParse() throws IOException {
+
+        final TrainGrammar tg = new TrainGrammar();
+        tg.binarization = Binarization.LEFT;
+        tg.grammarFormatType = GrammarFormatType.Berkeley;
+        tg.mergeFraction = 0.5f;
+        tg.setup();
+
+        final BufferedReader br = new BufferedReader(JUnit.unitTestDataAsReader("corpora/wsj/wsj_24.mrgEC.gz"),
+                20 * 1024 * 1024);
+        br.mark(20 * 1024 * 1024);
+
+        final StringCountGrammar scg = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley);
+        final FractionalCountGrammar g0 = scg.toFractionalCountGrammar();
+        br.reset();
+
+        tg.loadGoldTreesAndConstrainingCharts(br, g0);
+        tg.corpusWordCounts = scg.wordCounts(g0.lexicon);
+
+        // Split and train with the 1-split grammar
+        final RandomNoiseGenerator noiseGenerator = new RandomNoiseGenerator(0, .01f);
+        final FractionalCountGrammar split1 = g0.split(noiseGenerator);
+        final FractionalCountGrammar g1 = runEm(tg, g0, split1, 1, 50, false, false);
+
+        // Re-merge half the non-terminals, split again, and train with the new 2-split grammar
+        final FractionalCountGrammar mergedG1 = tg.merge(g1);
+        final FractionalCountGrammar split2 = mergedG1.split(noiseGenerator);
+        final FractionalCountGrammar g2 = runEm(tg, g0, split2, 2, 50, false, false);
+
+        // Re-merge half the non-terminals , split again, and train with the new 3-split grammar
+        final FractionalCountGrammar mergedG2 = tg.merge(g2);
+        final FractionalCountGrammar split3 = mergedG2.split(noiseGenerator);
+        runEm(tg, g0, split3, 3, 50, false, false);
+    }
+
+    /**
+     * Learns a 3-split grammar from a small corpus (WSJ section 24). Verifies that corpus likelihood increases with
+     * successive EM iteration. Reports F-score after each split/EM run and verifies that those increase as well.
+     * Parsing accuracy isn't guaranteed to increase, but in this test, we're evaluating on the training set, so if
+     * parse accuracy declines, something's probably terribly wrong.
+     * 
+     * @throws IOException
+     */
+    @Test
+    @DetailedTest
+    @Ignore
     public void test3SplitWsj24WithMerging() throws IOException {
 
         final TrainGrammar tg = new TrainGrammar();
@@ -283,11 +330,12 @@ public class TestTrainGrammar {
                 20 * 1024 * 1024);
         br.mark(20 * 1024 * 1024);
 
-        final FractionalCountGrammar g0 = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley)
-                .toFractionalCountGrammar();
+        final StringCountGrammar scg = new StringCountGrammar(br, Binarization.LEFT, GrammarFormatType.Berkeley);
+        final FractionalCountGrammar g0 = scg.toFractionalCountGrammar();
         br.reset();
 
         tg.loadGoldTreesAndConstrainingCharts(br, g0);
+        tg.corpusWordCounts = scg.wordCounts(g0.lexicon);
 
         // Parse the training 'corpus' with induced grammar and report F-score
         final long t0 = System.currentTimeMillis();
@@ -296,24 +344,20 @@ public class TestTrainGrammar {
                 (System.currentTimeMillis() - t0) / 1000f);
 
         // Split and train with the 1-split grammar
-        final FractionalCountGrammar split1 = g0.split();
-        split1.randomize(tg.random, .01f);
+        final RandomNoiseGenerator noiseGenerator = new RandomNoiseGenerator(0, .01f);
+        final FractionalCountGrammar split1 = g0.split(noiseGenerator);
         final FractionalCountGrammar g1 = runEm(tg, g0, split1, 1, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, g1, previousFScore);
 
         // Re-merge half the non-terminals, split again, and train with the new 2-split grammar
         final FractionalCountGrammar mergedG1 = tg.merge(g1);
-        tg.reloadConstrainingCharts(cscGrammar(g1), cscGrammar(mergedG1));
-        final FractionalCountGrammar split2 = mergedG1.split();
-        split2.randomize(tg.random, .01f);
+        final FractionalCountGrammar split2 = mergedG1.split(noiseGenerator);
         final FractionalCountGrammar g2 = runEm(tg, g0, split2, 2, 50, false, false);
         previousFScore = verifyFscoreIncrease(tg, g2, previousFScore);
 
         // Re-merge half the non-terminals , split again, and train with the new 3-split grammar
         final FractionalCountGrammar mergedG2 = tg.merge(g2);
-        tg.reloadConstrainingCharts(cscGrammar(g2), cscGrammar(mergedG2));
-        final FractionalCountGrammar split3 = mergedG2.split();
-        split3.randomize(tg.random, .01f);
+        final FractionalCountGrammar split3 = mergedG2.split(noiseGenerator);
         final FractionalCountGrammar g3 = runEm(tg, g0, split3, 3, 50, false, false);
         verifyFscoreIncrease(tg, g3, previousFScore);
     }
@@ -335,16 +379,16 @@ public class TestTrainGrammar {
             final boolean reportFinalParseScore, final boolean reportEmIterationParseScores) {
 
         final int lexiconSize = currentGrammar.lexicon.size();
-        float previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
+        double previousCorpusLikelihood = Float.NEGATIVE_INFINITY;
 
         final long t0 = System.currentTimeMillis();
         EmIterationResult result = null;
 
         for (int i = 0; i < iterations; i++) {
 
-            result = tg.emIteration(currentGrammar, -70f);
+            result = tg.emIteration(currentGrammar, Float.NEGATIVE_INFINITY);
             currentGrammar = result.countGrammar;
-            // result.fcGrammar.verifyVsUnsplitGrammar(markov0Grammar);
+            currentGrammar.totalParentCounts();
             final ConstrainedInsideOutsideGrammar cscGrammar = cscGrammar(currentGrammar);
 
             // Ensure we have rules matching each lexical entry
@@ -357,11 +401,12 @@ public class TestTrainGrammar {
                         cscGrammar.getLexicalProductionsWithChild(j).size() > 0);
             }
 
-            if (i > 1) {
-                // Allow a small delta on corpus likelihood comparison to avoid floating-point errors
+            if (i > 2) {
+                // Allow a small delta on corpus likelihood comparison to avoid floating-point errors and declines due
+                // to rule pruning
                 assertTrue(String.format("Corpus likelihood declined from %.2f to %.2f on iteration %d",
                         previousCorpusLikelihood, result.corpusLikelihood, i + 1), result.corpusLikelihood
-                        - previousCorpusLikelihood >= -.001f);
+                        - previousCorpusLikelihood >= -.01f);
             }
 
             if (reportEmIterationParseScores) {
@@ -378,6 +423,8 @@ public class TestTrainGrammar {
 
         final long t1 = System.currentTimeMillis();
         System.out.format("Training Time: %.1f seconds\n", (t1 - t0) / 1000f);
+        System.out.format("Constrained parse time: %d ms  Count time: %d ms\n", tg.parseTime / 1000000,
+                tg.countTime / 1000000);
 
         if (reportFinalParseScore) {
             // Parse the training corpus with the new CSC grammar and report F-score

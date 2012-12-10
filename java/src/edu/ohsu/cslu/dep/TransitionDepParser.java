@@ -16,7 +16,7 @@ public class TransitionDepParser implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public final NivreParserFeatureExtractor featureExtractor;
+    public final TransitionParserFeatureExtractor featureExtractor;
     public final AveragedPerceptron shiftReduceClassifier;
     public final AveragedPerceptron reduceDirectionClassifier;
     public final AveragedPerceptron labelClassifier;
@@ -24,7 +24,7 @@ public class TransitionDepParser implements Serializable {
     public final SymbolSet<String> pos;
     public final SymbolSet<String> labels;
 
-    public TransitionDepParser(final NivreParserFeatureExtractor featureExtractor,
+    public TransitionDepParser(final TransitionParserFeatureExtractor featureExtractor,
             final AveragedPerceptron shiftReduceClassifier, final AveragedPerceptron reduceDirectionClassifier,
             final AveragedPerceptron labelClassifier, final SymbolSet<String> tokens, final SymbolSet<String> pos,
             final SymbolSet<String> labels) {
@@ -48,7 +48,7 @@ public class TransitionDepParser implements Serializable {
         final int totalSteps = parse.size() * 2 - 1;
         for (int step = 0, i = 0; step < totalSteps; step++) {
             final BitVector featureVector = featureExtractor.forwardFeatureVector(new NivreParserContext(stack,
-                    parse.arcs), i);
+                    parse.arcs, i), i);
 
             ParserAction action = null;
             ScoredClassification shiftReduceClassification = null;

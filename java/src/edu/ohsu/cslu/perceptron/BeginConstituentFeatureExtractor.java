@@ -37,6 +37,8 @@ import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
  */
 public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence> {
 
+    private static final long serialVersionUID = 1L;
+
     private final Grammar grammar;
     private final int markovOrder;
     private final int featureCount;

@@ -36,10 +36,11 @@ import edu.ohsu.cslu.datastructs.vectors.MutableSparseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.util.Strings;
 
 /**
  * Represents an averaged perceptron (see Collins, 2002). The model should be trained with
- * {@link #train(int, SparseBitVector)}, and applied with {@link #classify(Vector)}.
+ * {@link #train(int, BitVector)}, and applied with {@link #classify(Vector)}.
  * 
  * NOTE: clients are responsible to include their own bias feature in the training and testing instances, meaning that
  * there is a single feature which is always on (value=1) for all instances.
@@ -60,7 +61,12 @@ public class AveragedPerceptron extends Perceptron {
     }
 
     public AveragedPerceptron(final LossFunction lossFunction, final int classes, final long features) {
-        super(0.25f, lossFunction, classes, features);
+        this(0.25f, lossFunction, classes, features);
+    }
+
+    public AveragedPerceptron(final float learningRate, final LossFunction lossFunction, final int classes,
+            final long features) {
+        super(learningRate, lossFunction, classes, features);
         this.avgWeights = new FloatVector[classes];
 
         if (features <= MAX_DENSE_STORAGE_SIZE) {
@@ -205,45 +211,74 @@ public class AveragedPerceptron extends Perceptron {
     protected void update(final int goldClass, final int guessClass, final float alpha, final BitVector featureVector,
             final int example) {
 
+        final FloatVector avgGuess = avgWeights[guessClass];
+        final FloatVector avgGold = avgWeights[goldClass];
+        final FloatVector rawGold = rawWeights[goldClass];
+        final FloatVector rawGuess = rawWeights[guessClass];
+
+        // l = last-averaged example
+        // e = current example
+        // A_l = averaged weight at l
+        // R_l = raw weight at l
+        // A_e = Averaged weight at e = (A_l * l + R_l * e - R_l * l + alpha) / e
+
+        // Update averaged weights first
         if (lastAveraged instanceof LargeVector) {
-            final LargeVector largeLastAveraged = (LargeVector) lastAveraged;
 
-            final LargeVector largeAvgGold = (LargeVector) avgWeights[goldClass];
-            final LargeVector largeAvgGuess = (LargeVector) avgWeights[guessClass];
+            // Cast all important vectors to LargeVector versions
+            final LargeSparseIntVector largeLastAveraged = (LargeSparseIntVector) lastAveraged;
+            final LargeVector largeAvgGold = (LargeVector) avgGold;
+            final LargeSparseFloatVector largeRawGold = (LargeSparseFloatVector) rawGold;
+            final LargeVector largeAvgGuess = (LargeVector) avgGuess;
+            final LargeSparseFloatVector largeRawGuess = (LargeSparseFloatVector) rawGuess;
 
-            // Update averaged weights first
             for (final long featIndex : ((LargeBitVector) featureVector).longValues()) {
 
-                final int lastAvgExample = largeLastAveraged.getInt(featIndex); // default=0
-                final float update = alpha * (example - lastAvgExample) / example;
+                final int l = largeLastAveraged.getInt(featIndex); // default=0
 
                 // Upweight gold class weights
-                largeAvgGold.set(featIndex, largeAvgGold.getFloat(featIndex) + update);
+                final float goldA_l = largeAvgGold.getFloat(featIndex);
+                final float goldR_l = largeRawGold.getFloat(featIndex);
+                final float goldA_e = ((goldA_l - goldR_l) * l + alpha) / example + goldR_l;
+                largeAvgGold.set(featIndex, goldA_e);
 
                 // Downweight guess class weights
-                largeAvgGuess.set(featIndex, largeAvgGuess.getFloat(featIndex) - update);
+                final float guessA_l = largeAvgGuess.getFloat(featIndex);
+                final float guessR_l = largeRawGuess.getFloat(featIndex);
+                final float guessA_e = ((guessA_l - guessR_l) * l - alpha) / example + guessR_l;
+                largeAvgGuess.set(featIndex, guessA_e);
+
+                // Update last-averaged
+                largeLastAveraged.set(featIndex, example);
             }
 
         } else {
 
-            final LargeVector largeLastAveraged = (LargeVector) lastAveraged;
-
-            // Update averaged weights first
             for (final int featIndex : ((SparseBitVector) featureVector).elements()) {
 
-                final int lastAvgExample = largeLastAveraged.getInt(featIndex); // default=0
-                final float update = alpha * (example - lastAvgExample) / example;
+                // TODO Fix
+                final int l = lastAveraged.getInt(featIndex); // default=0
 
                 // Upweight gold class weights
-                avgWeights[goldClass].set(featIndex, avgWeights[goldClass].getFloat(featIndex) + update);
+                final float goldA_l = avgGold.getFloat(featIndex);
+                final float goldR_l = rawGold.getFloat(featIndex);
+                final float goldA_e = ((goldA_l - goldR_l) * l + alpha) / example + goldR_l;
+                avgGold.set(featIndex, goldA_e);
 
                 // Downweight guess class weights
-                avgWeights[guessClass].set(featIndex, avgWeights[guessClass].getFloat(featIndex) - update);
+                final float guessA_l = avgGuess.getFloat(featIndex);
+                final float guessR_l = rawGuess.getFloat(featIndex);
+                final float guessA_e = ((guessA_l - guessR_l) * l - alpha) / example + guessR_l;
+                avgGuess.set(featIndex, guessA_e);
+
+                // Update last-averaged
+                lastAveraged.set(featIndex, example);
             }
         }
 
-        rawWeights[goldClass].inPlaceAdd(featureVector, alpha);
-        rawWeights[guessClass].inPlaceAdd(featureVector, -alpha);
+        // And now raw weights
+        rawGold.inPlaceAdd(featureVector, alpha);
+        rawGuess.inPlaceAdd(featureVector, -alpha);
     }
 
     private void averageAllFeatures() {
@@ -257,13 +292,14 @@ public class AveragedPerceptron extends Perceptron {
                 if (lastAvgExample < trainExampleNumber) {
                     for (int i = 0; i < avgWeights.length; i++) {
 
-                        final float rawValue = ((LargeVector) rawWeights[i]).getFloat(featIndex);
-                        final float oldAvgValue = ((LargeVector) avgWeights[i]).getFloat(featIndex);
-
                         // all values between lastAvgExample and example are assumed to be unchanged
-                        final float avgUpdate = (rawValue - oldAvgValue) * (trainExampleNumber - lastAvgExample)
-                                / trainExampleNumber;
-                        ((LargeVector) avgWeights[i]).set(featIndex, oldAvgValue + avgUpdate);
+                        final float oldAvgValue = ((LargeVector) avgWeights[i]).getFloat(featIndex);
+                        final float diff = ((LargeVector) rawWeights[i]).getFloat(featIndex) - oldAvgValue;
+
+                        if (diff != 0) {
+                            final float avgUpdate = diff * (trainExampleNumber - lastAvgExample) / trainExampleNumber;
+                            ((LargeVector) avgWeights[i]).set(featIndex, oldAvgValue + avgUpdate);
+                        }
                     }
                     largeLastAveraged.set(featIndex, trainExampleNumber);
                 }
@@ -271,18 +307,19 @@ public class AveragedPerceptron extends Perceptron {
         } else {
             for (final long featIndex : rawWeights[0].populatedDimensions()) {
                 final int intFeatIndex = (int) featIndex;
-                final int lastAvgExample = lastAveraged.getInt((int) featIndex); // default=0
+                final int lastAvgExample = lastAveraged.getInt(intFeatIndex); // default=0
 
                 if (lastAvgExample < trainExampleNumber) {
                     for (int i = 0; i < avgWeights.length; i++) {
 
-                        final float rawValue = rawWeights[i].getFloat(intFeatIndex);
+                        // all values between lastAvgExample and example are assumed to be unchanged
                         final float oldAvgValue = avgWeights[i].getFloat(intFeatIndex);
+                        final float diff = rawWeights[i].getFloat(intFeatIndex) - oldAvgValue;
 
-                        // all values between lastAvgExample and example-1 are assumed to be unchanged
-                        final float avgUpdate = (rawValue - oldAvgValue) * (trainExampleNumber - lastAvgExample)
-                                / trainExampleNumber;
-                        avgWeights[i].set((int) featIndex, oldAvgValue + avgUpdate);
+                        if (diff != 0) {
+                            final float avgUpdate = diff * (trainExampleNumber - lastAvgExample) / trainExampleNumber;
+                            avgWeights[i].set(intFeatIndex, oldAvgValue + avgUpdate);
+                        }
                     }
                     lastAveraged.set(intFeatIndex, trainExampleNumber);
                 }
@@ -325,40 +362,28 @@ public class AveragedPerceptron extends Perceptron {
         // final BufferedReader br = new BufferedReader(inputReader);
 
         // read in file until we get to the model specs
-        String line = inputReader.readLine();
-        while (line != null && !line.trim().equals("# === Perceptron Model ===")) {
-            line = inputReader.readLine();
+        String headerLine = inputReader.readLine();
+        while (headerLine != null && !headerLine.trim().equals("# === Perceptron Model ===")) {
+            headerLine = inputReader.readLine();
         }
-        if (line == null) {
+        if (headerLine == null) {
             throw new RuntimeException("Unexpected EOF found in AveragedPerceptron model.  Exiting.");
         }
 
-        // for (String line = inputReader.readLine(); line != null &&
-        // !line.trim().equals("# === Perceptron Model ===");
-        // line = inputReader.readLine()) {
-        String[] tokens = inputReader.readLine().split("\\s");
-        final int numFeatures = Integer.parseInt(tokens[0].split("=")[1]);
-        // this.numClasses = Integer.parseInt(tokens[1].split("=")[1]);
-        final String binsString = tokens[2].split("=")[1];
-        // final String biasString = tokens[3].split("=")[1];
-        // this.initBins(binsString);
+        final String modelHeaderLine = inputReader.readLine();
+        final String[] tokens = Strings.splitOnSpace(modelHeaderLine);
+        // final int numFeatures = Integer.parseInt(tokens[0].split("=")[1]);
+        final String binsString = tokens[2].substring(tokens[2].indexOf('=') + 1);
         this.binsStr = binsString;
         this.bins = Util.strToIntArray(binsStr);
         this.avgWeights = new FloatVector[numClasses()];
-        this.featureTemplate = inputReader.readLine().replace("featTemplate: ", "");
+
+        final String featureTemplateLine = inputReader.readLine();
+        this.featureTemplate = featureTemplateLine.replace("featTemplate: ", "");
 
         for (int classIndex = 0; classIndex < numClasses(); classIndex++) {
-            inputReader.readLine(); // vector type=float length=X
-            tokens = inputReader.readLine().split("\\s"); // get float values for model[i]
-            final float[] weights = new float[numFeatures];
-            for (int i = 0; i < tokens.length; i++) {
-                weights[i] = Float.parseFloat(tokens[i]);
-            }
-            this.avgWeights[classIndex] = new DenseFloatVector(weights);
-
-            // if (classIndex != numClasses() - 1) {
+            this.avgWeights[classIndex] = (FloatVector) Vector.Factory.read(inputReader);
             inputReader.readLine(); // blank line
-            // }
         }
     }
 
@@ -370,71 +395,11 @@ public class AveragedPerceptron extends Perceptron {
         public final float score;
         public final float margin;
 
-        private ScoredClassification(final int classification, final float score, final float margin) {
+        public ScoredClassification(final int classification, final float score, final float margin) {
             super();
             this.classification = classification;
             this.score = score;
             this.margin = margin;
         }
     }
-
-    // /**
-    // * Update weights for all features found in the specified feature vector by the specified alpha
-    // *
-    // * @param featureVector Features to update
-    // * @param alpha Update amount (generally positive for positive examples and negative for negative
-    // examples)
-    // * @param example The number of examples seen in the training corpus (i.e., the index of the example
-    // which caused
-    // * this update, 1-indexed).
-    // */
-    // private void update2(final SparseBitVector featureVector, final float alpha, final int example) {
-    //
-    // // if (example <= lastUpdate) {
-    // // throw new IllegalArgumentException("Model updated at example " + lastUpdate
-    // // + " (more recently than requested example " + example + ")");
-    // // }
-    // // lastUpdate = example;
-    //
-    // // Update the averaged model
-    // final int[] features = featureVector.elements();
-    // if (example == 1) {
-    // averagedPerceptron.inPlaceAdd(featureVector, alpha);
-    // lastAveraged.inPlaceAdd(featureVector, 1);
-    // } else {
-    // for (final int feature : features) {
-    // final int lastAvgExample = lastAveraged.getInt(feature);
-    // final float currentAverage = averagedPerceptron.getFloat(feature);
-    // // Average up to the previous example
-    // final float update = (rawPerceptron.getFloat(feature) - currentAverage)
-    // * (example - lastAvgExample - 1) / (example - 1);
-    // averagedPerceptron.set(feature, currentAverage + update);
-    // lastAveraged.set(feature, example - 1);
-    // }
-    // }
-    // // Update the raw perceptron
-    // rawPerceptron.inPlaceAdd(featureVector, alpha);
-    // }
-    //
-    // /**
-    // * Compute averaged weights for any features which have been updated in the raw perceptron and not
-    // subsequently
-    // * averaged. This method should be called following training and prior to testing.
-    // *
-    // * @param totalExamples The number of training examples seen
-    // */
-    // public void updateAveragedModel2() {
-    //
-    // final int totalExamples = trainExampleNumber;
-    //
-    // for (int feature = 0; feature < rawPerceptron.length(); feature++) {
-    // final int la = lastAveraged.getInt(feature);
-    // final float currentAverage = averagedPerceptron.getFloat(feature);
-    // // Average up to the current example
-    // final float update = (rawPerceptron.getFloat(feature) - currentAverage) * (totalExamples - la)
-    // / totalExamples;
-    // averagedPerceptron.set(feature, currentAverage + update);
-    // }
-    // lastAveraged.fill(totalExamples);
-    // }
 }

@@ -59,7 +59,7 @@ public class TrainDepParser extends BaseCommandlineTool {
             try {
                 final DependencyGraph g = DependencyGraph.readConll(br);
                 // If we can't produce a derivation, skip this example
-                g.derivation();
+                g.stackProjectiveDerivation();
                 trainingExamples.add(g);
             } catch (final IllegalArgumentException ignore) {
             }
@@ -95,7 +95,8 @@ public class TrainDepParser extends BaseCommandlineTool {
             }
         }
 
-        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor(featureTemplates, tokens, pos, labels);
+        final TransitionParserFeatureExtractor fe = new TransitionParserFeatureExtractor(featureTemplates, tokens, pos,
+                labels);
 
         // At each step, we have 3 possible actions (shift, reduce-left, reduce-right), but we divide them into 2
         // classifiers - one to decide between shift and reduce, and one to select reduce direction. For the moment, we
@@ -115,13 +116,13 @@ public class TrainDepParser extends BaseCommandlineTool {
             for (final DependencyGraph example : trainingExamples) {
                 example.clear();
                 try {
-                    final DependencyGraph.DerivationAction[] derivation = example.derivation();
+                    final DependencyGraph.StackProjectiveAction[] derivation = example.stackProjectiveDerivation();
 
                     final Arc[] arcs = example.arcs;
                     final LinkedList<Arc> stack = new LinkedList<Arc>();
-                    final NivreParserContext context = new NivreParserContext(stack, arcs);
 
                     for (int step = 0, i = 0; step < derivation.length; step++) {
+                        final NivreParserContext context = new NivreParserContext(stack, arcs, i);
                         final BitVector featureVector = fe.forwardFeatureVector(context, i);
 
                         switch (derivation[step]) {
@@ -201,8 +202,8 @@ public class TrainDepParser extends BaseCommandlineTool {
             correctLabels += parse.correctLabels();
         }
         final long time = System.currentTimeMillis() - startTime;
-        System.out.format("%s accuracy - unlabeled: %.3f  labeled %.3f  (%d ms, %.2f words/sec)\n", label, correctArcs
-                * 1.0 / total, correctLabels * 1.0 / total, time, total * 1000.0 / time);
+        System.out.format("%s accuracy - unlabeled: %.2f%%  labeled %.2f%%  (%d ms, %.2f words/sec)\n", label,
+                correctArcs * 100.0 / total, correctLabels * 100.0 / total, time, total * 1000.0 / time);
     }
 
     public static void main(final String[] args) {

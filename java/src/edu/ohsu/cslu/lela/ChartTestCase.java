@@ -28,6 +28,7 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.lela.FractionalCountGrammar.ZeroNoiseGenerator;
 
 /**
  * Shared functionality for {@link TestConstrainedChart} and {@link TestConstrainingChart}
@@ -72,7 +73,7 @@ public class ChartTestCase {
         f = grammar0.lexicon.getIndex("f");
 
         // Split the grammar
-        grammar1 = grammar0.split();
+        grammar1 = grammar0.split(new ZeroNoiseGenerator());
         cscGrammar1 = new ConstrainedInsideOutsideGrammar(grammar1, GrammarFormatType.Berkeley,
                 PerfectIntPairHashPackingFunction.class);
     }

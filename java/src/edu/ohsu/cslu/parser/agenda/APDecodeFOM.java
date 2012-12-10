@@ -47,7 +47,7 @@ public class APDecodeFOM extends APWithMemory {
         HashSetChartCell cell;
 
         initParser(parseTask);
-        fomModel.initSentence(parseTask, chart);
+        figureOfMerit.initSentence(parseTask, chart);
 
         addLexicalProductions(parseTask.tokens);
 

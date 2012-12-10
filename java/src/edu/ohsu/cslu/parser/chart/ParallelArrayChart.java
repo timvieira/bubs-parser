@@ -70,7 +70,7 @@ public abstract class ParallelArrayChart extends Chart {
     /**
      * Constructs a chart
      * 
-     * @param tokens Indices of sentence tokens
+     * @param parseTask Parser state
      * @param sparseMatrixGrammar Grammar
      * @param beamWidth The maximum number of entries allowed in a chart cell
      */
@@ -104,7 +104,7 @@ public abstract class ParallelArrayChart extends Chart {
     /**
      * Constructs a chart for exhaustive parsing (beamWidth = |V|)
      * 
-     * @param tokens
+     * @param parseTask parser state
      * @param sparseMatrixGrammar
      */
     protected ParallelArrayChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar) {
@@ -127,7 +127,6 @@ public abstract class ParallelArrayChart extends Chart {
         this.cellOffsets = new int[cells];
 
         this.insideProbabilities = new float[chartArraySize];
-        Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         this.packedChildren = new int[chartArraySize];
         this.midpoints = new short[cells];
     }
@@ -143,7 +142,7 @@ public abstract class ParallelArrayChart extends Chart {
      * @param end
      * @return the offset of the specified cell in the parallel chart arrays
      */
-    protected final int cellOffset(final int start, final int end) {
+    protected int cellOffset(final int start, final int end) {
 
         if (start < 0 || start > size) {
             throw new IllegalArgumentException("Illegal start: " + start);
@@ -180,10 +179,19 @@ public abstract class ParallelArrayChart extends Chart {
         return lexicalRowBeamWidth;
     }
 
-    public void reset(final ParseTask newParseTask, final int newBeamWidth, final int newLexicalRowBeamWidth) {
+    /**
+     * Re-initializes the chart data structures, facilitating reuse of the chart for multiple sentences. Subclasses must
+     * ensure that the data structure state following {@link #reset(ParseTask, int, int)} is identical to that of a
+     * newly constructed chart.
+     * 
+     * @param task
+     * @param newBeamWidth
+     * @param newLexicalRowBeamWidth
+     */
+    public void reset(final ParseTask task, final int newBeamWidth, final int newLexicalRowBeamWidth) {
         this.beamWidth = newBeamWidth;
         this.lexicalRowBeamWidth = newLexicalRowBeamWidth;
-        reset(newParseTask);
+        reset(task);
     }
 
     @Override
@@ -210,6 +218,11 @@ public abstract class ParallelArrayChart extends Chart {
 
     protected static String formatCellEntry(final SparseMatrixGrammar g, final int nonterminal,
             final int childProductions, final float insideProbability, final int midpoint, final boolean formatFractions) {
+
+        if (childProductions == 0 || childProductions == Integer.MIN_VALUE) {
+            return String.format("%s -> ? (%.5f, %d)\n", g.mapNonterminal(nonterminal), insideProbability, midpoint);
+        }
+
         final int leftChild = g.packingFunction().unpackLeftChild(childProductions);
         final int rightChild = g.packingFunction().unpackRightChild(childProductions);
 

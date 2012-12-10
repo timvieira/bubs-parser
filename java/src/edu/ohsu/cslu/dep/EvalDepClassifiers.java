@@ -12,7 +12,7 @@ import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
-import edu.ohsu.cslu.dep.DependencyGraph.DerivationAction;
+import edu.ohsu.cslu.dep.DependencyGraph.StackProjectiveAction;
 import edu.ohsu.cslu.dep.TransitionDepParser.ParserAction;
 import edu.ohsu.cslu.dep.TransitionDepParser.ReduceDirection;
 import edu.ohsu.cslu.grammar.SymbolSet;
@@ -44,14 +44,14 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
     @Option(name = "-l", usage = "Label arcs (if false, no arc labels will be assigned)")
     private boolean classifyLabels = false;
 
-    @Option(name = "-msl", metaVar = "loss", usage = "Missed shift loss (vs. 1 for missed-reduce)")
-    private float missedShiftLoss = 1f;
-
     @Option(name = "-cas", metaVar = "file", usage = "Output constrained arc scores to file")
     private File constrainedArcScores;
 
     @Option(name = "-as", metaVar = "file", usage = "Output arc scores to file")
     private File arcScores;
+
+    @Option(name = "-alpha", metaVar = "alpha", usage = "Training rate")
+    private float alpha = 0.25f;
 
     @SuppressWarnings("null")
     @Override
@@ -65,7 +65,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
             try {
                 final DependencyGraph g = DependencyGraph.readConll(br);
                 // If we can't produce a derivation, skip this example
-                g.derivation();
+                g.stackProjectiveDerivation();
                 trainingExamples.add(g);
             } catch (final IllegalArgumentException ignore) {
             }
@@ -101,17 +101,19 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
             }
         }
 
-        final NivreParserFeatureExtractor fe = new NivreParserFeatureExtractor(featureTemplates, tokens, pos, labels);
+        final TransitionParserFeatureExtractor fe = new TransitionParserFeatureExtractor(featureTemplates, tokens, pos,
+                labels);
 
         // At each step, we have 3 possible actions (shift, reduce-left, reduce-right), but we divide them into 2
         // classifiers - one to decide between shift and reduce, and one to select reduce direction. For the moment, we
         // use the same feature-set for both.
-        final AveragedPerceptron shiftReduceClassifier = new AveragedPerceptron(new Perceptron.BiasedLoss(new float[] {
-                missedShiftLoss, 1f }), 2, fe.featureCount());
-        final AveragedPerceptron reduceDirectionClassifier = new AveragedPerceptron(2, fe.featureCount());
+        final AveragedPerceptron shiftReduceClassifier = new AveragedPerceptron(alpha, new Perceptron.ZeroOneLoss(), 2,
+                fe.featureCount());
+        final AveragedPerceptron reduceDirectionClassifier = new AveragedPerceptron(alpha,
+                new Perceptron.ZeroOneLoss(), 2, fe.featureCount());
         // Label arcs, with a third classifier
-        final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(labels.size(),
-                fe.featureCount()) : null;
+        final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(alpha,
+                new Perceptron.ZeroOneLoss(), labels.size(), fe.featureCount()) : null;
         final TransitionDepParser parser = new TransitionDepParser(fe, shiftReduceClassifier,
                 reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
 
@@ -122,13 +124,13 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
             for (final DependencyGraph example : trainingExamples) {
                 example.clear();
                 try {
-                    final DependencyGraph.DerivationAction[] derivation = example.derivation();
+                    final DependencyGraph.StackProjectiveAction[] derivation = example.stackProjectiveDerivation();
 
                     final Arc[] arcs = example.arcs;
                     final LinkedList<Arc> stack = new LinkedList<Arc>();
-                    final NivreParserContext context = new NivreParserContext(stack, arcs);
 
                     for (int step = 0, i = 0; step < derivation.length; step++) {
+                        final NivreParserContext context = new NivreParserContext(stack, arcs, i);
                         final BitVector featureVector = fe.forwardFeatureVector(context, i);
 
                         switch (derivation[step]) {
@@ -191,13 +193,13 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
             for (final DependencyGraph example : devExamples) {
                 example.clear();
                 try {
-                    final DependencyGraph.DerivationAction[] derivation = example.derivation();
+                    final DependencyGraph.StackProjectiveAction[] derivation = example.stackProjectiveDerivation();
 
                     final Arc[] arcs = example.arcs;
                     final LinkedList<Arc> stack = new LinkedList<Arc>();
-                    final NivreParserContext context = new NivreParserContext(stack, arcs);
 
                     for (int step = 0, i = 0; step < derivation.length; step++) {
+                        final NivreParserContext context = new NivreParserContext(stack, arcs, i);
                         final BitVector featureVector = fe.forwardFeatureVector(context, i);
                         final ScoredClassification srClassification = shiftReduceClassifier
                                 .scoredClassify(featureVector);
@@ -302,7 +304,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
 
             BaseLogger.singleton().info(
                     String.format("Shift/Reduce: %d/%d (%.2f%%)", correctShiftReduceClassifications,
-                            shiftReduceClassifications, 1.0 * correctShiftReduceClassifications
+                            shiftReduceClassifications, 100.0 * correctShiftReduceClassifications
                                     / shiftReduceClassifications));
             BaseLogger.singleton()
                     .info(String.format("Missed Shifts: %d/%d", missedShifts, shiftReduceClassifications));
@@ -310,7 +312,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
                     String.format("Missed Reduces: %d/%d", missedReduces, shiftReduceClassifications));
             BaseLogger.singleton().info(
                     String.format("Reduce Direction: %d/%d (%.2f%%)", correctReduceDirectionClassifications,
-                            reduceDirectionClassifications, 1.0 * correctReduceDirectionClassifications
+                            reduceDirectionClassifications, 100.0 * correctReduceDirectionClassifications
                                     / reduceDirectionClassifications));
         }
 
@@ -319,7 +321,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
         }
     }
 
-    private void write(final FileWriter arcScoreWriter, final DependencyGraph.DerivationAction derivationStep,
+    private void write(final FileWriter arcScoreWriter, final DependencyGraph.StackProjectiveAction derivationStep,
             final NivreParserContext context, final int i, final ScoredClassification srClassification,
             final ScoredClassification lrClassification, final Arc top, final ScoredClassification labelClassification)
             throws IOException {
@@ -327,13 +329,14 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
         arcScoreWriter.write(String.format(
                 "%d,%.3f,%d,%d,%.3f,%d,%d,%d,%d,%d,%s,%.3f,%.3f,%s\n",
                 // Shift-reduce
-                derivationStep == DerivationAction.SHIFT ? 0 : 1,
-                derivationStep == DerivationAction.SHIFT ? -srClassification.score : srClassification.score,
+                derivationStep == StackProjectiveAction.SHIFT ? 0 : 1,
+                derivationStep == StackProjectiveAction.SHIFT ? -srClassification.score : srClassification.score,
                 srClassification.classification,
 
                 // Left-right
-                derivationStep.ordinal() - 1, derivationStep == DerivationAction.REDUCE_LEFT ? -lrClassification.score
-                        : lrClassification.score, lrClassification.classification,
+                derivationStep.ordinal() - 1,
+                derivationStep == StackProjectiveAction.REDUCE_LEFT ? -lrClassification.score : lrClassification.score,
+                lrClassification.classification,
 
                 // State
                 top.predictedHead, top.index - top.predictedHead, context.arcs.length - i, context.arcs.length - 1,
@@ -401,7 +404,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
             final int totalSteps = example.size() * 2 - 1;
             for (int step = 0, i = 0; step < totalSteps; step++) {
                 final BitVector featureVector = parser.featureExtractor.forwardFeatureVector(new NivreParserContext(
-                        stack, example.arcs), i);
+                        stack, example.arcs, i), i);
 
                 ParserAction action = null;
                 ScoredClassification srClassification = null;

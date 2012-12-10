@@ -83,7 +83,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             this.threadLocalQueueEdges = new ThreadLocal<TemporaryChartCell>() {
                 @Override
                 protected TemporaryChartCell initialValue() {
-                    return new TemporaryChartCell(grammar);
+                    return new TemporaryChartCell(grammar, false);
                 }
             };
 
@@ -99,8 +99,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         final ConfigProperties props = GlobalConfigProperties.singleton();
 
         // Pruning Parameters
-        if ((props.containsKey(PROPERTY_MAX_BEAM_WIDTH) && props.getIntProperty(PROPERTY_MAX_BEAM_WIDTH) > 0)
-                || implicitPruning()) {
+        if (props.containsKey(PROPERTY_MAX_BEAM_WIDTH) && props.getIntProperty(PROPERTY_MAX_BEAM_WIDTH) > 0) {
             this.beamWidth = props.getIntProperty(Parser.PROPERTY_MAX_BEAM_WIDTH);
             this.lexicalRowBeamWidth = props.getIntProperty(PROPERTY_LEXICAL_ROW_BEAM_WIDTH, beamWidth);
             this.lexicalRowUnaries = props.getIntProperty(PROPERTY_LEXICAL_ROW_UNARIES, lexicalRowBeamWidth / 3);
@@ -316,7 +315,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             short maxNt = -1;
             if (end - start == 1) { // Lexical Row (span = 1)
                 for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-                    final float fom = fomModel.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    final float fom = figureOfMerit.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
                     if (fom > maxFom) {
                         maxFom = fom;
                         maxNt = nt;
@@ -324,7 +323,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                 }
             } else {
                 for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-                    final float fom = fomModel.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    final float fom = figureOfMerit.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
                     if (fom > maxFom) {
                         maxFom = fom;
                         maxNt = nt;
@@ -352,9 +351,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
     protected final void unaryAndPruning(final TemporaryChartCell tmpCell, final int cellBeamWidth, final short start,
             final short end) {
         // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
-        final boolean allowUnaries = !cellSelector.hasCellConstraints()
-                || cellSelector.getCellConstraints().isUnaryOpen(start, end)
-                && !(cellSelector.getCellConstraints().isCellOnlyFactored(start, end) && (end - start > 1));
+        final boolean allowUnaries = !cellSelector.hasCellConstraints() || cellSelector.isUnaryOpen(start, end)
+                && !(cellSelector.isCellOnlyFactored(start, end) && (end - start > 1));
         final float minInsideProbability = edu.ohsu.cslu.util.Math.floatMax(tmpCell.insideProbabilities)
                 - maxLocalDelta;
 
@@ -391,12 +389,15 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             q.setMaxSize(lexicalRowBeamWidth - lexicalRowUnaries);
 
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
+                // Skip edges that don't meet the maximum delta
                 if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
-                    final float fom = fomModel.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
-                    q.insert(nt, fom);
-                    queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
-                    queueEdges.insideProbabilities[nt] = tmpCell.insideProbabilities[nt];
-                    queueEdges.midpoints[nt] = tmpCell.midpoints[nt];
+                    final float fom = figureOfMerit.calcLexicalFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    // Skip storing edges that didn't make it into the bounded queue
+                    if (q.insert(nt, fom)) {
+                        queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
+                        queueEdges.insideProbabilities[nt] = tmpCell.insideProbabilities[nt];
+                        queueEdges.midpoints[nt] = tmpCell.midpoints[nt];
+                    }
                 }
             }
             // Now that all lexical productions are on the queue, expand it a bit to allow space for unary productions
@@ -404,12 +405,15 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
         } else { // Span >= 2
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
+                // Skip edges that don't meet the maximum delta
                 if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
-                    final float fom = fomModel.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
-                    q.insert(nt, fom);
-                    queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
-                    queueEdges.insideProbabilities[nt] = tmpCell.insideProbabilities[nt];
-                    queueEdges.midpoints[nt] = tmpCell.midpoints[nt];
+                    final float fom = figureOfMerit.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
+                    // Skip storing edges that didn't make it into the bounded queue
+                    if (q.insert(nt, fom)) {
+                        queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
+                        queueEdges.insideProbabilities[nt] = tmpCell.insideProbabilities[nt];
+                        queueEdges.midpoints[nt] = tmpCell.midpoints[nt];
+                    }
                 }
             }
         }
@@ -453,6 +457,12 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                     final short child = nt;
                     final float childInsideProbability = tmpCell.insideProbabilities[child];
 
+                    // Skip the grammar loop if there are no grammar rules that will meet the inside-probability delta
+                    // cutoff
+                    if (childInsideProbability + grammar.cscMaxUnaryProbabilities[child] < minInsideProbability) {
+                        continue;
+                    }
+
                     // Iterate over possible parents of the child (rows with non-zero entries)
                     for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
 
@@ -460,7 +470,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
                         if (jointProbability > minInsideProbability) {
                             final short parent = grammar.cscUnaryRowIndices[i];
-                            final float parentFom = fomModel.calcFOM(start, end, parent, jointProbability);
+                            final float parentFom = figureOfMerit.calcFOM(start, end, parent, jointProbability);
 
                             if (parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
                                 // The FOM was high enough that the edge was added to the queue; update temporary
