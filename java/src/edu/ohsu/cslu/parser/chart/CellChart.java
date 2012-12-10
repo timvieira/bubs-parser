@@ -29,7 +29,6 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Util;
-import edu.ohsu.cslu.parser.fom.DiscriminativeFOM.DiscriminativeFOMSelector;
 
 public class CellChart extends Chart {
 
@@ -320,18 +319,9 @@ public class CellChart extends Chart {
         // binary production
         public ChartEdge(final Production prod, final ChartCell leftCell, final ChartCell rightCell) {
             super(prod, leftCell, rightCell);
-            if (parser.fomModel != null) {
-                if (parser.fomModel instanceof DiscriminativeFOMSelector) {
-                    this.fom = ((DiscriminativeFOMSelector) (parser.fomModel)).calcFOM((short) this.start(),
-                            (short) this.midpt(), (short) this.end(), (short) this.prod.parent,
-                            (short) this.prod.leftChild, (short) this.prod.rightChild, this.inside());
-                } else {
-                    // this.fom = parser.fomModel.calcFOM(this);
-                    this.fom = parser.fomModel.calcFOM(this.start(), this.end(), (short) this.prod.parent,
-                            this.inside());
-                    // System.out.println(((BoundaryInOutSelector) (parser.fomModel)).calcFOMToString(this.start(),
-                    // this.end(), (short) this.prod.parent, this.inside()));
-                }
+            if (parser.figureOfMerit != null) {
+                // this.fom = parser.fomModel.calcFOM(this);
+                this.fom = parser.figureOfMerit.calcFOM(this.start(), this.end(), (short) this.prod.parent, this.inside());
             }
         }
 
@@ -339,20 +329,13 @@ public class CellChart extends Chart {
         public ChartEdge(final Production prod, final HashSetChartCell childCell) {
             super(prod, childCell);
 
-            if (parser.fomModel != null) {
+            if (parser.figureOfMerit != null) {
                 if (prod.isLexProd()) {
-                    // TODO: should we care about unary productions for DiscFOM?
-                    this.fom = parser.fomModel.calcLexicalFOM(this.start(), this.end(), (short) this.prod.parent,
+                    this.fom = parser.figureOfMerit.calcLexicalFOM(this.start(), this.end(), (short) this.prod.parent,
                             this.inside());
                 } else {
-                    if (parser.fomModel instanceof DiscriminativeFOMSelector) {
-                        this.fom = ((DiscriminativeFOMSelector) (parser.fomModel)).calcFOM((short) this.start(),
-                                (short) -1, (short) this.end(), (short) this.prod.parent, (short) this.prod.leftChild,
-                                (short) this.prod.rightChild, this.inside());
-                    } else {
-                        this.fom = parser.fomModel.calcFOM(this.start(), this.end(), (short) this.prod.parent,
-                                this.inside());
-                    }
+                    this.fom = parser.figureOfMerit.calcFOM(this.start(), this.end(), (short) this.prod.parent,
+                            this.inside());
                 }
             }
         }

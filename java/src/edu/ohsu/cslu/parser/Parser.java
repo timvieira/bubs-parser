@@ -25,9 +25,42 @@ import cltool4j.BaseLogger;
 import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.lela.ConstrainedCellSelector;
+import edu.ohsu.cslu.parser.agenda.APDecodeFOM;
+import edu.ohsu.cslu.parser.agenda.APGhostEdges;
+import edu.ohsu.cslu.parser.agenda.APWithMemory;
+import edu.ohsu.cslu.parser.agenda.AgendaParser;
+import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
+import edu.ohsu.cslu.parser.beam.BSCPBeamConfTrain;
+import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
+import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
+import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
+import edu.ohsu.cslu.parser.beam.BSCPPruneViterbi;
+import edu.ohsu.cslu.parser.beam.BSCPSplitUnary;
+import edu.ohsu.cslu.parser.beam.BSCPWeakThresh;
+import edu.ohsu.cslu.parser.beam.BeamSearchChartParser;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
+import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossHash;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossHashGrammarLoop2;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossList;
+import edu.ohsu.cslu.parser.ecp.ECPCellCrossMatrix;
+import edu.ohsu.cslu.parser.ecp.ECPGrammarLoop;
+import edu.ohsu.cslu.parser.ecp.ECPGrammarLoopBerkFilter;
+import edu.ohsu.cslu.parser.ecp.ECPInsideOutside;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
+import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchLeftChildSpmlParser;
+import edu.ohsu.cslu.parser.ml.CartesianProductBinarySearchSpmlParser;
+import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
+import edu.ohsu.cslu.parser.ml.CartesianProductLeftChildHashSpmlParser;
+import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
+import edu.ohsu.cslu.parser.ml.GrammarLoopSpmlParser;
+import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
+import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
+import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
+import edu.ohsu.cslu.parser.ml.ViterbiInOutCphSpmlParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
@@ -75,7 +108,7 @@ public abstract class Parser<G extends Grammar> {
     public ParserDriver opts;
 
     // TODO Make this reference final (once we work around the hack in CellChart)
-    public FigureOfMerit fomModel;
+    public FigureOfMerit figureOfMerit;
     public final CellSelector cellSelector;
 
     /**
@@ -88,7 +121,7 @@ public abstract class Parser<G extends Grammar> {
     public Parser(final ParserDriver opts, final G grammar) {
         this.grammar = grammar;
         this.opts = opts;
-        this.fomModel = opts.fomModel != null ? opts.fomModel.createFOM() : null;
+        this.figureOfMerit = opts.fomModel != null ? opts.fomModel.createFOM() : null;
         this.cellSelector = opts.cellSelectorModel.createCellSelector();
 
         this.collectDetailedStatistics = BaseLogger.singleton().isLoggable(Level.FINER);
@@ -116,7 +149,7 @@ public abstract class Parser<G extends Grammar> {
      * with '((', '(TOP', or '(ROOT'.
      * 
      * @param input
-     * @return
+     * @return Parse output and state
      */
     public ParseTask parseSentence(final String input) {
         return parseSentence(input, null);
@@ -129,7 +162,7 @@ public abstract class Parser<G extends Grammar> {
      * 
      * @param input
      * @param recoveryStrategy Recovery strategy in case of parse failure
-     * @return
+     * @return Parse output and state
      */
     public ParseTask parseSentence(String input, final RecoveryStrategy recoveryStrategy) {
 
@@ -146,7 +179,8 @@ public abstract class Parser<G extends Grammar> {
 
         // TODO: make parseTask local and pass it around to required methods. Will probably need to add
         // instance methods of CellSelector, FOM, and Chart to it. Should make parse thread-safe.
-        final ParseTask task = new ParseTask(input, opts.inputFormat, grammar, recoveryStrategy, opts.decodeMethod);
+        final ParseTask task = new ParseTask(input, opts.inputFormat, grammar, figureOfMerit, recoveryStrategy,
+                opts.decodeMethod);
 
         if (task.sentenceLength() > opts.maxLength) {
             BaseLogger.singleton().info(
@@ -193,49 +227,80 @@ public abstract class Parser<G extends Grammar> {
     }
 
     static public enum ResearchParserType {
-        ECPCellCrossList("ecpccl"),
-        ECPCellCrossListTreeConstrained("goldcyk"),
-        ECPCellCrossHash("ecpcch"),
-        ECPCellCrossHashGrammarLoop("ecpcchgl"),
-        ECPCellCrossHashGrammarLoop2("ecpcchgl2"),
-        ECPCellCrossMatrix("ecpccm"),
-        ECPGrammarLoop("ecpgl"),
-        ECPGrammarLoopBerkeleyFilter("ecpglbf"),
-        ECPInsideOutside("ecpio"),
-        AgendaParser("apall"),
-        APWithMemory("apwm"),
-        APGhostEdges("apge"),
-        APDecodeFOM("apfom"),
-        BeamSearchChartParser("beam"),
-        BSCPSplitUnary("bscpsu"),
-        BSCPPruneViterbi("beampv"),
-        BSCPOnlineBeam("beamob"),
-        BSCPBoundedHeap("beambh"),
-        BSCPExpDecay("beamed"),
-        BSCPPerceptronCell("beampc"),
-        BSCPFomDecode("beamfom"),
-        BSCPBeamConfTrain("beamconftrain"),
-        CoarseCellAgenda("cc"),
-        CoarseCellAgendaCSLUT("cccslut"),
-        DenseVectorOpenClSpmv("dvopencl"),
-        PackedOpenClSpmv("popencl"),
-        CsrSpmv("csr"),
-        GrammarParallelCsrSpmv("gpcsr"),
-        CscSpmv("csc"),
-        GrammarParallelCscSpmv("gpcsc"),
-        LeftChildMl("lcml"),
-        RightChildMl("rcml"),
-        GrammarLoopMl("glml"),
-        CartesianProductBinarySearchMl("cpbs"),
-        CartesianProductBinarySearchLeftChildMl("cplbs"),
-        CartesianProductHashMl("cph"),
-        CartesianProductLeftChildHashMl("cplch"),
-        InsideOutsideCartesianProductHash("iocph"),
-        ViterbiInOutCph("vitio"),
-        ConstrainedCartesianProductHashMl("const");
+        ECPCellCrossList(ECPCellCrossList.class.getName(), "ecpccl"),
+        ECPCellCrossHash(ECPCellCrossHash.class.getName(), "ecpcch"),
+        ECPCellCrossHashGrammarLoop(ECPCellCrossHashGrammarLoop.class.getName(), "ecpcchgl"),
+        ECPCellCrossHashGrammarLoop2(ECPCellCrossHashGrammarLoop2.class.getName(), "ecpcchgl2"),
+        ECPCellCrossMatrix(ECPCellCrossMatrix.class.getName(), "ecpccm"),
+        ECPGrammarLoop(ECPGrammarLoop.class.getName(), "ecpgl"),
+        ECPGrammarLoopBerkeleyFilter(ECPGrammarLoopBerkFilter.class.getName(), "ecpglbf"),
+        ECPInsideOutside(ECPInsideOutside.class.getName(), "ecpio"),
+        AgendaParser(AgendaParser.class.getName(), "apall"),
+        APWithMemory(APWithMemory.class.getName(), "apwm"),
+        APGhostEdges(APGhostEdges.class.getName(), "apge"),
+        APDecodeFOM(APDecodeFOM.class.getName(), "apfom"),
+        BeamSearchChartParser(BeamSearchChartParser.class.getName(), "beam"),
+        BSCPSplitUnary(BSCPSplitUnary.class.getName(), "bscpsu"),
+        BSCPPruneViterbi(BSCPPruneViterbi.class.getName(), "beampv"),
+        BSCPOnlineBeam(BSCPWeakThresh.class.getName(), "beamob"),
+        BSCPBoundedHeap(BSCPBoundedHeap.class.getName(), "beambh"),
+        BSCPExpDecay(BSCPExpDecay.class.getName(), "beamed"),
+        BSCPPerceptronCell(BSCPFomDecode.class.getName(), "beampc"),
+        BSCPFomDecode(BSCPFomDecode.class.getName(), "beamfom"),
+        BSCPBeamConfTrain(BSCPBeamConfTrain.class.getName(), "beamconftrain"),
+        CoarseCellAgenda(CoarseCellAgendaParser.class.getName(), "cc"),
+        CoarseCellAgendaCSLUT(null, "cccslut"), // Not currently supported
 
-        private ResearchParserType(final String... aliases) {
+        // Hard-code class names for OpenCL parsers. Referencing the classes at runtime requires OpenCL libraries, which
+        // aren't included in non-GPL builds
+        DenseVectorOpenClSpmv("edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser", "dvopencl"),
+        PackedOpenClSpmv("edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser", "popencl"),
+
+        CsrSpmv(CsrSpmvParser.class.getName(), "csr"),
+        GrammarParallelCsrSpmv(GrammarParallelCsrSpmvParser.class.getName(), "gpcsr"),
+        CscSpmv(CscSpmvParser.class.getName(), "csc"),
+        GrammarParallelCscSpmv(GrammarParallelCscSpmvParser.class.getName(), "gpcsc"),
+        LeftChildMl(LeftChildLoopSpmlParser.class.getName(), "lcml"),
+        RightChildMl(RightChildLoopSpmlParser.class.getName(), "rcml"),
+        GrammarLoopMl(GrammarLoopSpmlParser.class.getName(), "glml"),
+        CartesianProductBinarySearchMl(CartesianProductBinarySearchSpmlParser.class.getName(), "cpbs"),
+        CartesianProductBinarySearchLeftChildMl(CartesianProductBinarySearchLeftChildSpmlParser.class.getName(),
+                "cplbs"),
+        CartesianProductHashMl(CartesianProductHashSpmlParser.class.getName(), "cph"),
+        CartesianProductLeftChildHashMl(CartesianProductLeftChildHashSpmlParser.class.getName(), "cplch"),
+        InsideOutsideCartesianProductHash(InsideOutsideCphSpmlParser.class.getName(), "iocph"),
+        ViterbiInOutCph(ViterbiInOutCphSpmlParser.class.getName(), "vitio"),
+        ConstrainedCartesianProductHashMl(ConstrainedCphSpmlParser.class.getName(), ConstrainedCellSelector.MODEL,
+                "const");
+
+        /** The implementing class */
+        private final String classname;
+
+        /**
+         * A few parsers require a specialized {@link CellSelectorModel}. If specified, this model will be used at
+         * runtime
+         */
+        private final CellSelectorModel cellSelectorModel;
+
+        private ResearchParserType(final String classname, final String... aliases) {
+            this.classname = classname;
+            this.cellSelectorModel = null;
             EnumAliasMap.singleton().addAliases(this, aliases);
+        }
+
+        private ResearchParserType(final String classname, final CellSelectorModel cellSelectorModel,
+                final String... aliases) {
+            this.classname = classname;
+            this.cellSelectorModel = cellSelectorModel;
+            EnumAliasMap.singleton().addAliases(this, aliases);
+        }
+
+        public String classname() {
+            return classname;
+        }
+
+        public CellSelectorModel cellSelectorModel() {
+            return cellSelectorModel;
         }
     }
 

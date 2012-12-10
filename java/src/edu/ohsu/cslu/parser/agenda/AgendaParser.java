@@ -60,7 +60,7 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
 
         initParser(parseTask);
         addLexicalProductions(parseTask.tokens);
-        fomModel.initSentence(parseTask, chart);
+        figureOfMerit.initSentence(parseTask, chart);
 
         for (int i = 0; i < parseTask.sentenceLength(); i++) {
             cell = chart.getCell(i, i + 1);

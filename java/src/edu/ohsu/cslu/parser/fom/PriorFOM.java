@@ -70,7 +70,7 @@ public class PriorFOM extends FigureOfMeritModel {
 
             for (final ParseTree node : tree.preOrderTraversal()) {
                 if (node.isLeaf() == false) {
-                    if (grammar.nonTermSet.contains(node.contents) == false) {
+                    if (grammar.nonTermSet.containsKey(node.contents) == false) {
                         throw new IOException("Nonterminal '" + node.contents
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
@@ -79,7 +79,7 @@ public class PriorFOM extends FigureOfMeritModel {
             }
         }
 
-        final int numNT = grammar.numNonTerms() + grammar.posSet.size();
+        final int numNT = grammar.numNonTerms() + grammar.posSet.length;
 
         // smooth counts
         if (smoothingCount > 0) {

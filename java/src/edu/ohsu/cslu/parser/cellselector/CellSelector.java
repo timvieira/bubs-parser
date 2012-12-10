@@ -23,6 +23,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Iterator;
 
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel.DepGraphCellSelector;
 
@@ -42,6 +44,8 @@ public abstract class CellSelector implements Iterator<short[]> {
     // TODO: If we really need a parser instance to call parser.waitForActiveTasks(), then
     // this should be passed in when the model is created, not at each sentence init.
     protected ChartParser<?, ?> parser;
+
+    protected DenseIntVector maxSpan = null;
 
     protected CellSelector() {
     }
@@ -146,26 +150,54 @@ public abstract class CellSelector implements Iterator<short[]> {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * @return true if this {@link CellSelector} implementation supports cell constraints
-     */
     public boolean hasCellConstraints() {
+        return constraintsEnabled;
+    }
+
+    /**
+     * Returns true if the specified cell is 'open'. Overridden in classes with constraints.
+     * 
+     * @param start
+     * @param end
+     * @return true if the specified cell is 'open'
+     */
+    public boolean isCellOpen(final short start, final short end) {
+        return true;
+    }
+
+    /**
+     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
+     * complete constituent). Overridden in classes with constraints.
+     * 
+     * @param start
+     * @param end
+     * @return true if the specified cell is 'open' only to factored parents
+     */
+    public boolean isCellOnlyFactored(final short start, final short end) {
         return false;
     }
 
-    public CellConstraints getCellConstraints() {
-        if (hasCellConstraints()) {
-            return (CellConstraints) this;
-        }
-        return null;
+    /**
+     * Returns true if the specified cell is 'open' to unary productions. Overridden in classes with constraints.
+     * 
+     * @param start
+     * @param end
+     * @return true if the specified cell is 'open' to unary productions.
+     */
+    public boolean isUnaryOpen(final short start, final short end) {
+        return true;
     }
 
     public int getMidStart(final short start, final short end) {
-        return start + 1;
+        if ((end - start) < 2 || !isCellOnlyFactored(start, end) || isGrammarLeftFactored())
+            return start + 1;
+        return end - 1; // only allow one midpoint
     }
 
     public int getMidEnd(final short start, final short end) {
-        return end - 1;
+        if ((end - start) < 2 || !isCellOnlyFactored(start, end) || !isGrammarLeftFactored())
+            return end - 1;
+        return start + 1; // only allow one midpoint
     }
 
     /**
@@ -173,15 +205,15 @@ public abstract class CellSelector implements Iterator<short[]> {
      * implementations (e.g. {@link DepGraphCellSelector}) identify subsequence spans and constrain the final chart to
      * be consistent with those bracketings. E.g., if an NP-chunker has identified noun phrases, we must build a
      * complete NP covering the identified span, but we need not consider larger spans that include part (and not all)
-     * of that NP. {@link CellConstraints#isCellOpen(short, short)} implements the former constraint, and this method
-     * implements the latter.
+     * of that NP. {@link #isCellOpen(short, short)} implements the former constraint, and this method implements the
+     * latter.
      * 
      * @param start
      * @param end
      * @return The maximum span in which the specified cell can participate.
      */
     public short getMaxSpan(final short start, final short end) {
-        return Short.MAX_VALUE;
+        return maxSpan == null ? Short.MAX_VALUE : (short) maxSpan.getInt(parser.chart.cellIndex(start, end));
     }
 
     /**
@@ -193,5 +225,9 @@ public abstract class CellSelector implements Iterator<short[]> {
      */
     public int getBeamWidth(final short start, final short end) {
         return Integer.MAX_VALUE;
+    }
+
+    protected final boolean isGrammarLeftFactored() {
+        return parser.grammar.binarization() == Binarization.LEFT;
     }
 }

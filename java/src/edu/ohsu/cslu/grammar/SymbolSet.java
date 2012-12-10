@@ -83,10 +83,6 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
             throw new RuntimeException("Cannot modify a finalized SymbolSet");
         }
 
-        // TODO Re-sort if we have a comparator
-        // if (comparator != null) {
-        //
-        // }
         index = list.size();
         map.put(symbol, index);
         list.add(symbol);
@@ -103,10 +99,6 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
         if (index >= list.size()) {
             throw new IndexOutOfBoundsException();
         }
-        // TODO Re-sort if we have a comparator
-        // if (comparator != null) {
-        //
-        // }
 
         map.remove(symbol);
         list.set(index, symbol);
@@ -147,16 +139,6 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
     @Override
     public boolean containsKey(final Object key) {
         return map.containsKey(key);
-    }
-
-    public boolean hasSymbol(final E label) {
-        // TODO Remove; duplicates containsKey(E)
-        return map.containsKey(label);
-    }
-
-    public boolean contains(final E label) {
-        // TODO Remove; duplicates containsKey(E)
-        return map.containsKey(label);
     }
 
     @Override
@@ -252,11 +234,6 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
     @Override
     public boolean isEmpty() {
         return list.isEmpty();
-    }
-
-    public final int numSymbols() {
-        // TODO Remove; duplicates size()
-        return list.size();
     }
 
     public int size() {

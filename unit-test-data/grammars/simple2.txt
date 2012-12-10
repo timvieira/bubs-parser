@@ -1,0 +1,25 @@
+format=Berkeley start=ROOT
+S => NP VP 0
+S => NP @S -0.693147181
+@S => NP VP -0.693147181
+ROOT => S 0
+NP => DT NP -1.386294361
+NP => DT NN -1.386294361
+NP => NN NN -1.791759469
+NP => NN @NP -1.791759469
+NP => NN RB -1.791759469
+@NP => NN NN 0
+VP => VB RB -0.693147181
+VP => VB @VP -1.386294361
+VP => VB -1.386294361
+@VP => NP 0
+===== LEXICON =====
+DT => The 0
+NN => fish 0
+NN => market -0.405465108
+VB => market -1.098612289
+NN => stands -0.693147181
+VB => stands -0.693147181
+RB => last -0.405465108
+VB => last -1.098612289
+NN => UNK 0

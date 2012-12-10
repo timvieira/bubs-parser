@@ -157,7 +157,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
             final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
 
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                functionClass, initCscMatrices);
+                functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(binaryProductions, packingFunction);

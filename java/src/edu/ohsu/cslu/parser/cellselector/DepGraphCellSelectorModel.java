@@ -66,7 +66,7 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
         return new DepGraphCellSelector();
     }
 
-    public class DepGraphCellSelector extends CellConstraints {
+    public class DepGraphCellSelector extends CellSelector {
 
         private PackedBitVector openCellsVector;
         private int sentenceLength;
@@ -178,11 +178,6 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
         @Override
         public boolean isUnaryOpen(final short start, final short end) {
             return true;
-        }
-
-        @Override
-        protected boolean isGrammarLeftFactored() {
-            return false;
         }
     }
 }

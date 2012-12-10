@@ -60,21 +60,19 @@ public class DenseVectorChart extends ParallelArrayChart {
     /**
      * Constructs a chart
      * 
-     * @param tokens Sentence tokens, mapped to integer indices
+     * @param parseTask Input state
      * @param sparseMatrixGrammar Grammar
      */
     public DenseVectorChart(final ParseTask parseTask, final SparseMatrixGrammar sparseMatrixGrammar) {
         super(parseTask, sparseMatrixGrammar);
+        Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
     }
 
     @Override
     public void reset(final ParseTask task) {
         this.parseTask = task;
         this.size = task.sentenceLength();
-        // TODO We probably don't need to re-initialize all three arrays
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
-        Arrays.fill(packedChildren, 0);
-        Arrays.fill(midpoints, (short) 0);
     }
 
     @Override

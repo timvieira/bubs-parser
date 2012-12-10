@@ -32,14 +32,13 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTask;
-import edu.ohsu.cslu.parser.fom.DiscriminativeFOM;
 
 public abstract class Chart {
 
     protected int size;
     protected Grammar grammar;
     public ParseTask parseTask;
-    public static SymbolSet<String> featHash = new SymbolSet<String>();
+    SymbolSet<String> featHash = new SymbolSet<String>();
 
     protected Chart() {
     }
@@ -83,7 +82,9 @@ public abstract class Chart {
     }
 
     /**
-     * Removes existing chart entries and re-initializes chart state.
+     * Removes existing chart entries and re-initializes chart data structures, facilitating reuse of the chart for
+     * multiple sentences. Subclasses must ensure that the data structure state following {@link #reset(ParseTask)} is
+     * identical to that of a newly constructed chart.
      * 
      * @param task
      */
@@ -119,7 +120,7 @@ public abstract class Chart {
 
     /**
      * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
-     * that of {@link #cellOffset(int, int)}
+     * that of {@link ParallelArrayChart#cellOffset(int, int)}
      * 
      * @param start
      * @param end
@@ -143,7 +144,7 @@ public abstract class Chart {
 
     /**
      * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
-     * that of {@link #cellOffset(int, int)}
+     * that of {@link ParallelArrayChart#cellOffset(int, int)}
      * 
      * @param start
      * @param end
@@ -192,7 +193,6 @@ public abstract class Chart {
      * rare, but can be caused by too-aggressive pruning or a too-sparse grammar.
      * 
      * @param recoveryStrategy Recovery strategy
-     * @throws Exception
      */
     public NaryTree<String> extractRecoveryParse(final RecoveryStrategy recoveryStrategy) {
 
@@ -360,80 +360,9 @@ public abstract class Chart {
         }
     }
 
-    public static class SimpleChartEdge implements Comparable<SimpleChartEdge> {
+    public static class SimpleChartEdge {
         public short A = -1, B = -1, C = -1;
         public short start = -1, mid = -1, end = -1;
-
-        public SimpleChartEdge() {
-        }
-
-        public SimpleChartEdge(final short A, final short B, final short C, final short start, final short mid,
-                final short end) {
-            this.A = A;
-            this.B = B;
-            this.C = C;
-            this.start = start;
-            this.mid = mid;
-            this.end = end;
-        }
-
-        public SimpleChartEdge(final ChartEdge e) {
-            this.A = (short) e.prod.parent;
-            this.B = (short) e.prod.leftChild;
-            this.C = (short) e.prod.rightChild;
-            this.start = (short) e.start();
-            this.end = (short) e.end();
-            this.mid = -1;
-            if (e.prod.isBinaryProd()) {
-                this.mid = (short) e.midpt();
-            }
-        }
-
-        @Override
-        public String toString() {
-            return String.format("[%d,%d,%d] %d => %d %d", this.start, this.mid, this.end, this.A, this.B, this.C);
-        }
-
-        public String toString(final Grammar grammar) {
-            final String strA = this.A == -1 ? "-1" : grammar.mapNonterminal(this.A);
-            final String strB = this.B == -1 ? "-1" : grammar.mapNonterminal(this.B);
-            final String strC = this.C == -1 ? "-1" : grammar.mapNonterminal(this.C);
-            return String.format("[%d,%d,%d] %s -> %s %s", this.start, this.mid, this.end, strA, strB, strC);
-        }
-
-        @Override
-        public int compareTo(final SimpleChartEdge e) {
-            if (this.equals(e)) {
-                return 0;
-            }
-            return 1;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (o instanceof ChartEdge) {
-                final ChartEdge e = (ChartEdge) o;
-                if (e.start() == this.start && e.end() == this.end && e.prod.parent == this.A
-                        && e.prod.leftChild == this.B && e.prod.rightChild == this.C) {
-                    if (e.prod.isBinaryProd()) {
-                        if (e.midpt() == this.mid) {
-                            return true;
-                        }
-                    } else {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            if (!(o instanceof SimpleChartEdge))
-                return false;
-            final SimpleChartEdge e = (SimpleChartEdge) o;
-            if (e.A == this.A && e.B == this.B && e.C == this.C && e.start == this.start && e.mid == this.mid
-                    && e.end == this.end) {
-                return true;
-            }
-            return false;
-        }
     }
 
     public static class ChartEdge {
@@ -599,9 +528,6 @@ public abstract class Chart {
 
     public static List<Feature> featureTemplateStrToEnum(final String[] featureNames) {
         final List<Feature> feats = new LinkedList<Feature>();
-        if (featureNames.length == 0 || (featureNames.length==1 && featureNames[0].equals(""))) {
-            return feats;
-        }
         for (final String featStr : featureNames) {
             if (featStr.equals("lt"))
                 feats.add(Feature.lt);
@@ -654,172 +580,61 @@ public abstract class Chart {
         return feats;
     }
 
-    /* @formatter:on */
-
-    public static void printFeatMap(final Grammar gram) {
-        System.out.println("FEAT NULLPOS " + gram.posSet.getIndex(gram.nullSymbol()));
-        System.out.println("FEAT NULLWORD " + gram.nullWord);
-        for (final Short posIndex : gram.posSet) {
-            System.out.println("FEAT POS " + gram.mapNonterminal(posIndex) + " " + gram.posSet.getIndex(posIndex));
-        }
-        for (final String nt : gram.nonTermSet) {
-            System.out.println("FEAT NT " + nt + " " + gram.nonTermSet.getIndex(nt));
-        }
-        for (final String lex : gram.lexSet) {
-            System.out.println("FEAT LEX " + lex + " " + gram.lexSet.getIndex(lex));
-        }
-    }
-
-    public SparseBitVector getEdgeFeatures(final ChartEdge edge, final boolean addFeat) {
-        // System.out.println("STRFEAT: " + edge.toString());
-        if (edge.prod.isBinaryProd()) {
-            return getEdgeFeatures((short) edge.start(), (short) edge.midpt(), (short) edge.end(),
-                    (short) edge.prod.parent, (short) edge.prod.leftChild, (short) edge.prod.rightChild, addFeat);
-        }
-        return getEdgeFeatures((short) edge.start(), (short) -1, (short) edge.end(), (short) edge.prod.parent,
-                (short) edge.prod.leftChild, (short) edge.prod.rightChild, addFeat);
-    }
-
-    public SparseBitVector getEdgeFeatures(final SimpleChartEdge edge, final boolean addFeat) {
-        return getEdgeFeatures(edge.start, edge.mid, edge.end, edge.A, edge.B, edge.C, addFeat);
-    }
-
-    private int normFeat(int feat) {
-        feat = Math.abs(feat % DiscriminativeFOM.NUM_FEATS);
-        // reserve feat=0 for inside prob
-        return Math.max(1, feat);
-    }
-
-    @SuppressWarnings("unused")
-    public SparseBitVector getEdgeFeatures(final short start, final short mid, final short end, final short A,
-            final short B, final short C, final boolean addFeat) {
-        final IntList featIndices = new IntArrayList(10);
-        final int span = end - start;
-
-        final int intRule = (A + B) * (A * B + 1) * (A * A * B * C);
-        featIndices.add(normFeat(intRule));
-
-        final int intWordEdges = (A * A + getWordFeat(start - 1)) * (1 + A + getWordFeat(end)) * (span + A * 13);
-        featIndices.add(normFeat(intWordEdges));
-
-        if (mid != -1) {
-            final int intNGramTreeApprox = intRule * getWordFeat(mid - 1) * (intRule + getWordFeat(mid));
-            featIndices.add(normFeat(intNGramTreeApprox));
-        }
-
-        // for debugging
-        if (false && addFeat) {
-            int i = 0;
-            final String aStr = grammar.mapNonterminal(A), bStr = grammar.mapNonterminal(B);
-            final String cStr = C >= 0 ? grammar.mapNonterminal(C) : "-1";
-            for (final int x : featIndices) {
-                if (i == 0) {
-
-                    System.out.format("%d\t%s -> %s %s\n", x, aStr, bStr, cStr);
-                } else if (i == 1) {
-                    System.out.format("%d\tA=%s lo=%s ro=%s span=%d\n", x, aStr,
-                            grammar.mapLexicalEntry(getWordFeat(start - 1)), grammar.mapLexicalEntry(getWordFeat(end)),
-                            span);
-                } else if (i == 2) {
-                    System.out.format("%d\t%s -> %s %s li=%s ri=%s\n", x, aStr, bStr, cStr,
-                            grammar.mapLexicalEntry(getWordFeat(mid - 1)), grammar.mapLexicalEntry(getWordFeat(mid)));
-                }
-                i++;
-            }
-        }
-
-        return new SparseBitVector(DiscriminativeFOM.NUM_FEATS, featIndices.toIntArray());
-
-        // check collisions by printing int and str to stdout and counting
-
+    public SparseBitVector getEdgeFeatures(final SimpleChartEdge edge) {
+        return getEdgeFeatures(edge.start, edge.mid, edge.end, edge.A, edge.B, edge.C);
     }
 
     // TODO: VERY Inefficient!!! Need to move to an integer-based lookup and not use strings.
     // how to make this compact??? could go over training set and find all instances, then map them
-    // to a list of indicies. Could hash. ...
-    public SparseBitVector getEdgeFeaturesHashStr(final short start, final short mid, final short end, final short A,
-            final short B, final short C, final boolean addFeat) {
+    // to a list of indices. Could hash. ...
+    public SparseBitVector getEdgeFeatures(final short start, final short mid, final short end, final short A,
+            final short B, final short C) {
+        // int numFeats = 104729;
         final IntList featIndices = new IntArrayList(10);
-
-        if (!addFeat) {
-            return null;
-        }
-        // System.out.println(String.format("INTFEAT: [%d,%d,%d] %d -> %d %d", start, mid, end, A, B, C));
+        int largestFeatIndex = -1;
 
         // int n=grammar.numNonTerms();
 
         // for (final Feature f : features) {
         // switch (f) {
         // case Rule:
-        // Ex: S -> NP VP
-        final String strRule = String.format("R%s,%s,%s", A, B, C);
-        addFeatIndex(strRule, featIndices, addFeat);
+        final String strRule = String.format("%s%s%s", A, B, C);
+        featIndices.add(featHash.addSymbol(strRule));
 
-        final int outLeftWord = getWordFeat(start);
-        final int outRightWord = getWordFeat(end - 1);
+        final int leftWord = getWordFeat(start);
+        final int rightWord = getWordFeat(end - 1);
         final int span = end - start;
-        // Ex: A=NP outLeft='has' outRight='.' span=5
-        final String strWordEdges = String.format("E%s,%s,%s,%s", A, outLeftWord, outRightWord, span);
-        addFeatIndex(strWordEdges, featIndices, addFeat);
+        final String strWordEdge = String.format("%s lw=%s rw=%s s=%s", A, leftWord, rightWord, span);
+        featIndices.add(featHash.addSymbol(strWordEdge));
 
-        if (mid != -1) {
-            final int inLeftWord = getWordFeat(mid - 1);
-            final int inRightWord = getWordFeat(mid);
-            // Ex: VP -> VBD NP inLeft='saw' inRight='the'
-            final String strNGramTreeApprox = String.format("N%s,%s,%s", strRule, inLeftWord, inRightWord);
-            addFeatIndex(strNGramTreeApprox, featIndices, addFeat);
-        }
-
-        // for (final int x : featIndices) {
-        // if (x >= DiscriminativeFOM.NUM_FEATS) {
-        // System.err.println("ERROR: num feats larger than NUM_FEATS=" + DiscriminativeFOM.NUM_FEATS);
-        // System.exit(1);
-        // }
-        // }
-
-        // System.out.println("featHash: " + strWordEdge + " index="
-        // + (featHash.getIndex(strWordEdge) % DiscriminativeFOM.NUM_FEATS));
         // NB: Can only use POS feats of we do 1-best tagging (with POS FOM)
 
         // final int leftPOS = getPOSFeat(start);
         // final int rightPOS = getPOSFeat(end - 1);
-        // final String strPOSEdge = String.format("%s lp=%s rp=%s s=%s", strRule, leftPOS, rightPOS, span);
+        // final String strPOSEdge = String.format("%s lp=%s rp=%s s=%s", A, leftPOS, rightPOS, span);
         // featIndices.add(featHash.addSymbol(strPOSEdge));
 
         // final int leftInPOS = getPOSFeat(start + 1);
         // final int rightInPOS = getPOSFeat(end - 2);
-        // final String strPOSInEdge = String.format("%s lpi=%s rpi=%s s=%s", strRule, leftInPOS, rightInPOS, span);
+        // final String strPOSInEdge = String.format("%s lpi=%s rpi=%s s=%s", A, leftInPOS, rightInPOS, span);
         // featIndices.add(featHash.addSymbol(strPOSInEdge));
 
-        // for (final int x : featIndices) {
-        // if (x > largestFeatIndex)
-        // largestFeatIndex = x;
-        // }
+        for (final int x : featIndices) {
+            if (x > largestFeatIndex)
+                largestFeatIndex = x;
+        }
 
         // break;
         // }
         // }
-        if (featIndices.size() == 0) {
-            return null;
-        }
-        return new SparseBitVector(DiscriminativeFOM.NUM_FEATS, featIndices.toIntArray());
-    }
-
-    private void addFeatIndex(final String strRule, final IntList featIndices, final boolean addFeat) {
-        // could make set smaller (with collisions) by % DiscriminativeFOM.NUM_FEATS
-        if (addFeat) {
-            featIndices.add(featHash.addSymbol(strRule) % DiscriminativeFOM.NUM_FEATS);
-        } else if (featHash.contains(strRule)) {
-            featIndices.add(featHash.get(strRule) % DiscriminativeFOM.NUM_FEATS);
-        }
-        // don't add if not in featHash
+        return new SparseBitVector(largestFeatIndex + 1, featIndices.toIntArray());
     }
 
     public SparseBitVector getCellFeatures(final int start, final int end, final List<Feature> features) {
         int numFeats = 0;
         final IntList featIndices = new IntArrayList(10);
 
-        final int numTags = grammar.posSet.size();
+        final int numTags = grammar.posSet.length;
         final int numWords = grammar.lexSet.size();
 
         for (final Feature f : features) {
@@ -944,7 +759,7 @@ public abstract class Chart {
         int numFeats = 0;
         final IntList featIndices = new IntArrayList(10);
 
-        final int numTags = grammar.posSet.size();
+        final int numTags = grammar.posSet.length;
         final int numWords = grammar.lexSet.size();
 
         for (final String featStr : featureNames) {
@@ -1057,11 +872,18 @@ public abstract class Chart {
     }
 
     // map from sparse POS index to compact ordering by using grammar.posSet
-    private int getPOSFeat(final int tokIndex) {
-        if (tokIndex < 0 || tokIndex >= parseTask.sentenceLength()) {
-            return grammar.posSet.getIndex(grammar.nullSymbol());
+    /**
+     * Returns the POS-index (in {@link Grammar#posSet}) of the 1-best tag for the specified token
+     * 
+     * @param tokenIndex
+     * @return POS-index (in {@link Grammar#posSet}) of the 1-best tag for the specified token
+     */
+    private int getPOSFeat(final int tokenIndex) {
+        if (tokenIndex < 0 || tokenIndex >= parseTask.sentenceLength()) {
+            return grammar.posIndexMap[grammar.nullSymbol()];
         }
-        return grammar.posSet.getIndex((short) parseTask.fomTags[tokIndex]);
+        // parseTask.
+        return parseTask.figureOfMerit.fomTags[tokenIndex];
     }
 
     private int getWordFeat(final int tokIndex) {

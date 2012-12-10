@@ -43,7 +43,7 @@ public class CoarseGrammar extends ListGrammar {
             final String fineNTStr = fineGrammar.mapNonterminal(i);
             final String coarseNTStr = fineToCoarseNonTermString(fineNTStr);
             // System.out.println(parentNonTermString + " => " + projNTStr);
-            if (this.nonTermSet.contains(coarseNTStr) == false) {
+            if (this.nonTermSet.containsKey(coarseNTStr) == false) {
                 BaseLogger.singleton().info(
                         "ERROR: mapping fine non-terminal '" + fineNTStr + "' to coarse non-terminal '" + coarseNTStr
                                 + "' but coarse non-terminal not found in coarse grammar.");

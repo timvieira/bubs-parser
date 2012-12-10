@@ -30,6 +30,8 @@ import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
 
 public class BinaryPerceptronSet extends Classifier {
 
+    private static final long serialVersionUID = 1L;
+
     Perceptron classifiers[];
     int numClassifiers;
     String binsStr;
