@@ -21,12 +21,14 @@ package edu.ohsu.cslu.lela;
 
 import java.util.Iterator;
 
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
+import edu.ohsu.cslu.parser.ml.BaseIoCphSpmlParser;
 import edu.ohsu.cslu.parser.ml.ConstrainedChartParser;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
 import edu.ohsu.cslu.util.Math;
@@ -40,6 +42,11 @@ import edu.ohsu.cslu.util.Math;
  */
 public class ConstrainedInsideOutsideParser extends
         SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, ConstrainedChart> implements ConstrainedChartParser {
+
+    protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
+            BaseIoCphSpmlParser.PROPERTY_APPROXIMATE_LOG_SUM, false);
+    protected final static float SUM_DELTA = GlobalConfigProperties.singleton().getFloatProperty(
+            BaseIoCphSpmlParser.PROPERTY_LOG_SUM_DELTA, 16f);
 
     ConstrainingChart constrainingChart;
 
@@ -176,9 +183,15 @@ public class ConstrainedInsideOutsideParser extends
                 } else if (parent == parent0) {
                     foundParent = true;
                     chart.nonTerminalIndices[parent0Offset] = parent;
-                    chart.insideProbabilities[parent0Offset] = Math.logSum(chart.insideProbabilities[parent0Offset],
-                            grammar.cscBinaryProbabilities[k] + childInsideProbability);
-
+                    if (APPROXIMATE_SUM) {
+                        chart.insideProbabilities[parent0Offset] = Math.approximateLogSum(
+                                chart.insideProbabilities[parent0Offset], grammar.cscBinaryProbabilities[k]
+                                        + childInsideProbability, SUM_DELTA);
+                    } else {
+                        chart.insideProbabilities[parent0Offset] = Math.logSum(
+                                chart.insideProbabilities[parent0Offset], grammar.cscBinaryProbabilities[k]
+                                        + childInsideProbability, SUM_DELTA);
+                    }
                 } else {
                     // We've passed all target parents. No need to search more grammar rules
                     break;
@@ -218,8 +231,13 @@ public class ConstrainedInsideOutsideParser extends
                     foundParent = true;
                     final float unaryProbability = grammar.cscUnaryProbabilities[j] + childInsideProbability;
                     chart.nonTerminalIndices[parentIndex] = grammarParent;
-                    chart.insideProbabilities[parentIndex] = Math.logSum(chart.insideProbabilities[parentIndex],
-                            unaryProbability);
+                    if (APPROXIMATE_SUM) {
+                        chart.insideProbabilities[parentIndex] = Math.approximateLogSum(
+                                chart.insideProbabilities[parentIndex], unaryProbability, SUM_DELTA);
+                    } else {
+                        chart.insideProbabilities[parentIndex] = Math.logSum(chart.insideProbabilities[parentIndex],
+                                unaryProbability, SUM_DELTA);
+                    }
 
                 } else {
                     // We've passed all target parents. No need to search more grammar rules
@@ -285,7 +303,7 @@ public class ConstrainedInsideOutsideParser extends
             final int siblingIndex, final int[] cscBinaryColumnOffsets, final short[] cscBinaryRowIndices,
             final float[] cscBinaryProbabilities, final PackingFunction cpf) {
 
-        final float sentenceInsideProbability = chart.getInside(0, chart.size(), 0);
+        // final float sentenceInsideProbability = chart.getInside(0, chart.size(), 0);
 
         final short entry = constrainingChart.nonTerminalIndices[entryOffset];
         // For debugging with assertions turned on
@@ -308,8 +326,14 @@ public class ConstrainedInsideOutsideParser extends
 
             } else if (grammarEntry == entry) {
                 foundEntry = true;
-                chart.outsideProbabilities[entryOffset] = Math.logSum(chart.outsideProbabilities[entryOffset],
-                        cscBinaryProbabilities[k] + jointProbability);
+                if (APPROXIMATE_SUM) {
+                    chart.outsideProbabilities[entryOffset] = Math.approximateLogSum(
+                            chart.outsideProbabilities[entryOffset], cscBinaryProbabilities[k] + jointProbability,
+                            SUM_DELTA);
+                } else {
+                    chart.outsideProbabilities[entryOffset] = Math.logSum(chart.outsideProbabilities[entryOffset],
+                            cscBinaryProbabilities[k] + jointProbability, SUM_DELTA);
+                }
 
             } else {
                 // We've passed all target entries. No need to search more grammar rules
@@ -321,7 +345,7 @@ public class ConstrainedInsideOutsideParser extends
 
     private void computeUnaryOutsideProbabilities(final int cellIndex) {
 
-        final float sentenceInsideProbability = chart.getInside(0, chart.size(), 0);
+        // final float sentenceInsideProbability = chart.getInside(0, chart.size(), 0);
         final int offset = chart.offset(cellIndex);
 
         // foreach unary chain depth (starting from 2nd from top in chain; the top entry is the binary child)
@@ -349,8 +373,14 @@ public class ConstrainedInsideOutsideParser extends
 
                 } else if (grammarParent == parent) {
                     foundChild = true;
-                    chart.outsideProbabilities[childIndex] = Math.logSum(chart.outsideProbabilities[childIndex],
-                            grammar.cscUnaryProbabilities[j] + chart.outsideProbabilities[parentIndex]);
+                    if (APPROXIMATE_SUM) {
+                        chart.outsideProbabilities[childIndex] = Math.approximateLogSum(
+                                chart.outsideProbabilities[childIndex], grammar.cscUnaryProbabilities[j]
+                                        + chart.outsideProbabilities[parentIndex], SUM_DELTA);
+                    } else {
+                        chart.outsideProbabilities[childIndex] = Math.logSum(chart.outsideProbabilities[childIndex],
+                                grammar.cscUnaryProbabilities[j] + chart.outsideProbabilities[parentIndex], SUM_DELTA);
+                    }
 
                 } else {
                     // We've passed the target parent. No need to search more grammar rules
