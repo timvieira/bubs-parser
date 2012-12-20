@@ -239,6 +239,23 @@
     </target>
 
 
+    <target name="normalize" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.Normalize" />
+            <param name="tool-name" value="normalize" />
+            <param name="heap-size" value="1024m" />
+        </antcall>
+    </target>
+
+
+    <target name="select-features" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.SelectFeatures" />
+            <param name="tool-name" value="select-features" />
+        </antcall>
+    </target>
+
+
     <target name="bubs-all" depends="compile">
         <jar file="${dir.dist}/bubs-all.jar">
             <fileset dir="${dir.build}" includes="**/*.class" />
